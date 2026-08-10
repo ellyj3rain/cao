@@ -76,47 +76,47 @@ public static class Program
     private static void CheckOneVariableReceipts(StringBuilder report)
     {
         var baseline = new Policy();
-        CheckDelta(report, "Generated land", baseline,
+        CheckDelta(report, "Connected regions", baseline,
             p => p.StitchedBand = 0.05f,
             p => p.StitchedBand = 1f,
             "realizedStitchedFrequency", "requestedExtent");
-        CheckDelta(report, "Stitched region size", baseline,
+        CheckDelta(report, "Region span", baseline,
             p => { p.StitchedMin = 2; p.StitchedMax = 3; },
             p => { p.StitchedMin = 6; p.StitchedMax = 7; },
             "requestedExtent");
-        CheckDelta(report, "Settlement concentration", baseline,
+        CheckDelta(report, "Settlement spacing", baseline,
             p => p.Concentration = 0.1f,
             p => p.Concentration = 0.9f,
             "placementTile", "settlementPattern");
-        CheckDelta(report, "Urban growth propensity", baseline,
+        CheckDelta(report, "Urban development", baseline,
             p => p.UrbanGrowth = 0.1f,
             p => p.UrbanGrowth = 0.9f,
             "urbanThreshold", "settlementScale");
-        CheckDelta(report, "Frontier holding frequency", baseline,
+        CheckDelta(report, "Frontier settlement", baseline,
             p => p.FrontierFrequency = 0.05f,
             p => p.FrontierFrequency = 0.95f,
             "frontierCount", "settlementPattern");
-        CheckDelta(report, "Frontier holding size", baseline,
+        CheckDelta(report, "Homestead size", baseline,
             p => p.FrontierSize = 0.05f,
             p => p.FrontierSize = 0.95f,
             "frontierHousehold", "frontierMaterial", "frontierForm");
-        CheckDelta(report, "Unaffiliated residents", baseline,
+        CheckDelta(report, "Residents outside factions", baseline,
             p => p.Unaffiliated = 0.05f,
             p => p.Unaffiliated = 0.95f,
             "unaffiliatedPercent");
-        CheckDelta(report, "Reallocation source variety", baseline,
+        CheckDelta(report, "Settlement origins", baseline,
             p => p.SourceVariety = 0.05f,
             p => p.SourceVariety = 0.95f,
             "differentOwner");
-        CheckDelta(report, "Local faction formation", baseline,
+        CheckDelta(report, "New local factions", baseline,
             p => p.LocalFaction = 0.05f,
             p => p.LocalFaction = 0.95f,
             "localFaction");
-        CheckDelta(report, "Regional conflict", baseline,
+        CheckDelta(report, "Faction relations", baseline,
             p => p.Conflict = 0.05f,
             p => p.Conflict = 0.95f,
             "relation", "relationPattern", "settlementPattern");
-        CheckDelta(report, "Off-map activity rate", baseline,
+        CheckDelta(report, "Distant activity", baseline,
             p => p.OffMapActivity = 0.1f,
             p => p.OffMapActivity = 0.9f,
             "offMapBudget");
@@ -292,7 +292,15 @@ public static class Program
             Require(dialog.Contains(field), field + " has no visible control");
         }
         Require(setup.Contains("CurrentSchemaVersion = 3"),
-            "current plan schema is not 2");
+            "current plan schema is not 3");
+        Require(setup.Contains("localFactionChance = 0.45f")
+            && setup.Contains("regionalConflictChance = 0.4f"),
+            "the neutral profile does not begin on the middle faction bands");
+        Require(dialog.Contains("CACreationUI.DrawSegment")
+            && dialog.Contains("WorldProfile[] Profiles")
+            && dialog.Contains("NeutralProfile")
+            && !dialog.Contains("new FloatMenu"),
+            "world tendencies are not exposed as stable independent bands");
         Require(setup.Contains("PlacementScore")
             && setup.Contains("settlementConcentration"),
             "concentration does not own placement");
@@ -405,11 +413,11 @@ public static class Program
         Require(savedPolicy != null
                 && FloatValue(savedPolicy, "stitchedRegionFrequencyMin", -1f)
                     == 0.15f
-                && FloatValue(savedPolicy, "stitchedRegionFrequencyMax", -1f)
+                && FloatValue(savedPolicy, "stitchedRegionFrequencyMax", 0.55f)
                     == 0.55f
-                && IntValue(savedPolicy, "stitchedRegionSizeMin", -1) == 3
+                && IntValue(savedPolicy, "stitchedRegionSizeMin", 3) == 3
                 && IntValue(savedPolicy, "stitchedRegionSizeMax", -1) == 7
-                && FloatValue(savedPolicy, "settlementConcentration", -1f)
+                && FloatValue(savedPolicy, "settlementConcentration", 0.5f)
                     == 0.5f
                 && FloatValue(savedPolicy, "urbanGrowthPropensity", -1f)
                     == 0.35f
@@ -423,7 +431,7 @@ public static class Program
                 && FloatValue(savedPolicy, "localFactionChance", -1f) == 0.12f
                 && FloatValue(savedPolicy, "regionalConflictChance", -1f)
                     == 0.25f
-                && FloatValue(savedPolicy, "offMapActivityRate", -1f) == 0.5f,
+                && FloatValue(savedPolicy, "offMapActivityRate", 0.5f) == 0.5f,
             "fixture world-tendency preset changed or became implicit");
         Require((string)plan.Element("regionalId") == "CA-RG-EB596A12"
             && (string)plan.Element("candidateId") == "613b1fe44104"
@@ -594,7 +602,7 @@ public static class Program
         if (relations.Any(item => !BoolValue(item, "authorRelation", true)))
             hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
                 (int)MathF.Round(FloatValue(policy, "regionalConflictChance",
-                    0.12f) * 10000f));
+                    0.4f) * 10000f));
         foreach (XElement relation in relations)
         {
             hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,

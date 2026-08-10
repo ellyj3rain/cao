@@ -136,8 +136,8 @@ namespace ColonistAwareness
         // These three propensities own separate steps: source ownership mix,
         // local-faction creation, and relation generation.
         public float reallocationSourceVariety = 0.50f;
-        public float localFactionChance = 0.15f;
-        public float regionalConflictChance = 0.12f;
+        public float localFactionChance = 0.45f;
+        public float regionalConflictChance = 0.4f;
 
         // Urban scale applies only when population, geography,
         // infrastructure, trade, and history can support a city.
@@ -173,9 +173,9 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref reallocationSourceVariety,
                 "reallocationSourceVariety", 0.50f);
             Scribe_Values.Look(ref localFactionChance,
-                "localFactionChance", 0.15f);
+                "localFactionChance", 0.45f);
             Scribe_Values.Look(ref regionalConflictChance,
-                "regionalConflictChance", 0.12f);
+                "regionalConflictChance", 0.4f);
             Scribe_Values.Look(ref urbanGrowthPropensity,
                 "urbanGrowthPropensity", 0.45f);
             Scribe_Values.Look(ref offMapActivityRate,
@@ -1499,20 +1499,20 @@ namespace ColonistAwareness
                 CAFoundingArrangement founding = plan.playerFounding.arrangement;
                 if (founding == null)
                 {
-                    failure = "The authored founding arrangement is missing.";
+                    failure = "The authored founding terms are missing.";
                     return false;
                 }
                 if (founding.leaderRule != "none"
                     && founding.leaderRule != "chosen")
                 {
-                    failure = "The founding arrangement has an unknown "
+                    failure = "The founding terms have an unknown "
                         + "leadership rule.";
                     return false;
                 }
                 if (founding.leaderRule == "none"
                     && !founding.foundersDecide)
                 {
-                    failure = "The founding arrangement needs either a leader "
+                    failure = "The founding terms need either a leader "
                         + "or shared decisions.";
                     return false;
                 }

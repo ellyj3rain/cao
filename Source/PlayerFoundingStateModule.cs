@@ -384,6 +384,12 @@ namespace ColonistAwareness
             CAPlayerFoundingPlan draft)
         {
             if (draft == null) return;
+            if (draft.arrangement != null)
+            {
+                draft.arrangement.id = "custom";
+                draft.arrangement.label = "custom founding terms";
+                draft.arrangement.premise = "Rules chosen for this landing.";
+            }
             draft.arrangementSource = (byte)CAAxisSource.Authored;
             draft.confirmed = false;
         }
@@ -464,18 +470,18 @@ namespace ColonistAwareness
             CAFoundingArrangement arrangement = draft.arrangement;
             if (arrangement == null)
             {
-                failure = "Choose or generate a founding arrangement.";
+                failure = "Choose or generate founding terms.";
                 return false;
             }
             if (!draft.ArrangementChosen)
             {
-                failure = "Choose or generate a founding arrangement.";
+                failure = "Choose or generate founding terms.";
                 return false;
             }
             if (arrangement.leaderRule != "none"
                 && arrangement.leaderRule != "chosen")
             {
-                failure = "The founding arrangement has an unknown "
+                failure = "The founding terms have an unknown "
                     + "leadership rule.";
                 return false;
             }

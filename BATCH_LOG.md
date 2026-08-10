@@ -2,8 +2,8 @@
 
 This is the chronological index of Colonist Awareness's append-only atomic batch sequence. Together with the recorded provenance, these governed records are the project's portable history; they do not depend on a particular Git host. Batch files use one alphanumeric namespace and live together under [`Batches/`](Batches/). Letter changes mark development eras; they do not create separate history systems. Series-neutral thematic classification lives in [`Batches/THREADS.md`](Batches/THREADS.md); contiguous tier-bearing development units live in [`VERSION_MAP.md`](VERSION_MAP.md).
 
-The A sequence closes at `A102`. The closed chronology continues through `B2`;
-`B3` is the next development batch.
+The A sequence closes at `A102`. The closed chronology continues through `B3`;
+`B4` is the next development batch.
 
 | Batch | Date | Descriptive name | Threads |
 |---|---|---|---|
@@ -110,6 +110,7 @@ The A sequence closes at `A102`. The closed chronology continues through `B2`;
 | [A101](Batches/A101-2026-08-09-creator-primary-grammar-and-evidence-correction.md) | 2026-08-09 02:20–02:32 UTC / 19:20–19:32 PST | Creator primary grammar and evidence correction | [`T-021`](Batches/THREADS.md#t-021), [`T-023`](Batches/THREADS.md#t-023), [`T-025`](Batches/THREADS.md#t-025), [`T-028`](Batches/THREADS.md#t-028), [`T-030`](Batches/THREADS.md#t-030) |
 | [A102](Batches/A102-2026-08-10-faction-and-settlement-ontology-convergence.md) | 2026-08-10 04:07 UTC / 21:07 PST | Faction and settlement ontology convergence | [`T-014`](Batches/THREADS.md#t-014), [`T-016`](Batches/THREADS.md#t-016), [`T-021`](Batches/THREADS.md#t-021), [`T-022`](Batches/THREADS.md#t-022), [`T-023`](Batches/THREADS.md#t-023), [`T-024`](Batches/THREADS.md#t-024), [`T-025`](Batches/THREADS.md#t-025), [`T-028`](Batches/THREADS.md#t-028), [`T-030`](Batches/THREADS.md#t-030) |
 | [B1](Batches/B001-2026-08-10-causal-world-authoring.md) | 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST | Causal world authoring | [`T-002`](Batches/THREADS.md#t-002), [`T-019`](Batches/THREADS.md#t-019), [`T-021`](Batches/THREADS.md#t-021), [`T-024`](Batches/THREADS.md#t-024), [`T-025`](Batches/THREADS.md#t-025), [`T-026`](Batches/THREADS.md#t-026), [`T-028`](Batches/THREADS.md#t-028), [`T-030`](Batches/THREADS.md#t-030) |
-| [B2](Batches/B002-2026-08-10-player-founding-authoring.md) | 2026-08-10 18:06-19:46 UTC / 11:06-12:46 PST | Player founding authoring | [`T-022`](Batches/THREADS.md#t-022), [`T-023`](Batches/THREADS.md#t-023), [`T-024`](Batches/THREADS.md#t-024), [`T-025`](Batches/THREADS.md#t-025), [`T-028`](Batches/THREADS.md#t-028), [`T-030`](Batches/THREADS.md#t-030) |
+| [B2](Batches/B002-2026-08-10-player-founding-authoring.md) | 2026-08-10 18:06–19:46 UTC / 11:06–12:46 PST | Player founding authoring | [`T-022`](Batches/THREADS.md#t-022), [`T-023`](Batches/THREADS.md#t-023), [`T-024`](Batches/THREADS.md#t-024), [`T-025`](Batches/THREADS.md#t-025), [`T-028`](Batches/THREADS.md#t-028), [`T-030`](Batches/THREADS.md#t-030) |
+| [B3](Batches/B003-2026-08-10-creation-flow-interaction-convergence.md) | 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST | Creation-flow interaction convergence | [`T-002`](Batches/THREADS.md#t-002), [`T-021`](Batches/THREADS.md#t-021), [`T-022`](Batches/THREADS.md#t-022), [`T-023`](Batches/THREADS.md#t-023), [`T-024`](Batches/THREADS.md#t-024), [`T-025`](Batches/THREADS.md#t-025), [`T-026`](Batches/THREADS.md#t-026), [`T-028`](Batches/THREADS.md#t-028), [`T-030`](Batches/THREADS.md#t-030) |
 
 Former pre-recatalog labels resolve through [`Batches/FORMER_LABELS.md`](Batches/FORMER_LABELS.md).

@@ -250,7 +250,7 @@ namespace ColonistAwareness
                     + CAPoliticalBeliefsModel.Summary(playerBeliefs) + ".");
 
             // Record the applied arrangement and its effect.
-            colony.Record("organization", "founding arrangement: "
+            colony.Record("organization", "founding terms: "
                 + preset.label + " - " + preset.premise);
 
             // Record only differences between the starting arrangement and
@@ -261,7 +261,7 @@ namespace ColonistAwareness
                     playerBeliefs, preset))
             {
                 if (axis.Silent || axis.conforms) continue;
-                colony.Record("organization", "the founding arrangement"
+                colony.Record("organization", "the founding terms"
                     + " differs from"
                     + " political beliefs on " + axis.title.ToLower()
                     + ": they hold " + axis.belief
@@ -348,7 +348,7 @@ namespace ColonistAwareness
                 });
             }
 
-            colony.Record("organization", "founding arrangement: "
+            colony.Record("organization", "founding terms: "
                 + (commander != null
                     ? commander.LabelShort + " commands"
                     : "no permanent leader")

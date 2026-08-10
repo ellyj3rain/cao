@@ -180,7 +180,7 @@ public static class Program
         foreach (string label in new[]
         {
             "Culture", "Ideoligion", "Political beliefs",
-            "Founding arrangement"
+            "Founding terms"
         })
             Require(page.Contains("\"" + label + "\""),
                 label + " is absent from the founding page");
@@ -192,11 +192,15 @@ public static class Program
             && page.Contains("ApplyCarriedState(draft")
             && page.Contains("!draft.nativeIdeoNotified"),
             "page completion does not confirm one native-Ideo-aware draft");
-        Require(page.Contains("Who may give binding orders?")
-            && page.Contains("May founders be ordered to work?")
-            && page.Contains("Do founders have a voice from day one?")
-            && page.Contains("Are starting supplies held in common?"),
-            "the four belief-to-arrangement questions are incomplete");
+        Require(page.Contains("Settlement leadership")
+            && page.Contains("Who may give binding orders.")
+            && page.Contains("Required work")
+            && page.Contains("Whether work and defense may be assigned.")
+            && page.Contains("First decisions")
+            && page.Contains("Who votes on decisions from the first day.")
+            && page.Contains("Starting supplies")
+            && page.Contains("Whether provisions are pooled and rationed."),
+            "the four founding-term causes are incomplete");
         Require(setup.Contains("CurrentSchemaVersion = 3")
             && setup.Contains("Scribe_Deep.Look(ref playerFounding, "
                 + "\"playerFounding\")"),
@@ -250,13 +254,9 @@ public static class Program
         Require(player.Element("politicalBeliefs")?.Element("positions")
                 != null,
             label + " political beliefs have no serialized axis collection");
-        Require(player.Element("arrangementSource") != null
-            && player.Element("nativeIdeoId") != null
-            && player.Element("nativeIdeoName") != null
-            && player.Element("nativeIdeoSignature") != null
-            && player.Element("nativeIdeoNotified") != null
-            && player.Element("confirmed") != null,
-            label + " founding provenance or native receipt is incomplete");
+        // RimWorld's Scribe omits values that equal their declared defaults.
+        // Absence of a false boolean, an unset source, or nativeIdeoId -1 is
+        // therefore the serialized default rather than missing schema.
         bool confirmed = string.Equals(Value(player, "confirmed"), "True",
             StringComparison.OrdinalIgnoreCase);
         XElement arrangement = player.Element("arrangement");
@@ -295,13 +295,27 @@ public static class Program
         }
         else
         {
-            Require(arrangementNull
-                && Value(player, "arrangementSource") == "0"
-                && Value(player, "nativeIdeoId") == "-1"
-                && string.Equals(Value(player, "nativeIdeoNotified"),
-                    "False", StringComparison.OrdinalIgnoreCase),
-                label + " unconfirmed draft invents a recovered player "
-                    + "choice");
+            string arrangementSource = Value(player, "arrangementSource");
+            string nativeIdeoId = Value(player, "nativeIdeoId");
+            bool pristine = arrangementNull
+                && (arrangementSource.Length == 0
+                    || arrangementSource == "0")
+                && (nativeIdeoId.Length == 0 || nativeIdeoId == "-1");
+            if (!pristine)
+            {
+                Require(arrangementNull
+                        || (arrangementSource.Length > 0
+                            && arrangementSource != "0"
+                            && !string.IsNullOrEmpty(
+                                Value(arrangement, "id"))),
+                    label + " authored founding terms lost provenance");
+                if (nativeIdeoId.Length > 0 && nativeIdeoId != "-1")
+                    Require(!string.IsNullOrEmpty(
+                                Value(player, "nativeIdeoName"))
+                            && !string.IsNullOrEmpty(
+                                Value(player, "nativeIdeoSignature")),
+                        label + " authored Ideoligion lost its receipt");
+            }
         }
         Require(plan.Element("foundingArrangement") == null
             && plan.Element("foundingArrangementAuthored") == null,
@@ -309,7 +323,8 @@ public static class Program
         report.AppendLine("PASS " + label
             + " -> schema 3; 3 factions; 4 settlements; 9 population groups; "
             + (confirmed ? "confirmed founding state"
-                : "unconfirmed founding authoring state"));
+                : arrangementNull ? "unconfirmed founding authoring state"
+                : "unconfirmed authored founding draft"));
     }
 
     private static void CheckRoundTrip(XDocument original,

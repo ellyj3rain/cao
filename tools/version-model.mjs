@@ -19,8 +19,8 @@ export const KOHAI_HARD_CAP = 16;
 export const PATCH_HARD_CAP = 24;
 export const MATURITY_LADDER = Object.freeze(["pre-alpha", "alpha", "beta", "rc"]);
 export const ROOT_REPLAY_START_VERSION = "0.1.0.0-pre-alpha";
-export const CLOSED_BATCH_TIP = "B2";
-export const NEXT_BATCH = "B3";
+export const CLOSED_BATCH_TIP = "B3";
+export const NEXT_BATCH = "B4";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_REPO_ROOT = resolve(here, "..");
@@ -318,6 +318,17 @@ export const VERSION_UNITS = Object.freeze([
     threads: ["T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
     rationale: "B2 restores a missing player-visible authoring and runtime contract: Culture, native Ideoligion, Political Beliefs, and the adopted Founding Arrangement now share the faction ontology while preserving the temporal difference between an established society and a new colony. The world-owned draft and one-shot arrangement receipt cover regional and non-regional starts without fabricating mature player institutions. This is a new setup capability rather than an in-place correction, so it carries the minor tier.",
   },
+  {
+    id: "VU-030",
+    series: "B",
+    first: 3,
+    last: 3,
+    dates: "2026-08-10",
+    tier: "kohai",
+    name: "Creation-flow interaction convergence",
+    threads: ["T-002", "T-021", "T-022", "T-023", "T-024", "T-025", "T-026", "T-028", "T-030"],
+    rationale: "B3 matures the B1-B2 creation capability into one coherent interaction system across World tendencies, Starting Region, Culture, native Ideoligion, Political Beliefs, and Founding terms. Shared graphical choices, explicit focus and applied states, bounded comparison layouts, neutral presets, independent population causes, and executable interaction receipts improve legibility and correctness without opening a new simulation capability.",
+  },
 ]);
 
 function parseVersion(version) {
@@ -465,7 +476,7 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | Hard caps | minor ${MINOR_HARD_CAP}; kohai ${KOHAI_HARD_CAP}; patch ${PATCH_HARD_CAP} |
 | Replay start | \`${ROOT_REPLAY_START_VERSION}\` |
 | Current version | \`${replay.currentVersion}\` |
-| Closed chronology | \`A1-B2\` |
+| Closed chronology | \`A1-B3\` |
 | Next batch | \`${NEXT_BATCH}\` |
 | Executable source | [\`tools/version-model.mjs\`](tools/version-model.mjs) |
 
@@ -508,7 +519,7 @@ The thematic catalog is series-neutral in [\`Batches/THREADS.md\`](Batches/THREA
 
 const STAMP_MARKER = "cao:generated:version";
 const STAMP_TARGETS = Object.freeze({
-  "README.md": () => `Current version: \`${CURRENT_VERSION}\`. Implementation is complete through batch \`${CLOSED_BATCH_TIP}\`; \`${NEXT_BATCH}\` is the next development batch. The verified assembly is deployed for operator runtime testing. Static verification does not substitute for how the game looks and plays.`,
+  "README.md": () => `Current version: \`${CURRENT_VERSION}\`. Implementation is complete through batch \`${CLOSED_BATCH_TIP}\`; \`${NEXT_BATCH}\` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.`,
   "CORE.md": () => `| Version | \`${CURRENT_VERSION}\` · closed batch tip \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
   "GOVERNANCE.md": () => `| Version | \`${CURRENT_VERSION}\` · closed batch tip \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
   "MEMORY.md": () => `| Version | \`${CURRENT_VERSION}\` · closed batch tip \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
@@ -554,9 +565,10 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     ...Array.from({ length: 102 }, (_, index) => `A${index + 1}`),
     "B1",
     "B2",
+    "B3",
   ];
   if (JSON.stringify(covered) !== JSON.stringify(expected)) {
-    errors.push("version units must cover A1-B2 exactly once, contiguously, and in order");
+    errors.push("version units must cover A1-B3 exactly once, contiguously, and in order");
   }
   VERSION_UNITS.forEach((unit, index) => {
     const expectedId = `VU-${String(index + 1).padStart(3, "0")}`;
@@ -571,19 +583,19 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     .sort((left, right) => left[0].localeCompare(right[0])
       || Number(left.slice(1)) - Number(right.slice(1)));
   if (JSON.stringify(closedIds) !== JSON.stringify(expected)) {
-    errors.push("Batches/ must contain exactly the closed A001-A102 and B001-B002 record set");
+    errors.push("Batches/ must contain exactly the closed A001-A102 and B001-B003 record set");
   }
-  if (batchFiles.some((name) => /^B0*3-.*\.md$/.test(name))) {
-    errors.push("B3 must remain unconsumed until the next development batch");
+  if (batchFiles.some((name) => /^B0*4-.*\.md$/.test(name))) {
+    errors.push("B4 must remain unconsumed until the next development batch");
   }
 
   const batchLog = readFileSync(join(repoRoot, "BATCH_LOG.md"), "utf8");
   const logIds = [...batchLog.matchAll(/^\| \[([A-Z])(\d+)\]/gm)]
     .map((match) => `${match[1]}${Number(match[2])}`);
   if (JSON.stringify(logIds) !== JSON.stringify(closedIds)) {
-    errors.push("BATCH_LOG.md must index A1-B2 exactly once and in order");
+    errors.push("BATCH_LOG.md must index A1-B3 exactly once and in order");
   }
-  if (/^\| \[B3\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B3 record yet");
+  if (/^\| \[B4\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B4 record yet");
 
   const threads = readFileSync(join(repoRoot, "Batches", "THREADS.md"), "utf8");
   const declaredThreads = new Set([...threads.matchAll(/<a id="t-(\d{3})"><\/a>T-(\d{3})/g)].map((match) => `T-${match[1]}`));
@@ -668,7 +680,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (args.has("--write")) writeGenerated(DEFAULT_REPO_ROOT);
   const result = validateRepository(DEFAULT_REPO_ROOT);
   if (args.has("--json")) console.log(JSON.stringify(result, null, 2));
-  else if (result.ok) console.log(`version-model: OK — ${result.currentVersion}; ${result.unitCount} units cover A1-B2; ${result.nextBatch} remains next`);
+  else if (result.ok) console.log(`version-model: OK — ${result.currentVersion}; ${result.unitCount} units cover A1-B3; ${result.nextBatch} remains next`);
   else result.errors.forEach((error) => console.error(`version-model: ${error}`));
   process.exit(result.ok ? 0 : 1);
 }
