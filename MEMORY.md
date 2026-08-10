@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Memory |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `0.12.4.0-alpha` · closed batch tip `B1` · next `B2` |
+| Version | `1.0.0.0-alpha` · closed batch tip `B2` · next `B3` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `MEMORY.md` |
@@ -38,26 +38,26 @@ junction for the operator, not a defect in the index.
 | `CORE.md` | CANONICAL | Project identity, canonical composition, governing constraints. |
 | `ARCHITECTURE.md` | CANONICAL | Ratified framework shape; the four pillars. |
 | `GOVERNANCE.md` | CANONICAL | Operating discipline and model-facing instruction surface. |
-| `DECISION_REGISTRY.md` | CANONICAL, APPEND-ONLY | Ratified decisions DR-1…DR-96. Later records supersede earlier decisions without rewriting them. |
+| `DECISION_REGISTRY.md` | CANONICAL, APPEND-ONLY | Ratified decisions DR-1 through DR-97. Later records supersede earlier decisions without rewriting them. |
 | `FINDINGS.md` | CANONICAL, APPEND-ONLY | Verified findings F-1…F-135 and F-151…F-154. Former Git labels F-136…F-150 resolve through the former-label crosswalk and are not reused as finding identifiers. |
 | `BATCH_LOG.md` | REGULATORY | Chronological index for the single append-only batch sequence and the next-batch declaration. |
 | `VERSION_MAP.md` | REGULATORY, GENERATED | Chronological version-unit replay derived from `tools/version-model.mjs`. |
 | `ROADMAP.md` | CANONICAL | Thread map, backlog, live gates. |
 | `SESSION_STATE.md` | CANONICAL | Current operational reality. Read before claiming where anything stands. |
-| `VERSION` | CANONICAL, GENERATED | `0.12.4.0-alpha`, derived from the version replay. |
+| `VERSION` | CANONICAL, GENERATED | `1.0.0.0-alpha`, derived from the version replay. |
 
 ## Batch record system
 
 | Surface | Status | Role |
 |---|---|---|
 | `Batches/README.md` | REGULATORY | Portable-history contract for one alphanumeric batch namespace. |
-| `Batches/[A-Z]*.md` | APPEND-ONLY | The 102 closed A-sequence records and closed `B1` record in one namespace. |
+| `Batches/[A-Z]*.md` | APPEND-ONLY | The 102 closed A-sequence records and closed `B1-B2` records in one namespace. |
 | `Batches/THREADS.md` | REGULATORY | Permanent series-neutral families and many-to-many threads over nonadjacent batches. |
 | `Batches/THREAD_ID_CROSSWALK.md` | REGULATORY | Complete map from temporary `ATF-*` / `AT-*` identifiers to `TF-*` / `T-*`. |
 | `Batches/FORMER_LABELS.md` | REGULATORY | Complete map from all 93 former ledger boundaries to current batches. |
 
-The A sequence closes at `A102`; the chronology continues through closed `B1`,
-and `B2` is next. The governed batch records, chronological catalog, thematic
+The A sequence closes at `A102`; the chronology continues through closed `B2`,
+and `B3` is next. The governed batch records, chronological catalog, thematic
 crosswalks, version map, decisions, findings, receipts, and source provenance are
 the portable project history.
 
@@ -68,8 +68,8 @@ the portable project history.
 | Published forge history | Host-specific distribution record beginning at the canonical snapshot selected for publication. |
 
 The three development layers are separate. Batches record atomic chronological
-work. Threads classify related work across any letter sequence. The 28 version
-units in `VERSION_MAP.md` partition A1-B1 into contiguous capability runs and
+work. Threads classify related work across any letter sequence. The 29 version
+units in `VERSION_MAP.md` partition A1-B2 into contiguous capability runs and
 derive the current root version through the Neo four-coordinate odometer.
 
 ## Engine and distribution

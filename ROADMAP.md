@@ -1,6 +1,7 @@
 # Colonist Awareness - roadmap
 
-The A sequence is closed at `A102`; `B1` is the next development batch.
+The A sequence is closed at `A102`; the chronology is complete through `B2`,
+and `B3` is the next development batch.
 Historical batch identifiers below use the current sequence. Thematic `T-*`
 identifiers link continuing work across nonadjacent batches. The chronological
 catalog is [`BATCH_LOG.md`](BATCH_LOG.md); thematic links are in
@@ -1400,3 +1401,28 @@ knowledge, Bio and competence, condition, weapon operation, terrain, mutual
 support, target commitment, and survival posture separate. Pursuit, a new
 withdrawal mode, broad formation doctrine, and unrelated systems do not enter
 this gate merely because this engagement was lost.
+
+## Player founding authoring — B2 / T-022, T-023, T-024, T-025, T-028, T-030
+
+B2 restores the coordinated player creator before Starting Pawns. The setup
+flow now authors Culture, native Ideoligion, Political Beliefs, and a Founding
+Arrangement on one page. Presets remain editable inputs to the same models used
+for existing factions. RimWorld's native fixed and fluid Ideoligion editors are
+retained as the detailed Ideoligion surface and return to the coordinated page.
+
+The temporal distinction is explicit. Existing factions and settlements are
+described with realized institutions and history. The player faction is authored
+at founding: its people bring Culture, Ideoligion, and Political Beliefs; they
+adopt immediate rules for authority, work, voice, and starting supplies; later
+institutional structure develops through play. The general faction generator no
+longer fills a mature player structure at map start.
+
+The founding draft is world-owned even when no Starting Region exists. Its
+arrangement applies exactly once under a durable receipt. Founding terms remain
+their exact, duration-aware relations and do not silently become broader
+institutions. Political Beliefs judge current practice; they do not become
+organization customs merely because the founders hold them.
+
+The next evidence is the operator's runtime test of hierarchy, copy fit,
+Back/Next stability, native Ideoligion editing, preset/custom continuity,
+belief-versus-arrangement clarity, and materialization in the real colony flow.

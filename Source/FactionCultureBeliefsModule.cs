@@ -116,6 +116,7 @@ namespace ColonistAwareness
     internal sealed class CACulturePreset
     {
         internal string Name;
+        internal string Description;
         internal string Gathering;
         internal string IconPath;
     }
@@ -127,24 +128,32 @@ namespace ColonistAwareness
             new CACulturePreset
             {
                 Name = "Hearth customs",
+                Description = "Shared meals and meetings gather around the "
+                    + "settlement hearth.",
                 Gathering = "hearth",
                 IconPath = "Rimshare/WorldMapIcons/flowers"
             },
             new CACulturePreset
             {
                 Name = "Traveling customs",
+                Description = "Gatherings are held at roads, camps, and "
+                    + "meeting places used by travelers.",
                 Gathering = "waymeet",
                 IconPath = "Rimshare/WorldMapIcons/compass"
             },
             new CACulturePreset
             {
                 Name = "Memorial customs",
+                Description = "Public memory and memorial gatherings anchor "
+                    + "community life.",
                 Gathering = "memorial",
                 IconPath = "Rimshare/WorldMapIcons/feather"
             },
             new CACulturePreset
             {
                 Name = "Festival customs",
+                Description = "Communal feasts and festivals mark shared "
+                    + "occasions.",
                 Gathering = "feast",
                 IconPath = "Rimshare/WorldMapIcons/carnival-mask"
             }
@@ -364,6 +373,21 @@ namespace ColonistAwareness
                 + (ownership == null ? "" : " · " + ownership);
         }
 
+        internal static string DescribePreset(
+            CAFactionAxes.PoliticalPreset preset)
+        {
+            if (preset == null) return "No preset";
+            var expected = new Dictionary<string, string>();
+            CollectPreset(preset, expected);
+            return string.Join(", ", CAFactionAxes.Axes
+                .Where(axis => expected.ContainsKey(axis.Key))
+                .Take(5)
+                .Select(axis => axis.Label + ": "
+                    + (axis.Options.FirstOrDefault(option => option.Key
+                        == expected[axis.Key])?.Label ?? expected[axis.Key]))
+                .ToArray());
+        }
+
         internal static Texture2D Icon(CAPoliticalBeliefs beliefs)
         {
             string leadership = CAFactionAxes.KeyOf(beliefs?.positions,
@@ -577,9 +601,9 @@ namespace ColonistAwareness
         }
     }
 
-    // The player-facing draft lives on the already durable regional plan.
-    // A no-region scenario receives a process-local fallback and is adopted
-    // into the faction record as soon as a world exists.
+    // The shared editor changes either a descriptive established society or
+    // the player's world-owned founding draft. Surface ownership differs;
+    // Culture and Political Beliefs remain the same models.
     internal sealed class Dialog_CAAxisEditor : Window
     {
         private readonly CAPoliticalBeliefs beliefs;
@@ -726,7 +750,8 @@ namespace ColonistAwareness
                 CAFactionAxes.Presets)
             {
                 CAFactionAxes.PoliticalPreset local = preset;
-                options.Add(new FloatMenuOption(local.Name, delegate
+                options.Add(new FloatMenuOption(local.Name + ": "
+                    + CAPoliticalBeliefsModel.DescribePreset(local), delegate
                 {
                     CAPoliticalBeliefsModel.ApplyPreset(beliefs, local);
                     changed?.Invoke();
@@ -843,7 +868,8 @@ namespace ColonistAwareness
             foreach (CACulturePreset preset in CACultureModel.Presets)
             {
                 CACulturePreset local = preset;
-                options.Add(new FloatMenuOption(local.Name, delegate
+                options.Add(new FloatMenuOption(local.Name + ": "
+                    + local.Description, delegate
                 {
                     CACultureModel.ApplyPreset(culture, local);
                     changed?.Invoke();

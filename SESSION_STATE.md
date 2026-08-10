@@ -1,27 +1,27 @@
 | Document | Colonist Awareness Overhaul Session State |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `0.12.4.0-alpha` · closed batch tip `B1` · next `B2` |
+| Version | `1.0.0.0-alpha` · closed batch tip `B2` · next `B3` |
 <!-- cao:generated:version END -->
 | Repository | `SESSION_STATE.md` |
-| Status | ACTIVE — current operational state. |
+| Status | ACTIVE - current operational state. |
 
 # Session state
 
-Updated 2026-08-10 12:48 UTC / 05:48 PST.
+Updated 2026-08-10 19:46 UTC / 12:46 PST.
 
-Read this before claiming where the regional work stands. Compile evidence and
-operator runtime judgment are separate.
+Read this before claiming where the regional or player-founding work stands.
+Compile evidence and operator runtime judgment remain separate.
 
 ## Version control
 
 | Surface | State |
 |---|---|
 | Canonical project state | The current tracked local tree and governed records. `git status --short` identifies checkout-local changes. |
-| Development closure | `B1` closes the causal World tendencies convergence; `B2` is next. The closing commit is recorded in the batch file. |
-| Authority branch | `mallowfluff/world-tendencies-causal-convergence`, based on current GitHub `origin/main` `9a6153a8ce7282c241e90ad8459cb92c88468a78`. |
+| Development closure | `B2` closes player founding authoring; `B3` is next. The closing commit carries the batch record. |
+| Authority branch | `mallowfluff/b2-player-founding-authoring`, based on closed B1 tip `c78a441b9bda30c0eb2c3efc998844db51a44084`. |
 | Local Git history | May retain engineering history from before publication. It is supporting evidence, not the portable project history. |
-| Published forge | `origin/main` at `git@github.com:ellyj3rain/cao.git`; publication history begins at parentless snapshot `18b1034eee35f21158817727f4bc39af80dadd2a`. |
+| Published forge | No B2 publication action is part of this gate. The current local project and deployed assembly are the runtime-test authority. |
 
 The project root is the live mod junction. Linked checkouts are temporary
 execution surfaces and are not part of the project's identity.
@@ -29,76 +29,81 @@ execution surfaces and are not part of the project's identity.
 ## Development record
 
 The A sequence is closed at `A102`; the chronology continues through closed
-`B1`, and `B2` is the next development batch.
-`BATCH_LOG.md` is the chronological index. Every batch record lives directly
-under `Batches/`, including future letter eras. `Batches/THREADS.md` classifies
-work across time without changing chronology. `VERSION_MAP.md` partitions the
-closed chronology into contiguous capability units and derives `VERSION`.
+`B2`, and `B3` is the next development batch. `BATCH_LOG.md` is the
+chronological index. `Batches/THREADS.md` classifies work across time without
+changing chronology. `VERSION_MAP.md` partitions the closed chronology into
+contiguous capability units and derives `VERSION`.
 
 | Evidence | State |
 |---|---|
-| Chronology | 103 dated batches, `A1` through `A102`, followed by `B1` |
-| Thematic organization | 12 series-neutral `TF-*` families and 30 many-to-many `T-*` threads; temporary identifiers have a complete crosswalk |
-| Version chronology | 28 contiguous units cover A1-B1 exactly once; Neo hierarchy and caps derive `0.12.4.0-alpha` |
-| Former ledger map | All 93 former boundaries mapped; split and joined boundaries are explicit |
-| Provenance | Associated commits, builds, receipts, corrections, and source relations are recorded per batch where available |
+| Chronology | 104 dated batches: `A1` through `A102`, followed by `B1-B2` |
+| Thematic organization | 12 series-neutral `TF-*` families and 30 many-to-many `T-*` threads |
+| Version chronology | 29 contiguous units cover A1-B2 exactly once; Neo hierarchy and caps derive `1.0.0.0-alpha` |
+| Next work | `B3` remains the next ordinary batch; its content determines its version tier |
 
-Closed batch records and their recorded provenance are the portable project
-history. Chronological and thematic navigation and the former-label map are
-regulatory. Local Git may retain finer-grained engineering history and superseded
-catalog machinery. The published forge starts at the canonical snapshot and does
-not need the earlier local commit graph.
+Closed batch records and their provenance are the portable project history.
+Local Git may retain finer-grained engineering history. A forge publishes the
+current project but does not define its identity or continuity.
 
-## Current regional model
+## Current society model
 
-| Level | Current saved concepts |
-|---|---|
-| Region | selected world areas, arrival area, causal world-policy snapshot, source-settlement receipts, realized faction relations, frontier holdings, settlement pattern, relation pattern, settlement scale |
-| Faction | source faction, culture, Ideoligion, political beliefs, faction structure, settlement authority, faction era |
-| Settlement | owner, world area, regional role, form, resident population, land capacity, access, services, civic development, economic capacity, trade connectivity, specialization, history, urban support, realized scale, population groups, starting facilities, starting provisions |
-| Organization | offices, groups, customs, security, agreements, policies, claims, relations, decision history |
-| Frontier holding | member area, household size, land capacity, material level, site form, faction state |
-| Relations | one saved canonical faction-pair result; organization relations for settlement authority and delegation |
+Existing factions and settlements are descriptive state. Their Culture,
+Ideoligion, Political Beliefs, realized social order, institutions, relations,
+and accumulated history already exist when encountered.
 
-The same vocabulary is used by setup UI, generation, save fields, types, Defs,
-comments, and canonical documentation. Each World tendencies row owns one direct
-cause. Concentration changes settlement placement before pattern classification;
-urban propensity changes a support threshold rather than city status; frontier
-frequency owns count and frontier size owns household and material form. Realized
-facts are saved once and runtime consumers do not reroll policy. Capability is
-derived from faction era and local supports. Starting provisions are generated
-from current causes and allow a distribution override per provision.
+The player surface authors a founding moment:
 
-The convergence pass removes the superseded political tier, territorial
-constitution, old settlement population model, duplicate federation caches, custom
-political precepts, separate belief state, derived ideology classifier, old coast
-modes, old settlement type names, and migration or alias code used only by
-abandoned pre-release schemas. Earlier experimental saves are not supported.
+`Culture + Ideoligion + Political Beliefs -> Founding Arrangement -> institutions and historical practice through play`
+
+Culture and Political Beliefs use the same models, presets, and editors as
+established societies. RimWorld's native `Ideo` remains authoritative for
+Ideoligion. Political Beliefs state what the founders consider proper. The
+Founding Arrangement states the immediate rules actually adopted for authority,
+work, voice, shared supplies, and duration. Agreement or disagreement is saved
+and summarized as meaningful state.
+
+The confirmed draft is world-owned for regional, ordinary, and forced-map
+starts. The regional fixture retains a serialized projection. A stable live
+draft survives Back/Next and native-editor round trips. The native Ideoligion
+receipt follows content and revision rather than load ID alone, and native
+structural validity is checked before scenario notification. At game start,
+the exact arrangement becomes duration-aware relations once; a durable applied
+tick prevents replay over later institutions. The player faction receives no
+generated mature structure.
+
+Political Beliefs remain standards. Current organization customs derive from
+the realized social order rather than being copied from belief. Established
+humanlike factions still receive realized structures appropriate to societies
+whose histories precede the game.
 
 ## Build and deployment
 
 | Artifact | SHA-256 | State |
 |---|---|---|
-| Built `Assemblies/ColonistAwareness.dll` | `D7AE79BFC5316A8330FDE8C88CC077D56CEB1686B53E9A140D88CDA4736669D3` | Two full no-incremental Release builds were byte-identical: 0 errors and the same 12 existing warnings. |
-| Live root `Assemblies/ColonistAwareness.dll` | `D7AE79BFC5316A8330FDE8C88CC077D56CEB1686B53E9A140D88CDA4736669D3` | Deployed from the verified build and byte-identical. RimWorld was closed during deployment and has not run against this assembly yet. |
+| Built `Assemblies/ColonistAwareness.dll` | `DF57515B1F2A0F4635DB7471DB9460BD5788B545694B41E35538CE73503BB2B4` | Two full no-incremental Release builds were byte-identical: 0 errors and the same 12 existing warnings. |
+| Live root `Assemblies/ColonistAwareness.dll` | `DF57515B1F2A0F4635DB7471DB9460BD5788B545694B41E35538CE73503BB2B4` | Deployed while RimWorld was closed and byte-identical to the verified build. |
 
-No current regional, political, onboarding, or generation result is
-runtime-verified. The next evidence belongs to the operator's in-game test.
+Static verification is closed for this gate. The three-lane correctness,
+coherence, and structural review has no outstanding Critical or High findings.
+The player-founding suite passes 44 assertions; the World tendencies fixed-seed
+suite passes 179. Both receipt tools build with 0 errors and 0 warnings. The
+main project builds with 0 errors and the same 12 existing warnings. The version
+model covers 104 batches in 29 units, its tests pass, all tracked XML parses,
+and `git diff --check` reports no whitespace errors.
 
-Static verification is closed for this gate: the initial three-lane review and
-final coherence re-audit have no outstanding findings; the independent build
-validator confirms two reproducible Release builds; all 141 tracked XML files,
-including 120 Def files, and both active fixtures parse; 103 batch records, 30
-thematic threads, and 28 contiguous version units reconcile; the version tests
-pass 4/4; `git diff --check` reports no whitespace errors; and the causal suite
-passes 179 assertions.
+No B2 player-founding result is operator runtime-verified. The next evidence
+belongs to the in-game test.
 
 ## Authored runtime fixture
 
 World identity: `alysaliu|1|Algorab Markab`
+
 Region: `CA-RG-EB596A12`
+
 Candidate: `613b1fe44104`, confirmed, developer exercise
+
 Arrival area: `389638`
+
 Composition: 3 factions, 4 settlements, 9 population groups, local map scale 350
 
 Current keyed file:
@@ -109,37 +114,46 @@ Active mirror:
 
 `C:\Users\jleyv\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlan.xml`
 
-Both active files have SHA-256
-`4D90AD4738F3B0E983BB7D1BC2DBA9E26C984BDE48A157263B913393D735579A`.
-They use schema 2 and agree on the causal world-policy snapshot, realization
-source hash, 3 factions, 4 settlements, 9 population groups, saved relations,
-frontier rows, economic capacity, urban support, and realized scale. The prior
-tendency preset is now explicit, so new band-aligned defaults cannot change the
-confirmed fixture. Starting provisions are intentionally regenerated from current
-settlement and faction facts instead of carrying former stacked entries.
+Both active files use schema 3 and are byte-identical at SHA-256
+`40BA69E3B41770EACA0C6C2A2D430F7D7AE0C056967C919F204FA49FD287BF1A`.
+They agree on identity, arrival area, causal world policy, three factions, four
+settlements, nine population groups, faction and settlement relationships,
+population assignments, relations, frontier rows, and realized settlement
+facts.
 
-A pre-convergence copy of the dirty implementation and original fixture exists
-at:
+The converted `playerFounding` state is deliberately unconfirmed and contains
+no invented Culture, Political Beliefs, Ideoligion receipt, or Founding
+Arrangement. The recovered fixture did not contain a valid current-schema
+player choice; the restored page is the authority where the operator authors it.
 
-`C:\Users\jleyv\AppData\Local\Temp\ca-convergence-preclean-20260809-121414`
+Exact pre-conversion copies are preserved at:
+
+`C:\Users\jleyv\AppData\Local\Temp\ca-b2-player-authoring-recovery\pre-live-conversion-20260810-1915Z`
 
 ## Runtime handoff
 
 The operator's next test is the gate:
 
-1. Open the existing world setup flow and confirm that the keyed composition is
-   restored with the same arrival area, options, factions, and settlements.
-2. Inspect World tendencies and confirm that each row states its direct cause,
-   constraints, and derived outcome in the corrected settlement/frontier flow.
-3. Start generation and confirm that no incomplete-bundle or missing-arrival
-   error appears.
-4. Compare the generated visual land, coast, selected geographic features,
-   settlement positions, factions, residents, facilities, and provisions with
-   the authored candidate.
+1. Open the existing colony-creation flow and confirm that the authored region,
+   arrival area, World tendencies, three factions, and four settlements restore.
+2. Continue to Founding society and confirm that it replaces the vanilla
+   preset-only page with Culture, Ideoligion, Political Beliefs, and Founding
+   Arrangement on one coordinated surface.
+3. Exercise Culture, Political Belief, and arrangement presets and editors.
+   Confirm that generated suggestions remain editable and that belief-versus-
+   arrangement differences are intelligible.
+4. Exercise native Ideoligion preset, load, fixed, fluid, Continue, and Back
+   paths. Confirm that edits persist, invalid native configurations remain
+   blocked, and the flow returns to the coordinated page.
+5. Continue through Starting Pawns and world generation. Confirm that no
+   incomplete-bundle, missing-arrival, or dropped-composition error appears.
+6. Inspect the founded colony. Confirm that carried Culture, Ideoligion, and
+   Political Beliefs are present; the exact selected Founding Arrangement is
+   materialized once; and no mature institutional history was invented.
 
 Repository convergence stops before this test. It does not launch RimWorld,
-select options, advance the game, or alter saves. The live DLL is already deployed
-for the operator's test.
+select options, advance the game, alter saves, or substitute static receipts for
+the operator's judgment of how the flow looks and plays.
 
 ## Environment and preserved evidence
 
@@ -147,7 +161,7 @@ for the operator's test.
 - Odyssey is installed. Its active runtime state is not asserted without a game
   launch.
 - `PARALLEL_ONTOLOGY_AUDIT.md` remains a damaged consolidation; the recovered
-  full copy is held in the preservation package.
+  full copy remains in the preservation package.
 - Preservation package:
   `Projects\colonist-awareness-preservation-20260806-0614Z-2314PDT`, with a
   verified mirror on `D:`.

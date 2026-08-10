@@ -917,7 +917,7 @@ namespace ColonistAwareness
     }
 
     // Customs the player may establish directly. Other customs come from
-    // political beliefs, experience, and training.
+    // current social order, experience, and training.
     public static class CACustomCatalog
     {
         public static readonly string[] Adoptable =
@@ -2534,8 +2534,9 @@ namespace ColonistAwareness
             SyncOffices(org, colonists);
             SyncGroups(org, colonists);
             SyncCustoms(org);
-            CAPoliticalCustoms.ReconcileCustoms(org,
-                CAPoliticalCustoms.PoliticalBeliefsOf(Faction.OfPlayer));
+            CAPoliticalBeliefPractice.ReconcileCurrentStructure(org,
+                CAFactionStateWorldComponent.Current
+                    ?.Find(Faction.OfPlayer)?.factionStructure);
             SyncSecurityPractices(org);
         }
 
@@ -3081,12 +3082,12 @@ namespace ColonistAwareness
                 }
                 else
                 {
-                    // Political beliefs remain current even while the map is
-                    // unloaded; background belief checks must not judge
-                    // customs that the faction no longer holds.
-                    CAPoliticalCustoms.ReconcileCustoms(org,
-                        CAPoliticalCustoms.PoliticalBeliefsOf(
-                            record.faction));
+                    // Organization customs follow realized social order even
+                    // while the map is unloaded. Political beliefs remain a
+                    // separate standard against which that order is judged.
+                    CAPoliticalBeliefPractice.ReconcileCurrentStructure(org,
+                        CAFactionStateWorldComponent.Current
+                            ?.Find(record.faction)?.factionStructure);
                     if (map != null)
                         RefreshSettlementOrg(org, record, map);
                 }
@@ -3135,9 +3136,10 @@ namespace ColonistAwareness
             org.Record("settlement organization established - seeded at"
                 + " materialization of " + record.name);
 
-            // Seed organization customs from political beliefs.
-            CAPoliticalCustoms.ReconcileCustoms(org,
-                CAPoliticalCustoms.PoliticalBeliefsOf(record.faction));
+            // Seed organization customs from the realized social order.
+            CAPoliticalBeliefPractice.ReconcileCurrentStructure(org,
+                CAFactionStateWorldComponent.Current
+                    ?.Find(record.faction)?.factionStructure);
             if (record.generationSummary != null)
                 org.Record("organization", "starting state: "
                     + record.generationSummary);

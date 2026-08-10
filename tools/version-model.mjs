@@ -19,8 +19,8 @@ export const KOHAI_HARD_CAP = 16;
 export const PATCH_HARD_CAP = 24;
 export const MATURITY_LADDER = Object.freeze(["pre-alpha", "alpha", "beta", "rc"]);
 export const ROOT_REPLAY_START_VERSION = "0.1.0.0-pre-alpha";
-export const CLOSED_BATCH_TIP = "B1";
-export const NEXT_BATCH = "B2";
+export const CLOSED_BATCH_TIP = "B2";
+export const NEXT_BATCH = "B3";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_REPO_ROOT = resolve(here, "..");
@@ -307,6 +307,17 @@ export const VERSION_UNITS = Object.freeze([
     threads: ["T-002", "T-019", "T-021", "T-024", "T-025", "T-026", "T-028", "T-030"],
     rationale: "B1 converges the existing World tendencies surface into one causal policy, realization, persistence, and generation contract. It matures the A100-A102 creator line with fixed-seed isolation receipts, current-schema fixture repair, and a verified deployment rather than opening a separate gameplay capability.",
   },
+  {
+    id: "VU-029",
+    series: "B",
+    first: 2,
+    last: 2,
+    dates: "2026-08-10",
+    tier: "minor",
+    name: "Player founding authoring",
+    threads: ["T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
+    rationale: "B2 restores a missing player-visible authoring and runtime contract: Culture, native Ideoligion, Political Beliefs, and the adopted Founding Arrangement now share the faction ontology while preserving the temporal difference between an established society and a new colony. The world-owned draft and one-shot arrangement receipt cover regional and non-regional starts without fabricating mature player institutions. This is a new setup capability rather than an in-place correction, so it carries the minor tier.",
+  },
 ]);
 
 function parseVersion(version) {
@@ -454,7 +465,7 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | Hard caps | minor ${MINOR_HARD_CAP}; kohai ${KOHAI_HARD_CAP}; patch ${PATCH_HARD_CAP} |
 | Replay start | \`${ROOT_REPLAY_START_VERSION}\` |
 | Current version | \`${replay.currentVersion}\` |
-| Closed chronology | \`A1-B1\` |
+| Closed chronology | \`A1-B2\` |
 | Next batch | \`${NEXT_BATCH}\` |
 | Executable source | [\`tools/version-model.mjs\`](tools/version-model.mjs) |
 
@@ -542,9 +553,10 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
   const expected = [
     ...Array.from({ length: 102 }, (_, index) => `A${index + 1}`),
     "B1",
+    "B2",
   ];
   if (JSON.stringify(covered) !== JSON.stringify(expected)) {
-    errors.push("version units must cover A1-B1 exactly once, contiguously, and in order");
+    errors.push("version units must cover A1-B2 exactly once, contiguously, and in order");
   }
   VERSION_UNITS.forEach((unit, index) => {
     const expectedId = `VU-${String(index + 1).padStart(3, "0")}`;
@@ -559,19 +571,19 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     .sort((left, right) => left[0].localeCompare(right[0])
       || Number(left.slice(1)) - Number(right.slice(1)));
   if (JSON.stringify(closedIds) !== JSON.stringify(expected)) {
-    errors.push("Batches/ must contain exactly the closed A001-A102 and B001 record set");
+    errors.push("Batches/ must contain exactly the closed A001-A102 and B001-B002 record set");
   }
-  if (batchFiles.some((name) => /^B0*2-.*\.md$/.test(name))) {
-    errors.push("B2 must remain unconsumed until the next development batch");
+  if (batchFiles.some((name) => /^B0*3-.*\.md$/.test(name))) {
+    errors.push("B3 must remain unconsumed until the next development batch");
   }
 
   const batchLog = readFileSync(join(repoRoot, "BATCH_LOG.md"), "utf8");
   const logIds = [...batchLog.matchAll(/^\| \[([A-Z])(\d+)\]/gm)]
     .map((match) => `${match[1]}${Number(match[2])}`);
   if (JSON.stringify(logIds) !== JSON.stringify(closedIds)) {
-    errors.push("BATCH_LOG.md must index A1-B1 exactly once and in order");
+    errors.push("BATCH_LOG.md must index A1-B2 exactly once and in order");
   }
-  if (/^\| \[B2\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B2 record yet");
+  if (/^\| \[B3\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B3 record yet");
 
   const threads = readFileSync(join(repoRoot, "Batches", "THREADS.md"), "utf8");
   const declaredThreads = new Set([...threads.matchAll(/<a id="t-(\d{3})"><\/a>T-(\d{3})/g)].map((match) => `T-${match[1]}`));
@@ -656,7 +668,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (args.has("--write")) writeGenerated(DEFAULT_REPO_ROOT);
   const result = validateRepository(DEFAULT_REPO_ROOT);
   if (args.has("--json")) console.log(JSON.stringify(result, null, 2));
-  else if (result.ok) console.log(`version-model: OK — ${result.currentVersion}; ${result.unitCount} units cover A1-B1; ${result.nextBatch} remains next`);
+  else if (result.ok) console.log(`version-model: OK — ${result.currentVersion}; ${result.unitCount} units cover A1-B2; ${result.nextBatch} remains next`);
   else result.errors.forEach((error) => console.error(`version-model: ${error}`));
   process.exit(result.ok ? 0 : 1);
 }

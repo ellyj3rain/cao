@@ -368,6 +368,8 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 
 - [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
 
+- [B2 - Player founding authoring](B002-2026-08-10-player-founding-authoring.md) - 2026-08-10 18:06-19:24 UTC / 11:06-12:24 PST
+
 ## TF-09 - Political and cultural simulation
 
 Organizations, relations, political state, culture, beliefs, and Ideoligion.
@@ -388,6 +390,8 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 - [A97 - Transactions, stock plans, tiers, and threat muster](A097-2026-08-08-transactions-stock-plans-tiers-and-threat-muster.md) - 2026-08-08 22:09 UTC / 15:09 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
 
+- [B2 - Player founding authoring](B002-2026-08-10-player-founding-authoring.md) - 2026-08-10 18:06-19:24 UTC / 11:06-12:24 PST
+
 ### <a id="t-023"></a>T-023 - Culture, beliefs, and Ideoligion
 
 - [A28 - Space-program residents and negotiation](A028-2026-07-27-space-program-residents-and-negotiation.md) - 2026-07-27 21:55–22:50 UTC / 14:55–15:50 PST
@@ -406,6 +410,8 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 - [A95 - Ontology corrections and operational machinery](A095-2026-08-08-ontology-corrections-and-operational-machinery.md) - 2026-08-08 19:29 UTC / 12:29 PST
 - [A101 - Creator primary grammar and evidence correction](A101-2026-08-09-creator-primary-grammar-and-evidence-correction.md) - 2026-08-09 02:20–02:32 UTC / 19:20–19:32 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
+
+- [B2 - Player founding authoring](B002-2026-08-10-player-founding-authoring.md) - 2026-08-10 18:06-19:24 UTC / 11:06-12:24 PST
 
 ## TF-10 - Onboarding and authoring
 
@@ -428,6 +434,8 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
 
 - [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
+
+- [B2 - Player founding authoring](B002-2026-08-10-player-founding-authoring.md) - 2026-08-10 18:06-19:24 UTC / 11:06-12:24 PST
 
 ### <a id="t-025"></a>T-025 - Authoring surfaces and UI grammar
 
@@ -455,6 +463,8 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
 
 - [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
+
+- [B2 - Player founding authoring](B002-2026-08-10-player-founding-authoring.md) - 2026-08-10 18:06-19:24 UTC / 11:06-12:24 PST
 
 ## TF-11 - Runtime tooling and controls
 
@@ -508,3 +518,4 @@ Canonical vocabulary, model convergence, copy register, and product truthfulness
 - [A101 - Creator primary grammar and evidence correction](A101-2026-08-09-creator-primary-grammar-and-evidence-correction.md) - 2026-08-09 02:20–02:32 UTC / 19:20–19:32 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
 - [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
+- [B2 - Player founding authoring](B002-2026-08-10-player-founding-authoring.md) - 2026-08-10 18:06-19:24 UTC / 11:06-12:24 PST

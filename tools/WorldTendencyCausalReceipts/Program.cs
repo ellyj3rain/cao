@@ -291,7 +291,7 @@ public static class Program
             Require(setup.Contains(field), field + " is not persisted");
             Require(dialog.Contains(field), field + " has no visible control");
         }
-        Require(setup.Contains("CurrentSchemaVersion = 2"),
+        Require(setup.Contains("CurrentSchemaVersion = 3"),
             "current plan schema is not 2");
         Require(setup.Contains("PlacementScore")
             && setup.Contains("settlementConcentration"),
@@ -399,7 +399,7 @@ public static class Program
         Require((string)document.Root?.Element("worldIdentity")
                 == "alysaliu|1|Algorab Markab",
             "fixture world identity changed");
-        Require((string)plan.Element("schemaVersion") == "2",
+        Require((string)plan.Element("schemaVersion") == "3",
             "fixture schema is not current");
         XElement savedPolicy = plan.Element("worldPolicy");
         Require(savedPolicy != null
@@ -523,7 +523,7 @@ public static class Program
                 holdingSeed, i, land, holdingSize);
             int material = CAWorldTendencyCausalKernel.FrontierMaterialLevel(
                 holdingSeed, i, land, holdingSize);
-            Require(IntValue(holdings[i], "key", -1) == i
+            Require(IntValue(holdings[i], "key", 0) == i
                     && IntValue(holdings[i], "householdSize", -1) == household
                     && IntValue(holdings[i], "materialLevel", -1) == material
                     && IntValue(holdings[i], "form", -1)
@@ -531,7 +531,12 @@ public static class Program
                             household, material)
                     && BoolValue(holdings[i], "factionless", false)
                         == (i % 2 == 0),
-                "fixture frontier holding does not match saved causes");
+                "fixture frontier holding " + i + " does not match saved "
+                    + "causes (land " + land + ", household "
+                    + IntValue(holdings[i], "householdSize", -1)
+                    + "/" + household + ", material "
+                    + IntValue(holdings[i], "materialLevel", -1)
+                    + "/" + material + ")");
         }
         Require(plan.Element("relations")?.Elements("li").Count() == 3,
             "fixture relation count is not 3");
@@ -565,7 +570,7 @@ public static class Program
         Require(!fixtureText.Contains("realizedFrontierHoldings")
             && !fixtureText.Contains("frontierSettlement"),
             "fixture retains obsolete schema fields");
-        report.AppendLine("PASS current fixture -> schema 2, causal hash, 3 factions, 4 settlements, 9 population groups, mirrored XML readback");
+        report.AppendLine("PASS current fixture -> schema 3, causal hash, 3 factions, 4 settlements, 9 population groups, mirrored XML readback");
     }
 
     private static int FixtureSourceHash(XElement plan)

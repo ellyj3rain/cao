@@ -2030,3 +2030,38 @@
   plan that fails structural validation is rejected rather than silently
   regenerated. This extends DR-86's native-substrate rule and DR-4's declaration
   contract across the World tendencies flow.
+
+- **DR-97** (2026-08-10 18:06 UTC / 11:06 PST) - **Established societies and
+  the player founding share an ontology but not a temporal conclusion.** An
+  existing faction or settlement is descriptive state: its Culture,
+  Ideoligion, Political Beliefs, social order, institutions, relations, and
+  history already exist when the player encounters it. Its setup surface
+  answers what that society is already like.
+
+  The player surface authors a founding moment. Culture, Ideoligion, and
+  Political Beliefs are brought by the founders. Political Beliefs state what
+  they consider proper. A Founding Arrangement states what they institute at
+  landing. Agreement or conflict between those states is retained. Only the
+  immediate arrangement materializes before play; mature institutions and
+  historical practice develop through simulation.
+
+  Both surfaces use the same Culture and Political Beliefs models, presets,
+  vocabulary, and editors. RimWorld's native `Ideo` remains the Ideoligion
+  substrate. The coordinated player page replaces the vanilla preset page as
+  the top-level creator while retaining native fixed, fluid, and loaded
+  Ideoligion editing. The general faction pass may complete established
+  societies but may not fabricate a mature social order for the player. This
+  corrects the unauthorized absence recorded by the prior start-surface map and
+  restores the belief-to-arrangement relationship identified in
+  `SETUP_SCOPE_MAP.md`.
+
+  The confirmed player draft belongs to a world component so the same contract
+  covers regional, ordinary, and forced-map starts. A durable applied-tick
+  receipt prevents map or regional resolution from replaying the founding over
+  institutions developed later. The exact arrangement creates duration-aware
+  founding relations; it does not invent broader faction-structure answers.
+  The native Ideoligion receipt follows content and revision rather than load
+  ID alone, and RimWorld's structural Ideoligion checks run before scenario
+  notification, including after native editor Back.
+  Political Beliefs remain standards for judging practice. Organization customs
+  come from the social order actually in force, not from belief alone.

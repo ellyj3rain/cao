@@ -5,9 +5,11 @@ using Verse;
 
 namespace ColonistAwareness
 {
-    // Political beliefs shape faction and settlement rules. Ideoligion
-    // supplies moral precepts and remains a separate native system.
-    internal static class CAPoliticalCustoms
+    // Political Beliefs state what a population considers proper. Faction
+    // structure records realized social order. This bridge compares the two
+    // and projects only realized practice into organization customs.
+    // Ideoligion remains a separate native system.
+    internal static class CAPoliticalBeliefPractice
     {
         internal static CAPoliticalBeliefs PoliticalBeliefsOf(
             Faction faction)
@@ -203,12 +205,12 @@ namespace ColonistAwareness
             return rows;
         }
 
-        internal static IEnumerable<string> CustomsHeldBy(Pawn pawn)
+        internal static IEnumerable<string> StandardsHeldBy(Pawn pawn)
         {
             var seen = new HashSet<string>();
-            foreach (string custom in PoliticalCustoms(
+            foreach (string standard in PoliticalStandards(
                 PoliticalBeliefsOf(pawn)))
-                if (seen.Add(custom)) yield return custom;
+                if (seen.Add(standard)) yield return standard;
         }
 
         internal static bool HasPoliticalBeliefs(CAPoliticalBeliefs beliefs)
@@ -218,7 +220,9 @@ namespace ColonistAwareness
                     != (byte)CAAxisSource.Unset);
         }
 
-        internal static IEnumerable<string> PoliticalCustoms(
+        // These keys are standards used to judge acts. They are beliefs about
+        // proper conduct, not proof that an organization has adopted them.
+        internal static IEnumerable<string> PoliticalStandards(
             CAPoliticalBeliefs beliefs)
         {
             if (beliefs == null) yield break;
@@ -254,13 +258,15 @@ namespace ColonistAwareness
                 yield return "combatants only";
         }
 
-        internal static void ReconcileCustoms(CAOrganization org,
-            CAPoliticalBeliefs beliefs)
+        // Organization customs describe current practice. They follow the
+        // realized social order, never political beliefs by themselves.
+        internal static void ReconcileCurrentStructure(CAOrganization org,
+            List<CAAxisEntry> structure)
         {
             if (org == null) return;
-            const string source = "political beliefs";
+            const string source = "social order";
             var desired = new HashSet<string>(
-                PoliticalCustoms(beliefs));
+                StructureCustoms(structure));
             for (int i = org.customs.Count - 1; i >= 0; i--)
             {
                 CAOrganizationCustom existing = org.customs[i];
@@ -271,6 +277,33 @@ namespace ColonistAwareness
             }
             foreach (string custom in desired)
                 Seed(org, custom, source);
+        }
+
+        private static IEnumerable<string> StructureCustoms(
+            List<CAAxisEntry> structure)
+        {
+            string ownership = CAFactionAxes.KeyOf(structure,
+                CAFactionAxes.Ownership);
+            if (ownership == "private") yield return "private holdings";
+            else if (ownership == "common" || ownership == "cooperative")
+                yield return "property in common";
+
+            string work = CAFactionAxes.KeyOf(structure,
+                CAFactionAxes.Work);
+            if (work == "duty") yield return "required work";
+            else if (work == "contract" || work == "organized")
+                yield return "voluntary work";
+
+            string participation = CAFactionAxes.KeyOf(structure,
+                CAFactionAxes.Participation);
+            if (participation == "universal")
+                yield return "every voice counts";
+
+            string leadership = CAFactionAxes.KeyOf(structure,
+                CAFactionAxes.Leadership);
+            if (leadership == "single") yield return "single leader";
+            else if (leadership == "whole" || leadership == "none")
+                yield return "shared leadership";
         }
 
         private static void Seed(CAOrganization org, string custom,

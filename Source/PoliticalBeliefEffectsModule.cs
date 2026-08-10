@@ -595,7 +595,7 @@ namespace ColonistAwareness
                 e.pawnsAnswered.Add(pawnId);
 
                 foreach (string key in
-                    CAPoliticalCustoms.CustomsHeldBy(pawn))
+                    CAPoliticalBeliefPractice.StandardsHeldBy(pawn))
                 {
                     Row row;
                     string meaning;

@@ -300,7 +300,7 @@ Authority.
 
 The root world-tile graph is the authoritative regional topology. A saved regional
 plan owns its footprint, arrival area, factions, settlements, faction relations,
-world tendencies, settlement pattern, and scale. Each settlement plan owns its
+world tendencies, settlement pattern, scale, and player founding state. Each settlement plan owns its
 population groups, form, role, starting facilities, access, services, civic
 development, and provisions. Persistent world objects mark settlements and
 visible moving actors. Maps materialize player homes, entered settlements,
@@ -313,6 +313,17 @@ population groups, organizations, material state, relationships, and
 materialization history. Faction era records what the faction knows. Facilities
 and infrastructure record what a settlement can support. Local capability is
 derived from those facts; it is not a separately authored source of truth.
+
+An existing faction's structure is realized state from a society with history.
+The player founding state is intentionally earlier: it owns the Culture and
+Political Beliefs brought by the founders, a receipt for their native
+Ideoligion content and revision, and the Founding Arrangement adopted at
+landing. Native Ideoligion validity is checked before the receipt may authorize
+scenario notification. That arrangement materializes once as exact,
+duration-aware founding relations. It is not expanded into broader
+faction-structure answers that the player did not choose.
+The player structure and institutional history develop through simulation; the
+established-faction generator does not fill them at game start.
 
 Individual observation becomes collective action only through an explicit causal
 chain: a pawn observes; a valid communication or reporting edge carries an
@@ -331,8 +342,9 @@ provide together. Offices, votes, delegation, emergency powers, succession,
 trade, mobilization, negotiation, surrender, and agreements use those saved facts.
 
 Organizations own offices, groups, customs, security, agreements, policies,
-claims, relations, and decision history. Political-belief effects compare saved
-beliefs with current rules and observed acts. There is no separate ideology
+claims, relations, and decision history. Organization customs follow the social
+order actually in force. Political Beliefs remain standards used to judge that
+order and observed acts; they do not silently become adopted customs. There is no separate ideology
 classification layer between those facts and their consequences.
 
 Geography follows the visual land shape projected from the selected world areas.

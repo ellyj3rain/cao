@@ -179,9 +179,13 @@ namespace ColonistAwareness
                 if (beliefsMissing) beliefSets++;
                 beliefFields += filled;
 
-                structureFields += CAFactionStructureModel.GenerateUnset(
-                    record.factionStructure, record.politicalBeliefs,
-                    seed + ":structure");
+                // An established faction begins with a realized structure.
+                // The player faction begins with only the arrangement adopted
+                // at founding; its remaining institutions emerge through play.
+                if (!faction.IsPlayer)
+                    structureFields += CAFactionStructureModel.GenerateUnset(
+                        record.factionStructure, record.politicalBeliefs,
+                        seed + ":structure");
                 if (record.generatedAtTick < 0)
                 {
                     record.generatedAtTick = GenTicks.TicksAbs;

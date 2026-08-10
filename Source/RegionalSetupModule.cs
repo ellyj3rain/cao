@@ -819,7 +819,7 @@ namespace ColonistAwareness
 
     public sealed class CARegionalPlan : IExposable
     {
-        internal const int CurrentSchemaVersion = 2;
+        internal const int CurrentSchemaVersion = 3;
 
         // Pending plans are pre-release authoring artifacts. Only the current
         // schema loads; abandoned development schemas are not migrated.
@@ -861,9 +861,11 @@ namespace ColonistAwareness
         // Groundwater settings carried from the draft into generation.
         public CAGroundwaterTuning groundwater =
             new CAGroundwaterTuning();
-        // Optional starting arrangement for the player's colony.
-        public CAFoundingArrangement foundingArrangement;
-        public bool foundingArrangementAuthored;
+        // What the player faction brings and establishes at the founding
+        // moment. Native Ideoligion remains on Faction.OfPlayer; this draft
+        // persists the independent CA state and its native-Ideo receipt.
+        public CAPlayerFoundingPlan playerFounding =
+            new CAPlayerFoundingPlan();
         public bool operatorAuthored;
 
         // Candidate-plan lifecycle (P2):
@@ -936,10 +938,7 @@ namespace ColonistAwareness
             Scribe_Deep.Look(ref groundwater, "groundwater");
             if (groundwater == null)
                 groundwater = new CAGroundwaterTuning();
-            Scribe_Deep.Look(ref foundingArrangement,
-                "foundingArrangement");
-            Scribe_Values.Look(ref foundingArrangementAuthored,
-                "foundingArrangementAuthored", false);
+            Scribe_Deep.Look(ref playerFounding, "playerFounding");
             Scribe_Values.Look(ref operatorAuthored, "operatorAuthored", false);
             Scribe_Values.Look(ref candidateId, "candidateId");
             Scribe_Values.Look(ref confirmed, "confirmed", false);
@@ -973,6 +972,8 @@ namespace ColonistAwareness
                     relations = new List<CARegionalRelationPlan>();
                 if (frontierHoldings == null)
                     frontierHoldings = new List<CAFrontierHoldingPlan>();
+                if (playerFounding == null)
+                    playerFounding = new CAPlayerFoundingPlan();
             }
         }
 
@@ -1493,9 +1494,9 @@ namespace ColonistAwareness
             if (!TryValidateDistinctFactionClaims(plan, out failure))
                 return false;
 
-            if (plan.foundingArrangementAuthored)
+            if (plan.playerFounding?.ArrangementChosen == true)
             {
-                CAFoundingArrangement founding = plan.foundingArrangement;
+                CAFoundingArrangement founding = plan.playerFounding.arrangement;
                 if (founding == null)
                 {
                     failure = "The authored founding arrangement is missing.";
@@ -3108,8 +3109,8 @@ namespace ColonistAwareness
             return plan != null && ((plan.settlements?.Count ?? 0) > 0
                 || (plan.factions?.Count ?? 0) > 0
                 || (plan.relations?.Count ?? 0) > 0
-                || plan.foundingArrangement != null
-                || plan.foundingArrangementAuthored
+                || plan.playerFounding?.arrangement != null
+                || plan.playerFounding?.confirmed == true
                 || plan.regionNameAuthored);
         }
 
@@ -3157,9 +3158,8 @@ namespace ColonistAwareness
             }
             replacement.groundwater = current.groundwater
                 ?? new CAGroundwaterTuning();
-            replacement.foundingArrangement = current.foundingArrangement;
-            replacement.foundingArrangementAuthored =
-                current.foundingArrangementAuthored;
+            replacement.playerFounding = current.playerFounding?.Copy()
+                ?? new CAPlayerFoundingPlan();
             replacement.operatorAuthored = true;
             replacement.consumedSources = current.consumedSources
                 ?.ToList() ?? new List<string>();
@@ -3346,9 +3346,8 @@ namespace ColonistAwareness
             }
             replacement.groundwater = current.groundwater
                 ?? new CAGroundwaterTuning();
-            replacement.foundingArrangement = current.foundingArrangement;
-            replacement.foundingArrangementAuthored =
-                current.foundingArrangementAuthored;
+            replacement.playerFounding = current.playerFounding?.Copy()
+                ?? new CAPlayerFoundingPlan();
             replacement.consumedSources = current.consumedSources?.ToList()
                 ?? new List<string>();
             // A changed physical region is a new candidate. Its design is
@@ -3715,8 +3714,10 @@ namespace ColonistAwareness
                     group.culture, group.politicalBeliefs, group.factionStructure);
             }
 
-            // Fill CA culture, political-belief, and faction-structure state
-            // for other humanlike factions. Native Ideoligion is unchanged.
+            // Fill missing state for established humanlike factions. Native
+            // Ideoligion remains unchanged. The player's carried state is
+            // staged by the founding page and applied at the one-shot game
+            // start boundary; regional resolution does not own or replay it.
             Log.Message(CAFactionStateGenerator.RunWorldPass(plan.worldPolicy,
                 "region " + (plan.regionalId ?? "unknown")));
         }

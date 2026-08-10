@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Core |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `0.12.4.0-alpha` · closed batch tip `B1` · next `B2` |
+| Version | `1.0.0.0-alpha` · closed batch tip `B2` · next `B3` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `CORE.md` |
@@ -71,6 +71,16 @@ contract → native world/incident/quest/map/Lord projection → reconciled outc
 
 Native RimWorld physical execution remains authoritative while materialized; this
 mod owns the persistent organizational reason and continuity.
+
+Existing societies and the player founding use the same Culture, native
+Ideoligion, Political Beliefs, and social-order concepts at different points in
+time. Existing faction and settlement authoring records realized institutions
+and accumulated history. Player authoring records what the founders bring and
+the Founding Arrangement they adopt at landing; later institutions and practice
+must be produced by play rather than generated as pre-existing history.
+The arrangement is applied once as its exact, duration-aware relations. Political
+Beliefs judge what is practiced; they do not become organization customs or
+broader institutions merely because the founders hold them.
 
 ## Governing constraints
 

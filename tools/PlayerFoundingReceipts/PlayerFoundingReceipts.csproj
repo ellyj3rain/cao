@@ -6,8 +6,4 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Include="..\..\Source\WorldTendencyCausalKernel.cs"
-             Link="WorldTendencyCausalKernel.cs" />
-  </ItemGroup>
 </Project>

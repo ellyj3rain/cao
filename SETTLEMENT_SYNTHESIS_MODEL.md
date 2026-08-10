@@ -61,8 +61,14 @@ Generation resolves one confirmed candidate in this order:
    owners, place them, and persist faction relations. Starting-region rows
    retain their authored settlement count, positions, owners, and relation
    overrides.
-3. Resolve each faction's culture, Ideoligion, political beliefs, faction
-   structure, and settlement authority.
+3. Apply the Culture and Political Beliefs carried by the founders, then
+   materialize the exact Founding Arrangement once as duration-aware relations.
+   Leave broader player faction-structure questions unset until play establishes
+   them. Resolve
+   each existing faction's Culture, Ideoligion, Political Beliefs, realized
+   social order, and settlement authority. Existing societies may begin with
+   mature institutions; the player's remaining institutional state develops
+   through play.
 4. Resolve and save each settlement's population, land capacity, access,
    services, civic development, economic capacity, trade connectivity,
    specialization, regional role, and
@@ -84,21 +90,29 @@ screen, previewing, or drawing the UI does not regenerate saved choices.
 
 ## Faction state
 
-Culture, Ideoligion, political beliefs, and faction structure are distinct.
+Culture, Ideoligion, Political Beliefs, and social order are distinct.
 
 - Culture supplies names, style, and ordinary customs.
 - Ideoligion uses RimWorld's native `Ideo` state.
-- Political beliefs describe what a population believes about leadership,
+- Political Beliefs describe what a population believes about leadership,
   decisions, participation, dissent, ownership, economy, work, support,
   membership, status, local order, defense, and war conduct.
-- Faction structure answers the same concrete questions for the arrangement now
+- Faction structure stores the same concrete questions for the social order now
   in force. Beliefs and structure may disagree.
 - Settlement authority records what several settlements of the same faction
   decide and provide together.
 
-Each political-belief and faction-structure answer records its source as unset,
+Each Political Belief and faction-structure answer records its source as unset,
 generated, authored, or preset. Presets fill answers; they are not additional
 political entities.
+
+The player founding plan is temporally narrower. Culture, native Ideoligion,
+and Political Beliefs arrive with the founders. The Founding Arrangement stores
+the authority, work, voice, supplies, and duration rules adopted at landing.
+Those exact rules materialize once as founding relations. They do not imply a
+decision method, productive-property regime, or other mature institution that
+the player did not choose. The general faction pass does not fill a mature
+player structure before the colony has lived its history.
 
 ## Settlement state
 
@@ -153,11 +167,14 @@ it does not override them.
 
 ## Persistence
 
-The current pending-plan schema is `2`. It writes `factions`, `settlements`,
+The current pending-plan schema is `3`. It writes `factions`, `settlements`,
 `populationGroups`, `startingProvisions`, `factionStructure`, `politicalBeliefs`,
 `settlementAuthority`, `relations`, `frontierHoldings`, `settlementPattern`,
 `settlementScale`, `regionalRelationPattern`, and
-`settlementRealizationComplete` directly. Each settlement row carries the
+`settlementRealizationComplete` directly. It also writes one `playerFounding`
+object containing Culture, Political Beliefs, the Founding Arrangement and its
+provenance, confirmation state, and a receipt for RimWorld's native player
+Ideoligion. Each settlement row carries the
 realized facts used to derive its scale. A confirmed plan consumes those facts;
 generation does not consult its tendencies again.
 

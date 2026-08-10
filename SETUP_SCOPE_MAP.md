@@ -155,6 +155,20 @@ one layer down: the precepts are what the people hold *proper*, the founding is
 what they have actually *adopted*. Nothing on screen says so, which is a large
 part of why the block reads as arbitrary.
 
+B2 carries that recovered relationship into the current faction ontology. The
+normative side is now `CAPoliticalBeliefs`, not removed CA political precepts;
+the adopted side is `CAPlayerFoundingPlan.arrangement`. The coordinated
+Founding Society page shows both before play while RimWorld's native `Ideo`
+continues to own Ideoligion. This paragraph records the current implementation;
+the table above remains the historical evidence from which the relationship was
+recovered.
+
+The confirmed draft is stored by `CAPlayerFoundingWorldComponent`, independently
+of regional geography. The exact arrangement is materialized once as founding
+relations and retains its duration. It does not populate broader
+`factionStructure` answers. Those fields describe institutions that exist only
+after the colony has developed them through play.
+
 `plan.startTileId` — the subject of the water survey and the place the founding
 applies to — **is not editable in this dialog at all.** It is set by the
 `Landing tile` control on the outer setup panel. So player-start scope is

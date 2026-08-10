@@ -8,9 +8,9 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | Form | `major.minor.kohai.patch-maturity` |
 | Hard caps | minor 12; kohai 16; patch 24 |
 | Replay start | `0.1.0.0-pre-alpha` |
-| Current version | `0.12.4.0-alpha` |
-| Closed chronology | `A1-B1` |
-| Next batch | `B2` |
+| Current version | `1.0.0.0-alpha` |
+| Closed chronology | `A1-B2` |
+| Next batch | `B3` |
 | Executable source | [`tools/version-model.mjs`](tools/version-model.mjs) |
 
 ## Tier meanings
@@ -56,6 +56,7 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | VU-026 | A99 | 2026-08-08 to 2026-08-09 | patch | `0.12.2.1-alpha` | Map-size selector correction | `T-024`, `T-027`, `T-029`, `T-030` | A99 diagnoses and fixes one production map-size field without changing the surrounding creator contract. |
 | VU-027 | A100-A102 | 2026-08-09 to 2026-08-10 | kohai | `0.12.3.0-alpha` | World language and ontology convergence | `T-014`, `T-016`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-026`, `T-028`, `T-030` | A100-A102 converge world tendencies, creator grammar, evidence capture, factions, settlements, population, provisions, persistence, generation, and player-facing language onto the already established creator capability. |
 | VU-028 | B1 | 2026-08-10 | kohai | `0.12.4.0-alpha` | Causal world authoring | `T-002`, `T-019`, `T-021`, `T-024`, `T-025`, `T-026`, `T-028`, `T-030` | B1 converges the existing World tendencies surface into one causal policy, realization, persistence, and generation contract. It matures the A100-A102 creator line with fixed-seed isolation receipts, current-schema fixture repair, and a verified deployment rather than opening a separate gameplay capability. |
+| VU-029 | B2 | 2026-08-10 | minor | `1.0.0.0-alpha` | Player founding authoring | `T-022`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B2 restores a missing player-visible authoring and runtime contract: Culture, native Ideoligion, Political Beliefs, and the adopted Founding Arrangement now share the faction ontology while preserving the temporal difference between an established society and a new colony. The world-owned draft and one-shot arrangement receipt cover regional and non-regional starts without fabricating mature player institutions. This is a new setup capability rather than an in-place correction, so it carries the minor tier. |
 
 ## Historical version evidence
 
@@ -65,12 +66,12 @@ A22 is the maturity boundary: reproducible assembly followed an end-to-end runti
 
 ## Next movement
 
-`B2` is the next ordinary batch. Its content determines its tier after it exists:
+`B3` is the next ordinary batch. Its content determines its tier after it exists:
 
-| If B2 is | Result |
+| If B3 is | Result |
 |---|---|
-| patch or hotfix | `0.12.4.1-alpha` |
-| kohai | `0.12.5.0-alpha` |
-| minor | `1.0.0.0-alpha` (the minor hard cap rolls the numeric major; maturity remains alpha) |
+| patch or hotfix | `1.0.0.1-alpha` |
+| kohai | `1.0.1.0-alpha` |
+| minor | `1.1.0.0-alpha` (the minor hard cap rolls the numeric major; maturity remains alpha) |
 
 The thematic catalog is series-neutral in [`Batches/THREADS.md`](Batches/THREADS.md). Temporary `AT-*` and `ATF-*` identifiers resolve through [`Batches/THREAD_ID_CROSSWALK.md`](Batches/THREAD_ID_CROSSWALK.md).
