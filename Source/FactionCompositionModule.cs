@@ -370,8 +370,11 @@ namespace ColonistAwareness
         {
             group?.EnsureCultureAndPolitics(plan);
             int tier = TechTier(group);
-            float conflict = plan?.worldPolicy?.startingConflictChance
-                ?? 0.25f;
+            bool conflict = plan?.relations != null
+                && plan.relations.Any(relation => relation != null
+                    && relation.relation == FactionRelationKind.Hostile
+                    && (relation.leftFactionKey == group.key
+                        || relation.rightFactionKey == group.key));
             int filled = 0;
             Rand.PushState(Gen.HashCombineInt(GenText.StableStringHash(
                 (plan?.candidateId ?? "ca") + ":faction-structure"),
@@ -422,7 +425,7 @@ namespace ColonistAwareness
                         ? Pick("constabulary", "watch", 0.55f)
                         : Pick("watch", "rulers", 0.7f)));
                 filled += Fill(group, Defense, Lean(Defense,
-                    conflict > 0.5f
+                    conflict
                         ? Pick("militia", "professional",
                             tier >= 1 ? 0.5f : 0.8f)
                         : Pick("levy", "militia", 0.6f)));

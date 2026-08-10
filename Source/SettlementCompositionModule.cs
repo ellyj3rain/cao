@@ -265,6 +265,23 @@ namespace ColonistAwareness
     // Authored entries are preserved.
     internal static class CASettlementComposition
     {
+        // A world-policy change owns generated population shares. Once any
+        // population row is authored, the settlement composition itself is a
+        // Starting Region override and remains intact.
+        internal static void ClearPolicyGeneratedPopulation(
+            CARegionalPlan plan)
+        {
+            if (plan?.settlements == null) return;
+            foreach (CARegionalSettlementPlan settlement in plan.settlements)
+            {
+                if (settlement?.populationGroups == null
+                    || settlement.populationGroups.Any(item => item != null
+                        && item.authored))
+                    continue;
+                settlement.populationGroups.Clear();
+            }
+        }
+
         internal static void EnsureDerived(CARegionalPlan plan,
             CARegionalSettlementPlan settlementPlan)
         {
@@ -359,6 +376,20 @@ namespace ColonistAwareness
                 memberTileId = source.memberTileId,
                 factionKey = source.factionKey,
                 realizedRole = source.realizedRole,
+                realizedScale = source.realizedScale,
+                residentPopulation = source.residentPopulation,
+                landCapacity = source.landCapacity,
+                realizedAccessInfrastructure =
+                    source.realizedAccessInfrastructure,
+                realizedServiceInfrastructure =
+                    source.realizedServiceInfrastructure,
+                realizedCivicInfrastructure =
+                    source.realizedCivicInfrastructure,
+                economicCapacity = source.economicCapacity,
+                tradeConnectivity = source.tradeConnectivity,
+                specialization = source.specialization,
+                historicalDevelopment = source.historicalDevelopment,
+                urbanSupport = source.urbanSupport,
                 populationGroups = source.populationGroups,
                 startingProvisions = new List<CAStartingProvision>(),
                 startingFacilityMask = source.startingFacilityMask,
@@ -411,7 +442,7 @@ namespace ColonistAwareness
             }
 
             CARegionalSettlements.EnsureSettlementPattern(plan);
-            var scale = (CASettlementScale)plan.settlementScale;
+            var scale = CARegionalSettlements.RealizedScaleOf(plan, source);
             var role = (CASettlementRole)source.realizedRole;
             int neighborhoodNodes = scale >= CASettlementScale.LargeUrbanRegion
                 ? 3 : scale >= CASettlementScale.UrbanCenter ? 2
@@ -493,16 +524,23 @@ namespace ColonistAwareness
             Rand.PushState(Seed(plan, settlementPlan, "populationGroups"));
             try
             {
-                int unaffiliated = 3
-                    + (int)(policy.unaffiliatedPopulationShare * 12f)
-                    + Rand.RangeInclusive(0, 3);
+                int unaffiliated = CAWorldTendencyCausalKernel
+                    .UnaffiliatedPercent(policy.unaffiliatedPopulationShare,
+                        Rand.RangeInclusive(0, 3));
                 int minorityShare = 0;
                 CARegionalFactionPlan minoritySource = null;
                 List<CARegionalFactionPlan> others =
                     plan.factions.Where(item => item != null
-                        && item.key != settlementPlan.factionKey).ToList();
-                if (others.Count > 0
-                    && Rand.Chance(policy.nearbyFactionVariety))
+                        && item.key != settlementPlan.factionKey
+                        && plan.settlements.Any(place => place != null
+                            && place.factionKey == item.key)
+                        && plan.RelationBetween(settlementPlan.factionKey,
+                            item.key) != FactionRelationKind.Hostile)
+                    .OrderBy(item => item.key).ToList();
+                // Minority residence follows actual neighboring ownership and
+                // saved relations. Settlement-ownership variety has already
+                // done its work when owners were assigned.
+                if (others.Count > 0 && Rand.Chance(0.55f))
                 {
                     minoritySource = others[Rand.Range(0, others.Count)];
                     minorityShare = 8 + Rand.RangeInclusive(0, 22);
@@ -557,7 +595,8 @@ namespace ColonistAwareness
             // Realized settlement pattern and scale determine provision nodes
             // and reach; world tendencies do not replace the saved result.
             CARegionalSettlements.EnsureSettlementPattern(plan);
-            var scale = (CASettlementScale)plan.settlementScale;
+            var scale = CARegionalSettlements.RealizedScaleOf(plan,
+                settlementPlan);
             var topology = (CASettlementPattern)plan.settlementPattern;
             var role = (CASettlementRole)settlementPlan.realizedRole;
             int neighborhoodNodes =

@@ -198,6 +198,8 @@ namespace ColonistAwareness
         internal static int Access(CARegionalPlan plan,
             CARegionalSettlementPlan place)
         {
+            if (place != null && place.realizedAccessInfrastructure >= 0)
+                return Mathf.Clamp(place.realizedAccessInfrastructure, 0, 3);
             return ResolveInfrastructure(place?.accessInfrastructure ?? -1,
                 DerivedAccess(plan, place));
         }
@@ -205,6 +207,8 @@ namespace ColonistAwareness
         internal static int Services(CARegionalPlan plan,
             CARegionalSettlementPlan place)
         {
+            if (place != null && place.realizedServiceInfrastructure >= 0)
+                return Mathf.Clamp(place.realizedServiceInfrastructure, 0, 3);
             return ResolveInfrastructure(place?.serviceInfrastructure ?? -1,
                 DerivedServices(plan, place));
         }
@@ -212,6 +216,8 @@ namespace ColonistAwareness
         internal static int Civic(CARegionalPlan plan,
             CARegionalSettlementPlan place)
         {
+            if (place != null && place.realizedCivicInfrastructure >= 0)
+                return Mathf.Clamp(place.realizedCivicInfrastructure, 0, 3);
             return ResolveInfrastructure(place?.civicInfrastructure ?? -1,
                 DerivedCivic(plan, place));
         }
@@ -289,13 +295,16 @@ namespace ColonistAwareness
             if (place == null) return 0;
             bool road = CARegionalPlanUtility.ConstituentHasRoad(
                 place.memberTileId);
+            bool river = CARegionalPlanUtility.ConstituentHasRiver(
+                place.memberTileId);
             bool coast = CARegionalPlanUtility.ConstituentIsCoastal(
                 place.memberTileId);
-            int value = road && coast ? 2 : road || coast ? 1 : 0;
+            int links = (road ? 1 : 0) + (river ? 1 : 0)
+                + (coast ? 1 : 0);
+            int value = links >= 2 ? 2 : links == 1 ? 1 : 0;
             if ((CASettlementRole)place.realizedRole
                     == CASettlementRole.Center
-                && (CASettlementScale)(plan?.settlementScale ?? 0)
-                    >= CASettlementScale.RegionalCenter)
+                && place.residentPopulation >= 500)
                 value++;
             return Mathf.Clamp(value, 0, 3);
         }
@@ -304,12 +313,22 @@ namespace ColonistAwareness
             CARegionalSettlementPlan place)
         {
             if (place == null) return 0;
-            int scale = (int)(plan?.settlementScale ?? 0);
-            int value = scale >= (int)CASettlementScale.UrbanCenter ? 2
-                : scale >= (int)CASettlementScale.RegionalCenter ? 1 : 0;
+            FactionDef owner = plan?.FactionPlan(place.factionKey)
+                ?.ResolvedFactionDef;
+            int tier = CASettlementAxes.Tier(
+                CASettlementAxes.TemplateEraPrior(owner));
+            int value = place.residentPopulation >= 500 ? 2
+                : place.residentPopulation >= 140 ? 1 : 0;
+            int explicitFacilities = place.startingFacilityValues
+                & place.startingFacilityAuthoredMask;
+            if ((explicitFacilities & (CAStartingFacilities.MaskInfirmary
+                    | CAStartingFacilities.MaskDining
+                    | CAStartingFacilities.MaskStores)) != 0)
+                value++;
+            if (tier >= 2 && place.residentPopulation >= 280) value++;
             if ((CASettlementRole)place.realizedRole
-                == CASettlementRole.Center) value++;
-            if (place.populationGroups != null && place.populationGroups.Count >= 3) value++;
+                    == CASettlementRole.Center
+                && place.residentPopulation >= 280) value++;
             return Mathf.Clamp(value, 0, 3);
         }
 
@@ -317,13 +336,13 @@ namespace ColonistAwareness
             CARegionalSettlementPlan place)
         {
             if (place == null) return 0;
-            int scale = (int)(plan?.settlementScale ?? 0);
-            int value = scale >= (int)CASettlementScale.LargeUrbanRegion ? 3
-                : scale >= (int)CASettlementScale.UrbanCenter ? 2
-                : scale >= (int)CASettlementScale.RegionalCenter ? 1 : 0;
+            int value = place.residentPopulation >= 700 ? 2
+                : place.residentPopulation >= 220 ? 1 : 0;
+            if (place.historicalDevelopment >= 2) value++;
             if ((CASettlementRole)place.realizedRole
-                    == CASettlementRole.Center)
-                value = Mathf.Max(value, 2);
+                    == CASettlementRole.Center
+                && place.residentPopulation >= 280)
+                value++;
             return Mathf.Clamp(value, 0, 3);
         }
 

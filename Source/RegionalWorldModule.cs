@@ -593,6 +593,15 @@ namespace ColonistAwareness
         public int memberTileId = -1;
         public int factionKey;
         public int operationalRoleMask;
+        public int residentPopulation = -1;
+        public int landCapacity = -1;
+        public int economicCapacity = -1;
+        public int tradeConnectivity = -1;
+        public int specialization = -1;
+        public int historicalDevelopment = -1;
+        public int urbanSupport = -1;
+        public byte realizedRole;
+        public byte realizedScale;
         public bool persistent = true;
         public Faction faction;
         public string factionDefName;
@@ -667,6 +676,19 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref factionKey, "factionKey", 0);
             Scribe_Values.Look(ref operationalRoleMask,
                 "operationalRoleMask", 0);
+            Scribe_Values.Look(ref residentPopulation,
+                "residentPopulation", -1);
+            Scribe_Values.Look(ref landCapacity, "landCapacity", -1);
+            Scribe_Values.Look(ref economicCapacity,
+                "economicCapacity", -1);
+            Scribe_Values.Look(ref tradeConnectivity,
+                "tradeConnectivity", -1);
+            Scribe_Values.Look(ref specialization, "specialization", -1);
+            Scribe_Values.Look(ref historicalDevelopment,
+                "historicalDevelopment", -1);
+            Scribe_Values.Look(ref urbanSupport, "urbanSupport", -1);
+            Scribe_Values.Look(ref realizedRole, "realizedRole", (byte)0);
+            Scribe_Values.Look(ref realizedScale, "realizedScale", (byte)0);
             Scribe_Values.Look(ref persistent, "persistent", true);
             Scribe_References.Look(ref faction, "faction");
             Scribe_Values.Look(ref factionDefName, "factionDefName");
@@ -1074,6 +1096,13 @@ namespace ColonistAwareness
                 throw new InvalidOperationException("Unconfirmed authored region "
                     + (region.regionalId ?? "unknown")
                     + " cannot enter durable world state.");
+            string realizationFailure;
+            if (!CARegionalSettlements.TryValidateRealization(region,
+                    out realizationFailure))
+                throw new InvalidOperationException("Regional plan "
+                    + (region.regionalId ?? "unknown")
+                    + " has invalid persisted settlement realization: "
+                    + realizationFailure + ".");
             string identityFailure;
             if (!CARegionalPlanUtility.TryValidateStableIdentities(region,
                     out identityFailure))
@@ -1189,6 +1218,10 @@ namespace ColonistAwareness
             if (!TryReserveRegion(derived, out failure))
                 throw new InvalidOperationException("Regional footprint "
                     + derived.regionalId + " cannot be reserved: " + failure);
+            // Auto-generated major settlements use the same RimWorld pool
+            // transfer as authored reallocation. Frontier holdings are absent
+            // from this list and never consume major-settlement authorization.
+            CARegionalPlanUtility.ConsumeReallocatedSources(derived);
             return RegisterRegion(derived);
         }
 
@@ -1275,6 +1308,16 @@ namespace ColonistAwareness
                 memberTileId = settlement?.memberTileId ?? -1,
                 factionKey = settlement?.factionKey ?? 0,
                 operationalRoleMask = settlement?.operationalRoleMask ?? 0,
+                residentPopulation = settlement?.residentPopulation ?? -1,
+                landCapacity = settlement?.landCapacity ?? -1,
+                economicCapacity = settlement?.economicCapacity ?? -1,
+                tradeConnectivity = settlement?.tradeConnectivity ?? -1,
+                specialization = settlement?.specialization ?? -1,
+                historicalDevelopment = settlement
+                    ?.historicalDevelopment ?? -1,
+                urbanSupport = settlement?.urbanSupport ?? -1,
+                realizedRole = settlement?.realizedRole ?? (byte)0,
+                realizedScale = settlement?.realizedScale ?? (byte)0,
                 startingFacilityMask = resolvedFacilities,
                 accessInfrastructure = resolvedAccess,
                 serviceInfrastructure = resolvedServices,
@@ -1784,6 +1827,16 @@ namespace ColonistAwareness
                 record.memberTileId = settlement.memberTileId;
                 record.factionKey = settlement.factionKey;
                 record.operationalRoleMask = settlement.operationalRoleMask;
+                record.residentPopulation = settlement.residentPopulation;
+                record.landCapacity = settlement.landCapacity;
+                record.economicCapacity = settlement.economicCapacity;
+                record.tradeConnectivity = settlement.tradeConnectivity;
+                record.specialization = settlement.specialization;
+                record.historicalDevelopment =
+                    settlement.historicalDevelopment;
+                record.urbanSupport = settlement.urbanSupport;
+                record.realizedRole = settlement.realizedRole;
+                record.realizedScale = settlement.realizedScale;
                 record.persistent = settlement.persistent;
 
                 CellRect rect;
@@ -1840,8 +1893,8 @@ namespace ColonistAwareness
             List<CellRect> physicalCluster, out CellRect rect)
         {
             rect = CellRect.Empty;
-            int size = Mathf.Clamp(48 + record.production * 3
-                + record.organization * 2, 48, 76);
+            int size = Mathf.Clamp(44 + record.realizedScale * 6
+                + record.production * 2 + record.organization, 44, 86);
             List<CellRect> used = MapGenerator.UsedRects;
 
             if (record.localRect != CellRect.Empty
@@ -2005,9 +2058,15 @@ namespace ColonistAwareness
                 faction = record.faction,
                 groupKind = PawnGroupKindDefOf.Settlement,
                 inhabitants = true,
-                points = Mathf.Clamp(
-                    650f + record.training * 140f
-                    + record.organization * 90f, 650f, 1850f),
+                // The map population is a playable projection of the saved
+                // regional population, not a fresh population roll. Scale,
+                // training, and organization determine how much of it appears
+                // in this generated settlement encounter.
+                points = Mathf.Clamp(420f
+                    + Mathf.Sqrt(Mathf.Max(0, record.residentPopulation)) * 28f
+                    + record.realizedScale * 110f
+                    + record.training * 110f
+                    + record.organization * 70f, 500f, 2400f),
                 seed = Gen.HashCombineInt(
                     GenText.StableStringHash(record.regionalId),
                     record.materializationCount)
@@ -2352,22 +2411,22 @@ namespace ColonistAwareness
                     + policy.stitchedRegionSizeMax
                     + "; unaffiliated population "
                     + policy.unaffiliatedPopulationShare.ToStringPercent()
-                    + "; settlement pattern "
-                    + policy.settlementPatternTendency.ToStringPercent()
-                    + "; frontier settlement frequency "
-                    + policy.frontierSettlementFrequency.ToStringPercent()
-                    + "; frontier settlement size "
-                    + policy.frontierSettlementSize.ToStringPercent()
-                    + "; nearby faction variety "
-                    + policy.nearbyFactionVariety.ToStringPercent()
-                    + "; new local factions "
-                    + policy.newLocalFactionChance.ToStringPercent()
-                    + "; starting conflict "
-                    + policy.startingConflictChance.ToStringPercent()
-                    + "; city formation "
-                    + policy.cityFormationChance.ToStringPercent()
-                    + "; distant activity "
-                    + policy.distantActivity.ToStringPercent());
+                    + "; settlement concentration "
+                    + policy.settlementConcentration.ToStringPercent()
+                    + "; frontier holding frequency "
+                    + policy.frontierHoldingFrequency.ToStringPercent()
+                    + "; frontier holding size "
+                    + policy.frontierHoldingSize.ToStringPercent()
+                    + "; settlement ownership variety "
+                    + policy.reallocationSourceVariety.ToStringPercent()
+                    + "; local faction formation "
+                    + policy.localFactionChance.ToStringPercent()
+                    + "; regional conflict "
+                    + policy.regionalConflictChance.ToStringPercent()
+                    + "; urban growth propensity "
+                    + policy.urbanGrowthPropensity.ToStringPercent()
+                    + "; off-map activity rate "
+                    + policy.offMapActivityRate.ToStringPercent());
                 foreach (CARegionalFactionPlan group in
                     region.factions.OrderBy(item => item.key))
                     Log.Message("[CA][Regional] faction " + group.key
@@ -2379,8 +2438,10 @@ namespace ColonistAwareness
                 foreach (CARegionalRelationPlan relation in region.relations)
                     Log.Message("[CA][Regional] faction relation "
                         + relation.leftFactionKey + "-" + relation.rightFactionKey
-                        + "; " + (relation.authorRelation
-                            ? relation.relation.ToString() : "native"));
+                        + "; " + relation.relation + "; source "
+                        + (relation.authorRelation
+                            ? "starting-region override"
+                            : "realized default"));
             }
             else if (expanded)
                 Log.Warning("[CA][Regional] census found no regional plan for "

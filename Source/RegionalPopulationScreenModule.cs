@@ -406,6 +406,7 @@ namespace ColonistAwareness
 
         private void DrawRegionOverview(ref float y, float width)
         {
+            CARegionalSettlements.EnsureSettlementPattern(plan);
             CARegionalProjectionKernel kernel =
                 CARegionalProjectionPreview.KernelFor(plan);
             CARegionalCandidateFacts facts =
@@ -538,13 +539,17 @@ namespace ColonistAwareness
                     CARegionalSettlements.SettlementProfile(plan) + " - "
                     + plan.settlements.Count + " settlement"
                     + (plan.settlements.Count == 1 ? "" : "s"));
+                Readout(ref y, width, "Regional relations",
+                    CARegionalSettlements.RelationPatternWords(
+                        (CARegionalRelationPattern)
+                            plan.regionalRelationPattern));
                 Readout(ref y, width, "Starting provisions",
                     StartingProvisionSummary());
                 Readout(ref y, width, "Frontier",
-                    plan.realizedFrontierHoldings > 0
-                        ? plan.realizedFrontierHoldings
+                    (plan.frontierHoldings?.Count ?? 0) > 0
+                        ? plan.frontierHoldings.Count
                             + " holdings between settlements"
-                        : plan.realizedFrontierHoldings == 0
+                        : plan.settlementRealizationComplete
                             ? "no holdings between settlements"
                             : "not decided yet");
                 foreach (CARegionalFactionPlan group in
@@ -820,20 +825,23 @@ namespace ColonistAwareness
                                 .ToArray()));
                 }
                 Readout(ref y, width, "Population",
-                    "resolves at generation \u2014 the native settlement "
-                    + "generator decides head counts from each "
-                    + "settlement's points; no number is invented here");
+                    plan.settlementRealizationComplete
+                        ? plan.settlements.Where(item => item != null)
+                            .Sum(item => Math.Max(0,
+                                item.residentPopulation))
+                            + " residents across the region"
+                        : "not realized yet");
                 Readout(ref y, width, "Starting provisions",
                     StartingProvisionSummary());
                 Readout(ref y, width, "Frontier",
-                    plan.realizedFrontierHoldings > 0
-                        ? plan.realizedFrontierHoldings
-                            + " holding"
-                            + (plan.realizedFrontierHoldings == 1 ? "" : "s")
-                            + " in the country between towns"
-                        : plan.realizedFrontierHoldings == 0
-                            ? "no holdings between the towns"
-                            : "not yet drawn");
+                    (plan.frontierHoldings?.Count ?? 0) > 0
+                        ? plan.frontierHoldings.Count
+                            + " frontier holding"
+                            + (plan.frontierHoldings.Count == 1 ? "" : "s")
+                            + " on unoccupied regional land"
+                        : plan.settlementRealizationComplete
+                            ? "no frontier holdings"
+                            : "not realized yet");
 
                 // Compact readout of the same faction and settlement state
                 // consumed by materialization.
@@ -914,6 +922,7 @@ namespace ColonistAwareness
             CARegionalFactionPlan owner = plan.FactionPlan(
                 place.factionKey);
             FactionDef def = owner?.ResolvedFactionDef;
+            CARegionalSettlements.EnsureSettlementPattern(plan);
             CASettlementStartingState.Sync(plan, place, def);
             CASettlementComposition.EnsureDerived(plan, place);
             CARegionMapWidget.hoveredSlot = place.slot;
@@ -934,6 +943,21 @@ namespace ColonistAwareness
                 CARegionMapWidget.SelectFaction(place.factionKey);
             Title(ref y, width,
                 CARegionalPlanUtility.SettlementName(plan, place));
+            if (plan.settlementRealizationComplete)
+            {
+                Readout(ref y, width, "Realized scale",
+                    CARegionalSettlements.ScaleWords(
+                        (CASettlementScale)place.realizedScale)
+                    + " · " + place.residentPopulation + " residents");
+                Readout(ref y, width, "Development",
+                    "land " + place.landCapacity + "/3 · access "
+                    + place.realizedAccessInfrastructure + "/3 · services "
+                    + place.realizedServiceInfrastructure + "/3 · civic "
+                    + place.realizedCivicInfrastructure + "/3 · economy "
+                    + place.economicCapacity + "/3 · trade "
+                    + place.tradeConnectivity + "/3 · history "
+                    + place.historicalDevelopment + "/3");
+            }
 
             Widgets.Label(new Rect(0f, y + 3f, LabelWidth, Row), "Name");
             place.customName = Widgets.TextField(
@@ -2246,6 +2270,10 @@ namespace ColonistAwareness
         // structure, settlement pattern, population groups, then provisions.
         private void GenerateUnspecified()
         {
+            bool patternFilled = !plan.settlementRealizationComplete;
+            // Generated relations are realized first because faction defense
+            // structure consumes the saved relation, not the tendency.
+            CARegionalSettlements.EnsureSettlementPattern(plan);
             int politicalBeliefsFilled = 0;
             int structureFilled = 0;
             foreach (CARegionalFactionPlan group in plan.factions)
@@ -2261,8 +2289,10 @@ namespace ColonistAwareness
 
             int populationGroupsFilled = 0;
             int provisionsFilled = 0;
-            bool patternFilled = plan.settlementPattern
-                == (byte)CASettlementPattern.Unsettled;
+            // Faction structure can change derived facilities. Recompute the
+            // still-unconfirmed settlement realization before provisions read
+            // it; the fixed candidate seed keeps every unrelated fact stable.
+            CARegionalSettlements.Invalidate(plan);
             CARegionalSettlements.EnsureSettlementPattern(plan);
             foreach (CARegionalSettlementPlan place in plan.settlements)
             {
@@ -2299,6 +2329,15 @@ namespace ColonistAwareness
                     originsFilled++;
                 }
                 else originsShort++;
+            }
+            if (originsFilled > 0)
+            {
+                CARegionalSettlements.Invalidate(plan);
+                CARegionalSettlements.EnsureSettlementPattern(plan);
+                foreach (CARegionalSettlementPlan place in plan.settlements
+                    .Where(item => item != null))
+                    CASettlementComposition.ReconcileStartingProvisions(plan,
+                        place);
             }
             CARegionalSetupSession.SavePending();
             var filled = new List<string>();
@@ -3177,8 +3216,11 @@ namespace ColonistAwareness
 
         private void StartingSettingsChanged(CARegionalSettlementPlan place)
         {
-            CASettlementStartingState.Sync(plan, place,
-                plan.FactionPlan(place.factionKey)?.ResolvedFactionDef);
+            // Infrastructure and facilities are causes of settlement scale,
+            // trade support, and provisions. Replace the prior realization
+            // before any consumer reads the edited value.
+            CARegionalSettlements.Invalidate(plan);
+            CARegionalSettlements.EnsureSettlementPattern(plan);
             CASettlementComposition.ReconcileStartingProvisions(plan, place);
             CARegionalSetupSession.SavePending();
         }

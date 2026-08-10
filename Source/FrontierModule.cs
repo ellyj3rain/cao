@@ -7,35 +7,57 @@ using Verse.AI;
 
 namespace ColonistAwareness
 {
-    // FRONTIERISM: people of a faction living OUTSIDE its organizations.
-    // An organization is per-SETTLEMENT, never per-faction, so a homestead
-    // flying a distant flag is coherently its own political body - a
-    // householder, a claim, a memory, and no organizational depth at all.
-    // This is how a map populates with diverse, negotiable people without
-    // anyone being organized: even a world with no authored settlements
-    // has frontier holdings to meet, trade with, warn, protect, or push
-    // off their ground.
+    // A standard map saves its frontier realization the first time that map is
+    // processed. Regional maps use the holding rows saved on their region plan.
+    public sealed class CAFrontierMapPlan : IExposable
+    {
+        public int mapId = -1;
+        public int mapTileId = -1;
+        public int mapWidth;
+        public int mapHeight;
+        public int realizationSourceHash;
+        public List<CAFrontierHoldingPlan> holdings =
+            new List<CAFrontierHoldingPlan>();
+
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref mapId, "mapId", -1);
+            Scribe_Values.Look(ref mapTileId, "mapTileId", -1);
+            Scribe_Values.Look(ref mapWidth, "mapWidth", 0);
+            Scribe_Values.Look(ref mapHeight, "mapHeight", 0);
+            Scribe_Values.Look(ref realizationSourceHash,
+                "realizationSourceHash", 0);
+            Scribe_Collections.Look(ref holdings, "holdings", LookMode.Deep);
+            if (holdings == null)
+                holdings = new List<CAFrontierHoldingPlan>();
+        }
+    }
+
     public static class CAFrontier
     {
-        // The frontier scales with the ground: a standard map holds a
-        // couple of households; a regional map is a country, and the
-        // spaces between its towns fill with people who answer to none
-        // of them.
-        private static int HoldingsFor(Map map)
+        private static int HoldingsFor(CAOrganizationWorldComponent comp,
+            Map map)
         {
-            // THE REALIZED VALUE FIRST. A regional plan rolled its
-            // frontier complement once from frontierSettlementFrequency over its
-            // suitable ground and persisted the outcome; consuming the
-            // area rule instead would be re-deriving from a prior after
-            // realization. The area rule remains only for maps with no
-            // regional plan at all.
             CARegionalPlan plan = CARegionalWorldComponent.Current
                 ?.FindRegionForMap(map);
-            if (plan != null && plan.realizedFrontierHoldings >= 0)
-                return Mathf.Clamp(plan.realizedFrontierHoldings, 0, 8);
-            int cells = map.Size.x * map.Size.z;
-            int byArea = cells / 40000;
-            return Mathf.Clamp(byArea, 2, 8);
+            if (plan?.frontierHoldings != null)
+                return Mathf.Clamp(plan.frontierHoldings.Count, 0, 8);
+            CAFrontierMapPlan mapPlan = comp?.EnsureFrontierMapPlan(map);
+            return Mathf.Clamp(mapPlan?.holdings?.Count ?? 0, 0, 8);
+        }
+
+        private static CAFrontierHoldingPlan HoldingPlanFor(
+            CAOrganizationWorldComponent comp, Map map, int index)
+        {
+            CARegionalPlan plan = CARegionalWorldComponent.Current
+                ?.FindRegionForMap(map);
+            if (plan?.frontierHoldings != null
+                && index >= 0 && index < plan.frontierHoldings.Count)
+                return plan.frontierHoldings[index];
+            CAFrontierMapPlan mapPlan = comp?.EnsureFrontierMapPlan(map);
+            return mapPlan?.holdings != null && index >= 0
+                && index < mapPlan.holdings.Count
+                    ? mapPlan.holdings[index] : null;
         }
 
         public static void EnsureHoldings(CAOrganizationWorldComponent comp)
@@ -50,13 +72,9 @@ namespace ColonistAwareness
                 for (int i = 0; i < comp.Organizations.Count; i++)
                     if (comp.Organizations[i].organizationKey.StartsWith(
                         "frontier:" + map.uniqueID + ":")) existing++;
-                int want = HoldingsFor(map);
-                // AT BIRTH the frontier already EXISTS: a map that has
-                // just come into being (under ~10000 ticks old) with no
-                // holdings at all seeds its full complement at once -
-                // homesteaders are part of the ground's history, never
-                // latecomers. Afterwards the dust rule holds: extras
-                // wait out the first two days and arrive one per pulse.
+                int want = HoldingsFor(comp, map);
+                // New maps seed saved holdings promptly. Older maps add one
+                // saved holding per pulse after the initial delay.
                 if (existing < want && Find.TickManager.TicksGame
                     - map.generationTick < 20000)
                 {
@@ -69,25 +87,23 @@ namespace ColonistAwareness
                     // seat the full complement.
                     var taken = new List<IntVec3>();
                     for (int k = 0; k < 2 && existing + k < want; k++)
-                        if (!TrySeedHolding(comp, map, existing + k,
-                            taken)) break;
+                    {
+                        int index = existing + k;
+                        if (!TrySeedHolding(comp, map, index,
+                                HoldingPlanFor(comp, map, index), taken)) break;
+                    }
                 }
                 else if (existing < want
                     && Find.TickManager.TicksGame > 120000)
-                    TrySeedHolding(comp, map, existing);
+                    TrySeedHolding(comp, map, existing,
+                        HoldingPlanFor(comp, map, existing));
                 Parley(comp, map);
             }
         }
 
-        // THE PARLEY - a householder standing before an army. Weakness is
-        // not silence: a holding with no capability at all still has a
-        // voice, a name, and whatever standing it has earned. The
-        // computation is inspectable and the outcome is REAL: it decides
-        // what THEIR people do (buy their lives and withdraw, be stripped
-        // bare, or stand their ground), never what the enemy decides -
-        // nothing is faked on the other side of the field. The player gets
-        // a window to intervene, because watching the choice arrive and
-        // choosing whether to ride out IS the moment.
+        // A threatened holding chooses whether to pay, withdraw, or defend.
+        // The result governs the holding's people and remains open to player
+        // intervention; it does not issue orders to the attacking faction.
         private static void Parley(CAOrganizationWorldComponent comp,
             Map map)
         {
@@ -423,20 +439,30 @@ namespace ColonistAwareness
 
         private static bool TrySeedHolding(
             CAOrganizationWorldComponent comp, Map map, int index,
-            List<IntVec3> taken = null)
+            CAFrontierHoldingPlan holding, List<IntVec3> taken = null)
         {
-            // Half the frontier flies no flag at all: FACTIONLESS folk,
-            // beholden to nobody, convertible by invitation rather than
-            // by cage. Diversity that owes nothing to the world's
-            // politics.
-            bool factionless = index % 2 == 0;
+            if (holding == null) return false;
+            bool factionless = holding.factionless;
             Faction flag = factionless ? null : PickFlag();
             if (!factionless && flag == null) factionless = true;
             IntVec3 site;
-            if (!TryFindSite(map, out site, taken)) return false;
+            IntVec3 preferred = IntVec3.Invalid;
+            if (holding != null && holding.memberTileId >= 0)
+                preferred = map.GetComponent<CARegionalProjectionMapComponent>()
+                    ?.CenterForMember(holding.memberTileId)
+                    ?? IntVec3.Invalid;
+            int siteSeed = Gen.HashCombineInt(map.uniqueID,
+                holding.key, holding.memberTileId,
+                509203);
+            Rand.PushState(siteSeed);
+            try
+            {
+                if (!TryFindSite(map, out site, taken, preferred)) return false;
+            }
+            finally { Rand.PopState(); }
 
             var folk = new List<Pawn>();
-            int count = 1 + (index % 2);
+            int count = Mathf.Clamp(holding.householdSize, 1, 6);
             PawnKindDef kind = PawnKindDefOf.Villager;
             if (flag != null)
                 try
@@ -446,7 +472,7 @@ namespace ColonistAwareness
                         && fk.RaceProps.Humanlike) kind = fk;
                 }
                 catch { }
-            for (int i = 0; i <= count; i++)
+            for (int i = 0; i < count; i++)
             {
                 try
                 {
@@ -463,12 +489,8 @@ namespace ColonistAwareness
             if (folk.Count == 0) return false;
             taken?.Add(site);
 
-            // Their holding's PHYSICAL form. A flagged household gets a
-            // grown homestead - house, outbuilding, fenced field - from
-            // the morphology engine, seeded by the ground it stands on.
-            // A factionless one keeps the open camp (the adapter needs
-            // an owner), and any materialization failure falls back to
-            // the camp too: a holding is never left structureless.
+            // Form selects the physical layout. Material level adds saved
+            // furnishings and storage independently of faction ownership.
             bool materialized = false;
             if (flag != null)
                 try
@@ -476,16 +498,18 @@ namespace ColonistAwareness
                     CAMorphologyAdapter.Materialize(map,
                         CellRect.CenteredOn(site, 26, 26)
                             .ClipInsideMap(map),
-                        // The holding already exists. The world's composition
-                        // preference decides its form, constrained by what
-                        // this household can build.
-                        CAWorldRules.FrontierFormFor(folk.Count,
-                            site.GetHashCode()),
+                        holding.form == 1
+                            ? CAMorphForm.FrontierHomestead
+                            : CAMorphForm.Cabin,
                         site.GetHashCode(), flag);
                     materialized = true;
                 }
                 catch { }
-            if (!materialized) SpawnHomestead(map, site, flag);
+            if (materialized)
+                SpawnMaterialDetails(map, site, flag, holding.materialLevel);
+            else
+                SpawnHomestead(map, site, flag, folk.Count,
+                    holding.materialLevel, holding.form);
 
             string family = folk[0].Name != null
                 ? folk[0].Name.ToStringShort : "frontier";
@@ -493,11 +517,9 @@ namespace ColonistAwareness
                 "frontier:" + map.uniqueID + ":" + index,
                 family + "'s holding",
                 factionless
-                    ? "unaffiliated frontier folk - no flag, no faction;"
-                    + " a household that answers to nobody at all"
-                    : "frontier folk of " + flag.Name + " - living"
-                    + " outside its organizations; a household, not a"
-                    + " settlement", CAOrganizationKind.Household);
+                    ? "Unaffiliated frontier household."
+                    : "Frontier household affiliated with " + flag.Name
+                    + ".", CAOrganizationKind.Household);
             org.offices.Add(new CAOffice
             {
                 sourceKey = "householder",
@@ -505,7 +527,7 @@ namespace ColonistAwareness
                 seniority = 200,
                 holderId = folk[0].thingIDNumber,
                 holderLabel = folk[0].LabelShort,
-                grants = "speaks for the household - no standing beyond it"
+                grants = "represents this household"
             });
             var handIds = new List<int>();
             for (int i = 0; i < folk.Count; i++)
@@ -526,15 +548,16 @@ namespace ColonistAwareness
             org.treasury = 60f;
             org.lastPopulation = folk.Count;
             org.memberPawnIds = new List<int>(handIds);
-            org.Record("relations", "the holding was raised - "
+            org.Record("relations", "Holding established: "
                 + folk.Count + (factionless
-                    ? " souls under no flag at all"
-                    : " souls under " + flag.Name
-                    + "'s distant flag, answering to none of it"));
+                    ? " unaffiliated residents"
+                    : " residents affiliated with " + flag.Name)
+                + "; material level " + (holding?.materialLevel ?? 1)
+                + "; " + ((holding?.form ?? 0) == 1
+                    ? "established homestead" : "cabin"));
 
             CAOrganization colony = comp.EnsureColony();
-            colony.Record("relations", "frontier folk have settled"
-                + " nearby - " + org.name);
+            colony.Record("relations", "Nearby frontier holding: " + org.name);
             Messages.Message((factionless
                 ? "Unaffiliated frontier folk have raised a holding"
                 + " nearby: " : "Frontier folk have raised a holding"
@@ -568,7 +591,8 @@ namespace ColonistAwareness
         }
 
         private static bool TryFindSite(Map map, out IntVec3 site,
-            List<IntVec3> taken = null)
+            List<IntVec3> taken = null,
+            IntVec3 preferredCenter = default(IntVec3))
         {
             site = IntVec3.Invalid;
             IntVec3 home = map.Center;
@@ -585,7 +609,15 @@ namespace ColonistAwareness
             int maxTries = map.Size.x * map.Size.z > 1000000 ? 80 : 220;
             for (int tries = 0; tries < maxTries; tries++)
             {
-                IntVec3 c = CellFinder.RandomCell(map);
+                IntVec3 c = IntVec3.Invalid;
+                if (preferredCenter.IsValid
+                    && !CellFinder.TryFindRandomCellNear(preferredCenter,
+                        map, Math.Max(35,
+                            Math.Min(map.Size.x, map.Size.z) / 4),
+                        cell => cell.InBounds(map), out c))
+                    c = CellFinder.RandomCell(map);
+                else if (!preferredCenter.IsValid)
+                    c = CellFinder.RandomCell(map);
                 if (!c.Standable(map) || c.Fogged(map)) continue;
                 if (c.Roofed(map)) continue;
                 if (c.DistanceTo(home) < 60f) continue;
@@ -617,19 +649,23 @@ namespace ColonistAwareness
         }
 
         private static void SpawnHomestead(Map map, IntVec3 site,
-            Faction flag)
+            Faction flag, int householdSize, int materialLevel, int form)
         {
+            if (form == 1) SpawnEstablishedShell(map, site, flag);
             TrySpawn(map, site, "Campfire", flag, null, 20f);
             ThingDef bedroll = DefDatabase<ThingDef>.GetNamedSilentFail(
                 "Bedroll");
             ThingDef cloth = DefDatabase<ThingDef>.GetNamedSilentFail(
                 "Cloth");
-            for (int i = 1; i <= 2; i++)
+            for (int i = 1; i <= Math.Max(1, householdSize); i++)
             {
-                IntVec3 c = site + GenRadial.RadialPattern[i * 2];
+                int radial = Math.Min(GenRadial.NumCellsInRadius(4f) - 1,
+                    i * 2);
+                IntVec3 c = site + GenRadial.RadialPattern[radial];
                 if (bedroll != null) TrySpawnDef(map, c, bedroll, flag,
                     cloth, 0f);
             }
+            SpawnMaterialDetails(map, site, flag, materialLevel);
             ThingDef mini = DefDatabase<ThingDef>.GetNamedSilentFail(
                 "NCS_TentBag");
             if (mini != null)
@@ -646,21 +682,73 @@ namespace ColonistAwareness
             }
         }
 
-        private static void TrySpawn(Map map, IntVec3 c, string defName,
+        private static void SpawnEstablishedShell(Map map, IntVec3 site,
+            Faction flag)
+        {
+            ThingDef wall = DefDatabase<ThingDef>.GetNamedSilentFail("Wall");
+            ThingDef door = DefDatabase<ThingDef>.GetNamedSilentFail("Door");
+            ThingDef wood = DefDatabase<ThingDef>.GetNamedSilentFail("WoodLog");
+            if (wall == null) return;
+            for (int dx = -3; dx <= 3; dx++)
+                for (int dz = -3; dz <= 3; dz++)
+                {
+                    if (Math.Abs(dx) != 3 && Math.Abs(dz) != 3) continue;
+                    IntVec3 cell = site + new IntVec3(dx, 0, dz);
+                    if (dx == 0 && dz == -3 && door != null)
+                        TrySpawnDef(map, cell, door, flag, wood, 0f);
+                    else
+                        TrySpawnDef(map, cell, wall, flag, wood, 0f);
+                }
+        }
+
+        private static void SpawnMaterialDetails(Map map, IntVec3 site,
+            Faction flag, int materialLevel)
+        {
+            ThingDef wood = DefDatabase<ThingDef>.GetNamedSilentFail(
+                "WoodLog");
+            if (materialLevel >= 1)
+                TrySpawnNearby(map, site, "Stool", flag, wood, 0f, 5);
+            if (materialLevel >= 2)
+                TrySpawnNearby(map, site, "Table1x2c", flag, wood, 0f, 11);
+            if (materialLevel >= 3)
+            {
+                TrySpawnNearby(map, site, "Shelf", flag, wood, 0f, 17);
+                TrySpawnNearby(map, site, "TorchLamp", flag, wood, 20f, 23);
+            }
+        }
+
+        private static bool TrySpawn(Map map, IntVec3 c, string defName,
             Faction faction, ThingDef stuff, float fuel)
         {
             ThingDef def = DefDatabase<ThingDef>.GetNamedSilentFail(
                 defName);
-            if (def != null) TrySpawnDef(map, c, def, faction, stuff, fuel);
+            return def != null
+                && TrySpawnDef(map, c, def, faction, stuff, fuel);
         }
 
-        private static void TrySpawnDef(Map map, IntVec3 c, ThingDef def,
+        private static void TrySpawnNearby(Map map, IntVec3 center,
+            string defName, Faction faction, ThingDef stuff, float fuel,
+            int start)
+        {
+            ThingDef def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
+            if (def == null) return;
+            int cells = GenRadial.NumCellsInRadius(7f);
+            for (int offset = 0; offset < cells; offset++)
+            {
+                int index = 1 + (start + offset) % Math.Max(1, cells - 1);
+                if (TrySpawnDef(map, center + GenRadial.RadialPattern[index],
+                        def, faction, stuff, fuel))
+                    return;
+            }
+        }
+
+        private static bool TrySpawnDef(Map map, IntVec3 c, ThingDef def,
             Faction faction, ThingDef stuff, float fuel)
         {
             try
             {
-                if (!c.InBounds(map) || !c.Standable(map)) return;
-                if (c.GetEdifice(map) != null) return;
+                if (!c.InBounds(map) || !c.Standable(map)) return false;
+                if (c.GetEdifice(map) != null) return false;
                 Thing t = def.MadeFromStuff
                     ? ThingMaker.MakeThing(def, stuff
                         ?? GenStuff.DefaultStuffFor(def))
@@ -673,8 +761,9 @@ namespace ColonistAwareness
                     var comp = t.TryGetComp<CompRefuelable>();
                     if (comp != null) comp.Refuel(fuel);
                 }
+                return true;
             }
-            catch { }
+            catch { return false; }
         }
     }
 }

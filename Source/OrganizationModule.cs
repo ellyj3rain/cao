@@ -1288,6 +1288,8 @@ namespace ColonistAwareness
     public sealed class CAOrganizationWorldComponent : WorldComponent
     {
         private List<CAOrganization> organizations = new List<CAOrganization>();
+        private List<CAFrontierMapPlan> frontierMapPlans =
+            new List<CAFrontierMapPlan>();
         private List<CAAgreement> agreements = new List<CAAgreement>();
         private int nextAgreementId = 1;
         private int lastSyncTick = -99999;
@@ -1480,6 +1482,115 @@ namespace ColonistAwareness
             get { return organizations; }
         }
 
+        internal CAFrontierMapPlan EnsureFrontierMapPlan(Map map)
+        {
+            if (map == null) return null;
+            CARegionalPlan regional = CARegionalWorldComponent.Current
+                ?.FindRegionForMap(map);
+            if (regional != null) return null;
+
+            int tileId = map.Tile.Valid ? map.Tile.tileId : -1;
+            CAFrontierMapPlan existing = frontierMapPlans.FirstOrDefault(item =>
+                item != null && item.mapId == map.uniqueID);
+            if (ValidFrontierMapPlan(existing, map, tileId))
+                return existing;
+            if (existing != null) frontierMapPlans.Remove(existing);
+
+            CARegionalWorldPolicy policy = CARegionalWorldComponent.Current
+                ?.WorldPolicy ?? new CARegionalWorldPolicy();
+            int worldSeed = 0;
+            try { worldSeed = Verse.Find.World.info.Seed; }
+            catch { }
+            int seed = Gen.HashCombineInt(worldSeed, tileId,
+                map.Size.x, map.Size.z);
+            int suitableCapacity = Mathf.Clamp(
+                map.Size.x * map.Size.z / 40000, 2, 8);
+            int count = CAWorldTendencyCausalKernel.FrontierHoldingCount(
+                seed, suitableCapacity, policy.frontierHoldingFrequency);
+            int landCapacity = FrontierLandCapacity(map);
+            var created = new CAFrontierMapPlan
+            {
+                mapId = map.uniqueID,
+                mapTileId = tileId,
+                mapWidth = map.Size.x,
+                mapHeight = map.Size.z,
+                realizationSourceHash = CAWorldTendencyCausalKernel
+                    .HashCombineInt(seed,
+                        Mathf.RoundToInt(
+                            policy.frontierHoldingFrequency * 10000f),
+                        Mathf.RoundToInt(
+                            policy.frontierHoldingSize * 10000f),
+                        suitableCapacity)
+            };
+            for (int i = 0; i < count; i++)
+            {
+                int household = CAWorldTendencyCausalKernel
+                    .FrontierHouseholdSize(seed, i, landCapacity,
+                        policy.frontierHoldingSize);
+                int material = CAWorldTendencyCausalKernel
+                    .FrontierMaterialLevel(seed, i, landCapacity,
+                        policy.frontierHoldingSize);
+                created.holdings.Add(new CAFrontierHoldingPlan
+                {
+                    key = i,
+                    memberTileId = tileId,
+                    householdSize = household,
+                    landCapacity = landCapacity,
+                    materialLevel = material,
+                    form = CAWorldTendencyCausalKernel.FrontierForm(
+                        household, material),
+                    factionless = CAWorldTendencyCausalKernel.Unit(seed, i,
+                        1414213) < 0.45f
+                });
+            }
+            frontierMapPlans.Add(created);
+            return created;
+        }
+
+        private static bool ValidFrontierMapPlan(CAFrontierMapPlan plan,
+            Map map, int tileId)
+        {
+            if (plan == null || plan.mapTileId != tileId
+                || plan.mapWidth != map.Size.x
+                || plan.mapHeight != map.Size.z
+                || plan.holdings == null || plan.holdings.Count > 8)
+                return false;
+
+            var keys = new HashSet<int>();
+            for (int i = 0; i < plan.holdings.Count; i++)
+            {
+                CAFrontierHoldingPlan holding = plan.holdings[i];
+                if (holding == null || holding.memberTileId != tileId
+                    || !keys.Add(holding.key)
+                    || holding.landCapacity < 1
+                    || holding.landCapacity > 3
+                    || holding.householdSize < 1
+                    || holding.householdSize > 6
+                    || holding.materialLevel < 0
+                    || holding.materialLevel > holding.landCapacity
+                    || holding.form != CAWorldTendencyCausalKernel
+                        .FrontierForm(holding.householdSize,
+                            holding.materialLevel))
+                    return false;
+            }
+            return true;
+        }
+
+        private static int FrontierLandCapacity(Map map)
+        {
+            Hilliness hilliness = map.TileInfo?.hilliness ?? Hilliness.Flat;
+            switch (hilliness)
+            {
+                case Hilliness.Impassable:
+                case Hilliness.Mountainous:
+                    return 1;
+                case Hilliness.LargeHills:
+                    return 2;
+                default:
+                    return 3;
+            }
+        }
+
         public CAOrganization EnsureColony()
         {
             for (int i = 0; i < organizations.Count; i++)
@@ -1549,14 +1660,14 @@ namespace ColonistAwareness
             PulsePoliticalBeliefsUnderBudget(now);
         }
 
-        // Player-facing and loaded organizations update daily. Distant
-        // organizations share an update allowance set by world activity.
-        private int distantActivityCursor;
+        // Player-facing and loaded organizations update every world pulse.
+        // Off-map organizations share the saved activity budget and cursor.
+        private int offMapActivityCursor;
 
         private void PulsePoliticalBeliefsUnderBudget(int now)
         {
-            float distantActivity = CARegionalWorldComponent.Current
-                ?.WorldPolicy?.distantActivity ?? 0.5f;
+            float offMapActivityRate = CARegionalWorldComponent.Current
+                ?.WorldPolicy?.offMapActivityRate ?? 0.5f;
             var background = new List<CAOrganization>();
             for (int i = 0; i < organizations.Count; i++)
             {
@@ -1567,13 +1678,12 @@ namespace ColonistAwareness
                 else background.Add(org);
             }
             if (background.Count == 0) return;
-            int allowance = Mathf.Clamp(
-                Mathf.CeilToInt(background.Count * distantActivity),
-                distantActivity <= 0f ? 0 : 1, background.Count);
+            int allowance = CAWorldTendencyCausalKernel
+                .OffMapActivityBudget(background.Count, offMapActivityRate);
             for (int n = 0; n < allowance; n++)
             {
                 CAOrganization org = background[
-                    distantActivityCursor++ % background.Count];
+                    offMapActivityCursor++ % background.Count];
                 CAPoliticalBeliefEffects.Pulse(org, now);
             }
         }
@@ -2234,6 +2344,8 @@ namespace ColonistAwareness
                 IntVec3.Invalid);
             Scribe_Collections.Look(ref organizations, "CA_organizations",
                 LookMode.Deep);
+            Scribe_Collections.Look(ref frontierMapPlans,
+                "CA_frontierMapPlans", LookMode.Deep);
             Scribe_Collections.Look(ref agreements, "CA_agreements",
                 LookMode.Deep);
             Scribe_Values.Look(ref nextAgreementId, "CA_nextAgreementId", 1);
@@ -2248,8 +2360,12 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref nextOfferId, "CA_nextOfferId", 1);
             Scribe_Values.Look(ref lastInitiativeTick,
                 "CA_lastInitiativeTick", -999999);
+            Scribe_Values.Look(ref offMapActivityCursor,
+                "CA_offMapActivityCursor", 0);
             if (organizations == null)
                 organizations = new List<CAOrganization>();
+            if (frontierMapPlans == null)
+                frontierMapPlans = new List<CAFrontierMapPlan>();
             if (agreements == null)
                 agreements = new List<CAAgreement>();
             if (breachCases == null) breachCases = new List<CABreachCase>();
@@ -5281,7 +5397,8 @@ namespace ColonistAwareness
             new[] { "Frontier holdings",
                 "Frontier sites range from cabins to developed homesteads. "
                 + "They may belong to a faction or remain unaffiliated. "
-                + "World tendencies control how often each form appears." },
+                + "Frequency controls holding count. Size controls household "
+                + "and material form within local land limits." },
             new[] { "Organizations",
                 "Settlements track offices, policies, claims, security "
                 + "practices, funds, relations, public support, and decisions. "
