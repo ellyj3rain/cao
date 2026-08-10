@@ -6,9 +6,9 @@ The temporary A-series-scoped identifiers resolve through [`THREAD_ID_CROSSWALK.
 
 ## TF-01 - Governance and evidence
 
-Repository identity, historical regulation, build provenance, validation, deployment, and receipts.
+Project identity, historical regulation, build provenance, validation, deployment, and receipts.
 
-### <a id="t-001"></a>T-001 - Repository governance and historical provenance
+### <a id="t-001"></a>T-001 - Project governance and historical provenance
 
 - [A1 - Repository establishment and governance surface](A001-2026-07-22-repository-establishment-and-governance-surface.md) - 2026-07-22
 - [A31 - Differentiated storage-policy ratification](A031-2026-07-28-differentiated-storage-policy-ratification.md) - 2026-07-28 02:58 UTC / 19:58 PST

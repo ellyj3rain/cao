@@ -1,6 +1,6 @@
 # Former batch-label crosswalk
 
-This single crosswalk maps the 93 boundaries from the pre-recatalog ledger to the current append-only batch identifiers. These labels are historical provenance, not current batch names. Old commits preserve the original ledger and commit-label detail.
+This single crosswalk maps the 93 boundaries from the pre-recatalog ledger to the current append-only batch identifiers. These labels are historical provenance, not current batch names. The crosswalk is part of the portable project history; local Git may retain additional commit-label detail.
 
 | Former entry | Former label | Source lines | Recataloged batches | Boundary treatment |
 |---:|---|---:|---|---|

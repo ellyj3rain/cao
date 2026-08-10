@@ -5,7 +5,7 @@
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `CORE.md` |
-| Status | ACTIVE - genesis identity for this repository. |
+| Status | ACTIVE - genesis identity for this project. |
 
 # Colonist Awareness Overhaul — core
 
@@ -28,12 +28,16 @@ friendly-fire crossing, or abandonment of an actionable teammate.
 | Field | Value |
 |---|---|
 | Display name | Colonist Awareness Overhaul: A Living World Framework (DR-88) |
-| Repository | `cao` |
+| Project key | `cao` |
 | `packageId` | `ellyj3rain.colonistawareness` — **stable**; changing it breaks existing saves and Workshop identity |
 | Licence | GPL-3.0 (`LICENSE`), because the mod adapts GPL-covered work |
 | Target | RimWorld 1.6 |
 | Declared dependencies | Harmony, Biotech, Ideology (`About/About.xml`) |
 | Author | ellyj3rain |
+
+The local project tree is canonical. Its governed batch and provenance records
+are the portable project history. Git remotes and forge histories publish that
+state; they do not define the project's identity or historical continuity.
 
 ## Canonical composition
 
@@ -89,10 +93,10 @@ mod owns the persistent organizational reason and continuity.
 
 | Surface | Owner | Purpose |
 |---|---|---|
-| `CORE.md` | governance | Repository identity and canonical composition. |
+| `CORE.md` | governance | Project identity and canonical composition. |
 | `ARCHITECTURE.md` | governance | Ratified framework shape. |
 | `GAME_ARCHITECTURE.md` | governance | Decompile-grounded study of engine seams and limits. |
-| `BATCH_LOG.md`, `Batches/` | history | One append-only atomic batch sequence with chronological navigation and historical crosswalks. |
+| `BATCH_LOG.md`, `Batches/` | history | Portable project history: one append-only atomic batch sequence with chronological navigation, provenance, and historical crosswalks. |
 | `Batches/THREADS.md` | governance | Permanent series-neutral thematic classification across nonadjacent batches. |
 | `VERSION_MAP.md`, `tools/version-model.mjs`, `VERSION` | governance | Contiguous version units, tier replay, generated current version, and mechanical validation. |
 | `Source/` | implementation | The mod assembly. |

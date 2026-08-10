@@ -7,11 +7,11 @@
 | Name | Independent pointer bridge across program states |
 | Status | Closed append-only batch |
 | Threads | [`T-011`](THREADS.md#t-011), [`T-029`](THREADS.md#t-029) |
-| Commits | [`33f1acf9eb27`](https://github.com/ellyj3rain/cao/commit/33f1acf9eb27dd33321a9e2a39155408116314ce) |
-| Builds | 5 historical build references; exact context remains in the associated commits and earlier Git record. |
-| Receipts and verification | 2 historical receipt or verification references; exact context remains in the associated commits and earlier Git record. |
-| Corrections | No correction term occurs in the preserved source or Git text. |
-| Provenance | Frozen source ledger: former entry 19, lines 409-420; Git through `03df661256da` |
+| Local Git commits | `33f1acf9eb27` |
+| Builds | 5 historical build references; exact context remains in the associated commits and local Git history. |
+| Receipts and verification | 2 historical receipt or verification references; exact context remains in the associated commits and local Git history. |
+| Corrections | No correction term occurs in the preserved source or local Git text. |
+| Provenance | Frozen source ledger: former entry 19, lines 409-420; local Git through `03df661256da` |
 | Source relation | Frozen source ledger: former entry 19, lines 409-420 |
 
 ## Record
@@ -20,4 +20,4 @@ Extended the event-local pointer bridge beyond Playing to menus and dialogs.
 
 This batch is closed. Later implementation, correction, or verification remains at its later alphanumeric identifier.
 
-Detailed pre-recatalog prose and commit bodies remain available in Git history; the commit links above are the durable provenance for this current record.
+This governed record is the portable project history for the batch. Local Git may retain finer-grained engineering detail; forge publication of those commits is not required.

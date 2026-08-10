@@ -7,11 +7,11 @@
 | Name | Secured Armory placement |
 | Status | Closed append-only batch |
 | Threads | [`T-015`](THREADS.md#t-015), [`T-016`](THREADS.md#t-016) |
-| Commits | [`26314195f5ce`](https://github.com/ellyj3rain/cao/commit/26314195f5ce70309a849da3ec4e0d9758cf9aaf) |
-| Builds | 2 historical build references; exact context remains in the associated commits and earlier Git record. |
-| Receipts and verification | 4 historical receipt or verification references; exact context remains in the associated commits and earlier Git record. |
-| Corrections | 4 historical correction references; exact context remains in the associated commits and earlier Git record. |
-| Provenance | Frozen source ledger: former entry 50, lines 1270-1293; Git through `03df661256da` |
+| Local Git commits | `26314195f5ce` |
+| Builds | 2 historical build references; exact context remains in the associated commits and local Git history. |
+| Receipts and verification | 4 historical receipt or verification references; exact context remains in the associated commits and local Git history. |
+| Corrections | 4 historical correction references; exact context remains in the associated commits and local Git history. |
+| Provenance | Frozen source ledger: former entry 50, lines 1270-1293; local Git through `03df661256da` |
 | Source relation | Frozen source ledger: former entry 50, lines 1270-1293 |
 
 ## Record
@@ -20,4 +20,4 @@ Added interior, ingress, and turret evidence to correct exposed Armory projectio
 
 This batch is closed. Later implementation, correction, or verification remains at its later alphanumeric identifier.
 
-Detailed pre-recatalog prose and commit bodies remain available in Git history; the commit links above are the durable provenance for this current record.
+This governed record is the portable project history for the batch. Local Git may retain finer-grained engineering detail; forge publication of those commits is not required.

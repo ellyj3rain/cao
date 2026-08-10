@@ -1985,3 +1985,23 @@
   itself as current state. This regulatory reconstruction consumes no batch and
   leaves `B1` unused. Extends DR-93 and corrects the accidental A-series scope of
   the first thematic catalog.
+
+- **DR-95** (2026-08-10 09:35 UTC / 02:35 PST) - **Project history, local Git
+  history, and published forge history are separate surfaces.** The current local
+  project tree is the canonical implementation and documentation state. The
+  governed batch and provenance system is the portable project history: batch
+  records, chronological and thematic navigation, version units, decisions,
+  findings, receipts, and source provenance travel with the project.
+
+  Local Git may retain prior engineering commits and superseded working states.
+  Those objects are supporting evidence and continuity, not a portability
+  dependency. Recorded hashes remain valid local provenance even when a host does
+  not publish them.
+
+  Published forge history is a distribution record. The current GitHub `main`
+  begins at parentless canonical snapshot
+  `18b1034eee35f21158817727f4bc39af80dadd2a`; later commits record changes
+  published after that baseline. Replacing, resetting, or mirroring a forge does
+  not replace the project or rewrite its governed history. This corrects DR-93's
+  reliance on Git history as the portable preservation layer. It is `[REPO]`
+  maintenance, adds no version unit, and leaves `B1` unused.

@@ -23,7 +23,7 @@ The first thematic catalog was created inside an A-series history projection. It
 
 | Temporary identifier | Current identifier | Thread |
 |---|---|---|
-| `AT-001` | `T-001` | Repository governance and historical provenance |
+| `AT-001` | `T-001` | Project governance and historical provenance |
 | `AT-002` | `T-002` | Builds, deployment, reproducibility, and receipts |
 | `AT-003` | `T-003` | Disposition and individual judgment |
 | `AT-004` | `T-004` | Knowledge and contact evidence |

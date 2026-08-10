@@ -7,11 +7,11 @@
 | Name | Canonical governance doc-pack retrofit |
 | Status | Closed append-only batch |
 | Threads | [`T-001`](THREADS.md#t-001), [`T-030`](THREADS.md#t-030) |
-| Commits | [`3fb7c85a4e38`](https://github.com/ellyj3rain/cao/commit/3fb7c85a4e38cba981036e7cb5b49154b10a281e), [`034ad710642c`](https://github.com/ellyj3rain/cao/commit/034ad710642cce644156ac6aca6df932add4cc55) |
-| Builds | 2 historical build references; exact context remains in the associated commits and earlier Git record. |
-| Receipts and verification | 4 historical receipt or verification references; exact context remains in the associated commits and earlier Git record. |
-| Corrections | 2 historical correction references; exact context remains in the associated commits and earlier Git record. |
-| Provenance | Frozen source ledger: former entry 91, lines 2804-2834; Git through `03df661256da` |
+| Local Git commits | `3fb7c85a4e38`, `034ad710642c` |
+| Builds | 2 historical build references; exact context remains in the associated commits and local Git history. |
+| Receipts and verification | 4 historical receipt or verification references; exact context remains in the associated commits and local Git history. |
+| Corrections | 2 historical correction references; exact context remains in the associated commits and local Git history. |
+| Provenance | Frozen source ledger: former entry 91, lines 2804-2834; local Git through `03df661256da` |
 | Source relation | Frozen source ledger: former entry 91, lines 2804-2834 |
 
 ## Record
@@ -20,4 +20,4 @@ Adopted the canonical doc pack, classified every root artifact, and reconciled t
 
 This batch is closed. Later implementation, correction, or verification remains at its later alphanumeric identifier.
 
-Detailed pre-recatalog prose and commit bodies remain available in Git history; the commit links above are the durable provenance for this current record.
+This governed record is the portable project history for the batch. Local Git may retain finer-grained engineering detail; forge publication of those commits is not required.

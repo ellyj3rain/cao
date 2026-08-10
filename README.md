@@ -28,7 +28,7 @@ The package identifier is `ellyj3rain.colonistawareness`. Dependencies and load 
 
 ## Build
 
-From the repository root:
+From the project root:
 
 ```powershell
 dotnet build Source/ColonistAwareness.csproj -c Release
@@ -36,7 +36,7 @@ dotnet build Source/ColonistAwareness.csproj -c Release
 
 The Release assembly is written to `Assemblies/ColonistAwareness.dll`. DLL changes require a full RimWorld restart.
 
-## Repository map
+## Project map
 
 | Path | Purpose |
 |---|---|
@@ -50,12 +50,14 @@ The Release assembly is written to `Assemblies/ColonistAwareness.dll`. DLL chang
 | `VERSION_MAP.md` | Chronological, tier-bearing version units |
 | `tools/version-model.mjs` | Version replay, generated stamps, and structural checks |
 | `ARCHITECTURE.md` | Current framework architecture |
-| `GOVERNANCE.md` | Repository operating rules |
+| `GOVERNANCE.md` | Project operating rules |
 | `SESSION_STATE.md` | Current build, deployment, and runtime-test boundary |
 
-## Batch records
+## Project history
 
-Batch history is append-only and self-indexing. `A1` through `A102` live beside future `B*` records under [`Batches/`](Batches/); a new letter does not create a separate history hierarchy. [`BATCH_LOG.md`](BATCH_LOG.md) is the chronological view. [`Batches/THREADS.md`](Batches/THREADS.md) classifies related work across nonadjacent batches with permanent `TF-*` and `T-*` identifiers. [`VERSION_MAP.md`](VERSION_MAP.md) separately partitions chronological work into contiguous capability units under the four-coordinate odometer.
+The governed batch and provenance records are the project's portable history. They travel with the current tree and do not depend on a particular Git host. `A1` through `A102` live beside future `B*` records under [`Batches/`](Batches/); a new letter does not create a separate history hierarchy. [`BATCH_LOG.md`](BATCH_LOG.md) is the chronological view. [`Batches/THREADS.md`](Batches/THREADS.md) classifies related work across nonadjacent batches with permanent `TF-*` and `T-*` identifiers. [`VERSION_MAP.md`](VERSION_MAP.md) partitions chronological work into contiguous capability units under the four-coordinate odometer.
+
+Local Git may retain earlier engineering history. The published forge history is a separate distribution record: it begins at the canonical snapshot selected for publication and continues with later published changes.
 
 Run the governance check with:
 

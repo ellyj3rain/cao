@@ -7,11 +7,11 @@
 | Name | Regional living-world architecture ratification |
 | Status | Closed append-only batch |
 | Threads | [`T-001`](THREADS.md#t-001), [`T-019`](THREADS.md#t-019), [`T-020`](THREADS.md#t-020), [`T-021`](THREADS.md#t-021) |
-| Commits | [`cc28825b776b`](https://github.com/ellyj3rain/cao/commit/cc28825b776bb9f732829a77ebf2562fa357180d) |
-| Builds | No build term occurs in the preserved source or Git text. |
-| Receipts and verification | 2 historical receipt or verification references; exact context remains in the associated commits and earlier Git record. |
-| Corrections | No correction term occurs in the preserved source or Git text. |
-| Provenance | Frozen source ledger: former entry 41, lines 1002-1032; Git through `03df661256da` |
+| Local Git commits | `cc28825b776b` |
+| Builds | No build term occurs in the preserved source or local Git text. |
+| Receipts and verification | 2 historical receipt or verification references; exact context remains in the associated commits and local Git history. |
+| Corrections | No correction term occurs in the preserved source or local Git text. |
+| Provenance | Frozen source ledger: former entry 41, lines 1002-1032; local Git through `03df661256da` |
 | Source relation | Frozen source ledger: former entry 41, lines 1002-1032 |
 
 ## Record
@@ -20,4 +20,4 @@ Ratified persistent regional actors, bounded materialization, logistics, institu
 
 This batch is closed. Later implementation, correction, or verification remains at its later alphanumeric identifier.
 
-Detailed pre-recatalog prose and commit bodies remain available in Git history; the commit links above are the durable provenance for this current record.
+This governed record is the portable project history for the batch. Local Git may retain finer-grained engineering detail; forge publication of those commits is not required.

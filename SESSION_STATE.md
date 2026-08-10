@@ -8,7 +8,7 @@
 
 # Session state
 
-Updated 2026-08-10 PDT.
+Updated 2026-08-10 09:35 UTC / 02:35 PST.
 
 Read this before claiming where the regional work stands. Compile evidence and
 operator runtime judgment are separate.
@@ -17,13 +17,13 @@ operator runtime judgment are separate.
 
 | Surface | State |
 |---|---|
-| Canonical branch | `main` |
-| Current commit | `git rev-parse origin/main` is authoritative. The final development batch, `A102`, closes at `03df661256da7b13ef20a5877d2f47c0af1c597b`; later `[REPO]` maintenance does not consume `B1`. |
-| Working tree | `git status --short` is authoritative in the active checkout. |
-| Remote | `origin` → `git@github.com:ellyj3rain/cao.git` |
+| Canonical project state | The current tracked local tree and governed records. `git status --short` identifies checkout-local changes. |
+| Development closure | The final development batch, `A102`, closes at local engineering commit `03df661256da7b13ef20a5877d2f47c0af1c597b`; later `[REPO]` maintenance does not consume `B1`. |
+| Local Git history | May retain engineering history from before publication. It is supporting evidence, not the portable project history. |
+| Published forge | `origin/main` at `git@github.com:ellyj3rain/cao.git`; publication history begins at parentless snapshot `18b1034eee35f21158817727f4bc39af80dadd2a`. |
 
-The repository root is the live mod junction. Linked checkouts are temporary
-execution surfaces and are not part of the repository's identity.
+The project root is the live mod junction. Linked checkouts are temporary
+execution surfaces and are not part of the project's identity.
 
 ## Development record
 
@@ -41,10 +41,11 @@ closed chronology into contiguous capability units and derives `VERSION`.
 | Former ledger map | All 93 former boundaries mapped; split and joined boundaries are explicit |
 | Provenance | Associated commits, builds, receipts, corrections, and source relations are recorded per batch where available |
 
-Closed batch records and Git commits are historical evidence. Chronological and
-thematic navigation and the former-label map are regulatory. Exact former ledgers
-and removed catalog machinery remain available in Git history; they are not a
-second current history system.
+Closed batch records and their recorded provenance are the portable project
+history. Chronological and thematic navigation and the former-label map are
+regulatory. Local Git may retain finer-grained engineering history and superseded
+catalog machinery. The published forge starts at the canonical snapshot and does
+not need the earlier local commit graph.
 
 ## Current regional model
 

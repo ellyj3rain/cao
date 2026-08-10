@@ -7,11 +7,11 @@
 | Name | Authored facility-requirement evaluator |
 | Status | Closed append-only batch |
 | Threads | [`T-015`](THREADS.md#t-015), [`T-030`](THREADS.md#t-030) |
-| Commits | [`775a988169a5`](https://github.com/ellyj3rain/cao/commit/775a988169a59aed83afc3d5a7e69a16efdf48b8), [`8e6849ddb767`](https://github.com/ellyj3rain/cao/commit/8e6849ddb76719ac266d45d51c9a3c393d96efef) |
-| Builds | 5 historical build references; exact context remains in the associated commits and earlier Git record. |
-| Receipts and verification | 4 historical receipt or verification references; exact context remains in the associated commits and earlier Git record. |
-| Corrections | 2 historical correction references; exact context remains in the associated commits and earlier Git record. |
-| Provenance | Frozen source ledger: former entry 57, lines 1465-1514; Git through `03df661256da` |
+| Local Git commits | `775a988169a5`, `8e6849ddb767` |
+| Builds | 5 historical build references; exact context remains in the associated commits and local Git history. |
+| Receipts and verification | 4 historical receipt or verification references; exact context remains in the associated commits and local Git history. |
+| Corrections | 2 historical correction references; exact context remains in the associated commits and local Git history. |
+| Provenance | Frozen source ledger: former entry 57, lines 1465-1514; local Git through `03df661256da` |
 | Source relation | Frozen source ledger: former entry 57, lines 1465-1514 |
 
 ## Record
@@ -20,4 +20,4 @@ Evaluated exact player-authored facility footprints across loss, hazard, service
 
 This batch is closed. Later implementation, correction, or verification remains at its later alphanumeric identifier.
 
-Detailed pre-recatalog prose and commit bodies remain available in Git history; the commit links above are the durable provenance for this current record.
+This governed record is the portable project history for the batch. Local Git may retain finer-grained engineering detail; forge publication of those commits is not required.

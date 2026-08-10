@@ -1,6 +1,6 @@
 # Batch records
 
-`Batches/` is the project's append-only development record. Every batch lives in this one directory, regardless of letter sequence.
+`Batches/` is the project's portable, append-only development record. Every batch lives in this one directory, regardless of letter sequence or publication host.
 
 - Canonical identifiers use a letter and ordinal: `A1` through `A102`, then `B1` onward.
 - Filenames zero-pad the ordinal so directory order remains chronological within each letter.
@@ -12,6 +12,6 @@
 - [`FORMER_LABELS.md`](FORMER_LABELS.md) is the one historical crosswalk for labels used before the recatalog.
 - [`../VERSION_MAP.md`](../VERSION_MAP.md) partitions the chronology into contiguous, tier-bearing version units.
 
-The records in this directory establish the append-only baseline. The immediately preceding generated history tree was a regulatory projection, not a second set of closed batch files. Its exact prose remains available in Git history.
+The records in this directory establish the append-only baseline and carry their own historical substance and provenance. Local Git may retain finer-grained engineering history, but neither these records nor their validity depend on a local commit graph or a forge retaining old objects. The immediately preceding generated history tree was a regulatory projection, not a second set of closed batch files.
 
 The A sequence closes at `A102`. The next development batch is `B1`; it will be added here and appended to `BATCH_LOG.md`. No per-letter history hierarchy is created.

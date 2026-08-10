@@ -35,10 +35,10 @@ junction for the operator, not a defect in the index.
 |---|---|---|
 | `README.md`, `README.docx` | CANONICAL | Human entry point in working and document formats. |
 | `MEMORY.md` | CANONICAL | This index. |
-| `CORE.md` | CANONICAL | Repository identity, canonical composition, governing constraints. |
+| `CORE.md` | CANONICAL | Project identity, canonical composition, governing constraints. |
 | `ARCHITECTURE.md` | CANONICAL | Ratified framework shape; the four pillars. |
 | `GOVERNANCE.md` | CANONICAL | Operating discipline and model-facing instruction surface. |
-| `DECISION_REGISTRY.md` | CANONICAL, APPEND-ONLY | Ratified decisions DR-1…DR-94. Later records supersede earlier decisions without rewriting them. |
+| `DECISION_REGISTRY.md` | CANONICAL, APPEND-ONLY | Ratified decisions DR-1…DR-95. Later records supersede earlier decisions without rewriting them. |
 | `FINDINGS.md` | CANONICAL, APPEND-ONLY | Verified findings F-1…F-135 and F-151…F-153. Former Git labels F-136…F-150 resolve through the former-label crosswalk and are not reused as finding identifiers. |
 | `BATCH_LOG.md` | REGULATORY | Chronological index for the single append-only batch sequence and the next-batch declaration. |
 | `VERSION_MAP.md` | REGULATORY, GENERATED | Chronological version-unit replay derived from `tools/version-model.mjs`. |
@@ -50,14 +50,21 @@ junction for the operator, not a defect in the index.
 
 | Surface | Status | Role |
 |---|---|---|
-| `Batches/README.md` | REGULATORY | Maintenance contract for one alphanumeric batch namespace. |
+| `Batches/README.md` | REGULATORY | Portable-history contract for one alphanumeric batch namespace. |
 | `Batches/A*.md` | APPEND-ONLY | The 102 closed A-sequence batch records. Future `B*` records join them in the same directory. |
 | `Batches/THREADS.md` | REGULATORY | Permanent series-neutral families and many-to-many threads over nonadjacent batches. |
 | `Batches/THREAD_ID_CROSSWALK.md` | REGULATORY | Complete map from temporary `ATF-*` / `AT-*` identifiers to `TF-*` / `T-*`. |
 | `Batches/FORMER_LABELS.md` | REGULATORY | Complete map from all 93 former ledger boundaries to current batches. |
 
-The A sequence closes at `A102`; `B1` is next. Git history preserves the exact
-pre-convergence ledgers, generated catalog surfaces, and former file layouts.
+The A sequence closes at `A102`; `B1` is next. The governed batch records,
+chronological catalog, thematic crosswalks, version map, decisions, findings,
+receipts, and source provenance are the portable project history.
+
+| History surface | Standing |
+|---|---|
+| Portable project history | Governed records in the current tree; independent of any Git host. |
+| Local Git history | Optional engineering continuity and supporting provenance, including pre-publication work when retained. |
+| Published forge history | Host-specific distribution record beginning at the canonical snapshot selected for publication. |
 
 The three development layers are separate. Batches record atomic chronological
 work. Threads classify related work across any letter sequence. The 27 version
@@ -96,7 +103,7 @@ These are retained design records, not current architecture.
 
 ## Boundary
 
-This index covers repository documents only. It does not cover the preservation
+This index covers current project documents only. It does not cover the preservation
 package, the RS-008 save, the live-tree-only `REGIONAL_SPECIMENS.md`, or the
 decompiled engine source — those are listed in `SESSION_STATE.md` under
 out-of-band artifacts, with their locations and hashes.

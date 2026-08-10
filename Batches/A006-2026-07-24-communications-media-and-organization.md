@@ -7,11 +7,11 @@
 | Name | Communications media and organization |
 | Status | Closed append-only batch |
 | Threads | [`T-004`](THREADS.md#t-004), [`T-005`](THREADS.md#t-005), [`T-030`](THREADS.md#t-030) |
-| Commits | [`95a45236c851`](https://github.com/ellyj3rain/cao/commit/95a45236c851616f64062a388df7b51ce4005e83), [`6f684f850816`](https://github.com/ellyj3rain/cao/commit/6f684f8508166d4bac5f2a814614e9cce19dc58b) |
-| Builds | 3 historical build references; exact context remains in the associated commits and earlier Git record. |
-| Receipts and verification | No receipt or verification term occurs in the preserved source or Git text. |
-| Corrections | 1 historical correction reference; exact context remains in the associated commits and earlier Git record. |
-| Provenance | Frozen source ledger: former entry 7, lines 83-116; Git through `03df661256da` |
+| Local Git commits | `95a45236c851`, `6f684f850816` |
+| Builds | 3 historical build references; exact context remains in the associated commits and local Git history. |
+| Receipts and verification | No receipt or verification term occurs in the preserved source or local Git text. |
+| Corrections | 1 historical correction reference; exact context remains in the associated commits and local Git history. |
+| Provenance | Frozen source ledger: former entry 7, lines 83-116; local Git through `03df661256da` |
 | Source relation | Frozen source ledger: former entry 7, lines 83-116 |
 
 ## Record
@@ -20,4 +20,4 @@ Separated voice, radio, mechlink, reporting, and command-route capacity.
 
 This batch is closed. Later implementation, correction, or verification remains at its later alphanumeric identifier.
 
-Detailed pre-recatalog prose and commit bodies remain available in Git history; the commit links above are the durable provenance for this current record.
+This governed record is the portable project history for the batch. Local Git may retain finer-grained engineering detail; forge publication of those commits is not required.

@@ -1,6 +1,6 @@
 # Batch log
 
-This is the chronological index of Colonist Awareness's append-only atomic batch sequence. Batch files use one alphanumeric namespace and live together under [`Batches/`](Batches/). Letter changes mark development eras; they do not create separate history systems. Series-neutral thematic classification lives in [`Batches/THREADS.md`](Batches/THREADS.md); contiguous tier-bearing development units live in [`VERSION_MAP.md`](VERSION_MAP.md).
+This is the chronological index of Colonist Awareness's append-only atomic batch sequence. Together with the recorded provenance, these governed records are the project's portable history; they do not depend on a particular Git host. Batch files use one alphanumeric namespace and live together under [`Batches/`](Batches/). Letter changes mark development eras; they do not create separate history systems. Series-neutral thematic classification lives in [`Batches/THREADS.md`](Batches/THREADS.md); contiguous tier-bearing development units live in [`VERSION_MAP.md`](VERSION_MAP.md).
 
 The A sequence closes at `A102`. `B1` is the next development batch.
 

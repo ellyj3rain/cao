@@ -9,12 +9,12 @@
 
 # Colonist Awareness Overhaul — governance
 
-Single instruction surface for any model working this repository. `AGENTS.md` is
+Single instruction surface for any model working in this project. `AGENTS.md` is
 the autoload shim pointing here. Host identity is a vantage, not
 authority; the operator (ellyj3rain) is the design authority and the judge of how
 the game LOOKS and PLAYS — code-level verification never settles that question.
 
-`README.md` is the human entry point. This repository carries the GZDS canonical
+`README.md` is the human entry point. This project carries the GZDS canonical
 doc-pack: `MEMORY.md`, `CORE.md`,
 `ARCHITECTURE.md`, `GOVERNANCE.md`, `DECISION_REGISTRY.md`, `FINDINGS.md`,
 `BATCH_LOG.md`, `VERSION_MAP.md`, `ROADMAP.md`, `SESSION_STATE.md`, `VERSION`. Batch records live
@@ -56,7 +56,7 @@ substrate; the other three are what make the mod a framework.
 
 ## Governance
 
-- `CORE.md` — repository identity and canonical component set. `MEMORY.md` — index
+- `CORE.md` — project identity and canonical component set. `MEMORY.md` — index
   of every root document with its canonical/superseded status. `SESSION_STATE.md`
   — current operational state and immediate next work; read it before claiming
   where anything stands.
@@ -64,39 +64,56 @@ substrate; the other three are what make the mod a framework.
   study of the engine. `ROADMAP.md` — thread map + backlog.
 - **Durable project records contain current ratified decisions, verified facts,
   active invariants, and unresolved junctions.** Mutable canonical specifications
-  replace superseded interpretations in place. Git history is the exact
-  append-only record; current organization is regulatory.
+  replace superseded interpretations in place. The governed batch and provenance
+  system is the portable project history: closed record substance is append-only,
+  while catalogs, crosswalks, threads, and version projections are regulatory.
 - `DECISION_REGISTRY.md` and `FINDINGS.md` append substantive decisions, findings,
-  corrections, and supersession records. Repository convergence may normalize an
-  obsolete tool identity, filename, or path in an existing entry when its decision
-  or finding does not change and Git retains the exact prior text. Substantive
-  changes require a later correction or supersession record.
+  corrections, and supersession records. Project convergence may normalize an
+  obsolete tool identity, filename, or path in current regulatory metadata when
+  the recorded decision or finding does not change. Substantive changes require a
+  later correction or supersession record.
   `BATCH_LOG.md` is the chronological index to the append-only records in
   `Batches/`. `Batches/THREADS.md` is the permanent, series-neutral thematic
   classification. `VERSION_MAP.md` is the chronological version-unit projection.
   `Batches/FORMER_LABELS.md` and `Batches/THREAD_ID_CROSSWALK.md` resolve former
   batch and temporary thematic identifiers. These indexes and projections are
-  regulatory; batch substance and closed Git commits are historical evidence.
+  regulatory; batch substance and its recorded provenance are historical
+  evidence. Local Git commits are supporting engineering evidence when retained.
 - Batch identifiers share one namespace across letter eras. The A sequence is
   closed at `A102`; new development begins at `[B1]` and continues as `[B#]` in
   the same directory and log. A new letter does not create another history tree,
   generator, catalog, or projection layer.
 - The records now under `Batches/` establish this append-only contract. The
   immediately preceding generated history tree was a regulatory projection, not
-  a second set of closed batch records; Git preserves it as prior repository
-  state.
+  a second set of closed batch records. Local Git may retain that engineering
+  state; the portable project history does not depend on it.
 - A closed batch's date, name, substance, commits, receipts, corrections, and
-  provenance are not rewritten. Current regulatory references in its header,
-  including series-neutral thread identifiers, may be corrected without changing
+  provenance are not rewritten. Current regulatory references in its metadata and
+  navigation, including series-neutral thread identifiers and forge locators, may
+  be corrected without changing
   that substance. Later implementation, correction, or verification receives the
   next batch identifier. Small commits remain split by layer (governance / source /
   defs / reference), and subjects open with the development-batch prefix.
-- Pure repository maintenance uses `[REPO]`. It may correct navigation, current
+- Pure project maintenance uses `[REPO]`. It may correct navigation, current
   documentation, filenames, or regulatory indexes without changing runtime
   behavior, adding a version unit, or consuming `B1`.
 - Automated tools do not receive Co-Authored-By trailers in commits.
 - The operator owns: architectural ratification, public remotes, destructive ref
   work, version-policy changes.
+
+## Project history and publication
+
+| Surface | Authority and purpose |
+|---|---|
+| Current local project tree | Canonical implementation, content, documentation, and governed records. |
+| Governed batch and provenance system | Portable project history. `Batches/`, `BATCH_LOG.md`, thematic indexes, the version map, decisions, findings, receipts, and source provenance travel with the project. |
+| Local Git history | Optional engineering continuity and supporting evidence. It may retain work that predates the published snapshot, but the portable project history does not require that commit graph. |
+| Published forge history | Distribution history for the current hosted snapshot and later publications. It begins at the canonical snapshot selected for publication; a forge or remote is not the project identity. |
+
+GitHub is the current forge. A later GitHub reset, GitLab mirror, or replacement
+host changes publication history, not the governed project history. Commit hashes
+recorded in batch files remain local engineering provenance even when a forge does
+not expose those objects.
 
 ## Batch, thread, and version discipline
 
