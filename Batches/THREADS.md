@@ -32,6 +32,8 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [A83 - Regional projection kernel and Screen 2](A083-2026-08-07-regional-projection-kernel-and-screen-2.md) - 2026-08-07 11:21–20:01 UTC / 04:21–13:01 PST
 - [A91 - Runtime exercise harness and map-scale parameterization](A091-2026-08-08-runtime-exercise-harness-and-map-scale-parameterization.md) - 2026-08-08 07:25–08:03 UTC / 00:25–01:03 PST
 
+- [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
+
 ### <a id="t-030"></a>T-030 - Validation and evidence discipline
 
 - [A1 - Repository establishment and governance surface](A001-2026-07-22-repository-establishment-and-governance-surface.md) - 2026-07-22
@@ -110,6 +112,8 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [A99 - Map-size selector diagnosis and verified fix](A099-2026-08-08-map-size-selector-diagnosis-and-verified-fix.md) - 2026-08-08 23:31–2026-08-09 01:29 UTC / 16:31–18:29 PST
 - [A101 - Creator primary grammar and evidence correction](A101-2026-08-09-creator-primary-grammar-and-evidence-correction.md) - 2026-08-09 02:20–02:32 UTC / 19:20–19:32 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
+
+- [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
 
 ## TF-02 - Pawn cognition and authority
 
@@ -313,6 +317,8 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [A86 - Canonical relation identity and federation truth](A086-2026-08-07-canonical-relation-identity-and-federation-truth.md) - 2026-08-07 23:17–23:42 UTC / 16:17–16:42 PST
 - [A90 - Territorial composition](A090-2026-08-08-territorial-composition.md) - 2026-08-08 06:59–07:17 UTC / 23:59–00:17 PST
 
+- [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
+
 ### <a id="t-020"></a>T-020 - Regional geometry, projection, and scatter
 
 - [A32 - Regional living-world architecture ratification](A032-2026-07-28-regional-living-world-architecture-ratification.md) - 2026-07-28 03:33 UTC / 20:33 PST
@@ -348,6 +354,8 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [A101 - Creator primary grammar and evidence correction](A101-2026-08-09-creator-primary-grammar-and-evidence-correction.md) - 2026-08-09 02:20–02:32 UTC / 19:20–19:32 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
 
+- [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
+
 ### <a id="t-026"></a>T-026 - World tendencies and geography
 
 - [A72 - Carrier-owned mountain mutation](A072-2026-08-06-carrier-owned-mountain-mutation.md) - 2026-08-06 08:47 UTC / 01:47 PST
@@ -357,6 +365,8 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [A90 - Territorial composition](A090-2026-08-08-territorial-composition.md) - 2026-08-08 06:59–07:17 UTC / 23:59–00:17 PST
 - [A96 - Status, defense, daylight, and provenance consumers](A096-2026-08-08-status-defense-daylight-and-provenance-consumers.md) - 2026-08-08 21:43 UTC / 14:43 PST
 - [A100 - World-tendencies directed surface](A100-2026-08-09-world-tendencies-directed-surface.md) - 2026-08-09 01:57–02:00 UTC / 18:57–19:00 PST
+
+- [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
 
 ## TF-09 - Political and cultural simulation
 
@@ -417,6 +427,8 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [A99 - Map-size selector diagnosis and verified fix](A099-2026-08-08-map-size-selector-diagnosis-and-verified-fix.md) - 2026-08-08 23:31–2026-08-09 01:29 UTC / 16:31–18:29 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
 
+- [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
+
 ### <a id="t-025"></a>T-025 - Authoring surfaces and UI grammar
 
 - [A26 - Planned room-use layer and placement receipt](A026-2026-07-27-planned-room-use-layer-and-placement-receipt.md) - 2026-07-27 19:52–20:37 UTC / 12:52–13:37 PST
@@ -441,6 +453,8 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [A100 - World-tendencies directed surface](A100-2026-08-09-world-tendencies-directed-surface.md) - 2026-08-09 01:57–02:00 UTC / 18:57–19:00 PST
 - [A101 - Creator primary grammar and evidence correction](A101-2026-08-09-creator-primary-grammar-and-evidence-correction.md) - 2026-08-09 02:20–02:32 UTC / 19:20–19:32 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
+
+- [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
 
 ## TF-11 - Runtime tooling and controls
 
@@ -493,3 +507,4 @@ Canonical vocabulary, model convergence, copy register, and product truthfulness
 - [A100 - World-tendencies directed surface](A100-2026-08-09-world-tendencies-directed-surface.md) - 2026-08-09 01:57–02:00 UTC / 18:57–19:00 PST
 - [A101 - Creator primary grammar and evidence correction](A101-2026-08-09-creator-primary-grammar-and-evidence-correction.md) - 2026-08-09 02:20–02:32 UTC / 19:20–19:32 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
+- [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST

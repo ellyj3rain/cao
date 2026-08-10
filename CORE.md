@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Core |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `0.12.3.0-alpha` · A sequence closed at `A102` · next `B1` |
+| Version | `0.12.4.0-alpha` · closed batch tip `B1` · next `B2` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `CORE.md` |

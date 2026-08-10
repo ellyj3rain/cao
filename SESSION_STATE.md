@@ -1,14 +1,14 @@
 | Document | Colonist Awareness Overhaul Session State |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `0.12.3.0-alpha` · A sequence closed at `A102` · next `B1` |
+| Version | `0.12.4.0-alpha` · closed batch tip `B1` · next `B2` |
 <!-- cao:generated:version END -->
 | Repository | `SESSION_STATE.md` |
 | Status | ACTIVE — current operational state. |
 
 # Session state
 
-Updated 2026-08-10 09:35 UTC / 02:35 PST.
+Updated 2026-08-10 12:48 UTC / 05:48 PST.
 
 Read this before claiming where the regional work stands. Compile evidence and
 operator runtime judgment are separate.
@@ -18,7 +18,8 @@ operator runtime judgment are separate.
 | Surface | State |
 |---|---|
 | Canonical project state | The current tracked local tree and governed records. `git status --short` identifies checkout-local changes. |
-| Development closure | The final development batch, `A102`, closes at local engineering commit `03df661256da7b13ef20a5877d2f47c0af1c597b`; later `[REPO]` maintenance does not consume `B1`. |
+| Development closure | `B1` closes the causal World tendencies convergence; `B2` is next. The closing commit is recorded in the batch file. |
+| Authority branch | `mallowfluff/world-tendencies-causal-convergence`, based on current GitHub `origin/main` `9a6153a8ce7282c241e90ad8459cb92c88468a78`. |
 | Local Git history | May retain engineering history from before publication. It is supporting evidence, not the portable project history. |
 | Published forge | `origin/main` at `git@github.com:ellyj3rain/cao.git`; publication history begins at parentless snapshot `18b1034eee35f21158817727f4bc39af80dadd2a`. |
 
@@ -27,7 +28,8 @@ execution surfaces and are not part of the project's identity.
 
 ## Development record
 
-The A sequence is closed at `A102`; `B1` is the next development batch.
+The A sequence is closed at `A102`; the chronology continues through closed
+`B1`, and `B2` is the next development batch.
 `BATCH_LOG.md` is the chronological index. Every batch record lives directly
 under `Batches/`, including future letter eras. `Batches/THREADS.md` classifies
 work across time without changing chronology. `VERSION_MAP.md` partitions the
@@ -35,9 +37,9 @@ closed chronology into contiguous capability units and derives `VERSION`.
 
 | Evidence | State |
 |---|---|
-| Chronology | 102 dated batches, `A1` through `A102` |
+| Chronology | 103 dated batches, `A1` through `A102`, followed by `B1` |
 | Thematic organization | 12 series-neutral `TF-*` families and 30 many-to-many `T-*` threads; temporary identifiers have a complete crosswalk |
-| Version chronology | 27 contiguous units cover A1-A102 exactly once; Neo hierarchy and caps derive `0.12.3.0-alpha` |
+| Version chronology | 28 contiguous units cover A1-B1 exactly once; Neo hierarchy and caps derive `0.12.4.0-alpha` |
 | Former ledger map | All 93 former boundaries mapped; split and joined boundaries are explicit |
 | Provenance | Associated commits, builds, receipts, corrections, and source relations are recorded per batch where available |
 
@@ -51,16 +53,21 @@ not need the earlier local commit graph.
 
 | Level | Current saved concepts |
 |---|---|
-| Region | selected world areas, arrival area, world tendencies, settlement pattern, settlement scale |
+| Region | selected world areas, arrival area, causal world-policy snapshot, source-settlement receipts, realized faction relations, frontier holdings, settlement pattern, relation pattern, settlement scale |
 | Faction | source faction, culture, Ideoligion, political beliefs, faction structure, settlement authority, faction era |
-| Settlement | owner, world area, regional role, form, starting facilities, access, services, civic development, population groups, starting provisions |
+| Settlement | owner, world area, regional role, form, resident population, land capacity, access, services, civic development, economic capacity, trade connectivity, specialization, history, urban support, realized scale, population groups, starting facilities, starting provisions |
 | Organization | offices, groups, customs, security, agreements, policies, claims, relations, decision history |
-| Relations | faction-to-faction relations; organization relations for settlement authority and delegation |
+| Frontier holding | member area, household size, land capacity, material level, site form, faction state |
+| Relations | one saved canonical faction-pair result; organization relations for settlement authority and delegation |
 
 The same vocabulary is used by setup UI, generation, save fields, types, Defs,
-comments, and canonical documentation. Capability is derived from faction era and
-local supports. Starting provisions are generated from current causes and allow a
-distribution override per provision.
+comments, and canonical documentation. Each World tendencies row owns one direct
+cause. Concentration changes settlement placement before pattern classification;
+urban propensity changes a support threshold rather than city status; frontier
+frequency owns count and frontier size owns household and material form. Realized
+facts are saved once and runtime consumers do not reroll policy. Capability is
+derived from faction era and local supports. Starting provisions are generated
+from current causes and allow a distribution override per provision.
 
 The convergence pass removes the superseded political tier, territorial
 constitution, old settlement population model, duplicate federation caches, custom
@@ -72,20 +79,19 @@ abandoned pre-release schemas. Earlier experimental saves are not supported.
 
 | Artifact | SHA-256 | State |
 |---|---|---|
-| Built `Assemblies/ColonistAwareness.dll` | `2C409E448CE5CB90C1D5E34607913AA188D17E583530BAEB3AF3622AEDFA0A01` | Final convergence artifact. Clean Release builds produced 0 errors and the same 12 existing warnings. |
-| Live root `Assemblies/ColonistAwareness.dll` | `2C409E448CE5CB90C1D5E34607913AA188D17E583530BAEB3AF3622AEDFA0A01` | Deployed and byte-identical to the built artifact. RimWorld has not run against it yet. |
+| Built `Assemblies/ColonistAwareness.dll` | `D7AE79BFC5316A8330FDE8C88CC077D56CEB1686B53E9A140D88CDA4736669D3` | Two full no-incremental Release builds were byte-identical: 0 errors and the same 12 existing warnings. |
+| Live root `Assemblies/ColonistAwareness.dll` | `D7AE79BFC5316A8330FDE8C88CC077D56CEB1686B53E9A140D88CDA4736669D3` | Deployed from the verified build and byte-identical. RimWorld was closed during deployment and has not run against this assembly yet. |
 
 No current regional, political, onboarding, or generation result is
 runtime-verified. The next evidence belongs to the operator's in-game test.
 
-Static verification is closed for this gate: three independent coherence lanes
-reviewed the repository convergence; all 141 tracked XML files, including 120 Def
-files, parse; 102 batch records, 93 former boundaries, 30 thematic threads, and
-285 associated commits reconcile; retired vocabulary and filenames scan clean;
-and the Release build completes with 0 errors and the same 12 existing warnings.
-`README.docx` has native headings, lists, code styling, table geometry, and eight
-hyperlinks with complete Markdown-source parity. LibreOffice is unavailable and
-the Word fallback did not complete, so page-image inspection is not claimed.
+Static verification is closed for this gate: the initial three-lane review and
+final coherence re-audit have no outstanding findings; the independent build
+validator confirms two reproducible Release builds; all 141 tracked XML files,
+including 120 Def files, and both active fixtures parse; 103 batch records, 30
+thematic threads, and 28 contiguous version units reconcile; the version tests
+pass 4/4; `git diff --check` reports no whitespace errors; and the causal suite
+passes 179 assertions.
 
 ## Authored runtime fixture
 
@@ -99,15 +105,18 @@ Current keyed file:
 
 `C:\Users\jleyv\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlans\regional-plan-9bcbba2fdcd1e7f334711a69635242a2.xml`
 
-Converted backup mirror:
+Active mirror:
 
 `C:\Users\jleyv\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlan.xml`
 
-Both converted files have SHA-256
-`588812BA0BB125FF0B196F5DBDF2B1A0F5D35CBF82B3666F8D136870228C88EE`.
-They use the current schema. Starting provisions are intentionally regenerated
-from the current faction, facility, infrastructure, scale, role, and population
-parameters instead of carrying the former stacked entries.
+Both active files have SHA-256
+`4D90AD4738F3B0E983BB7D1BC2DBA9E26C984BDE48A157263B913393D735579A`.
+They use schema 2 and agree on the causal world-policy snapshot, realization
+source hash, 3 factions, 4 settlements, 9 population groups, saved relations,
+frontier rows, economic capacity, urban support, and realized scale. The prior
+tendency preset is now explicit, so new band-aligned defaults cannot change the
+confirmed fixture. Starting provisions are intentionally regenerated from current
+settlement and faction facts instead of carrying former stacked entries.
 
 A pre-convergence copy of the dirty implementation and original fixture exists
 at:
@@ -119,10 +128,12 @@ at:
 The operator's next test is the gate:
 
 1. Open the existing world setup flow and confirm that the keyed composition is
-   restored with the same arrival area and options.
-2. Start generation and confirm that no incomplete-bundle or missing-arrival
+   restored with the same arrival area, options, factions, and settlements.
+2. Inspect World tendencies and confirm that each row states its direct cause,
+   constraints, and derived outcome in the corrected settlement/frontier flow.
+3. Start generation and confirm that no incomplete-bundle or missing-arrival
    error appears.
-3. Compare the generated visual land, coast, selected geographic features,
+4. Compare the generated visual land, coast, selected geographic features,
    settlement positions, factions, residents, facilities, and provisions with
    the authored candidate.
 

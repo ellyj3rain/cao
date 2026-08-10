@@ -8,9 +8,9 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | Form | `major.minor.kohai.patch-maturity` |
 | Hard caps | minor 12; kohai 16; patch 24 |
 | Replay start | `0.1.0.0-pre-alpha` |
-| Current version | `0.12.3.0-alpha` |
-| Closed chronology | `A1-A102` |
-| Next batch | `B1` |
+| Current version | `0.12.4.0-alpha` |
+| Closed chronology | `A1-B1` |
+| Next batch | `B2` |
 | Executable source | [`tools/version-model.mjs`](tools/version-model.mjs) |
 
 ## Tier meanings
@@ -55,21 +55,22 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | VU-025 | A92-A98 | 2026-08-08 | kohai | `0.12.2.0-alpha` | Creator mechanics and product convergence | `T-008`, `T-015`, `T-016`, `T-018`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-026`, `T-028` | A92-A98 mature the existing creator line: composition-first authoring, stratified axes, concrete consumers, corrected ontology, operational machinery, and agreement between declarations and generated worlds. |
 | VU-026 | A99 | 2026-08-08 to 2026-08-09 | patch | `0.12.2.1-alpha` | Map-size selector correction | `T-024`, `T-027`, `T-029`, `T-030` | A99 diagnoses and fixes one production map-size field without changing the surrounding creator contract. |
 | VU-027 | A100-A102 | 2026-08-09 to 2026-08-10 | kohai | `0.12.3.0-alpha` | World language and ontology convergence | `T-014`, `T-016`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-026`, `T-028`, `T-030` | A100-A102 converge world tendencies, creator grammar, evidence capture, factions, settlements, population, provisions, persistence, generation, and player-facing language onto the already established creator capability. |
+| VU-028 | B1 | 2026-08-10 | kohai | `0.12.4.0-alpha` | Causal world authoring | `T-002`, `T-019`, `T-021`, `T-024`, `T-025`, `T-026`, `T-028`, `T-030` | B1 converges the existing World tendencies surface into one causal policy, realization, persistence, and generation contract. It matures the A100-A102 creator line with fixed-seed isolation receipts, current-schema fixture repair, and a verified deployment rather than opening a separate gameplay capability. |
 
 ## Historical version evidence
 
-The original file moved from `0.1.0` to `0.2.0`, `0.2.1`, and `0.2.2`. Those declarations establish the first four historical boundaries. The three-coordinate values are replayed through the four-coordinate hierarchy: the former patch becomes the fourth coordinate, while substantive public capability growth is classified by the current tier rubric. After A5 the old file remained hand-frozen at `0.2.2`; it is evidence of the former state, not a version assignment for A6-A102.
+The original file moved from `0.1.0` to `0.2.0`, `0.2.1`, and `0.2.2`. Those declarations establish the first four historical boundaries. The three-coordinate values are replayed through the four-coordinate hierarchy: the former patch becomes the fourth coordinate, while substantive public capability growth is classified by the current tier rubric. After A5 the old file remained hand-frozen at `0.2.2`; it is evidence of the former state, not a version assignment for later batches.
 
 A22 is the maturity boundary: reproducible assembly followed an end-to-end runtime line with live execution evidence, so the replay changes from `pre-alpha` to `alpha` there without a numeric bump.
 
 ## Next movement
 
-`B1` remains the next ordinary batch. Its content determines its tier after it exists:
+`B2` is the next ordinary batch. Its content determines its tier after it exists:
 
-| If B1 is | Result |
+| If B2 is | Result |
 |---|---|
-| patch or hotfix | `0.12.3.1-alpha` |
-| kohai | `0.12.4.0-alpha` |
+| patch or hotfix | `0.12.4.1-alpha` |
+| kohai | `0.12.5.0-alpha` |
 | minor | `1.0.0.0-alpha` (the minor hard cap rolls the numeric major; maturity remains alpha) |
 
 The thematic catalog is series-neutral in [`Batches/THREADS.md`](Batches/THREADS.md). Temporary `AT-*` and `ATF-*` identifiers resolve through [`Batches/THREAD_ID_CROSSWALK.md`](Batches/THREAD_ID_CROSSWALK.md).

@@ -2005,3 +2005,28 @@
   not replace the project or rewrite its governed history. This corrects DR-93's
   reliance on Git history as the portable preservation layer. It is `[REPO]`
   maintenance, adds no version unit, and leaves `B1` unused.
+
+- **DR-96** (2026-08-10 12:25 UTC / 05:25 PST) - **World tendencies author
+  causes; realized world state is saved once and consumed.** Each editable row
+  owns one policy variable with a direct effect, explicit constraints, derived
+  outcomes, and independent neighboring controls. Starting-region authoring
+  replaces the matching default only at that owning surface.
+
+  Major-settlement abundance comes from RimWorld's world-population settlement
+  pool unless a scenario explicitly overrides it. Concentration changes
+  settlement placement before spatial pattern classification. Urban-growth
+  propensity changes the support threshold; actual population, land, access,
+  services, civic development, economic capacity, trade connectivity,
+  specialization, regional role, and history determine realized scale.
+  Reallocation source variety changes the owners represented among selected
+  source settlements without changing abundance or final local ownership.
+
+  Frontier frequency owns site count. Frontier size owns household, material
+  level, and form after a suitable site exists. Regional plans and ordinary maps
+  save the same realized holding facts before physical generation. Generated
+  faction relations, relation pattern, settlement pattern, scale, population,
+  and source receipts are persisted canonical facts. Generation and runtime
+  consume those facts and do not reroll their tendencies. A confirmed regional
+  plan that fails structural validation is rejected rather than silently
+  regenerated. This extends DR-86's native-substrate rule and DR-4's declaration
+  contract across the World tendencies flow.

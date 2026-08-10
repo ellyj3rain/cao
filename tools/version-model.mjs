@@ -19,8 +19,8 @@ export const KOHAI_HARD_CAP = 16;
 export const PATCH_HARD_CAP = 24;
 export const MATURITY_LADDER = Object.freeze(["pre-alpha", "alpha", "beta", "rc"]);
 export const ROOT_REPLAY_START_VERSION = "0.1.0.0-pre-alpha";
-export const CLOSED_BATCH_TIP = "A102";
-export const NEXT_BATCH = "B1";
+export const CLOSED_BATCH_TIP = "B1";
+export const NEXT_BATCH = "B2";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_REPO_ROOT = resolve(here, "..");
@@ -296,6 +296,17 @@ export const VERSION_UNITS = Object.freeze([
     threads: ["T-014", "T-016", "T-021", "T-022", "T-023", "T-024", "T-025", "T-026", "T-028", "T-030"],
     rationale: "A100-A102 converge world tendencies, creator grammar, evidence capture, factions, settlements, population, provisions, persistence, generation, and player-facing language onto the already established creator capability.",
   },
+  {
+    id: "VU-028",
+    series: "B",
+    first: 1,
+    last: 1,
+    dates: "2026-08-10",
+    tier: "kohai",
+    name: "Causal world authoring",
+    threads: ["T-002", "T-019", "T-021", "T-024", "T-025", "T-026", "T-028", "T-030"],
+    rationale: "B1 converges the existing World tendencies surface into one causal policy, realization, persistence, and generation contract. It matures the A100-A102 creator line with fixed-seed isolation receipts, current-schema fixture repair, and a verified deployment rather than opening a separate gameplay capability.",
+  },
 ]);
 
 function parseVersion(version) {
@@ -409,11 +420,14 @@ export function computeVersionReplay(units = VERSION_UNITS) {
 export const CURRENT_VERSION = computeVersionReplay().currentVersion;
 
 export function expandBatchSpan(unit) {
-  return Array.from({ length: unit.last - unit.first + 1 }, (_, index) => `A${unit.first + index}`);
+  const series = unit.series ?? "A";
+  return Array.from({ length: unit.last - unit.first + 1 }, (_, index) => `${series}${unit.first + index}`);
 }
 
 function batchSpan(unit) {
-  return unit.first === unit.last ? `A${unit.first}` : `A${unit.first}-A${unit.last}`;
+  const series = unit.series ?? "A";
+  return unit.first === unit.last ? `${series}${unit.first}`
+    : `${series}${unit.first}-${series}${unit.last}`;
 }
 
 function renderThreadRefs(threads) {
@@ -440,7 +454,7 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | Hard caps | minor ${MINOR_HARD_CAP}; kohai ${KOHAI_HARD_CAP}; patch ${PATCH_HARD_CAP} |
 | Replay start | \`${ROOT_REPLAY_START_VERSION}\` |
 | Current version | \`${replay.currentVersion}\` |
-| Closed chronology | \`A1-A102\` |
+| Closed chronology | \`A1-B1\` |
 | Next batch | \`${NEXT_BATCH}\` |
 | Executable source | [\`tools/version-model.mjs\`](tools/version-model.mjs) |
 
@@ -463,15 +477,15 @@ ${rows.join("\n")}
 
 ## Historical version evidence
 
-The original file moved from \`0.1.0\` to \`0.2.0\`, \`0.2.1\`, and \`0.2.2\`. Those declarations establish the first four historical boundaries. The three-coordinate values are replayed through the four-coordinate hierarchy: the former patch becomes the fourth coordinate, while substantive public capability growth is classified by the current tier rubric. After A5 the old file remained hand-frozen at \`0.2.2\`; it is evidence of the former state, not a version assignment for A6-A102.
+The original file moved from \`0.1.0\` to \`0.2.0\`, \`0.2.1\`, and \`0.2.2\`. Those declarations establish the first four historical boundaries. The three-coordinate values are replayed through the four-coordinate hierarchy: the former patch becomes the fourth coordinate, while substantive public capability growth is classified by the current tier rubric. After A5 the old file remained hand-frozen at \`0.2.2\`; it is evidence of the former state, not a version assignment for later batches.
 
 A22 is the maturity boundary: reproducible assembly followed an end-to-end runtime line with live execution evidence, so the replay changes from \`pre-alpha\` to \`alpha\` there without a numeric bump.
 
 ## Next movement
 
-\`${NEXT_BATCH}\` remains the next ordinary batch. Its content determines its tier after it exists:
+\`${NEXT_BATCH}\` is the next ordinary batch. Its content determines its tier after it exists:
 
-| If B1 is | Result |
+| If ${NEXT_BATCH} is | Result |
 |---|---|
 | patch or hotfix | \`${nextPatch}\` |
 | kohai | \`${nextKohai}\` |
@@ -483,11 +497,11 @@ The thematic catalog is series-neutral in [\`Batches/THREADS.md\`](Batches/THREA
 
 const STAMP_MARKER = "cao:generated:version";
 const STAMP_TARGETS = Object.freeze({
-  "README.md": () => `Current version: \`${CURRENT_VERSION}\`. Implementation is complete through batch \`${CLOSED_BATCH_TIP}\`; \`${NEXT_BATCH}\` is the next development batch. The final convergence assembly is deployed for operator runtime testing. Static verification does not substitute for how the game looks and plays.`,
-  "CORE.md": () => `| Version | \`${CURRENT_VERSION}\` · A sequence closed at \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
-  "GOVERNANCE.md": () => `| Version | \`${CURRENT_VERSION}\` · A sequence closed at \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
-  "MEMORY.md": () => `| Version | \`${CURRENT_VERSION}\` · A sequence closed at \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
-  "SESSION_STATE.md": () => `| Version | \`${CURRENT_VERSION}\` · A sequence closed at \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
+  "README.md": () => `Current version: \`${CURRENT_VERSION}\`. Implementation is complete through batch \`${CLOSED_BATCH_TIP}\`; \`${NEXT_BATCH}\` is the next development batch. The verified assembly is deployed for operator runtime testing. Static verification does not substitute for how the game looks and plays.`,
+  "CORE.md": () => `| Version | \`${CURRENT_VERSION}\` · closed batch tip \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
+  "GOVERNANCE.md": () => `| Version | \`${CURRENT_VERSION}\` · closed batch tip \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
+  "MEMORY.md": () => `| Version | \`${CURRENT_VERSION}\` · closed batch tip \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
+  "SESSION_STATE.md": () => `| Version | \`${CURRENT_VERSION}\` · closed batch tip \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
 });
 
 function generatedRegion(body) {
@@ -525,9 +539,12 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
   const replay = computeVersionReplay();
 
   const covered = VERSION_UNITS.flatMap(expandBatchSpan);
-  const expected = Array.from({ length: 102 }, (_, index) => `A${index + 1}`);
+  const expected = [
+    ...Array.from({ length: 102 }, (_, index) => `A${index + 1}`),
+    "B1",
+  ];
   if (JSON.stringify(covered) !== JSON.stringify(expected)) {
-    errors.push("version units must cover A1-A102 exactly once, contiguously, and in order");
+    errors.push("version units must cover A1-B1 exactly once, contiguously, and in order");
   }
   VERSION_UNITS.forEach((unit, index) => {
     const expectedId = `VU-${String(index + 1).padStart(3, "0")}`;
@@ -535,24 +552,26 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
   });
 
   const batchFiles = readdirSync(join(repoRoot, "Batches"));
-  const closedNumbers = batchFiles
-    .map((name) => /^A(\d{3})-.*\.md$/.exec(name))
+  const closedIds = batchFiles
+    .map((name) => /^([A-Z])(\d{3})-.*\.md$/.exec(name))
     .filter(Boolean)
-    .map((match) => Number(match[1]))
-    .sort((a, b) => a - b);
-  if (JSON.stringify(closedNumbers) !== JSON.stringify(expected.map((id) => Number(id.slice(1))))) {
-    errors.push("Batches/ must contain exactly the closed A001-A102 record set");
+    .map((match) => `${match[1]}${Number(match[2])}`)
+    .sort((left, right) => left[0].localeCompare(right[0])
+      || Number(left.slice(1)) - Number(right.slice(1)));
+  if (JSON.stringify(closedIds) !== JSON.stringify(expected)) {
+    errors.push("Batches/ must contain exactly the closed A001-A102 and B001 record set");
   }
-  if (batchFiles.some((name) => /^B0*1-.*\.md$/.test(name))) {
-    errors.push("B1 must remain unconsumed while the reconstructed model is settled");
+  if (batchFiles.some((name) => /^B0*2-.*\.md$/.test(name))) {
+    errors.push("B2 must remain unconsumed until the next development batch");
   }
 
   const batchLog = readFileSync(join(repoRoot, "BATCH_LOG.md"), "utf8");
-  const logNumbers = [...batchLog.matchAll(/^\| \[A(\d+)\]/gm)].map((match) => Number(match[1]));
-  if (JSON.stringify(logNumbers) !== JSON.stringify(closedNumbers)) {
-    errors.push("BATCH_LOG.md must index A1-A102 exactly once and in order");
+  const logIds = [...batchLog.matchAll(/^\| \[([A-Z])(\d+)\]/gm)]
+    .map((match) => `${match[1]}${Number(match[2])}`);
+  if (JSON.stringify(logIds) !== JSON.stringify(closedIds)) {
+    errors.push("BATCH_LOG.md must index A1-B1 exactly once and in order");
   }
-  if (/^\| \[B1\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B1 record yet");
+  if (/^\| \[B2\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B2 record yet");
 
   const threads = readFileSync(join(repoRoot, "Batches", "THREADS.md"), "utf8");
   const declaredThreads = new Set([...threads.matchAll(/<a id="t-(\d{3})"><\/a>T-(\d{3})/g)].map((match) => `T-${match[1]}`));
@@ -608,7 +627,7 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     schema: VERSION_MODEL_SCHEMA,
     currentVersion: replay.currentVersion,
     unitCount: VERSION_UNITS.length,
-    closedBatchCount: closedNumbers.length,
+    closedBatchCount: closedIds.length,
     nextBatch: NEXT_BATCH,
     errors,
   };
@@ -637,7 +656,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (args.has("--write")) writeGenerated(DEFAULT_REPO_ROOT);
   const result = validateRepository(DEFAULT_REPO_ROOT);
   if (args.has("--json")) console.log(JSON.stringify(result, null, 2));
-  else if (result.ok) console.log(`version-model: OK — ${result.currentVersion}; ${result.unitCount} units cover A1-A102; ${result.nextBatch} remains next`);
+  else if (result.ok) console.log(`version-model: OK — ${result.currentVersion}; ${result.unitCount} units cover A1-B1; ${result.nextBatch} remains next`);
   else result.errors.forEach((error) => console.error(`version-model: ${error}`));
   process.exit(result.ok ? 0 : 1);
 }

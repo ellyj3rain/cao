@@ -3142,3 +3142,20 @@
   batch exactly once and derive `0.12.3.0-alpha`. The validator also proves 12
   neutral families, 30 neutral threads, current projection freshness, and the
   absence of a `B1` record.
+
+- **F-154** (2026-08-10 12:25 UTC / 05:25 PST) - **The World tendencies screen
+  exposed a parallel causal model.** Outcome-shaped city and pattern controls,
+  frontier count and size conflation, generated-relation rerolls, and source
+  ownership language allowed UI policy, saved plans, and runtime generation to
+  disagree about which fact each row owned.
+
+  The converged model has eleven explicit UI-to-consumer contracts. A shared
+  deterministic kernel realizes settlement placement, population shares,
+  relations, economic and urban support, scale, frontier count and form, and
+  off-map activity. Confirmed regional plans and standard-map frontier plans save
+  those results before consumers run. A fixed-seed receipt runner varies every
+  tendency independently, verifies unrelated-variable stability, checks all
+  visible controls have consumers, round-trips saved state, proves later policy
+  does not reroll it, checks override ownership, and recomputes the authored
+  fixture's production realization hash and derived facts. The suite passes 179
+  assertions; operator runtime judgment remains the next gate.
