@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+  <!-- Add the Anon2Dresser wherever the vanilla dresser is added -->
+  <Operation Class="PatchOperationInsert">
+    <xpath>Defs/ThingDef/comps/li/linkableFacilities/li[text()="Dresser"]</xpath>
+    <value>
+      <li>Anon2Dresser</li>
+    </value>
+  </Operation>
+  <!-- Add the Anon2EndTables wherever the vanilla endtable is added -->
+  <Operation Class="PatchOperationInsert">
+    <xpath>Defs/ThingDef/comps/li/linkableFacilities/li[text()="EndTable"]</xpath>
+    <value>
+      <li>Anon2EndTable</li>
+      <li>Anon2RoyalEndTable</li>
+      <li>Anon2EndTableLight</li>
+      <li>Anon2RoyalEndTableLight</li>
+    </value>
+  </Operation>
+  <Operation Class="PatchOperationConditional">
+    <xpath>Defs/ThingDef[defName = "SimpleResearchBench"]/comps</xpath>
+    <nomatch Class="PatchOperationAdd">
+      <xpath>Defs/ThingDef[defName = "SimpleResearchBench"]</xpath>
+      <value>
+        <comps>
+          <li Class="CompProperties_AffectedByFacilities">
+            <linkableFacilities>
+              <li>Anon2FileCabinet</li>
+            </linkableFacilities>
+          </li>
+        </comps>
+      </value>
+    </nomatch>
+    <match Class="PatchOperationConditional">
+      <xpath>Defs/ThingDef[defName = "SimpleResearchBench"]/comps/li[@Class = "CompProperties_AffectedByFacilities"]</xpath>
+      <nomatch Class="PatchOperationAdd">
+        <xpath>Defs/ThingDef[defName = "SimpleResearchBench"]/comps</xpath>
+        <value>
+          <li Class="CompProperties_AffectedByFacilities">
+            <linkableFacilities>
+              <li>Anon2FileCabinet</li>
+            </linkableFacilities>
+          </li>
+        </value>
+      </nomatch>
+      <match Class="PatchOperationAdd">
+        <xpath>Defs/ThingDef[defName = "SimpleResearchBench"]/comps/li[@Class = "CompProperties_AffectedByFacilities"]/linkableFacilities</xpath>
+        <value>
+          <li>Anon2FileCabinet</li>
+        </value>
+      </match>
+    </match>
+  </Operation>
+  <Operation Class="PatchOperationAdd">
+    <xpath>Defs/ThingDef[defName = "HiTechResearchBench"]/comps/li[@Class = "CompProperties_AffectedByFacilities"]/linkableFacilities</xpath>
+    <value>
+      <li>Anon2FileCabinet</li>
+    </value>
+  </Operation>
+</Patch>

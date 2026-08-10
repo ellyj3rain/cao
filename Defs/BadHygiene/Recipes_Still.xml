@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+<!-- DISTILLATION. Boiling kills what lives in water; it does not
+     remove salt, it concentrates it. Getting drinking water out of the
+     sea means boiling the water AWAY from the salt and catching the
+     steam, which is a different act with different economics:
+
+       fuel      you must boil off everything you intend to keep, so
+                 the fuel cost is per litre RECOVERED, not per litre
+                 handled
+       time      six times the work of simply boiling a pot
+       yield     most of what goes in does not come back
+
+     A fire still is genuinely ancient - it needs a pot, a lid and a
+     way to catch condensate, nothing more - so it belongs on the
+     campfire and not behind research. It is simply awful, which is the
+     honest position: a coastal people CAN drink, and they will spend
+     their whole day doing it until they dig a well or build something
+     better.
+
+     Brackish water gives up its water more easily than sea water,
+     which is why a brackish well beats the beach even before anyone
+     builds anything. -->
+
+  <RecipeDef>
+    <defName>CA_DistilSeaWater</defName>
+    <label>distil sea water</label>
+    <description>Boil sea water and catch the steam. Most of it is lost; what is caught is drinkable.</description>
+    <jobString>Distilling sea water.</jobString>
+    <workAmount>1500</workAmount>
+    <workSpeedStat>CookSpeed</workSpeedStat>
+    <effectWorking>Cook</effectWorking>
+    <soundWorking>Recipe_CookMeal</soundWorking>
+    <allowMixingIngredients>false</allowMixingIngredients>
+    <ingredients>
+      <li>
+        <filter>
+          <thingDefs>
+            <li>CA_WaterSaline</li>
+          </thingDefs>
+        </filter>
+        <count>10</count>
+      </li>
+    </ingredients>
+    <fixedIngredientFilter>
+      <thingDefs>
+        <li>CA_WaterSaline</li>
+      </thingDefs>
+    </fixedIngredientFilter>
+    <products>
+      <CA_WaterPotable>2</CA_WaterPotable>
+    </products>
+    <recipeUsers>
+      <li>Campfire</li>
+      <li>FueledStove</li>
+      <li>ElectricStove</li>
+    </recipeUsers>
+  </RecipeDef>
+
+  <RecipeDef>
+    <defName>CA_DistilBrackishWater</defName>
+    <label>distil brackish water</label>
+    <description>Boil brackish water and catch the steam. It gives up its water more readily than the sea does.</description>
+    <jobString>Distilling brackish water.</jobString>
+    <workAmount>1100</workAmount>
+    <workSpeedStat>CookSpeed</workSpeedStat>
+    <effectWorking>Cook</effectWorking>
+    <soundWorking>Recipe_CookMeal</soundWorking>
+    <allowMixingIngredients>false</allowMixingIngredients>
+    <ingredients>
+      <li>
+        <filter>
+          <thingDefs>
+            <li>CA_WaterBrackish</li>
+          </thingDefs>
+        </filter>
+        <count>10</count>
+      </li>
+    </ingredients>
+    <fixedIngredientFilter>
+      <thingDefs>
+        <li>CA_WaterBrackish</li>
+      </thingDefs>
+    </fixedIngredientFilter>
+    <products>
+      <CA_WaterPotable>4</CA_WaterPotable>
+    </products>
+    <recipeUsers>
+      <li>Campfire</li>
+      <li>FueledStove</li>
+      <li>ElectricStove</li>
+    </recipeUsers>
+  </RecipeDef>
+
+</Defs>

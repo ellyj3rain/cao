@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <LearningDesireDef>
+    <defName>CA_WarGames</defName>
+    <label>war games</label>
+    <description>Drill at the defensive line the way the grown fighters do. Children of militant creeds build shooting and melee skill this way.</description>
+    <workerClass>ColonistAwareness.LearningGiver_WarGames</workerClass>
+    <iconPath>UI/Icons/Learning/Workwatching</iconPath>
+    <jobDef>CA_WarGamesJob</jobDef>
+    <selectionWeight>1.3</selectionWeight>
+  </LearningDesireDef>
+
+  <LearningDesireDef>
+    <defName>CA_PracticeHunt</defName>
+    <label>practice hunt</label>
+    <description>Range the land just beyond the colony, stalking and tracking. Children of militant creeds build shooting and animal skill this way.</description>
+    <workerClass>ColonistAwareness.LearningGiver_PracticeHunt</workerClass>
+    <iconPath>UI/Icons/Learning/NatureRunning</iconPath>
+    <jobDef>CA_PracticeHuntJob</jobDef>
+    <selectionWeight>1.3</selectionWeight>
+  </LearningDesireDef>
+
+</Defs>

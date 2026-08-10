@@ -1,0 +1,75 @@
+# Version map
+
+This is the regulatory version replay for Colonist Awareness. It partitions the closed batch chronology into contiguous capability units without rewriting the batch records. Threads classify work across time; version units partition time; batches remain the atomic historical record.
+
+| Field | Current state |
+|---|---|
+| Schema | `cao.version-model/1` |
+| Form | `major.minor.kohai.patch-maturity` |
+| Hard caps | minor 12; kohai 16; patch 24 |
+| Replay start | `0.1.0.0-pre-alpha` |
+| Current version | `0.12.3.0-alpha` |
+| Closed chronology | `A1-A102` |
+| Next batch | `B1` |
+| Executable source | [`tools/version-model.mjs`](tools/version-model.mjs) |
+
+## Tier meanings
+
+| Tier | Meaning in CAO |
+|---|---|
+| major | Formal release, project-identity, or supported-compatibility boundary. No A-series unit requires it. |
+| minor | A new player-visible simulation capability or a new authoring/runtime contract. |
+| kohai | A coherent extension, integration, or structural maturation of an existing capability. |
+| patch | An in-place correction, verification closure, or repair that does not change the capability boundary. |
+| hotfix | Urgent patch movement. It shares patch arithmetic and is not used by the A-series replay. |
+| maturity | `pre-alpha -> alpha -> beta -> rc -> GA`; maturity can change without moving a numeric coordinate. |
+
+## Chronological replay
+
+| Unit | Batches | Date or range | Tier | Resulting version | Descriptive name | Thread evidence | Boundary rationale |
+|---|---|---|---|---|---|---|---|
+| VU-001 | A1-A2 | 2026-07-22 | initial | `0.1.0.0-pre-alpha` | Repository and imported tactical baseline | `T-001`, `T-002`, `T-003`, `T-004`, `T-007`, `T-008` | The former A1 source entry established the repository and imported the complete pre-git baseline under VERSION 0.1.0; the later batch recatalog split that one historical version boundary into A1 and A2. |
+| VU-002 | A3 | 2026-07-22 | minor | `0.2.0.0-pre-alpha` | First pillar slice | `T-003`, `T-004`, `T-005` | A3 joins the former A2 and A2.1 implementation and hardening records. It established the first public Disposition, Knowledge, and Authority slice and carried the historical VERSION 0.2.0 boundary. |
+| VU-003 | A4 | 2026-07-23 | patch | `0.2.0.1-pre-alpha` | Half-speed control correction | `T-002`, `T-029`, `T-030` | A4 contains the half-speed control and its immediate load correction. The historical 0.2.1 movement is an in-place correction and therefore maps to the fourth-coordinate patch tier. |
+| VU-004 | A5-A7 | 2026-07-24 | minor | `0.3.0.0-pre-alpha` | Shared awareness and communications | `T-004`, `T-005`, `T-008`, `T-010` | A5-A7 form one continuous expansion from shared contact evidence through communication media to the corrected autonomy floor. The former A2.3-A2.3.2 run carried the historical 0.2.2 boundary; semantic replay classifies the public capability growth as minor. |
+| VU-005 | A8 | 2026-07-24 | kohai | `0.3.1.0-pre-alpha` | Independent pointer bridge | `T-011`, `T-029` | A8 added event-local developer input infrastructure without establishing a new gameplay capability line. |
+| VU-006 | A9-A14 | 2026-07-24 to 2026-07-25 | minor | `0.4.0.0-pre-alpha` | Individual awareness and welfare judgment | `T-003`, `T-004`, `T-006`, `T-008`, `T-010`, `T-012` | A9-A14 continuously apply the awareness substrate to lost contacts, animal response, equipment access, immediate combat judgment, casualty triage, and private welfare accountability. Together they establish the first complete individual decision-and-care line. |
+| VU-007 | A15 | 2026-07-25 | kohai | `0.4.1.0-pre-alpha` | Pointer bridge across program states | `T-011`, `T-029` | A15 extends the existing pointer bridge through menus and dialogs; it matures the tool boundary rather than adding a separate operator capability. |
+| VU-008 | A16-A21 | 2026-07-25 to 2026-07-26 | minor | `0.5.0.0-pre-alpha` | Native emergency execution | `T-006`, `T-007`, `T-008`, `T-010`, `T-012`, `T-016` | A16-A21 move awareness decisions into persistent native work: fighting withdrawal, synchronized hauling, cover halts, fire response, threat correction, and downed-animal feeding. The intervening corrections were discovered through the same live native-execution run. |
+| VU-009 | A22 | 2026-07-26 | maturity-alpha | `0.5.0.0-alpha` | Reproducible alpha assembly | `T-002`, `T-030` | A22 made the proven native-execution line reproducibly assemblable. It changes maturity from pre-alpha to alpha without moving a numeric coordinate. |
+| VU-010 | A23-A31 | 2026-07-27 to 2026-07-28 | minor | `0.6.0.0-alpha` | Authored homes and space programs | `T-010`, `T-013`, `T-014`, `T-015`, `T-016`, `T-025` | A23-A31 progress continuously from autonomous home planning through authored room programs and residents to native construction prerequisites and the storage policy those prerequisites exposed. |
+| VU-011 | A32 | 2026-07-28 | kohai | `0.6.1.0-alpha` | Regional living-world architecture | `T-001`, `T-019`, `T-020`, `T-021` | A32 ratified the regional architecture without shipping an independent runtime surface. It is structural preparation for the later regional line. |
+| VU-012 | A33-A43 | 2026-07-28 | minor | `0.7.0.0-alpha` | Native storage and contextual facilities | `T-013`, `T-014`, `T-015`, `T-016`, `T-019`, `T-023` | A33-A43 build one public spatial-planning capability from native construction storage and durable inventory through settlement context, contextual placement, furnishing evidence, facility comparison, and authored requirements. |
+| VU-013 | A44-A49 | 2026-07-28 | kohai | `0.7.1.0-alpha` | Waste, stockpiles, and spatial initiative | `T-010`, `T-015`, `T-016`, `T-017` | A44-A49 extend the existing spatial-planning line through toxic-waste lifecycle handling, return storage authority to native stockpiles, and add shared spatial initiative and shelf construction. |
+| VU-014 | A50-A55 | 2026-07-29 | kohai | `0.7.2.0-alpha` | Contextual furnishing and society evidence | `T-004`, `T-006`, `T-012`, `T-014`, `T-015`, `T-023` | A50-A55 mature contextual facilities with room-authority transitions, stable welfare evidence, animal infrastructure, society-specific interpretation, and authored Bedroom comparison. |
+| VU-015 | A56 | 2026-07-29 to 2026-07-30 | kohai | `0.7.3.0-alpha` | Developer item relocation | `T-002`, `T-011`, `T-029`, `T-030` | A56 adds and proves a developer-only item-relocation and native MouseMux tool path; it matures runtime tooling without adding simulation behavior. |
+| VU-016 | A57 | 2026-07-30 | patch | `0.7.3.1-alpha` | Bedroom construction cause proof | `T-013`, `T-014`, `T-016`, `T-030` | A57 verifies and tightens the existing authored Bedroom material-and-construction chain rather than establishing another capability. |
+| VU-017 | A58-A61 | 2026-07-30 | minor | `0.8.0.0-alpha` | Combat execution and battlefield evidence | `T-004`, `T-008`, `T-009` | A58-A61 form a continuous combat release: execution restoration, initiative separation, pawn-proximal topology, stable battlefield reference, and continuous after-action proof. |
+| VU-018 | A62-A64 | 2026-08-05 | minor | `0.9.0.0-alpha` | Political beliefs and first deployment | `T-006`, `T-022`, `T-023` | A62-A64 establish standing conventions, persistent conviction and issue judgment, and the first deployed political simulation line. |
+| VU-019 | A65-A69 | 2026-08-05 | minor | `0.10.0.0-alpha` | Settlement setup and institutional economy | `T-018`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-028` | A65-A69 rebuild setup around owned scopes, restore regional population and settlement authoring, separate settlement axes, and add explicit institutional transactions and credit terms. |
+| VU-020 | A70-A71 | 2026-08-06 | kohai | `0.10.1.0-alpha` | Repository and governance convergence | `T-001`, `T-002`, `T-030` | A70-A71 preserve the pre-cleanup repository and adopt the canonical governance pack. This is structural repository maturation with no gameplay capability movement. |
+| VU-021 | A72-A77 | 2026-08-06 to 2026-08-07 | minor | `0.11.0.0-alpha` | Regional spatial generation | `T-019`, `T-020`, `T-021`, `T-025`, `T-026` | A72-A77 establish the public regional execution line: carrier-owned geography, constituent-local spatial work, candidate persistence, compatibility gates, per-cell allocation, extent, and authoritative projection. |
+| VU-022 | A78-A84 | 2026-08-07 | kohai | `0.11.1.0-alpha` | World-generation onboarding and projection | `T-019`, `T-020`, `T-021`, `T-024`, `T-025`, `T-026`, `T-027`, `T-028` | A78-A84 integrate and close the existing regional capability through onboarding structure, landing separation, engine-root boundaries, fixture corrections, the projection kernel, and Screen 2 semantics. |
+| VU-023 | A85-A90 | 2026-08-07 to 2026-08-08 | minor | `0.12.0.0-alpha` | Political, cultural, and territorial composition | `T-014`, `T-016`, `T-019`, `T-020`, `T-021`, `T-022`, `T-023`, `T-025`, `T-026`, `T-028` | A85-A90 form one new simulation and authoring contract from political architecture and canonical relations through Ideoligion, settlement population and provisions, and territorial realization. |
+| VU-024 | A91 | 2026-08-08 | kohai | `0.12.1.0-alpha` | Runtime exercise harness | `T-002`, `T-027`, `T-029`, `T-030` | A91 hardens the test and launch boundary and parameterizes map scale; it is runtime tooling for the existing world-generation capability. |
+| VU-025 | A92-A98 | 2026-08-08 | kohai | `0.12.2.0-alpha` | Creator mechanics and product convergence | `T-008`, `T-015`, `T-016`, `T-018`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-026`, `T-028` | A92-A98 mature the existing creator line: composition-first authoring, stratified axes, concrete consumers, corrected ontology, operational machinery, and agreement between declarations and generated worlds. |
+| VU-026 | A99 | 2026-08-08 to 2026-08-09 | patch | `0.12.2.1-alpha` | Map-size selector correction | `T-024`, `T-027`, `T-029`, `T-030` | A99 diagnoses and fixes one production map-size field without changing the surrounding creator contract. |
+| VU-027 | A100-A102 | 2026-08-09 to 2026-08-10 | kohai | `0.12.3.0-alpha` | World language and ontology convergence | `T-014`, `T-016`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-026`, `T-028`, `T-030` | A100-A102 converge world tendencies, creator grammar, evidence capture, factions, settlements, population, provisions, persistence, generation, and player-facing language onto the already established creator capability. |
+
+## Historical version evidence
+
+The original file moved from `0.1.0` to `0.2.0`, `0.2.1`, and `0.2.2`. Those declarations establish the first four historical boundaries. The three-coordinate values are replayed through the four-coordinate hierarchy: the former patch becomes the fourth coordinate, while substantive public capability growth is classified by the current tier rubric. After A5 the old file remained hand-frozen at `0.2.2`; it is evidence of the former state, not a version assignment for A6-A102.
+
+A22 is the maturity boundary: reproducible assembly followed an end-to-end runtime line with live execution evidence, so the replay changes from `pre-alpha` to `alpha` there without a numeric bump.
+
+## Next movement
+
+`B1` remains the next ordinary batch. Its content determines its tier after it exists:
+
+| If B1 is | Result |
+|---|---|
+| patch or hotfix | `0.12.3.1-alpha` |
+| kohai | `0.12.4.0-alpha` |
+| minor | `1.0.0.0-alpha` (the minor hard cap rolls the numeric major; maturity remains alpha) |
+
+The thematic catalog is series-neutral in [`Batches/THREADS.md`](Batches/THREADS.md). Temporary `AT-*` and `ATF-*` identifiers resolve through [`Batches/THREAD_ID_CROSSWALK.md`](Batches/THREAD_ID_CROSSWALK.md).

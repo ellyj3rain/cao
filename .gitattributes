@@ -1,0 +1,5 @@
+# Repository documentation uses repository-owned LF.
+README.md text eol=lf
+README.docx -text -diff
+BATCH_LOG.md text eol=lf
+Batches/*.md text eol=lf

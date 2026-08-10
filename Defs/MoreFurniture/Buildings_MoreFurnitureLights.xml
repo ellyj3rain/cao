@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- Ported from More Furniture (Continued), MIT. Legacy StandingLamp_* save-compat
+       defs from the original Steam mod are intentionally omitted: they exist only so
+       pre-existing subscribers' saves keep loading, are hidden from architect and
+       trade, and serve no purpose in this mod. -->
+  <!--====================== end table light ======================-->
+  <ThingDef ParentName="Anon2FurnitureBase">
+    <defName>Anon2EndTableLight</defName>
+    <label>end table (lamp)</label>
+    <description>This small table goes well with a bed. When placed with a bed it will increase comfort slightly. Includes a lamp.</description>
+    <graphicData>
+      <texPath>MoreFurniture/BedroomStuff/Anon2EndTableLight</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <shaderType>CutoutComplex</shaderType>
+      <drawSize>(3,3)</drawSize>
+      <damageData>
+        <rect>(0.15,0.15,1.7,1.7)</rect>
+      </damageData>
+    </graphicData>
+    <size>(1,1)</size>
+    <passability>PassThroughOnly</passability>
+    <castEdgeShadows>true</castEdgeShadows>
+    <fillPercent>0.62</fillPercent>
+    <minifiedDef>MinifiedThing</minifiedDef>
+    <statBases>
+      <MaxHitPoints>80</MaxHitPoints>
+      <WorkToBuild>600</WorkToBuild>
+      <Flammability>1.0</Flammability>
+      <Beauty>10</Beauty>
+      <Mass>23</Mass>
+    </statBases>
+    <costList>
+      <Steel>15</Steel>
+    </costList>
+    <stuffCategories>
+      <li>Metallic</li>
+      <li>Woody</li>
+      <li>Stony</li>
+    </stuffCategories>
+    <costStuffCount>30</costStuffCount>
+    <comps>
+      <li Class="CompProperties_Facility">
+        <statOffsets>
+          <Comfort>0.05</Comfort>
+        </statOffsets>
+        <maxSimultaneous>1</maxSimultaneous>
+        <mustBePlacedAdjacentCardinalToBedHead>true</mustBePlacedAdjacentCardinalToBedHead>
+      </li>
+      <li Class="CompProperties_Power">
+        <compClass>CompPowerTrader</compClass>
+        <basePowerConsumption>20</basePowerConsumption>
+        <shortCircuitInRain>true</shortCircuitInRain>
+      </li>
+      <li Class="CompProperties_Flickable" />
+      <li>
+        <compClass>CompQuality</compClass>
+      </li>
+      <li Class="CompProperties_Glower">
+        <glowRadius>8</glowRadius>
+        <glowColor>(217,217,208,0)</glowColor>
+      </li>
+    </comps>
+    <pathCost>70</pathCost>
+    <placeWorkers>
+      <li>PlaceWorker_ShowFacilitiesConnections</li>
+    </placeWorkers>
+    <researchPrerequisites>
+      <li>Electricity</li>
+      <li>ComplexFurniture</li>
+    </researchPrerequisites>
+    <designationCategory>ANON2MF</designationCategory>
+    <defaultPlacingRot>South</defaultPlacingRot>
+    <techLevel>Medieval</techLevel>
+  </ThingDef>
+  <!--====================== royal end table light ======================-->
+  <ThingDef ParentName="Anon2ArtableFurnitureBase">
+    <defName>Anon2RoyalEndTableLight</defName>
+    <label>royal end table (lamp)</label>
+    <description>This small table goes well with a royal bed. When placed with a bed it will increase comfort. Includes a lamp.</description>
+    <graphicData>
+      <texPath>MoreFurniture/BedroomStuff/Anon2RoyalEndTableLight</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <shaderType>CutoutComplex</shaderType>
+      <drawSize>(3,3)</drawSize>
+      <damageData>
+        <rect>(0.15,0.15,1.7,1.7)</rect>
+      </damageData>
+    </graphicData>
+    <size>(1,1)</size>
+    <passability>PassThroughOnly</passability>
+    <castEdgeShadows>true</castEdgeShadows>
+    <fillPercent>0.62</fillPercent>
+    <minifiedDef>MinifiedThing</minifiedDef>
+    <statBases>
+      <MaxHitPoints>80</MaxHitPoints>
+      <WorkToBuild>2100</WorkToBuild>
+      <Flammability>1.0</Flammability>
+      <Beauty>35</Beauty>
+      <Mass>28</Mass>
+    </statBases>
+    <costList>
+      <Steel>15</Steel>
+      <Gold>20</Gold>
+    </costList>
+    <stuffCategories>
+      <li>Metallic</li>
+      <li>Woody</li>
+      <li>Stony</li>
+    </stuffCategories>
+    <costStuffCount>30</costStuffCount>
+    <comps>
+      <li Class="CompProperties_Facility">
+        <statOffsets>
+          <Comfort>0.05</Comfort>
+        </statOffsets>
+        <maxSimultaneous>1</maxSimultaneous>
+        <mustBePlacedAdjacentCardinalToBedHead>true</mustBePlacedAdjacentCardinalToBedHead>
+      </li>
+      <li Class="CompProperties_Power">
+        <compClass>CompPowerTrader</compClass>
+        <basePowerConsumption>20</basePowerConsumption>
+        <shortCircuitInRain>true</shortCircuitInRain>
+      </li>
+      <li Class="CompProperties_Flickable" />
+      <li>
+        <compClass>CompQuality</compClass>
+      </li>
+      <li Class="CompProperties_Glower">
+        <glowRadius>8</glowRadius>
+        <glowColor>(217,217,208,0)</glowColor>
+      </li>
+    </comps>
+    <pathCost>70</pathCost>
+    <placeWorkers>
+      <li>PlaceWorker_ShowFacilitiesConnections</li>
+    </placeWorkers>
+    <researchPrerequisites>
+      <li>Electricity</li>
+      <li>ComplexFurniture</li>
+    </researchPrerequisites>
+    <designationCategory>ANON2MF</designationCategory>
+    <defaultPlacingRot>South</defaultPlacingRot>
+  </ThingDef>
+</Defs>

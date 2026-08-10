@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- MATERIAL- AND TECHNOLOGY-AWARE WALL APERTURES.
+       Public prior art audited (all MIT, GPL-compatible): jptrrs's
+       OpenTheWindows carries the full wall-window stack, ED-Embrasures
+       proves the def-only slit (fillPercent < 1 + Impassable = shoot-
+       through cover with no code), archdukejim's skylights the clean 1.6
+       sky-light render. CA's apertures stay native and def-driven: five
+       kinds with their own pierced-wall textures (grayscale masonry,
+       tinted by stuff), linkFlags so wall lines connect INTO them, and
+       per-state behavior in Building_CAAperture. The shutter's open and
+       closed states are two defs swapped in place - the closed def
+       blocks light, sight, gas and cover exactly as a wall does, which
+       avoids OpenTheWindows' known wart of mutating blockLight on the
+       shared def at runtime. -->
+
+  <ThingDef Name="CAApertureBase" ParentName="BuildingBase" Abstract="True">
+    <thingClass>ColonistAwareness.Building_CAAperture</thingClass>
+    <category>Building</category>
+    <altitudeLayer>Building</altitudeLayer>
+    <passability>Impassable</passability>
+    <blockWind>false</blockWind>
+    <castEdgeShadows>true</castEdgeShadows>
+    <blockLight>false</blockLight>
+    <holdsRoof>true</holdsRoof>
+    <coversFloor>true</coversFloor>
+    <staticSunShadowHeight>0.5</staticSunShadowHeight>
+    <drawerType>MapMeshOnly</drawerType>
+    <building>
+      <isInert>true</isInert>
+      <ai_chillDestination>false</ai_chillDestination>
+      <blueprintGraphicData>
+        <texPath>Things/Building/Linked/Wall_Blueprint_Atlas</texPath>
+      </blueprintGraphicData>
+    </building>
+    <stuffCategories>
+      <li>Woody</li>
+      <li>Stony</li>
+      <li>Metallic</li>
+    </stuffCategories>
+    <statBases>
+      <Flammability>1.0</Flammability>
+    </statBases>
+    <designationCategory>Structure</designationCategory>
+    <fertility>0</fertility>
+    <tickerType>Rare</tickerType>
+  </ThingDef>
+
+  <!-- A wall opening without glass: sight through the wall, fully open
+       to air, temperature, sound, smoke and gas (partial fillage). The
+       low-technology default of warm country. -->
+  <ThingDef ParentName="CAApertureBase">
+    <defName>CA_ApertureOpen</defName>
+    <label>open aperture</label>
+    <description>A bare opening in the wall - no glass, no cover to speak of. Whoever is inside can see out and be seen; heat, cold and sound pass as though the wall were pierced, because it is.</description>
+    <graphicData>
+      <texPath>CA/Apertures/ApertureOpen</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <linkFlags>
+        <li>Wall</li>
+        <li>Rock</li>
+      </linkFlags>
+    </graphicData>
+    <fillPercent>0.35</fillPercent>
+    <statBases>
+      <MaxHitPoints>80</MaxHitPoints>
+      <WorkToBuild>120</WorkToBuild>
+    </statBases>
+    <costStuffCount>2</costStuffCount>
+  </ThingDef>
+
+  <!-- The shutter's OPEN state: air, light, sight and sound pass. The
+       closed state is its own def below; Building_CAAperture swaps the
+       two in place, preserving stuff, faction and damage. -->
+  <ThingDef ParentName="CAApertureBase">
+    <defName>CA_ApertureShuttered</defName>
+    <label>shuttered aperture</label>
+    <description>A wall opening with a simple shutter, standing open: air, light and sight pass. The people who live behind it close it for the night and against the cold.</description>
+    <graphicData>
+      <texPath>CA/Apertures/ApertureShuttered</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <linkFlags>
+        <li>Wall</li>
+        <li>Rock</li>
+      </linkFlags>
+    </graphicData>
+    <fillPercent>0.5</fillPercent>
+    <statBases>
+      <MaxHitPoints>100</MaxHitPoints>
+      <WorkToBuild>250</WorkToBuild>
+    </statBases>
+    <costStuffCount>4</costStuffCount>
+  </ThingDef>
+
+  <!-- The shutter's CLOSED state: full fillage and blocked light make it
+       a wall in every engine sense - sight, light, cover, gas and smoke
+       all stop here - while awareness reads it at a shutter's residual
+       transparency. Not built directly; only the swap reaches it. -->
+  <ThingDef ParentName="CAApertureBase">
+    <defName>CA_ApertureShutteredClosed</defName>
+    <label>shuttered aperture (closed)</label>
+    <description>A wall opening with its shutter drawn: near enough a wall while it stays closed. Light, sight and weather stop at the boards; a little sound still carries.</description>
+    <graphicData>
+      <texPath>CA/Apertures/ApertureShutteredClosed</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <linkFlags>
+        <li>Wall</li>
+        <li>Rock</li>
+      </linkFlags>
+    </graphicData>
+    <blockLight>true</blockLight>
+    <staticSunShadowHeight>0.75</staticSunShadowHeight>
+    <fillPercent>1.0</fillPercent>
+    <statBases>
+      <MaxHitPoints>100</MaxHitPoints>
+      <WorkToBuild>250</WorkToBuild>
+    </statBases>
+    <costStuffCount>4</costStuffCount>
+    <designationCategory IsNull="True" />
+  </ThingDef>
+
+  <!-- Glazing: sight and light without airflow. Not the universal
+       default - generation places it only where material capability,
+       wealth or standing justify it. -->
+  <ThingDef ParentName="CAApertureBase">
+    <defName>CA_WindowGlazed</defName>
+    <label>glazed window</label>
+    <description>A glazed window: light and sight pass, the weather does not. Glass is not cheap - windows like this mark wealth, standing or an industrial glassworks somewhere in the supply chain.</description>
+    <graphicData>
+      <texPath>CA/Apertures/WindowGlazed</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <linkFlags>
+        <li>Wall</li>
+        <li>Rock</li>
+      </linkFlags>
+    </graphicData>
+    <fillPercent>0.6</fillPercent>
+    <statBases>
+      <MaxHitPoints>60</MaxHitPoints>
+      <WorkToBuild>400</WorkToBuild>
+    </statBases>
+    <costStuffCount>3</costStuffCount>
+    <costList>
+      <Steel>4</Steel>
+    </costList>
+  </ThingDef>
+
+  <!-- A defensive slit: restricted visibility, strong protection.
+       Def-only in the engine's terms - high fill is the cover, partial
+       fill is the sightline (the ED-Embrasures pattern). -->
+  <ThingDef ParentName="CAApertureBase">
+    <defName>CA_ApertureSlit</defName>
+    <label>defensive slit</label>
+    <description>A narrow firing slit. Little can be seen through it from outside and less can get in; from inside it commands the approach.</description>
+    <graphicData>
+      <texPath>CA/Apertures/ApertureSlit</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <linkFlags>
+        <li>Wall</li>
+        <li>Rock</li>
+      </linkFlags>
+    </graphicData>
+    <fillPercent>0.85</fillPercent>
+    <statBases>
+      <MaxHitPoints>220</MaxHitPoints>
+      <WorkToBuild>500</WorkToBuild>
+    </statBases>
+    <costStuffCount>5</costStuffCount>
+  </ThingDef>
+</Defs>

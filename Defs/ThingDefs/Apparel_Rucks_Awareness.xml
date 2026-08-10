@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <ThingDef ParentName="ApparelNoQualityBase">
+    <defName>CA_NightGoggles</defName>
+    <label>night goggles</label>
+    <description>Light-amplifying optics strapped over the eyes. The wearer spots concealed enemies at full range in darkness, where unaided eyes are badly shortened. The tool of the night raid.</description>
+    <thingClass>Apparel</thingClass>
+    <techLevel>Industrial</techLevel>
+    <graphicData>
+      <texPath>CA/NightGoggles</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>(0.7,0.7)</drawSize>
+    </graphicData>
+    <thingCategories>
+      <li>ApparelUtility</li>
+    </thingCategories>
+    <costList>
+      <Steel>40</Steel>
+      <ComponentIndustrial>3</ComponentIndustrial>
+    </costList>
+    <statBases>
+      <MaxHitPoints>80</MaxHitPoints>
+      <Mass>0.4</Mass>
+      <WorkToMake>4500</WorkToMake>
+      <EquipDelay>1.5</EquipDelay>
+    </statBases>
+    <equippedStatOffsets>
+      <CA_DarkVisionEfficiency>1</CA_DarkVisionEfficiency>
+    </equippedStatOffsets>
+    <recipeMaker>
+      <unfinishedThingDef>UnfinishedApparel</unfinishedThingDef>
+      <researchPrerequisite>Machining</researchPrerequisite>
+      <recipeUsers>
+        <li>TableMachining</li>
+      </recipeUsers>
+      <workSpeedStat>GeneralLaborSpeed</workSpeedStat>
+      <workSkill>Crafting</workSkill>
+      <effectWorking>Smith</effectWorking>
+      <soundWorking>Recipe_Smith</soundWorking>
+      <skillRequirements>
+        <Crafting>5</Crafting>
+      </skillRequirements>
+    </recipeMaker>
+    <apparel>
+      <countsAsClothingForNudity>false</countsAsClothingForNudity>
+      <careIfWornByCorpse>false</careIfWornByCorpse>
+      <careIfDamaged>false</careIfDamaged>
+      <bodyPartGroups>
+        <li>Eyes</li>
+      </bodyPartGroups>
+      <layers>
+        <li>Overhead</li>
+      </layers>
+      <tags>
+        <li>IndustrialMilitaryBasic</li>
+      </tags>
+    </apparel>
+  </ThingDef>
+
+  <ThingDef Name="CA_RuckBase" ParentName="ApparelNoQualityBase" Abstract="True">
+    <thingClass>Apparel</thingClass>
+    <techLevel>Industrial</techLevel>
+    <graphicData>
+      <texPath>Things/Pawn/Humanlike/Apparel/ToxPack/ToxPack</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>(0.7,0.7)</drawSize>
+    </graphicData>
+    <thingCategories>
+      <li>ApparelUtility</li>
+    </thingCategories>
+    <recipeMaker>
+      <unfinishedThingDef>UnfinishedPack</unfinishedThingDef>
+      <recipeUsers>
+        <li>TableMachining</li>
+        <li>CraftingSpot</li>
+      </recipeUsers>
+      <workSpeedStat>GeneralLaborSpeed</workSpeedStat>
+      <workSkill>Crafting</workSkill>
+      <effectWorking>Smith</effectWorking>
+      <soundWorking>Recipe_Smith</soundWorking>
+      <skillRequirements>
+        <Crafting>3</Crafting>
+      </skillRequirements>
+    </recipeMaker>
+    <apparel>
+      <countsAsClothingForNudity>false</countsAsClothingForNudity>
+      <careIfWornByCorpse>false</careIfWornByCorpse>
+      <careIfDamaged>false</careIfDamaged>
+      <wearPerDay>0.1</wearPerDay>
+      <bodyPartGroups>
+        <li>Waist</li>
+      </bodyPartGroups>
+      <layers>
+        <li>Belt</li>
+      </layers>
+      <wornGraphicPath>Things/Pawn/Humanlike/Apparel/ToxPack/ToxPack</wornGraphicPath>
+      <wornGraphicData>
+        <renderUtilityAsPack>true</renderUtilityAsPack>
+        <north><offset>(0,-0.15)</offset></north>
+        <south><offset>(0,-0.15)</offset></south>
+        <east><offset>(-0.35,-0.1)</offset></east>
+        <west><offset>(0.35,-0.1)</offset></west>
+      </wornGraphicData>
+    </apparel>
+    <stuffCategories>
+      <li>Fabric</li>
+      <li>Leathery</li>
+    </stuffCategories>
+  </ThingDef>
+
+  <ThingDef ParentName="CA_RuckBase">
+    <defName>CA_RuckSmall</defName>
+    <label>small ruck</label>
+    <description>A small pack of stitched textile with plasteel framing. Adds roughly 45 items of carrying capacity, scaled by the wearer's build, strength, and nerve.</description>
+    <statBases>
+      <Mass>1</Mass>
+      <WorkToMake>2400</WorkToMake>
+    </statBases>
+    <costStuffCount>30</costStuffCount>
+    <costList>
+      <Plasteel>10</Plasteel>
+    </costList>
+  </ThingDef>
+
+  <ThingDef ParentName="CA_RuckBase">
+    <defName>CA_RuckMedium</defName>
+    <label>medium ruck</label>
+    <description>A patrol pack of textile on a plasteel frame. Adds roughly 75 items of carrying capacity, scaled by the wearer's build, strength, and nerve.</description>
+    <statBases>
+      <Mass>2</Mass>
+      <WorkToMake>3600</WorkToMake>
+    </statBases>
+    <costStuffCount>60</costStuffCount>
+    <costList>
+      <Plasteel>20</Plasteel>
+    </costList>
+  </ThingDef>
+
+  <ThingDef ParentName="CA_RuckBase">
+    <defName>CA_RuckLarge</defName>
+    <label>large ruck</label>
+    <description>A full field ruck on a reinforced plasteel frame. Adds roughly 100 items of carrying capacity, scaled by the wearer's build, strength, and nerve.</description>
+    <statBases>
+      <Mass>3</Mass>
+      <WorkToMake>4800</WorkToMake>
+    </statBases>
+    <costStuffCount>80</costStuffCount>
+    <costList>
+      <Plasteel>40</Plasteel>
+    </costList>
+  </ThingDef>
+
+  <ThingDef ParentName="CA_RuckBase">
+    <defName>CA_RuckXXL</defName>
+    <label>XXL ruck</label>
+    <description>An expedition ruck the size of its wearer. Adds roughly 150 items of carrying capacity - two full stacks - scaled by the wearer's build, strength, and nerve.</description>
+    <statBases>
+      <Mass>5</Mass>
+      <WorkToMake>7200</WorkToMake>
+    </statBases>
+    <costStuffCount>120</costStuffCount>
+    <costList>
+      <Plasteel>80</Plasteel>
+    </costList>
+  </ThingDef>
+
+</Defs>

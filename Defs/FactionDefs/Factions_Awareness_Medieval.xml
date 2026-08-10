@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <!-- THE MEDIEVAL GAP, CLOSED [operator-ordered]: the engine has the
+       tech level and the arsenal (plate, longswords, bows) but no
+       faction. This template makes Medieval selectable in the starting
+       region settlements menu and the vanilla world-creation list. It
+       rides TribeBase for all plumbing (namers, icons, trade kinds)
+       and swaps the war grammar to steel: men-at-arms in plate,
+       archers with recurves, serfs with simple arms, a lord above
+       them. Power dynamics by technology: stronger than any tribe,
+       humbler than industry - the operator's composition target. -->
+
+  <PawnKindDef ParentName="VillagerBase">
+    <defName>CA_MedievalSerf</defName>
+    <label>serf</label>
+    <combatPower>35</combatPower>
+    <isFighter>false</isFighter>
+    <gearHealthRange>0.3~1.6</gearHealthRange>
+    <weaponTags>
+      <li>MedievalMeleeBasic</li>
+    </weaponTags>
+    <weaponMoney>65~140</weaponMoney>
+    <apparelMoney>120~280</apparelMoney>
+    <apparelAllowHeadgearChance>0.3</apparelAllowHeadgearChance>
+    <techHediffsChance>0</techHediffsChance>
+  </PawnKindDef>
+
+  <PawnKindDef ParentName="VillagerBase">
+    <defName>CA_MedievalArcher</defName>
+    <label>archer</label>
+    <combatPower>65</combatPower>
+    <isFighter>true</isFighter>
+    <gearHealthRange>0.5~1.8</gearHealthRange>
+    <weaponTags>
+      <li>NeolithicRangedDecent</li>
+    </weaponTags>
+    <weaponMoney>150~320</weaponMoney>
+    <apparelMoney>200~420</apparelMoney>
+    <apparelAllowHeadgearChance>0.5</apparelAllowHeadgearChance>
+    <techHediffsChance>0</techHediffsChance>
+  </PawnKindDef>
+
+  <PawnKindDef ParentName="GuardBase">
+    <defName>CA_MedievalManAtArms</defName>
+    <label>man-at-arms</label>
+    <combatPower>85</combatPower>
+    <isFighter>true</isFighter>
+    <gearHealthRange>0.6~2</gearHealthRange>
+    <apparelTags>
+      <li>MedievalMilitary</li>
+    </apparelTags>
+    <apparelMoney>900~1700</apparelMoney>
+    <apparelAllowHeadgearChance>1</apparelAllowHeadgearChance>
+    <weaponTags>
+      <li>MedievalMeleeDecent</li>
+      <li>MedievalMeleeAdvanced</li>
+    </weaponTags>
+    <weaponMoney>200~520</weaponMoney>
+    <techHediffsChance>0</techHediffsChance>
+  </PawnKindDef>
+
+  <PawnKindDef ParentName="GuardBase">
+    <defName>CA_MedievalLord</defName>
+    <label>lord</label>
+    <combatPower>110</combatPower>
+    <isFighter>true</isFighter>
+    <gearHealthRange>0.8~2</gearHealthRange>
+    <apparelTags>
+      <li>MedievalMilitary</li>
+    </apparelTags>
+    <apparelMoney>1300~2200</apparelMoney>
+    <apparelAllowHeadgearChance>1</apparelAllowHeadgearChance>
+    <weaponTags>
+      <li>MedievalMeleeAdvanced</li>
+    </weaponTags>
+    <weaponMoney>420~900</weaponMoney>
+    <techHediffsChance>0</techHediffsChance>
+  </PawnKindDef>
+
+  <FactionDef ParentName="TribeBase">
+    <defName>CA_MedievalKingdom</defName>
+    <label>medieval kingdom</label>
+    <description>A settled feudal people. Somewhere between the old
+tribes and the machine towns, they hold land the way their
+grandparents held it: by oath, by harvest, and by the sword. Serfs
+work the fields, archers watch the walls, and men-at-arms in plate
+answer to a lord whose word is law.\n\nThey are neither primitive
+nor advanced - and they know exactly which neighbors are
+which.</description>
+    <techLevel>Medieval</techLevel>
+    <leaderTitle>king</leaderTitle>
+    <basicMemberKind>CA_MedievalSerf</basicMemberKind>
+    <colorSpectrum>
+      <li>(0.42, 0.22, 0.58)</li>
+      <li>(0.68, 0.5, 0.84)</li>
+    </colorSpectrum>
+    <disallowedMemes>
+      <li MayRequire="Ludeon.RimWorld.Ideology">Nudism</li>
+      <li MayRequire="Ludeon.RimWorld.Ideology">Blindsight</li>
+    </disallowedMemes>
+    <maxConfigurableAtWorldCreation>9999</maxConfigurableAtWorldCreation>
+    <configurationListOrderPriority>35</configurationListOrderPriority>
+    <pawnGroupMakers>
+      <li>
+        <kindDef>Peaceful</kindDef>
+        <options>
+          <CA_MedievalSerf>10</CA_MedievalSerf>
+          <CA_MedievalArcher>2</CA_MedievalArcher>
+        </options>
+      </li>
+      <li>
+        <kindDef>Combat</kindDef>
+        <options>
+          <CA_MedievalManAtArms>10</CA_MedievalManAtArms>
+          <CA_MedievalArcher>8</CA_MedievalArcher>
+          <CA_MedievalSerf>3</CA_MedievalSerf>
+          <CA_MedievalLord>1</CA_MedievalLord>
+        </options>
+      </li>
+      <li>
+        <kindDef>Settlement</kindDef>
+        <options>
+          <CA_MedievalManAtArms>8</CA_MedievalManAtArms>
+          <CA_MedievalArcher>6</CA_MedievalArcher>
+          <CA_MedievalSerf>5</CA_MedievalSerf>
+          <CA_MedievalLord>1</CA_MedievalLord>
+        </options>
+      </li>
+      <li>
+        <kindDef>Trader</kindDef>
+        <traders>
+          <Tribal_Trader>1</Tribal_Trader>
+        </traders>
+        <carriers>
+          <Muffalo>6</Muffalo>
+          <Dromedary>5</Dromedary>
+        </carriers>
+        <guards>
+          <CA_MedievalManAtArms>6</CA_MedievalManAtArms>
+          <CA_MedievalArcher>5</CA_MedievalArcher>
+        </guards>
+      </li>
+    </pawnGroupMakers>
+  </FactionDef>
+
+</Defs>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <!-- Stack posture: move to your assigned slot, then hold it with weapon oriented
+       on your sector. The posture job self-renews off this duty - the duty IS the
+       standing order, not a pinned job. -->
+  <DutyDef>
+    <defName>CA_StackPosition</defName>
+    <alwaysShowWeapon>true</alwaysShowWeapon>
+    <socialModeMax>Off</socialModeMax>
+    <thinkNode Class="ThinkNode_Priority">
+      <subNodes>
+        <li Class="ColonistAwareness.JobGiver_CAStackSlot" />
+      </subNodes>
+    </thinkNode>
+  </DutyDef>
+
+  <!-- Automatic raid defense: engage from the selected post or stand armed and
+       watch the remembered contact. Deliberately no needs/work subtree: a pawn
+       who has reacted to contact must not resume RopeToPen at the barricade. -->
+  <DutyDef>
+    <defName>CA_DefensivePosture</defName>
+    <alwaysShowWeapon>true</alwaysShowWeapon>
+    <socialModeMax>Off</socialModeMax>
+    <constantThinkNode Class="ThinkNode_Priority">
+      <subNodes>
+        <li Class="ColonistAwareness.JobGiver_CAEngagePoint">
+          <targetAcquireRadius>40</targetAcquireRadius>
+          <targetKeepRadius>48</targetKeepRadius>
+        </li>
+        <li Class="ColonistAwareness.JobGiver_CAStackSlot" />
+      </subNodes>
+    </constantThinkNode>
+    <thinkNode Class="ThinkNode_Priority">
+      <subNodes>
+        <li Class="ColonistAwareness.JobGiver_CAEngagePoint">
+          <targetAcquireRadius>40</targetAcquireRadius>
+          <targetKeepRadius>48</targetKeepRadius>
+        </li>
+        <li Class="ColonistAwareness.JobGiver_CAStackSlot" />
+      </subNodes>
+    </thinkNode>
+  </DutyDef>
+
+  <!-- Hold position: fight from the post without chasing, satisfy needs within a
+       short leash of it, otherwise stand the post with sector facing. The vanilla
+       Defend pattern, adjusted by the selected defense posture. -->
+  <DutyDef>
+    <defName>CA_HoldPosition</defName>
+    <alwaysShowWeapon>true</alwaysShowWeapon>
+    <!-- Immediate target reacquisition belongs in RimWorld's 30-tick constant-duty
+         lane. Return to the anchor remains in the normal duty tree so it cannot
+         interrupt a bounded attack commitment or an ordinary permitted need job. -->
+    <constantThinkNode Class="ThinkNode_Priority">
+      <subNodes>
+        <li Class="ColonistAwareness.JobGiver_CAEngagePoint">
+          <targetAcquireRadius>40</targetAcquireRadius>
+          <targetKeepRadius>48</targetKeepRadius>
+        </li>
+      </subNodes>
+    </constantThinkNode>
+    <thinkNode Class="ThinkNode_Priority">
+      <subNodes>
+        <li Class="ColonistAwareness.JobGiver_CAEngagePoint">
+          <targetAcquireRadius>40</targetAcquireRadius>
+          <targetKeepRadius>48</targetKeepRadius>
+        </li>
+        <li Class="ThinkNode_ForbidOutsideFlagRadius">
+          <maxDistToSquadFlag>12</maxDistToSquadFlag>
+          <subNodes>
+            <li Class="ThinkNode_Subtree">
+              <treeDef>SatisfyBasicNeedsAndWork</treeDef>
+            </li>
+          </subNodes>
+        </li>
+        <li Class="ColonistAwareness.JobGiver_CAStackSlot" />
+      </subNodes>
+    </thinkNode>
+  </DutyDef>
+
+  <!-- Room clearing: engage anything near your point of domination (cast position
+       leashed to the duty radius), otherwise take and hold the point. -->
+  <DutyDef>
+    <defName>CA_ClearRoom</defName>
+    <alwaysShowWeapon>true</alwaysShowWeapon>
+    <constantThinkNode Class="ThinkNode_Priority">
+      <subNodes>
+        <li Class="ColonistAwareness.JobGiver_CAEngagePoint">
+          <targetAcquireRadius>18</targetAcquireRadius>
+          <targetKeepRadius>24</targetKeepRadius>
+        </li>
+      </subNodes>
+    </constantThinkNode>
+    <thinkNode Class="ThinkNode_Priority">
+      <subNodes>
+        <li Class="ColonistAwareness.JobGiver_CAEngagePoint">
+          <targetAcquireRadius>18</targetAcquireRadius>
+          <targetKeepRadius>24</targetKeepRadius>
+        </li>
+        <li Class="ColonistAwareness.JobGiver_CAStackSlot" />
+      </subNodes>
+    </thinkNode>
+  </DutyDef>
+
+</Defs>

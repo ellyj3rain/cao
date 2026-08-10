@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+<!-- Water for the bedridden, on the same work type and at a higher
+     priority than feeding them, because thirst kills faster than
+     hunger. Vanilla's own feed-patients giver is the pattern. -->
+
+  <WorkGiverDef>
+    <defName>CA_DoctorWaterPatients</defName>
+    <label>give water to patients</label>
+    <giverClass>ColonistAwareness.WorkGiver_CAWaterPatient</giverClass>
+    <workType>Doctor</workType>
+    <verb>give water to</verb>
+    <gerund>giving water to</gerund>
+    <priorityInType>85</priorityInType>
+    <requiredCapacities>
+      <li>Manipulation</li>
+    </requiredCapacities>
+    <prioritizeSustains>true</prioritizeSustains>
+    <canBeDoneByMechs>true</canBeDoneByMechs>
+  </WorkGiverDef>
+
+  <!-- Drawing water to STORE is hauling work, and it happens because
+       the place has somewhere to put it. Storage settings are the
+       demand signal - the same one that decides whether anything else
+       in this game gets carried anywhere. -->
+  <WorkGiverDef>
+    <defName>CA_DrawWater</defName>
+    <label>draw water</label>
+    <giverClass>ColonistAwareness.WorkGiver_CADrawWater</giverClass>
+    <workType>Hauling</workType>
+    <verb>draw</verb>
+    <gerund>drawing water</gerund>
+    <priorityInType>60</priorityInType>
+    <requiredCapacities>
+      <li>Manipulation</li>
+    </requiredCapacities>
+    <prioritizeSustains>true</prioritizeSustains>
+  </WorkGiverDef>
+
+  <WorkGiverDef>
+    <defName>CA_DrawFromWell</defName>
+    <label>draw water from well</label>
+    <giverClass>ColonistAwareness.WorkGiver_CADrawFromWell</giverClass>
+    <workType>Hauling</workType>
+    <verb>draw</verb>
+    <gerund>drawing water</gerund>
+    <priorityInType>65</priorityInType>
+    <requiredCapacities><li>Manipulation</li></requiredCapacities>
+    <prioritizeSustains>true</prioritizeSustains>
+  </WorkGiverDef>
+
+  <WorkGiverDef>
+    <defName>CA_DrawFromCistern</defName>
+    <label>draw water from cistern</label>
+    <giverClass>ColonistAwareness.WorkGiver_CADrawFromCistern</giverClass>
+    <workType>Hauling</workType>
+    <verb>draw</verb>
+    <gerund>drawing water</gerund>
+    <priorityInType>66</priorityInType>
+    <requiredCapacities><li>Manipulation</li></requiredCapacities>
+    <prioritizeSustains>true</prioritizeSustains>
+  </WorkGiverDef>
+
+</Defs>

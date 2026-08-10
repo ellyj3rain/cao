@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <JobDef>
+    <defName>CA_DrinkFromSource</defName>
+    <driverClass>ColonistAwareness.JobDriver_CADrinkFromSource</driverClass>
+    <reportString>drinking from the water.</reportString>
+    <casualInterruptible>false</casualInterruptible>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_WashAtWater</defName>
+    <driverClass>ColonistAwareness.JobDriver_CAWashAtWater</driverClass>
+    <reportString>washing.</reportString>
+    <casualInterruptible>true</casualInterruptible>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_RelieveOutdoors</defName>
+    <driverClass>ColonistAwareness.JobDriver_CARelieveOutdoors</driverClass>
+    <reportString>relieving self.</reportString>
+    <casualInterruptible>false</casualInterruptible>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_DrawWater</defName>
+    <driverClass>ColonistAwareness.JobDriver_CADrawWater</driverClass>
+    <reportString>drawing water.</reportString>
+    <casualInterruptible>true</casualInterruptible>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_DrawFromWell</defName>
+    <driverClass>ColonistAwareness.JobDriver_CADrawFromWell</driverClass>
+    <reportString>drawing water from TargetA.</reportString>
+    <casualInterruptible>true</casualInterruptible>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_DrawFromCistern</defName>
+    <driverClass>ColonistAwareness.JobDriver_CADrawFromCistern</driverClass>
+    <reportString>drawing water from TargetA.</reportString>
+    <casualInterruptible>true</casualInterruptible>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_DrinkFromVessel</defName>
+    <driverClass>ColonistAwareness.JobDriver_CADrinkFromVessel</driverClass>
+    <reportString>drinking.</reportString>
+    <casualInterruptible>false</casualInterruptible>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_WaterPatient</defName>
+    <driverClass>ColonistAwareness.JobDriver_CAWaterPatient</driverClass>
+    <reportString>giving water to TargetB.</reportString>
+    <casualInterruptible>false</casualInterruptible>
+  </JobDef>
+
+</Defs>

@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+<!-- Container art ported from Dubs Bad Hygiene by Dubwise56, used by
+     permission. See CREDITS.md.
+
+     FOUR TIERS, because they answer four different logistics problems:
+       personal    what one body carries for one day
+       transport   what a squad or a household moves in one trip
+       storage     what a place keeps
+       sealed      the same jobs done better, where the tech exists
+
+     Empty mass, capacity and sealing are the three numbers that make
+     them different from each other. Full mass is not a field: it is
+     the empty vessel plus a kilogram a litre, added by the same stat
+     machinery the rucks use, which is why a canteen gets lighter as it
+     is drunk without anything tracking it. -->
+
+  <ThingDef Name="CA_VesselBase" ParentName="ResourceBase" Abstract="True">
+    <thingCategories>
+      <li>Manufactured</li>
+    </thingCategories>
+    <stackLimit>1</stackLimit>
+    <resourceReadoutPriority>Middle</resourceReadoutPriority>
+    <alwaysHaulable>true</alwaysHaulable>
+    <drawGUIOverlay>false</drawGUIOverlay>
+    <tradeability>Sellable</tradeability>
+    <comps>
+      <li Class="CompProperties_Forbiddable" />
+    </comps>
+  </ThingDef>
+
+  <!-- PERSONAL: one body, one day. A waterskin is what a people with
+       leather and no metalwork carries; the canteen is the same idea
+       once there is sheet metal. -->
+
+  <ThingDef ParentName="CA_VesselBase">
+    <defName>CA_Waterskin</defName>
+    <label>waterskin</label>
+    <description>A stitched hide bag with a stopper. It holds a day's water for one person and weighs almost nothing empty.</description>
+    <graphicData>
+      <texPath>BadHygiene/Things/Resource/WaterBottles/WaterPouch_a</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>0.75</drawSize>
+    </graphicData>
+    <statBases>
+      <MaxHitPoints>50</MaxHitPoints>
+      <Flammability>0.8</Flammability>
+      <Mass>0.3</Mass>
+      <DeteriorationRate>2</DeteriorationRate>
+      <WorkToMake>900</WorkToMake>
+    </statBases>
+    <costList>
+      <Leather_Plain>15</Leather_Plain>
+    </costList>
+    <comps>
+      <li Class="ColonistAwareness.CompProperties_WaterVessel">
+        <capacity>3</capacity>
+        <sealed_>true</sealed_>
+      </li>
+    </comps>
+  </ThingDef>
+
+  <ThingDef ParentName="CA_VesselBase">
+    <defName>CA_Canteen</defName>
+    <label>canteen</label>
+    <description>A pressed metal flask on a strap. Heavier than a skin, and it does not taint what is in it.</description>
+    <graphicData>
+      <texPath>BadHygiene/Things/Resource/WaterBottles/WaterBot_a</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>0.75</drawSize>
+    </graphicData>
+    <statBases>
+      <MaxHitPoints>80</MaxHitPoints>
+      <Flammability>0.2</Flammability>
+      <Mass>0.6</Mass>
+      <DeteriorationRate>1</DeteriorationRate>
+      <WorkToMake>1400</WorkToMake>
+    </statBases>
+    <costList>
+      <Steel>8</Steel>
+    </costList>
+    <comps>
+      <li Class="ColonistAwareness.CompProperties_WaterVessel">
+        <capacity>4</capacity>
+        <sealed_>true</sealed_>
+      </li>
+    </comps>
+  </ThingDef>
+
+  <!-- SEALED HIGH TECH: the same personal job, done properly. Light
+       for what it holds and it does not let anything in. -->
+
+  <ThingDef ParentName="CA_VesselBase">
+    <defName>CA_PlasteelBottle</defName>
+    <label>plasteel bottle</label>
+    <description>A sealed plasteel canister. It holds more than a canteen, weighs less empty, and nothing gets into it that was not poured in.</description>
+    <graphicData>
+      <texPath>BadHygiene/Things/Resource/WaterBottles/WaterBot_b</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>0.75</drawSize>
+    </graphicData>
+    <statBases>
+      <MaxHitPoints>200</MaxHitPoints>
+      <Flammability>0</Flammability>
+      <Mass>0.35</Mass>
+      <DeteriorationRate>0</DeteriorationRate>
+      <WorkToMake>3200</WorkToMake>
+    </statBases>
+    <costList>
+      <Plasteel>6</Plasteel>
+    </costList>
+    <comps>
+      <li Class="ColonistAwareness.CompProperties_WaterVessel">
+        <capacity>6</capacity>
+        <sealed_>true</sealed_>
+      </li>
+    </comps>
+  </ThingDef>
+
+  <!-- TRANSPORT: what a squad or a household moves in one trip. The
+       jug is open at the top and water stands stagnant in it; the
+       jerry can is closed and does not. -->
+
+  <ThingDef ParentName="CA_VesselBase">
+    <defName>CA_WaterJug</defName>
+    <label>water jug</label>
+    <description>A fired clay jug. It moves real quantities of water and it is open at the neck, so what stands in it turns stagnant within days.</description>
+    <graphicData>
+      <texPath>BadHygiene/Things/Resource/WaterBottles/WaterPouch_c</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>0.9</drawSize>
+    </graphicData>
+    <statBases>
+      <MaxHitPoints>60</MaxHitPoints>
+      <Flammability>0</Flammability>
+      <Mass>2.5</Mass>
+      <DeteriorationRate>1</DeteriorationRate>
+      <WorkToMake>1100</WorkToMake>
+    </statBases>
+    <costList>
+      <Steel>4</Steel>
+    </costList>
+    <comps>
+      <li Class="ColonistAwareness.CompProperties_WaterVessel">
+        <capacity>12</capacity>
+        <sealed_>false</sealed_>
+        <daysToStagnateOpen>2</daysToStagnateOpen>
+      </li>
+    </comps>
+  </ThingDef>
+
+  <ThingDef ParentName="CA_VesselBase">
+    <defName>CA_JerryCan</defName>
+    <label>jerry can</label>
+    <description>A stamped steel can with a sealed cap. Twenty litres is twenty kilograms - one person can carry it, and will not enjoy it.</description>
+    <graphicData>
+      <texPath>BadHygiene/Things/Resource/WaterBottles/WaterBot_c</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>0.95</drawSize>
+    </graphicData>
+    <statBases>
+      <MaxHitPoints>140</MaxHitPoints>
+      <Flammability>0.1</Flammability>
+      <Mass>3.0</Mass>
+      <DeteriorationRate>1</DeteriorationRate>
+      <WorkToMake>2400</WorkToMake>
+    </statBases>
+    <costList>
+      <Steel>20</Steel>
+    </costList>
+    <comps>
+      <li Class="ColonistAwareness.CompProperties_WaterVessel">
+        <capacity>20</capacity>
+        <sealed_>true</sealed_>
+      </li>
+    </comps>
+  </ThingDef>
+
+</Defs>

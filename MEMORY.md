@@ -1,0 +1,102 @@
+| Document | Colonist Awareness Overhaul Memory |
+|---|---|
+<!-- cao:generated:version BEGIN -->
+| Version | `0.12.3.0-alpha` · A sequence closed at `A102` · next `B1` |
+<!-- cao:generated:version END -->
+| Author | ellyj3rain |
+| Repository | `MEMORY.md` |
+| Status | ACTIVE - index of every root document and its standing. |
+
+# Memory
+
+Index of every document at the repository root, with what it is and whether it is
+current. Nothing at the root is unclassified. Where a disposition is genuinely
+unresolved, this file says so rather than guessing — an unresolved status is a
+junction for the operator, not a defect in the index.
+
+## Status vocabulary
+
+| Status | Meaning |
+|---|---|
+| CANONICAL | Current truth. Edit in place when superseded. |
+| CANONICAL, INCOMPLETE | Current, and self-declares unfinished scope. |
+| APPEND-ONLY | Historical record extended through new entries; prior substance is fixed. |
+| REGULATORY | Active organization or index. May be corrected without rewriting the historical records it organizes. |
+| IMMUTABLE | Exact historical evidence. Never rewritten. |
+| DAMAGED | Content was lost; a recovered copy exists out-of-band and is not restored. |
+| SUPERSEDED, UNMIGRATED | A successor exists, but this document still holds content the successor does not. Do not delete. |
+| RECORD | Working record or captured artifact. Evidence, not architecture. |
+| RECORD, SUPERSEDED | Historical design record retained for context. Not a current contract. |
+| SHIM | Pointer file. |
+
+## Canonical doc-pack
+
+| File | Status | Role |
+|---|---|---|
+| `README.md`, `README.docx` | CANONICAL | Human entry point in working and document formats. |
+| `MEMORY.md` | CANONICAL | This index. |
+| `CORE.md` | CANONICAL | Repository identity, canonical composition, governing constraints. |
+| `ARCHITECTURE.md` | CANONICAL | Ratified framework shape; the four pillars. |
+| `GOVERNANCE.md` | CANONICAL | Operating discipline and model-facing instruction surface. |
+| `DECISION_REGISTRY.md` | CANONICAL, APPEND-ONLY | Ratified decisions DR-1…DR-94. Later records supersede earlier decisions without rewriting them. |
+| `FINDINGS.md` | CANONICAL, APPEND-ONLY | Verified findings F-1…F-135 and F-151…F-153. Former Git labels F-136…F-150 resolve through the former-label crosswalk and are not reused as finding identifiers. |
+| `BATCH_LOG.md` | REGULATORY | Chronological index for the single append-only batch sequence and the next-batch declaration. |
+| `VERSION_MAP.md` | REGULATORY, GENERATED | Chronological version-unit replay derived from `tools/version-model.mjs`. |
+| `ROADMAP.md` | CANONICAL | Thread map, backlog, live gates. |
+| `SESSION_STATE.md` | CANONICAL | Current operational reality. Read before claiming where anything stands. |
+| `VERSION` | CANONICAL, GENERATED | `0.12.3.0-alpha`, derived from the version replay. |
+
+## Batch record system
+
+| Surface | Status | Role |
+|---|---|---|
+| `Batches/README.md` | REGULATORY | Maintenance contract for one alphanumeric batch namespace. |
+| `Batches/A*.md` | APPEND-ONLY | The 102 closed A-sequence batch records. Future `B*` records join them in the same directory. |
+| `Batches/THREADS.md` | REGULATORY | Permanent series-neutral families and many-to-many threads over nonadjacent batches. |
+| `Batches/THREAD_ID_CROSSWALK.md` | REGULATORY | Complete map from temporary `ATF-*` / `AT-*` identifiers to `TF-*` / `T-*`. |
+| `Batches/FORMER_LABELS.md` | REGULATORY | Complete map from all 93 former ledger boundaries to current batches. |
+
+The A sequence closes at `A102`; `B1` is next. Git history preserves the exact
+pre-convergence ledgers, generated catalog surfaces, and former file layouts.
+
+The three development layers are separate. Batches record atomic chronological
+work. Threads classify related work across any letter sequence. The 27 version
+units in `VERSION_MAP.md` partition A1-A102 into contiguous capability runs and
+derive the current root version through the Neo four-coordinate odometer.
+
+## Engine and distribution
+
+| File | Status | Role |
+|---|---|---|
+| `GAME_ARCHITECTURE.md` | CANONICAL | Decompile-grounded study of RimWorld seams and limits. |
+| `LICENSE` | CANONICAL | GPL-3.0 full text. Required for shipment. |
+| `CREDITS.md` | CANONICAL | Public attribution and per-source how-and-why. Carries a corrected Processor Framework entry: the design is described, nothing is ported. |
+| `UPSTREAM_SOURCES.md` | CANONICAL | Machine-checkable provenance — upstream URLs, licences, what was taken, incorporation state. Records that commit hashes are not recoverable from the local archive. |
+| `AGENTS.md` | SHIM | Points at `GOVERNANCE.md`. |
+
+## Audits and synthesis
+
+| File | Status | Standing |
+|---|---|---|
+| `SETTLEMENT_SYNTHESIS_MODEL.md` | CANONICAL | Current faction, settlement, starting-condition, and derived-capability generation model. |
+| `START_SURFACE_MAP.md` | CANONICAL | Vanilla colony-creation stages and CA's proper extension point per stage. Supersedes `SETUP_SCOPE_MAP.md`'s framing. |
+| `PRIOR_ART_TRACES.md` | CANONICAL | One record of every external implementation investigated. Labels evidence grade per assertion; Simple Warrants is source-verified, Law and Order and Yayo's Bank are operator-supplied. |
+| `ECONOMIC_FUNCTION_AUDIT.md` | CANONICAL, INCOMPLETE | DR-87 first pass over 13 economic functions. Self-declares remaining scope unfinished. |
+| `ECONOMIC_IMPLEMENTATION_AUDIT.md` | CANONICAL, INCOMPLETE | DR-87 second pass; RimBank deep trace, verdict "split by layer". Closes with "Remaining, not started". |
+| `PARALLEL_ONTOLOGY_AUDIT.md` | **DAMAGED** | The current file is an 89-line consolidation. The complete 394-line original was overwritten 2026-08-05 while untracked, recovered from session transcripts, and is held in `recovery-candidates/` in the preservation package. **Restoration is an open decision.** Current verdicts in the file are accurate; rounds 1–2 per-item consumer tracing is missing from it. |
+| `SETUP_SCOPE_MAP.md` | RECORD, SUPERSEDED | Historical audit of the removed setup screen. Retained for its dead-control and flow evidence; its schema names are not current contracts. |
+## Working records
+
+These are retained design records, not current architecture.
+
+| File | Status | Content |
+|---|---|---|
+| `POLITICAL_ARCHITECTURE_RATIFICATION.md` | RECORD, SUPERSEDED | Earlier political-design proposal. Current contracts live in `ARCHITECTURE.md` and `SETTLEMENT_SYNTHESIS_MODEL.md`. |
+| `ONBOARDING_IA.md` | RECORD, SUPERSEDED | Earlier onboarding IA. Current contracts live in DR-91 and `SETTLEMENT_SYNTHESIS_MODEL.md`. |
+
+## Boundary
+
+This index covers repository documents only. It does not cover the preservation
+package, the RS-008 save, the live-tree-only `REGIONAL_SPECIMENS.md`, or the
+decompiled engine source — those are listed in `SESSION_STATE.md` under
+out-of-band artifacts, with their locations and hashes.

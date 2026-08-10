@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <InteractionDef>
+    <defName>CA_PraiseThirdParty</defName>
+    <label>praise someone</label>
+    <workerClass>ColonistAwareness.InteractionWorker_Praise</workerClass>
+    <symbol>Things/Mote/SpeechSymbols/Chitchat</symbol>
+    <logRulesInitiator>
+      <rulesStrings>
+        <li>r_logentry->[INITIATOR_nameDef] spoke well of another colonist to [RECIPIENT_nameDef].</li>
+      </rulesStrings>
+    </logRulesInitiator>
+  </InteractionDef>
+
+  <InteractionDef>
+    <defName>CA_PoisonThirdParty</defName>
+    <label>speak ill of someone</label>
+    <workerClass>ColonistAwareness.InteractionWorker_Poison</workerClass>
+    <symbol>Things/Mote/SpeechSymbols/Slight</symbol>
+    <logRulesInitiator>
+      <rulesStrings>
+        <li>r_logentry->[INITIATOR_nameDef] spoke ill of another colonist to [RECIPIENT_nameDef].</li>
+      </rulesStrings>
+    </logRulesInitiator>
+  </InteractionDef>
+
+</Defs>

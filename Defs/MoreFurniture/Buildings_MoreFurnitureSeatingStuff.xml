@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!--============================== Seating ==============================-->
+  <!--====================== square dining chair ======================-->
+  <ThingDef ParentName="Anon2ArtableFurnitureBase">
+    <defName>Anon2SquareDiningChair</defName>
+    <label>square dining chair</label>
+    <graphicData>
+      <texPath>MoreFurniture/SeatingStuff/Anon2SquareChair</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawSize>(3,3)</drawSize>
+      <shadowData>
+        <volume>(0.3, 0.6, 0.3)</volume>
+      </shadowData>
+      <damageData>
+        <rectN>(0.25,0.234375,0.5,0.28125)</rectN>
+        <rectS>(0.25,0.234375,0.5,0.28125)</rectS>
+        <rectE>(0.28125,0.25,0.453125,0.25)</rectE>
+        <rectW>(0.28125,0.25,0.453125,0.25)</rectW>
+      </damageData>
+    </graphicData>
+    <altitudeLayer>Building</altitudeLayer>
+    <statBases>
+      <MaxHitPoints>170</MaxHitPoints>
+      <WorkToBuild>6000</WorkToBuild>
+      <Mass>5</Mass>
+      <Flammability>1.0</Flammability>
+      <Beauty>7</Beauty>
+      <Comfort>0.70</Comfort>
+    </statBases>
+    <description>A comfortable and attractive chair for sitting at a table.</description>
+    <socialPropernessMatters>true</socialPropernessMatters>
+    <stuffCategories>
+      <li>Metallic</li>
+      <li>Woody</li>
+    </stuffCategories>
+    <costStuffCount>45</costStuffCount>
+    <pathCost>30</pathCost>
+    <fillPercent>0.35</fillPercent>
+    <building>
+      <isSittable>true</isSittable>
+    </building>
+    <designationCategory>ANON2MF</designationCategory>
+    <defaultPlacingRot>South</defaultPlacingRot>
+    <techLevel>Medieval</techLevel>
+    <researchPrerequisites>
+      <li>ComplexFurniture</li>
+    </researchPrerequisites>
+  </ThingDef>
+  <!--====================== cushioned chair ======================-->
+  <ThingDef ParentName="Anon2FurnitureWithQualityBase">
+    <defName>Anon2CushionedChair</defName>
+    <label>cushioned chair</label>
+    <graphicData>
+      <texPath>MoreFurniture/SeatingStuff/Anon2CushionedChair</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawSize>(3,3)</drawSize>
+      <shadowData>
+        <volume>(0.3, 0.6, 0.3)</volume>
+      </shadowData>
+      <damageData>
+        <rectN>(0.25,0.234375,0.5,0.28125)</rectN>
+        <rectS>(0.25,0.234375,0.5,0.28125)</rectS>
+        <rectE>(0.28125,0.25,0.453125,0.25)</rectE>
+        <rectW>(0.28125,0.25,0.453125,0.25)</rectW>
+      </damageData>
+    </graphicData>
+    <altitudeLayer>Building</altitudeLayer>
+    <statBases>
+      <MaxHitPoints>160</MaxHitPoints>
+      <WorkToBuild>7500</WorkToBuild>
+      <Mass>6</Mass>
+      <Flammability>1.0</Flammability>
+      <Beauty>10</Beauty>
+      <Comfort>0.75</Comfort>
+    </statBases>
+    <description>A large, soft, comfy seat. Great for relaxation and dining.</description>
+    <socialPropernessMatters>true</socialPropernessMatters>
+    <stuffCategories>
+      <li>Fabric</li>
+      <li>Leathery</li>
+    </stuffCategories>
+    <costStuffCount>45</costStuffCount>
+    <pathCost>30</pathCost>
+    <fillPercent>0.4</fillPercent>
+    <building>
+      <isSittable>true</isSittable>
+    </building>
+    <designationCategory>ANON2MF</designationCategory>
+    <defaultPlacingRot>South</defaultPlacingRot>
+    <techLevel>Medieval</techLevel>
+    <researchPrerequisites>
+      <li>ComplexFurniture</li>
+    </researchPrerequisites>
+  </ThingDef>
+  <!--====================== geek chair 
+
+  <ThingDef ParentName="Anon2FurnitureBase">
+    <defName>Anon2GeekChair</defName>
+    <label>computer chair</label>
+    <graphicData>
+      <texPath>MoreFurniture/SeatingStuff/Anon2GeekChair</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawSize>(3,3)</drawSize>
+      <shadowData>
+        <volume>(0.3, 0.6, 0.3)</volume>
+      </shadowData>
+      <damageData>
+        <rectN>(0.25,0.234375,0.5,0.28125)</rectN>
+        <rectS>(0.25,0.234375,0.5,0.28125)</rectS>
+        <rectE>(0.28125,0.25,0.453125,0.25)</rectE>
+        <rectW>(0.28125,0.25,0.453125,0.25)</rectW>
+      </damageData>
+    </graphicData>
+    <altitudeLayer>Building</altitudeLayer>
+    <statBases>
+      <MaxHitPoints>200</MaxHitPoints>
+      <WorkToBuild>1000</WorkToBuild>
+      <Mass>6</Mass>
+      <Flammability>1.0</Flammability>
+      <Beauty>7</Beauty>
+      <Comfort>0.74</Comfort>
+    </statBases>
+    <description>A comfortable chair with ajustable hight and support. Favored by those who use computers.</description>
+    <socialPropernessMatters>true</socialPropernessMatters>
+    <costList>
+      <Steel>30</Steel>
+      <ComponentIndustrial>3</ComponentIndustrial>
+    </costList>
+    <pathCost>35</pathCost>
+    <fillPercent>0.35</fillPercent>
+    <building>
+      <isSittable>true</isSittable>
+    </building>
+    <designationCategory>ANON2MF</designationCategory>
+  </ThingDef>
+
+======================-->
+  <!--====================== couch right ======================-->
+  <ThingDef ParentName="Anon2FurnitureBase">
+    <defName>Anon2CouchRight</defName>
+    <label>couch right</label>
+    <graphicData>
+      <texPath>MoreFurniture/SeatingStuff/Anon2CouchR</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawSize>(3,3)</drawSize>
+      <shadowData>
+        <volume>(0.6, 0.6, 0.6)</volume>
+      </shadowData>
+      <damageData>
+        <rectN>(0,0,1,0.703125)</rectN>
+        <rectS>(0.09375,0,0.84375,1)</rectS>
+        <rectE>(0,0,0.84375,0.625)</rectE>
+        <rectW>(0.15625,0,0.84375,0.625)</rectW>
+      </damageData>
+    </graphicData>
+    <altitudeLayer>Building</altitudeLayer>
+    <statBases>
+      <MaxHitPoints>220</MaxHitPoints>
+      <WorkToBuild>7500</WorkToBuild>
+      <Mass>18</Mass>
+      <Flammability>1.0</Flammability>
+      <Beauty>5</Beauty>
+      <Comfort>0.8</Comfort>
+    </statBases>
+    <description>A piece of a large, soft, comfy sofa. Great for relaxation.</description>
+    <socialPropernessMatters>true</socialPropernessMatters>
+    <stuffCategories>
+      <li>Fabric</li>
+      <li>Leathery</li>
+    </stuffCategories>
+    <costStuffCount>100</costStuffCount>
+    <pathCost>30</pathCost>
+    <fillPercent>0.40</fillPercent>
+    <building>
+      <isSittable>true</isSittable>
+    </building>
+    <designationCategory>ANON2MF</designationCategory>
+    <defaultPlacingRot>South</defaultPlacingRot>
+    <techLevel>Medieval</techLevel>
+    <researchPrerequisites>
+      <li>ComplexFurniture</li>
+    </researchPrerequisites>
+  </ThingDef>
+  <!--====================== couch center ======================-->
+  <ThingDef ParentName="Anon2FurnitureBase">
+    <defName>Anon2CouchCenter</defName>
+    <label>couch center</label>
+    <graphicData>
+      <texPath>MoreFurniture/SeatingStuff/Anon2CouchC</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawSize>(3,3)</drawSize>
+      <shadowData>
+        <volume>(0.6, 0.6, 0.6)</volume>
+      </shadowData>
+      <damageData>
+        <rectN>(0,0,1,0.703125)</rectN>
+        <rectS>(0.09375,0,0.84375,1)</rectS>
+        <rectE>(0,0,0.84375,0.625)</rectE>
+        <rectW>(0.15625,0,0.84375,0.625)</rectW>
+      </damageData>
+    </graphicData>
+    <altitudeLayer>Building</altitudeLayer>
+    <statBases>
+      <MaxHitPoints>220</MaxHitPoints>
+      <WorkToBuild>7500</WorkToBuild>
+      <Mass>18</Mass>
+      <Flammability>1.0</Flammability>
+      <Beauty>5</Beauty>
+      <Comfort>0.8</Comfort>
+    </statBases>
+    <description>A piece of a large, soft, comfy sofa. Great for relaxation.</description>
+    <socialPropernessMatters>true</socialPropernessMatters>
+    <stuffCategories>
+      <li>Fabric</li>
+      <li>Leathery</li>
+    </stuffCategories>
+    <costStuffCount>100</costStuffCount>
+    <pathCost>30</pathCost>
+    <fillPercent>0.40</fillPercent>
+    <building>
+      <isSittable>true</isSittable>
+    </building>
+    <designationCategory>ANON2MF</designationCategory>
+    <defaultPlacingRot>South</defaultPlacingRot>
+    <techLevel>Medieval</techLevel>
+    <researchPrerequisites>
+      <li>ComplexFurniture</li>
+    </researchPrerequisites>
+  </ThingDef>
+  <!--====================== couch left ======================-->
+  <ThingDef ParentName="Anon2FurnitureBase">
+    <defName>Anon2CouchLeft</defName>
+    <label>couch left</label>
+    <graphicData>
+      <texPath>MoreFurniture/SeatingStuff/Anon2CouchL</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawSize>(3,3)</drawSize>
+      <shadowData>
+        <volume>(0.6, 0.6, 0.6)</volume>
+      </shadowData>
+      <damageData>
+        <rectN>(0,0,1,0.703125)</rectN>
+        <rectS>(0.09375,0,0.84375,1)</rectS>
+        <rectE>(0,0,0.84375,0.625)</rectE>
+        <rectW>(0.15625,0,0.84375,0.625)</rectW>
+      </damageData>
+    </graphicData>
+    <altitudeLayer>Building</altitudeLayer>
+    <statBases>
+      <MaxHitPoints>220</MaxHitPoints>
+      <WorkToBuild>7500</WorkToBuild>
+      <Mass>18</Mass>
+      <Flammability>1.0</Flammability>
+      <Beauty>5</Beauty>
+      <Comfort>0.8</Comfort>
+    </statBases>
+    <description>A piece of a large, soft, comfy sofa. Great for relaxation.</description>
+    <socialPropernessMatters>true</socialPropernessMatters>
+    <stuffCategories>
+      <li>Fabric</li>
+      <li>Leathery</li>
+    </stuffCategories>
+    <costStuffCount>100</costStuffCount>
+    <pathCost>30</pathCost>
+    <fillPercent>0.40</fillPercent>
+    <building>
+      <isSittable>true</isSittable>
+    </building>
+    <designationCategory>ANON2MF</designationCategory>
+    <defaultPlacingRot>South</defaultPlacingRot>
+    <techLevel>Medieval</techLevel>
+    <researchPrerequisites>
+      <li>ComplexFurniture</li>
+    </researchPrerequisites>
+  </ThingDef>
+  <!--====================== couch corner ======================-->
+  <ThingDef ParentName="Anon2FurnitureBase">
+    <defName>Anon2CouchCorner</defName>
+    <label>couch corner</label>
+    <graphicData>
+      <texPath>MoreFurniture/SeatingStuff/Anon2CouchCorner</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawSize>(3,3)</drawSize>
+      <shadowData>
+        <volume>(0.6, 0.6, 0.6)</volume>
+      </shadowData>
+      <damageData>
+        <rectN>(0,0,1,0.703125)</rectN>
+        <rectS>(0.09375,0,0.84375,1)</rectS>
+        <rectE>(0,0,0.84375,0.625)</rectE>
+        <rectW>(0.15625,0,0.84375,0.625)</rectW>
+      </damageData>
+    </graphicData>
+    <altitudeLayer>Building</altitudeLayer>
+    <statBases>
+      <MaxHitPoints>220</MaxHitPoints>
+      <WorkToBuild>7500</WorkToBuild>
+      <Mass>18</Mass>
+      <Flammability>1.0</Flammability>
+      <Beauty>5</Beauty>
+      <Comfort>0.8</Comfort>
+    </statBases>
+    <description>A piece of a large, soft, comfy sofa. Great for relaxation.</description>
+    <socialPropernessMatters>true</socialPropernessMatters>
+    <stuffCategories>
+      <li>Fabric</li>
+      <li>Leathery</li>
+    </stuffCategories>
+    <costStuffCount>100</costStuffCount>
+    <pathCost>30</pathCost>
+    <fillPercent>0.40</fillPercent>
+    <building>
+      <isSittable>true</isSittable>
+    </building>
+    <designationCategory>ANON2MF</designationCategory>
+    <defaultPlacingRot>South</defaultPlacingRot>
+    <techLevel>Medieval</techLevel>
+    <researchPrerequisites>
+      <li>ComplexFurniture</li>
+    </researchPrerequisites>
+  </ThingDef>
+  <!--====================== couch corner Inverted ======================-->
+  <ThingDef ParentName="Anon2FurnitureBase">
+    <defName>Anon2CouchCornerInv</defName>
+    <label>couch corner Inverted</label>
+    <graphicData>
+      <texPath>MoreFurniture/SeatingStuff/Anon2CouchCornerInv</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawSize>(3,3)</drawSize>
+      <shadowData>
+        <volume>(0.6, 0.6, 0.6)</volume>
+      </shadowData>
+      <damageData>
+        <rectN>(0,0,1,0.703125)</rectN>
+        <rectS>(0.09375,0,0.84375,1)</rectS>
+        <rectE>(0,0,0.84375,0.625)</rectE>
+        <rectW>(0.15625,0,0.84375,0.625)</rectW>
+      </damageData>
+    </graphicData>
+    <altitudeLayer>Building</altitudeLayer>
+    <statBases>
+      <MaxHitPoints>220</MaxHitPoints>
+      <WorkToBuild>7500</WorkToBuild>
+      <Mass>18</Mass>
+      <Flammability>1.0</Flammability>
+      <Beauty>5</Beauty>
+      <Comfort>0.8</Comfort>
+    </statBases>
+    <description>A piece of a large, soft, comfy sofa. Great for relaxation.</description>
+    <socialPropernessMatters>true</socialPropernessMatters>
+    <stuffCategories>
+      <li>Fabric</li>
+      <li>Leathery</li>
+    </stuffCategories>
+    <costStuffCount>100</costStuffCount>
+    <pathCost>30</pathCost>
+    <fillPercent>0.40</fillPercent>
+    <building>
+      <isSittable>true</isSittable>
+    </building>
+    <designationCategory>ANON2MF</designationCategory>
+    <defaultPlacingRot>South</defaultPlacingRot>
+    <techLevel>Medieval</techLevel>
+    <researchPrerequisites>
+      <li>ComplexFurniture</li>
+    </researchPrerequisites>
+  </ThingDef>
+</Defs>

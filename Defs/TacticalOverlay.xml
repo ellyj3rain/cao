@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <!-- CA command painting: a dedicated architect tab holding the tactical
+       overlay designators. The layers themselves live on the map component;
+       these are pure paint tools. -->
+  <DesignationCategoryDef>
+    <defName>CA_Command</defName>
+    <label>command</label>
+    <description>Paint tactical command intent: objectives, the defensive line, the fallback line, the offensive line. Colonist Awareness lanes deploy to, withdraw toward, and defend what you paint.</description>
+    <order>25</order>
+    <specialDesignatorClasses>
+      <li>ColonistAwareness.Designator_CAOverlayObjective</li>
+      <li>ColonistAwareness.Designator_CAOverlayPrimaryObjective</li>
+      <li>ColonistAwareness.Designator_CAOverlayDefensiveLine</li>
+      <li>ColonistAwareness.Designator_CAOverlayFallbackLine</li>
+      <li>ColonistAwareness.Designator_CAOverlayOffensiveLine</li>
+      <li>ColonistAwareness.Designator_CAOverlayErase</li>
+    </specialDesignatorClasses>
+  </DesignationCategoryDef>
+
+</Defs>

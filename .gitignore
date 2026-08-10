@@ -1,0 +1,18 @@
+# build intermediates (the shipped DLL in Assemblies/ IS tracked)
+Source/obj/
+Source/bin/
+/obj/
+*.user
+
+# twin-build outputs (reproducible from source; ~559 MB across ~275 directories)
+.build-*/
+
+# upstream mod source kept locally for reference only; never a build input.
+# provenance is recorded in CREDITS.md and UPSTREAM_SOURCES.md instead.
+.vendor/
+
+# third-party binaries; not build inputs (the csproj resolves refs from NuGet)
+.vf-assemblies-staging/
+
+# never commit decompiled game source (lives outside the repo; keep it that way)
+rimworld-decompiled/

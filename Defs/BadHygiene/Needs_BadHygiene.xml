@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+<!-- Ported from Dubs Bad Hygiene by Dubwise56, used by permission.
+     See CREDITS.md.
+
+     DBH declared these through its own NeedDef subclass, whose only
+     addition was a list of body/race/hediff exemptions for other mods'
+     pawns. Vanilla's own Pawn_NeedsTracker.ShouldHaveNeed already
+     screens on intelligence, developmental stage and faction, so these
+     are stock NeedDefs and the screening stays where the engine put
+     it. -->
+
+  <NeedDef>
+    <defName>CA_Thirst</defName>
+    <needClass>ColonistAwareness.CANeed_Thirst</needClass>
+    <label>thirst</label>
+    <description>Water is required for many of life's physiological processes. A body that cannot replace what it loses fails long before it starves.</description>
+    <!-- Humanlike only, for now, because only humanlikes have a way to
+         drink. Animals are thirsty creatures and troughs are how they
+         answer it; until the troughs exist, giving animals a need they
+         cannot satisfy would just kill the livestock. -->
+    <minIntelligence>Humanlike</minIntelligence>
+    <baseLevel>0.8</baseLevel>
+    <listPriority>402</listPriority>
+    <showForCaravanMembers>false</showForCaravanMembers>
+  </NeedDef>
+
+  <NeedDef>
+    <defName>CA_Hygiene</defName>
+    <needClass>ColonistAwareness.CANeed_Hygiene</needClass>
+    <label>hygiene</label>
+    <description>Keeping clean reduces the risk of disease and makes a person easier to be around.</description>
+    <minIntelligence>Humanlike</minIntelligence>
+    <baseLevel>0.8</baseLevel>
+    <listPriority>321</listPriority>
+  </NeedDef>
+
+  <NeedDef>
+    <defName>CA_Bladder</defName>
+    <needClass>ColonistAwareness.CANeed_Bladder</needClass>
+    <label>bladder</label>
+    <description>Waste has to go somewhere. Where it goes decides whether it comes back as disease.</description>
+    <minIntelligence>Humanlike</minIntelligence>
+    <baseLevel>0.8</baseLevel>
+    <listPriority>401</listPriority>
+  </NeedDef>
+
+</Defs>

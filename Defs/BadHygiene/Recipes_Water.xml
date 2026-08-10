@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+<!-- PURIFICATION, at the level anyone can manage it: boiling. It needs
+     nothing but a fire, which is why it is the baseline and not a
+     technology - a tribe at a campfire purifies water exactly as well
+     as a colony at an electric stove, only slower and in smaller
+     amounts. Purpose-built filtration belongs to the fixtures and
+     will beat this on throughput, not on principle.
+
+     This is a stock RecipeDef on stock stoves. No code. -->
+
+  <RecipeDef>
+    <defName>CA_BoilWater</defName>
+    <label>boil water</label>
+    <description>Boil untreated water until it is fit to drink.</description>
+    <jobString>Boiling water.</jobString>
+    <workAmount>240</workAmount>
+    <workSpeedStat>CookSpeed</workSpeedStat>
+    <effectWorking>Cook</effectWorking>
+    <soundWorking>Recipe_CookMeal</soundWorking>
+    <allowMixingIngredients>false</allowMixingIngredients>
+    <ingredients>
+      <li>
+        <filter>
+          <thingDefs>
+            <li>CA_WaterContaminated</li>
+          </thingDefs>
+        </filter>
+        <count>5</count>
+      </li>
+    </ingredients>
+    <fixedIngredientFilter>
+      <thingDefs>
+        <li>CA_WaterContaminated</li>
+      </thingDefs>
+    </fixedIngredientFilter>
+    <products>
+      <CA_WaterPotable>5</CA_WaterPotable>
+    </products>
+    <recipeUsers>
+      <li>Campfire</li>
+      <li>FueledStove</li>
+      <li>ElectricStove</li>
+    </recipeUsers>
+  </RecipeDef>
+
+</Defs>

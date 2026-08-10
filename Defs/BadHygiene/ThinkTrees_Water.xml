@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+<!-- The seam is the engine's own: a JobGiver in the think tree is how
+     vanilla satisfies hunger and rest, how Dubs Bad Hygiene satisfied
+     these same three, and where this mod's combat reaction already
+     sits. Nothing pushes a job at anybody from outside; a pawn asks
+     what it wants to do and these are among the answers.
+
+     PostDuty, so anyone under orders - a patrol on its circuit, a lord
+     holding a line, a raid on its approach - finishes what it was told
+     before it goes looking for water. Thirst still rises while they
+     hold; it just does not countermand them. -->
+
+  <ThinkTreeDef>
+    <defName>CA_BodyNeeds</defName>
+    <insertTag>Humanlike_PostDuty</insertTag>
+    <insertPriority>100</insertPriority>
+    <thinkRoot Class="ThinkNode_Tagger">
+      <tagToGive>SatisfyingNeeds</tagToGive>
+      <subNodes>
+        <li Class="ThinkNode_PrioritySorter">
+          <subNodes>
+            <li Class="ColonistAwareness.JobGiver_CADrink" />
+            <li Class="ColonistAwareness.JobGiver_CARelieve" />
+            <li Class="ColonistAwareness.JobGiver_CAWash" />
+          </subNodes>
+        </li>
+      </subNodes>
+    </thinkRoot>
+  </ThinkTreeDef>
+
+</Defs>

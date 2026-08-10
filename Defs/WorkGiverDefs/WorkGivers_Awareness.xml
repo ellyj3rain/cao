@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <WorkGiverDef>
+    <defName>CA_RescueFromTemperature</defName>
+    <label>move people out of dangerous temperatures</label>
+    <giverClass>ColonistAwareness.WorkGiver_RescueFromTemperature</giverClass>
+    <workType>Doctor</workType>
+    <verb>rescue</verb>
+    <gerund>rescuing</gerund>
+    <priorityInType>105</priorityInType>
+    <emergency>true</emergency>    <requiredCapacities>
+      <li>Manipulation</li>
+    </requiredCapacities>
+  </WorkGiverDef>
+
+  <WorkGiverDef>
+    <defName>CA_FeedHungryAnimals</defName>
+    <label>feed hungry animals</label>
+    <giverClass>ColonistAwareness.WorkGiver_FeedHungryAnimals</giverClass>
+    <workType>Handling</workType>
+    <verb>feed</verb>
+    <gerund>feeding</gerund>
+    <priorityInType>95</priorityInType>
+    <emergency>true</emergency>
+    <requiredCapacities>
+      <li>Manipulation</li>
+    </requiredCapacities>
+  </WorkGiverDef>
+
+  <WorkGiverDef>
+    <defName>CA_RescueDownedAnimals</defName>
+    <label>rescue downed animals to animal beds</label>
+    <giverClass>ColonistAwareness.WorkGiver_RescueDownedAnimals</giverClass>
+    <workType>Handling</workType>
+    <verb>rescue</verb>
+    <gerund>rescuing</gerund>
+    <priorityInType>94</priorityInType>
+    <emergency>true</emergency>
+    <requiredCapacities>
+      <li>Manipulation</li>
+    </requiredCapacities>
+  </WorkGiverDef>
+
+  <WorkGiverDef>
+    <defName>CA_HaulCriticalDeteriorating</defName>
+    <label>rescue deteriorating valuables</label>
+    <giverClass>ColonistAwareness.WorkGiver_HaulCritical</giverClass>
+    <workType>Hauling</workType>
+    <verb>rescue</verb>
+    <gerund>rescuing</gerund>
+    <priorityInType>90</priorityInType>    <requiredCapacities>
+      <li>Manipulation</li>
+    </requiredCapacities>
+  </WorkGiverDef>
+
+  <WorkGiverDef>
+    <defName>CA_ToxicWasteRelocation</defName>
+    <label>relocate authorized toxic waste</label>
+    <giverClass>ColonistAwareness.WorkGiver_CAToxicWasteRelocation</giverClass>
+    <workType>Hauling</workType>
+    <verb>relocate</verb>
+    <gerund>relocating</gerund>
+    <priorityInType>95</priorityInType>
+    <directOrderable>false</directOrderable>
+    <canBeDoneByMechs>true</canBeDoneByMechs>
+    <requiredCapacities>
+      <li>Manipulation</li>
+    </requiredCapacities>
+  </WorkGiverDef>
+
+  <WorkGiverDef>
+    <defName>CA_ToxicWasteResponse</defName>
+    <label>respond to unstaged toxic waste</label>
+    <giverClass>ColonistAwareness.WorkGiver_CAToxicWasteResponse</giverClass>
+    <workType>Hauling</workType>
+    <verb>secure</verb>
+    <gerund>securing</gerund>
+    <priorityInType>96</priorityInType>
+    <emergency>true</emergency>
+    <directOrderable>false</directOrderable>
+    <canBeDoneByMechs>true</canBeDoneByMechs>
+    <requiredCapacities>
+      <li>Manipulation</li>
+    </requiredCapacities>
+  </WorkGiverDef>
+
+</Defs>
