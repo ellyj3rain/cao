@@ -3,7 +3,7 @@
 Colonist Awareness is a RimWorld 1.6 overhaul. Pawns act on what they know. Settlements persist as real places with people, supplies, services, beliefs, and authority. Factions make decisions and carry consequences forward instead of resetting to isolated game events.
 
 <!-- cao:generated:version BEGIN -->
-Current version: `0.12.3.0-alpha`. Implementation is complete through batch `A102`; `B1` is the next development batch. The final convergence assembly is deployed for operator runtime testing. Static verification does not substitute for how the game looks and plays.
+Current version: `0.12.4.0-alpha`. Implementation is complete through batch `B1`; `B2` is the next development batch. The verified assembly is deployed for operator runtime testing. Static verification does not substitute for how the game looks and plays.
 <!-- cao:generated:version END -->
 
 ## Framework
@@ -15,7 +15,7 @@ The project is organized around four connected concerns:
 - **Authority** - roles, organizations, beliefs, legitimacy, and player control determine who may decide and act.
 - **Doctrine** - tactical and operational behavior uses the same knowledge and authority substrate.
 
-The current regional model is direct: regions contain factions and settlements; settlements contain population groups and organizations. Culture, Ideoligion, political beliefs, development, services, facilities, population, and provisions are authored or generated where they materially exist.
+The current regional model is direct: regions contain factions and settlements; settlements contain population groups and organizations. Culture, Ideoligion, political beliefs, development, services, facilities, population, and provisions are authored or generated where they materially exist. World tendencies author causes; placement, relations, settlement pattern, frontier holdings, and settlement scale are realized once, saved, and consumed by generation.
 
 ## Requirements
 
@@ -55,7 +55,7 @@ The Release assembly is written to `Assemblies/ColonistAwareness.dll`. DLL chang
 
 ## Project history
 
-The governed batch and provenance records are the project's portable history. They travel with the current tree and do not depend on a particular Git host. `A1` through `A102` live beside future `B*` records under [`Batches/`](Batches/); a new letter does not create a separate history hierarchy. [`BATCH_LOG.md`](BATCH_LOG.md) is the chronological view. [`Batches/THREADS.md`](Batches/THREADS.md) classifies related work across nonadjacent batches with permanent `TF-*` and `T-*` identifiers. [`VERSION_MAP.md`](VERSION_MAP.md) partitions chronological work into contiguous capability units under the four-coordinate odometer.
+The governed batch and provenance records are the project's portable history. They travel with the current tree and do not depend on a particular Git host. `A1` through `A102` and `B1` share one sequence under [`Batches/`](Batches/); a new letter does not create a separate history hierarchy. [`BATCH_LOG.md`](BATCH_LOG.md) is the chronological view. [`Batches/THREADS.md`](Batches/THREADS.md) classifies related work across nonadjacent batches with permanent `TF-*` and `T-*` identifiers. [`VERSION_MAP.md`](VERSION_MAP.md) partitions chronological work into contiguous capability units under the four-coordinate odometer.
 
 Local Git may retain earlier engineering history. The published forge history is a separate distribution record: it begins at the canonical snapshot selected for publication and continues with later published changes.
 
@@ -67,7 +67,7 @@ node tools/version-model.mjs --check
 
 ## Status and verification
 
-The code, setup flow, generation, saves, definitions, and documentation use the same current concepts: factions, settlements, population groups, organizations, starting conditions, and generated provisions. Earlier experimental save formats are not supported.
+The code, setup flow, generation, saves, definitions, and documentation use the same current concepts: factions, settlements, population groups, organizations, starting conditions, and generated provisions. The eleven World tendencies controls each own one direct causal variable, and fixed-seed receipts check consumer reach, one-variable isolation, serialization, readback, and override ownership. Earlier experimental save formats are not supported.
 
 The Release project builds against the RimWorld 1.6 reference assemblies. Regional authoring, world generation, settlement placement, population, geography, and provisioning still require operator runtime acceptance in the real game flow. See [`SESSION_STATE.md`](SESSION_STATE.md) for the exact gate.
 

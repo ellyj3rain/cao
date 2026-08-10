@@ -801,7 +801,9 @@ The current regional implementation uses one direct model: regions contain
 factions and settlements. Factions own culture, Ideoligion, political beliefs,
 faction structure, settlement authority, and faction era. Settlements own
 population groups, form, role, starting facilities, access, services, civic
-development, starting provisions, and derived capability.
+development, economic capacity, trade connectivity, historical development,
+starting provisions, and derived capability. Settlement pattern and urban scale
+are realized results, not independent authoring categories.
 
 Built and statically verified:
 
@@ -813,9 +815,12 @@ Built and statically verified:
    population groups, facilities, infrastructure, and provisions. The current
    authored composition is converted to this schema.
 3. **Faction and settlement authoring.** Culture, Ideoligion, political beliefs,
-   faction structure, settlement authority, settlement pattern and scale, form,
-   facilities, infrastructure, population groups, and provision distribution are
-   independently readable and editable where they affect generation.
+   faction structure, settlement authority, settlement form, facilities,
+   infrastructure, population groups, and provision distribution are independently
+   readable and editable where they affect generation. Settlement placement,
+   relations, population, land, access, services, civic development, economic and
+   trade conditions, specialization, regional role, and history produce the saved
+   settlement pattern and scale.
 4. **Materialization.** The confirmed candidate creates native factions,
    settlements, residents, Ideoligions, organizations, buildings, provisions,
    geography, and faction relations. Derived capability reads faction era and
