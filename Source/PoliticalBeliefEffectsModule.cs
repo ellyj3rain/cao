@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -465,7 +466,14 @@ namespace ColonistAwareness
                     float heldDays = held / 60000f;
                     float drain = timing.drain
                         * (1f + timing.escalatePerDayHeld * heldDays);
-                    if (held >= timing.habituateAfterTicks)
+                    int culturalStrength = CulturalStrength(org, key);
+                    int habituation = CACultureConsumerKernel
+                        .PoliticalHabituationTicks(
+                            timing.habituateAfterTicks, culturalStrength);
+                    // Political beliefs remain unchanged. A persisted culture
+                    // of public gathering makes voice and shared-leadership
+                    // contradictions remain politically salient for longer.
+                    if (held >= habituation)
                         drain *= timing.habituatedFactor;
                     Cost(org, drain);
                     if (timing.reinforceEveryTicks > 0
@@ -506,6 +514,40 @@ namespace ColonistAwareness
             float before = org.publicSupport;
             org.publicSupport = Mathf.Max(Floor, org.publicSupport - amount);
             org.unrecoveredSupportLoss += before - org.publicSupport;
+        }
+
+        private static int CulturalStrength(CAOrganization org,
+            string beliefKey)
+        {
+            string practice = beliefKey == "every voice counts"
+                    || beliefKey == "shared leadership"
+                ? "shared-public-life" : null;
+            return PracticeForOrganization(org, practice);
+        }
+
+        private static int PracticeForOrganization(CAOrganization org,
+            string practice)
+        {
+            if (practice == null || org == null) return 0;
+            if (org.organizationKey == "player")
+            {
+                List<int> strengths = (Find.Maps
+                        ?? new List<Map>())
+                    .Where(map => map != null && map.IsPlayerHome)
+                    .Select(map => CACultureHistory.PracticeStrength(
+                        CACultureLongitudinalMapComponent.For(map)
+                            ?.PlayerLocalCulture, practice))
+                    .ToList();
+                return strengths.Count == 0 ? 0
+                    : Mathf.Clamp(Mathf.RoundToInt(
+                        (float)strengths.Average()), 0, 100);
+            }
+            CACulture culture = (CARegionalWorldComponent.Current?.Records
+                    ?? new List<CARegionalSettlementRecord>())
+                .FirstOrDefault(record => record != null
+                    && record.regionalId + "#" + record.slot
+                        == org.organizationKey)?.culture;
+            return CACultureHistory.PracticeStrength(culture, practice);
         }
 
         // ---- observed acts ---------------------------------------------
@@ -595,7 +637,7 @@ namespace ColonistAwareness
                 e.pawnsAnswered.Add(pawnId);
 
                 foreach (string key in
-                    CAPoliticalCustoms.CustomsHeldBy(pawn))
+                    CAPoliticalBeliefPractice.StandardsHeldBy(pawn))
                 {
                     Row row;
                     string meaning;

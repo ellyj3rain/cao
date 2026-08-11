@@ -52,6 +52,8 @@ namespace ColonistAwareness
         public int sourceTick = -1;
         public int stateTick = -1;
         public int revision = -1;
+        public int uncertaintyTicks;
+        public float confidence;
         public int createdTick = -1;
         public int readyTick = -1;
         public int requesterJobId = -1;
@@ -72,6 +74,8 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref sourceTick, "sourceTick", -1);
             Scribe_Values.Look(ref stateTick, "stateTick", -1);
             Scribe_Values.Look(ref revision, "revision", -1);
+            Scribe_Values.Look(ref uncertaintyTicks, "uncertaintyTicks", 0);
+            Scribe_Values.Look(ref confidence, "confidence", 0f);
             Scribe_Values.Look(ref createdTick, "createdTick", -1);
             Scribe_Values.Look(ref readyTick, "readyTick", -1);
             Scribe_Values.Look(ref requesterJobId, "requesterJobId", -1);
@@ -227,6 +231,8 @@ namespace ColonistAwareness
                 sourceTick = fact.SourceTick,
                 stateTick = fact.StateTick,
                 revision = fact.Revision,
+                uncertaintyTicks = fact.Evidence.UncertaintyTicks,
+                confidence = fact.Evidence.Confidence,
                 createdTick = Find.TickManager.TicksGame,
                 episodeId = CACombatIntent.NewEpisode(),
                 welfareCell = fact.Cell,
@@ -235,6 +241,39 @@ namespace ColonistAwareness
                 supportCell = supportCell,
                 channel = channel
             };
+            int now = Find.TickManager.TicksGame;
+            var requestContext = CABehaviorContext.ForPawn(requester,
+                CAAuthorityOrigin.PlayerDelegated,
+                authoritySatisfied: selected != null
+                    && channel != CommunicationChannel.None,
+                knowledgeSatisfied: fact.Actionable,
+                knowledgeFresh: fact.Actionable,
+                liveValidated: true,
+                knowledgeRelayed: !fact.Evidence.IsDirect,
+                knowledgeAgeTicks: Math.Max(0, now - fact.SourceTick),
+                knowledgeConfidence: fact.Evidence.Confidence,
+                knowledgeUncertainty: fact.Evidence.UncertaintyTicks,
+                capabilitySatisfied: supportCell.IsValid,
+                materialSatisfied: supportCell.IsValid,
+                currentIntentCompatible: true,
+                directPlayerOwnership: requester.CurJob != null
+                    && requester.CurJob.playerForced,
+                authorityBasis: "bounded welfare-support request via "
+                    + channel.ToString().ToLowerInvariant(),
+                knowledgeBasis: fact.Evidence.IsDirect
+                    ? "direct welfare concern"
+                    : "relayed welfare concern with preserved source age",
+                owner: "one threshold-support transaction");
+            CABehaviorDecision requestDecision = CABehaviorGate.Evaluate(
+                "welfare.threshold_support", requestContext);
+            if (!requestDecision.Allowed)
+            {
+                CATrace.Skip(requester, "threshold support request",
+                    requestDecision.PrimaryReason,
+                    contact: exterior, destination: fact.Cell,
+                    anchor: requester.Position);
+                return false;
+            }
             requests.Add(request);
             CATrace.Pawn(requester,
                 "outward welfare check WAITS for " + selected.LabelShort
@@ -243,8 +282,13 @@ namespace ColonistAwareness
                 contact: exterior, destination: fact.Cell,
                 anchor: requester.Position,
                 intent: new CAIntentContext(request.episodeId,
-                    CAIntentOrigin.Autonomous,
-                    CAIntentController.Welfare, requester.thingIDNumber));
+                    CAIntentOrigin.PeerRelay,
+                    CAIntentController.Welfare, requester.thingIDNumber,
+                    behaviorKey: "welfare.threshold_support",
+                    authorityOrigin: CAAuthorityOrigin.PlayerDelegated,
+                    authorityIdentity: requestContext.AuthorityBasis,
+                    ownershipScope: requestContext.Owner,
+                    targetOrDemand: "welfare concern " + fact.SubjectId));
             CATrace.Pawn(selected,
                 "receives bounded threshold-support request from "
                 + requester.LabelShort + "; support post " + supportCell
@@ -283,14 +327,27 @@ namespace ColonistAwareness
                 return false;
             }
             result.count = request.episodeId;
+            var supportContext = SupportContext(partner, request,
+                CAAuthorityOrigin.PeerRequest,
+                "accepted peer-support assignment");
+            CABehaviorDecision decision;
+            CAIntentContext supportIntent;
+            if (!CABehaviorJobOrigin.TryAuthorizeAndRegister(partner, result,
+                "welfare.threshold_support", CAIntentController.Welfare,
+                supportContext, request.episodeId, out decision,
+                out supportIntent, "support pawn " + request.requesterId,
+                "one threshold-support transaction", ReadyTimeoutTicks))
+            {
+                Remove(request, decision.PrimaryReason);
+                result = null;
+                return false;
+            }
             CATrace.Pawn(partner,
                 "threshold support MOVES to cover " + requester.LabelShort
                 + " before exterior welfare travel",
                 contact: request.firstExteriorCell,
                 destination: request.supportCell, anchor: partner.Position,
-                intent: new CAIntentContext(request.episodeId,
-                    CAIntentOrigin.Continuation,
-                    CAIntentController.Welfare, request.requesterId));
+                intent: supportIntent);
             return true;
         }
 
@@ -312,15 +369,58 @@ namespace ColonistAwareness
             result.count = request.episodeId;
             result.expiryInterval = PendingTimeoutTicks;
             result.checkOverrideOnExpire = true;
+            var waitContext = SupportContext(requester, request,
+                CAAuthorityOrigin.Continuation,
+                "retained threshold-support request");
+            CABehaviorDecision decision;
+            CAIntentContext waitIntent;
+            if (!CABehaviorJobOrigin.TryAuthorizeAndRegister(requester,
+                result, "welfare.threshold_support",
+                CAIntentController.Welfare, waitContext, request.episodeId,
+                out decision, out waitIntent,
+                "support pawn " + request.partnerId,
+                "one threshold-support transaction", PendingTimeoutTicks))
+            {
+                Remove(request, decision.PrimaryReason);
+                result = null;
+                return false;
+            }
             CATrace.Pawn(requester,
                 "holds the protected interior while threshold support forms",
                 contact: request.firstExteriorCell,
                 destination: request.thresholdCell,
                 anchor: requester.Position,
-                intent: new CAIntentContext(request.episodeId,
-                    CAIntentOrigin.Continuation,
-                    CAIntentController.Welfare, requester.thingIDNumber));
+                intent: waitIntent);
             return true;
+        }
+
+        private CABehaviorContext SupportContext(Pawn actor,
+            CAWelfareSupportRequest request, CAAuthorityOrigin origin,
+            string authorityBasis)
+        {
+            int now = Find.TickManager?.TicksGame ?? 0;
+            return CABehaviorContext.ForPawn(actor, origin,
+                authoritySatisfied: request != null
+                    && request.episodeId > 0,
+                knowledgeSatisfied: request != null
+                    && request.welfareCell.IsValid,
+                knowledgeFresh: request != null
+                    && now - request.sourceTick <= 2500,
+                liveValidated: true, knowledgeRelayed: true,
+                knowledgeAgeTicks: request == null ? int.MaxValue
+                    : Math.Max(0, now - request.sourceTick),
+                knowledgeConfidence: request?.confidence ?? 0f,
+                knowledgeUncertainty: request?.uncertaintyTicks ?? 0,
+                capabilitySatisfied: actor != null && actor.Spawned
+                    && !actor.Downed,
+                materialSatisfied: request != null
+                    && request.supportCell.IsValid,
+                currentIntentCompatible: true,
+                directPlayerOwnership: actor?.CurJob != null
+                    && actor.CurJob.playerForced,
+                authorityBasis: authorityBasis,
+                knowledgeBasis: "communicated welfare concern; source age preserved",
+                owner: "one threshold-support transaction");
         }
 
         internal bool RequesterWaitStillPending(Pawn requester, Job job)
@@ -456,7 +556,8 @@ namespace ColonistAwareness
             {
                 Pawn candidate = pawns[i];
                 if (candidate == requester || !candidate.Drafted
-                    || AutonomyComponent.LevelOf(candidate) < 2
+                    || !CABehaviorGate.StableProfileAllows(candidate,
+                        "welfare.threshold_support")
                     || !PartnerStillViable(candidate)
                     || !CADraftedCombatInitiativeMapComponent
                         .IsIdleDraftedWatch(candidate)

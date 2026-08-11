@@ -174,6 +174,50 @@ namespace ColonistAwareness
             p.jobs.StartJob(haul, JobCondition.InterruptForced);
         }
 
+        private static bool TryOrderAmbushAftermathStash(Pawn pawn,
+            Corpse corpse, IntVec3 spot, CAIntentContext parent,
+            out CAIntentContext aftermathIntent)
+        {
+            aftermathIntent = default(CAIntentContext);
+            if (pawn == null || corpse == null || !corpse.Spawned
+                || !parent.IsValid || parent.EpisodeId <= 0) return false;
+            Job haul = JobMaker.MakeJob(JobDefOf.HaulToCell, corpse, spot);
+            haul.count = corpse.stackCount;
+            haul.haulMode = HaulMode.ToCellNonStorage;
+            var context = CABehaviorContext.ForPawn(pawn,
+                CAAuthorityOrigin.Continuation,
+                authoritySatisfied: true, knowledgeSatisfied: true,
+                knowledgeFresh: true, liveValidated: corpse.Spawned,
+                knowledgeRelayed: false, knowledgeAgeTicks: 0,
+                knowledgeConfidence: 1f, knowledgeUncertainty: 0f,
+                capabilitySatisfied: pawn.CanReserveAndReach(corpse,
+                    PathEndMode.ClosestTouch, Danger.Deadly)
+                    && pawn.CanReach(spot, PathEndMode.OnCell,
+                        Danger.Deadly),
+                materialSatisfied: spot.IsValid
+                    && spot.InBounds(pawn.Map) && spot.Standable(pawn.Map),
+                currentIntentCompatible: pawn.CurJob == null
+                    || !pawn.CurJob.playerForced,
+                directPlayerOwnership: pawn.CurJob != null
+                    && pawn.CurJob.playerForced,
+                authorityBasis: parent.AuthorityIdentity
+                    ?? "active authored ambush episode",
+                knowledgeBasis:
+                    "directly observed ambush casualty after local danger cleared",
+                owner: parent.OwnershipScope ?? "authored ambush episode");
+            CABehaviorDecision decision;
+            if (!CABehaviorJobOrigin.TryAuthorizeAndRegister(pawn, haul,
+                    "support.ambush_aftermath", CAIntentController.Ambush,
+                    context, parent.EpisodeId, out decision,
+                    out aftermathIntent,
+                    "conceal ambush casualty at " + spot,
+                    parent.OwnershipScope ?? "authored ambush episode",
+                    1800)) return false;
+            pendingStash[corpse.thingIDNumber] = spot;
+            pawn.jobs.StartJob(haul, JobCondition.InterruptForced);
+            return pawn.CurJob == haul;
+        }
+
         public static bool IsOrdered(Pawn p)
         {
             return p != null && ordered.Contains(p.thingIDNumber);
@@ -190,6 +234,7 @@ namespace ColonistAwareness
             MovingFire.ClearTransient();
             CATrace.ClearTransient();
             CACombatIntent.ClearTransient();
+            CAEffectiveBehaviorProfileCache.Clear();
             CABattlefieldPerception.ClearTransient();
             hidden.Clear();
             hiddenMapIds.Clear();
@@ -879,7 +924,8 @@ namespace ColonistAwareness
                     if (ambusher.CurJob != null && (ambusher.CurJob.def == JobDefOf.AttackMelee
                         || ambusher.CurJob.def == JobDefOf.HaulToCell)) continue;
 
-                    bool higher = AutonomyComponent.LevelOf(ambusher) >= 3 || ordered.Contains(kv.Key);
+                    bool higher = CABehaviorGate.StableProfileAllows(ambusher,
+                        "support.ambush_aftermath") || ordered.Contains(kv.Key);
                     if (!higher) { doneAftermath.Add(kv.Key); continue; }
 
                     Corpse corpse = null;
@@ -908,15 +954,31 @@ namespace ColonistAwareness
                     IntVec3 spot;
                     if (TryFindConcealmentNear(map, ambusher, corpse.Position, 8.9f, out spot))
                     {
-                        OrderStash(ambusher, corpse, spot);
+                        CAIntentContext parent;
+                        if (!ambushContexts.TryGetValue(kv.Key, out parent)
+                            || !parent.IsValid) continue;
+                        CAIntentContext aftermathIntent;
+                        if (!TryOrderAmbushAftermathStash(ambusher, corpse,
+                                spot, parent, out aftermathIntent)) continue;
                         IntVec3 back;
                         if (aftermathReturn.TryGetValue(kv.Key, out back))
                         {
                             var continuation = new CAIntentContext(
-                                CACombatIntent.NewEpisode(),
+                                aftermathIntent.EpisodeId,
                                 CAIntentOrigin.Continuation,
                                 CAIntentController.Ambush,
-                                ambusher.thingIDNumber);
+                                aftermathIntent.IssuerId,
+                                behaviorKey: "support.ambush_aftermath",
+                                authorityOrigin:
+                                    CAAuthorityOrigin.Continuation,
+                                authorityIdentity:
+                                    aftermathIntent.AuthorityIdentity,
+                                ownershipScope:
+                                    aftermathIntent.OwnershipScope,
+                                ownerId: aftermathIntent.OwnerId,
+                                creationTier: aftermathIntent.CreationTier,
+                                targetOrDemand: "return to ambush at " + back,
+                                createdTick: aftermathIntent.CreatedTick);
                             OrderAmbush(ambusher, back, continuation);
                         }
                     }
@@ -1166,42 +1228,28 @@ namespace ColonistAwareness
                     continue;
                 }
 
-                // Pure hiders don't hunt - but a CORNERED hider defends itself: the
-                // hunter is on top of them, in sight, and ALONE - stun and break away.
-                // A pack closing in means stay down and pray instead.
+                // A pure hide is exactly that: concealment without a spring. It
+                // cannot borrow the ambush-adaptation contract, because no authored
+                // ambush episode owns this pawn. Immediate native self-defense may
+                // still interrupt the hide through RimWorld's ordinary safety lanes.
                 if (passive.Contains(kv.Key))
                 {
-                    if (p.WorkTagIsDisabled(WorkTags.Violent) || p.skills == null) continue;
-                    if (hostiles == null) hostiles = HostilesOf(map);
-                    for (int i = 0; i < hostiles.Count; i++)
-                    {
-                        var h = hostiles[i];
-                        if (!h.Position.InHorDistOf(p.Position, 2.9f)) continue;
-                        if (!GenSight.LineOfSight(p.Position, h.Position, map, skipFirstCell: true)) continue;
-                        bool alone = true;
-                        for (int j = 0; j < hostiles.Count; j++)
-                            if (hostiles[j] != h && hostiles[j].Position.InHorDistOf(h.Position, 12f))
-                            { alone = false; break; }
-                        if (!alone) continue;
-                        int mel = p.skills.GetSkill(SkillDefOf.Melee).Level;
-                        h.TakeDamage(new DamageInfo(DamageDefOf.Stun, 6f + mel * 0.5f, 0f, -1f, p));
-                        try
-                        {
-                            if (h.stances != null && h.stances.stagger != null)
-                                h.stances.stagger.StaggerFor(60 + mel * 8);
-                        }
-                        catch { }
-                        toReveal.Add(kv.Key);
-                        break;
-                    }
                     continue;
                 }
                 bool orderedHere = ordered.Contains(kv.Key);
                 var s2 = AwarenessMod.Settings;
                 if (s2 == null || !s2.ambushStrikes) continue;
-                if (!(orderedHere || AutonomyComponent.LevelOf(p) >= 2)) continue;
+                if (!orderedHere && !CABehaviorGate.StableProfileAllows(p,
+                        "support.ambush_adaptation")) continue;
                 if (p.WorkTagIsDisabled(WorkTags.Violent) || p.skills == null) continue;
                 if (!(orderedHere || p.skills.GetSkill(SkillDefOf.Melee).Level >= 4)) continue;
+
+                CAIntentContext parent;
+                if (!ambushContexts.TryGetValue(kv.Key, out parent)
+                    || !parent.IsValid
+                    || !CATactical.MatchesOrder(p, parent.EpisodeId,
+                        LordJob_CATactical.KindAmbush,
+                        LordJob_CATactical.KindAmbushSubdue)) continue;
 
                 if (hostiles == null) hostiles = HostilesOf(map);
                 for (int i = 0; i < hostiles.Count; i++)
@@ -1210,6 +1258,51 @@ namespace ColonistAwareness
                     if (!h.Position.InHorDistOf(p.Position, 2.9f)) continue;
                     if (!GenSight.LineOfSight(p.Position, h.Position, map, skipFirstCell: true)) continue;
                     int melee = p.skills.GetSkill(SkillDefOf.Melee).Level;
+                    Job adaptation;
+                    if (subdue.Contains(kv.Key))
+                    {
+                        adaptation = JobMaker.MakeJob(JobDefOf.Wait, 600);
+                    }
+                    else
+                    {
+                        adaptation = JobMaker.MakeJob(JobDefOf.AttackMelee, h);
+                        adaptation.expiryInterval = 400;
+                    }
+
+                    bool current = h.Spawned && h.Map == map && !h.Dead
+                        && GenHostility.HostileTo(h, p)
+                        && h.Position.InHorDistOf(p.Position, 2.9f)
+                        && GenSight.LineOfSight(p.Position, h.Position, map,
+                            skipFirstCell: true);
+                    bool compatible = !CATactical.HasForeignPlayerForcedJob(p);
+                    var context = CABehaviorContext.ForPawn(p,
+                        CAAuthorityOrigin.Continuation,
+                        authoritySatisfied: current && compatible,
+                        knowledgeSatisfied: current,
+                        knowledgeFresh: current,
+                        liveValidated: current,
+                        knowledgeConfidence: 1f,
+                        knowledgeUncertainty: 0f,
+                        capabilitySatisfied: p.jobs != null
+                            && !p.WorkTagIsDisabled(WorkTags.Violent),
+                        materialSatisfied: current,
+                        currentIntentCompatible: compatible,
+                        authorityBasis: parent.AuthorityIdentity
+                            ?? "active player-authored ambush episode",
+                        knowledgeBasis: "current direct sight of "
+                            + h.LabelShort,
+                        owner: parent.OwnershipScope ?? "ambush order");
+                    CABehaviorDecision decision;
+                    CAIntentContext registered;
+                    if (!CABehaviorJobOrigin.TryAuthorizeAndRegister(p,
+                            adaptation, "support.ambush_adaptation",
+                            CAIntentController.Ambush, context,
+                            parent.EpisodeId, out decision, out registered,
+                            targetOrDemand: h.LabelShort,
+                            ownershipScope: parent.OwnershipScope
+                                ?? "ambush order", lifetimeTicks: 900))
+                        continue;
+
                     try
                     {
                         if (h.stances != null && h.stances.stagger != null)
@@ -1221,19 +1314,14 @@ namespace ColonistAwareness
                     if (subdue.Contains(kv.Key))
                     {
                         // Non-lethal: stun cold, then the choke pass takes over.
-                        h.TakeDamage(new DamageInfo(DamageDefOf.Stun, 8f + melee * 0.6f, 0f, -1f, p));
+                        h.TakeDamage(new DamageInfo(DamageDefOf.Stun,
+                            8f + melee * 0.6f, 0f, -1f, p));
                         chokeVictim[kv.Key] = h.thingIDNumber;
                         chokeCycles[kv.Key] = 0;
-                        Job pin = JobMaker.MakeJob(JobDefOf.Wait, 600);
-                        p.jobs.StartJob(pin, JobCondition.InterruptForced);
                     }
-                    else
-                    {
-                        GrantFirstStrike(p);
-                        Job strike = JobMaker.MakeJob(JobDefOf.AttackMelee, h);
-                        strike.expiryInterval = 400;
-                        p.jobs.StartJob(strike, JobCondition.InterruptForced);
-                    }
+                    else GrantFirstStrike(p);
+                    p.jobs.StartJob(adaptation,
+                        JobCondition.InterruptForced);
                     break;
                 }
             }
@@ -3262,8 +3350,8 @@ namespace ColonistAwareness
                         + (SquadComponent.FireteamOf(pawn) > 0
                             ? ", Team " + (SquadComponent.FireteamOf(pawn) == 1
                                 ? "A" : "B") : ""))
-                    : AutonomyComponent.LevelNames[
-                        AutonomyComponent.LevelOf(pawn)];
+                    : CAInitiativePresentation.Label(
+                        AutonomyComponent.TierOf(pawn));
                 // Information architecture: never the flat everything-list.
                 // Options partition into categories by what they ARE -
                 // establish (create new intent), act (execute/report/alter),

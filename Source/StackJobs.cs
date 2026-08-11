@@ -230,7 +230,8 @@ namespace ColonistAwareness
             // just broke, a duty just released), and the civilian
             // flee-and-cower config would decide the reaction of a person
             // CA models in full. A threat-aware, violence-capable
-            // Proactive+ colonist defers to CA's own constant-think lanes -
+            // A colonist eligible for registered local reaction defers to CA's
+            // own constant-think lanes -
             // reaction, survival response, recovery - which weigh health,
             // skill, disposition, and nearby allies and may still choose to
             // break contact on those terms. Non-fighters, lower autonomy,
@@ -238,7 +239,8 @@ namespace ColonistAwareness
             // response: vanilla psychology remains real where CA has no
             // richer answer.
             if (GapDeferralEnabled && pawn.IsColonist && !pawn.Drafted
-                && AutonomyComponent.LevelOf(pawn) >= 2
+                && CABehaviorGate.StableProfileAllows(pawn,
+                    "combat.local_reaction")
                 && !pawn.WorkTagIsDisabled(WorkTags.Violent)
                 && !SquadComponent.CombatLiability(pawn)
                 && CACombatThreat.PerceivesActiveThreat(pawn))

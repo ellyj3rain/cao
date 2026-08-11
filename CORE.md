@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Core |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `0.12.3.0-alpha` · A sequence closed at `A102` · next `B1` |
+| Version | `1.3.0.1-alpha` · closed batch tip `B7` · next `B8` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `CORE.md` |
@@ -58,19 +58,57 @@ the game's native machinery. `ARCHITECTURE.md` holds the ratified shape.
 Doctrine ships first and rides the game's native substrate; the other three are
 what make the mod a framework rather than a feature set.
 
+Every CA-originated behavior also crosses one typed authorization contract.
+Its stable definition names the behavior domain, form, applicable actor,
+permission, minimum initiative, required evidence, authority, native execution
+lane, intent owner, completion, and stand-down condition. The dynamic gate keeps
+permission, initiative, authority, actor-held knowledge, capability, material
+conditions, and player ownership separate. The same catalog supplies runtime
+authorization, settings text, tracing, diagnostics, and executable receipts.
+
+The active initiative ladder is Standard, Proactive, and Autonomous. Standard
+retains ordinary RimWorld agency, enabled safeguards, observation, direct and
+accepted relayed orders, and continuation of owned work. Proactive may originate
+one finite response to a current fact. Autonomous may retain, compare, or
+coordinate persistent work inside delegated authority. Initiative never creates
+knowledge, office, materials, access, or permission, and explicit player intent
+remains authoritative at every tier.
+
 ## The regional program
 
 The regional work is not a detached map-size mod. It is the physical theater for
 the same framework. Regions contain factions, settlements, population groups,
-culture, Ideoligion, political beliefs, faction structure, starting conditions,
-relationships, operations, economies, diplomacy and conflict. Loaded maps are
-detailed materializations and native physical executors. The projection rule:
+persistent local Culture, Ideoligion, Political Beliefs, social order, starting
+conditions, relationships, operations, economies, diplomacy, and conflict.
+Loaded maps are detailed materializations and native physical executors. The
+projection rule:
 
 `pawn evidence → organization record → authorization → regional operation or
 contract → native world/incident/quest/map/Lord projection → reconciled outcome`
 
 Native RimWorld physical execution remains authoritative while materialized; this
 mod owns the persistent organizational reason and continuity.
+
+Culture is persistent longitudinal social-historical state. A local Culture
+retains inherited origin, local identity, constituent populations, lived
+observations, recognized practices, transitions, and provenance. Bounded
+historical evaluations derive `Culture(T+1)` from `Culture(T)` and intervening
+evidence. Spatial, social, institutional, political, and settlement-development
+consumers may rank otherwise valid choices from that state, but Culture creates
+neither permission nor material capability. Cultural expression is a read-only
+interpretation of the relationship between Culture and current society; native
+`CultureDef` is one optional visual inheritance.
+
+Existing societies and player founding use the same Culture, native Ideoligion,
+Political Beliefs, and social-order concepts at different points in time.
+Existing faction and settlement records describe a society already present:
+established Culture, realized institutions, material conditions, and an explicit
+temporal basis. Player authoring records the inherited Culture, Ideoligion, and
+Political Beliefs the founders bring and the exact rules they adopt at landing.
+Later local Culture, institutions, and practice must be produced by play rather
+than fabricated as pre-existing event history. Political Beliefs judge what is
+practiced; they do not become organization customs or broader institutions merely
+because the founders hold them.
 
 ## Governing constraints
 
@@ -85,6 +123,13 @@ mod owns the persistent organizational reason and continuity.
   a computed summary or cache.
 - **DR-89.** Goods move only when paid for, or when explicit terms authorise
   credit. An obligation is created by a basis, never by an empty purse.
+- **DR-106 through DR-115.** Authoring exposes meaningful persistent causes,
+  not every analytical category the simulation can derive. Culture is persistent
+  longitudinal social history; Ideoligion, Political Beliefs, institutions,
+  adopted rules, and practice remain distinct; established societies and new
+  founders retain their different temporal boundaries. Contextual explanation
+  belongs to the owning decision, and Starting Region preserves its spatial map
+  without universal detail, development-intensity, or facility-bundle controls.
 - Stitching controls geographic continuity only, never population or political
   intensity. Vanilla `OverallPopulation` stays authoritative for major-settlement
   abundance.

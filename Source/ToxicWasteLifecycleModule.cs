@@ -2523,7 +2523,43 @@ namespace ColonistAwareness
                     Mathf.Max(0, job.count));
                 if (job.count <= 0) continue;
                 job.haulOpportunisticDuplicates = false;
-                return job;
+                CAInitiativeTier ceiling = CASpatialInitiativeMapComponent
+                    .For(map)?.TierFor(program)
+                    ?? CAInitiativeTier.Standard;
+                Job current = pawn.CurJob;
+                var context = new CABehaviorContext(pawn,
+                    CAActorContext.PlayerPawn
+                        | CAActorContext.PlayerSpatialAuthority,
+                    AutonomyComponent.TierOf(pawn),
+                    CAAuthorityOrigin.PlayerDelegated,
+                    authoritySatisfied: program.author
+                        == CASpaceAuthor.Player,
+                    knowledgeSatisfied: objective?.relocation != null
+                        && objective.relocation.requiredUnits > 0,
+                    knowledgeFresh: true, liveValidated: thing.Spawned,
+                    knowledgeRelayed: false, knowledgeAgeTicks: 0,
+                    knowledgeConfidence: 1f,
+                    knowledgeUncertainty: 0f,
+                    capabilitySatisfied: EligibleHauler(pawn),
+                    materialSatisfied: thing.Spawned && available > 0,
+                    currentIntentCompatible: current == null
+                        || !current.playerForced,
+                    directPlayerOwnership: current != null
+                        && current.playerForced,
+                    authorityCeiling: ceiling,
+                    authorityBasis: "player-authored waste staging program #"
+                        + program.id,
+                    knowledgeBasis: "persisted waste relocation deficit",
+                    owner: "authored waste staging program");
+                CABehaviorDecision decision;
+                CAIntentContext intent;
+                if (CABehaviorJobOrigin.TryAuthorizeAndRegister(pawn, job,
+                        "hazard.toxic_waste_response",
+                        CAIntentController.Logistics, context,
+                        out decision, out intent,
+                        thing.LabelShort + " to program #" + program.id,
+                        "authored waste staging program", 6000))
+                    return job;
             }
             return null;
         }

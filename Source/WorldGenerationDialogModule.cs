@@ -47,35 +47,37 @@ namespace ColonistAwareness
             get
             {
                 CARegionalWorldPolicy p = Policy;
+                string profile = Dialog_CAWorldGeneration.ProfileName(p);
+                if (!profile.NullOrEmpty()) return profile;
                 float share = (p.stitchedRegionFrequencyMin
                     + p.stitchedRegionFrequencyMax) * 0.5f;
                 string frequencySummary = share >= 0.65f
-                    ? "Stitched regions are common"
+                    ? "Connected regions are common"
                     : share <= 0.25f
                         ? "Mostly single-tile regions"
-                        : "Some stitched regions";
+                        : "Some connected regions";
                 var defaults = new CARegionalWorldPolicy();
                 int tailored = 0;
                 if (p.stitchedRegionSizeMin != defaults.stitchedRegionSizeMin
                     || p.stitchedRegionSizeMax != defaults.stitchedRegionSizeMax) tailored++;
-                if (!Mathf.Approximately(p.settlementPatternTendency,
-                        defaults.settlementPatternTendency)) tailored++;
-                if (!Mathf.Approximately(p.cityFormationChance,
-                        defaults.cityFormationChance)) tailored++;
-                if (!Mathf.Approximately(p.frontierSettlementFrequency,
-                        defaults.frontierSettlementFrequency)) tailored++;
-                if (!Mathf.Approximately(p.frontierSettlementSize,
-                        defaults.frontierSettlementSize)) tailored++;
+                if (!Mathf.Approximately(p.settlementConcentration,
+                        defaults.settlementConcentration)) tailored++;
+                if (!Mathf.Approximately(p.urbanGrowthPropensity,
+                        defaults.urbanGrowthPropensity)) tailored++;
+                if (!Mathf.Approximately(p.frontierHoldingFrequency,
+                        defaults.frontierHoldingFrequency)) tailored++;
+                if (!Mathf.Approximately(p.frontierHoldingSize,
+                        defaults.frontierHoldingSize)) tailored++;
                 if (!Mathf.Approximately(p.unaffiliatedPopulationShare,
                         defaults.unaffiliatedPopulationShare)) tailored++;
-                if (!Mathf.Approximately(p.nearbyFactionVariety,
-                        defaults.nearbyFactionVariety)) tailored++;
-                if (!Mathf.Approximately(p.newLocalFactionChance,
-                        defaults.newLocalFactionChance)) tailored++;
-                if (!Mathf.Approximately(p.startingConflictChance,
-                        defaults.startingConflictChance)) tailored++;
-                if (!Mathf.Approximately(p.distantActivity,
-                        defaults.distantActivity)) tailored++;
+                if (!Mathf.Approximately(p.reallocationSourceVariety,
+                        defaults.reallocationSourceVariety)) tailored++;
+                if (!Mathf.Approximately(p.localFactionChance,
+                        defaults.localFactionChance)) tailored++;
+                if (!Mathf.Approximately(p.regionalConflictChance,
+                        defaults.regionalConflictChance)) tailored++;
+                if (!Mathf.Approximately(p.offMapActivityRate,
+                        defaults.offMapActivityRate)) tailored++;
                 return frequencySummary + (tailored == 0 ? " · defaults elsewhere"
                     : " · " + tailored + " other tailored choice"
                         + (tailored == 1 ? "" : "s"));
@@ -91,8 +93,7 @@ namespace ColonistAwareness
 
         private const float Row = 30f;
         private const float Gap = 8f;
-        private const float LabelWidth = 320f;
-        private const float MenuWidth = 250f;
+        private const float LabelWidth = 250f;
 
         internal Dialog_CAWorldGeneration(CARegionalWorldPolicy policy)
         {
@@ -105,7 +106,11 @@ namespace ColonistAwareness
 
         public override Vector2 InitialSize
         {
-            get { return new Vector2(760f, 720f); }
+            get
+            {
+                return new Vector2(Mathf.Min(980f, UI.screenWidth - 48f),
+                    Mathf.Min(820f, UI.screenHeight - 48f));
+            }
         }
 
         public override void DoWindowContents(Rect inRect)
@@ -116,12 +121,26 @@ namespace ColonistAwareness
             Text.Font = GameFont.Small;
             GUI.color = new Color(0.74f, 0.78f, 0.82f);
             Widgets.Label(new Rect(0f, 36f, inRect.width - 8f, 44f),
-                "Defaults for generated regions, settlements, factions, and "
-                + "off-map activity. Starting-region choices override them.");
+                "Set defaults for places the player does not author directly. "
+                + "Each control changes one cause; Starting Region choices "
+                + "replace the matching default.");
             GUI.color = Color.white;
 
-            Rect outRect = new Rect(0f, 84f, inRect.width,
-                inRect.height - 132f);
+            CACreationUI.DrawFlow(new Rect(0f, 86f, inRect.width, 24f), 0);
+            if (Widgets.ButtonText(new Rect(0f, 118f, 210f, 32f),
+                    "World presets..."))
+                OpenWorldPresets();
+            if (Widgets.ButtonText(new Rect(220f, 118f, 190f, 32f),
+                    "Restore neutral profile"))
+                ApplyProfile(NeutralProfile);
+            string profile = ProfileName(policy) ?? "Custom profile";
+            CACreationUI.DrawChip(new Rect(422f, 124f,
+                inRect.width - 422f, 20f), profile,
+                ProfileName(policy) == null ? CACreationUI.Authored
+                    : CACreationUI.Preset);
+
+            Rect outRect = new Rect(0f, 160f, inRect.width,
+                inRect.height - 208f);
             Rect viewRect = new Rect(0f, 0f, outRect.width - 20f,
                 measuredHeight);
             Widgets.BeginScrollView(outRect, ref scroll, viewRect);
@@ -144,76 +163,262 @@ namespace ColonistAwareness
         {
             CARegionalWorldPolicy p = policy;
 
-            Section(ref y, width, "Regional geography");
-            BandRow(ref y, width, "Generated land",
+            Section(ref y, width, "Regions");
+            BandRow(ref y, width, "Connected regions",
                 StitchedRegionFrequencyBand(p), StitchedRegionFrequencyBands,
                 v => SetStitchedRegionFrequency(p, v),
-                "Generated land appears as single-tile maps or larger "
-                + "stitched regions. Starting Region sets the player's "
-                + "region separately.");
-            BandRow(ref y, width, "Stitched region size",
+                "Direct effect: how often generated regions join adjacent "
+                + "world tiles. Connected unoccupied land limits the result. "
+                + "Local map size is independent.");
+            BandRow(ref y, width, "Region span",
                 StitchedRegionSizeBand(p), StitchedRegionSizeBands,
                 v => SetStitchedRegionSize(p, v),
-                "Land spanned by a generated stitched region.");
+                "Direct effect: how many world tiles a connected region asks "
+                + "to include. Available adjacent land caps the final span. "
+                + "Region frequency and local map size are independent.");
 
-            Section(ref y, width, "Settlement patterns");
-            BandRow(ref y, width, "Regional pattern",
-                p.settlementPatternTendency, SettlementPatternBands,
-                v => Set(p, ref p.settlementPatternTendency, v),
-                "Generated settlements form a shared cluster or gather "
-                + "around one main settlement. Existing settlements are not "
-                + "moved.");
-            BandRow(ref y, width, "City formation",
-                p.cityFormationChance, CityBands,
-                v => Set(p, ref p.cityFormationChance, v),
-                "Chance that a suitable large town becomes a city. Requires "
-                + "enough population, land, and trade.");
+            Section(ref y, width, "Settlements");
+            BandRow(ref y, width, "Settlement spacing",
+                p.settlementConcentration, SettlementConcentrationBands,
+                v => Set(p, ref p.settlementConcentration, v),
+                "Direct effect: placement favors open ground or earlier "
+                + "settlements. Land capacity, access, and the world "
+                + "settlement pool constrain placement. It does not add "
+                + "settlements.");
+            BandRow(ref y, width, "Urban development",
+                p.urbanGrowthPropensity, UrbanGrowthBands,
+                v => Set(p, ref p.urbanGrowthPropensity, v),
+                "Direct effect: raises or lowers the support threshold for "
+                + "urban scale. Population, land, access, services, civic "
+                + "development, trade, specialization, regional role, and "
+                + "history remain required.");
 
-            Section(ref y, width, "Frontier settlements");
-            BandRow(ref y, width, "Frontier settlement frequency",
-                p.frontierSettlementFrequency,
-                FrontierSettlementFrequencyBands,
-                v => Set(p, ref p.frontierSettlementFrequency, v),
-                "Frequency of isolated holdings on suitable land between "
-                + "towns.");
-            BandRow(ref y, width, "Frontier settlement size",
-                p.frontierSettlementSize, FrontierSettlementSizeBands,
-                v => Set(p, ref p.frontierSettlementSize, v),
-                "Generated frontier sites range from cabins to developed "
-                + "homesteads.");
+            Section(ref y, width, "Frontier homes");
+            BandRow(ref y, width, "Frontier settlement",
+                p.frontierHoldingFrequency,
+                FrontierHoldingFrequencyBands,
+                v => Set(p, ref p.frontierHoldingFrequency, v),
+                "Direct effect: how many suitable unoccupied areas receive a "
+                + "frontier household. It does not change major settlements "
+                + "or the form of each home.");
+            BandRow(ref y, width, "Homestead size",
+                p.frontierHoldingSize, FrontierHoldingSizeBands,
+                v => Set(p, ref p.frontierHoldingSize, v),
+                "Direct effect: household size and material form after a "
+                + "frontier site exists. Local land limits the result. The "
+                + "number of sites is independent.");
 
-            Section(ref y, width, "Unaffiliated populations");
-            BandRow(ref y, width, "Unaffiliated residents",
+            Section(ref y, width, "Population");
+            BandRow(ref y, width, "Residents outside factions",
                 p.unaffiliatedPopulationShare,
                 UnaffiliatedPopulationBands,
                 v => Set(p, ref p.unaffiliatedPopulationShare, v),
-                "Typical share of residents without a faction.");
+                "Direct effect: the generated share of residents without "
+                + "faction membership. Settlement ownership, settlement "
+                + "count, and faction relations are independent.");
 
-            Section(ref y, width, "Neighboring factions");
-            BandRow(ref y, width, "Nearby faction variety",
-                p.nearbyFactionVariety, NearbyFactionVarietyBands,
-                v => Set(p, ref p.nearbyFactionVariety, v),
-                "Frequency of different factions owning nearby settlements.");
+            Section(ref y, width, "Factions");
+            BandRow(ref y, width, "Settlement origins",
+                p.reallocationSourceVariety, ReallocationSourceVarietyBands,
+                v => Set(p, ref p.reallocationSourceVariety, v),
+                "Direct effect: whether population sources repeat an owner or "
+                + "draw from another eligible world faction. Final ownership, "
+                + "population shares, settlement count, and relations are "
+                + "independent.");
             BandRow(ref y, width, "New local factions",
-                p.newLocalFactionChance, NewFactionBands,
-                v => Set(p, ref p.newLocalFactionChance, v),
-                "Frequency of new local factions instead of existing world "
-                + "factions.");
-            BandRow(ref y, width, "Starting relations",
-                p.startingConflictChance, StartingRelationBands,
-                v => Set(p, ref p.startingConflictChance, v),
-                "At peace with one another, or already at odds.");
+                p.localFactionChance, LocalFactionBands,
+                v => Set(p, ref p.localFactionChance, v),
+                "Direct effect: whether a generated owner keeps its world "
+                + "faction or forms a new local faction. Settlement count and "
+                + "placement are independent.");
+            BandRow(ref y, width, "Faction relations",
+                p.regionalConflictChance, RegionalConflictBands,
+                v => Set(p, ref p.regionalConflictChance, v),
+                "Direct effect: the chance that newly generated faction pairs "
+                + "begin hostile. Existing relations and Starting Region "
+                + "choices remain authoritative.");
 
-            Section(ref y, width, "Distant activity");
-            BandRow(ref y, width, "Distant world activity",
-                p.distantActivity, DistantActivityBands,
-                v => Set(p, ref p.distantActivity, v),
-                "How often factions and settlements outside the starting "
-                + "region change.");
+            Section(ref y, width, "Distant world");
+            BandRow(ref y, width, "Distant activity",
+                p.offMapActivityRate, OffMapActivityBands,
+                v => Set(p, ref p.offMapActivityRate, v),
+                "Direct effect: how many distant factions and settlements can "
+                + "make progress between visits. Loaded and player-facing "
+                + "groups remain fully active.");
 
             y += 6f;
-            Note(ref y, width, "These choices do not change the number of "
-                + "major settlements. World population still controls that.");
+            Note(ref y, width, "Major-settlement count remains controlled by "
+                + "RimWorld's world-population setting and explicit scenario "
+                + "overrides.");
+        }
+
+        // A world preset composes independent controls; it does not create a
+        // second generation model. Applying one writes the same policy fields
+        // the rows below own, and every row remains independently editable.
+        private sealed class WorldProfile
+        {
+            internal string Name;
+            internal string Summary;
+            internal string Traits;
+            internal string Details;
+            internal string IconPath;
+            internal Action<CARegionalWorldPolicy> Apply;
+        }
+
+        private static readonly WorldProfile NeutralProfile =
+            new WorldProfile
+            {
+                Name = "Balanced world",
+                Summary = "The semantic middle for every world tendency.",
+                Traits = "Mixed regions · typical settlement · mixed relations",
+                Details = "Every control begins at its middle choice. Land, "
+                    + "population, access, existing relations, and scenario "
+                    + "overrides still determine realized outcomes.",
+                IconPath = "Rimshare/WorldMapIcons/compass",
+                Apply = p => Configure(p, 0.4f, 0.5f, 0.5f, 0.45f,
+                    0.45f, 0.5f, 0.45f, 0.5f, 0.45f, 0.4f, 0.5f)
+            };
+
+        private static readonly WorldProfile[] Profiles =
+        {
+            NeutralProfile,
+            new WorldProfile
+            {
+                Name = "Settled heartlands",
+                Summary = "Connected, clustered regions with stronger urban growth.",
+                Traits = "Connected land · clustered settlements · fewer frontiers",
+                Details = "Favors broad connected regions, clustered placement, "
+                    + "urban development, varied origins, and established world "
+                    + "factions. It does not add major settlements.",
+                IconPath = "Rimshare/WorldMapIcons/factory",
+                Apply = p => Configure(p, 0.72f, 0.5f, 0.82f, 0.8f,
+                    0.15f, 0.5f, 0.15f, 0.82f, 0.15f, 0.12f, 0.82f)
+            },
+            new WorldProfile
+            {
+                Name = "Open frontier",
+                Summary = "Separate regions with dispersed settlements and homesteads.",
+                Traits = "Open ground · many homesteads · new local factions",
+                Details = "Favors separate regions, spread-out placement, many "
+                    + "frontier homes, unaffiliated residents, and new local "
+                    + "factions. Major-settlement count remains unchanged.",
+                IconPath = "Rimshare/WorldMapIcons/forward-sun",
+                Apply = p => Configure(p, 0.12f, 0.2f, 0.2f, 0.15f,
+                    0.78f, 0.82f, 0.8f, 0.5f, 0.78f, 0.4f, 0.5f)
+            },
+            new WorldProfile
+            {
+                Name = "Fractured rim",
+                Summary = "Dispersed populations, local factions, and contested ground.",
+                Traits = "Varied origins · local factions · hostile relations",
+                Details = "Favors spread-out settlements, small frontier homes, "
+                    + "unaffiliated residents, varied sources, new local factions, "
+                    + "and hostile generated relations.",
+                IconPath = "Rimshare/WorldMapIcons/cracked-shield",
+                Apply = p => Configure(p, 0.4f, 0.5f, 0.2f, 0.45f,
+                    0.78f, 0.18f, 0.8f, 0.82f, 0.78f, 0.75f, 0.82f)
+            }
+        };
+
+        private void OpenWorldPresets()
+        {
+            var choices = Profiles.Select(profile =>
+            {
+                WorldProfile local = profile;
+                return new CACreationChoice
+                {
+                    Key = local.Name,
+                    Name = local.Name,
+                    Summary = local.Summary,
+                    Traits = local.Traits,
+                    Details = local.Details,
+                    Badge = "World preset",
+                    Icon = CACreationUI.Icon(local.IconPath),
+                    Accent = CACreationUI.Preset,
+                    Selected = Matches(policy, local),
+                    ConfirmLabel = "Use this world preset",
+                    Choose = delegate { ApplyProfile(local); }
+                };
+            }).ToList();
+            CACreationUI.OpenChoices("World presets",
+                "Apply a composed starting profile. Every tendency remains "
+                + "independent and editable after the preset is applied.",
+                choices);
+        }
+
+        private void ApplyProfile(WorldProfile profile)
+        {
+            if (profile == null || policy == null) return;
+            profile.Apply(policy);
+            policy.realizedStitchedRegionFrequency = -1f;
+            CAWorldTendenciesSession.MarkEdited();
+        }
+
+        internal static string ProfileName(CARegionalWorldPolicy value)
+        {
+            WorldProfile profile = Profiles.FirstOrDefault(item =>
+                Matches(value, item));
+            return profile?.Name;
+        }
+
+        private static bool Matches(CARegionalWorldPolicy value,
+            WorldProfile profile)
+        {
+            if (value == null || profile == null) return false;
+            var expected = new CARegionalWorldPolicy();
+            profile.Apply(expected);
+            return value.stitchedRegionSizeMin == expected.stitchedRegionSizeMin
+                && value.stitchedRegionSizeMax == expected.stitchedRegionSizeMax
+                && Mathf.Approximately(value.stitchedRegionFrequencyMin,
+                    expected.stitchedRegionFrequencyMin)
+                && Mathf.Approximately(value.stitchedRegionFrequencyMax,
+                    expected.stitchedRegionFrequencyMax)
+                && Mathf.Approximately(value.settlementConcentration,
+                    expected.settlementConcentration)
+                && Mathf.Approximately(value.urbanGrowthPropensity,
+                    expected.urbanGrowthPropensity)
+                && Mathf.Approximately(value.frontierHoldingFrequency,
+                    expected.frontierHoldingFrequency)
+                && Mathf.Approximately(value.frontierHoldingSize,
+                    expected.frontierHoldingSize)
+                && Mathf.Approximately(value.unaffiliatedPopulationShare,
+                    expected.unaffiliatedPopulationShare)
+                && Mathf.Approximately(value.reallocationSourceVariety,
+                    expected.reallocationSourceVariety)
+                && Mathf.Approximately(value.localFactionChance,
+                    expected.localFactionChance)
+                && Mathf.Approximately(value.regionalConflictChance,
+                    expected.regionalConflictChance)
+                && Mathf.Approximately(value.offMapActivityRate,
+                    expected.offMapActivityRate);
+        }
+
+        private static void Configure(CARegionalWorldPolicy p,
+            float regionFrequency, float regionSize,
+            float settlementSpacing, float urbanDevelopment,
+            float frontierFrequency, float frontierSize,
+            float unaffiliated, float sourceVariety, float localFactions,
+            float conflict, float offMap)
+        {
+            p.stitchedRegionFrequencyMin = Mathf.Clamp01(
+                regionFrequency - 0.15f);
+            p.stitchedRegionFrequencyMax = Mathf.Clamp01(
+                regionFrequency + 0.15f);
+            if (regionSize < 0.35f)
+            { p.stitchedRegionSizeMin = 2; p.stitchedRegionSizeMax = 3; }
+            else if (regionSize < 0.65f)
+            { p.stitchedRegionSizeMin = 3; p.stitchedRegionSizeMax = 5; }
+            else
+            { p.stitchedRegionSizeMin = 5; p.stitchedRegionSizeMax = 8; }
+            p.settlementConcentration = settlementSpacing;
+            p.urbanGrowthPropensity = urbanDevelopment;
+            p.frontierHoldingFrequency = frontierFrequency;
+            p.frontierHoldingSize = frontierSize;
+            p.unaffiliatedPopulationShare = unaffiliated;
+            p.reallocationSourceVariety = sourceVariety;
+            p.localFactionChance = localFactions;
+            p.regionalConflictChance = conflict;
+            p.offMapActivityRate = offMap;
         }
 
         // ---- named tendency bands -----------------------------------------
@@ -227,94 +432,94 @@ namespace ColonistAwareness
             { Name = name; Value = value; Description = description; }
         }
 
-        private static readonly BandOption[] SettlementPatternBands =
+        private static readonly BandOption[] SettlementConcentrationBands =
         {
-            new BandOption("Shared cluster", 0.2f,
-                "Settlements usually form one shared cluster."),
+            new BandOption("Spread out", 0.2f,
+                "Generated settlements favor open areas farther apart."),
             new BandOption("Mixed", 0.5f,
-                "Clusters and regions with one main settlement are both likely."),
-            new BandOption("One main settlement", 0.82f,
-                "Settlements usually gather around one main settlement.")
+                "Ground and access usually decide between near and far sites."),
+            new BandOption("Clustered", 0.82f,
+                "Generated settlements favor sites near earlier placements.")
         };
-        private static readonly BandOption[] CityBands =
+        private static readonly BandOption[] UrbanGrowthBands =
         {
-            new BandOption("Rare", 0.15f,
-                "Only unusually well-supported towns become cities."),
-            new BandOption("Occasional", 0.45f,
-                "Cities form where population, land, and trade align."),
-            new BandOption("Common", 0.8f,
-                "Suitable towns readily grow into cities.")
+            new BandOption("Harder", 0.15f,
+                "Urban scale requires a high support score."),
+            new BandOption("Typical", 0.45f,
+                "Urban scale uses the standard support threshold."),
+            new BandOption("Easier", 0.8f,
+                "Urban scale uses a lower support threshold; required facts remain.")
         };
-        private static readonly BandOption[] FrontierSettlementFrequencyBands =
+        private static readonly BandOption[] FrontierHoldingFrequencyBands =
         {
             new BandOption("Sparse", 0.15f,
-                "Only a few lone holdings stand between towns."),
-            new BandOption("Settled", 0.45f,
-                "Homesteads appear regularly on workable frontier ground."),
-            new BandOption("Dense", 0.78f,
-                "Many independent holdings occupy suitable wild ground.")
+                "Few suitable unoccupied areas receive holdings."),
+            new BandOption("Typical", 0.45f,
+                "Suitable unoccupied areas regularly receive holdings."),
+            new BandOption("Common", 0.78f,
+                "Most suitable unoccupied areas receive holdings.")
         };
-        private static readonly BandOption[] FrontierSettlementSizeBands =
+        private static readonly BandOption[] FrontierHoldingSizeBands =
         {
             new BandOption("Lone cabins", 0.18f,
-                "Frontier holdings are usually simple household sites."),
+                "Realized holdings favor small households and simple material form."),
             new BandOption("Mixed holdings", 0.5f,
-                "Cabins and worked farmsteads both appear."),
+                "Land capacity decides between cabins and worked homesteads."),
             new BandOption("Established homesteads", 0.82f,
-                "Frontier sites include developed working holdings.")
+                "Capable sites favor larger households and established form.")
         };
         private static readonly BandOption[] UnaffiliatedPopulationBands =
         {
-            new BandOption("Few", 0.15f,
+            new BandOption("Mostly affiliated", 0.15f,
                 "Most residents belong to a faction."),
-            new BandOption("Mixed", 0.45f,
+            new BandOption("Mixed membership", 0.45f,
                 "Some settlements include unaffiliated residents."),
-            new BandOption("Many", 0.8f,
+            new BandOption("Many unaffiliated", 0.8f,
                 "Unaffiliated residents are common.")
         };
-        private static readonly BandOption[] NearbyFactionVarietyBands =
+        private static readonly BandOption[] ReallocationSourceVarietyBands =
         {
-            new BandOption("Mostly one faction", 0.15f,
-                "Nearby settlements usually belong to the same faction."),
-            new BandOption("Several factions", 0.5f,
-                "Several factions commonly hold nearby settlements."),
-            new BandOption("Highly mixed", 0.82f,
-                "Many factions hold settlements in the same region.")
+            new BandOption("Repeated origins", 0.15f,
+                "Source selection favors settlements of an owner already represented."),
+            new BandOption("Mixed origins", 0.5f,
+                "Source selection mixes repeated and different owners."),
+            new BandOption("Varied origins", 0.82f,
+                "Source selection favors owners not yet represented.")
         };
-        private static readonly BandOption[] NewFactionBands =
+        private static readonly BandOption[] LocalFactionBands =
         {
-            new BandOption("Rare", 0.15f,
-                "Few settlements introduce a new local faction."),
-            new BandOption("Occasional", 0.45f,
-                "New local factions appear here and there."),
-            new BandOption("Common", 0.78f,
-                "Many settlements introduce a new local faction.")
+            new BandOption("Mostly remain", 0.15f,
+                "Generated ownership usually retains the source world faction."),
+            new BandOption("Some form", 0.45f,
+                "Some generated owners become new local factions."),
+            new BandOption("Often form", 0.78f,
+                "Generated owners often become new local factions.")
         };
-        private static readonly BandOption[] StartingRelationBands =
+        private static readonly BandOption[] RegionalConflictBands =
         {
             new BandOption("Mostly peaceful", 0.12f,
-                "Most neighboring factions begin without a standing dispute."),
+                "New faction pairs usually receive neutral relations."),
             new BandOption("Mixed", 0.4f,
-                "Peaceful relations and active rivalries both occur."),
+                "New faction pairs receive neutral and hostile relations."),
             new BandOption("Contentious", 0.75f,
-                "Standing disputes are common between neighbors.")
+                "New faction pairs often receive hostile relations.")
         };
-        private static readonly BandOption[] DistantActivityBands =
+        private static readonly BandOption[] OffMapActivityBands =
         {
             new BandOption("Quiet", 0.2f,
-                "Distant factions and settlements change rarely."),
+                "Change among distant factions and settlements is uncommon."),
             new BandOption("Active", 0.5f,
-                "Distant factions and settlements change regularly."),
+                "Distant factions and settlements continue to change."),
             new BandOption("Busy", 0.82f,
-                "Distant factions and settlements change often.")
+                "Change among distant factions and settlements is frequent.")
         };
         private static readonly BandOption[] StitchedRegionFrequencyBands =
         {
             new BandOption("Mostly separate", 0.12f,
                 "Most generated regions occupy one world tile."),
-            new BandOption("Some stitched regions", 0.4f,
+            new BandOption("Mixed", 0.4f,
                 "Single-tile and larger connected regions both occur."),
-            new BandOption("Commonly stitched", 0.72f,
+            new BandOption("Often connected", 0.72f,
                 "Larger connected regions are common across the world.")
         };
         private static readonly BandOption[] StitchedRegionSizeBands =
@@ -342,6 +547,14 @@ namespace ColonistAwareness
         }
         private static float StitchedRegionSizeBand(CARegionalWorldPolicy p)
         {
+            if (p.stitchedRegionSizeMin == 2
+                && p.stitchedRegionSizeMax == 3) return 0.2f;
+            if (p.stitchedRegionSizeMin == 3
+                && p.stitchedRegionSizeMax == 5) return 0.5f;
+            if (p.stitchedRegionSizeMin == 5
+                && p.stitchedRegionSizeMax == 8) return 0.85f;
+            // A noncanonical range can still be displayed by proximity; the
+            // three saved defaults and menu-written ranges map exactly.
             float mid = (p.stitchedRegionSizeMin
                 + p.stitchedRegionSizeMax) * 0.5f;
             return Mathf.Clamp01((mid - 2f) / 8f);
@@ -389,35 +602,30 @@ namespace ColonistAwareness
             Text.Font = GameFont.Tiny;
             float descriptionHeight = Mathf.Max(24f, Text.CalcHeight(
                 options[idx].Description, descriptionWidth));
+            float contractHeight = Mathf.Max(24f, Text.CalcHeight(
+                tip ?? "", descriptionWidth));
             Text.Font = oldFont;
-            float bandHeight = Row + 4f + descriptionHeight;
+            float bandHeight = Row + 6f + descriptionHeight
+                + contractHeight + 6f;
             Rect row = new Rect(0f, y, width, bandHeight);
             Widgets.Label(new Rect(0f, y + 4f, LabelWidth, Row), label);
-            if (Widgets.ButtonText(
-                    new Rect(LabelWidth + Gap, y, MenuWidth, Row),
-                    options[idx].Name))
-            {
-                var menu = new List<FloatMenuOption>();
-                foreach (BandOption option in options)
-                {
-                    BandOption local = option;
-                    menu.Add(new FloatMenuOption(local.Name + " - "
-                        + local.Description, delegate
-                    {
-                        set(local.Value);
-                    }));
-                }
-                Find.WindowStack.Add(new FloatMenu(menu));
-            }
+            CACreationUI.DrawSegment(new Rect(LabelWidth + Gap, y,
+                descriptionWidth, Row),
+                options.Select(item => item.Name).ToArray(), idx,
+                index => set(options[index].Value));
             Text.Font = GameFont.Tiny;
-            GUI.color = new Color(0.70f, 0.74f, 0.79f);
+            GUI.color = new Color(0.80f, 0.83f, 0.87f);
             Widgets.Label(new Rect(LabelWidth + Gap, y + Row + 2f,
                 descriptionWidth, descriptionHeight),
                 options[idx].Description);
+            GUI.color = new Color(0.61f, 0.66f, 0.71f);
+            Widgets.Label(new Rect(LabelWidth + Gap,
+                y + Row + 4f + descriptionHeight, descriptionWidth,
+                contractHeight), tip ?? "");
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
-            TooltipHandler.TipRegion(row, (tip ?? "") + "\n\n"
-                + options[idx].Description);
+            TooltipHandler.TipRegion(row, options[idx].Description + "\n\n"
+                + (tip ?? ""));
             y += bandHeight + 4f;
         }
 
@@ -481,12 +689,12 @@ namespace ColonistAwareness
             GUI.color = new Color(0.70f, 0.74f, 0.79f);
             Text.Font = GameFont.Tiny;
             Widgets.Label(note, "Defaults for generated regions and settlements. "
-                + "Starting-region choices override them.");
+                + "Matching Starting Region choices replace these defaults.");
             Text.Font = GameFont.Small;
             GUI.color = Color.white;
             TooltipHandler.TipRegion(new Rect(0f, y, half, 76f),
-                "Set broad tendencies for generated regions: scale, "
-                + "settlement patterns, frontier holdings, factions, and "
+                "Set broad tendencies for generated regions: extent, "
+                + "settlement placement, frontier holdings, factions, and "
                 + "distant-world activity.");
         }
     }

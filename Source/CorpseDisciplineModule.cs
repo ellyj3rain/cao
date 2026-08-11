@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using RimWorld;
 using Verse;
@@ -25,7 +26,7 @@ namespace ColonistAwareness
                 var corpses = ListUnburiedHumanlikeCorpses();
                 if (corpses.Count == 0) return;
 
-                if (s.autoUnforbidCorpses)
+                if (Allows("logistics.corpse_access"))
                 {
                     for (int i = 0; i < corpses.Count; i++)
                     {
@@ -34,14 +35,50 @@ namespace ColonistAwareness
                     }
                 }
 
-                if (s.autoDigGraves)
+                int capacity = CountOpenGravesAndPlans();
+                int deficit = corpses.Count - capacity;
+                if (deficit > 0)
                 {
-                    int capacity = CountOpenGravesAndPlans();
-                    int deficit = corpses.Count - capacity;
-                    if (deficit > 0) PlaceGraves(deficit);
+                    bool graveyardAuthority = HasExistingGraveyard();
+                    if (Allows("logistics.grave_planning",
+                        knowledgeSatisfied: true,
+                        authoritySatisfied: graveyardAuthority,
+                        materialSatisfied: graveyardAuthority))
+                        PlaceGraves(deficit);
                 }
             }
-            catch { }
+            catch (Exception exception)
+            {
+                Log.ErrorOnce("[CA] Corpse discipline failed: " + exception,
+                    1943411821 ^ map.uniqueID);
+            }
+        }
+
+        private bool Allows(string behaviorKey,
+            bool knowledgeSatisfied = true, bool authoritySatisfied = true,
+            bool materialSatisfied = true)
+        {
+            var context = new CABehaviorContext(null,
+                CAActorContext.PlayerColony, CAInitiativeTier.Standard,
+                CAAuthorityOrigin.PlayerDelegated,
+                authoritySatisfied: authoritySatisfied,
+                knowledgeSatisfied: knowledgeSatisfied,
+                knowledgeFresh: true, liveValidated: true,
+                capabilitySatisfied: true,
+                materialSatisfied: materialSatisfied,
+                currentIntentCompatible: true,
+                directPlayerOwnership: false,
+                authorityBasis: "enabled colony policy",
+                knowledgeBasis: knowledgeSatisfied
+                    ? "current burial-capacity census" : "no current deficit",
+                owner: nameof(CorpseDisciplineMapComponent));
+            return CABehaviorGate.EvaluateNativeExecution(behaviorKey,
+                context).Allowed;
+        }
+
+        private bool HasExistingGraveyard()
+        {
+            return map.listerThings.ThingsOfDef(ThingDefOf.Grave).Count > 0;
         }
 
         private List<Corpse> ListUnburiedHumanlikeCorpses()

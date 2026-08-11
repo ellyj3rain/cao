@@ -136,23 +136,56 @@ job-stomping loop or manufacture an identified threat from ambiguous sound.
 
 ## Autonomy tier canon (ratified)
 
-Explicit orders persist at ALL tiers. Directed = most controlled, survival floor
-only. Standard = floor + vanilla behavior. The dial governs SELF-INITIATION only.
-UI is UI: the order surface is never gated by tier.
+Explicit orders persist at every tier. The dial governs self-initiation only.
 
-Operational access is a bounded projection of that dial, not a second autonomy
-system. At colony creation, a Proactive or Autonomous default makes the scenario's
-shared starting cargo arrive allowed instead of inheriting RimWorld's automatic
-red-X forbid. Whenever any Proactive or Autonomous colonist is present, ordinary,
-visible, non-quest items across the colony map are maintained as allowed. A
-Proactive+ pawn with a known threat may then select a nearby weapon or genuinely
-protective apparel through the constant-think lane. CA observes the native item
-toggle and Forbid/Allow designators, scribes explicit player-denied item IDs, and
-never reverses those later denials. The former migration that protected every
-originless red X is cleared once because it preserved RimWorld's automatic locks
-as though the player had chosen them. Drafted control, queued forced work, allowed
-areas, and standing tactical orders remain authoritative. Category policy and
-general action authorization are still separate, unbuilt surfaces.
+| Tier | Active meaning |
+|---|---|
+| Standard | Ordinary RimWorld agency, enabled CA safeguards and native augmentation, direct and accepted relayed orders, observation, and continuation of an owned intent. It does not originate discretionary plans or unowned collective work. |
+| Proactive | One finite response to a current actionable fact, with bounded target, space, time, authority, completion, and interruption. |
+| Autonomous | Persistent, comparative, adaptive, or multi-actor work inside explicit delegation, office, institution, ownership, and material limits. |
+
+Old Directed `0` and old Standard `1` migrate to Standard. Old Proactive `2`
+and Autonomous `3` migrate to the corresponding active tiers. The current save
+schema and UI use only the three active identities.
+
+Operational access is colony policy, not an aggregate of pawn initiative.
+When enabled, the colony policy may reconcile ordinary visible non-quest items
+with the native forbid system while preserving every explicit player denial.
+Pawn initiative separately controls personal equipment choices. A Proactive pawn
+may select one weapon or genuinely protective apparel only for a current
+actor-held threat fact, through the exact behavior gate and native equipment job.
+Restricted categories still require their own authority. Drafted control, current
+and queued forced work, allowed areas, ownership, and standing tactical orders
+remain authoritative.
+
+## Behavior catalog and commitment gate
+
+`BehaviorCatalogModule.cs` is the shared definition surface for every CA
+behavior. Each stable key owns one primary domain and one form, plus actor
+contexts, feature permission, minimum initiative, evidence requirement,
+authority origins, execution lane, cadence, intent owner, completion, and
+stand-down conditions. Domains organize ownership and settings; forms distinguish
+observation, native augmentation, safeguards, finite responses, readiness,
+coordination, persistent objectives, adaptive plans, institutional action,
+direct orders, execution capabilities, presentation, and diagnostics.
+
+The effective profile is a cached stable prefilter. It may exclude an impossible
+setting/tier/actor combination, but it never authorizes a commitment. At the
+actual mutation or native-job boundary, `CABehaviorGate.Evaluate` must separately
+validate feature permission, initiative, authority ceiling, authority origin,
+actor-held knowledge and its provenance, live target state, player ownership,
+capability, material conditions, and current-intent compatibility. Every
+CA-originated native job is registered with its behavior key, episode, origin,
+controller, issuer, authority, owner, target, creation tick, and termination.
+
+Player pawns and NPC institutions may consume the same planning facts without
+sharing authority. Player action requires direct, accepted relay, native duty,
+continuation, or explicit delegation. NPC settlements act from saved offices,
+households, organizations, law, demands, and material means; player initiative is
+not an NPC policy. Culture and disposition rank permitted alternatives but never
+manufacture permission or authority. RimWorld jobs, duties, reservations,
+blueprints, work designations, social interactions, and world objects remain the
+physical executors.
 
 ## Settlement-objective projection
 
@@ -209,8 +242,9 @@ veto for that exact construction objective. It is demand staging, not durable
 inventory classification, and native hauling remains the physical executor.
 
 `CASpatialInitiativeMapComponent` attaches one saved CA initiative ceiling to each
-native stockpile and authored room program: Directed `0`, Standard `1`, Proactive
-`2`, or Autonomous `3`. An unspecified space is Standard. Effective initiative is
+native stockpile and authored room program: Standard `0`, Proactive `1`, or
+Autonomous `2`. An unspecified space is Standard. Old `0` and `1` values both
+migrate to Standard; old `2` and `3` become Proactive and Autonomous. Effective initiative is
 the lower of the acting pawn's autonomy and the space ceiling, so a space never
 elevates a pawn. Native priority continues to choose among valid storage
 destinations and native filters continue to define accepted items. The operative
@@ -300,19 +334,64 @@ Authority.
 
 The root world-tile graph is the authoritative regional topology. A saved regional
 plan owns its footprint, arrival area, factions, settlements, faction relations,
-world tendencies, settlement pattern, and scale. Each settlement plan owns its
-population groups, form, role, starting facilities, access, services, civic
-development, and provisions. Persistent world objects mark settlements and
-visible moving actors. Maps materialize player homes, entered settlements,
-encounters, and other events that need pawn-, thing-, job-, or Lord-level detail.
+world tendencies, settlement pattern, scale, and player founding state. A
+settlement plan owns direct facts: stable identity and location, faction,
+population composition and sources, settlement form and role, provisions, and a
+sparse exact exception mask where the operator must preserve or forbid a concrete
+starting object. Access, services, civic capacity, facilities, infrastructure,
+and settlement scale are realized consequences of population, land, geography,
+technology, knowledge, institutions, economy, trade, material state, and history.
+Persistent world objects mark settlements and visible moving actors. Maps
+materialize player homes, entered settlements, encounters, and other events that
+need pawn-, thing-, job-, or Lord-level detail.
 
-A faction owns culture, Ideoligion, political beliefs, current faction structure,
-and the authority shared between its settlements. A settlement keeps a stable CA
-identity even when its faction changes. Its realized record owns residents,
-population groups, organizations, material state, relationships, and
-materialization history. Faction era records what the faction knows. Facilities
+A faction owns inherited Culture and its optional native visual tradition,
+Ideoligion, Political Beliefs, current faction structure, and the authority shared
+between its settlements. A settlement keeps a stable CA identity even when its
+faction changes. Its realized record owns residents, population groups,
+organizations, material state, relationships, materialization history, and one
+persistent local Culture. Faction era records what the faction knows. Facilities
 and infrastructure record what a settlement can support. Local capability is
 derived from those facts; it is not a separately authored source of truth.
+
+Local Culture is longitudinal social-historical state, not a profile reconstructed
+from the current settlement summary. It records inherited origin, local identity,
+constituent populations, typed observations of lived events, recognized practices,
+successive transitions, and predecessor/evidence/domain provenance. A bounded
+world-simulation behavior evaluates elapsed historical cycles. Stable evidence
+refreshes observed practice without manufacturing change; meaningful accumulated
+evidence deterministically produces a successor state. Two settlements with the
+same inherited origin may therefore diverge through different histories, while
+plural constituents remain represented rather than collapsing arbitrarily.
+
+Cultural expression is a read-only contextual interpretation of current Culture
+in relation to Ideoligion, Political Beliefs, population, institutions, founding
+or realized order, material conditions, geography, relations, and observed
+practice. Its status, summary, facets, facts, and signature remain stable under
+the same saved inputs. It does not define Culture by reverse-summarizing transport,
+services, public works, facilities, or provisioning. Starting Region, faction
+summaries, loaded maps, and world markers consume the same nonmutating reading.
+
+Culture ranks otherwise valid social, spatial, institutional, political, and
+settlement-development choices. Current practices can favor shared public life,
+spatial continuity, defensive boundaries, institutional acceptance or friction,
+political normalization or durable contradiction, and development paths that
+fit lived local history. Each consumer still requires its own authority,
+knowledge, land, technology, labor, materials, treasury, and execution lane.
+Culture never manufactures those causes.
+
+An existing faction's structure is realized state from a society with history.
+An established settlement begins with an explicit temporal basis and may retain
+mature institutions and local Culture, but authoring does not invent unobserved
+event history merely to make it established. The player founding state is
+intentionally earlier: it owns the inherited Culture and Political Beliefs brought
+by the founders, a receipt for their native Ideoligion content and revision, and
+the Founding Arrangement adopted at landing. Native Ideoligion validity is checked
+before the receipt may authorize scenario notification. That arrangement
+materializes once as exact, duration-aware founding relations. It is not expanded
+into broader faction-structure answers that the player did not choose. Player
+institutions and local historical Culture develop through simulation; the
+established-faction generator does not fill them at game start.
 
 Individual observation becomes collective action only through an explicit causal
 chain: a pawn observes; a valid communication or reporting edge carries an
@@ -331,8 +410,9 @@ provide together. Offices, votes, delegation, emergency powers, succession,
 trade, mobilization, negotiation, surrender, and agreements use those saved facts.
 
 Organizations own offices, groups, customs, security, agreements, policies,
-claims, relations, and decision history. Political-belief effects compare saved
-beliefs with current rules and observed acts. There is no separate ideology
+claims, relations, and decision history. Organization customs follow the social
+order actually in force. Political Beliefs remain standards used to judge that
+order and observed acts; they do not silently become adopted customs. There is no separate ideology
 classification layer between those facts and their consequences.
 
 Geography follows the visual land shape projected from the selected world areas.

@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Governance |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `0.12.3.0-alpha` · A sequence closed at `A102` · next `B1` |
+| Version | `1.3.0.1-alpha` · closed batch tip `B7` · next `B8` |
 <!-- cao:generated:version END -->
 | Design authority | ellyj3rain |
 | Repository | `GOVERNANCE.md` |
@@ -43,6 +43,21 @@ substrate; the other three are what make the mod a framework.
   attribute invented intent.
 - **Declarations are promises.** Settings copy and in-game text must match shipped
   behavior exactly.
+- **Author causes, inspect consequences.** Simulation complexity does not justify
+  exposing every analytical category as a player control. Authoring surfaces own
+  concrete persistent facts with real consumers; continuous, relational,
+  historical, and derived outcomes remain in the simulation and are explained
+  where the relevant decision or inspection occurs.
+- **No universal explanation mode.** Contextual explanation belongs to the object
+  or decision that owns it. Presentation policy may not replace causal copy with
+  global Compact, Standard, or Expanded authoring states or repeated detail
+  toggles.
+- **Social systems keep their boundaries.** Culture is persistent longitudinal
+  social history; Ideoligion is RimWorld's native religious and moral substrate;
+  Political Beliefs are normative commitments; institutions and adopted rules
+  are realized order; observed practice is what people actually do. Agreement
+  and contradiction remain representable rather than being collapsed for UI
+  convenience.
 - **Publishable-portable.** No operator-specific hardcoding; license-clean bespoke
   implementations (reference reading of other mods is fine; copying is not).
 - **DLL changes need a full game restart; Defs XML hot-reloads in dev mode.**
@@ -80,9 +95,9 @@ substrate; the other three are what make the mod a framework.
   regulatory; batch substance and its recorded provenance are historical
   evidence. Local Git commits are supporting engineering evidence when retained.
 - Batch identifiers share one namespace across letter eras. The A sequence is
-  closed at `A102`; new development begins at `[B1]` and continues as `[B#]` in
-  the same directory and log. A new letter does not create another history tree,
-  generator, catalog, or projection layer.
+  closed at `A102`; development continues with `[B#]` in the same directory and
+  log. `B7` is closed and `B8` is next. A new letter does not create another
+  history tree, generator, catalog, or projection layer.
 - The records now under `Batches/` establish this append-only contract. The
   immediately preceding generated history tree was a regulatory projection, not
   a second set of closed batch records. Local Git may retain that engineering
@@ -96,7 +111,7 @@ substrate; the other three are what make the mod a framework.
   defs / reference), and subjects open with the development-batch prefix.
 - Pure project maintenance uses `[REPO]`. It may correct navigation, current
   documentation, filenames, or regulatory indexes without changing runtime
-  behavior, adding a version unit, or consuming `B1`.
+  behavior, adding a version unit, or consuming the next batch.
 - Automated tools do not receive Co-Authored-By trailers in commits.
 - The operator owns: architectural ratification, public remotes, destructive ref
   work, version-policy changes.
@@ -118,7 +133,7 @@ not expose those objects.
 ## Batch, thread, and version discipline
 
 - **Batch** is the atomic chronological development record. The closed history is
-  `A1` through `A102`; `B1` is simply the next identifier.
+  `A1` through `A102`, followed by `B1` through `B7`; `B8` is the next identifier.
 - **Thread and family** are permanent, series-neutral semantic classifications.
   `T-*` and `TF-*` may connect nonadjacent batches across any letter sequence, and
   one batch may participate in several threads.
@@ -139,11 +154,11 @@ Maturity advances independently through `pre-alpha`, `alpha`, `beta`, `rc`, and
 GA.
 
 `tools/version-model.mjs` is the executable replay source. It derives `VERSION`,
-the generated version stamps, and `VERSION_MAP.md`; validates exact A1-A102
-coverage; checks the thematic namespace; and fails if `B1` has been consumed by
-this reconstruction. Mechanically derived version facts are generated and gated,
-not hand-typed. The A-series replay contains 27 evidenced version units and derives
-`0.12.3.0-alpha`.
+the generated version stamps, and `VERSION_MAP.md`; validates exact A1-B7
+coverage; checks the thematic namespace; and fails if the declared next batch has
+already been consumed. Mechanically derived version facts are generated and
+gated, not hand-typed. Thirty-four evidenced version units derive
+`1.3.0.1-alpha`.
 
 When new development begins, the first batch opens the next contiguous version
 unit. Immediately following batches may share that version only when they form one

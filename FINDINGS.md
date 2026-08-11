@@ -3142,3 +3142,66 @@
   batch exactly once and derive `0.12.3.0-alpha`. The validator also proves 12
   neutral families, 30 neutral threads, current projection freshness, and the
   absence of a `B1` record.
+
+- **F-154** (2026-08-10 12:25 UTC / 05:25 PST) - **The World tendencies screen
+  exposed a parallel causal model.** Outcome-shaped city and pattern controls,
+  frontier count and size conflation, generated-relation rerolls, and source
+  ownership language allowed UI policy, saved plans, and runtime generation to
+  disagree about which fact each row owned.
+
+  The converged model has eleven explicit UI-to-consumer contracts. A shared
+  deterministic kernel realizes settlement placement, population shares,
+  relations, economic and urban support, scale, frontier count and form, and
+  off-map activity. Confirmed regional plans and standard-map frontier plans save
+  those results before consumers run. A fixed-seed receipt runner varies every
+  tendency independently, verifies unrelated-variable stability, checks all
+  visible controls have consumers, round-trips saved state, proves later policy
+  does not reroll it, checks override ownership, and recomputes the authored
+  fixture's production realization hash and derived facts. The suite passes 179
+  assertions; operator runtime judgment remains the next gate.
+
+- **F-155** (2026-08-11) - **B5/B6 closed substantive Culture acceptance without
+  implementing the required longitudinal state or consumer depth.** B5 persisted
+  chiefly identity, background text, and an optional native visual source, then
+  derived a cultural-expression read model from other settlement state. B6 wired
+  parts of that derived expression into behavior and spatial infrastructure, but
+  a status-to-score multiplier and prose summary did not establish
+  `Culture(T) + lived history -> Culture(T+1)`. Source and runtime review found no
+  persisted predecessor/evidence transition loop and no complete substantive
+  spatial, social, institutional, political, and settlement-development consumer
+  set. B7 treats this as failed prior acceptance, not new scope, and preserves
+  the closed B5/B6 records as evidence of the discrepancy.
+
+- **F-156** (2026-08-11) - **The B6 creation surfaces exposed derived conclusions
+  and implementation classifications as though they were world facts.** Global
+  Compact, Standard, and Expanded information detail; repeated local detail
+  toggles; Minimal, Contextual, and Extensive settlement development; generic
+  transport, services, civic, research, and facility controls; and Generated,
+  Include, and Omit provenance made unrelated phenomena share one convenient UI
+  grammar. The controls were not isolated copy defects. They encoded analytical
+  and generated outcomes as constitutive variables. B7 removes those authoring
+  objects, retains direct region, faction, settlement, location, population,
+  ownership, relation, founding, provision, and sparse concrete exception facts,
+  and presents the remaining material state as derived realization.
+
+- **F-157** (2026-08-11) - **B7 closes its static acceptance boundary without
+  converting receipts into runtime evidence.** The frozen source at
+  `3043e6b737472ffb34cf47d856b880c4e6a07811` passes 50 creation-ontology
+  assertions, 15 longitudinal-Culture assertions, 65 creation-flow assertions,
+  48 player-founding assertions, 185 World-tendency assertions, and 98 of 107
+  behavior cases; the remaining nine are named operator-runtime observations.
+  Separate causality, ontology, UI, and playability reviews leave no unresolved
+  Critical or High source finding. A full Release rebuild succeeds with zero
+  errors and the same twelve inherited warnings. Its 3,255,808-byte assembly,
+  SHA-256
+  `2CF3982C3ECA6E83D335BD7BCEEDF0E4BE98DDF2B218A0DAF854F72EB630A4E1`,
+  is byte-identical at RimWorld's active mod target.
+
+  Both active fixture surfaces retain the same schema-5 world, region,
+  candidate, arrival tile, scale, three factions, four settlements, nine
+  population groups, and explicit established temporal bases. Their normalized
+  XML content agrees; byte hashes differ only because the keyed file retains
+  CRLF and the active mirror retains LF. The selected region's unsupported world
+  mutators remain an explicitly stamped transient developer exercise. It may
+  exercise cases 97-103 and 105 without inventing durable compatibility. Case
+  104 requires a separate compatible-region save/reload run.

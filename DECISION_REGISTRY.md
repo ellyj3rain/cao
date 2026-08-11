@@ -2005,3 +2005,203 @@
   not replace the project or rewrite its governed history. This corrects DR-93's
   reliance on Git history as the portable preservation layer. It is `[REPO]`
   maintenance, adds no version unit, and leaves `B1` unused.
+
+- **DR-96** (2026-08-10 12:25 UTC / 05:25 PST) - **World tendencies author
+  causes; realized world state is saved once and consumed.** Each editable row
+  owns one policy variable with a direct effect, explicit constraints, derived
+  outcomes, and independent neighboring controls. Starting-region authoring
+  replaces the matching default only at that owning surface.
+
+  Major-settlement abundance comes from RimWorld's world-population settlement
+  pool unless a scenario explicitly overrides it. Concentration changes
+  settlement placement before spatial pattern classification. Urban-growth
+  propensity changes the support threshold; actual population, land, access,
+  services, civic development, economic capacity, trade connectivity,
+  specialization, regional role, and history determine realized scale.
+  Reallocation source variety changes the owners represented among selected
+  source settlements without changing abundance or final local ownership.
+
+  Frontier frequency owns site count. Frontier size owns household, material
+  level, and form after a suitable site exists. Regional plans and ordinary maps
+  save the same realized holding facts before physical generation. Generated
+  faction relations, relation pattern, settlement pattern, scale, population,
+  and source receipts are persisted canonical facts. Generation and runtime
+  consume those facts and do not reroll their tendencies. A confirmed regional
+  plan that fails structural validation is rejected rather than silently
+  regenerated. This extends DR-86's native-substrate rule and DR-4's declaration
+  contract across the World tendencies flow.
+
+- **DR-97** (2026-08-10 18:06 UTC / 11:06 PST) - **Established societies and
+  the player founding share an ontology but not a temporal conclusion.** An
+  existing faction or settlement is descriptive state: its Culture,
+  Ideoligion, Political Beliefs, social order, institutions, relations, and
+  history already exist when the player encounters it. Its setup surface
+  answers what that society is already like.
+
+  The player surface authors a founding moment. Culture, Ideoligion, and
+  Political Beliefs are brought by the founders. Political Beliefs state what
+  they consider proper. A Founding Arrangement states what they institute at
+  landing. Agreement or conflict between those states is retained. Only the
+  immediate arrangement materializes before play; mature institutions and
+  historical practice develop through simulation.
+
+  Both surfaces use the same Culture and Political Beliefs models, presets,
+  vocabulary, and editors. RimWorld's native `Ideo` remains the Ideoligion
+  substrate. The coordinated player page replaces the vanilla preset page as
+  the top-level creator while retaining native fixed, fluid, and loaded
+  Ideoligion editing. The general faction pass may complete established
+  societies but may not fabricate a mature social order for the player. This
+  corrects the unauthorized absence recorded by the prior start-surface map and
+  restores the belief-to-arrangement relationship identified in
+  `SETUP_SCOPE_MAP.md`.
+
+  The confirmed player draft belongs to a world component so the same contract
+  covers regional, ordinary, and forced-map starts. A durable applied-tick
+  receipt prevents map or regional resolution from replaying the founding over
+  institutions developed later. The exact arrangement creates duration-aware
+  founding relations; it does not invent broader faction-structure answers.
+  The native Ideoligion receipt follows content and revision rather than load
+  ID alone, and RimWorld's structural Ideoligion checks run before scenario
+  notification, including after native editor Back.
+  Political Beliefs remain standards for judging practice. Organization customs
+  come from the social order actually in force, not from belief alone.
+
+- **DR-98** (2026-08-11) - **The active initiative ladder has three tiers.**
+  Standard permits ordinary RimWorld behavior, enabled CA safeguards, direct and
+  accepted relayed orders, observation, and continuation of an owned intent.
+  Proactive adds finite responses to current facts. Autonomous adds persistent,
+  adaptive, or collective action inside delegated authority. Old Directed `0`
+  and old Standard `1` both migrate to Standard; old Proactive `2` and Autonomous
+  `3` retain their meanings at the new compact identities. This supersedes the
+  four-tier portions of earlier autonomy decisions without weakening explicit
+  player orders.
+
+- **DR-99** (2026-08-11) - **Permission, initiative, authority, knowledge,
+  capability, and material conditions are separate gates.** A feature setting
+  permits a behavior family. Initiative permits the actor to originate that form
+  of action. Authority identifies who may commit it. Actor-held knowledge
+  supplies the actionable fact. Native capability and material conditions decide
+  whether it can be executed. Passing one gate never implies the others.
+
+- **DR-100** (2026-08-11) - **Every CA behavior has one stable typed
+  definition.** A behavior key owns its domain, form, actor contexts, minimum
+  initiative, permission, required evidence, authority class, interruption rule,
+  native execution lane, owner, and termination condition. Each behavior belongs
+  to one primary domain even when it relates to others.
+
+- **DR-101** (2026-08-11) - **Runtime authorization, settings presentation,
+  tracing, diagnostics, and receipts read one behavior catalog.** Module-local
+  labels and raw tier comparisons do not define public behavior semantics. The
+  behavior census is a read-only view of that shared catalog and saved decisions;
+  it does not become a scheduler.
+
+- **DR-102** (2026-08-11) - **Player delegation and NPC institutions share
+  planning facts but use different authority.** Player pawns may act only through
+  operator, accepted relay, native duty, continuation, or explicitly delegated
+  authority. NPC settlements and institutions act through their saved offices,
+  households, organizations, laws, demands, and material means. NPC initiative is
+  not presented as a player pawn setting.
+
+- **DR-103** (2026-08-11) - **Culture and disposition rank permitted choices;
+  they do not create permission or authority.** Cultural background, Ideoligion,
+  political beliefs, local expression, skills, traits, mood, and pain may alter
+  priority, confidence, method, or willingness inside the valid choice set. They
+  cannot authorize a behavior that its setting, initiative, knowledge, office,
+  ownership, or material conditions deny.
+
+- **DR-104** (2026-08-11) - **Direct operator intent remains authoritative.**
+  Player orders, drafted control, queued forced work, player-authored spaces,
+  permissions, ownership, and explicit denials override self-originated CA work.
+  Saved autonomous intent must carry its behavior key, episode, origin,
+  controller, issuer, authority basis, owner, target, creation tick, and
+  termination condition so it can be rechecked rather than silently replacing
+  operator intent.
+
+- **DR-105** (2026-08-11) - **RimWorld remains the physical execution
+  substrate.** Authorized CA behavior uses native think trees, jobs, duties,
+  reservations, blueprints, work designations, social interactions, world
+  objects, and settlement records. Consequences that depend on a native job are
+  committed only after that job succeeds. The behavior contract classifies,
+  authorizes, records, and explains action; it is not a parallel central
+  scheduler.
+
+- **DR-106** (2026-08-11) - **Simulation complexity does not imply equivalent
+  authoring complexity.** Creation exposes persistent causes the operator can
+  meaningfully choose. The simulation may derive many layered consequences from
+  those facts without turning every consequence, cache, or diagnostic into a
+  control.
+
+- **DR-107** (2026-08-11) - **A descriptive analytical category is not
+  automatically a constitutive simulation variable.** Labels used to inspect,
+  compare, or explain realized state do not become saved causes merely because
+  they make a convenient selector. Every retained authoring control owns one
+  concrete persisted fact and has a real downstream consumer.
+
+- **DR-108** (2026-08-11) - **Continuous, relational, plural, and historical
+  social state is not discretized merely for UI convenience.** A universal
+  ordinal may be used only where the underlying phenomenon actually possesses
+  that ordered scale. Overlapping provision, affiliation, belief, practice,
+  access, and cultural relations retain their own causes and can remain
+  contradictory.
+
+- **DR-109** (2026-08-11) - **Culture is persistent longitudinal
+  social-historical state.** A local Culture retains stable identity, inherited
+  origin, local development, constituent populations, typed observations,
+  recognized practices, transitions, and predecessor/evidence/domain
+  provenance. Bounded historical evaluation derives `Culture(T+1)` from
+  `Culture(T)` plus lived evidence. Unchanged history does not manufacture a
+  transition. Cultural expression is a read-only contextual interpretation of
+  Culture, and native `CultureDef` is one optional visual inheritance rather
+  than the cultural model. This supersedes the insufficient cultural-background
+  and derived-expression portions of DR-103 while retaining its authority
+  boundary.
+
+- **DR-110** (2026-08-11) - **Culture, Political Beliefs, Ideoligion,
+  institutions, adopted rules, and actual practice remain distinct.** Culture
+  records socially reproduced historical pattern. Political Beliefs record what
+  populations hold proper. RimWorld Ideoligion owns religious, ritual, moral,
+  and spiritual commitments. Institutions and adopted rules record realized
+  order. Observed practice records what people actually do. Agreement,
+  adaptation, plurality, and contradiction are meaningful state and are not
+  collapsed to make summaries agree.
+
+- **DR-111** (2026-08-11) - **Established societies and new founders occupy
+  different temporal boundaries.** An established settlement may begin with
+  mature institutions and local Culture because it predates the scenario, but
+  authoring records an explicit temporal basis rather than inventing unobserved
+  events. New founders bring inherited Culture, Ideoligion, and Political
+  Beliefs, adopt rules at landing, and acquire local institutions and historical
+  Culture through play. Player identity alone does not decide maturity; an
+  explicitly established player-start scenario may carry earlier history.
+
+- **DR-112** (2026-08-11) - **Native Ideoligion remains first-class inside one
+  integrated CA founding flow.** Native presets, saved Ideoligions, fixed and
+  fluid creation, memes, precepts, roles, rituals, validation,
+  `Scenario.PostIdeoChosen`, and native persistence remain authoritative. The
+  surrounding flow preserves inherited Culture, Political Beliefs, and landing
+  rules across entry, Back, and return; the native chooser is neither forked nor
+  treated as the complete founding ontology.
+
+- **DR-113** (2026-08-11) - **Contextual explanation belongs to the decision or
+  inspected object, not to a universal detail mode.** The global Compact,
+  Standard, and Expanded authoring policy and repeated local detail toggles are
+  removed. A decision states its fact, direct effect, constraints, and relevant
+  consequences where it occurs. Diagnostics may retain technical provenance
+  outside ordinary player copy.
+
+- **DR-114** (2026-08-11) - **Starting Region preserves spatial authoring while
+  exposing only meaningful direct facts and realized state.** The selected
+  region, arrival area, map, factions, settlements, locations, population
+  composition, ownership, relations, and concrete exceptional starting
+  conditions remain authorable. Access, services, civic capacity, facilities,
+  infrastructure, and settlement scale are derived from the people, land,
+  institutions, technology, economy, material state, and history that actually
+  exist.
+
+- **DR-115** (2026-08-11) - **Generic settlement-intensity and facility-bundle
+  controls are not canonical authoring primitives.** Minimal, Contextual, and
+  Extensive development profiles; unrelated ordinal infrastructure controls;
+  and per-facility Generated, Include, and Omit menus do not define arbitrary
+  societies. Sparse exact exceptions may preserve or forbid a concrete starting
+  object when that fact matters, but they remain secondary to realization and
+  never become a universal settlement recipe.

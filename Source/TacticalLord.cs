@@ -15,7 +15,7 @@ namespace ColonistAwareness
     // lord scribes, so standing orders now survive saves natively.
     public class LordJob_CATactical : LordJob
     {
-        private const int CurrentOrderSchemaVersion = 2;
+        private const int CurrentOrderSchemaVersion = 3;
         public const int KindHold = 0;
         public const int KindAmbush = 1;
         public const int KindHide = 2;
@@ -40,6 +40,15 @@ namespace ColonistAwareness
         private List<int> orderOrigins = new List<int>();
         private List<int> orderControllers = new List<int>();
         private List<int> orderIssuers = new List<int>();
+        private List<string> orderBehaviorKeys = new List<string>();
+        private List<int> orderAuthorityOrigins = new List<int>();
+        private List<string> orderAuthorityIdentities = new List<string>();
+        private List<string> orderOwnershipScopes = new List<string>();
+        private List<int> orderOwnerIds = new List<int>();
+        private List<int> orderCreatedTicks = new List<int>();
+        private List<int> orderCreationTiers = new List<int>();
+        private List<string> orderTargets = new List<string>();
+        private List<string> orderTerminationConditions = new List<string>();
         // True only when CA changed Fire-at-will from on to off for this
         // concealment order. The ownership bit is scribed so a load can restore
         // the player's original setting when the concealment ends.
@@ -90,6 +99,7 @@ namespace ColonistAwareness
                 orderOrigins[i] = (int)context.Origin;
                 orderControllers[i] = (int)context.Controller;
                 orderIssuers[i] = context.IssuerId;
+                WriteBehaviorContext(i, context);
                 // Updating an existing concealment row preserves the Fire-at-will
                 // change CA already owns. Reveal/release is the transaction that
                 // restores the player setting and clears this persisted bit.
@@ -104,6 +114,15 @@ namespace ColonistAwareness
                 orderOrigins.Add((int)context.Origin);
                 orderControllers.Add((int)context.Controller);
                 orderIssuers.Add(context.IssuerId);
+                orderBehaviorKeys.Add(context.BehaviorKey);
+                orderAuthorityOrigins.Add((int)context.AuthorityOrigin);
+                orderAuthorityIdentities.Add(context.AuthorityIdentity);
+                orderOwnershipScopes.Add(context.OwnershipScope);
+                orderOwnerIds.Add(context.OwnerId);
+                orderCreatedTicks.Add(context.CreatedTick);
+                orderCreationTiers.Add((int)context.CreationTier);
+                orderTargets.Add(context.TargetOrDemand);
+                orderTerminationConditions.Add(context.TerminationCondition);
                 orderFireSuppressed.Add(false);
                 orderEnvelopes.Add(DefaultHoldEnvelope);
                 orderGrits.Add(GritStandard);
@@ -164,11 +183,37 @@ namespace ColonistAwareness
             {
                 context = new CAIntentContext(orderEpisodes[i],
                     (CAIntentOrigin)orderOrigins[i],
-                    (CAIntentController)orderControllers[i], orderIssuers[i]);
+                    (CAIntentController)orderControllers[i], orderIssuers[i],
+                    behaviorKey: orderBehaviorKeys[i],
+                    authorityOrigin:
+                        (CAAuthorityOrigin)orderAuthorityOrigins[i],
+                    authorityIdentity: orderAuthorityIdentities[i],
+                    ownershipScope: orderOwnershipScopes[i],
+                    ownerId: orderOwnerIds[i],
+                    creationTier:
+                        (CAInitiativeTier)orderCreationTiers[i],
+                    targetOrDemand: orderTargets[i],
+                    terminationCondition: orderTerminationConditions[i],
+                    createdTick: orderCreatedTicks[i]);
                 return true;
             }
             context = default(CAIntentContext);
             return false;
+        }
+
+        private void WriteBehaviorContext(int index, CAIntentContext context)
+        {
+            EnsureContextRows();
+            if (index < 0 || index >= orderPawns.Count) return;
+            orderBehaviorKeys[index] = context.BehaviorKey;
+            orderAuthorityOrigins[index] = (int)context.AuthorityOrigin;
+            orderAuthorityIdentities[index] = context.AuthorityIdentity;
+            orderOwnershipScopes[index] = context.OwnershipScope;
+            orderOwnerIds[index] = context.OwnerId;
+            orderCreatedTicks[index] = context.CreatedTick;
+            orderCreationTiers[index] = (int)context.CreationTier;
+            orderTargets[index] = context.TargetOrDemand;
+            orderTerminationConditions[index] = context.TerminationCondition;
         }
 
         public bool FireSuppressionOwned(Pawn p)
@@ -203,6 +248,15 @@ namespace ColonistAwareness
             orderOrigins.RemoveAt(i);
             orderControllers.RemoveAt(i);
             orderIssuers.RemoveAt(i);
+            orderBehaviorKeys.RemoveAt(i);
+            orderAuthorityOrigins.RemoveAt(i);
+            orderAuthorityIdentities.RemoveAt(i);
+            orderOwnershipScopes.RemoveAt(i);
+            orderOwnerIds.RemoveAt(i);
+            orderCreatedTicks.RemoveAt(i);
+            orderCreationTiers.RemoveAt(i);
+            orderTargets.RemoveAt(i);
+            orderTerminationConditions.RemoveAt(i);
             orderFireSuppressed.RemoveAt(i);
             if (i < orderEnvelopes.Count) orderEnvelopes.RemoveAt(i);
             if (i < orderGrits.Count) orderGrits.RemoveAt(i);
@@ -354,6 +408,24 @@ namespace ColonistAwareness
             Scribe_Collections.Look(ref orderOrigins, "orderOrigins", LookMode.Value);
             Scribe_Collections.Look(ref orderControllers, "orderControllers", LookMode.Value);
             Scribe_Collections.Look(ref orderIssuers, "orderIssuers", LookMode.Value);
+            Scribe_Collections.Look(ref orderBehaviorKeys,
+                "orderBehaviorKeys", LookMode.Value);
+            Scribe_Collections.Look(ref orderAuthorityOrigins,
+                "orderAuthorityOrigins", LookMode.Value);
+            Scribe_Collections.Look(ref orderAuthorityIdentities,
+                "orderAuthorityIdentities", LookMode.Value);
+            Scribe_Collections.Look(ref orderOwnershipScopes,
+                "orderOwnershipScopes", LookMode.Value);
+            Scribe_Collections.Look(ref orderOwnerIds, "orderOwnerIds",
+                LookMode.Value);
+            Scribe_Collections.Look(ref orderCreatedTicks,
+                "orderCreatedTicks", LookMode.Value);
+            Scribe_Collections.Look(ref orderCreationTiers,
+                "orderCreationTiers", LookMode.Value);
+            Scribe_Collections.Look(ref orderTargets, "orderTargets",
+                LookMode.Value);
+            Scribe_Collections.Look(ref orderTerminationConditions,
+                "orderTerminationConditions", LookMode.Value);
             Scribe_Collections.Look(ref orderFireSuppressed, "orderFireSuppressed",
                 LookMode.Value);
             Scribe_Collections.Look(ref orderEnvelopes, "orderEnvelopes",
@@ -377,6 +449,22 @@ namespace ColonistAwareness
                 if (orderOrigins == null) orderOrigins = new List<int>();
                 if (orderControllers == null) orderControllers = new List<int>();
                 if (orderIssuers == null) orderIssuers = new List<int>();
+                if (orderBehaviorKeys == null)
+                    orderBehaviorKeys = new List<string>();
+                if (orderAuthorityOrigins == null)
+                    orderAuthorityOrigins = new List<int>();
+                if (orderAuthorityIdentities == null)
+                    orderAuthorityIdentities = new List<string>();
+                if (orderOwnershipScopes == null)
+                    orderOwnershipScopes = new List<string>();
+                if (orderOwnerIds == null) orderOwnerIds = new List<int>();
+                if (orderCreatedTicks == null)
+                    orderCreatedTicks = new List<int>();
+                if (orderCreationTiers == null)
+                    orderCreationTiers = new List<int>();
+                if (orderTargets == null) orderTargets = new List<string>();
+                if (orderTerminationConditions == null)
+                    orderTerminationConditions = new List<string>();
                 if (orderFireSuppressed == null)
                     orderFireSuppressed = new List<bool>();
                 if (orderEnvelopes == null) orderEnvelopes = new List<float>();
@@ -396,6 +484,22 @@ namespace ColonistAwareness
                     if (i < orderOrigins.Count) orderOrigins.RemoveAt(i);
                     if (i < orderControllers.Count) orderControllers.RemoveAt(i);
                     if (i < orderIssuers.Count) orderIssuers.RemoveAt(i);
+                    if (i < orderBehaviorKeys.Count)
+                        orderBehaviorKeys.RemoveAt(i);
+                    if (i < orderAuthorityOrigins.Count)
+                        orderAuthorityOrigins.RemoveAt(i);
+                    if (i < orderAuthorityIdentities.Count)
+                        orderAuthorityIdentities.RemoveAt(i);
+                    if (i < orderOwnershipScopes.Count)
+                        orderOwnershipScopes.RemoveAt(i);
+                    if (i < orderOwnerIds.Count) orderOwnerIds.RemoveAt(i);
+                    if (i < orderCreatedTicks.Count)
+                        orderCreatedTicks.RemoveAt(i);
+                    if (i < orderCreationTiers.Count)
+                        orderCreationTiers.RemoveAt(i);
+                    if (i < orderTargets.Count) orderTargets.RemoveAt(i);
+                    if (i < orderTerminationConditions.Count)
+                        orderTerminationConditions.RemoveAt(i);
                     if (i < orderFireSuppressed.Count)
                         orderFireSuppressed.RemoveAt(i);
                     if (i < orderEnvelopes.Count) orderEnvelopes.RemoveAt(i);
@@ -414,6 +518,24 @@ namespace ColonistAwareness
                         orderOrigins[i] = (int)restored.Origin;
                         orderControllers[i] = (int)restored.Controller;
                         orderIssuers[i] = restored.IssuerId;
+                        WriteBehaviorContext(i, restored);
+                    }
+                    else if (string.IsNullOrEmpty(orderBehaviorKeys[i]))
+                    {
+                        CAIntentContext migrated = new CAIntentContext(
+                            orderEpisodes[i],
+                            (CAIntentOrigin)orderOrigins[i],
+                            (CAIntentController)orderControllers[i],
+                            orderIssuers[i],
+                            behaviorKey: CABehaviorCatalog.KeyForController(
+                                (CAIntentController)orderControllers[i],
+                                (CAIntentOrigin)orderOrigins[i]),
+                            authorityIdentity: "migrated standing order",
+                            ownerId: orderPawns[i]?.thingIDNumber ?? -1,
+                            creationTier: orderPawns[i] != null
+                                ? AutonomyComponent.TierOf(orderPawns[i])
+                                : CAInitiativeTier.Standard);
+                        WriteBehaviorContext(i, migrated);
                     }
                     CACombatIntent.ObserveEpisode(orderEpisodes[i]);
                 }
@@ -426,6 +548,22 @@ namespace ColonistAwareness
             if (orderOrigins == null) orderOrigins = new List<int>();
             if (orderControllers == null) orderControllers = new List<int>();
             if (orderIssuers == null) orderIssuers = new List<int>();
+            if (orderBehaviorKeys == null)
+                orderBehaviorKeys = new List<string>();
+            if (orderAuthorityOrigins == null)
+                orderAuthorityOrigins = new List<int>();
+            if (orderAuthorityIdentities == null)
+                orderAuthorityIdentities = new List<string>();
+            if (orderOwnershipScopes == null)
+                orderOwnershipScopes = new List<string>();
+            if (orderOwnerIds == null) orderOwnerIds = new List<int>();
+            if (orderCreatedTicks == null)
+                orderCreatedTicks = new List<int>();
+            if (orderCreationTiers == null)
+                orderCreationTiers = new List<int>();
+            if (orderTargets == null) orderTargets = new List<string>();
+            if (orderTerminationConditions == null)
+                orderTerminationConditions = new List<string>();
             if (orderFireSuppressed == null)
                 orderFireSuppressed = new List<bool>();
             if (orderEnvelopes == null) orderEnvelopes = new List<float>();
@@ -435,6 +573,24 @@ namespace ColonistAwareness
             while (orderOrigins.Count < orderPawns.Count) orderOrigins.Add(0);
             while (orderControllers.Count < orderPawns.Count) orderControllers.Add(0);
             while (orderIssuers.Count < orderPawns.Count) orderIssuers.Add(-1);
+            while (orderBehaviorKeys.Count < orderPawns.Count)
+                orderBehaviorKeys.Add(null);
+            while (orderAuthorityOrigins.Count < orderPawns.Count)
+                orderAuthorityOrigins.Add((int)CAAuthorityOrigin.None);
+            while (orderAuthorityIdentities.Count < orderPawns.Count)
+                orderAuthorityIdentities.Add(null);
+            while (orderOwnershipScopes.Count < orderPawns.Count)
+                orderOwnershipScopes.Add(null);
+            while (orderOwnerIds.Count < orderPawns.Count)
+                orderOwnerIds.Add(-1);
+            while (orderCreatedTicks.Count < orderPawns.Count)
+                orderCreatedTicks.Add(0);
+            while (orderCreationTiers.Count < orderPawns.Count)
+                orderCreationTiers.Add((int)CAInitiativeTier.Standard);
+            while (orderTargets.Count < orderPawns.Count)
+                orderTargets.Add(null);
+            while (orderTerminationConditions.Count < orderPawns.Count)
+                orderTerminationConditions.Add(null);
             while (orderFireSuppressed.Count < orderPawns.Count)
                 orderFireSuppressed.Add(false);
             while (orderEnvelopes.Count < orderPawns.Count)
@@ -451,6 +607,26 @@ namespace ColonistAwareness
                 orderControllers.RemoveAt(orderControllers.Count - 1);
             while (orderIssuers.Count > orderPawns.Count)
                 orderIssuers.RemoveAt(orderIssuers.Count - 1);
+            while (orderBehaviorKeys.Count > orderPawns.Count)
+                orderBehaviorKeys.RemoveAt(orderBehaviorKeys.Count - 1);
+            while (orderAuthorityOrigins.Count > orderPawns.Count)
+                orderAuthorityOrigins.RemoveAt(orderAuthorityOrigins.Count - 1);
+            while (orderAuthorityIdentities.Count > orderPawns.Count)
+                orderAuthorityIdentities.RemoveAt(
+                    orderAuthorityIdentities.Count - 1);
+            while (orderOwnershipScopes.Count > orderPawns.Count)
+                orderOwnershipScopes.RemoveAt(orderOwnershipScopes.Count - 1);
+            while (orderOwnerIds.Count > orderPawns.Count)
+                orderOwnerIds.RemoveAt(orderOwnerIds.Count - 1);
+            while (orderCreatedTicks.Count > orderPawns.Count)
+                orderCreatedTicks.RemoveAt(orderCreatedTicks.Count - 1);
+            while (orderCreationTiers.Count > orderPawns.Count)
+                orderCreationTiers.RemoveAt(orderCreationTiers.Count - 1);
+            while (orderTargets.Count > orderPawns.Count)
+                orderTargets.RemoveAt(orderTargets.Count - 1);
+            while (orderTerminationConditions.Count > orderPawns.Count)
+                orderTerminationConditions.RemoveAt(
+                    orderTerminationConditions.Count - 1);
             while (orderFireSuppressed.Count > orderPawns.Count)
                 orderFireSuppressed.RemoveAt(orderFireSuppressed.Count - 1);
             while (orderEnvelopes.Count > orderPawns.Count)
@@ -589,7 +765,8 @@ namespace ColonistAwareness
         // Automatic raid defense shares the standing Lord vehicle but is not a
         // standing player order. It may create/update only its own row; any explicit
         // hold/ambush/hide, stack drill, ritual, caravan, or other Lord wins.
-        public static bool AssignAutomaticDefense(Pawn p, IntVec3 cell, IntVec3 watch)
+        public static bool AssignAutomaticDefense(Pawn p, IntVec3 cell,
+            IntVec3 watch, CAIntentContext? ownedContext = null)
         {
             if (p == null || p.Map == null || !cell.IsValid) return false;
             var map = p.Map;
@@ -604,10 +781,15 @@ namespace ColonistAwareness
                 IntVec3 oldCell, oldWatch;
                 if (!currentJob.TryGetOrder(p, out kind, out oldCell, out oldWatch)
                     || kind != LordJob_CATactical.KindRaidDefense) return false;
-                if (oldCell == cell && oldWatch == watch) return true;
+                if (oldCell == cell && oldWatch == watch)
+                {
+                    CAIntentContext retained;
+                    return currentJob.TryGetContext(p, out retained)
+                        && retained.IsValid;
+                }
                 CAIntentContext context;
-                if (!currentJob.TryGetContext(p, out context))
-                    context = CACombatIntent.AutomaticDefense(p);
+                if (!ownedContext.HasValue
+                    || !(context = ownedContext.Value).IsValid) return false;
                 currentJob.SetOrder(p, LordJob_CATactical.KindRaidDefense, cell,
                     watch, context);
                 currentJob.AssignDuty(p);
@@ -615,7 +797,9 @@ namespace ColonistAwareness
             }
 
             LordJob_CATactical job;
-            CAIntentContext automaticContext = CACombatIntent.AutomaticDefense(p);
+            if (!ownedContext.HasValue || !ownedContext.Value.IsValid)
+                return false;
+            CAIntentContext automaticContext = ownedContext.Value;
             if (lord == null)
             {
                 job = new LordJob_CATactical();

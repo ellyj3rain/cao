@@ -2,6 +2,8 @@
 Source/obj/
 Source/bin/
 /obj/
+tools/**/obj/
+tools/**/bin/
 *.user
 
 # twin-build outputs (reproducible from source; ~559 MB across ~275 directories)

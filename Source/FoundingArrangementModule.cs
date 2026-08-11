@@ -125,12 +125,13 @@ namespace ColonistAwareness
                 durationDays = 30
             };
 
-        public static readonly CAFoundingArrangement EstablishedSettlement =
+        public static readonly CAFoundingArrangement AncestralCommons =
             new CAFoundingArrangement
             {
-                id = "established-settlement",
-                label = "established settlement",
-                premise = "The residents keep their established local rules.",
+                id = "ancestral-commons",
+                label = "ancestral commons",
+                premise = "The group carries inherited customs into the "
+                    + "rules adopted at landing.",
                 leaderRule = "none",
                 workRequired = false,
                 foundersDecide = true,
@@ -153,7 +154,7 @@ namespace ColonistAwareness
 
         public static readonly CAFoundingArrangement[] All =
         {
-            SharedSurvival, EmergencyCommand, EstablishedSettlement,
+            SharedSurvival, EmergencyCommand, AncestralCommons,
             SingleFounder
         };
 
@@ -163,7 +164,7 @@ namespace ColonistAwareness
             bool ancestral)
         {
             if (alone) return SingleFounder;
-            if (ancestral) return EstablishedSettlement;
+            if (ancestral) return AncestralCommons;
             return SharedSurvival;
         }
     }
@@ -174,6 +175,15 @@ namespace ColonistAwareness
 
         internal static void OnNewGame()
         {
+            CAPlayerFoundingWorldComponent foundingOwner =
+                CAPlayerFoundingWorldComponent.Current;
+            if (foundingOwner?.Applied == true)
+            {
+                Log.Message("[CA][Founding] founding state was already "
+                    + "applied at tick " + foundingOwner.AppliedAtTick
+                    + "; replay skipped");
+                return;
+            }
             CAOrganizationRelationsWorldComponent ledger =
                 CAOrganizationRelationsWorldComponent.Current;
             CAOrganizationWorldComponent orgs =
@@ -190,6 +200,16 @@ namespace ColonistAwareness
             string scenario = Find.Scenario?.name ?? "unknown";
             int now = Find.TickManager.TicksGame;
 
+            // The founders carry culture and political beliefs. Their wider
+            // faction structure remains empty until institutions actually
+            // develop; only the exact arrangement below is instituted now.
+            CAPlayerFoundingPlan founding = CAPlayerFoundingSession
+                .ConfirmedForRuntime();
+            CAPlayerFoundingModel.ApplyCarriedState(founding,
+                Faction.OfPlayer);
+            CACultureLongitudinalMapComponent.For(map)
+                ?.EstablishPlayerCulture(founding, now);
+
             // Scenario facts used to choose a default arrangement.
             bool fellFromSky = ArrivedViolently();
             bool alone = founders.Count == 1;
@@ -201,21 +221,16 @@ namespace ColonistAwareness
             // scenario default using the current faction state.
             CAFoundingArrangement preset = null;
             bool arrangementAuthored = false;
-            try
+            if (founding?.arrangement != null && founding.confirmed)
             {
-                CARegionalPlan drafted =
-                    CARegionalSetupSession.CurrentPlanOrNull();
-                if (drafted?.foundingArrangement != null
-                    && drafted.foundingArrangementAuthored)
-                {
-                    preset = drafted.foundingArrangement;
-                    arrangementAuthored = true;
-                }
+                preset = founding.arrangement;
+                arrangementAuthored = founding.ArrangementSource
+                    == CAAxisSource.Authored
+                    || founding.ArrangementSource == CAAxisSource.Preset;
             }
-            catch { }
             if (preset == null)
-                preset = CAPoliticalCustoms.ShapeDefault(
-                    CAPoliticalCustoms.PoliticalBeliefsOf(
+                preset = CAPoliticalBeliefPractice.ShapeDefault(
+                    CAPoliticalBeliefPractice.PoliticalBeliefsOf(
                         Faction.OfPlayer),
                     CAFactionStateWorldComponent.Current?.Find(Faction.OfPlayer)
                         ?.factionStructure,
@@ -226,24 +241,30 @@ namespace ColonistAwareness
                 arrangementAuthored, fellFromSky, now);
 
             DirectedNonPersons(ledger, colony, map, origin, now);
-            CAPoliticalBeliefs playerBeliefs = CAPoliticalCustoms
+            CAPoliticalBeliefs playerBeliefs = CAPoliticalBeliefPractice
                 .PoliticalBeliefsOf(Faction.OfPlayer);
-            CAPoliticalCustoms.ReconcileCustoms(colony,
-                playerBeliefs);
+
+            if (founding != null)
+                colony.Record("founding", "Culture: "
+                    + (founding.culture?.name ?? "not recorded")
+                    + ". Ideoligion: "
+                    + (founding.nativeIdeoName ?? "not active")
+                    + ". Political beliefs: "
+                    + CAPoliticalBeliefsModel.Summary(playerBeliefs) + ".");
 
             // Record the applied arrangement and its effect.
-            colony.Record("organization", "founding arrangement: "
+            colony.Record("organization", "founding terms: "
                 + preset.label + " - " + preset.premise);
 
             // Record only differences between the starting arrangement and
             // the faction's political beliefs. The founders, Ideoligion, and
             // site are all final at this point.
-            foreach (CAPoliticalCustoms.CAFoundingBeliefReading axis
-                in CAPoliticalCustoms.ReadAgainstPoliticalBeliefs(
+            foreach (CAPoliticalBeliefPractice.CAFoundingBeliefReading axis
+                in CAPoliticalBeliefPractice.ReadAgainstPoliticalBeliefs(
                     playerBeliefs, preset))
             {
                 if (axis.Silent || axis.conforms) continue;
-                colony.Record("organization", "the founding arrangement"
+                colony.Record("organization", "the founding terms"
                     + " differs from"
                     + " political beliefs on " + axis.title.ToLower()
                     + ": they hold " + axis.belief
@@ -254,6 +275,7 @@ namespace ColonistAwareness
                 + preset.Consequence(founders.Count)
                 + " | relation ledger now holds "
                 + ledger.Relations.Count + " records.");
+            foundingOwner?.MarkApplied(now);
         }
 
         private static bool ArrivedViolently()
@@ -329,7 +351,7 @@ namespace ColonistAwareness
                 });
             }
 
-            colony.Record("organization", "founding arrangement: "
+            colony.Record("organization", "founding terms: "
                 + (commander != null
                     ? commander.LabelShort + " commands"
                     : "no permanent leader")

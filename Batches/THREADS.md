@@ -32,6 +32,14 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [A83 - Regional projection kernel and Screen 2](A083-2026-08-07-regional-projection-kernel-and-screen-2.md) - 2026-08-07 11:21–20:01 UTC / 04:21–13:01 PST
 - [A91 - Runtime exercise harness and map-scale parameterization](A091-2026-08-08-runtime-exercise-harness-and-map-scale-parameterization.md) - 2026-08-08 07:25–08:03 UTC / 00:25–01:03 PST
 
+- [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
+
+- [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
+- [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
+- [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+
 ### <a id="t-030"></a>T-030 - Validation and evidence discipline
 
 - [A1 - Repository establishment and governance surface](A001-2026-07-22-repository-establishment-and-governance-surface.md) - 2026-07-22
@@ -111,6 +119,15 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [A101 - Creator primary grammar and evidence correction](A101-2026-08-09-creator-primary-grammar-and-evidence-correction.md) - 2026-08-09 02:20–02:32 UTC / 19:20–19:32 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
 
+- [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
+
+- [B2 - Player founding authoring](B002-2026-08-10-player-founding-authoring.md) - 2026-08-10 18:06–19:46 UTC / 11:06–12:46 PST
+- [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
+- [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
+- [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+
 ## TF-02 - Pawn cognition and authority
 
 Disposition, knowledge, communication, command, and accountability.
@@ -122,6 +139,7 @@ Disposition, knowledge, communication, command, and accountability.
 - [A7 - Autonomy floor and epistemic conformance](A007-2026-07-24-autonomy-floor-and-epistemic-conformance.md) - 2026-07-24 05:55 UTC / 22:55 PST
 - [A11 - Operational access and emergency equipment](A011-2026-07-24-operational-access-and-emergency-equipment.md) - 2026-07-24 20:16 UTC / 13:16 PST
 - [A12 - Immediate individual combat judgment](A012-2026-07-24-immediate-individual-combat-judgment.md) - 2026-07-24 21:11 UTC / 14:11 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ### <a id="t-004"></a>T-004 - Knowledge and contact evidence
 
@@ -136,6 +154,7 @@ Disposition, knowledge, communication, command, and accountability.
 - [A14 - Pawn-private welfare and conditional accountability](A014-2026-07-25-pawn-private-welfare-and-conditional-accountability.md) - 2026-07-25 00:30–12:40 UTC / 17:30–05:40 PST
 - [A51 - Stable welfare-observation correction](A051-2026-07-29-stable-welfare-observation-correction.md) - 2026-07-29 01:36 UTC / 18:36 PST
 - [A60 - Pawn-proximal combat topology and retention](A060-2026-07-30-pawn-proximal-combat-topology-and-retention.md) - 2026-07-30 19:18–20:27 UTC / 12:18–13:27 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ### <a id="t-005"></a>T-005 - Communications and command authority
 
@@ -143,6 +162,7 @@ Disposition, knowledge, communication, command, and accountability.
 - [A5 - Shared awareness and reaction](A005-2026-07-24-shared-awareness-and-reaction.md) - 2026-07-24 02:12 UTC / 19:12 PST
 - [A6 - Communications media and organization](A006-2026-07-24-communications-media-and-organization.md) - 2026-07-24 04:00 UTC / 21:00 PST
 - [A14 - Pawn-private welfare and conditional accountability](A014-2026-07-25-pawn-private-welfare-and-conditional-accountability.md) - 2026-07-25 00:30–12:40 UTC / 17:30–05:40 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ## TF-03 - Combat doctrine
 
@@ -154,6 +174,7 @@ Combat reaction, fighting withdrawal, positioning, and battlefield evidence.
 - [A16 - Native fighting-withdrawal executor](A016-2026-07-25-native-fighting-withdrawal-executor.md) - 2026-07-25 23:56 UTC / 16:56 PST
 - [A18 - Cover-aware withdrawal halts](A018-2026-07-26-cover-aware-withdrawal-halts.md) - 2026-07-26 01:21–01:23 UTC / 18:21–18:23 PST
 - [A20 - Late-contact withdrawal correction and exact receipt](A020-2026-07-26-late-contact-withdrawal-correction-and-exact-receipt.md) - 2026-07-26 09:06–20:38 UTC / 02:06–13:38 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ### <a id="t-008"></a>T-008 - Combat initiative and positioning
 
@@ -168,12 +189,14 @@ Combat reaction, fighting withdrawal, positioning, and battlefield evidence.
 - [A59 - Combat initiative and Moving Fire separation](A059-2026-07-30-combat-initiative-and-moving-fire-separation.md) - 2026-07-30 17:12 UTC / 10:12 PST
 - [A96 - Status, defense, daylight, and provenance consumers](A096-2026-08-08-status-defense-daylight-and-provenance-consumers.md) - 2026-08-08 21:43 UTC / 14:43 PST
 - [A97 - Transactions, stock plans, tiers, and threat muster](A097-2026-08-08-transactions-stock-plans-tiers-and-threat-muster.md) - 2026-08-08 22:09 UTC / 15:09 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ### <a id="t-009"></a>T-009 - Battlefield evidence and topology
 
 - [A58 - Combat execution and spatial receipts](A058-2026-07-30-combat-execution-and-spatial-receipts.md) - 2026-07-30 08:11 UTC / 01:11 PST
 - [A60 - Pawn-proximal combat topology and retention](A060-2026-07-30-pawn-proximal-combat-topology-and-retention.md) - 2026-07-30 19:18–20:27 UTC / 12:18–13:27 PST
 - [A61 - Stable battlefield reference and continuous after-action proof](A061-2026-07-30-stable-battlefield-reference-and-continuous-after-action-proof.md) - 2026-07-30 21:07–21:41 UTC / 14:07–14:41 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ## TF-04 - Autonomy and operational access
 
@@ -190,6 +213,7 @@ Pawn autonomy, permissions, equipment, and bounded self-directed work.
 - [A34 - First-frame operational access](A034-2026-07-28-first-frame-operational-access.md) - 2026-07-28 04:33 UTC / 21:33 PST
 - [A46 - Autonomous toxic-waste containment](A046-2026-07-28-autonomous-toxic-waste-containment.md) - 2026-07-28 21:30 UTC / 14:30 PST
 - [A49 - Spatial initiative and native shelf construction](A049-2026-07-28-spatial-initiative-and-native-shelf-construction.md) - 2026-07-28 23:20 UTC / 16:20 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ## TF-05 - Animals and welfare
 
@@ -202,6 +226,7 @@ Animal cognition and infrastructure plus pawn welfare and clinical evidence.
 - [A21 - Downed-animal feeding without beds](A021-2026-07-26-downed-animal-feeding-without-beds.md) - 2026-07-26 20:47 UTC / 13:47 PST
 - [A51 - Stable welfare-observation correction](A051-2026-07-29-stable-welfare-observation-correction.md) - 2026-07-29 01:36 UTC / 18:36 PST
 - [A63 - Conviction memory and per-issue judgment](A063-2026-08-05-conviction-memory-and-per-issue-judgment.md) - 2026-08-05
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ### <a id="t-012"></a>T-012 - Animal cognition and infrastructure
 
@@ -209,6 +234,7 @@ Animal cognition and infrastructure plus pawn welfare and clinical evidence.
 - [A21 - Downed-animal feeding without beds](A021-2026-07-26-downed-animal-feeding-without-beds.md) - 2026-07-26 20:47 UTC / 13:47 PST
 - [A52 - Animal infrastructure and strategic-asset awareness](A052-2026-07-29-animal-infrastructure-and-strategic-asset-awareness.md) - 2026-07-29 01:36 UTC / 18:36 PST
 - [A54 - Society-specific animal infrastructure](A054-2026-07-29-society-specific-animal-infrastructure.md) - 2026-07-29 02:08 UTC / 19:08 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ## TF-06 - Colony space and facilities
 
@@ -226,6 +252,8 @@ Home planning, space programs, residents, furnishing, and facility siting.
 - [A40 - Contextual Bed placement and hardened receipt](A040-2026-07-28-contextual-bed-placement-and-hardened-receipt.md) - 2026-07-28 07:15–07:23 UTC / 00:15–00:23 PST
 - [A41 - Feng Shui furnishing](A041-2026-07-28-feng-shui-furnishing.md) - 2026-07-28 08:40 UTC / 01:40 PST
 - [A57 - Native Bedroom construction-cause proof](A057-2026-07-30-native-bedroom-construction-cause-proof.md) - 2026-07-30 03:39–05:50 UTC / 20:39–22:50 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ### <a id="t-014"></a>T-014 - Space programs and residents
 
@@ -239,6 +267,8 @@ Home planning, space programs, residents, furnishing, and facility siting.
 - [A57 - Native Bedroom construction-cause proof](A057-2026-07-30-native-bedroom-construction-cause-proof.md) - 2026-07-30 03:39–05:50 UTC / 20:39–22:50 PST
 - [A89 - Settlement composition, pawns, and provisioning](A089-2026-08-08-settlement-composition-pawns-and-provisioning.md) - 2026-08-08 05:26 UTC / 22:26 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ### <a id="t-015"></a>T-015 - Facility siting and furnishing
 
@@ -258,6 +288,10 @@ Home planning, space programs, residents, furnishing, and facility siting.
 - [A53 - Room-furnishing authority transitions](A053-2026-07-29-room-furnishing-authority-transitions.md) - 2026-07-29 01:52 UTC / 18:52 PST
 - [A55 - Authored Bedroom requirement comparison](A055-2026-07-29-authored-bedroom-requirement-comparison.md) - 2026-07-29 03:32 UTC / 20:32 PST
 - [A94 - First consumers for every authoring axis](A094-2026-08-08-first-consumers-for-every-authoring-axis.md) - 2026-08-08 18:46 UTC / 11:46 PST
+- [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
+- [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ## TF-07 - Logistics, waste, and economy
 
@@ -281,6 +315,7 @@ Materials, storage, inventory, toxic waste, transactions, and obligations.
 - [A95 - Ontology corrections and operational machinery](A095-2026-08-08-ontology-corrections-and-operational-machinery.md) - 2026-08-08 19:29 UTC / 12:29 PST
 - [A97 - Transactions, stock plans, tiers, and threat muster](A097-2026-08-08-transactions-stock-plans-tiers-and-threat-muster.md) - 2026-08-08 22:09 UTC / 15:09 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ### <a id="t-017"></a>T-017 - Toxic-waste lifecycle
 
@@ -289,6 +324,7 @@ Materials, storage, inventory, toxic waste, transactions, and obligations.
 - [A45 - Player-authorized toxic-waste relocation](A045-2026-07-28-player-authorized-toxic-waste-relocation.md) - 2026-07-28 20:31 UTC / 13:31 PST
 - [A46 - Autonomous toxic-waste containment](A046-2026-07-28-autonomous-toxic-waste-containment.md) - 2026-07-28 21:30 UTC / 14:30 PST
 - [A47 - Native stockpile authority and facility receipt correction](A047-2026-07-28-native-stockpile-authority-and-facility-receipt-correction.md) - 2026-07-28 22:06 UTC / 15:06 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ### <a id="t-018"></a>T-018 - Transactions and economy
 
@@ -312,6 +348,11 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [A80 - Pending-plan single-slot finding](A080-2026-08-07-pending-plan-single-slot-finding.md) - 2026-08-07 08:37 UTC / 01:37 PST
 - [A86 - Canonical relation identity and federation truth](A086-2026-08-07-canonical-relation-identity-and-federation-truth.md) - 2026-08-07 23:17–23:42 UTC / 16:17–16:42 PST
 - [A90 - Territorial composition](A090-2026-08-08-territorial-composition.md) - 2026-08-08 06:59–07:17 UTC / 23:59–00:17 PST
+
+- [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
+- [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ### <a id="t-020"></a>T-020 - Regional geometry, projection, and scatter
 
@@ -348,6 +389,14 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [A101 - Creator primary grammar and evidence correction](A101-2026-08-09-creator-primary-grammar-and-evidence-correction.md) - 2026-08-09 02:20–02:32 UTC / 19:20–19:32 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
 
+- [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
+
+- [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
+- [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
+- [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+
 ### <a id="t-026"></a>T-026 - World tendencies and geography
 
 - [A72 - Carrier-owned mountain mutation](A072-2026-08-06-carrier-owned-mountain-mutation.md) - 2026-08-06 08:47 UTC / 01:47 PST
@@ -357,6 +406,10 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [A90 - Territorial composition](A090-2026-08-08-territorial-composition.md) - 2026-08-08 06:59–07:17 UTC / 23:59–00:17 PST
 - [A96 - Status, defense, daylight, and provenance consumers](A096-2026-08-08-status-defense-daylight-and-provenance-consumers.md) - 2026-08-08 21:43 UTC / 14:43 PST
 - [A100 - World-tendencies directed surface](A100-2026-08-09-world-tendencies-directed-surface.md) - 2026-08-09 01:57–02:00 UTC / 18:57–19:00 PST
+
+- [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
+
+- [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
 
 ## TF-09 - Political and cultural simulation
 
@@ -378,6 +431,13 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 - [A97 - Transactions, stock plans, tiers, and threat muster](A097-2026-08-08-transactions-stock-plans-tiers-and-threat-muster.md) - 2026-08-08 22:09 UTC / 15:09 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
 
+- [B2 - Player founding authoring](B002-2026-08-10-player-founding-authoring.md) - 2026-08-10 18:06–19:46 UTC / 11:06–12:46 PST
+- [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
+- [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
+- [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+
 ### <a id="t-023"></a>T-023 - Culture, beliefs, and Ideoligion
 
 - [A28 - Space-program residents and negotiation](A028-2026-07-27-space-program-residents-and-negotiation.md) - 2026-07-27 21:55–22:50 UTC / 14:55–15:50 PST
@@ -396,6 +456,13 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 - [A95 - Ontology corrections and operational machinery](A095-2026-08-08-ontology-corrections-and-operational-machinery.md) - 2026-08-08 19:29 UTC / 12:29 PST
 - [A101 - Creator primary grammar and evidence correction](A101-2026-08-09-creator-primary-grammar-and-evidence-correction.md) - 2026-08-09 02:20–02:32 UTC / 19:20–19:32 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
+
+- [B2 - Player founding authoring](B002-2026-08-10-player-founding-authoring.md) - 2026-08-10 18:06–19:46 UTC / 11:06–12:46 PST
+- [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
+- [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
+- [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ## TF-10 - Onboarding and authoring
 
@@ -416,6 +483,14 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [A98 - Creator product convergence](A098-2026-08-08-creator-product-convergence.md) - 2026-08-08 22:31 UTC / 15:31 PST
 - [A99 - Map-size selector diagnosis and verified fix](A099-2026-08-08-map-size-selector-diagnosis-and-verified-fix.md) - 2026-08-08 23:31–2026-08-09 01:29 UTC / 16:31–18:29 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
+
+- [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
+
+- [B2 - Player founding authoring](B002-2026-08-10-player-founding-authoring.md) - 2026-08-10 18:06–19:46 UTC / 11:06–12:46 PST
+- [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
+- [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
+- [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ### <a id="t-025"></a>T-025 - Authoring surfaces and UI grammar
 
@@ -441,6 +516,15 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [A100 - World-tendencies directed surface](A100-2026-08-09-world-tendencies-directed-surface.md) - 2026-08-09 01:57–02:00 UTC / 18:57–19:00 PST
 - [A101 - Creator primary grammar and evidence correction](A101-2026-08-09-creator-primary-grammar-and-evidence-correction.md) - 2026-08-09 02:20–02:32 UTC / 19:20–19:32 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
+
+- [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
+
+- [B2 - Player founding authoring](B002-2026-08-10-player-founding-authoring.md) - 2026-08-10 18:06–19:46 UTC / 11:06–12:46 PST
+- [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
+- [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
+- [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ## TF-11 - Runtime tooling and controls
 
@@ -468,6 +552,7 @@ Time controls, independent input, developer tools, exercise harnesses, and runti
 - [A64 - Political-line deployment and preflight](A064-2026-08-05-political-line-deployment-and-preflight.md) - 2026-08-05
 - [A91 - Runtime exercise harness and map-scale parameterization](A091-2026-08-08-runtime-exercise-harness-and-map-scale-parameterization.md) - 2026-08-08 07:25–08:03 UTC / 00:25–01:03 PST
 - [A99 - Map-size selector diagnosis and verified fix](A099-2026-08-08-map-size-selector-diagnosis-and-verified-fix.md) - 2026-08-08 23:31–2026-08-09 01:29 UTC / 16:31–18:29 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ## TF-12 - Ontology and product coherence
 
@@ -493,3 +578,10 @@ Canonical vocabulary, model convergence, copy register, and product truthfulness
 - [A100 - World-tendencies directed surface](A100-2026-08-09-world-tendencies-directed-surface.md) - 2026-08-09 01:57–02:00 UTC / 18:57–19:00 PST
 - [A101 - Creator primary grammar and evidence correction](A101-2026-08-09-creator-primary-grammar-and-evidence-correction.md) - 2026-08-09 02:20–02:32 UTC / 19:20–19:32 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
+- [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
+- [B2 - Player founding authoring](B002-2026-08-10-player-founding-authoring.md) - 2026-08-10 18:06–19:46 UTC / 11:06–12:46 PST
+- [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
+- [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
+- [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST

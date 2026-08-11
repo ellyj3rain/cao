@@ -751,10 +751,24 @@ namespace ColonistAwareness
                 if (TryFindBetterFirePosition(pawn, visibleTarget, true,
                     out current, out better))
                 {
-                    CAIntentContext context = CACombatIntent.Autonomous(pawn,
-                        CAIntentController.SelfPreservation);
                     result = PositionJob(pawn, better.cell);
                     if (result == null) return false;
+                    CABehaviorDecision decision;
+                    CAIntentContext context;
+                    if (!CABehaviorJobOrigin.TryAuthorizeAndRegister(pawn,
+                        result, "combat.withdrawal_self_preservation",
+                        CAIntentController.SelfPreservation,
+                        SelfPreservationContext(pawn, assessment),
+                        out decision, out context,
+                        targetOrDemand: better.cell.ToString(),
+                        ownershipScope: pawn.Faction == Faction.OfPlayer
+                            ? "pawn self-preservation"
+                            : "NPC doctrine",
+                        lifetimeTicks: RecentHarmTicks))
+                    {
+                        result = null;
+                        return false;
+                    }
                     CACombatIntent.RecordMovement(pawn, context, pawn.Position,
                         better.cell, visibleTarget);
                     CATrace.Pawn(pawn, "breaks exposure for firing position "
@@ -782,8 +796,22 @@ namespace ColonistAwareness
             }
             if (result == null) return false;
 
-            CAIntentContext breakContext = CACombatIntent.Autonomous(pawn,
-                CAIntentController.SelfPreservation);
+            CABehaviorDecision breakDecision;
+            CAIntentContext breakContext;
+            if (!CABehaviorJobOrigin.TryAuthorizeAndRegister(pawn, result,
+                "combat.withdrawal_self_preservation",
+                CAIntentController.SelfPreservation,
+                SelfPreservationContext(pawn, assessment),
+                out breakDecision, out breakContext,
+                targetOrDemand: result.targetA.IsValid
+                    ? result.targetA.Cell.ToString() : "break contact",
+                ownershipScope: pawn.Faction == Faction.OfPlayer
+                    ? "pawn self-preservation" : "NPC doctrine",
+                lifetimeTicks: RecentHarmTicks))
+            {
+                result = null;
+                return false;
+            }
             result.locomotionUrgency = LocomotionUrgency.Sprint;
             int breakContactExpiry = BreakContactExpiryTicks(pawn, result,
                 assessment.condition);
@@ -808,6 +836,36 @@ namespace ColonistAwareness
                 BeginPersistentRecoveryAfterHarm(pawn, assessment.condition);
             handledHarmEpisodes[pawn.thingIDNumber] = assessment.harmEpisodeId;
             return true;
+        }
+
+        private static CABehaviorContext SelfPreservationContext(Pawn pawn,
+            CASelfPreservationAssessment assessment)
+        {
+            bool player = pawn != null && pawn.Faction == Faction.OfPlayer;
+            Job current = pawn?.CurJob;
+            return CABehaviorContext.ForPawn(pawn,
+                player ? CAAuthorityOrigin.PlayerDelegated
+                    : CAAuthorityOrigin.NativeDuty,
+                authoritySatisfied: pawn != null && pawn.Spawned,
+                knowledgeSatisfied: assessment.recentHarm
+                    && assessment.threatCell.IsValid,
+                knowledgeFresh: assessment.harmAge >= 0
+                    && assessment.harmAge <= RecentHarmTicks,
+                liveValidated: pawn != null && pawn.Spawned
+                    && assessment.threatCell.IsValid
+                    && assessment.threatCell.InBounds(pawn.Map),
+                knowledgeRelayed: false,
+                knowledgeAgeTicks: assessment.harmAge,
+                capabilitySatisfied: pawn != null && !pawn.Downed,
+                materialSatisfied: true,
+                currentIntentCompatible: current == null
+                    || !CATactical.HasForeignPlayerForcedJob(pawn),
+                directPlayerOwnership: player
+                    && CATactical.HasForeignPlayerForcedJob(pawn),
+                authorityBasis: player ? "player-delegated survival response"
+                    : "native faction survival duty",
+                knowledgeBasis: "direct recent-harm episode",
+                owner: nameof(CAImmediateCombat));
         }
 
         private static int BreakContactExpiryTicks(Pawn pawn, Job job,
@@ -837,8 +895,9 @@ namespace ColonistAwareness
             CATrace.Pawn(pawn,
                 "fresh-harm survival move opens persistent combat recovery ("
                 + condition.TraceText() + ")", anchor: pawn.Position,
-                intent: CACombatIntent.Autonomous(pawn,
-                    CAIntentController.CombatRecovery, episode));
+                intent: CACombatIntent.ActorInitiated(pawn,
+                    CAIntentController.CombatRecovery,
+                    "survival.combat_recovery", episodeId: episode));
         }
 
         internal static bool AssessSelfPreservation(Pawn pawn, Pawn visibleTarget,
@@ -1001,8 +1060,9 @@ namespace ColonistAwareness
                     + (activeCombat ? "actor-local threat; "
                         : "degraded drafted fighter between contacts; ")
                     + condition.TraceText() + ")", anchor: pawn.Position,
-                    intent: CACombatIntent.Autonomous(pawn,
-                        CAIntentController.CombatRecovery, episode));
+                    intent: CACombatIntent.ActorInitiated(pawn,
+                        CAIntentController.CombatRecovery,
+                        episodeId: episode));
             }
 
             Job current = pawn.CurJob;
@@ -1085,12 +1145,15 @@ namespace ColonistAwareness
                     result = PositionJob(pawn, safer);
                     if (result == null) return false;
                     result.count = episode;
+                    CAIntentContext authorized;
+                    if (!AuthorizeRecoveryJob(pawn, result, episode,
+                            safer.ToString(), out authorized))
+                    {
+                        result = null;
+                        return false;
+                    }
                     recovery.DeferMove(pawn, now + 180);
-                    CAIntentContext context = new CAIntentContext(episode,
-                        CAIntentOrigin.Continuation,
-                        CAIntentController.CombatRecovery,
-                        pawn.thingIDNumber);
-                    CACombatIntent.RecordMovement(pawn, context,
+                    CACombatIntent.RecordMovement(pawn, authorized,
                         pawn.Position, safer);
                     CATrace.Pawn(pawn,
                         "health-adjusted reorganization MOVES away from contact; "
@@ -1098,7 +1161,7 @@ namespace ColonistAwareness
                         + EscapeTopologyText(pawn, safer, threat),
                         contact: threat,
                         destination: safer, anchor: pawn.Position,
-                        intent: context);
+                        intent: authorized);
                     return true;
                 }
             }
@@ -1118,6 +1181,13 @@ namespace ColonistAwareness
 
             result = JobMaker.MakeJob(CA_Defs.CombatRecovery);
             result.count = episode;
+            CAIntentContext recoveryIntent;
+            if (!AuthorizeRecoveryJob(pawn, result, episode,
+                    pawn.Position.ToString(), out recoveryIntent))
+            {
+                result = null;
+                return false;
+            }
             CATrace.Pawn(pawn,
                 "health-adjusted recovery OWNS this position until viability or explicit interruption; "
                 + condition.TraceText()
@@ -1125,10 +1195,7 @@ namespace ColonistAwareness
                     + EscapeTopologyText(pawn, pawn.Position, threat) : ""),
                 contact: threat.IsValid ? (IntVec3?)threat : null,
                 anchor: pawn.Position,
-                intent: new CAIntentContext(episode,
-                    CAIntentOrigin.Continuation,
-                    CAIntentController.CombatRecovery,
-                    pawn.thingIDNumber));
+                intent: recoveryIntent);
             return true;
         }
 
@@ -1319,7 +1386,7 @@ namespace ColonistAwareness
                     && recovery.TryGet(pawn, out episode)
                 ? new CAIntentContext(episode, CAIntentOrigin.Continuation,
                     CAIntentController.CombatRecovery, pawn.thingIDNumber)
-                : CACombatIntent.Autonomous(pawn,
+                : CACombatIntent.ActorInitiated(pawn,
                     CAIntentController.CombatRecovery);
             string unsafeReason;
             if (!RecoveryPocketCanDefend(pawn, target, condition,
@@ -1448,9 +1515,9 @@ namespace ColonistAwareness
         {
             AwarenessSettings settings = AwarenessMod.Settings;
             if (pawn == null || pawn.Map == null || settings == null
-                || !settings.fieldMedicine && !settings.lifeSafety
                 || CACombatThreat.PerceivesActiveThreat(pawn)
-                || AutonomyComponent.LevelOf(pawn) < 2
+                || !CABehaviorGate.StableProfileAllows(pawn,
+                    "welfare.accountability_check")
                 || pawn.WorkTagIsDisabled(WorkTags.Caring)
                 || pawn.health?.capacities == null
                 || !pawn.health.capacities.CapableOf(
@@ -1472,11 +1539,12 @@ namespace ColonistAwareness
         private static bool CanTakeEmergencySelfTendStep(Pawn pawn)
         {
             AwarenessSettings settings = AwarenessMod.Settings;
-            return settings != null && settings.fieldMedicine
+            return settings != null
                 && pawn != null && pawn.Map != null && pawn.health != null
                 && !pawn.Dead && !pawn.Downed && pawn.Awake()
                 && !pawn.InMentalState
-                && AutonomyComponent.LevelOf(pawn) >= 2
+                && CABehaviorGate.StableProfileAllows(pawn,
+                    "welfare.accountability_check")
                 && !pawn.WorkTagIsDisabled(WorkTags.Caring)
                 && pawn.health.capacities != null
                 && pawn.health.capacities.CapableOf(
@@ -1515,6 +1583,52 @@ namespace ColonistAwareness
             }
             return pawn.Position.InHorDistOf(anchor, radius + 1.5f)
                 && visibleTarget.Position.InHorDistOf(anchor, radius);
+        }
+
+        internal static bool TryRegisterCombatJob(Pawn pawn, Job job,
+            string behaviorKey, CAIntentController controller,
+            bool liveValidated, int knowledgeAgeTicks,
+            float knowledgeConfidence, float knowledgeUncertainty,
+            bool knowledgeRelayed, string knowledgeBasis,
+            string targetOrDemand, out CABehaviorDecision decision,
+            out CAIntentContext intent)
+        {
+            decision = default(CABehaviorDecision);
+            intent = default(CAIntentContext);
+            if (pawn == null || job == null || pawn.Map == null) return false;
+            CAIntentContext parent;
+            bool hasParent = CATactical.TryGetContext(pawn, out parent)
+                && parent.IsValid;
+            bool player = pawn.Faction == Faction.OfPlayer;
+            CAAuthorityOrigin origin = hasParent
+                ? CAAuthorityOrigin.Continuation
+                : player ? CAAuthorityOrigin.PlayerDelegated
+                    : CAAuthorityOrigin.NativeDuty;
+            string authority = hasParent
+                ? parent.AuthorityIdentity ?? "owned tactical intent"
+                : player ? "player combat behavior permission"
+                    : "native combat duty";
+            string owner = hasParent
+                ? parent.OwnershipScope ?? "owned tactical intent"
+                : player ? "pawn combat behavior" : "NPC combat doctrine";
+            var context = CABehaviorContext.ForPawn(pawn, origin,
+                authoritySatisfied: true, knowledgeSatisfied: true,
+                knowledgeFresh: knowledgeAgeTicks >= 0,
+                liveValidated: liveValidated,
+                knowledgeRelayed: knowledgeRelayed,
+                knowledgeAgeTicks: knowledgeAgeTicks,
+                knowledgeConfidence: knowledgeConfidence,
+                knowledgeUncertainty: knowledgeUncertainty,
+                authorityBasis: authority, knowledgeBasis: knowledgeBasis,
+                owner: owner);
+            if (hasParent)
+                return CABehaviorJobOrigin.TryAuthorizeAndRegister(pawn, job,
+                    behaviorKey, controller, context, parent.EpisodeId,
+                    out decision, out intent, targetOrDemand,
+                    ownershipScope: owner);
+            return CABehaviorJobOrigin.TryAuthorizeAndRegister(pawn, job,
+                behaviorKey, controller, context, out decision, out intent,
+                targetOrDemand, ownershipScope: owner);
         }
 
         internal static bool TryFirePositionJob(Pawn pawn, Pawn target,
@@ -1604,8 +1718,20 @@ namespace ColonistAwareness
             result = PositionJob(pawn, better.cell);
             if (result == null) return false;
             StampTacticalOwner(pawn, result);
-            CAIntentContext context = CACombatIntent.Continuation(pawn,
-                CAIntentController.FirePosition);
+            CABehaviorDecision decision;
+            CAIntentContext context;
+            if (!TryRegisterCombatJob(pawn, result,
+                    "combat.fire_position_adjustment",
+                    CAIntentController.FirePosition, liveValidated: true,
+                    knowledgeAgeTicks: 0, knowledgeConfidence: 1f,
+                    knowledgeUncertainty: 0f, knowledgeRelayed: false,
+                    knowledgeBasis: "direct current sight",
+                    targetOrDemand: target.LabelShort + " at "
+                        + target.Position, out decision, out context))
+            {
+                result = null;
+                return false;
+            }
             CACombatIntent.RecordMovement(pawn, context, pawn.Position,
                 better.cell, target);
             CATrace.Pawn(pawn, "improves firing position to " + better.cell
@@ -1709,6 +1835,22 @@ namespace ColonistAwareness
             if (result == null) return false;
             StampTacticalOwner(pawn, result);
 
+            CABehaviorDecision decision;
+            CAIntentContext context;
+            if (!TryRegisterCombatJob(pawn, result,
+                    "combat.local_reaction", CAIntentController.RaidDefense,
+                    liveValidated: false, knowledgeAgeTicks: age,
+                    knowledgeConfidence: contact.Evidence.Confidence,
+                    knowledgeUncertainty: contact.Evidence.Uncertainty,
+                    knowledgeRelayed: !contact.Evidence.IsDirect,
+                    knowledgeBasis: "fresh copied contact at " + contact.Cell,
+                    targetOrDemand: "reacquire copied contact at "
+                        + contact.Cell, out decision, out context))
+            {
+                result = null;
+                return false;
+            }
+
             positionClocks[pawn.thingIDNumber] = new PositionClock
             {
                 nextTick = now + competence.DecisionDelayTicks,
@@ -1718,8 +1860,6 @@ namespace ColonistAwareness
                 anchorCell = pawn.Position,
                 targetRetreating = false
             };
-            CAIntentContext context = CACombatIntent.Continuation(pawn,
-                CAIntentController.FirePosition);
             Pawn target = SpawnedPawnById(pawn.Map, contact.HostileId);
             CACombatIntent.RecordMovement(pawn, context, pawn.Position,
                 better.cell, target);
@@ -4002,6 +4142,27 @@ namespace ColonistAwareness
             return MakeLockedCombatMoveJob(pawn, cell, 240, null);
         }
 
+        private static bool AuthorizeRecoveryJob(Pawn pawn, Job job,
+            int episode, string target, out CAIntentContext intent)
+        {
+            var context = CABehaviorContext.ForPawn(pawn,
+                CAAuthorityOrigin.Continuation,
+                authoritySatisfied: episode > 0,
+                capabilitySatisfied: job != null,
+                materialSatisfied: job != null,
+                currentIntentCompatible: true,
+                directPlayerOwnership: pawn?.CurJob != null
+                    && pawn.CurJob.playerForced,
+                authorityBasis: "retained actor-local recovery episode",
+                knowledgeBasis: "current actor health and local danger",
+                owner: "combat recovery");
+            CABehaviorDecision decision;
+            return CABehaviorJobOrigin.TryAuthorizeAndRegister(pawn, job,
+                "survival.combat_recovery",
+                CAIntentController.CombatRecovery, context, episode,
+                out decision, out intent, target, "combat recovery", 1800);
+        }
+
         internal static Job MakeLockedCombatMoveJob(Pawn pawn, IntVec3 cell,
             int expiryInterval, IList<IntVec3> assessedRoute)
         {
@@ -4552,6 +4713,8 @@ namespace ColonistAwareness
 
                 bool mayFight = JobGiver_CACombatReaction.PlayerMaySelfReact(
                     pawn, settings);
+                bool mayEvade = JobGiver_CACombatReaction
+                    .PlayerMayImmediateEvasion(pawn, settings);
                 bool mayPreserve = JobGiver_CACombatReaction.PlayerMaySelfPreserve(
                     pawn, settings);
                 // Incoming explosive geometry is a short-lived physical deadline,
@@ -4559,7 +4722,7 @@ namespace ColonistAwareness
                 // gates. Direct or queued player work remains sovereign.
                 bool mayObserveImmediateSurvival =
                     MayObserveImmediateSurvival(pawn);
-                if (mayObserveImmediateSurvival && mayPreserve)
+                if (mayObserveImmediateSurvival && mayEvade)
                 {
                     Job evasion;
                     CAIncomingEvasionResult evasionState = CACombatIntent

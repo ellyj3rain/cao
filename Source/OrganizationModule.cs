@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using HarmonyLib;
 using RimWorld;
@@ -917,7 +918,7 @@ namespace ColonistAwareness
     }
 
     // Customs the player may establish directly. Other customs come from
-    // political beliefs, experience, and training.
+    // current social order, experience, and training.
     public static class CACustomCatalog
     {
         public static readonly string[] Adoptable =
@@ -1288,6 +1289,8 @@ namespace ColonistAwareness
     public sealed class CAOrganizationWorldComponent : WorldComponent
     {
         private List<CAOrganization> organizations = new List<CAOrganization>();
+        private List<CAFrontierMapPlan> frontierMapPlans =
+            new List<CAFrontierMapPlan>();
         private List<CAAgreement> agreements = new List<CAAgreement>();
         private int nextAgreementId = 1;
         private int lastSyncTick = -99999;
@@ -1480,6 +1483,115 @@ namespace ColonistAwareness
             get { return organizations; }
         }
 
+        internal CAFrontierMapPlan EnsureFrontierMapPlan(Map map)
+        {
+            if (map == null) return null;
+            CARegionalPlan regional = CARegionalWorldComponent.Current
+                ?.FindRegionForMap(map);
+            if (regional != null) return null;
+
+            int tileId = map.Tile.Valid ? map.Tile.tileId : -1;
+            CAFrontierMapPlan existing = frontierMapPlans.FirstOrDefault(item =>
+                item != null && item.mapId == map.uniqueID);
+            if (ValidFrontierMapPlan(existing, map, tileId))
+                return existing;
+            if (existing != null) frontierMapPlans.Remove(existing);
+
+            CARegionalWorldPolicy policy = CARegionalWorldComponent.Current
+                ?.WorldPolicy ?? new CARegionalWorldPolicy();
+            int worldSeed = 0;
+            try { worldSeed = Verse.Find.World.info.Seed; }
+            catch { }
+            int seed = Gen.HashCombineInt(worldSeed, tileId,
+                map.Size.x, map.Size.z);
+            int suitableCapacity = Mathf.Clamp(
+                map.Size.x * map.Size.z / 40000, 2, 8);
+            int count = CAWorldTendencyCausalKernel.FrontierHoldingCount(
+                seed, suitableCapacity, policy.frontierHoldingFrequency);
+            int landCapacity = FrontierLandCapacity(map);
+            var created = new CAFrontierMapPlan
+            {
+                mapId = map.uniqueID,
+                mapTileId = tileId,
+                mapWidth = map.Size.x,
+                mapHeight = map.Size.z,
+                realizationSourceHash = CAWorldTendencyCausalKernel
+                    .HashCombineInt(seed,
+                        Mathf.RoundToInt(
+                            policy.frontierHoldingFrequency * 10000f),
+                        Mathf.RoundToInt(
+                            policy.frontierHoldingSize * 10000f),
+                        suitableCapacity)
+            };
+            for (int i = 0; i < count; i++)
+            {
+                int household = CAWorldTendencyCausalKernel
+                    .FrontierHouseholdSize(seed, i, landCapacity,
+                        policy.frontierHoldingSize);
+                int material = CAWorldTendencyCausalKernel
+                    .FrontierMaterialLevel(seed, i, landCapacity,
+                        policy.frontierHoldingSize);
+                created.holdings.Add(new CAFrontierHoldingPlan
+                {
+                    key = i,
+                    memberTileId = tileId,
+                    householdSize = household,
+                    landCapacity = landCapacity,
+                    materialLevel = material,
+                    form = CAWorldTendencyCausalKernel.FrontierForm(
+                        household, material),
+                    factionless = CAWorldTendencyCausalKernel.Unit(seed, i,
+                        1414213) < 0.45f
+                });
+            }
+            frontierMapPlans.Add(created);
+            return created;
+        }
+
+        private static bool ValidFrontierMapPlan(CAFrontierMapPlan plan,
+            Map map, int tileId)
+        {
+            if (plan == null || plan.mapTileId != tileId
+                || plan.mapWidth != map.Size.x
+                || plan.mapHeight != map.Size.z
+                || plan.holdings == null || plan.holdings.Count > 8)
+                return false;
+
+            var keys = new HashSet<int>();
+            for (int i = 0; i < plan.holdings.Count; i++)
+            {
+                CAFrontierHoldingPlan holding = plan.holdings[i];
+                if (holding == null || holding.memberTileId != tileId
+                    || !keys.Add(holding.key)
+                    || holding.landCapacity < 1
+                    || holding.landCapacity > 3
+                    || holding.householdSize < 1
+                    || holding.householdSize > 6
+                    || holding.materialLevel < 0
+                    || holding.materialLevel > holding.landCapacity
+                    || holding.form != CAWorldTendencyCausalKernel
+                        .FrontierForm(holding.householdSize,
+                            holding.materialLevel))
+                    return false;
+            }
+            return true;
+        }
+
+        private static int FrontierLandCapacity(Map map)
+        {
+            Hilliness hilliness = map.TileInfo?.hilliness ?? Hilliness.Flat;
+            switch (hilliness)
+            {
+                case Hilliness.Impassable:
+                case Hilliness.Mountainous:
+                    return 1;
+                case Hilliness.LargeHills:
+                    return 2;
+                default:
+                    return 3;
+            }
+        }
+
         public CAOrganization EnsureColony()
         {
             for (int i = 0; i < organizations.Count; i++)
@@ -1549,14 +1661,14 @@ namespace ColonistAwareness
             PulsePoliticalBeliefsUnderBudget(now);
         }
 
-        // Player-facing and loaded organizations update daily. Distant
-        // organizations share an update allowance set by world activity.
-        private int distantActivityCursor;
+        // Player-facing and loaded organizations update every world pulse.
+        // Off-map organizations share the saved activity budget and cursor.
+        private int offMapActivityCursor;
 
         private void PulsePoliticalBeliefsUnderBudget(int now)
         {
-            float distantActivity = CARegionalWorldComponent.Current
-                ?.WorldPolicy?.distantActivity ?? 0.5f;
+            float offMapActivityRate = CARegionalWorldComponent.Current
+                ?.WorldPolicy?.offMapActivityRate ?? 0.5f;
             var background = new List<CAOrganization>();
             for (int i = 0; i < organizations.Count; i++)
             {
@@ -1567,13 +1679,12 @@ namespace ColonistAwareness
                 else background.Add(org);
             }
             if (background.Count == 0) return;
-            int allowance = Mathf.Clamp(
-                Mathf.CeilToInt(background.Count * distantActivity),
-                distantActivity <= 0f ? 0 : 1, background.Count);
+            int allowance = CAWorldTendencyCausalKernel
+                .OffMapActivityBudget(background.Count, offMapActivityRate);
             for (int n = 0; n < allowance; n++)
             {
                 CAOrganization org = background[
-                    distantActivityCursor++ % background.Count];
+                    offMapActivityCursor++ % background.Count];
                 CAPoliticalBeliefEffects.Pulse(org, now);
             }
         }
@@ -2234,6 +2345,8 @@ namespace ColonistAwareness
                 IntVec3.Invalid);
             Scribe_Collections.Look(ref organizations, "CA_organizations",
                 LookMode.Deep);
+            Scribe_Collections.Look(ref frontierMapPlans,
+                "CA_frontierMapPlans", LookMode.Deep);
             Scribe_Collections.Look(ref agreements, "CA_agreements",
                 LookMode.Deep);
             Scribe_Values.Look(ref nextAgreementId, "CA_nextAgreementId", 1);
@@ -2248,8 +2361,12 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref nextOfferId, "CA_nextOfferId", 1);
             Scribe_Values.Look(ref lastInitiativeTick,
                 "CA_lastInitiativeTick", -999999);
+            Scribe_Values.Look(ref offMapActivityCursor,
+                "CA_offMapActivityCursor", 0);
             if (organizations == null)
                 organizations = new List<CAOrganization>();
+            if (frontierMapPlans == null)
+                frontierMapPlans = new List<CAFrontierMapPlan>();
             if (agreements == null)
                 agreements = new List<CAAgreement>();
             if (breachCases == null) breachCases = new List<CABreachCase>();
@@ -2418,14 +2535,16 @@ namespace ColonistAwareness
             SyncOffices(org, colonists);
             SyncGroups(org, colonists);
             SyncCustoms(org);
-            CAPoliticalCustoms.ReconcileCustoms(org,
-                CAPoliticalCustoms.PoliticalBeliefsOf(Faction.OfPlayer));
+            CAPoliticalBeliefPractice.ReconcileCurrentStructure(org,
+                CAFactionStateWorldComponent.Current
+                    ?.Find(Faction.OfPlayer)?.factionStructure);
             SyncSecurityPractices(org);
         }
 
         private static void SyncOffices(CAOrganization org, List<Pawn> colonists)
         {
             var live = new Dictionary<string, CAOffice>();
+            bool authorityChanged = false;
 
             for (int i = 0; i < colonists.Count; i++)
             {
@@ -2474,6 +2593,7 @@ namespace ColonistAwareness
                         + (held.holderLabel != null
                             ? " (last held by " + held.holderLabel + ")" : ""));
                     org.offices.RemoveAt(i);
+                    authorityChanged = true;
                     continue;
                 }
                 if (held.holderId != current.holderId)
@@ -2482,6 +2602,7 @@ namespace ColonistAwareness
                         + (held.holderLabel ?? "vacant") + " -> "
                         + current.holderLabel);
                     held.holderId = current.holderId;
+                    authorityChanged = true;
                 }
                 held.holderLabel = current.holderLabel;
                 held.seniority = current.seniority;
@@ -2493,8 +2614,10 @@ namespace ColonistAwareness
                 org.Record("office established - " + pair.Value.name
                     + ", held by " + pair.Value.holderLabel);
                 org.offices.Add(pair.Value);
+                authorityChanged = true;
             }
             org.offices.SortByDescending(o => o.seniority);
+            if (authorityChanged) CABehaviorRevisions.RoleChanged();
         }
 
         private static void AddOffice(Dictionary<string, CAOffice> live,
@@ -2900,11 +3023,41 @@ namespace ColonistAwareness
                 for (int i = 0; i < pawns.Count; i++)
                 {
                     Pawn p = pawns[i];
-                    if (p.Downed || AutonomyComponent.LevelOf(p) < 2)
+                    if (p.Downed || !CABehaviorGate.StableProfileAllows(p,
+                            "communication.status_report"))
                         continue;
                     int last;
                     if (laceLast.TryGetValue(p.thingIDNumber, out last)
                         && now - last < 15000) continue;
+                    ThreatContactSnapshot fact = default(
+                        ThreatContactSnapshot);
+                    bool hasFact = KnowledgeMapComponent.For(map)
+                        ?.TryGetFreshestContact(p, out fact) == true;
+                    if (!hasFact) continue;
+                    var reportContext = CABehaviorContext.ForPawn(p,
+                        CAAuthorityOrigin.Organization,
+                        authoritySatisfied: org.HasCustom(
+                            "status reporting"),
+                        knowledgeSatisfied: fact.State
+                            == ThreatContactState.Active,
+                        knowledgeFresh: now - fact.SourceTick <= 2500,
+                        liveValidated: true,
+                        knowledgeRelayed: !fact.Evidence.IsDirect,
+                        knowledgeAgeTicks: System.Math.Max(0,
+                            now - fact.SourceTick),
+                        knowledgeConfidence: fact.Evidence.Confidence,
+                        knowledgeUncertainty: fact.Evidence.Uncertainty,
+                        capabilitySatisfied: true, materialSatisfied: true,
+                        currentIntentCompatible: true,
+                        directPlayerOwnership: false,
+                        authorityBasis:
+                            "adopted colony status-reporting practice",
+                        knowledgeBasis: "actor-held threat fact",
+                        owner: "colony organization");
+                    CABehaviorDecision reportDecision =
+                        CABehaviorGate.Evaluate(
+                            "communication.status_report", reportContext);
+                    if (!reportDecision.Allowed) continue;
                     laceLast[p.thingIDNumber] = now;
                     CATrace.Pawn(p, "LACE (adopted practice): "
                         + CAStatusReport.For(p), anchor: p.Position);
@@ -2965,12 +3118,12 @@ namespace ColonistAwareness
                 }
                 else
                 {
-                    // Political beliefs remain current even while the map is
-                    // unloaded; background belief checks must not judge
-                    // customs that the faction no longer holds.
-                    CAPoliticalCustoms.ReconcileCustoms(org,
-                        CAPoliticalCustoms.PoliticalBeliefsOf(
-                            record.faction));
+                    // Organization customs follow realized social order even
+                    // while the map is unloaded. Political beliefs remain a
+                    // separate standard against which that order is judged.
+                    CAPoliticalBeliefPractice.ReconcileCurrentStructure(org,
+                        CAFactionStateWorldComponent.Current
+                            ?.Find(record.faction)?.factionStructure);
                     if (map != null)
                         RefreshSettlementOrg(org, record, map);
                 }
@@ -3019,9 +3172,10 @@ namespace ColonistAwareness
             org.Record("settlement organization established - seeded at"
                 + " materialization of " + record.name);
 
-            // Seed organization customs from political beliefs.
-            CAPoliticalCustoms.ReconcileCustoms(org,
-                CAPoliticalCustoms.PoliticalBeliefsOf(record.faction));
+            // Seed organization customs from the realized social order.
+            CAPoliticalBeliefPractice.ReconcileCurrentStructure(org,
+                CAFactionStateWorldComponent.Current
+                    ?.Find(record.faction)?.factionStructure);
             if (record.generationSummary != null)
                 org.Record("organization", "starting state: "
                     + record.generationSummary);
@@ -3149,12 +3303,38 @@ namespace ColonistAwareness
                     mapId = map.uniqueID
                 });
 
-            SeedRepresentativeAssets(org, record, map);
-            CAStartingFacilities.Furnish(org, record, map);
+            CASettlementDevelopmentProposal creationProposal =
+                CASettlementAssetRegistry.CreationFromRecord(record);
+            record.creationSitingEvaluated = true;
+            record.creationSitingFeasible =
+                CASettlementAssetRegistry.CanSiteCreationDemands(map,
+                    record.localRect, creationProposal,
+                    out string creationSitingBlocker);
+            record.creationMaterialFeasible =
+                creationProposal.MaterialFeasible;
+            record.creationProposalSignature =
+                creationProposal.StableSignature();
+            record.creationExecutable = record.creationAuthorized
+                && record.creationMaterialFeasible
+                && record.creationSitingFeasible;
+            record.creationBlocker = record.creationExecutable
+                ? null : creationSitingBlocker ?? record.creationBlocker
+                    ?? "confirmed creation history is not materializable";
+            if (record.creationExecutable)
+            {
+                SeedRepresentativeAssets(org, record, map);
+                CAStartingFacilities.Furnish(org, record, map);
+            }
+            else
+                org.Record("works", "confirmed creation history blocked - "
+                    + record.creationBlocker);
             // Apply faction structure after residents and furnishings exist:
             // offices, facility holdings, staffed posts, membership, and
             // security practices.
             CAAxisMaterialization.Apply(org, record, map);
+            // Future work now reads the realized institution and current
+            // material settlement. It does not inherit creation feasibility.
+            RefreshDevelopmentAuthority(org, record, map);
             record.layout = CASettlementLayoutBuilder.Build(record, map);
             if (record.layout != null && record.layout.gates.Count > 0)
                 org.Record("settlement", "layout recorded - "
@@ -3163,6 +3343,66 @@ namespace ColonistAwareness
                     + record.layout.facilityKinds.Count
                     + " facilities");
             LogGraph(record, map);
+        }
+
+        internal static void RefreshDevelopmentAuthority(CAOrganization org,
+            CARegionalSettlementRecord record, Map map)
+        {
+            CASettlementDevelopmentProposal proposal =
+                CASettlementAssetRegistry.BuildInstitutionalProposal(record,
+                    org, map);
+            bool sitingFeasible = CASettlementAssetRegistry
+                .CanExerciseInstitutionalDevelopment(map, record, proposal,
+                    out string sitingBlocker);
+            CASettlementAssetRegistry.RecordInstitutionalFacts(record,
+                proposal, sitingFeasible, sitingBlocker);
+            bool developmentAuthorized =
+                CASettlementInstitutionalAuthorization
+                    .TryAuthorizeLaterDevelopment(record, org, proposal,
+                        out CABehaviorDecision developmentDecision,
+                        out CAIntentContext developmentIntent);
+            record.developmentBehaviorKey = developmentAuthorized
+                ? developmentIntent.BehaviorKey : null;
+            record.developmentEpisodeId = developmentAuthorized
+                ? developmentIntent.EpisodeId : 0;
+            record.developmentAuthorityOrigin = developmentAuthorized
+                ? (int)developmentIntent.AuthorityOrigin : 0;
+            record.developmentAuthorityIdentity = developmentAuthorized
+                ? developmentIntent.AuthorityIdentity : null;
+            record.developmentOwner = developmentAuthorized
+                ? developmentIntent.OwnershipScope : org?.organizationKey;
+            record.developmentProposer = org?.name ?? org?.organizationKey;
+            record.developmentApprover = developmentAuthorized
+                ? developmentIntent.AuthorityIdentity : null;
+            record.developmentLaborSource = "current native settlement residents";
+            record.developmentBeneficiaries = map?.mapPawns
+                    ?.SpawnedPawnsInFaction(record.faction)
+                    ?.Where(pawn => pawn != null && !pawn.Dead
+                        && pawn.RaceProps.Humanlike && !pawn.IsPrisoner)
+                    .Select(pawn => pawn.LabelShort)
+                    .Distinct().OrderBy(label => label,
+                        StringComparer.Ordinal).ToList()
+                ?? new List<string>();
+            if (record.developmentBeneficiaries.Count == 0)
+                record.developmentBeneficiaries.Add(
+                    "current settlement residents");
+            record.developmentTargetOrDemand = developmentAuthorized
+                ? developmentIntent.TargetOrDemand : proposal.StableSignature();
+            record.developmentCreatedTick = developmentAuthorized
+                ? developmentIntent.CreatedTick : -1;
+            record.developmentAuthorized = developmentAuthorized;
+            record.developmentExecutable = developmentAuthorized
+                && proposal.FundingFeasible && proposal.MaterialFeasible
+                && sitingFeasible;
+            record.developmentBlocker = record.developmentExecutable
+                ? null : !developmentAuthorized
+                    ? developmentDecision.PrimaryReason
+                    : !proposal.FundingFeasible
+                        ? proposal.FundingBasis
+                        : !proposal.MaterialFeasible
+                            ? proposal.MaterialBasis
+                            : sitingBlocker
+                                ?? "later institutional development is not executable";
         }
 
         // Prints the initial layout so missing entrances or rooms are visible
@@ -3477,6 +3717,7 @@ namespace ColonistAwareness
         {
             int now = Find.TickManager.TicksGame;
             List<Pawn> residents = ResidentsOf(record, map);
+            RefreshDevelopmentAuthority(org, record, map);
 
             // Fold-back: settlement losses cost their organization standing.
             if (org.lastPopulation >= 0
@@ -4192,14 +4433,25 @@ namespace ColonistAwareness
                     why = "no one with standing to speak";
                     continue;
                 }
-                IntVec3 spot = IntVec3.Invalid;
-                for (int i = 0; i < cols.Count && !spot.IsValid; i++)
-                {
-                    IntVec3 c = cols[i].Position;
-                    string reason;
-                    if (CanConvene(speaker, c, map, out reason))
-                        spot = c;
-                }
+                CACulture culture = CACultureLongitudinalMapComponent.For(map)
+                    ?.PlayerLocalCulture;
+                List<IntVec3> candidates = map.listerThings.AllThings
+                    .Where(thing => thing != null && thing.Spawned
+                        && (thing.def?.surfaceType == SurfaceType.Eat
+                            || thing.def?.defName == "Campfire"
+                            || (thing.def?.building != null
+                                && thing.def.building.isSittable)))
+                    .Select(thing => thing.Position).Distinct()
+                    .Where(cell =>
+                    {
+                        string reason;
+                        return CanConvene(speaker, cell, map, out reason);
+                    })
+                    .OrderByDescending(cell => GatheringScore(cell, speaker,
+                        cols, culture))
+                    .ThenBy(cell => cell.x).ThenBy(cell => cell.z).ToList();
+                IntVec3 spot = candidates.Count == 0
+                    ? IntVec3.Invalid : candidates[0];
                 if (!spot.IsValid)
                 {
                     why = "no gathering is possible - it needs a table or"
@@ -4230,6 +4482,19 @@ namespace ColonistAwareness
             }
             if (why == null) why = "no gathering is possible";
             return false;
+        }
+
+        private static float GatheringScore(IntVec3 cell, Pawn speaker,
+            List<Pawn> colonists, CACulture culture)
+        {
+            int near = colonists.Count(pawn => pawn != null
+                && pawn.Position.InHorDistOf(cell, 12f));
+            int shared = CACultureHistory.PracticeStrength(culture,
+                "shared-public-life");
+            // Culture ranks real gathering places only. Standing, attendance,
+            // reachability, and the player-authored policy remain unchanged.
+            return CACultureConsumerKernel.GatheringScore(near,
+                cell.DistanceTo(speaker.Position), shared);
         }
 
         public static void Convene(Pawn speaker, IntVec3 spot, Map map,
@@ -5281,7 +5546,8 @@ namespace ColonistAwareness
             new[] { "Frontier holdings",
                 "Frontier sites range from cabins to developed homesteads. "
                 + "They may belong to a faction or remain unaffiliated. "
-                + "World tendencies control how often each form appears." },
+                + "Frequency controls holding count. Size controls household "
+                + "and material form within local land limits." },
             new[] { "Organizations",
                 "Settlements track offices, policies, claims, security "
                 + "practices, funds, relations, public support, and decisions. "

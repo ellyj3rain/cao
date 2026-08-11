@@ -6,9 +6,9 @@ using Verse;
 
 namespace ColonistAwareness
 {
-    // CA state attached directly to a native RimWorld faction. Culture,
-    // political beliefs, and current faction structure remain separate from
-    // the faction's native Ideoligion.
+    // CA state attached directly to a native RimWorld faction. Inherited
+    // Culture, political beliefs, and current faction structure remain
+    // separate from the faction's native Ideoligion.
     public sealed class CAFactionState : IExposable
     {
         public int factionLoadId = -1;
@@ -136,8 +136,8 @@ namespace ColonistAwareness
         }
     }
 
-    // Completes culture, political beliefs, and current structure for every
-    // humanlike faction. Native Ideoligion remains untouched.
+    // Completes inherited Culture, political beliefs, and current structure
+    // for every humanlike faction. Native Ideoligion remains untouched.
     internal static class CAFactionStateGenerator
     {
         internal static string RunWorldPass(CARegionalWorldPolicy policy,
@@ -179,9 +179,13 @@ namespace ColonistAwareness
                 if (beliefsMissing) beliefSets++;
                 beliefFields += filled;
 
-                structureFields += CAFactionStructureModel.GenerateUnset(
-                    record.factionStructure, record.politicalBeliefs,
-                    seed + ":structure");
+                // An established faction begins with a realized structure.
+                // The player faction begins with only the arrangement adopted
+                // at founding; its remaining institutions emerge through play.
+                if (!faction.IsPlayer)
+                    structureFields += CAFactionStructureModel.GenerateUnset(
+                        record.factionStructure, record.politicalBeliefs,
+                        seed + ":structure");
                 if (record.generatedAtTick < 0)
                 {
                     record.generatedAtTick = GenTicks.TicksAbs;
@@ -191,7 +195,7 @@ namespace ColonistAwareness
             }
 
             return "[CA][Faction] setup pass (" + reason + "): "
-                + cultures + " cultures, " + beliefSets
+                + cultures + " Cultures, " + beliefSets
                 + " political-belief sets, " + beliefFields
                 + " political-belief fields, " + structureFields
                 + " faction-structure fields generated; " + skipped

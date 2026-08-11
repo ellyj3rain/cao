@@ -19,8 +19,8 @@ export const KOHAI_HARD_CAP = 16;
 export const PATCH_HARD_CAP = 24;
 export const MATURITY_LADDER = Object.freeze(["pre-alpha", "alpha", "beta", "rc"]);
 export const ROOT_REPLAY_START_VERSION = "0.1.0.0-pre-alpha";
-export const CLOSED_BATCH_TIP = "A102";
-export const NEXT_BATCH = "B1";
+export const CLOSED_BATCH_TIP = "B7";
+export const NEXT_BATCH = "B8";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_REPO_ROOT = resolve(here, "..");
@@ -296,6 +296,83 @@ export const VERSION_UNITS = Object.freeze([
     threads: ["T-014", "T-016", "T-021", "T-022", "T-023", "T-024", "T-025", "T-026", "T-028", "T-030"],
     rationale: "A100-A102 converge world tendencies, creator grammar, evidence capture, factions, settlements, population, provisions, persistence, generation, and player-facing language onto the already established creator capability.",
   },
+  {
+    id: "VU-028",
+    series: "B",
+    first: 1,
+    last: 1,
+    dates: "2026-08-10",
+    tier: "kohai",
+    name: "Causal world authoring",
+    threads: ["T-002", "T-019", "T-021", "T-024", "T-025", "T-026", "T-028", "T-030"],
+    rationale: "B1 converges the existing World tendencies surface into one causal policy, realization, persistence, and generation contract. It matures the A100-A102 creator line with fixed-seed isolation receipts, current-schema fixture repair, and a verified deployment rather than opening a separate gameplay capability.",
+  },
+  {
+    id: "VU-029",
+    series: "B",
+    first: 2,
+    last: 2,
+    dates: "2026-08-10",
+    tier: "minor",
+    name: "Player founding authoring",
+    threads: ["T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
+    rationale: "B2 restores a missing player-visible authoring and runtime contract: Culture, native Ideoligion, Political Beliefs, and the adopted Founding Arrangement now share the faction ontology while preserving the temporal difference between an established society and a new colony. The world-owned draft and one-shot arrangement receipt cover regional and non-regional starts without fabricating mature player institutions. This is a new setup capability rather than an in-place correction, so it carries the minor tier.",
+  },
+  {
+    id: "VU-030",
+    series: "B",
+    first: 3,
+    last: 3,
+    dates: "2026-08-10",
+    tier: "kohai",
+    name: "Creation-flow interaction convergence",
+    threads: ["T-002", "T-021", "T-022", "T-023", "T-024", "T-025", "T-026", "T-028", "T-030"],
+    rationale: "B3 matures the B1-B2 creation capability into one coherent interaction system across World tendencies, Starting Region, Culture, native Ideoligion, Political Beliefs, and Founding terms. Shared graphical choices, explicit focus and applied states, bounded comparison layouts, neutral presets, independent population causes, and executable interaction receipts improve legibility and correctness without opening a new simulation capability.",
+  },
+  {
+    id: "VU-031",
+    series: "B",
+    first: 4,
+    last: 4,
+    dates: "2026-08-10 to 2026-08-11",
+    tier: "minor",
+    name: "Culture, politics, and responsive authoring",
+    threads: ["T-002", "T-015", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
+    rationale: "B4 adds a player-visible cultural-practice and reusable-profile contract rather than only restyling B3. Four independently authored culture domains now materialize real settlement objects, political beliefs and realized structure share a grouped comparison composer, native Ideoligion remains first-class, explanation depth is a presentation-only preference, and the creation surfaces adapt across the supported width and UI-scale matrix. These new authoring and runtime consumers form a minor capability unit.",
+  },
+  {
+    id: "VU-032",
+    series: "B",
+    first: 5,
+    last: 5,
+    dates: "2026-08-11",
+    tier: "minor",
+    name: "Contextual cultural expression and settlement development",
+    threads: ["T-002", "T-015", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
+    rationale: "B5 replaces B4's invalid furniture-recipe model with a player-visible causal cultural-expression contract derived from carried background, Ideoligion, political beliefs, population, institutions, material conditions, geography, relations, and history. It also adds relative settlement-development authoring with exact per-facility overrides, current-schema migration, persisted runtime reconciliation, and shared executable causal receipts. These are new authoring and runtime capabilities, so the unit carries the minor tier.",
+  },
+  {
+    id: "VU-033",
+    series: "B",
+    first: 6,
+    last: 6,
+    dates: "2026-08-11",
+    tier: "minor",
+    name: "Behavior contract, authority, playability, and test convergence",
+    threads: ["T-002", "T-003", "T-004", "T-005", "T-006", "T-007", "T-008", "T-009", "T-010", "T-012", "T-013", "T-014", "T-015", "T-016", "T-017", "T-019", "T-021", "T-022", "T-023", "T-025", "T-028", "T-029", "T-030"],
+    rationale: "B6 replaces distributed four-tier and raw-integer behavior interpretation with one typed three-tier initiative contract, an 87-entry behavior catalog, structured authority, knowledge, capability, and material gating, saved intent provenance, separate player and NPC authorization, and native RimWorld execution. Its 107-case behavior suite joins the retained authoring and generation receipts at the gameplay boundary. This is a new runtime and authoring contract rather than an in-place correction, so the unit carries the minor tier.",
+  },
+  {
+    id: "VU-034",
+    series: "B",
+    first: 7,
+    last: 7,
+    dates: "2026-08-11",
+    tier: "patch",
+    name: "Creation ontology and authoring reconstruction",
+    threads: ["T-002", "T-013", "T-014", "T-015", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
+    rationale: "B7 repairs acceptance failures in the B5/B6 creation capability without opening a new capability boundary. It removes universal information-detail and settlement-intensity controls, restores an integrated Culture, native Ideoligion, Political Beliefs, and founding-order flow, establishes persistent longitudinal local Culture with provenance and substantive spatial, social, institutional, political, and settlement-development consumers, migrates the authored fixture, and replaces receipts that had accepted derived prose or categorical shims as Culture. The unit is therefore an in-place corrective patch.",
+  },
 ]);
 
 function parseVersion(version) {
@@ -409,11 +486,14 @@ export function computeVersionReplay(units = VERSION_UNITS) {
 export const CURRENT_VERSION = computeVersionReplay().currentVersion;
 
 export function expandBatchSpan(unit) {
-  return Array.from({ length: unit.last - unit.first + 1 }, (_, index) => `A${unit.first + index}`);
+  const series = unit.series ?? "A";
+  return Array.from({ length: unit.last - unit.first + 1 }, (_, index) => `${series}${unit.first + index}`);
 }
 
 function batchSpan(unit) {
-  return unit.first === unit.last ? `A${unit.first}` : `A${unit.first}-A${unit.last}`;
+  const series = unit.series ?? "A";
+  return unit.first === unit.last ? `${series}${unit.first}`
+    : `${series}${unit.first}-${series}${unit.last}`;
 }
 
 function renderThreadRefs(threads) {
@@ -440,7 +520,7 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | Hard caps | minor ${MINOR_HARD_CAP}; kohai ${KOHAI_HARD_CAP}; patch ${PATCH_HARD_CAP} |
 | Replay start | \`${ROOT_REPLAY_START_VERSION}\` |
 | Current version | \`${replay.currentVersion}\` |
-| Closed chronology | \`A1-A102\` |
+| Closed chronology | \`A1-B7\` |
 | Next batch | \`${NEXT_BATCH}\` |
 | Executable source | [\`tools/version-model.mjs\`](tools/version-model.mjs) |
 
@@ -463,19 +543,19 @@ ${rows.join("\n")}
 
 ## Historical version evidence
 
-The original file moved from \`0.1.0\` to \`0.2.0\`, \`0.2.1\`, and \`0.2.2\`. Those declarations establish the first four historical boundaries. The three-coordinate values are replayed through the four-coordinate hierarchy: the former patch becomes the fourth coordinate, while substantive public capability growth is classified by the current tier rubric. After A5 the old file remained hand-frozen at \`0.2.2\`; it is evidence of the former state, not a version assignment for A6-A102.
+The original file moved from \`0.1.0\` to \`0.2.0\`, \`0.2.1\`, and \`0.2.2\`. Those declarations establish the first four historical boundaries. The three-coordinate values are replayed through the four-coordinate hierarchy: the former patch becomes the fourth coordinate, while substantive public capability growth is classified by the current tier rubric. After A5 the old file remained hand-frozen at \`0.2.2\`; it is evidence of the former state, not a version assignment for later batches.
 
 A22 is the maturity boundary: reproducible assembly followed an end-to-end runtime line with live execution evidence, so the replay changes from \`pre-alpha\` to \`alpha\` there without a numeric bump.
 
 ## Next movement
 
-\`${NEXT_BATCH}\` remains the next ordinary batch. Its content determines its tier after it exists:
+\`${NEXT_BATCH}\` is the next ordinary batch. Its content determines its tier after it exists:
 
-| If B1 is | Result |
+| If ${NEXT_BATCH} is | Result |
 |---|---|
 | patch or hotfix | \`${nextPatch}\` |
 | kohai | \`${nextKohai}\` |
-| minor | \`${nextMinor}\` (the minor hard cap rolls the numeric major; maturity remains alpha) |
+| minor | \`${nextMinor}\` (the minor tier advances capability; maturity remains unchanged) |
 
 The thematic catalog is series-neutral in [\`Batches/THREADS.md\`](Batches/THREADS.md). Temporary \`AT-*\` and \`ATF-*\` identifiers resolve through [\`Batches/THREAD_ID_CROSSWALK.md\`](Batches/THREAD_ID_CROSSWALK.md).
 `;
@@ -483,11 +563,11 @@ The thematic catalog is series-neutral in [\`Batches/THREADS.md\`](Batches/THREA
 
 const STAMP_MARKER = "cao:generated:version";
 const STAMP_TARGETS = Object.freeze({
-  "README.md": () => `Current version: \`${CURRENT_VERSION}\`. Implementation is complete through batch \`${CLOSED_BATCH_TIP}\`; \`${NEXT_BATCH}\` is the next development batch. The final convergence assembly is deployed for operator runtime testing. Static verification does not substitute for how the game looks and plays.`,
-  "CORE.md": () => `| Version | \`${CURRENT_VERSION}\` · A sequence closed at \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
-  "GOVERNANCE.md": () => `| Version | \`${CURRENT_VERSION}\` · A sequence closed at \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
-  "MEMORY.md": () => `| Version | \`${CURRENT_VERSION}\` · A sequence closed at \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
-  "SESSION_STATE.md": () => `| Version | \`${CURRENT_VERSION}\` · A sequence closed at \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
+  "README.md": () => `Current version: \`${CURRENT_VERSION}\`. Implementation is complete through batch \`${CLOSED_BATCH_TIP}\`; \`${NEXT_BATCH}\` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.`,
+  "CORE.md": () => `| Version | \`${CURRENT_VERSION}\` · closed batch tip \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
+  "GOVERNANCE.md": () => `| Version | \`${CURRENT_VERSION}\` · closed batch tip \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
+  "MEMORY.md": () => `| Version | \`${CURRENT_VERSION}\` · closed batch tip \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
+  "SESSION_STATE.md": () => `| Version | \`${CURRENT_VERSION}\` · closed batch tip \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
 });
 
 function generatedRegion(body) {
@@ -525,9 +605,18 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
   const replay = computeVersionReplay();
 
   const covered = VERSION_UNITS.flatMap(expandBatchSpan);
-  const expected = Array.from({ length: 102 }, (_, index) => `A${index + 1}`);
+  const expected = [
+    ...Array.from({ length: 102 }, (_, index) => `A${index + 1}`),
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "B6",
+    "B7",
+  ];
   if (JSON.stringify(covered) !== JSON.stringify(expected)) {
-    errors.push("version units must cover A1-A102 exactly once, contiguously, and in order");
+    errors.push("version units must cover A1-B7 exactly once, contiguously, and in order");
   }
   VERSION_UNITS.forEach((unit, index) => {
     const expectedId = `VU-${String(index + 1).padStart(3, "0")}`;
@@ -535,24 +624,26 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
   });
 
   const batchFiles = readdirSync(join(repoRoot, "Batches"));
-  const closedNumbers = batchFiles
-    .map((name) => /^A(\d{3})-.*\.md$/.exec(name))
+  const closedIds = batchFiles
+    .map((name) => /^([A-Z])(\d{3})-.*\.md$/.exec(name))
     .filter(Boolean)
-    .map((match) => Number(match[1]))
-    .sort((a, b) => a - b);
-  if (JSON.stringify(closedNumbers) !== JSON.stringify(expected.map((id) => Number(id.slice(1))))) {
-    errors.push("Batches/ must contain exactly the closed A001-A102 record set");
+    .map((match) => `${match[1]}${Number(match[2])}`)
+    .sort((left, right) => left[0].localeCompare(right[0])
+      || Number(left.slice(1)) - Number(right.slice(1)));
+  if (JSON.stringify(closedIds) !== JSON.stringify(expected)) {
+    errors.push("Batches/ must contain exactly the closed A001-A102 and B001-B007 record set");
   }
-  if (batchFiles.some((name) => /^B0*1-.*\.md$/.test(name))) {
-    errors.push("B1 must remain unconsumed while the reconstructed model is settled");
+  if (batchFiles.some((name) => /^B0*8-.*\.md$/.test(name))) {
+    errors.push("B8 must remain unconsumed until the next development batch");
   }
 
   const batchLog = readFileSync(join(repoRoot, "BATCH_LOG.md"), "utf8");
-  const logNumbers = [...batchLog.matchAll(/^\| \[A(\d+)\]/gm)].map((match) => Number(match[1]));
-  if (JSON.stringify(logNumbers) !== JSON.stringify(closedNumbers)) {
-    errors.push("BATCH_LOG.md must index A1-A102 exactly once and in order");
+  const logIds = [...batchLog.matchAll(/^\| \[([A-Z])(\d+)\]/gm)]
+    .map((match) => `${match[1]}${Number(match[2])}`);
+  if (JSON.stringify(logIds) !== JSON.stringify(closedIds)) {
+    errors.push("BATCH_LOG.md must index A1-B7 exactly once and in order");
   }
-  if (/^\| \[B1\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B1 record yet");
+  if (/^\| \[B8\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B8 record yet");
 
   const threads = readFileSync(join(repoRoot, "Batches", "THREADS.md"), "utf8");
   const declaredThreads = new Set([...threads.matchAll(/<a id="t-(\d{3})"><\/a>T-(\d{3})/g)].map((match) => `T-${match[1]}`));
@@ -608,7 +699,7 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     schema: VERSION_MODEL_SCHEMA,
     currentVersion: replay.currentVersion,
     unitCount: VERSION_UNITS.length,
-    closedBatchCount: closedNumbers.length,
+    closedBatchCount: closedIds.length,
     nextBatch: NEXT_BATCH,
     errors,
   };
@@ -637,7 +728,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (args.has("--write")) writeGenerated(DEFAULT_REPO_ROOT);
   const result = validateRepository(DEFAULT_REPO_ROOT);
   if (args.has("--json")) console.log(JSON.stringify(result, null, 2));
-  else if (result.ok) console.log(`version-model: OK — ${result.currentVersion}; ${result.unitCount} units cover A1-A102; ${result.nextBatch} remains next`);
+  else if (result.ok) console.log(`version-model: OK — ${result.currentVersion}; ${result.unitCount} units cover A1-B7; ${result.nextBatch} remains next`);
   else result.errors.forEach((error) => console.error(`version-model: ${error}`));
   process.exit(result.ok ? 0 : 1);
 }

@@ -92,8 +92,32 @@ namespace ColonistAwareness
                     && cur.targetA.Cell.InHorDistOf(aim, 12f)) continue;
                 if (!p.CanReach(aim, PathEndMode.OnCell, Danger.Deadly))
                     continue;
-                p.jobs.StartJob(JobMaker.MakeJob(JobDefOf.Goto, aim),
-                    JobCondition.InterruptForced);
+                Job approach = JobMaker.MakeJob(JobDefOf.Goto, aim);
+                var context = CABehaviorContext.ForPawn(p,
+                    CAAuthorityOrigin.NativeDuty,
+                    authoritySatisfied: true, knowledgeSatisfied: true,
+                    knowledgeFresh: true, liveValidated: true,
+                    capabilitySatisfied: p.CanReach(aim,
+                        PathEndMode.OnCell, Danger.Deadly),
+                    materialSatisfied: aim.Standable(map),
+                    currentIntentCompatible: cur == null
+                        || !cur.playerForced,
+                    directPlayerOwnership: cur != null
+                        && cur.playerForced,
+                    authorityBasis: "current native assault duty for "
+                        + faction.Name,
+                    knowledgeBasis:
+                        "task-force-owned approach and observed entrance facts",
+                    owner: "native assault approach");
+                CABehaviorDecision decision;
+                CAIntentContext intent;
+                if (CABehaviorJobOrigin.TryAuthorizeAndRegister(p, approach,
+                        "combat.assault_approach",
+                        CAIntentController.AssaultApproach, context,
+                        out decision, out intent, aim.ToString(),
+                        "native assault approach", 1800))
+                    p.jobs.StartJob(approach,
+                        JobCondition.InterruptForced);
             }
         }
 

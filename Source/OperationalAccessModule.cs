@@ -23,8 +23,9 @@ namespace ColonistAwareness
             if (!forbid) return;
             AwarenessSettings settings = AwarenessMod.Settings;
             GameInitData init = Find.GameInitData;
-            if (settings == null || !settings.operationalAccess
-                || settings.defaultAutonomy < 2 || init == null || map == null
+            if (!CABehaviorSettings.IsEnabled(
+                    CASettingKey.OperationalAccess, settings)
+                || init == null || map == null
                 || Current.ProgramState != ProgramState.MapInitializing
                 || MapGenerator.mapBeingGenerated != map
                 || thingsGroups == null || init.startingAndOptionalPawns == null)
@@ -194,14 +195,16 @@ namespace ColonistAwareness
                 playerPolicyVersion = CurrentPlayerPolicyVersion;
             }
             AwarenessSettings settings = AwarenessMod.Settings;
-            if (settings == null || !settings.operationalAccess) return;
+            if (!CABehaviorSettings.IsEnabled(
+                    CASettingKey.OperationalAccess, settings)) return;
             MaintainAllMaps();
         }
 
         private void MaintainAllMaps()
         {
             AwarenessSettings settings = AwarenessMod.Settings;
-            if (settings == null || !settings.operationalAccess) return;
+            if (!CABehaviorSettings.IsEnabled(
+                    CASettingKey.OperationalAccess, settings)) return;
             List<Map> maps = Find.Maps;
             if (maps == null) return;
             for (int i = 0; i < maps.Count; i++) MaintainMap(maps[i]);
@@ -219,20 +222,20 @@ namespace ColonistAwareness
         private void MaintainMap(Map map)
         {
             if (map == null) return;
-            List<Pawn> colonists = map.mapPawns.FreeColonistsSpawned;
-            bool proactivePresent = false;
-            for (int i = 0; i < colonists.Count; i++)
-            {
-                Pawn pawn = colonists[i];
-                int level = AutonomyComponent.LevelOf(pawn);
-                if (level >= 2)
-                {
-                    proactivePresent = true;
-                    break;
-                }
-            }
-            if (!proactivePresent) return;
-
+            CABehaviorDecision policyDecision = CABehaviorGate.Evaluate(
+                "operations.shared_item_access", new CABehaviorContext(
+                    actor: null, actorContext: CAActorContext.PlayerColony,
+                    initiative: CAInitiativeTier.Standard,
+                    authorityOrigin: CAAuthorityOrigin.PlayerDelegated,
+                    authoritySatisfied: true, knowledgeSatisfied: true,
+                    knowledgeFresh: true, liveValidated: true,
+                    capabilitySatisfied: true, materialSatisfied: true,
+                    currentIntentCompatible: true,
+                    directPlayerOwnership: false,
+                    authorityBasis: "enabled player colony access policy",
+                    knowledgeBasis: "ordinary visible item state",
+                    owner: "player colony access policy"));
+            if (!policyDecision.Allowed) return;
             List<Thing> things = map.listerThings
                 .ThingsInGroup(ThingRequestGroup.HaulableEver);
             for (int i = 0; i < things.Count; i++)
@@ -247,7 +250,7 @@ namespace ColonistAwareness
 
                 thing.SetForbidden(false, warnOnFail: false);
                 CATrace.Log("operational access allowed " + thing.LabelShort
-                    + " for Proactive+ use");
+                    + " under player colony policy");
             }
         }
 
@@ -255,9 +258,9 @@ namespace ColonistAwareness
         {
             OperationalAccessComponent component = Instance;
             AwarenessSettings settings = AwarenessMod.Settings;
-            if (component == null || settings == null || !settings.operationalAccess
-                || pawn == null || pawn.Map == null
-                || AutonomyComponent.LevelOf(pawn) < 2) return;
+            if (component == null || !CABehaviorSettings.IsEnabled(
+                    CASettingKey.OperationalAccess, settings) || pawn == null
+                || pawn.Map == null) return;
             component.MaintainMap(pawn.Map);
         }
 
@@ -267,7 +270,7 @@ namespace ColonistAwareness
             int proactive = 0;
             List<Pawn> colonists = map.mapPawns.FreeColonistsSpawned;
             for (int i = 0; i < colonists.Count; i++)
-                if (AutonomyComponent.LevelOf(colonists[i]) >= 2) proactive++;
+                if (AutonomyComponent.AtLeast(colonists[i], CAInitiativeTier.Proactive)) proactive++;
 
             int visible = 0;
             int allowed = 0;
@@ -285,8 +288,9 @@ namespace ColonistAwareness
                 else if (playerForbidden.Contains(thing.thingIDNumber)) playerDenied++;
                 else systemForbidden++;
             }
-            return "[CA] operational access: Proactive+ colonists " + proactive
-                + ", ordinary visible items " + visible + ", allowed " + allowed
+            return "[CA] operational access: colony policy enabled, Proactive+ personal equipment actors "
+                + proactive + ", ordinary visible items " + visible
+                + ", allowed " + allowed
                 + ", system-forbidden " + systemForbidden + ", player-forbidden "
                 + playerDenied + ", policy version " + playerPolicyVersion;
         }
@@ -512,6 +516,18 @@ namespace ColonistAwareness
     // at most one native Equip or Wear job through RimWorld's constant-think lane.
     public class JobGiver_CAOperationalEquipment : ThinkNode_JobGiver
     {
+        private readonly struct ThreatBasis
+        {
+            public readonly ThreatContactSnapshot Contact;
+            public readonly bool Found;
+
+            public ThreatBasis(ThreatContactSnapshot contact)
+            {
+                Contact = contact;
+                Found = true;
+            }
+        }
+
         internal const float EquipmentSearchRadius = 36f;
         private const float ApparelSafetyRadius = 8f;
         private const float MinimumNetProtection = 0.15f;
@@ -534,13 +550,26 @@ namespace ColonistAwareness
                 return null;
             }
 
-            bool threatKnown = ThreatKnown(pawn);
-            if (!threatKnown) return null;
+            ThreatBasis threat;
+            if (!TryThreatBasis(pawn, out threat)) return null;
             if (ownEquipmentJob)
             {
                 if (current.def == JobDefOf.Wear
                     && PerceivedThreatWithin(pawn, ApparelSafetyRadius))
                     return null;
+                CAIntentContext existing;
+                bool ownsReceipt = CABehaviorIntentMapComponent.For(pawn.Map)
+                    ?.TryGet(pawn, current, out existing) == true;
+                string continuingKey = current.def == JobDefOf.Wear
+                    ? "operations.wear_protection"
+                    : "operations.arm_for_known_threat";
+                CABehaviorDecision continuing = CABehaviorGate.Evaluate(
+                    continuingKey, EquipmentContext(pawn, threat,
+                        CAAuthorityOrigin.Continuation,
+                        ownsReceipt,
+                        capabilitySatisfied: true,
+                        materialSatisfied: current.targetA.IsValid));
+                if (!continuing.Allowed) return null;
                 return current;
             }
 
@@ -556,6 +585,26 @@ namespace ColonistAwareness
                     {
                         equip.expiryInterval = 600;
                         equip.locomotionUrgency = LocomotionUrgency.Jog;
+                        CABehaviorDecision decision;
+                        CAIntentContext intent;
+                        if (!CABehaviorJobOrigin.TryAuthorizeAndRegister(
+                            pawn, equip,
+                            "operations.arm_for_known_threat",
+                            CAIntentController.RaidDefense,
+                            EquipmentContext(pawn, threat,
+                                CAAuthorityOrigin.PlayerDelegated,
+                                authoritySatisfied: true,
+                                capabilitySatisfied: true,
+                                materialSatisfied: weapon.Spawned),
+                            out decision, out intent,
+                            targetOrDemand: weapon.LabelShort,
+                            ownershipScope: "personal threat equipment",
+                            lifetimeTicks: 2500))
+                        {
+                            CATrace.Skip(pawn, "operational equipment",
+                                decision.PrimaryReason);
+                            return null;
+                        }
                         CATrace.Pawn(pawn, "takes permitted weapon " + weapon.LabelShort);
                         return equip;
                     }
@@ -580,22 +629,83 @@ namespace ColonistAwareness
                 return null;
             }
 
-            OperationalAccessComponent.MarkApparelIssued(pawn);
             Job wear = JobMaker.MakeJob(JobDefOf.Wear, apparel);
             wear.expiryInterval = 600;
             wear.locomotionUrgency = LocomotionUrgency.Jog;
+            CABehaviorDecision wearDecision;
+            CAIntentContext wearIntent;
+            if (!CABehaviorJobOrigin.TryAuthorizeAndRegister(pawn, wear,
+                "operations.wear_protection",
+                CAIntentController.RaidDefense,
+                EquipmentContext(pawn, threat,
+                    CAAuthorityOrigin.PlayerDelegated,
+                    authoritySatisfied: true,
+                    capabilitySatisfied: true,
+                    materialSatisfied: apparel.Spawned),
+                out wearDecision, out wearIntent,
+                targetOrDemand: apparel.LabelShort,
+                ownershipScope: "personal threat equipment",
+                lifetimeTicks: 2500))
+            {
+                CATrace.Skip(pawn, "protective apparel",
+                    wearDecision.PrimaryReason);
+                return null;
+            }
+            OperationalAccessComponent.MarkApparelIssued(pawn);
             CATrace.Pawn(pawn, "wears permitted protective apparel "
                 + apparel.LabelShort);
             return wear;
         }
 
+        private static CABehaviorContext EquipmentContext(Pawn pawn,
+            ThreatBasis threat, CAAuthorityOrigin origin,
+            bool authoritySatisfied, bool capabilitySatisfied,
+            bool materialSatisfied)
+        {
+            int now = Find.TickManager.TicksGame;
+            Job current = pawn?.CurJob;
+            return CABehaviorContext.ForPawn(pawn, origin,
+                authoritySatisfied: authoritySatisfied,
+                knowledgeSatisfied: threat.Found
+                    && threat.Contact.State == ThreatContactState.Active,
+                knowledgeFresh: threat.Found,
+                liveValidated: true,
+                knowledgeRelayed: threat.Found
+                    && !threat.Contact.Evidence.IsDirect,
+                knowledgeAgeTicks: threat.Found
+                    ? System.Math.Max(0, now - threat.Contact.SourceTick)
+                    : int.MaxValue,
+                capabilitySatisfied: capabilitySatisfied,
+                materialSatisfied: materialSatisfied,
+                currentIntentCompatible: current == null
+                    || origin == CAAuthorityOrigin.Continuation
+                    || !current.playerForced,
+                directPlayerOwnership: origin
+                        != CAAuthorityOrigin.Continuation
+                    && current != null && current.playerForced,
+                authorityBasis: origin == CAAuthorityOrigin.Continuation
+                    ? "persisted equipment intent"
+                    : "personal equipment choice inside enabled colony policy",
+                knowledgeBasis: threat.Found
+                    ? (threat.Contact.Evidence.IsDirect
+                        ? "direct current threat fact"
+                        : "physically relayed threat fact")
+                    : "no current threat fact",
+                owner: nameof(JobGiver_CAOperationalEquipment));
+        }
+
         private static bool CanAct(Pawn pawn, bool ownEquipmentJob)
         {
             AwarenessSettings settings = AwarenessMod.Settings;
-            if (settings == null || !settings.operationalAccess || pawn == null
+            CAEffectiveBehaviorProfile profile =
+                CAEffectiveBehaviorProfileCache.Of(pawn);
+            if (!CABehaviorSettings.IsEnabled(
+                    CASettingKey.OperationalAccess, settings) || pawn == null
                 || !pawn.Spawned || pawn.Dead || pawn.Downed || pawn.InMentalState
                 || !pawn.IsColonistPlayerControlled || pawn.Drafted || !pawn.Awake()
-                || AutonomyComponent.LevelOf(pawn) < 2 || pawn.jobs == null
+                || profile == null
+                || !profile.Includes("operations.arm_for_known_threat")
+                || pawn.jobs == null
                 || pawn.equipment == null || pawn.health == null
                 || !pawn.health.capacities.CapableOf(PawnCapacityDefOf.Manipulation))
                 return false;
@@ -644,18 +754,45 @@ namespace ColonistAwareness
 
         internal static bool ThreatKnown(Pawn pawn)
         {
+            ThreatBasis basis;
+            return TryThreatBasis(pawn, out basis);
+        }
+
+        private static bool TryThreatBasis(Pawn pawn,
+            out ThreatBasis basis)
+        {
+            basis = default(ThreatBasis);
             if (pawn == null || pawn.Map == null) return false;
             AwarenessSettings settings = AwarenessMod.Settings;
             if (settings != null && settings.knowledgeContacts)
             {
                 KnowledgeMapComponent knowledge = KnowledgeMapComponent.For(pawn.Map);
-                return knowledge != null && knowledge.KnowsAnyThreat(pawn);
+                ThreatContactSnapshot contact;
+                if (knowledge == null
+                    || !knowledge.TryGetFreshestContact(pawn, out contact))
+                    return false;
+                basis = new ThreatBasis(contact);
+                return true;
             }
 
             IReadOnlyList<Pawn> pawns = pawn.Map.mapPawns.AllPawnsSpawned;
             for (int i = 0; i < pawns.Count; i++)
                 if (KnowledgeMapComponent.CanCurrentlySeeHostile(
-                    pawn, pawns[i], 42f)) return true;
+                    pawn, pawns[i], 42f))
+                {
+                    int now = Find.TickManager.TicksGame;
+                    Pawn hostile = pawns[i];
+                    var evidence = new ContactEvidence(
+                        ContactEvidenceSource.Visual,
+                        hostile.thingIDNumber, 1f, 0f,
+                        CommunicationChannel.None,
+                        pawn.thingIDNumber);
+                    basis = new ThreatBasis(new ThreatContactSnapshot(
+                        hostile.thingIDNumber, hostile.Position, now, now,
+                        ContactWeaponCategory.Unknown, evidence,
+                        ThreatContactState.Active, now));
+                    return true;
+                }
             return false;
         }
 

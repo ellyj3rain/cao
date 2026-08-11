@@ -20,17 +20,34 @@ namespace ColonistAwareness
 
     internal sealed class CASpatialInitiativeRecord : IExposable
     {
+        private const int CurrentInitiativeSchema = 1;
         internal CASpatialAuthorityKind kind;
         internal int authorityId;
-        internal int level = 1;
+        internal CAInitiativeTier tier = CAInitiativeTier.Standard;
+        private int initiativeSchema = CurrentInitiativeSchema;
+        private int legacyLevel = 1;
 
         public void ExposeData()
         {
             Scribe_Values.Look(ref kind, "kind",
                 CASpatialAuthorityKind.NativeStockpile);
             Scribe_Values.Look(ref authorityId, "authorityId", 0);
-            Scribe_Values.Look(ref level, "level", 1);
-            level = Mathf.Clamp(level, 0, 3);
+            Scribe_Values.Look(ref initiativeSchema, "initiativeSchema", 0);
+            if (Scribe.mode == LoadSaveMode.Saving
+                || initiativeSchema >= CurrentInitiativeSchema)
+                Scribe_Values.Look(ref tier, "tier",
+                    CAInitiativeTier.Standard);
+            else
+                Scribe_Values.Look(ref legacyLevel, "level", 1);
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
+                if (initiativeSchema < CurrentInitiativeSchema)
+                {
+                    tier = AutonomyComponent.MigrateLegacyLevel(legacyLevel);
+                    initiativeSchema = CurrentInitiativeSchema;
+                }
+                tier = AutonomyComponent.Normalize(tier);
+            }
         }
     }
 
@@ -74,16 +91,17 @@ namespace ColonistAwareness
     }
 
     // The shared spatial initiative parameter. Both native stockpiles and
-    // player-authored room programs use these same four levels. Only the
+    // player-authored room programs use the same typed three-tier ladder. Only the
     // stockpile surface and authored Barracks editor expose the parameter
     // where their respective operative consumers exist. The authored Bedroom
-    // facility-requirement comparator remains read-only. Build a2-106 adds only
-    // an exact explicit debug-regression transition for one concrete resident
+    // facility-requirement comparator remains read-only. An exact developer
+    // regression may exercise one concrete resident
     // Bed cause; no production/background player-authored Bedroom Bed-cause
     // consumer is enabled.
     public sealed class CASpatialInitiativeMapComponent : MapComponent
     {
-        private const int DefaultLevel = 1;
+        private const CAInitiativeTier DefaultTier =
+            CAInitiativeTier.Standard;
         private const int InitialDelayTicks = 300;
         private const int CheckIntervalTicks = 600;
         private const float ProactivePressure = 0.80f;
@@ -114,6 +132,10 @@ namespace ColonistAwareness
         private int pendingOccupied;
         private int pendingCapacity;
         private string pendingEvidence;
+        private string pendingBehaviorKey;
+        private int pendingEpisodeId;
+        private int pendingAuthorityOrigin;
+        private string pendingAuthorityIdentity;
 
         private int pendingRoomProgramId;
         private string pendingRoomDefName;
@@ -126,6 +148,10 @@ namespace ColonistAwareness
         private int pendingRoomMissingBefore;
         private int pendingRoomExpectedLinks;
         private string pendingRoomEvidence;
+        private string pendingRoomBehaviorKey;
+        private int pendingRoomEpisodeId;
+        private int pendingRoomAuthorityOrigin;
+        private string pendingRoomAuthorityIdentity;
 
         private string lastOutcome = "not evaluated";
         private int lastEvaluationTick = -1;
@@ -175,6 +201,14 @@ namespace ColonistAwareness
                 "CA_spatialPendingCapacity", 0);
             Scribe_Values.Look(ref pendingEvidence,
                 "CA_spatialPendingEvidence");
+            Scribe_Values.Look(ref pendingBehaviorKey,
+                "CA_spatialPendingBehaviorKey");
+            Scribe_Values.Look(ref pendingEpisodeId,
+                "CA_spatialPendingEpisodeId", 0);
+            Scribe_Values.Look(ref pendingAuthorityOrigin,
+                "CA_spatialPendingAuthorityOrigin", 0);
+            Scribe_Values.Look(ref pendingAuthorityIdentity,
+                "CA_spatialPendingAuthorityIdentity");
             Scribe_Values.Look(ref pendingRoomProgramId,
                 "CA_spatialPendingRoomProgramId", 0);
             Scribe_Values.Look(ref pendingRoomDefName,
@@ -197,6 +231,14 @@ namespace ColonistAwareness
                 "CA_spatialPendingRoomExpectedLinks", 0);
             Scribe_Values.Look(ref pendingRoomEvidence,
                 "CA_spatialPendingRoomEvidence");
+            Scribe_Values.Look(ref pendingRoomBehaviorKey,
+                "CA_spatialPendingRoomBehaviorKey");
+            Scribe_Values.Look(ref pendingRoomEpisodeId,
+                "CA_spatialPendingRoomEpisodeId", 0);
+            Scribe_Values.Look(ref pendingRoomAuthorityOrigin,
+                "CA_spatialPendingRoomAuthorityOrigin", 0);
+            Scribe_Values.Look(ref pendingRoomAuthorityIdentity,
+                "CA_spatialPendingRoomAuthorityIdentity");
             Scribe_Values.Look(ref lastOutcome, "CA_spatialLastOutcome",
                 "not evaluated");
             Scribe_Values.Look(ref lastEvaluationTick,
@@ -213,6 +255,11 @@ namespace ColonistAwareness
                 completedRoom = new List<CASpatialBuiltRoomRecord>();
             if (pendingRoomFocusThingIds == null)
                 pendingRoomFocusThingIds = new List<string>();
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
+                CACombatIntent.ObserveEpisode(pendingEpisodeId);
+                CACombatIntent.ObserveEpisode(pendingRoomEpisodeId);
+            }
         }
 
         public override void MapComponentTick()
@@ -225,67 +272,143 @@ namespace ColonistAwareness
             }
             if (now < nextCheckTick) return;
             nextCheckTick = now + CheckIntervalTicks;
+            if (!CABehaviorSettings.IsEnabled(
+                CASettingKey.AutonomousHomePlanning,
+                AwarenessMod.Settings))
+            {
+                lastOutcome = "spatial planning permission is disabled";
+                lastEvaluationTick = now;
+                return;
+            }
             TryPlanNow(out _);
         }
 
-        public int LevelFor(Zone_Stockpile zone)
+        internal void NotifyPlanningSettingChanged(bool enabled,
+            int resetGeneration)
         {
-            return zone == null ? DefaultLevel : LevelFor(
+            nextCheckTick = (Find.TickManager?.TicksGame ?? 0)
+                + InitialDelayTicks;
+            if (enabled)
+            {
+                lastOutcome = "spatial planning permission enabled";
+                lastEvaluationTick = Find.TickManager?.TicksGame ?? -1;
+                return;
+            }
+
+            Thing storage = FindPendingStorageConstruction();
+            if (storage != null && !storage.Destroyed)
+                storage.Destroy(DestroyMode.Cancel);
+            Thing room = FindPendingRoomConstruction();
+            if (room != null && !room.Destroyed)
+                room.Destroy(DestroyMode.Cancel);
+            ClearPending();
+            ClearRoomPending();
+            lastOutcome = "spatial planning permission disabled; pending CA proposals canceled; completed structures retained";
+            lastEvaluationTick = Find.TickManager?.TicksGame ?? -1;
+        }
+
+        public CAInitiativeTier TierFor(Zone_Stockpile zone)
+        {
+            return zone == null ? DefaultTier : TierFor(
                 CASpatialAuthorityKind.NativeStockpile, zone.ID);
         }
 
-        public int LevelFor(CASpaceProgram program)
+        public CAInitiativeTier TierFor(CASpaceProgram program)
         {
             if (program == null || program.author != CASpaceAuthor.Player)
-                return DefaultLevel;
-            return LevelFor(CASpatialAuthorityKind.SpaceProgram, program.id);
+                return DefaultTier;
+            return TierFor(CASpatialAuthorityKind.SpaceProgram, program.id);
         }
 
-        public int EffectiveLevel(Pawn pawn, Zone_Stockpile zone)
+        public CAInitiativeTier EffectiveTier(Pawn pawn, Zone_Stockpile zone)
         {
-            return Mathf.Min(AutonomyComponent.LevelOf(pawn), LevelFor(zone));
+            CAInitiativeTier pawnTier = AutonomyComponent.TierOf(pawn);
+            CAInitiativeTier ceiling = TierFor(zone);
+            return pawnTier < ceiling ? pawnTier : ceiling;
         }
 
-        public int EffectiveLevel(Pawn pawn, CASpaceProgram program)
+        public CAInitiativeTier EffectiveTier(Pawn pawn,
+            CASpaceProgram program)
         {
-            return Mathf.Min(AutonomyComponent.LevelOf(pawn),
-                LevelFor(program));
+            CAInitiativeTier pawnTier = AutonomyComponent.TierOf(pawn);
+            CAInitiativeTier ceiling = TierFor(program);
+            return pawnTier < ceiling ? pawnTier : ceiling;
         }
 
-        public void SetLevel(Zone_Stockpile zone, int level)
+        // Observation-only summary for the behavior census. Reading it never
+        // prunes authority records, changes suppression, or schedules work.
+        internal string CeilingsForObservation(Pawn pawn)
+        {
+            var entries = new List<string>();
+            IReadOnlyList<Zone> allZones = map?.zoneManager?.AllZones;
+            if (allZones != null)
+            {
+                foreach (Zone_Stockpile zone in allZones
+                    .OfType<Zone_Stockpile>().OrderBy(item => item.ID))
+                {
+                    CAInitiativeTier ceiling = TierFor(zone);
+                    entries.Add("stockpile #" + zone.ID + " "
+                        + CAInitiativePresentation.Label(ceiling)
+                        + (pawn == null ? "" : " (effective "
+                            + CAInitiativePresentation.Label(
+                                EffectiveTier(pawn, zone)) + ")"));
+                }
+            }
+            IReadOnlyList<CASpaceProgram> programs = PlannedUseMapComponent
+                .For(map)?.ProgramsForObservation
+                ?? Array.Empty<CASpaceProgram>();
+            foreach (CASpaceProgram program in programs
+                .Where(item => item != null).OrderBy(item => item.id))
+            {
+                CAInitiativeTier ceiling = TierFor(program);
+                entries.Add("program #" + program.id + " "
+                    + CAInitiativePresentation.Label(ceiling)
+                    + (pawn == null ? "" : " (effective "
+                        + CAInitiativePresentation.Label(
+                            EffectiveTier(pawn, program)) + ")"));
+            }
+            return entries.Count == 0 ? "none" : string.Join("; ",
+                entries.ToArray());
+        }
+
+        public void SetTier(Zone_Stockpile zone, CAInitiativeTier tier)
         {
             if (zone == null || zone.Map != map) return;
-            int prior = LevelFor(zone);
-            SetLevel(CASpatialAuthorityKind.NativeStockpile, zone.ID, level);
-            if (prior != Mathf.Clamp(level, 0, 3))
+            CAInitiativeTier prior = TierFor(zone);
+            tier = AutonomyComponent.Normalize(tier);
+            SetTier(CASpatialAuthorityKind.NativeStockpile, zone.ID, tier);
+            if (prior != tier)
                 suppressedZones.Remove(zone.ID);
             nextCheckTick = Math.Min(nextCheckTick <= 0
                 ? int.MaxValue : nextCheckTick,
                 Find.TickManager.TicksGame + 60);
             lastOutcome = "player set native stockpile #" + zone.ID
                 + " initiative ceiling to "
-                + AutonomyComponent.LevelNames[LevelFor(zone)]
+                + CAInitiativePresentation.Label(TierFor(zone))
                 + "; native priority and filter remain unchanged";
             lastEvaluationTick = Find.TickManager.TicksGame;
+            CABehaviorRevisions.SpatialAuthorityChanged(map);
         }
 
-        public void SetLevel(CASpaceProgram program, int level)
+        public void SetTier(CASpaceProgram program, CAInitiativeTier tier)
         {
             if (program == null || program.author != CASpaceAuthor.Player)
                 return;
-            int prior = LevelFor(program);
-            SetLevel(CASpatialAuthorityKind.SpaceProgram, program.id, level);
-            if (prior != Mathf.Clamp(level, 0, 3))
+            CAInitiativeTier prior = TierFor(program);
+            tier = AutonomyComponent.Normalize(tier);
+            SetTier(CASpatialAuthorityKind.SpaceProgram, program.id, tier);
+            if (prior != tier)
                 suppressedPrograms.Remove(program.id);
             nextCheckTick = Math.Min(nextCheckTick <= 0
                 ? int.MaxValue : nextCheckTick,
                 Find.TickManager.TicksGame + 60);
             lastOutcome = "player set authored room program #" + program.id
                 + " initiative ceiling to "
-                + AutonomyComponent.LevelNames[LevelFor(program)]
+                + CAInitiativePresentation.Label(TierFor(program))
                 + "; native room role, residents, bed ownership, and authored "
                 + "footprint remain unchanged";
             lastEvaluationTick = Find.TickManager.TicksGame;
+            CABehaviorRevisions.SpatialAuthorityChanged(map);
         }
 
         internal bool DebugPlanZoneNow(Zone_Stockpile zone,
@@ -323,6 +446,22 @@ namespace ColonistAwareness
         internal bool HasPendingPlanForObservation => PendingStillExists()
             || FindPendingRoomConstruction() != null;
 
+        internal string PendingPlanForObservation
+        {
+            get
+            {
+                if (PendingStillExists())
+                    return pendingDefName + " at " + pendingCell
+                        + " for stockpile #" + pendingZoneId + " by pawn "
+                        + pendingPlannerId;
+                Thing room = FindPendingRoomConstruction();
+                return room == null ? "none" : pendingRoomDefName + " at "
+                    + pendingRoomCell + " for program #"
+                    + pendingRoomProgramId + " by pawn "
+                    + pendingRoomPlannerId;
+            }
+        }
+
         internal int CompletedStorageCount
         {
             get
@@ -341,24 +480,25 @@ namespace ColonistAwareness
             }
         }
 
-        private int LevelFor(CASpatialAuthorityKind kind, int authorityId)
+        private CAInitiativeTier TierFor(CASpatialAuthorityKind kind,
+            int authorityId)
         {
             CASpatialInitiativeRecord record = initiatives.FirstOrDefault(
                 candidate => candidate != null && candidate.kind == kind
                     && candidate.authorityId == authorityId);
-            return record == null ? DefaultLevel
-                : Mathf.Clamp(record.level, 0, 3);
+            return record == null ? DefaultTier
+                : AutonomyComponent.Normalize(record.tier);
         }
 
-        private void SetLevel(CASpatialAuthorityKind kind, int authorityId,
-            int level)
+        private void SetTier(CASpatialAuthorityKind kind, int authorityId,
+            CAInitiativeTier tier)
         {
-            level = Mathf.Clamp(level, 0, 3);
+            tier = AutonomyComponent.Normalize(tier);
             initiatives.RemoveAll(candidate => candidate == null);
             CASpatialInitiativeRecord record = initiatives.FirstOrDefault(
                 candidate => candidate.kind == kind
                     && candidate.authorityId == authorityId);
-            if (level == DefaultLevel)
+            if (tier == DefaultTier)
             {
                 if (record != null) initiatives.Remove(record);
                 return;
@@ -372,7 +512,7 @@ namespace ColonistAwareness
                 };
                 initiatives.Add(record);
             }
-            record.level = level;
+            record.tier = tier;
         }
 
         private bool TryPlanNow(out string outcome)
@@ -400,7 +540,8 @@ namespace ColonistAwareness
                 ClearRoomPending();
 
             List<Zone_Stockpile> zoneCandidates = map.zoneManager.AllZones
-                .OfType<Zone_Stockpile>().Where(zone => LevelFor(zone) >= 2)
+                .OfType<Zone_Stockpile>().Where(zone => TierFor(zone)
+                    >= CAInitiativeTier.Proactive)
                 .OrderByDescending(zone => DomainFor(zone).Pressure)
                 .ThenBy(zone => zone.ID).ToList();
             string firstBlocker = null;
@@ -416,7 +557,7 @@ namespace ColonistAwareness
             List<CASpaceProgram> roomCandidates = observed.Where(program =>
                     CASpatialFurnishingModule
                         .CanOriginateNewRoomFacility(program)
-                    && LevelFor(program) >= 2)
+                    && TierFor(program) >= CAInitiativeTier.Proactive)
                 .OrderBy(program => program.id).ToList();
             for (int i = 0; i < roomCandidates.Count; i++)
             {
@@ -466,21 +607,21 @@ namespace ColonistAwareness
                                 + suppression), out outcome);
             }
 
-            int effective;
+            CAInitiativeTier effective;
             Pawn planner = ChoosePlanner(zone, out effective);
-            if (planner == null || effective < 2)
+            if (planner == null || effective < CAInitiativeTier.Proactive)
                 return Finish("native stockpile #" + zone.ID
                     + " has no awake, threat-unaware construction author whose "
                     + "pawn autonomy and space ceiling combine to Proactive+",
                     out outcome);
             CAStorageDomain domain = DomainFor(zone);
-            float threshold = effective >= 3
+            float threshold = effective >= CAInitiativeTier.Autonomous
                 ? AutonomousPressure : ProactivePressure;
             if (domain.Capacity <= 0 || domain.Pressure < threshold)
                 return Finish("native stockpile #" + zone.ID + " pressure "
                     + Percent(domain.Pressure) + " (" + domain.OccupiedStacks
                     + "/" + domain.Capacity + " stack slots) is below the "
-                    + AutonomyComponent.LevelNames[effective] + " evidence "
+                    + CAInitiativePresentation.Label(effective) + " evidence "
                     + "threshold " + Percent(threshold)
                     + "; mixed contents and empty space are not defects",
                     out outcome);
@@ -493,13 +634,33 @@ namespace ColonistAwareness
                 return Finish("native stockpile #" + zone.ID + " justified "
                     + "capacity work at " + Percent(domain.Pressure) + ", but "
                     + blocker, out outcome);
+            CABehaviorContext context = SpatialContext(planner, effective,
+                TierFor(zone), authoritySatisfied: zone.Map == map,
+                knowledgeSatisfied: domain.Capacity > 0
+                    && domain.Pressure >= threshold,
+                materialSatisfied: plan.def != null,
+                authorityBasis: "native stockpile #" + zone.ID
+                    + " initiative ceiling",
+                knowledgeBasis: domain.OccupiedStacks + "/"
+                    + domain.Capacity + " occupied stack slots");
+            CABehaviorDecision decision = CABehaviorGate.Evaluate(
+                "logistics.storage_capacity", context);
+            if (!decision.Allowed)
+                return Finish("native stockpile #" + zone.ID
+                    + " planning blocked: " + decision.PrimaryReason,
+                    out outcome);
+            CAIntentContext intent = CACombatIntent.Authorized(planner,
+                CAIntentController.Unknown, "logistics.storage_capacity",
+                context.AuthorityOrigin, context.AuthorityBasis,
+                "delegated spatial proposal", zone.label);
             return PlacePlan(planner, zone, effective, domain, plan,
-                out outcome);
+                intent, out outcome);
         }
 
         private bool PlacePlan(Pawn planner, Zone_Stockpile zone,
-            int effectiveLevel, CAStorageDomain domain,
-            CASpatialFurnishingModule.CAStoragePlan plan, out string outcome)
+            CAInitiativeTier effectiveTier, CAStorageDomain domain,
+            CASpatialFurnishingModule.CAStoragePlan plan,
+            CAIntentContext intent, out string outcome)
         {
             outcome = "no plan";
             if (!(plan.def.blueprintDef?.thingClass != null
@@ -540,12 +701,16 @@ namespace ColonistAwareness
             pendingOccupied = domain.OccupiedStacks;
             pendingCapacity = domain.Capacity;
             pendingEvidence = plan.Receipt();
+            pendingBehaviorKey = intent.BehaviorKey;
+            pendingEpisodeId = intent.EpisodeId;
+            pendingAuthorityOrigin = (int)intent.AuthorityOrigin;
+            pendingAuthorityIdentity = intent.AuthorityIdentity;
             lastOutcome = planner.LabelShort + " planned native "
                 + plan.def.label + " for stockpile #" + zone.ID + " at "
                 + plan.cell + " because " + domain.OccupiedStacks + "/"
                 + domain.Capacity + " stack slots (" + Percent(domain.Pressure)
                 + ") met its "
-                + AutonomyComponent.LevelNames[effectiveLevel]
+                + CAInitiativePresentation.Label(effectiveTier)
                 + " evidence threshold; zone policy copied at transition "
                 + "[priority " + priority.Label() + ", allowed loaded definitions "
                 + allowed + "]; " + pendingEvidence;
@@ -598,9 +763,9 @@ namespace ColonistAwareness
                                 + suppression), out outcome);
             }
 
-            int effective;
+            CAInitiativeTier effective;
             Pawn planner = ChoosePlanner(program, out effective);
-            if (planner == null || effective < 2)
+            if (planner == null || effective < CAInitiativeTier.Proactive)
                 return Finish("authored room program #" + program.id
                     + " has no awake, threat-unaware construction author whose "
                     + "pawn autonomy and space ceiling combine to Proactive+",
@@ -613,14 +778,33 @@ namespace ColonistAwareness
                     + CASpacePurposeInfo.Label(program.purpose) + " program #"
                     + program.id + " has no authorized facility work: "
                     + blocker, out outcome);
+            CABehaviorContext context = SpatialContext(planner, effective,
+                TierFor(program), authoritySatisfied:
+                    program.author == CASpaceAuthor.Player,
+                knowledgeSatisfied: plan.missingLinksBefore > 0,
+                materialSatisfied: plan.def != null,
+                authorityBasis: "authored space program #" + program.id
+                    + " and its initiative ceiling",
+                knowledgeBasis: plan.missingLinksBefore
+                    + " missing facility relationship(s)");
+            CABehaviorDecision decision = CABehaviorGate.Evaluate(
+                "spatial.program_furnishing", context);
+            if (!decision.Allowed)
+                return Finish("authored room program #" + program.id
+                    + " planning blocked: " + decision.PrimaryReason,
+                    out outcome);
+            CAIntentContext intent = CACombatIntent.Authorized(planner,
+                CAIntentController.Unknown, "spatial.program_furnishing",
+                context.AuthorityOrigin, context.AuthorityBasis,
+                "delegated spatial proposal", program.label);
             return PlaceRoomPlan(planner, program, effective, plan,
-                out outcome);
+                intent, out outcome);
         }
 
         private bool PlaceRoomPlan(Pawn planner, CASpaceProgram program,
-            int effectiveLevel,
+            CAInitiativeTier effectiveTier,
             CASpatialFurnishingModule.CARoomFacilityPlan plan,
-            out string outcome)
+            CAIntentContext intent, out string outcome)
         {
             outcome = "no plan";
             GenSpawn.WipeExistingThings(plan.cell, plan.rotation,
@@ -647,11 +831,15 @@ namespace ColonistAwareness
             pendingRoomMissingBefore = plan.missingLinksBefore;
             pendingRoomExpectedLinks = plan.linksServed;
             pendingRoomEvidence = plan.Receipt(program);
+            pendingRoomBehaviorKey = intent.BehaviorKey;
+            pendingRoomEpisodeId = intent.EpisodeId;
+            pendingRoomAuthorityOrigin = (int)intent.AuthorityOrigin;
+            pendingRoomAuthorityIdentity = intent.AuthorityIdentity;
             lastOutcome = planner.LabelShort + " planned native "
                 + plan.def.label + " for authored "
                 + CASpacePurposeInfo.Label(program.purpose) + " program #"
                 + program.id + " at " + plan.cell + " under "
-                + AutonomyComponent.LevelNames[effectiveLevel]
+                + CAInitiativePresentation.Label(effectiveTier)
                 + " effective initiative; " + pendingRoomEvidence;
             lastEvaluationTick = pendingRoomSinceTick;
             outcome = lastOutcome;
@@ -667,11 +855,38 @@ namespace ColonistAwareness
             return true;
         }
 
+        private static CABehaviorContext SpatialContext(Pawn planner,
+            CAInitiativeTier effectiveTier,
+            CAInitiativeTier authorityCeiling, bool authoritySatisfied,
+            bool knowledgeSatisfied, bool materialSatisfied,
+            string authorityBasis, string knowledgeBasis)
+        {
+            Job current = planner?.CurJob;
+            return new CABehaviorContext(planner,
+                CAActorContext.PlayerSpatialAuthority, effectiveTier,
+                CAAuthorityOrigin.PlayerDelegated,
+                authoritySatisfied: authoritySatisfied,
+                knowledgeSatisfied: knowledgeSatisfied,
+                knowledgeFresh: knowledgeSatisfied,
+                liveValidated: planner != null && planner.Spawned,
+                knowledgeRelayed: false, knowledgeAgeTicks: 0,
+                capabilitySatisfied: planner != null && !planner.Downed,
+                materialSatisfied: materialSatisfied,
+                currentIntentCompatible: current == null
+                    || !current.playerForced,
+                directPlayerOwnership: current != null
+                    && current.playerForced,
+                authorityCeiling: authorityCeiling,
+                authorityBasis: authorityBasis,
+                knowledgeBasis: knowledgeBasis,
+                owner: nameof(CASpatialInitiativeMapComponent));
+        }
+
         private Pawn ChoosePlanner(Zone_Stockpile zone,
-            out int effectiveLevel)
+            out CAInitiativeTier effectiveTier)
         {
             Pawn best = null;
-            effectiveLevel = -1;
+            effectiveTier = CAInitiativeTier.Standard;
             float bestScore = float.MinValue;
             List<Pawn> pawns = map.mapPawns.FreeColonistsSpawned;
             for (int i = 0; i < pawns.Count; i++)
@@ -685,8 +900,8 @@ namespace ColonistAwareness
                         WorkTypeDefOf.Construction)
                     || KnowledgeMapComponent.For(map)?.KnowsAnyThreat(pawn)
                         == true) continue;
-                int effective = EffectiveLevel(pawn, zone);
-                if (effective < 2) continue;
+                CAInitiativeTier effective = EffectiveTier(pawn, zone);
+                if (effective < CAInitiativeTier.Proactive) continue;
                 DispositionProfile disposition = Disposition.Of(pawn);
                 int construction = SkillLevel(pawn,
                     SkillDefOf.Construction);
@@ -697,11 +912,11 @@ namespace ColonistAwareness
                     + construction / 20f * 0.30f
                     + intellectual / 20f * 0.10f
                     + (pawn.thingIDNumber % 997) * 0.000001f;
-                if (best == null || effective > effectiveLevel
-                    || effective == effectiveLevel && score > bestScore)
+                if (best == null || effective > effectiveTier
+                    || effective == effectiveTier && score > bestScore)
                 {
                     best = pawn;
-                    effectiveLevel = effective;
+                    effectiveTier = effective;
                     bestScore = score;
                 }
             }
@@ -709,10 +924,10 @@ namespace ColonistAwareness
         }
 
         private Pawn ChoosePlanner(CASpaceProgram program,
-            out int effectiveLevel)
+            out CAInitiativeTier effectiveTier)
         {
             Pawn best = null;
-            effectiveLevel = -1;
+            effectiveTier = CAInitiativeTier.Standard;
             float bestScore = float.MinValue;
             List<Pawn> pawns = map.mapPawns.FreeColonistsSpawned;
             for (int i = 0; i < pawns.Count; i++)
@@ -726,8 +941,8 @@ namespace ColonistAwareness
                         WorkTypeDefOf.Construction)
                     || KnowledgeMapComponent.For(map)?.KnowsAnyThreat(pawn)
                         == true) continue;
-                int effective = EffectiveLevel(pawn, program);
-                if (effective < 2) continue;
+                CAInitiativeTier effective = EffectiveTier(pawn, program);
+                if (effective < CAInitiativeTier.Proactive) continue;
                 DispositionProfile disposition = Disposition.Of(pawn);
                 int construction = SkillLevel(pawn,
                     SkillDefOf.Construction);
@@ -738,11 +953,11 @@ namespace ColonistAwareness
                     + construction / 20f * 0.30f
                     + intellectual / 20f * 0.10f
                     + (pawn.thingIDNumber % 997) * 0.000001f;
-                if (best == null || effective > effectiveLevel
-                    || effective == effectiveLevel && score > bestScore)
+                if (best == null || effective > effectiveTier
+                    || effective == effectiveTier && score > bestScore)
                 {
                     best = pawn;
-                    effectiveLevel = effective;
+                    effectiveTier = effective;
                     bestScore = score;
                 }
             }
@@ -816,17 +1031,19 @@ namespace ColonistAwareness
 
         private bool PendingStillExists()
         {
+            return FindPendingStorageConstruction() != null;
+        }
+
+        private Thing FindPendingStorageConstruction()
+        {
             if (pendingDefName.NullOrEmpty() || !pendingCell.IsValid
-                || !pendingCell.InBounds(map)) return false;
-            List<Thing> things = pendingCell.GetThingList(map);
-            for (int i = 0; i < things.Count; i++)
+                || !pendingCell.InBounds(map)) return null;
+            return pendingCell.GetThingList(map).FirstOrDefault(thing =>
             {
-                Thing thing = things[i];
                 ThingDef entity = thing?.def?.entityDefToBuild as ThingDef;
-                if ((thing is Blueprint_Build || thing is Frame)
-                    && entity?.defName == pendingDefName) return true;
-            }
-            return false;
+                return (thing is Blueprint_Build || thing is Frame)
+                    && entity?.defName == pendingDefName;
+            });
         }
 
         private bool RoomPendingStillExists()
@@ -1321,6 +1538,10 @@ namespace ColonistAwareness
             pendingOccupied = 0;
             pendingCapacity = 0;
             pendingEvidence = null;
+            pendingBehaviorKey = null;
+            pendingEpisodeId = 0;
+            pendingAuthorityOrigin = 0;
+            pendingAuthorityIdentity = null;
         }
 
         private void ClearRoomPending()
@@ -1336,6 +1557,10 @@ namespace ColonistAwareness
             pendingRoomMissingBefore = 0;
             pendingRoomExpectedLinks = 0;
             pendingRoomEvidence = null;
+            pendingRoomBehaviorKey = null;
+            pendingRoomEpisodeId = 0;
+            pendingRoomAuthorityOrigin = 0;
+            pendingRoomAuthorityIdentity = null;
         }
 
         private bool Finish(string text, out string outcome)
@@ -1371,16 +1596,17 @@ namespace ColonistAwareness
         {
             PruneAuthorityAndStorageRecords();
             var builder = new StringBuilder();
-            builder.AppendLine("[CA] spatial initiative: shared four-level "
-                + "per-space ceiling; default Standard; effective initiative "
-                + "is min(pawn autonomy, space ceiling)")
+            builder.AppendLine("[CA] spatial initiative: Standard, Proactive, "
+                + "or Autonomous per-space ceiling; default Standard; "
+                + "effective initiative is the lower of pawn initiative and "
+                + "the authored space ceiling")
                 .AppendLine("  authority: native Zone_Stockpile retains filter, "
                     + "priority, and footprint. CASpaceProgram uses the same "
                     + "saved parameter. An authored Barracks exposes "
                     + "the control only with the operative native bed-facility "
                     + "consumer; an authored Bedroom facility-requirement "
-                    + "comparator remains read-only. Build a2-106 adds only an "
-                    + "exact explicit debug-regression transition for one "
+                    + "comparator remains read-only. An exact developer "
+                    + "regression may exercise one "
                     + "concrete resident Bed cause; no production/background "
                     + "player-authored Bedroom Bed-cause consumer is enabled.")
                 .AppendLine("  operative consumers: one CA-originated native "
@@ -1408,8 +1634,8 @@ namespace ColonistAwareness
             {
                 Zone_Stockpile zone = zones[i];
                 CAStorageDomain domain = DomainFor(zone);
-                int ceiling = LevelFor(zone);
-                int effective;
+                CAInitiativeTier ceiling = TierFor(zone);
+                CAInitiativeTier effective;
                 Pawn planner = ChoosePlanner(zone, out effective);
                 int suppression;
                 string suppressed = !suppressedZones.TryGetValue(zone.ID,
@@ -1417,10 +1643,10 @@ namespace ColonistAwareness
                     ? "veto until ceiling changes" : "until tick " + suppression;
                 builder.Append("    #").Append(zone.ID).Append(" '")
                     .Append(zone.label).Append("': ceiling ")
-                    .Append(AutonomyComponent.LevelNames[ceiling])
+                    .Append(CAInitiativePresentation.Label(ceiling))
                     .Append(", best effective ")
                     .Append(planner == null ? "none" :
-                        AutonomyComponent.LevelNames[effective] + " via "
+                        CAInitiativePresentation.Label(effective) + " via "
                         + planner.LabelShort).Append(", pressure ")
                     .Append(Percent(domain.Pressure)).Append(" [zone ")
                     .Append(domain.ZoneStacks).Append("/")
@@ -1448,7 +1674,7 @@ namespace ColonistAwareness
                 CASpaceProgram program = playerPrograms[i];
                 bool originates = CASpatialFurnishingModule
                     .CanOriginateNewRoomFacility(program);
-                int effective = -1;
+                CAInitiativeTier effective = CAInitiativeTier.Standard;
                 Pawn planner = originates ? ChoosePlanner(program,
                     out effective) : null;
                 int suppression;
@@ -1462,8 +1688,8 @@ namespace ColonistAwareness
                     .Append("' (")
                     .Append(CASpacePurposeInfo.Label(program.purpose))
                     .Append("): ceiling ")
-                    .Append(AutonomyComponent.LevelNames[
-                        LevelFor(program)])
+                    .Append(CAInitiativePresentation.Label(
+                        TierFor(program)))
                     .Append(", consumer ").Append(originates
                         ? "operative; UI visible"
                         : program.purpose == CASpacePurpose.Bedroom
@@ -1472,7 +1698,7 @@ namespace ColonistAwareness
                             : "not operative; UI hidden")
                     .Append(", best effective ")
                     .Append(planner == null ? "none" :
-                        AutonomyComponent.LevelNames[effective] + " via "
+                        CAInitiativePresentation.Label(effective) + " via "
                         + planner.LabelShort)
                     .Append(", residents ")
                     .Append(program.residents?.Count(pawn => pawn != null) ?? 0)
@@ -1541,13 +1767,16 @@ namespace ColonistAwareness
             {
                 CASpatialInitiativeMapComponent component =
                     CASpatialInitiativeMapComponent.For(zone?.Map);
-                for (int i = 0; i < AutonomyComponent.LevelNames.Length; i++)
+                for (int i = 0;
+                    i < CAInitiativePresentation.ActiveTiers.Length; i++)
                 {
-                    int level = i;
-                    string label = (component?.LevelFor(zone) == level
-                        ? "* " : "") + AutonomyComponent.LevelNames[level];
+                    CAInitiativeTier tier =
+                        CAInitiativePresentation.ActiveTiers[i];
+                    string label = (component?.TierFor(zone) == tier
+                        ? "* " : "")
+                        + CAInitiativePresentation.Label(tier);
                     yield return new FloatMenuOption(label,
-                        delegate { component?.SetLevel(zone, level); });
+                        delegate { component?.SetTier(zone, tier); });
                 }
             }
         }
@@ -1565,17 +1794,17 @@ namespace ColonistAwareness
             CASpatialInitiativeMapComponent component =
                 CASpatialInitiativeMapComponent.For(__instance.Map);
             if (component == null) yield break;
-            int level = component.LevelFor(__instance);
+            CAInitiativeTier tier = component.TierFor(__instance);
             yield return new Command_CASpatialInitiative
             {
                 zone = __instance,
                 defaultLabel = "CA initiative: "
-                    + AutonomyComponent.LevelNames[level],
+                    + CAInitiativePresentation.Label(tier),
                 defaultDesc = "The initiative ceiling for this native "
                     + "stockpile. Effective initiative is the lower of this "
                     + "ceiling and the acting colonist's autonomy. Priority, "
                     + "filters, and the remaining floor stockpile stay native.\n\n"
-                    + "Directed and Standard never originate shelf work. "
+                    + "Standard does not originate shelf work. "
                     + "Proactive may verticalize at 80% stack pressure; "
                     + "Autonomous may do so at 50%. A valid plan must preserve "
                     + "current contents, access, circulation, service and sleep "
@@ -1585,8 +1814,10 @@ namespace ColonistAwareness
                 icon = TexCommand.HoldOpen,
                 action = delegate
                 {
-                    component.SetLevel(__instance, (component
-                        .LevelFor(__instance) + 1) % 4);
+                    int next = ((int)component.TierFor(__instance) + 1)
+                        % CAInitiativePresentation.ActiveTiers.Length;
+                    component.SetTier(__instance,
+                        CAInitiativePresentation.ActiveTiers[next]);
                 }
             };
         }
@@ -1712,10 +1943,11 @@ namespace ColonistAwareness
                 return "[CA] spatial-initiative-mountain-start\nrefused; "
                     + failure;
 
-            component.SetLevel(zone, 3);
+            component.SetTier(zone, CAInitiativeTier.Autonomous);
             string outcome;
             bool placed = component.DebugPlanZoneNow(zone, out outcome);
-            AutonomyComponent.SetLevel(author, priorAutonomy);
+            AutonomyComponent.SetTier(author,
+                (CAInitiativeTier)priorAutonomy);
             if (placed && Find.TickManager != null)
                 Find.TickManager.CurTimeSpeed = TimeSpeed.Fast;
             return "[CA] spatial-initiative-mountain-start\n"
@@ -1724,9 +1956,9 @@ namespace ColonistAwareness
                 + "developed-mountain corpus; portable behavior depends on "
                 + "native authority and evidence, not this identity\n"
                 + "disposable author " + author.LabelShort + " autonomy "
-                + AutonomyComponent.LevelNames[priorAutonomy]
+                + CAInitiativePresentation.Label((CAInitiativeTier)priorAutonomy)
                 + " -> Autonomous for evaluation -> restored "
-                + AutonomyComponent.LevelNames[priorAutonomy]
+                + CAInitiativePresentation.Label((CAInitiativeTier)priorAutonomy)
                 + (wokeForFixture
                     ? "; native sleep job interrupted for this unsaved proof"
                     : "")
@@ -1757,18 +1989,19 @@ namespace ColonistAwareness
                 out priorAutonomy, out wokeForFixture, out failure))
                 return "[CA] spatial-initiative-aboveground-start\nrefused; "
                     + failure;
-            component.SetLevel(zone, 3);
+            component.SetTier(zone, CAInitiativeTier.Autonomous);
             string outcome;
             bool placed = component.DebugPlanZoneNow(zone, out outcome);
-            AutonomyComponent.SetLevel(author, priorAutonomy);
+            AutonomyComponent.SetTier(author,
+                (CAInitiativeTier)priorAutonomy);
             return "[CA] spatial-initiative-aboveground-start\n"
                 + "developer fixture only; matched the unique 42-cell, "
                 + "five-stack aboveground stockpile; portable behavior "
                 + "depends on native authority and evidence, not this identity\n"
                 + "disposable author " + author.LabelShort + " autonomy "
-                + AutonomyComponent.LevelNames[priorAutonomy]
+                + CAInitiativePresentation.Label((CAInitiativeTier)priorAutonomy)
                 + " -> Autonomous for evaluation -> restored "
-                + AutonomyComponent.LevelNames[priorAutonomy]
+                + CAInitiativePresentation.Label((CAInitiativeTier)priorAutonomy)
                 + (wokeForFixture
                     ? "; native sleep job interrupted for this unsaved proof"
                     : "")
@@ -1887,10 +2120,11 @@ namespace ColonistAwareness
             if (!TryPrepareDisposableAutonomousBuilder(map, out author,
                 out priorAutonomy, out wokeForFixture, out failure))
                 return "[CA] spatial-room-barracks-start\nrefused; " + failure;
-            component.SetLevel(program, 2);
+            component.SetTier(program, CAInitiativeTier.Proactive);
             string outcome;
             bool placed = component.DebugPlanProgramNow(program, out outcome);
-            AutonomyComponent.SetLevel(author, priorAutonomy);
+            AutonomyComponent.SetTier(author,
+                (CAInitiativeTier)priorAutonomy);
             if (placed && Find.TickManager != null)
                 Find.TickManager.CurTimeSpeed = TimeSpeed.Fast;
             return "[CA] spatial-room-barracks-start\n"
@@ -1901,9 +2135,9 @@ namespace ColonistAwareness
                 + "authority and loaded native definitions, never this name or "
                 + "its coordinates\n"
                 + "disposable author " + author.LabelShort + " autonomy "
-                + AutonomyComponent.LevelNames[priorAutonomy]
+                + CAInitiativePresentation.Label((CAInitiativeTier)priorAutonomy)
                 + " -> Autonomous for evaluation -> restored "
-                + AutonomyComponent.LevelNames[priorAutonomy]
+                + CAInitiativePresentation.Label((CAInitiativeTier)priorAutonomy)
                 + (wokeForFixture
                     ? "; native sleep job interrupted for this derived proof"
                     : "")
@@ -2079,7 +2313,8 @@ namespace ColonistAwareness
             }
             finally
             {
-                AutonomyComponent.SetLevel(author, priorAutonomy);
+                AutonomyComponent.SetTier(author,
+                    (CAInitiativeTier)priorAutonomy);
             }
             string verificationState;
             string verificationDetail;
@@ -2092,9 +2327,9 @@ namespace ColonistAwareness
                 + "confirmed; authored Barracks occupancy 7 -> 8; Dolly "
                 + "added through the production resident API\n"
                 + "disposable author " + author.LabelShort + " autonomy "
-                + AutonomyComponent.LevelNames[priorAutonomy]
+                + CAInitiativePresentation.Label((CAInitiativeTier)priorAutonomy)
                 + " -> Autonomous for evaluation -> restored "
-                + AutonomyComponent.LevelNames[priorAutonomy]
+                + CAInitiativePresentation.Label((CAInitiativeTier)priorAutonomy)
                 + (wokeForFixture
                     ? "; native sleep job interrupted for this derived proof"
                     : "")
@@ -2242,7 +2477,7 @@ namespace ColonistAwareness
                 CAStorageProgramMapComponent.For(map)
                     ?.NotifyPlanningSettingChanged(false, resetGeneration);
             }
-            spatial.SetLevel(program, 2);
+            spatial.SetTier(program, CAInitiativeTier.Proactive);
             bool placed;
             string outcome;
             try
@@ -2251,7 +2486,8 @@ namespace ColonistAwareness
             }
             finally
             {
-                AutonomyComponent.SetLevel(author, priorAutonomy);
+                AutonomyComponent.SetTier(author,
+                    (CAInitiativeTier)priorAutonomy);
             }
             if (placed && Find.TickManager != null)
                 Find.TickManager.CurTimeSpeed = TimeSpeed.Fast;
@@ -2260,9 +2496,9 @@ namespace ColonistAwareness
                 + "eight exact residents and eight completed owned beds; "
                 + "portable facility behavior remains program- and evidence-driven\n"
                 + "disposable author " + author.LabelShort + " autonomy "
-                + AutonomyComponent.LevelNames[priorAutonomy]
+                + CAInitiativePresentation.Label((CAInitiativeTier)priorAutonomy)
                 + " -> Autonomous for evaluation -> restored "
-                + AutonomyComponent.LevelNames[priorAutonomy]
+                + CAInitiativePresentation.Label((CAInitiativeTier)priorAutonomy)
                 + (wokeForFixture
                     ? "; native sleep job interrupted for this derived proof"
                     : "")
@@ -2353,17 +2589,18 @@ namespace ColonistAwareness
                     + "refused; " + failure;
 
             TimeSpeed priorSpeed = Find.TickManager.CurTimeSpeed;
-            int priorCeiling = spatial.LevelFor(program);
+            CAInitiativeTier priorCeiling = spatial.TierFor(program);
             Blueprint_Build blueprint = null;
             Thing construction = null;
             try
             {
                 Find.TickManager.CurTimeSpeed = TimeSpeed.Paused;
-                spatial.SetLevel(program, 2);
+                spatial.SetTier(program, CAInitiativeTier.Proactive);
                 CASpatialFurnishingModule.CARoomFacilityPlan plan;
                 string blocker;
                 if (!CASpatialFurnishingModule.TrySelectRoomFacilityPlan(map,
-                    program, author, 2, out plan, out blocker))
+                    program, author, CAInitiativeTier.Proactive,
+                    out plan, out blocker))
                     return "[CA] spatial-room-authority-player-intent-regression\n"
                         + "refused; no clean native facility candidate: "
                         + blocker;
@@ -2439,8 +2676,9 @@ namespace ColonistAwareness
                     construction.Destroy(DestroyMode.Cancel);
                 if (blueprint != null && !blueprint.Destroyed)
                     blueprint.Destroy(DestroyMode.Cancel);
-                spatial.SetLevel(program, priorCeiling);
-                AutonomyComponent.SetLevel(author, priorAutonomy);
+                spatial.SetTier(program, priorCeiling);
+                AutonomyComponent.SetTier(author,
+                    (CAInitiativeTier)priorAutonomy);
                 Find.TickManager.CurTimeSpeed = priorSpeed;
             }
         }
@@ -2470,7 +2708,7 @@ namespace ColonistAwareness
             try
             {
                 Find.TickManager.CurTimeSpeed = TimeSpeed.Paused;
-                spatial.SetLevel(program, 2);
+                spatial.SetTier(program, CAInitiativeTier.Proactive);
                 bool placed = spatial.DebugPlanProgramNow(program,
                     out string placementOutcome);
                 List<Thing> pending = FacilityConstructionInProgram(map,
@@ -2522,7 +2760,8 @@ namespace ColonistAwareness
             }
             finally
             {
-                AutonomyComponent.SetLevel(author, priorAutonomy);
+                AutonomyComponent.SetTier(author,
+                    (CAInitiativeTier)priorAutonomy);
                 Find.TickManager.CurTimeSpeed = priorSpeed;
             }
         }
@@ -2883,7 +3122,7 @@ namespace ColonistAwareness
                     .GetSkill(SkillDefOf.Construction)?.Level ?? 0)
                 .ThenBy(pawn => pawn.thingIDNumber).FirstOrDefault();
             priorAutonomy = author == null ? 1
-                : AutonomyComponent.LevelOf(author);
+                : (int)AutonomyComponent.TierOf(author);
             woke = author != null && !author.Awake();
             if (author == null)
             {
@@ -2899,7 +3138,7 @@ namespace ColonistAwareness
                     + "not be awakened for the bounded proof";
                 return false;
             }
-            AutonomyComponent.SetLevel(author, 3);
+            AutonomyComponent.SetTier(author, CAInitiativeTier.Autonomous);
             failure = null;
             return true;
         }

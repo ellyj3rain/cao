@@ -771,9 +771,9 @@ namespace ColonistAwareness
                     })) related++;
                 }
                 SetPolicy(op, "work", providerWork);
-                CAPoliticalCustoms.ReconcileCustoms(op,
-                    providerFaction?.politicalBeliefs
-                        ?? factionState.politicalBeliefs);
+                CAPoliticalBeliefPractice.ReconcileCurrentStructure(op,
+                    providerFaction?.factionStructure
+                        ?? factionState.factionStructure);
             }
 
             if (work == "organized" && staffed > 0)

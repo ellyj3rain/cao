@@ -193,7 +193,8 @@ namespace ColonistAwareness
         }
     }
 
-    // Drafting a squad leader drafts the squad (Proactive+ members); undrafting releases them.
+    // Drafting a squad leader relays the command to members who receive and
+    // accept it; pawn initiative is not an obedience requirement.
     [HarmonyPatch(typeof(Pawn_DraftController), "Drafted", MethodType.Setter)]
     public static class Patch_DraftChain
     {
@@ -236,7 +237,6 @@ namespace ColonistAwareness
                         && (SquadComponent.FireteamOf(p) != team
                             || SquadComponent.IsLeader(p))) continue;
                     if (p.Dead || p.Downed || p.InMentalState || p.drafter == null) continue;
-                    if (AutonomyComponent.LevelOf(p) < 2) continue;
                     if (!CommsModule.CanCommand(leader, p)) continue;
                     if (value)
                     {

@@ -1,6 +1,7 @@
 # Colonist Awareness - roadmap
 
-The A sequence is closed at `A102`; `B1` is the next development batch.
+The A sequence is closed at `A102`; the chronology is complete through `B7`,
+and `B8` is the next development batch.
 Historical batch identifiers below use the current sequence. Thematic `T-*`
 identifiers link continuing work across nonadjacent batches. The chronological
 catalog is [`BATCH_LOG.md`](BATCH_LOG.md); thematic links are in
@@ -151,9 +152,9 @@ presentation remain pending operator judgment after a full restart.
 - A fresh external-violence impact now reaches the existing humanlike 30-tick
   reaction lane before the later mind-state/contact notification. The pawn derives
   immediate survival pressure from live injury, bleeding, cover, ability to
-  engage, combat skill, and Disposition. Undrafted Proactive+ colonists and exact
+  engage, combat skill, and Disposition. Undrafted Proactive or Autonomous colonists and exact
   generic settlement assaulters may hold, improve position, or break contact;
-  Directed/Standard control and explicit player/emergency/tactical work retain
+  Standard initiative and explicit player/emergency/tactical work retain
   priority.
 - Against a currently visible contact, an eligible ranged pawn without an existing
   CA automatic-defense post compares nearby locally visible, reachable cells by
@@ -523,7 +524,12 @@ The levels stay BEHAVIORAL MODES. What follows is the intended EFFECT when the m
   installed Sim Settlements 2 configuration is design evidence for needs, role
   qualifications, budgets, leader effects, staged upgrades, limits, and notices—not
   an engine model to import wholesale.
-- Order/mode interaction (shipped): maneuver orders (ambush) at Directed/Standard require DRAFT (piloted play); Proactive is the hybrid (orders drafted or not); Autonomous minimizes manual low-level deliberation. Main-character pattern = the existing dial: your main (often the colony leader role) runs low-mode piloted, everyone else Autonomous.
+- Order/initiative interaction (shipped): direct maneuver orders remain valid at
+  every tier and preserve player ownership. Standard does not originate an
+  unowned maneuver; Proactive may make one bounded adaptation to a current fact;
+  Autonomous may retain a delegated objective and coordinate within its saved
+  authority. Draft state remains part of the command itself, not another
+  initiative tier.
 - Hold-position + deviation + report-up: SHIPPED (HoldModule + standing CATactical Lord) - right-click "Hold this position": walk there, fight from the duty post without melee pursuit, re-anchor if displaced, and persist the standing order through saves. Proactive+ deviation reads only the holder's remembered contacts; live hostile positions enter immediate overrun/flank checks only under current LOS. Deviation = suppressive movement away from remembered pressure + report-up when the leader has command contact. Piloted holds never self-release.
 - Mode dynamics - convene-plan-disperse: SHIPPED (RaidResponse) - Autonomous squadded fighters under a live commanding leader rally, plan, and disperse through persistent defensive duties. The leader plan uses that leader's relayed facts; individual positioning uses each pawn's own facts. Cover candidates require actual directional block chance, active defense posts retain their claims, and direct player/emergency/withdrawal control tears automatic defense down. PROACTIVE drafted HOI4 painted lines remain shipped through LineOrdersModule; later polish: multi-segment painting, saved plans, arrows.
 - Tactics taxonomy: guerrilla isolated-pawn tactics / organized guerrilla / conventional - a doctrine spectrum units operate along, per skills, structure, and comms.
@@ -798,25 +804,36 @@ judgment is the eventual built composition after native work supplies the Bed.
 ## Regional living-world program — T-019–T-026
 
 The current regional implementation uses one direct model: regions contain
-factions and settlements. Factions own culture, Ideoligion, political beliefs,
-faction structure, settlement authority, and faction era. Settlements own
-population groups, form, role, starting facilities, access, services, civic
-development, starting provisions, and derived capability.
+factions and settlements. Factions own carried cultural background, Ideoligion,
+political beliefs, faction structure, settlement authority, and faction era.
+Settlements own population groups, form, role, relative development, starting
+facilities and exact overrides, infrastructure, economic and trade conditions,
+history, provisions, and derived capability. Contextual cultural expression,
+settlement pattern, and urban scale are realized results, not independent
+authoring categories.
 
 Built and statically verified:
 
 1. **Regional geography.** One projection carries the selected visual land shape,
    coast, water depth, roads, rivers, caves, and supported geographic features.
    Settlement positions resolve on valid visual land.
-2. **Current pending-plan persistence.** One keyed file per world identity stores
-   the confirmed candidate directly as `factions`, `settlements`, relations,
-   population groups, facilities, infrastructure, and provisions. The current
-   authored composition is converted to this schema.
-3. **Faction and settlement authoring.** Culture, Ideoligion, political beliefs,
-   faction structure, settlement authority, settlement pattern and scale, form,
-   facilities, infrastructure, population groups, and provision distribution are
-   independently readable and editable where they affect generation.
-4. **Materialization.** The confirmed candidate creates native factions,
+2. **Current pending-plan persistence.** One keyed file per world identity and
+   its active mirror store the same confirmed candidate directly as `factions`,
+   `settlements`, relations, population groups, development profiles,
+   facilities, infrastructure, provisions, and founding state. The current
+   authored composition is converted to schema 4.
+3. **Faction and settlement authoring.** Carried cultural background,
+   Ideoligion, political beliefs, faction structure, settlement authority,
+   settlement form, relative development, facilities,
+   infrastructure, population groups, and provision distribution are independently
+   readable and editable where they affect generation. Settlement placement,
+   relations, population, land, access, services, civic development, economic and
+   trade conditions, specialization, regional role, and history produce the saved
+   settlement pattern and scale.
+4. **Cultural expression and materialization.** One typed causal kernel derives
+   each settlement's cultural expression from its actual people, beliefs,
+   institutions, material state, geography, relations, and history. The
+   confirmed candidate creates native factions,
    settlements, residents, Ideoligions, organizations, buildings, provisions,
    geography, and faction relations. Derived capability reads faction era and
    local supports.
@@ -829,15 +846,19 @@ Built and statically verified:
 
 Immediate runtime gates, in operator order:
 
-1. Restore the keyed authored composition without losing factions, settlements,
-   population groups, world tendencies, arrival area, or confirmation.
+1. Restore the byte-identical keyed and mirror composition without losing
+   factions, settlements, population groups, world tendencies, arrival area, or
+   confirmation.
 2. Start generation from that exact candidate without “regional bundle
    incomplete” or “select an arrival area” failures.
 3. Confirm that the generated map matches the preview's visual land shape and
    that selected geographic features resolve inside it.
-4. Confirm that settlement identifiers, buildings, residents, facilities, and
-   provisions appear on the intended land and reflect the authored settings.
-5. Record performance and generation receipts for the selected 350-cell local
+4. Confirm that settlement identifiers, buildings, residents, contextual
+   cultural expression, facilities, and provisions appear on the intended land
+   and reflect the authored settings.
+5. Compare Minimal, Contextual, and Extensive development; confirm explicit
+   infrastructure and exact per-facility overrides retain their ownership.
+6. Record performance and generation receipts for the selected 350-cell local
    scale and multi-area backing map.
 
 After that runtime gate, continue the same model into off-map economy, reports,
@@ -989,7 +1010,7 @@ itself a shelf requirement. Candidate proof must cover the developed mixed fridg
 at least one sparse aboveground stockpile, and the operator's visual judgment.
 
 After that proof, the selected native zone receives a CA initiative ceiling using
-Directed, Standard, Proactive, or Autonomous, defaulting to Standard. Effective
+Standard, Proactive, or Autonomous, defaulting to Standard. Effective
 initiative is the lower of pawn autonomy and zone autonomy. Native priority and
 filters remain unchanged and orthogonal. The zone control and its operative shelf
 consumer ship together; there is no inert checkbox phase. The consumer may place
@@ -1015,7 +1036,7 @@ receipts passed without a gameplay mutation. Pure visual props remain outside th
 utility model unless an explicit adapter supplies truthful semantic evidence.
 
 The next local gate is one shared per-space initiative-ceiling substrate using the
-existing Directed, Standard, Proactive, and Autonomous levels. It must remain a
+current Standard, Proactive, and Autonomous levels. It must remain a
 single parameter across native stockpile authorities and authored room programs,
 while each UI surface appears only when an operative consumer exists. The first
 bounded consumer is native shelf/capacity work inside a selected stockpile: it may
@@ -1395,3 +1416,115 @@ knowledge, Bio and competence, condition, weapon operation, terrain, mutual
 support, target commitment, and survival posture separate. Pursuit, a new
 withdrawal mode, broad formation doctrine, and unrelated systems do not enter
 this gate merely because this engagement was lost.
+
+## Player founding authoring — B2 / T-022, T-023, T-024, T-025, T-028, T-030
+
+B2 restores the coordinated player creator before Starting Pawns. The setup
+flow now authors Culture, native Ideoligion, Political Beliefs, and a Founding
+Arrangement on one page. Presets remain editable inputs to the same models used
+for existing factions. RimWorld's native fixed and fluid Ideoligion editors are
+retained as the detailed Ideoligion surface and return to the coordinated page.
+
+The temporal distinction is explicit. Existing factions and settlements are
+described with realized institutions and history. The player faction is authored
+at founding: its people bring Culture, Ideoligion, and Political Beliefs; they
+adopt immediate rules for authority, work, voice, and starting supplies; later
+institutional structure develops through play. The general faction generator no
+longer fills a mature player structure at map start.
+
+The founding draft is world-owned even when no Starting Region exists. Its
+arrangement applies exactly once under a durable receipt. Founding terms remain
+their exact, duration-aware relations and do not silently become broader
+institutions. Political Beliefs judge current practice; they do not become
+organization customs merely because the founders hold them.
+
+The next evidence is the operator's runtime test of hierarchy, copy fit,
+Back/Next stability, native Ideoligion editing, preset/custom continuity,
+belief-versus-arrangement clarity, and materialization in the real colony flow.
+
+## Contextual cultural expression and settlement development - B5 / T-015, T-019, T-021, T-023, T-025
+
+B5 corrects the B4 Culture model at its ownership boundary. A population carries
+background identity and an optional native visual tradition; it does not carry a
+furniture recipe. Settlement Culture is a realized expression of actual
+Ideoligion commitments, political beliefs, population, institutions, provisions,
+material conditions, geography, relations, and history. Starting Region,
+established-faction summaries, materialized records, loaded maps, and world
+markers consume that same deterministic reading.
+
+Settlement development is now relative. Minimal, Contextual, and Extensive
+shift only generated access, services, and civic development within bounded
+limits. Explicit infrastructure wins, and every starting facility independently
+remains Generated or receives an Include or Omit override. Plan schema 4 and
+Culture schema 3 preserve the authored composition across both active fixture
+surfaces.
+
+The verified assembly is deployed. The current gate is the operator's runtime
+test of the preserved three-faction/four-settlement plan, settlement-scoped
+cultural readings, relative development, exact facility provenance, generation,
+and materialized readback.
+
+## Behavior contract, authority, and playable runtime convergence - B6 / T-003–T-010, T-012, T-013, T-015, T-019, T-021, T-022, T-025
+
+B6 makes the runtime behavior model as explicit as the authoring ontology. The
+active initiative ladder is Standard, Proactive, and Autonomous; old Directed
+and Standard saves converge on Standard. A stable behavior catalog classifies
+each behavior by domain, form, actor, permission, evidence, authority, execution
+lane, ownership, completion, and stand-down condition. Its cached effective
+profile is only a prefilter. Every autonomous mutation or CA-owned native job
+must cross the dynamic gate at commitment and record its causal identity.
+
+The pass separates colony access policy from personal equipment initiative,
+bounded hostile stabilization from irreversible custody resolution, direct
+player delegation from NPC institutional authority, and each squad-support
+behavior from the old shared `holdOrders` owner. Actor-private facts remain
+actor-private: paired support and withdrawal require each executor's own current
+fact or a real delivered request, and uncertainty may rank permitted choices but
+does not create permission. Home, spatial, starting-facility, road, research,
+repair, and settlement-development paths share typed demands while keeping
+creation and later institutional action causally separate. Native jobs and
+material success remain the source of physical outcomes.
+
+Settings are grouped by behavior domain and distinguish feature permission,
+communication infrastructure, execution capability, presentation, and
+diagnostics. The read-only behavior census shows the selected actor's effective
+tier, catalog permissions, recent dynamic decision, and owned intent without
+authorizing work. The retained authoring suites and the B6 behavior-convergence
+suite provide the static gate; the named operator cases remain the next test of
+how the system looks, reads, and plays. B7 records the corrective reconstruction
+of the creation ontology and the Culture acceptance boundary.
+
+## Creation ontology and authoring reconstruction - B7 / T-002, T-013-T-015, T-019, T-021-T-025, T-028, T-030
+
+B7 restores the distinction between authoring causes and inspecting realized
+consequences. Starting Region keeps the regional map, arrival area, factions,
+settlements, placement, relations, population composition and sources, and
+sparse concrete exceptions. Generic development, transport, services, civic
+capacity, facility-bundle, and information-detail selectors are removed from
+ordinary authoring. Their underlying simulation facts remain concrete and
+causal; the UI presents realized results and contextual explanations at the
+objects and decisions that own them.
+
+Culture now persists as local longitudinal social history rather than as a
+visual source or prose summary of other settlement state. Stable inherited and
+local identities, constituent populations, lived observations, recognized
+practices, and transition provenance survive serialization. A bounded
+world-simulation behavior evaluates meaningful historical evidence and records
+deterministic successor state. Spatial ranking, social gathering, institutional
+legitimacy and research priority, political contradiction habituation, and
+player-delegated or NPC settlement development consume the same substantive
+Culture state without manufacturing authority, materials, knowledge, or
+capability.
+
+The founding surface again coordinates inherited Culture, native RimWorld
+Ideoligion, Political Beliefs, and the actual rules adopted at landing. Existing
+settlements carry explicit established temporal state; founders begin at the
+founding boundary unless a scenario explicitly supplies prior history. The
+selected three-faction/four-settlement fixture remains a transient developer
+exercise because its regional world mutators are not durably save-compatible.
+It can test creation and first-map behavior; save/reload case 104 requires a
+later compatible-region run.
+
+B7's deterministic receipts and frozen-tree reviews close the static gate. The
+verified assembly is deployed for operator cases 97-103 and 105 on the selected
+fixture. `B8` is the next development batch.

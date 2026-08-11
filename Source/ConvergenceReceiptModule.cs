@@ -76,16 +76,7 @@ namespace ColonistAwareness
             foreach (CAStartingProvision arrangement in
                 settlementPlan.startingProvisions.Where(a => a != null && a.active))
                 text.AppendLine("      starting provisions: "
-                    + arrangement.Summary
-                    + (arrangement.distributionAuthored
-                        ? " (distribution overridden)" : " (generated)"));
-            foreach (CAStartingProvision arrangement in
-                settlementPlan.startingProvisions.Where(a => a != null && !a.active
-                    && a.distributionAuthored))
-                text.AppendLine("      saved inactive provision override: "
-                    + arrangement.basisLabel + " - "
-                    + arrangement.PreferredDistribution + " distribution ("
-                    + (arrangement.inactiveReason ?? "cause absent") + ")");
+                    + arrangement.Summary);
 
             CARegionalFactionPlan owner = plan.FactionPlan(
                 settlementPlan.factionKey);

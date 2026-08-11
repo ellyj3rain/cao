@@ -140,7 +140,9 @@ namespace ColonistAwareness
 
             bool autoGo = true;
             for (int i = 0; i < stackers.Count; i++)
-                if (AutonomyComponent.LevelOf(stackers[i]) < 2) { autoGo = false; break; }
+                if (!CABehaviorGate.StableProfileAllows(stackers[i],
+                        "support.stack_auto_breach"))
+                { autoGo = false; break; }
 
             var job = new LordJob_CAStackBreach(door, stackers, slots, wallAxis, far, autoGo);
             LordMaker.MakeNewLord(Faction.OfPlayer, job, map, stackers);

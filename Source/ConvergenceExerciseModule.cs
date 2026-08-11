@@ -231,7 +231,7 @@ namespace ColonistAwareness
                 plan.worldPolicy = plan.worldPolicy
                     ?? new CARegionalWorldPolicy();
                 // History axes that guarantee an interesting composition.
-                plan.worldPolicy.nearbyFactionVariety = 1f;
+                plan.worldPolicy.reallocationSourceVariety = 1f;
                 plan.worldPolicy.unaffiliatedPopulationShare = 0.6f;
 
                 // Two factions with different political beliefs.

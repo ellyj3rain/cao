@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using RimWorld;
+using UnityEngine;
 using Verse;
 using Verse.AI;
 
@@ -16,6 +18,53 @@ namespace ColonistAwareness
     // duty-driven); every tasking, refusal, and release is receipted.
     public class SquadSupportMapComponent : MapComponent
     {
+        private readonly struct OwnedThreatContact
+        {
+            internal readonly Pawn Owner;
+            internal readonly ThreatContactSnapshot Contact;
+
+            internal OwnedThreatContact(Pawn owner,
+                ThreatContactSnapshot contact)
+            {
+                Owner = owner;
+                Contact = contact;
+            }
+        }
+
+        private readonly struct SupportKnowledgeEvidence
+        {
+            internal readonly bool Satisfied;
+            internal readonly bool Fresh;
+            internal readonly bool Relayed;
+            internal readonly bool LiveValidated;
+            internal readonly int AgeTicks;
+            internal readonly float Confidence;
+            internal readonly float Uncertainty;
+            internal readonly string Basis;
+            internal readonly ThreatContactSnapshot? Contact;
+
+            internal SupportKnowledgeEvidence(bool satisfied, bool fresh,
+                bool relayed, bool liveValidated, int ageTicks,
+                float confidence, float uncertainty, string basis,
+                ThreatContactSnapshot? contact = null)
+            {
+                Satisfied = satisfied;
+                Fresh = fresh;
+                Relayed = relayed;
+                LiveValidated = liveValidated;
+                AgeTicks = Math.Max(0, ageTicks);
+                Confidence = Mathf.Clamp01(confidence);
+                Uncertainty = Math.Max(0f, uncertainty);
+                Basis = basis;
+                Contact = contact;
+            }
+
+            internal static SupportKnowledgeEvidence Missing =>
+                new SupportKnowledgeEvidence(false, false, false, false,
+                    int.MaxValue, 0f, 1f,
+                    "no fact held or delivered to the executing pawn");
+        }
+
         private const int PassInterval = 90;
         private const int TaskingLifetimeTicks = 1800;
         private const int RescueEscortCooldownTicks = 1200;
@@ -24,18 +73,43 @@ namespace ColonistAwareness
 
         private int cooldown;
 
-        private sealed class SupportTasking
+        private sealed class SupportTasking : IExposable
         {
             public int PawnId;
             public int IssuedTick;
+            public int ExpiryTick;
             public string Reason;
             public int SupportedId;
+            public string BehaviorKey;
+            public int EpisodeId;
+            public int AuthorityOrigin;
+            public string AuthorityIdentity;
+            public string OwnershipScope;
+            public string TerminationCondition;
+
+            public void ExposeData()
+            {
+                Scribe_Values.Look(ref PawnId, "pawnId", -1);
+                Scribe_Values.Look(ref IssuedTick, "issuedTick");
+                Scribe_Values.Look(ref ExpiryTick, "expiryTick");
+                Scribe_Values.Look(ref Reason, "reason");
+                Scribe_Values.Look(ref SupportedId, "supportedId", -1);
+                Scribe_Values.Look(ref BehaviorKey, "behaviorKey");
+                Scribe_Values.Look(ref EpisodeId, "episodeId");
+                Scribe_Values.Look(ref AuthorityOrigin, "authorityOrigin");
+                Scribe_Values.Look(ref AuthorityIdentity, "authorityIdentity");
+                Scribe_Values.Look(ref OwnershipScope, "ownershipScope");
+                Scribe_Values.Look(ref TerminationCondition,
+                    "terminationCondition");
+                if (Scribe.mode == LoadSaveMode.PostLoadInit)
+                    CACombatIntent.ObserveEpisode(EpisodeId);
+            }
         }
 
-        // Session-only supervision state; the taskings themselves live on the
-        // scribed tactical lord as automatic-defense rows and survive saves as
-        // ordinary automatic defense (correctly released by its own rules).
-        private readonly List<SupportTasking> taskings = new List<SupportTasking>();
+        // The native tactical lord or native medical job executes the action;
+        // this compact row preserves why CA owns it and when that ownership
+        // ends. It is scribed so save/load does not erase authority identity.
+        private List<SupportTasking> taskings = new List<SupportTasking>();
         private readonly Dictionary<int, int> rescueEscortCooldown =
             new Dictionary<int, int>();
         private readonly Dictionary<int, int> objectiveCooldown =
@@ -69,6 +143,16 @@ namespace ColonistAwareness
 
         public SquadSupportMapComponent(Map map) : base(map) { }
 
+        public override void ExposeData()
+        {
+            base.ExposeData();
+            Scribe_Values.Look(ref cooldown, "behaviorPassCooldown");
+            Scribe_Collections.Look(ref taskings, "ownedSupportIntents",
+                LookMode.Deep);
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && taskings == null)
+                taskings = new List<SupportTasking>();
+        }
+
         public static SquadSupportMapComponent For(Map map)
         {
             return map?.GetComponent<SquadSupportMapComponent>();
@@ -79,6 +163,9 @@ namespace ColonistAwareness
         public void NotifyPositionFold(Pawn folder, IntVec3 origin, IntVec3 dest)
         {
             if (folder == null || folder.Map != map) return;
+            AwarenessSettings settings = AwarenessMod.Settings;
+            if (!CABehaviorSettings.IsEnabled(CABehaviorCatalog.Get(
+                    "support.fold_cover"), settings)) return;
             int squad = SquadComponent.SquadOf(folder);
             Pawn best = null;
             float bestScore = float.MaxValue;
@@ -88,6 +175,8 @@ namespace ColonistAwareness
                 Pawn candidate = colonists[i];
                 if (candidate == folder) continue;
                 if (SquadComponent.SquadOf(candidate) != squad) continue;
+                if (!CABehaviorGate.StableProfileAllows(candidate,
+                        "support.fold_cover")) continue;
                 string refusal;
                 float range;
                 if (!FreeForSupport(candidate, out range, out refusal)) continue;
@@ -104,9 +193,17 @@ namespace ColonistAwareness
                     + "squadmate in comms reach", anchor: folder.Position);
                 return;
             }
+            SupportKnowledgeEvidence requestEvidence;
+            if (!TryDeliveredRequestEvidence(folder, best,
+                    "withdrawal-cover request from " + folder.LabelShort,
+                    out requestEvidence)) return;
             IssueTasking(best, origin, folder,
                 "covering " + folder.LabelShort + "'s withdrawal",
-                moteText: "cover my withdrawal");
+                behaviorKey: "support.fold_cover",
+                authorityOrigin: CAAuthorityOrigin.PeerRequest,
+                authorityIdentity: "squadmate withdrawal request",
+                moteText: "cover my withdrawal",
+                explicitEvidence: requestEvidence);
         }
 
         // -------------------------- periodic passes --------------------------
@@ -116,17 +213,27 @@ namespace ColonistAwareness
             if (--cooldown > 0) return;
             cooldown = PassInterval;
             var settings = AwarenessMod.Settings;
-            if (settings == null || !settings.holdOrders) return;
+            if (settings == null) return;
             try
             {
                 ExpireTaskings();
-                RescueEscortPass();
-                ObjectiveDefensePass();
-                DefensiveLinePass();
-                RallyReroutePass();
-                FlankGuardPass();
-                MedicResponsePass();
-                OrderMenus.CAPendingRelay.Process(map);
+                if (CABehaviorSettings.IsEnabled(CABehaviorCatalog.Get(
+                        "support.rescue_escort"), settings))
+                    RescueEscortPass();
+                if (CABehaviorSettings.IsEnabled(CABehaviorCatalog.Get(
+                        "support.objective_defense"), settings))
+                {
+                    ObjectiveDefensePass();
+                    DefensiveLinePass();
+                    RallyReroutePass();
+                    FlankGuardPass();
+                }
+                if (CABehaviorSettings.IsEnabled(CABehaviorCatalog.Get(
+                        "welfare.medic_dispatch"), settings))
+                    MedicResponsePass();
+                if (CABehaviorSettings.IsEnabled(CABehaviorCatalog.Get(
+                        "communication.command_delivery"), settings))
+                    OrderMenus.CAPendingRelay.Process(map);
             }
             catch { }
         }
@@ -163,8 +270,8 @@ namespace ColonistAwareness
                     if (pass == 0 && skill < 4) continue;
                     if (pass == 1 && skill >= 4) continue;
                     Job current = medic.CurJob;
-                    if (current != null && (current.playerForced
-                        || current.def == JobDefOf.TendPatient
+                    if (HasPlayerOwnedWork(medic)) continue;
+                    if (current != null && (current.def == JobDefOf.TendPatient
                         || current.def == JobDefOf.Rescue
                         || current.def == CA_Defs.CombatRecovery
                         || current.def == CA_Defs.EmergencySelfTend
@@ -183,20 +290,36 @@ namespace ColonistAwareness
                     // pass is the suppressor, and the crossing waits.
                     IntVec3 contestedThreat;
                     int contestedId;
-                    if (CasualtyZoneContested(casualty, out contestedThreat,
-                        out contestedId))
+                    ThreatContactSnapshot contestedFact;
+                    Pawn contestedFactOwner;
+                    if (CasualtyZoneContested(casualty, medic,
+                        out contestedThreat, out contestedId, out contestedFact,
+                        out contestedFactOwner))
                     {
                         if (!SuppressionOnThreat(contestedId))
                         {
-                            Pawn suppressor = BestSupporter(casualty, -1,
-                                contestedThreat);
+                            ThreatContactSnapshot suppressorFact;
+                            string suppressorKnowledgeOwner;
+                            Pawn suppressor = BestSupporterForFact(casualty,
+                                -1, contestedThreat, "support.rescue_escort",
+                                contestedFactOwner, contestedFact,
+                                out suppressorFact,
+                                out suppressorKnowledgeOwner);
                             if (suppressor != null && suppressor != medic)
                             {
                                 IssueTasking(suppressor, contestedThreat,
                                     casualty, "care under fire - suppression "
                                     + "BEFORE the crossing to "
                                     + casualty.LabelShort,
-                                    moteText: "suppress - casualty crossing");
+                                    behaviorKey: "support.rescue_escort",
+                                    authorityOrigin:
+                                        CAAuthorityOrigin.PeerRequest,
+                                    authorityIdentity:
+                                        "casualty crossing support request",
+                                    moteText: "suppress - casualty crossing",
+                                    knowledgeFact: suppressorFact,
+                                    knowledgeOwner:
+                                        suppressorKnowledgeOwner);
                             }
                             int lastHold;
                             if (!medicResponseCooldown.TryGetValue(
@@ -224,16 +347,15 @@ namespace ColonistAwareness
                     // A live battle changes who may answer: a violence-
                     // incapable civilian is never sent across a battlefield -
                     // short, local responses only, and only when no known
-                    // contact stands near their path. The colony-wide threat
-                    // picture (any colonist's fresh contacts) decides
-                    // "battle", not the medic's personal fog.
+                    // contact stands near their path. Only the medic's own
+                    // fresh contacts decide whether that crossing is unsafe.
                     if (medic.WorkTagIsDisabled(WorkTags.Violent)
-                        && ColonyBattleActive())
+                        && ColonyBattleActive(medic))
                     {
                         float run = medic.Position.DistanceTo(
                             casualty.Position);
                         if (run > 25f
-                            || ContactNearPath(medic.Position,
+                            || ContactNearPath(medic, medic.Position,
                                 casualty.Position, 30f))
                         {
                             int lastHeld;
@@ -270,9 +392,46 @@ namespace ColonistAwareness
                         { alreadyHandled = true; break; }
                     }
                     if (alreadyHandled) continue;
+                    bool playerOwnedWork = HasPlayerOwnedWork(medic);
+                    CABehaviorContext gateContext =
+                        CABehaviorContext.ForPawn(medic,
+                            CAAuthorityOrigin.PlayerDelegated,
+                            authoritySatisfied: true,
+                            knowledgeSatisfied: true,
+                            knowledgeFresh: true,
+                            liveValidated: casualty.Spawned
+                                && casualty.Downed,
+                            capabilitySatisfied: answer != null,
+                            currentIntentCompatible: !playerOwnedWork,
+                            directPlayerOwnership: playerOwnedWork,
+                            authorityBasis:
+                                "player-delegated field-medicine duty",
+                            knowledgeBasis:
+                                "fresh casualty fact held by assigned medic",
+                            owner: "medical response");
+                    CABehaviorDecision medicalDecision;
+                    CAIntentContext medicalIntent;
+                    if (!CABehaviorJobOrigin.TryAuthorizeAndRegister(medic,
+                        answer, "welfare.medic_dispatch",
+                        CAIntentController.Welfare, gateContext,
+                        out medicalDecision, out medicalIntent,
+                        targetOrDemand: "care for "
+                            + casualty.LabelShort,
+                        ownershipScope: "medical response",
+                        lifetimeTicks: TaskingLifetimeTicks))
+                    {
+                        CATrace.Pawn(medic, "medical response BLOCKED - "
+                            + medicalDecision.PrimaryReason,
+                            destination: casualty.Position,
+                            anchor: medic.Position);
+                        continue;
+                    }
                     medicResponseCooldown[casualty.thingIDNumber] = now;
+                    RegisterTasking(medic, casualty, "medical response for "
+                        + casualty.LabelShort, medicalIntent);
+                    answer.playerForced = false;
                     medic.jobs.StartJob(answer,
-                        JobCondition.InterruptForced);
+                        JobCondition.InterruptOptional);
                     VisibleExchange(casualty, medic, "needs hands - on it");
                     CATrace.Pawn(medic, "medical response TASKED - "
                         + casualty.LabelShort + " ("
@@ -280,7 +439,7 @@ namespace ColonistAwareness
                             ? "carry to bed" : "tend in place")
                         + "; medicine " + skill + ")",
                         destination: casualty.Position,
-                        anchor: medic.Position);
+                        anchor: medic.Position, intent: medicalIntent);
                     return; // one assignment per pass keeps this gentle
                 }
             }
@@ -310,7 +469,7 @@ namespace ColonistAwareness
             // Union threat picture across the roster (relays included by the
             // knowledge lane itself), newest fact per hostile.
             var colonists = map.mapPawns.FreeColonistsSpawned;
-            var newest = new Dictionary<int, ThreatContactSnapshot>();
+            var newest = new Dictionary<int, OwnedThreatContact>();
             for (int i = 0; i < colonists.Count; i++)
             {
                 var contacts = know.FreshContacts(colonists[i]);
@@ -318,10 +477,11 @@ namespace ColonistAwareness
                 {
                     var contact = contacts[c];
                     if (!contact.Cell.IsValid) continue;
-                    ThreatContactSnapshot old;
+                    OwnedThreatContact old;
                     if (!newest.TryGetValue(contact.HostileId, out old)
-                        || contact.SourceTick > old.SourceTick)
-                        newest[contact.HostileId] = contact;
+                        || contact.SourceTick > old.Contact.SourceTick)
+                        newest[contact.HostileId] = new OwnedThreatContact(
+                            colonists[i], contact);
                 }
             }
             if (newest.Count == 0) return;
@@ -332,8 +492,10 @@ namespace ColonistAwareness
             var clusterCells = new List<IntVec3>();
             var clusterCounts = new List<int>();
             var clusterRelayed = new List<bool>();
-            foreach (var contact in newest.Values)
+            var clusterEvidence = new List<List<OwnedThreatContact>>();
+            foreach (OwnedThreatContact owned in newest.Values)
             {
+                ThreatContactSnapshot contact = owned.Contact;
                 bool merged = false;
                 for (int k = 0; k < clusterCells.Count; k++)
                 {
@@ -341,6 +503,7 @@ namespace ColonistAwareness
                         continue;
                     clusterCounts[k]++;
                     if (!contact.DirectlyAcquired) clusterRelayed[k] = true;
+                    clusterEvidence[k].Add(owned);
                     merged = true;
                     break;
                 }
@@ -349,6 +512,8 @@ namespace ColonistAwareness
                     clusterCells.Add(contact.Cell);
                     clusterCounts.Add(1);
                     clusterRelayed.Add(!contact.DirectlyAcquired);
+                    clusterEvidence.Add(new List<OwnedThreatContact>
+                        { owned });
                 }
             }
 
@@ -365,7 +530,11 @@ namespace ColonistAwareness
                 if (AxisCovered(colonists, threat, homeCentroid)) continue;
                 objectiveCooldown[-clusterKey] = now;
 
-                Pawn guard = BestSupporter(null, -1, threat);
+                ThreatContactSnapshot guardFact;
+                Pawn sourceOwner;
+                Pawn guard = BestInformedSupporter(clusterEvidence[k],
+                    threat, "support.flank_guard", out guardFact,
+                    out sourceOwner);
                 if (guard == null)
                 {
                     CATrace.Log("flank guard UNAVAILABLE - "
@@ -384,7 +553,13 @@ namespace ColonistAwareness
                     "flank guard - " + clusterCounts[k]
                     + (clusterRelayed[k] ? " relayed" : " direct")
                     + " contact(s) approaching an uncovered axis",
-                    anchorHint, moteText: "guard the flank");
+                    anchorHint,
+                    behaviorKey: "support.flank_guard",
+                    authorityOrigin: CAAuthorityOrigin.PlayerDelegated,
+                    authorityIdentity: "delegated regional defense",
+                    moteText: "guard the flank",
+                    knowledgeFact: guardFact,
+                    knowledgeOwner: sourceOwner?.LabelShort);
                 active++;
             }
         }
@@ -511,14 +686,31 @@ namespace ColonistAwareness
                 var contacts = know.FreshContacts(leader);
                 IntVec3 threat = IntVec3.Invalid;
                 float nearestThreat = float.MaxValue;
+                ThreatContactSnapshot leaderFact =
+                    default(ThreatContactSnapshot);
                 for (int c = 0; c < contacts.Count; c++)
                 {
                     if (!contacts[c].Cell.IsValid) continue;
                     float d = contacts[c].Cell.DistanceTo(anchor);
-                    if (d < 40f && d < nearestThreat)
-                    { nearestThreat = d; threat = contacts[c].Cell; }
+                    if (d >= 40f || !FactMeetsBehaviorContract(
+                            "support.rally_reroute", contacts[c])) continue;
+                    float ranked = d + EvidenceRankingPenalty(
+                        "support.rally_reroute", contacts[c]);
+                    if (ranked < nearestThreat)
+                    {
+                        nearestThreat = ranked;
+                        threat = contacts[c].Cell;
+                        leaderFact = contacts[c];
+                    }
                 }
                 if (!threat.IsValid) continue;
+
+                ThreatContactSnapshot stragglerFact;
+                string stragglerKnowledgeOwner;
+                if (!TryEnsureTaskingFact(know, leader, straggler,
+                        leaderFact, out stragglerFact,
+                        out stragglerKnowledgeOwner,
+                        preferredChannel: rerouteChannel)) continue;
 
                 float range;
                 string refusal;
@@ -533,8 +725,19 @@ namespace ColonistAwareness
                 if (!covered.IsValid
                     || covered.InHorDistOf(anchor, 3f)) continue;
                 rerouteCooldown[straggler.thingIDNumber] = now;
+                CAIntentContext rerouteIntent;
+                CABehaviorDecision rerouteDecision;
+                if (!TryAuthorizeTasking(straggler,
+                        "support.rally_reroute",
+                        CAAuthorityOrigin.PlayerDelegated,
+                        "squad rally responsibility", threat,
+                        out rerouteIntent, out rerouteDecision,
+                        stragglerFact, stragglerKnowledgeOwner))
+                    continue;
                 if (!CATactical.AssignAutomaticDefense(straggler, covered,
-                    threat)) continue;
+                    threat, rerouteIntent)) continue;
+                RegisterTasking(straggler, leader,
+                    "rally reroute under cover", rerouteIntent);
                 VisibleExchange(leader, straggler,
                     "reroute - assemble under cover against the contact");
                 CATrace.Pawn(straggler, "rally REROUTED by "
@@ -543,7 +746,7 @@ namespace ColonistAwareness
                     + " against contact at " + threat
                     + " (was " + anchor + ")",
                     destination: covered, contact: threat,
-                    anchor: straggler.Position);
+                    anchor: straggler.Position, intent: rerouteIntent);
             }
         }
 
@@ -554,11 +757,17 @@ namespace ColonistAwareness
             {
                 var tasking = taskings[i];
                 Pawn p = PawnById(tasking.PawnId);
-                bool stillOurs = p != null && CATactical.IsAutomaticDefense(p);
+                bool medical = tasking.BehaviorKey
+                    == "welfare.medic_dispatch";
+                bool stillOurs = p != null && (medical
+                    ? p.CurJob != null && !p.CurJob.playerForced
+                    : CATactical.IsAutomaticDefense(p));
                 if (p == null || !stillOurs
-                    || now - tasking.IssuedTick > TaskingLifetimeTicks)
+                    || now > (tasking.ExpiryTick > 0
+                        ? tasking.ExpiryTick
+                        : tasking.IssuedTick + TaskingLifetimeTicks))
                 {
-                    if (p != null && stillOurs)
+                    if (p != null && stillOurs && !medical)
                     {
                         CATactical.ReleaseAutomaticDefense(p);
                         CATrace.Pawn(p, "squad support RELEASED - "
@@ -589,6 +798,8 @@ namespace ColonistAwareness
 
                 var contacts = know.FreshContacts(rescuer);
                 IntVec3 threatCell = IntVec3.Invalid;
+                ThreatContactSnapshot rescuerFact =
+                    default(ThreatContactSnapshot);
                 int contested = 0;
                 for (int c = 0; c < contacts.Count; c++)
                 {
@@ -599,13 +810,21 @@ namespace ColonistAwareness
                     if (!threatCell.IsValid
                         || contacts[c].Cell.DistanceTo(casualty.Position)
                             < threatCell.DistanceTo(casualty.Position))
+                    {
                         threatCell = contacts[c].Cell;
+                        rescuerFact = contacts[c];
+                    }
                 }
                 if (contested == 0 || !threatCell.IsValid) continue;
                 rescueEscortCooldown[rescuer.thingIDNumber] = now;
 
                 int squad = SquadComponent.SquadOf(rescuer);
-                Pawn escort = BestSupporter(rescuer, squad, threatCell);
+                ThreatContactSnapshot escortFact;
+                string escortKnowledgeOwner;
+                Pawn escort = BestSupporterForFact(rescuer, squad,
+                    threatCell, "support.rescue_escort", rescuer,
+                    rescuerFact, out escortFact,
+                    out escortKnowledgeOwner);
                 if (escort == null)
                 {
                     CATrace.Pawn(rescuer,
@@ -618,7 +837,12 @@ namespace ColonistAwareness
                 IssueTasking(escort, threatCell, rescuer,
                     "support-by-fire for " + rescuer.LabelShort
                     + "'s rescue of " + casualty.LabelShort,
-                    moteText: "cover the rescue");
+                    behaviorKey: "support.rescue_escort",
+                    authorityOrigin: CAAuthorityOrigin.PeerRequest,
+                    authorityIdentity: "active rescue support request",
+                    moteText: "cover the rescue",
+                    knowledgeFact: escortFact,
+                    knowledgeOwner: escortKnowledgeOwner);
             }
         }
 
@@ -635,7 +859,8 @@ namespace ColonistAwareness
             for (int i = 0; i < colonists.Count; i++)
             {
                 Pawn fighter = colonists[i];
-                if (AutonomyComponent.LevelOf(fighter) < 3) continue;
+                if (!CABehaviorGate.StableProfileAllows(fighter,
+                        "support.objective_defense")) continue;
                 int lastTick;
                 if (objectiveCooldown.TryGetValue(fighter.thingIDNumber,
                         out lastTick)
@@ -647,7 +872,10 @@ namespace ColonistAwareness
                 var contacts = know.FreshContacts(fighter);
                 IntVec3 threatCell = IntVec3.Invalid;
                 IntVec3 objectiveCell = IntVec3.Invalid;
-                for (int c = 0; c < contacts.Count && !threatCell.IsValid; c++)
+                ThreatContactSnapshot objectiveFact =
+                    default(ThreatContactSnapshot);
+                float bestObjectiveEvidence = float.MaxValue;
+                for (int c = 0; c < contacts.Count; c++)
                 {
                     if (!contacts[c].Cell.IsValid) continue;
                     IntVec3 near = primary
@@ -657,14 +885,26 @@ namespace ColonistAwareness
                         near = overlay.NearestCell(CAOverlayKind.Objective,
                             contacts[c].Cell, 30f);
                     if (!near.IsValid) continue;
+                    if (!FactMeetsBehaviorContract(
+                            "support.objective_defense", contacts[c])) continue;
+                    float ranked = EvidenceRankingPenalty(
+                        "support.objective_defense", contacts[c]);
+                    if (ranked >= bestObjectiveEvidence) continue;
+                    bestObjectiveEvidence = ranked;
                     threatCell = contacts[c].Cell;
                     objectiveCell = near;
+                    objectiveFact = contacts[c];
                 }
                 if (!threatCell.IsValid) continue;
                 objectiveCooldown[fighter.thingIDNumber] = now;
                 IssueTasking(fighter, threatCell, null,
                     "defending the painted objective at " + objectiveCell,
-                    objectiveCell);
+                    objectiveCell,
+                    behaviorKey: "support.objective_defense",
+                    authorityOrigin: CAAuthorityOrigin.PlayerDelegated,
+                    authorityIdentity: "delegated objective defense",
+                    knowledgeFact: objectiveFact,
+                    knowledgeOwner: fighter.LabelShort);
             }
         }
 
@@ -691,9 +931,14 @@ namespace ColonistAwareness
                     fighter.thingIDNumber);
                 // Contact copies are not free; only the pawns this pass can
                 // affect pay for one.
-                if (!selfAssigned && AutonomyComponent.LevelOf(fighter) < 3)
+                if (!selfAssigned && !CABehaviorGate.StableProfileAllows(
+                        fighter, "support.defensive_line"))
                     continue;
-                bool aware = know.FreshContacts(fighter).Count > 0;
+                List<ThreatContactSnapshot> fighterContacts =
+                    know.FreshContacts(fighter);
+                ThreatContactSnapshot lineFact;
+                bool aware = TryBestHeldFact(fighter,
+                    "support.defensive_line", fighterContacts, out lineFact);
                 if (aware) lastThreatTick[fighter.thingIDNumber] = now;
 
                 if (selfAssigned)
@@ -728,9 +973,7 @@ namespace ColonistAwareness
                 {
                     // Interpreter positions, oriented by this fighter's own
                     // threat picture: cover on the friendly side, fire across.
-                    var contacts = know.FreshContacts(fighter);
-                    IntVec3 hint = contacts.Count > 0 && contacts[0].Cell.IsValid
-                        ? contacts[0].Cell : IntVec3.Invalid;
+                    IntVec3 hint = lineFact.Cell;
                     var solutions = CALineInterpreter.Solve(map,
                         CAOverlayKind.DefensiveLine, slotCount, hint);
                     slots = new List<IntVec3>(solutions.Count);
@@ -740,11 +983,20 @@ namespace ColonistAwareness
                 }
                 IntVec3 slot = NearestOpenSlot(slots, holdCells, fighter);
                 if (!slot.IsValid) continue;
-                var context = CACombatIntent.Autonomous(fighter,
-                    CAIntentController.Hold);
+                CAIntentContext context;
+                CABehaviorDecision lineDecision;
+                if (!TryAuthorizeTasking(fighter,
+                        "support.defensive_line",
+                        CAAuthorityOrigin.PlayerDelegated,
+                        "delegated defensive line", slot,
+                        out context, out lineDecision, lineFact,
+                        fighter.LabelShort))
+                    continue;
                 if (hold.OrderHold(fighter, slot, context))
                 {
                     selfAssignedLine[fighter.thingIDNumber] = now;
+                    RegisterTasking(fighter, null,
+                        "defensive-line assignment", context);
                     CATrace.Pawn(fighter,
                         "self-assigned to the defensive line",
                         destination: slot, anchor: fighter.Position,
@@ -795,8 +1047,17 @@ namespace ColonistAwareness
             return best;
         }
 
-        private Pawn BestSupporter(Pawn supported, int squad, IntVec3 threatCell)
+        private Pawn BestSupporterForFact(Pawn supported, int squad,
+            IntVec3 threatCell, string behaviorKey, Pawn reporter,
+            ThreatContactSnapshot sourceFact,
+            out ThreatContactSnapshot selectedFact,
+            out string knowledgeOwner)
         {
+            selectedFact = default(ThreatContactSnapshot);
+            knowledgeOwner = null;
+            KnowledgeMapComponent knowledge = KnowledgeMapComponent.For(map);
+            if (knowledge == null || reporter == null
+                || sourceFact.State != ThreatContactState.Active) return null;
             Pawn best = null;
             float bestScore = float.MaxValue;
             var colonists = map.mapPawns.FreeColonistsSpawned;
@@ -806,40 +1067,140 @@ namespace ColonistAwareness
                 {
                     Pawn candidate = colonists[i];
                     if (candidate == supported) continue;
+                    if (!CABehaviorGate.StableProfileAllows(candidate,
+                            behaviorKey)) continue;
                     bool sameSquad = SquadComponent.SquadOf(candidate) == squad;
                     // First pass: squadmates. Second pass: any Autonomous
                     // fighter - the colony does not watch a rescue die over
                     // an org-chart boundary.
                     if (pass == 0 && !sameSquad) continue;
-                    if (pass == 1 && (sameSquad
-                        || AutonomyComponent.LevelOf(candidate) < 3)) continue;
+                    if (pass == 1 && sameSquad) continue;
                     string refusal;
                     float range;
                     if (!FreeForSupport(candidate, out range, out refusal))
                         continue;
-                    // A named supported pawn must be reachable; an axis guard
-                    // acts on the shared threat picture their own knowledge
-                    // already carries.
                     if (supported != null
                         && !CommsAware(candidate, supported)) continue;
-                    float d = candidate.Position.DistanceTo(threatCell);
-                    if (d >= bestScore) continue;
+                    ThreatContactSnapshot candidateFact;
+                    bool alreadyHeld = knowledge.TryGetFreshContact(candidate,
+                        sourceFact.HostileId, out candidateFact);
+                    if (!alreadyHeld)
+                    {
+                        CommunicationChannel channel;
+                        if (!TryContactRelayChannel(reporter, candidate,
+                                sourceFact, out channel)) continue;
+                        candidateFact = RelayedSnapshot(sourceFact, reporter,
+                            channel);
+                    }
+                    if (!FactMeetsBehaviorContract(behaviorKey,
+                            candidateFact)) continue;
+                    float score = candidate.Position.DistanceTo(threatCell)
+                        + EvidenceRankingPenalty(behaviorKey, candidateFact);
+                    if (score >= bestScore) continue;
                     best = candidate;
-                    bestScore = d;
+                    bestScore = score;
                 }
+            }
+            if (best == null || !TryEnsureTaskingFact(knowledge, reporter,
+                    best, sourceFact, out selectedFact, out knowledgeOwner))
+                return null;
+            return best;
+        }
+
+        private Pawn BestInformedSupporter(
+            List<OwnedThreatContact> evidence, IntVec3 threatCell,
+            string behaviorKey, out ThreatContactSnapshot selectedFact,
+            out Pawn sourceOwner)
+        {
+            selectedFact = default(ThreatContactSnapshot);
+            sourceOwner = null;
+            if (evidence == null || evidence.Count == 0) return null;
+            KnowledgeMapComponent knowledge = KnowledgeMapComponent.For(map);
+            if (knowledge == null) return null;
+            Pawn best = null;
+            float bestScore = float.MaxValue;
+            List<Pawn> colonists = map.mapPawns.FreeColonistsSpawned;
+            for (int i = 0; i < colonists.Count; i++)
+            {
+                Pawn candidate = colonists[i];
+                if (!CABehaviorGate.StableProfileAllows(candidate,
+                        behaviorKey)) continue;
+                string refusal;
+                float range;
+                if (!FreeForSupport(candidate, out range, out refusal))
+                    continue;
+                ThreatContactSnapshot candidateFact =
+                    default(ThreatContactSnapshot);
+                Pawn candidateSource = null;
+                bool informed = false;
+                float candidateEvidencePenalty = float.MaxValue;
+                for (int e = 0; e < evidence.Count; e++)
+                {
+                    ThreatContactSnapshot held;
+                    if (!knowledge.TryGetFreshContact(candidate,
+                        evidence[e].Contact.HostileId, out held)) continue;
+                    if (!held.Evidence.IsDirect
+                        && held.Evidence.DeliveryChannel
+                            == CommunicationChannel.None) continue;
+                    if (!FactMeetsBehaviorContract(behaviorKey, held))
+                        continue;
+                    float heldPenalty = EvidenceRankingPenalty(behaviorKey,
+                        held);
+                    if (!informed || heldPenalty < candidateEvidencePenalty
+                        || Mathf.Abs(heldPenalty - candidateEvidencePenalty)
+                            <= 0.0001f
+                        && held.SourceTick > candidateFact.SourceTick)
+                    {
+                        informed = true;
+                        candidateFact = held;
+                        candidateSource = evidence[e].Owner;
+                        candidateEvidencePenalty = heldPenalty;
+                    }
+                }
+                if (!informed) continue;
+                float score = candidate.Position.DistanceTo(threatCell)
+                    + candidateEvidencePenalty;
+                if (score >= bestScore) continue;
+                best = candidate;
+                bestScore = score;
+                selectedFact = candidateFact;
+                sourceOwner = candidateSource;
             }
             return best;
         }
 
         private void IssueTasking(Pawn supporter, IntVec3 watchCell,
             Pawn supported, string reason, IntVec3 anchorHint = default,
-            string moteText = null)
+            string behaviorKey = "support.reported_contact_reorganization",
+            CAAuthorityOrigin authorityOrigin =
+                CAAuthorityOrigin.PlayerDelegated,
+            string authorityIdentity = "delegated squad support",
+            string moteText = null,
+            ThreatContactSnapshot? knowledgeFact = null,
+            string knowledgeOwner = null,
+            SupportKnowledgeEvidence? explicitEvidence = null)
         {
             float range;
             string refusal;
             if (!FreeForSupport(supporter, out range, out refusal))
             {
                 CATrace.Pawn(supporter, "squad support REFUSED - " + refusal,
+                    contact: watchCell, anchor: supporter.Position);
+                return;
+            }
+            SupportKnowledgeEvidence evidence = explicitEvidence
+                ?? (knowledgeFact.HasValue
+                    ? EvidenceFromContact(supporter, knowledgeFact.Value,
+                        knowledgeOwner)
+                    : SupportKnowledgeEvidence.Missing);
+            CAIntentContext intent;
+            CABehaviorDecision decision;
+            if (!TryAuthorizeTasking(supporter, behaviorKey,
+                    authorityOrigin, authorityIdentity, watchCell,
+                    out intent, out decision, evidence))
+            {
+                CATrace.Pawn(supporter, "squad support BLOCKED - "
+                    + decision.PrimaryReason + " [" + behaviorKey + "]",
                     contact: watchCell, anchor: supporter.Position);
                 return;
             }
@@ -854,25 +1215,250 @@ namespace ColonistAwareness
                 return;
             }
             if (!CATactical.AssignAutomaticDefense(supporter, coverCell,
-                watchCell))
+                watchCell, intent))
             {
                 CATrace.Pawn(supporter,
                     "squad support REFUSED - committed elsewhere",
                     contact: watchCell, anchor: supporter.Position);
                 return;
             }
-            taskings.Add(new SupportTasking
-            {
-                PawnId = supporter.thingIDNumber,
-                IssuedTick = Find.TickManager.TicksGame,
-                Reason = reason,
-                SupportedId = supported != null ? supported.thingIDNumber : -1
-            });
+            RegisterTasking(supporter, supported, reason, intent);
             if (moteText != null)
                 VisibleExchange(supported, supporter, moteText);
             CATrace.Pawn(supporter, "squad support TASKED - " + reason,
                 destination: coverCell, contact: watchCell,
-                anchor: supporter.Position);
+                anchor: supporter.Position, intent: intent);
+        }
+
+        private bool TryAuthorizeTasking(Pawn actor, string behaviorKey,
+            CAAuthorityOrigin authorityOrigin, string authorityIdentity,
+            IntVec3 target, out CAIntentContext intent,
+            out CABehaviorDecision decision,
+            ThreatContactSnapshot? knowledgeFact = null,
+            string knowledgeOwner = null)
+        {
+            SupportKnowledgeEvidence evidence = knowledgeFact.HasValue
+                ? EvidenceFromContact(actor, knowledgeFact.Value,
+                    knowledgeOwner)
+                : SupportKnowledgeEvidence.Missing;
+            return TryAuthorizeTasking(actor, behaviorKey, authorityOrigin,
+                authorityIdentity, target, out intent, out decision, evidence);
+        }
+
+        private bool TryAuthorizeTasking(Pawn actor, string behaviorKey,
+            CAAuthorityOrigin authorityOrigin, string authorityIdentity,
+            IntVec3 target, out CAIntentContext intent,
+            out CABehaviorDecision decision,
+            SupportKnowledgeEvidence evidence)
+        {
+            bool playerOwnedWork = HasPlayerOwnedWork(actor);
+            CABehaviorContext context = CABehaviorContext.ForPawn(actor,
+                authorityOrigin, authoritySatisfied:
+                    !string.IsNullOrWhiteSpace(authorityIdentity),
+                knowledgeSatisfied: target.IsValid && evidence.Satisfied,
+                knowledgeFresh: target.IsValid && evidence.Fresh,
+                liveValidated: evidence.LiveValidated,
+                knowledgeRelayed: evidence.Relayed,
+                knowledgeAgeTicks: evidence.AgeTicks,
+                knowledgeConfidence: evidence.Confidence,
+                knowledgeUncertainty: evidence.Uncertainty,
+                capabilitySatisfied: actor != null && !actor.Downed,
+                currentIntentCompatible: !playerOwnedWork,
+                directPlayerOwnership: playerOwnedWork,
+                authorityBasis: authorityIdentity,
+                knowledgeBasis: evidence.Basis,
+                owner: "squad support");
+            decision = CABehaviorGate.Evaluate(behaviorKey, context);
+            intent = default(CAIntentContext);
+            if (!decision.Allowed) return false;
+            intent = CACombatIntent.Authorized(actor,
+                CAIntentController.RaidDefense, behaviorKey,
+                authorityOrigin, authorityIdentity, "squad support",
+                target.ToString());
+            return true;
+        }
+
+        private SupportKnowledgeEvidence EvidenceFromContact(Pawn actor,
+            ThreatContactSnapshot fact, string knowledgeOwner)
+        {
+            int now = Find.TickManager?.TicksGame ?? 0;
+            int age = Math.Max(0, now - fact.SourceTick);
+            bool active = actor != null && actor.Map == map
+                && fact.HostileId >= 0 && fact.Cell.IsValid
+                && fact.Cell.InBounds(map)
+                && fact.State == ThreatContactState.Active
+                && now >= fact.SourceTick;
+            Pawn hostile = PawnById(fact.HostileId);
+            bool live = active && hostile != null
+                && KnowledgeMapComponent.CanCurrentlySeeHostile(actor,
+                    hostile);
+            string delivery = fact.Evidence.IsDirect ? "direct"
+                : "relayed via " + fact.Evidence.DeliveryChannel;
+            return new SupportKnowledgeEvidence(active, active,
+                !fact.Evidence.IsDirect, live, age,
+                fact.Evidence.Confidence, fact.Evidence.Uncertainty,
+                delivery + " contact held by "
+                    + (actor?.LabelShort ?? "unknown actor")
+                    + "; source owner "
+                    + (knowledgeOwner ?? "unknown") + "; age " + age
+                    + " ticks; confidence "
+                    + fact.Evidence.Confidence.ToString("F2")
+                    + "; uncertainty "
+                    + fact.Evidence.Uncertainty.ToString("F2"), fact);
+        }
+
+        private bool TryDeliveredRequestEvidence(Pawn reporter, Pawn actor,
+            string request, out SupportKnowledgeEvidence evidence)
+        {
+            evidence = SupportKnowledgeEvidence.Missing;
+            if (reporter == null || actor == null || reporter.Map != map
+                || actor.Map != map || reporter.Dead || actor.Dead) return false;
+            CommunicationChannel channel = CommunicationChannel.None;
+            bool direct = reporter == actor;
+            if (!direct && !CommsModule.TryGetKnowledgeChannel(reporter,
+                    actor, 11.9f, out channel)) return false;
+            evidence = new SupportKnowledgeEvidence(true, true, !direct,
+                liveValidated: reporter.Spawned && actor.Spawned,
+                ageTicks: 0, confidence: 1f, uncertainty: 0f,
+                basis: request + " delivered "
+                    + (direct ? "directly" : "via " + channel)
+                    + " by " + reporter.LabelShort);
+            return true;
+        }
+
+        private bool TryEnsureTaskingFact(KnowledgeMapComponent knowledge,
+            Pawn reporter, Pawn actor, ThreatContactSnapshot sourceFact,
+            out ThreatContactSnapshot actorFact, out string knowledgeOwner,
+            CommunicationChannel? preferredChannel = null)
+        {
+            actorFact = default(ThreatContactSnapshot);
+            knowledgeOwner = null;
+            if (knowledge == null || actor == null || actor.Map != map)
+                return false;
+            if (knowledge.TryGetFreshContact(actor, sourceFact.HostileId,
+                    out actorFact))
+            {
+                knowledgeOwner = actor.LabelShort + " (already held)";
+                return true;
+            }
+            if (reporter == null || reporter.Map != map) return false;
+            ThreatContactSnapshot reporterFact;
+            if (!knowledge.TryGetFreshContact(reporter,
+                    sourceFact.HostileId, out reporterFact)) return false;
+            CommunicationChannel channel;
+            if (preferredChannel.HasValue
+                && preferredChannel.Value != CommunicationChannel.None)
+                channel = preferredChannel.Value;
+            else if (!TryContactRelayChannel(reporter, actor, reporterFact,
+                    out channel)) return false;
+            ContactEvidence delivered = reporterFact.Evidence.RelayedThrough(
+                channel, reporter.thingIDNumber);
+            knowledge.NoteEvidence(actor, reporterFact.HostileId,
+                reporterFact.Cell, reporterFact.SourceTick, delivered,
+                "a squad tasking contact", reporterFact.WeaponCategory);
+            if (!knowledge.TryGetFreshContact(actor, reporterFact.HostileId,
+                    out actorFact)) return false;
+            knowledgeOwner = reporter.LabelShort;
+            return true;
+        }
+
+        private bool TryContactRelayChannel(Pawn reporter, Pawn actor,
+            ThreatContactSnapshot fact, out CommunicationChannel channel)
+        {
+            channel = CommunicationChannel.None;
+            if (reporter == null || actor == null || reporter.Map != map
+                || actor.Map != map) return false;
+            if (reporter == actor) return true;
+            return fact.Evidence.IsDirect
+                ? CommsModule.TryGetStrategicChannel(reporter, actor,
+                    11.9f, out channel)
+                : CommsModule.TryGetKnowledgeChannel(reporter, actor,
+                    11.9f, out channel);
+        }
+
+        private static ThreatContactSnapshot RelayedSnapshot(
+            ThreatContactSnapshot source, Pawn reporter,
+            CommunicationChannel channel)
+        {
+            ContactEvidence delivered = source.Evidence.RelayedThrough(channel,
+                reporter?.thingIDNumber ?? -1);
+            return new ThreatContactSnapshot(source.HostileId, source.Cell,
+                source.SourceTick, Find.TickManager?.TicksGame ?? 0,
+                source.WeaponCategory, delivered, source.State,
+                source.StateTick);
+        }
+
+        private static bool FactMeetsBehaviorContract(string behaviorKey,
+            ThreatContactSnapshot fact)
+        {
+            CABehaviorDefinition definition = CABehaviorCatalog.Get(behaviorKey);
+            if (definition == null || fact.HostileId < 0 || !fact.Cell.IsValid
+                || fact.State != ThreatContactState.Active) return false;
+            int now = Find.TickManager?.TicksGame ?? 0;
+            int age = now - fact.SourceTick;
+            if (age < 0 || definition.MaximumKnowledgeAgeTicks > 0
+                && age > definition.MaximumKnowledgeAgeTicks) return false;
+            return fact.Evidence.Confidence
+                >= definition.MinimumKnowledgeConfidence;
+        }
+
+        private static float EvidenceRankingPenalty(string behaviorKey,
+            ThreatContactSnapshot fact)
+        {
+            CABehaviorDefinition definition = CABehaviorCatalog.Get(behaviorKey);
+            int now = Find.TickManager?.TicksGame ?? 0;
+            int age = Math.Max(0, now - fact.SourceTick);
+            float penalty = (1f - fact.Evidence.Confidence) * 12f
+                + Mathf.Min(4f, age / 600f);
+            if (definition?.UncertaintyAffectsRanking == true)
+                penalty += fact.Evidence.Uncertainty * 6f;
+            return penalty;
+        }
+
+        private static bool TryBestHeldFact(Pawn actor, string behaviorKey,
+            List<ThreatContactSnapshot> contacts,
+            out ThreatContactSnapshot selected)
+        {
+            selected = default(ThreatContactSnapshot);
+            if (actor == null || contacts == null) return false;
+            bool found = false;
+            float bestPenalty = float.MaxValue;
+            for (int i = 0; i < contacts.Count; i++)
+            {
+                ThreatContactSnapshot fact = contacts[i];
+                if (!FactMeetsBehaviorContract(behaviorKey, fact)) continue;
+                float penalty = EvidenceRankingPenalty(behaviorKey, fact);
+                if (found && penalty >= bestPenalty) continue;
+                found = true;
+                bestPenalty = penalty;
+                selected = fact;
+            }
+            return found;
+        }
+
+        private void RegisterTasking(Pawn actor, Pawn supported,
+            string reason, CAIntentContext intent)
+        {
+            if (actor == null) return;
+            for (int i = taskings.Count - 1; i >= 0; i--)
+                if (taskings[i].PawnId == actor.thingIDNumber)
+                    taskings.RemoveAt(i);
+            int now = Find.TickManager.TicksGame;
+            taskings.Add(new SupportTasking
+            {
+                PawnId = actor.thingIDNumber,
+                IssuedTick = now,
+                ExpiryTick = now + TaskingLifetimeTicks,
+                Reason = reason,
+                SupportedId = supported != null
+                    ? supported.thingIDNumber : -1,
+                BehaviorKey = intent.BehaviorKey,
+                EpisodeId = intent.EpisodeId,
+                AuthorityOrigin = (int)intent.AuthorityOrigin,
+                AuthorityIdentity = intent.AuthorityIdentity,
+                OwnershipScope = intent.OwnershipScope,
+                TerminationCondition = intent.TerminationCondition
+            });
         }
 
         private IntVec3 FindFiringPosition(Pawn supporter, IntVec3 watchCell,
@@ -911,17 +1497,16 @@ namespace ColonistAwareness
             if (p.DevelopmentalStage != DevelopmentalStage.Adult
                 || p.WorkTagIsDisabled(WorkTags.Violent))
             { refusal = "not a combatant"; return false; }
-            if (AutonomyComponent.LevelOf(p) < 2)
-            { refusal = "autonomy below Proactive"; return false; }
             if (SquadComponent.CombatLiability(p))
             { refusal = "combat liability"; return false; }
             var verb = p.equipment?.PrimaryEq?.PrimaryVerb;
             if (verb == null || verb.verbProps.IsMeleeAttack)
             { refusal = "no ranged weapon"; return false; }
             range = verb.verbProps.range;
+            if (HasPlayerOwnedWork(p))
+            { refusal = "owned by direct player work"; return false; }
             Job current = p.CurJob;
-            if (current != null && (current.playerForced
-                || current.def == CA_Defs.CombatRecovery
+            if (current != null && (current.def == CA_Defs.CombatRecovery
                 || current.def == CA_Defs.EmergencySelfTend
                 || current.def == CA_Defs.AssessCasualty
                 || current.def == CA_Defs.CheckWelfare
@@ -950,28 +1535,34 @@ namespace ColonistAwareness
                 11.9f, out channel);
         }
 
-        private bool CasualtyZoneContested(Pawn casualty,
-            out IntVec3 threatCell, out int threatId)
+        private bool CasualtyZoneContested(Pawn casualty, Pawn observer,
+            out IntVec3 threatCell, out int threatId,
+            out ThreatContactSnapshot selectedFact, out Pawn factOwner)
         {
             threatCell = IntVec3.Invalid;
             threatId = -1;
+            selectedFact = default(ThreatContactSnapshot);
+            factOwner = null;
             var know = KnowledgeMapComponent.For(map);
-            if (know == null || casualty == null) return false;
+            if (know == null || casualty == null || observer == null
+                || observer.Map != map) return false;
             float best = float.MaxValue;
-            var colonists = map.mapPawns.FreeColonistsSpawned;
-            for (int i = 0; i < colonists.Count; i++)
+            List<ThreatContactSnapshot> contacts = know.FreshContacts(observer);
+            for (int c = 0; c < contacts.Count; c++)
             {
-                var contacts = know.FreshContacts(colonists[i]);
-                for (int c = 0; c < contacts.Count; c++)
+                if (!contacts[c].Cell.IsValid) continue;
+                float d = contacts[c].Cell.DistanceTo(casualty.Position);
+                if (d > 26f || !FactMeetsBehaviorContract(
+                        "support.rescue_escort", contacts[c])) continue;
+                float score = d + EvidenceRankingPenalty(
+                    "support.rescue_escort", contacts[c]);
+                if (score < best)
                 {
-                    if (!contacts[c].Cell.IsValid) continue;
-                    float d = contacts[c].Cell.DistanceTo(casualty.Position);
-                    if (d <= 26f && d < best)
-                    {
-                        best = d;
-                        threatCell = contacts[c].Cell;
-                        threatId = contacts[c].HostileId;
-                    }
+                    best = score;
+                    threatCell = contacts[c].Cell;
+                    threatId = contacts[c].HostileId;
+                    selectedFact = contacts[c];
+                    factOwner = observer;
                 }
             }
             return threatId != -1;
@@ -1001,39 +1592,42 @@ namespace ColonistAwareness
             return false;
         }
 
-        private bool ColonyBattleActive()
+        private bool ColonyBattleActive(Pawn observer)
         {
             var know = KnowledgeMapComponent.For(map);
-            if (know == null) return false;
-            var colonists = map.mapPawns.FreeColonistsSpawned;
-            for (int i = 0; i < colonists.Count; i++)
-                if (know.FreshContacts(colonists[i]).Count > 0) return true;
-            return false;
+            return know != null && observer != null && observer.Map == map
+                && know.FreshContacts(observer).Count > 0;
         }
 
-        private bool ContactNearPath(IntVec3 from, IntVec3 to, float radius)
+        private bool ContactNearPath(Pawn observer, IntVec3 from, IntVec3 to,
+            float radius)
         {
             var know = KnowledgeMapComponent.For(map);
-            if (know == null) return false;
-            var colonists = map.mapPawns.FreeColonistsSpawned;
-            for (int i = 0; i < colonists.Count; i++)
+            if (know == null || observer == null || observer.Map != map)
+                return false;
+            List<ThreatContactSnapshot> contacts = know.FreshContacts(observer);
+            for (int c = 0; c < contacts.Count; c++)
             {
-                var contacts = know.FreshContacts(colonists[i]);
-                for (int c = 0; c < contacts.Count; c++)
-                {
-                    if (!contacts[c].Cell.IsValid) continue;
-                    if (DistanceToSegment(contacts[c].Cell, from, to)
-                        <= radius) return true;
-                }
+                if (!contacts[c].Cell.IsValid) continue;
+                if (DistanceToSegment(contacts[c].Cell, from, to)
+                    <= radius) return true;
             }
             return false;
         }
 
+        private static bool HasPlayerOwnedWork(Pawn pawn)
+        {
+            if (pawn?.jobs == null) return false;
+            if (pawn.CurJob?.playerForced == true) return true;
+            return pawn.jobs.jobQueue != null
+                && pawn.jobs.jobQueue.AnyPlayerForced;
+        }
+
         private Pawn PawnById(int id)
         {
-            var colonists = map.mapPawns.FreeColonistsSpawned;
-            for (int i = 0; i < colonists.Count; i++)
-                if (colonists[i].thingIDNumber == id) return colonists[i];
+            IReadOnlyList<Pawn> pawns = map.mapPawns.AllPawnsSpawned;
+            for (int i = 0; i < pawns.Count; i++)
+                if (pawns[i].thingIDNumber == id) return pawns[i];
             return null;
         }
     }

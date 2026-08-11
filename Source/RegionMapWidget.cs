@@ -669,10 +669,18 @@ namespace ColonistAwareness
                 return;
             }
 
-            Rect strip = new Rect(inner.x, inner.yMax - 22f, inner.width,
-                22f);
+            CARegionalCandidateFacts facts =
+                CARegionalProjectionPreview.FactsFor(plan);
+            string contextText = ContextStripText(plan, facts);
+            GameFont priorFont = Text.Font;
+            Text.Font = GameFont.Tiny;
+            float stripHeight = Mathf.Clamp(Text.CalcHeight(contextText,
+                inner.width), 22f, 44f);
+            Text.Font = priorFont;
+            Rect strip = new Rect(inner.x, inner.yMax - stripHeight,
+                inner.width, stripHeight);
             Rect area = new Rect(inner.x, inner.y, inner.width,
-                inner.height - 26f);
+                inner.height - stripHeight - 4f);
             DrawLayerButtons(ref area);
 
             // The map in its true proportions. A stitched region is rarely
@@ -714,8 +722,6 @@ namespace ColonistAwareness
             Widgets.DrawBox(map, 2);
             GUI.color = Color.white;
 
-            CARegionalCandidateFacts facts =
-                CARegionalProjectionPreview.FactsFor(plan);
             DrawWaterLinks(map, kernel, facts);
             DrawRoads(map, kernel, facts);
             DrawNeighbors(map, kernel, facts);
@@ -729,7 +735,7 @@ namespace ColonistAwareness
             // dense region, and "whatever GUI saw first" is not an order
             // anyone can predict from looking at the screen.
             HandleClicks(map, kernel, plan, facts, changed);
-            DrawContextStrip(strip, plan, facts);
+            DrawContextStrip(strip, contextText);
         }
 
         private static void DrawLayerButtons(ref Rect area)
@@ -1458,11 +1464,19 @@ namespace ColonistAwareness
 
         // ---- the strip under the map ---------------------------------------
 
-        private static void DrawContextStrip(Rect strip, CARegionalPlan plan,
-            CARegionalCandidateFacts facts)
+        private static void DrawContextStrip(Rect strip, string text)
         {
             Text.Font = GameFont.Tiny;
             GUI.color = new Color(0.78f, 0.81f, 0.85f);
+            Widgets.Label(strip, text);
+            TooltipHandler.TipRegion(strip, text);
+            GUI.color = Color.white;
+            Text.Font = GameFont.Small;
+        }
+
+        private static string ContextStripText(CARegionalPlan plan,
+            CARegionalCandidateFacts facts)
+        {
             string text;
             if (awaitingSlot >= 0)
                 text = "Choose the broad area this settlement belongs to.";
@@ -1501,9 +1515,7 @@ namespace ColonistAwareness
                 }
                 text = string.Join(" - ", parts.ToArray());
             }
-            Widgets.Label(strip, text);
-            GUI.color = Color.white;
-            Text.Font = GameFont.Small;
+            return text;
         }
 
     }

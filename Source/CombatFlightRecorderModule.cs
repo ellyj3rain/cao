@@ -2820,11 +2820,10 @@ namespace ColonistAwareness
             Map map)
         {
             var result = new Dictionary<string, object>();
-            int autonomy = AutonomyComponent.LevelOf(pawn);
-            result["autonomyLevel"] = autonomy;
-            result["autonomyName"] = autonomy >= 0
-                && autonomy < AutonomyComponent.LevelNames.Length
-                    ? AutonomyComponent.LevelNames[autonomy] : null;
+            CAInitiativeTier initiativeTier = AutonomyComponent.TierOf(pawn);
+            result["initiativeTier"] = (int)initiativeTier;
+            result["initiativeName"] =
+                CAInitiativePresentation.Label(initiativeTier);
             result["squad"] = SquadComponent.SquadOf(pawn);
             result["withdrawalPlan"] = map
                 .GetComponent<WithdrawalMapComponent>()?.InPlan(pawn) == true;

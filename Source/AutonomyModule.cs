@@ -1,15 +1,23 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using HarmonyLib;
 using RimWorld;
+using UnityEngine;
 using Verse;
 
 namespace ColonistAwareness
 {
-    // Module 5: the master dial. Every colonist carries an autonomy level; every awareness
-    // behavior consults it. 0 Directed, 1 Standard, 2 Proactive, 3 Autonomous.
+    // Pawn autonomy owns one typed initiative tier. The schema marker separates the
+    // legacy four-value save representation from the current three-value ladder.
     public class AutonomyComponent : GameComponent
     {
-        private Dictionary<int, int> levels = new Dictionary<int, int>();
+        internal const int CurrentInitiativeSchema = 1;
+        private Dictionary<int, CAInitiativeTier> tiers =
+            new Dictionary<int, CAInitiativeTier>();
+        private Dictionary<int, int> legacyLevels;
+        private int initiativeSchema = CurrentInitiativeSchema;
         public static AutonomyComponent Instance;
 
         public AutonomyComponent(Game game) { Instance = this; }
@@ -17,36 +25,91 @@ namespace ColonistAwareness
         public override void ExposeData()
         {
             base.ExposeData();
-            Scribe_Collections.Look(ref levels, "CA_autonomyLevels", LookMode.Value, LookMode.Value);
-            if (levels == null) levels = new Dictionary<int, int>();
+            Scribe_Values.Look(ref initiativeSchema, "CA_initiativeSchema", 0);
+            if (Scribe.mode == LoadSaveMode.Saving
+                || initiativeSchema >= CurrentInitiativeSchema)
+            {
+                Scribe_Collections.Look(ref tiers, "CA_initiativeTiers",
+                    LookMode.Value, LookMode.Value);
+            }
+            else
+            {
+                Scribe_Collections.Look(ref legacyLevels, "CA_autonomyLevels",
+                    LookMode.Value, LookMode.Value);
+            }
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
+                if (initiativeSchema < CurrentInitiativeSchema)
+                {
+                    tiers = new Dictionary<int, CAInitiativeTier>();
+                    if (legacyLevels != null)
+                    {
+                        foreach (KeyValuePair<int, int> pair in legacyLevels)
+                            tiers[pair.Key] = MigrateLegacyLevel(pair.Value);
+                    }
+                    legacyLevels = null;
+                    initiativeSchema = CurrentInitiativeSchema;
+                    CATrace.Log("initiative schema migrated: Directed and Standard -> Standard; Proactive and Autonomous retained");
+                }
+                NormalizeStoredTiers();
+            }
+            if (tiers == null)
+                tiers = new Dictionary<int, CAInitiativeTier>();
             Instance = this;
         }
 
-        public static int LevelOf(Pawn p)
+        public static CAInitiativeTier TierOf(Pawn p)
         {
-            int def = AwarenessMod.Settings != null ? AwarenessMod.Settings.defaultAutonomy : 1;
+            CAInitiativeTier fallback = AwarenessMod.Settings != null
+                ? AwarenessMod.Settings.defaultInitiative
+                : CAInitiativeTier.Standard;
             var inst = Instance;
-            if (p == null || inst == null) return def;
-            int v;
-            if (inst.levels.TryGetValue(p.thingIDNumber, out v)) return v;
-            return def;
+            if (p == null || inst == null) return fallback;
+            CAInitiativeTier tier;
+            if (inst.tiers.TryGetValue(p.thingIDNumber, out tier))
+                return Normalize(tier);
+            return Normalize(fallback);
         }
 
-        public static void SetLevel(Pawn p, int v)
+        public static bool AtLeast(Pawn pawn, CAInitiativeTier minimum)
         {
-            if (p == null || Instance == null) return;
-            Instance.levels[p.thingIDNumber] = v;
-            OperationalAccessComponent.NotifyAutonomyChanged(p);
+            return TierOf(pawn) >= minimum;
         }
 
-        public static readonly string[] LevelNames = { "Directed", "Standard", "Proactive", "Autonomous" };
-        public static readonly string[] LevelDescs =
+        public static void SetTier(Pawn pawn, CAInitiativeTier tier)
         {
-            "Directed: you control everything. Only the survival floor runs on its own - eat smart, life safety, criticality. No tactical behavior self-initiates. Your explicit orders are absolute and persistent.",
-            "Standard: the survival floor plus normal game behavior - works, rests, and reacts like a vanilla colonist. Explicit orders still commit fully.",
-            "Proactive: broader initiative with buffers before risky action; rescues downed outsiders and responds to known danger. With Operational access enabled, the colony keeps ordinary visible non-quest items allowed, while a threat-aware pawn may arm from suitable supplies and put on protection when danger is not close. With Home planning enabled, an eligible colonist may plan missing sleeping and eating essentials inside claimed shelter. A native stockpile whose own initiative ceiling also permits it may receive capacity furniture after stack pressure reaches 80%. Explicit orders and later forbids commit firmly; canceling an automatic blueprint pauses that kind for one day, while deconstructing a completed automatic furnishing vetoes it until its owning planning authority is renewed.",
-            "Autonomous: full self-direction - takes positions and self-directs during raids on its own judgment, skill, and leadership. With Operational access enabled, the colony keeps ordinary visible non-quest items allowed, plus the Proactive threat-equipment behavior. With Home planning enabled, an eligible colonist may add modest seating, light, and usable recreation after essentials are covered. A native stockpile whose own initiative ceiling also permits it may receive capacity furniture after stack pressure reaches 50%. Explicit orders and later forbids remain authoritative; canceling an automatic blueprint pauses that kind for one day, while deconstructing a completed automatic furnishing vetoes it until its owning planning authority is renewed."
-        };
+            if (pawn == null || Instance == null) return;
+            tier = Normalize(tier);
+            if (TierOf(pawn) == tier
+                && Instance.tiers.ContainsKey(pawn.thingIDNumber)) return;
+            Instance.tiers[pawn.thingIDNumber] = tier;
+            CABehaviorRevisions.AutonomyChanged(pawn);
+            OperationalAccessComponent.NotifyAutonomyChanged(pawn);
+        }
+
+        public static CAInitiativeTier MigrateLegacyLevel(int legacy)
+        {
+            if (legacy >= 3) return CAInitiativeTier.Autonomous;
+            if (legacy >= 2) return CAInitiativeTier.Proactive;
+            return CAInitiativeTier.Standard;
+        }
+
+        public static CAInitiativeTier Normalize(CAInitiativeTier tier)
+        {
+            if (tier < CAInitiativeTier.Standard)
+                return CAInitiativeTier.Standard;
+            if (tier > CAInitiativeTier.Autonomous)
+                return CAInitiativeTier.Autonomous;
+            return tier;
+        }
+
+        private void NormalizeStoredTiers()
+        {
+            if (tiers == null) return;
+            var keys = tiers.Keys.ToList();
+            for (int i = 0; i < keys.Count; i++)
+                tiers[keys[i]] = Normalize(tiers[keys[i]]);
+        }
     }
 
     // The one context menu for a colonist's awareness setup - shared by the colonist-bar
@@ -57,12 +120,17 @@ namespace ColonistAwareness
         {
             if (colonist == null) return;
             var opts = new List<FloatMenuOption>();
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < CAInitiativePresentation.ActiveTiers.Length; i++)
             {
-                int lvl = i;
-                string label = (AutonomyComponent.LevelOf(colonist) == lvl ? "* " : "") + "Autonomy: " + AutonomyComponent.LevelNames[lvl];
-                opts.Add(new FloatMenuOption(label, delegate { AutonomyComponent.SetLevel(colonist, lvl); }));
+                CAInitiativeTier tier = CAInitiativePresentation.ActiveTiers[i];
+                string label = (AutonomyComponent.TierOf(colonist) == tier
+                    ? "* " : "") + "Initiative: "
+                    + CAInitiativePresentation.Label(tier);
+                opts.Add(new FloatMenuOption(label,
+                    delegate { AutonomyComponent.SetTier(colonist, tier); }));
             }
+            opts.Add(new FloatMenuOption("Behavior scope...",
+                delegate { Find.WindowStack.Add(new CABehaviorScopeWindow(colonist)); }));
             int cur = SquadComponent.SquadOf(colonist);
             for (int i = 1; i <= 4; i++)
             {
@@ -99,12 +167,18 @@ namespace ColonistAwareness
         {
             get
             {
-                for (int i = 0; i < 4; i++)
+                for (int i = 0;
+                    i < CAInitiativePresentation.ActiveTiers.Length; i++)
                 {
-                    int lvl = i;
-                    string label = (AutonomyComponent.LevelOf(pawn) == lvl ? "* " : "") + AutonomyComponent.LevelNames[lvl];
-                    yield return new FloatMenuOption(label, delegate { AutonomyComponent.SetLevel(pawn, lvl); });
+                    CAInitiativeTier tier =
+                        CAInitiativePresentation.ActiveTiers[i];
+                    string label = (AutonomyComponent.TierOf(pawn) == tier
+                        ? "* " : "") + CAInitiativePresentation.Label(tier);
+                    yield return new FloatMenuOption(label,
+                        delegate { AutonomyComponent.SetTier(pawn, tier); });
                 }
+                yield return new FloatMenuOption("Behavior scope...",
+                    delegate { Find.WindowStack.Add(new CABehaviorScopeWindow(pawn)); });
             }
         }
     }
@@ -117,15 +191,134 @@ namespace ColonistAwareness
             foreach (var g in gizmos) yield return g;
             var p = __instance;
             if (p == null || !p.IsColonistPlayerControlled) yield break;
-            int lvl = AutonomyComponent.LevelOf(p);
+            CAInitiativeTier tier = AutonomyComponent.TierOf(p);
             yield return new Command_Autonomy
             {
                 pawn = p,
-                defaultLabel = "Autonomy: " + AutonomyComponent.LevelNames[lvl],
-                defaultDesc = AutonomyComponent.LevelDescs[lvl] + "\n\nLeft-click cycles. Right-click picks directly.",
+                defaultLabel = "Initiative: "
+                    + CAInitiativePresentation.Label(tier),
+                defaultDesc = CAInitiativePresentation.Description(tier, p)
+                    + "\n\nLeft-click cycles. Right-click chooses a tier or opens Behavior scope.",
                 icon = TexCommand.HoldOpen,
-                action = delegate { AutonomyComponent.SetLevel(p, (AutonomyComponent.LevelOf(p) + 1) % 4); }
+                action = delegate
+                {
+                    int next = ((int)AutonomyComponent.TierOf(p) + 1)
+                        % CAInitiativePresentation.ActiveTiers.Length;
+                    AutonomyComponent.SetTier(p,
+                        CAInitiativePresentation.ActiveTiers[next]);
+                }
             };
+        }
+    }
+
+    internal sealed class CABehaviorScopeWindow : Window
+    {
+        private readonly Pawn pawn;
+        private Vector2 scroll;
+
+        public override Vector2 InitialSize => new Vector2(760f, 720f);
+
+        public CABehaviorScopeWindow(Pawn pawn)
+        {
+            this.pawn = pawn;
+            doCloseX = true;
+            absorbInputAroundWindow = true;
+            closeOnClickedOutside = true;
+        }
+
+        public override void DoWindowContents(Rect inRect)
+        {
+            if (pawn == null)
+            {
+                Widgets.Label(inRect, "No pawn selected.");
+                return;
+            }
+            Text.Font = GameFont.Medium;
+            Widgets.Label(new Rect(inRect.x, inRect.y, inRect.width, 34f),
+                pawn.LabelShort + " - behavior scope");
+            Text.Font = GameFont.Small;
+            Rect outer = new Rect(inRect.x, inRect.y + 42f, inRect.width,
+                inRect.height - 42f);
+            string text = BuildText();
+            float height = Text.CalcHeight(text, outer.width - 20f) + 12f;
+            Rect view = new Rect(0f, 0f, outer.width - 16f,
+                Mathf.Max(outer.height, height));
+            Widgets.BeginScrollView(outer, ref scroll, view);
+            Widgets.Label(new Rect(0f, 0f, view.width, height), text);
+            Widgets.EndScrollView();
+        }
+
+        private string BuildText()
+        {
+            CAEffectiveBehaviorProfile profile =
+                CAEffectiveBehaviorProfileCache.Of(pawn);
+            CAInitiativeTier tier = AutonomyComponent.TierOf(pawn);
+            var text = new StringBuilder();
+            text.Append("Initiative: ").Append(
+                CAInitiativePresentation.Label(tier)).Append("\n")
+                .Append(CAInitiativePresentation.Description(tier,
+                    pawn)).Append("\n\n")
+                .Append("Squad position: ").Append(profile?.Role ?? "none")
+                .Append("\n");
+
+            CAIntentContext intent;
+            if (CATactical.TryGetContext(pawn, out intent) && intent.IsValid)
+            {
+                text.Append("Active intent: ").Append(intent.BehaviorKey)
+                    .Append("; episode ").Append(intent.EpisodeId)
+                    .Append("; origin ").Append(intent.Origin)
+                    .Append("; controller ").Append(intent.Controller)
+                    .Append("\n");
+            }
+            else if (CABehaviorIntentMapComponent.For(pawn.Map)?.TryGet(
+                pawn, pawn.CurJob, out intent) == true && intent.IsValid)
+            {
+                text.Append("Active intent: ").Append(intent.BehaviorKey)
+                    .Append("; episode ").Append(intent.EpisodeId)
+                    .Append("; authority ")
+                    .Append(intent.AuthorityIdentity ?? "unspecified")
+                    .Append("\n");
+            }
+            else text.Append("Active intent: none\n");
+
+            CASpatialInitiativeMapComponent spatial =
+                CASpatialInitiativeMapComponent.For(pawn.Map);
+            text.Append("Spatial authority: ")
+                .Append(spatial != null
+                    ? "map programs retain their own initiative ceilings"
+                    : "none on this map")
+                .Append("\n\nEnabled domains\n");
+
+            CABehaviorDefinition[] definitions = profile?.Definitions()
+                .Where(d => d.ExposeInUi).ToArray()
+                ?? Array.Empty<CABehaviorDefinition>();
+            foreach (IGrouping<CABehaviorDomain, CABehaviorDefinition> group
+                in definitions.GroupBy(d => d.Domain))
+            {
+                text.Append("- ")
+                    .Append(CAInitiativePresentation.DomainLabel(group.Key))
+                    .Append(": ")
+                    .Append(string.Join(", ", group.Select(d => d.Label)
+                        .ToArray()))
+                    .Append("\n");
+            }
+
+            CABehaviorDefinition blocked = CABehaviorCatalog.All.FirstOrDefault(
+                d => d.ExposeInUi && d.AppliesTo(CAActorContext.PlayerPawn)
+                    && CABehaviorSettings.IsEnabled(d,
+                        AwarenessMod.Settings)
+                    && !d.InitiativeIndependent
+                    && d.MinimumInitiative > tier);
+            if (blocked != null)
+            {
+                text.Append("\nTier boundary example\n")
+                    .Append(blocked.Label).Append(": ")
+                    .Append("initiative tier is too low. Requires ")
+                    .Append(CAInitiativePresentation.Label(
+                        blocked.MinimumInitiative)).Append(".\n");
+            }
+            text.Append("\nPermissions, initiative, authority, knowledge, capability, and material feasibility are evaluated independently.");
+            return text.ToString();
         }
     }
 

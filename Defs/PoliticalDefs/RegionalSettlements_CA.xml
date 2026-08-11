@@ -65,7 +65,6 @@
     <defName>CA_Scale_LargeUrbanRegion</defName>
     <label>large urban region</label>
     <description>A large settlement with specialized facilities and nearby dependent settlements.</description>
-    <minSettlements>4</minSettlements>
   </ColonistAwareness.CASettlementScaleDef>
 
   <ColonistAwareness.CASettlementAuthorityDef>
