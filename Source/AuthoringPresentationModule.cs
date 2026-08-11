@@ -79,7 +79,7 @@ namespace ColonistAwareness
 
     public sealed class CAUserCultureProfile : IExposable
     {
-        public const int CurrentSchemaVersion = 1;
+        public const int CurrentSchemaVersion = 2;
         public int schemaVersion = CurrentSchemaVersion;
         public string key;
         public string displayName;
@@ -93,7 +93,10 @@ namespace ColonistAwareness
             Scribe_Deep.Look(ref values, "values");
             if (values == null) values = new CACulture();
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
+                CACultureModel.Migrate(values);
                 schemaVersion = CurrentSchemaVersion;
+            }
         }
 
         internal CAUserCultureProfile CopyAs(string newKey,
@@ -166,7 +169,7 @@ namespace ColonistAwareness
             foreach (CAUserCultureProfile item in settings.cultureProfiles)
             {
                 if (item.key.NullOrEmpty()) item.key = NewKey(CulturePrefix);
-                if (item.displayName.NullOrEmpty()) item.displayName = "Saved culture";
+                if (item.displayName.NullOrEmpty()) item.displayName = "Saved background";
                 if (item.values == null) item.values = new CACulture();
                 CACultureModel.Migrate(item.values);
             }

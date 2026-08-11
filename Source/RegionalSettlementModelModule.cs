@@ -242,6 +242,23 @@ namespace ColonistAwareness
             plan.settlementRealizationSourceHash = 0;
         }
 
+        // B4 had the same contextual infrastructure derivation but no named
+        // profile field. Preserve its realized facts, adopt the neutral
+        // profile, and renew only the causal hash that gained this one input.
+        internal static void MigrateB4ContextualDevelopment(
+            CARegionalPlan plan)
+        {
+            if (plan == null) return;
+            foreach (CARegionalSettlementPlan settlement in plan.settlements
+                ?? new List<CARegionalSettlementPlan>())
+                if (settlement != null)
+                    settlement.developmentProfile =
+                        CASettlementDevelopmentProfile.Contextual;
+            if (plan.settlementRealizationComplete)
+                plan.settlementRealizationSourceHash =
+                    RealizationSourceHash(plan);
+        }
+
         // A completion flag is not evidence by itself. Confirmed plans are
         // read-only inputs, so malformed or partial realized state is rejected
         // instead of being silently regenerated during map generation.
@@ -283,6 +300,8 @@ namespace ColonistAwareness
             foreach (CARegionalSettlementPlan settlement in settlements)
             {
                 if (settlement.residentPopulation < 18
+                    || !Enum.IsDefined(typeof(CASettlementDevelopmentProfile),
+                        settlement.developmentProfile)
                     || settlement.landCapacity < 1
                     || settlement.landCapacity > 3
                     || settlement.realizedAccessInfrastructure < 0
@@ -331,6 +350,16 @@ namespace ColonistAwareness
                         + " has economic capacity, scale, or urban support "
                         + "inconsistent with its "
                         + "saved facts";
+                    return false;
+                }
+                int expectedFacilities = CASettlementStartingState
+                    .ResolveFacilityMask(plan, settlement,
+                        plan.FactionPlan(settlement.factionKey)
+                            ?.ResolvedFactionDef);
+                if (settlement.startingFacilityMask != expectedFacilities)
+                {
+                    failure = "settlement " + settlement.slot
+                        + " has facilities inconsistent with its saved causes";
                     return false;
                 }
             }
@@ -700,9 +729,21 @@ namespace ColonistAwareness
                     faction.key,
                     (int)faction.source, faction.existingFactionLoadId);
                 hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
+                    faction.institutionalStateIncomplete ? 1 : 0);
+                hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
                     CAWorldTendencyCausalKernel.StableStringHash(
                         faction.customFactionDefName
                         ?? "none"));
+                foreach (CAAxisEntry axis in (faction.politicalBeliefs
+                        ?.positions ?? new List<CAAxisEntry>())
+                    .Where(item => item != null)
+                    .OrderBy(item => item.axisKey))
+                    hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
+                        CAWorldTendencyCausalKernel.StableStringHash(
+                            axis.axisKey ?? "none"),
+                        CAWorldTendencyCausalKernel.StableStringHash(
+                            axis.optionKey ?? "none"),
+                        axis.source);
                 foreach (CAAxisEntry axis in (faction.factionStructure
                     ?? new List<CAAxisEntry>()).Where(item => item != null)
                     .OrderBy(item => item.axisKey))
@@ -732,6 +773,8 @@ namespace ColonistAwareness
                     settlement.serviceInfrastructure,
                     settlement.civicInfrastructure,
                     settlement.authoredForm);
+                hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
+                    (int)settlement.developmentProfile);
             }
             return hash;
         }
@@ -1052,6 +1095,8 @@ namespace ColonistAwareness
         public int slot = -1;
         public string settlementName;
         public string roleWords;
+        public string culturalExpressionSummary;
+        public byte culturalExpressionStatus;
 
         public override string Label
         {
@@ -1064,7 +1109,12 @@ namespace ColonistAwareness
             string baseString = base.GetInspectString();
             string mine = (roleWords.NullOrEmpty() ? "" : roleWords
                     .CapitalizeFirst() + " of this region.\n")
-                + "Stands inside the expanded regional map.";
+                + "Stands inside the expanded regional map."
+                + (culturalExpressionSummary.NullOrEmpty() ? "" : "\n"
+                    + CACulturalExpression.StatusWords(
+                        (CACulturalExpressionStatus)culturalExpressionStatus)
+                    + " cultural expression: "
+                    + culturalExpressionSummary);
             return baseString.NullOrEmpty() ? mine
                 : baseString + "\n" + mine;
         }
@@ -1076,6 +1126,10 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref slot, "slot", -1);
             Scribe_Values.Look(ref settlementName, "settlementName");
             Scribe_Values.Look(ref roleWords, "roleWords");
+            Scribe_Values.Look(ref culturalExpressionSummary,
+                "culturalExpressionSummary");
+            Scribe_Values.Look(ref culturalExpressionStatus,
+                "culturalExpressionStatus", (byte)0);
         }
     }
 
@@ -1127,6 +1181,10 @@ namespace ColonistAwareness
                     }
                     marker.settlementName = record.name;
                     marker.roleWords = RoleWordsFor(plan, record);
+                    marker.culturalExpressionSummary =
+                        record.culturalExpressionSummary;
+                    marker.culturalExpressionStatus =
+                        record.culturalExpressionStatus;
                     if (marker.Faction != record.faction)
                         marker.SetFaction(record.faction);
                 }

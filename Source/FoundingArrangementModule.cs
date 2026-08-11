@@ -242,7 +242,7 @@ namespace ColonistAwareness
                 .PoliticalBeliefsOf(Faction.OfPlayer);
 
             if (founding != null)
-                colony.Record("founding", "Culture: "
+                colony.Record("founding", "Cultural background: "
                     + (founding.culture?.name ?? "not recorded")
                     + ". Ideoligion: "
                     + (founding.nativeIdeoName ?? "not active")

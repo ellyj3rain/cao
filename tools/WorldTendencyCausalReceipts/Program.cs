@@ -291,8 +291,8 @@ public static class Program
             Require(setup.Contains(field), field + " is not persisted");
             Require(dialog.Contains(field), field + " has no visible control");
         }
-        Require(setup.Contains("CurrentSchemaVersion = 3"),
-            "current plan schema is not 3");
+        Require(setup.Contains("CurrentSchemaVersion = 4"),
+            "current plan schema is not 4");
         Require(setup.Contains("localFactionChance = 0.45f")
             && setup.Contains("regionalConflictChance = 0.4f"),
             "the neutral profile does not begin on the middle faction bands");
@@ -407,7 +407,7 @@ public static class Program
         Require((string)document.Root?.Element("worldIdentity")
                 == "alysaliu|1|Algorab Markab",
             "fixture world identity changed");
-        Require((string)plan.Element("schemaVersion") == "3",
+        Require((string)plan.Element("schemaVersion") == "4",
             "fixture schema is not current");
         XElement savedPolicy = plan.Element("worldPolicy");
         Require(savedPolicy != null
@@ -464,6 +464,9 @@ public static class Program
         }
         foreach (XElement settlement in settlements)
         {
+            Require(StringValue(settlement, "developmentProfile",
+                    "missing") == "Contextual",
+                "fixture settlement development profile changed");
             string[] facts =
             {
                 "residentPopulation", "landCapacity",
@@ -572,92 +575,16 @@ public static class Program
                 "fixture population shares changed for slot " + i);
 
         Require(IntValue(plan, "settlementRealizationSourceHash", 0)
-                == FixtureSourceHash(plan),
-            "fixture realization hash does not match its saved causes");
+                == CARegionalFixtureContracts.RealizationSourceHash(plan),
+            "fixture realization hash does not match its saved causes: "
+                + IntValue(plan, "settlementRealizationSourceHash", 0)
+                + "/" + CARegionalFixtureContracts.RealizationSourceHash(
+                    plan));
         string fixtureText = File.ReadAllText(mirrorPath);
         Require(!fixtureText.Contains("realizedFrontierHoldings")
             && !fixtureText.Contains("frontierSettlement"),
             "fixture retains obsolete schema fields");
-        report.AppendLine("PASS current fixture -> schema 3, causal hash, 3 factions, 4 settlements, 9 population groups, mirrored XML readback");
-    }
-
-    private static int FixtureSourceHash(XElement plan)
-    {
-        int hash = CAWorldTendencyCausalKernel.StableStringHash(
-            StringValue(plan, "candidateId", "ca"));
-        XElement policy = plan.Element("worldPolicy");
-        hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-            (int)MathF.Round(FloatValue(policy, "urbanGrowthPropensity",
-                0.45f) * 10000f));
-        hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-            (int)MathF.Round(FloatValue(policy, "frontierHoldingFrequency",
-                0.45f) * 10000f));
-        hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-            (int)MathF.Round(FloatValue(policy, "frontierHoldingSize",
-                0.50f) * 10000f));
-        XElement[] relations = plan.Element("relations")?.Elements("li")
-            .OrderBy(item => IntValue(item, "leftFactionKey", 0))
-            .ThenBy(item => IntValue(item, "rightFactionKey", 0)).ToArray()
-            ?? Array.Empty<XElement>();
-        if (relations.Any(item => !BoolValue(item, "authorRelation", true)))
-            hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                (int)MathF.Round(FloatValue(policy, "regionalConflictChance",
-                    0.4f) * 10000f));
-        foreach (XElement relation in relations)
-        {
-            hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                IntValue(relation, "leftFactionKey", 0),
-                IntValue(relation, "rightFactionKey", 0),
-                RelationValue(StringValue(relation, "relation", "Neutral")));
-            hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                BoolValue(relation, "authorRelation", true) ? 1 : 0);
-        }
-        foreach (XElement faction in plan.Element("factions")?.Elements("li")
-            .OrderBy(item => IntValue(item, "key", 0))
-            ?? Enumerable.Empty<XElement>())
-        {
-            hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                IntValue(faction, "key", 0),
-                FactionSourceValue(StringValue(faction, "source",
-                    "ExistingWorldFaction")),
-                IntValue(faction, "existingFactionLoadId", -1));
-            hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                CAWorldTendencyCausalKernel.StableStringHash(
-                    StringValue(faction, "customFactionDefName", "none")));
-            foreach (XElement axis in faction.Element("factionStructure")
-                ?.Elements("li").OrderBy(item =>
-                    StringValue(item, "axisKey", "none"))
-                ?? Enumerable.Empty<XElement>())
-                hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                    CAWorldTendencyCausalKernel.StableStringHash(
-                        StringValue(axis, "axisKey", "none")),
-                    CAWorldTendencyCausalKernel.StableStringHash(
-                        StringValue(axis, "optionKey", "none")),
-                    IntValue(axis, "source", 0));
-        }
-        foreach (XElement settlement in plan.Element("settlements")
-            ?.Elements("li").OrderBy(item => IntValue(item, "slot", -1))
-            ?? Enumerable.Empty<XElement>())
-        {
-            hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                IntValue(settlement, "slot", -1),
-                IntValue(settlement, "memberTileId", -1),
-                IntValue(settlement, "factionKey", 0));
-            hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                SettlementOriginValue(StringValue(settlement,
-                    "populationOrigin", "Unset")),
-                IntValue(settlement, "reallocatedFromTileId", -1),
-                IntValue(settlement, "operationalRoleMask", 0));
-            hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                IntValue(settlement, "startingFacilityAuthoredMask", 0),
-                IntValue(settlement, "startingFacilityValues", 0),
-                IntValue(settlement, "accessInfrastructure", -1));
-            hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                IntValue(settlement, "serviceInfrastructure", -1),
-                IntValue(settlement, "civicInfrastructure", -1),
-                IntValue(settlement, "authoredForm", -1));
-        }
-        return hash;
+        report.AppendLine("PASS current fixture -> schema 4, causal hash, relative development, 3 factions, 4 settlements, 9 population groups, mirrored XML readback");
     }
 
     private static int IntValue(XElement parent, string name, int fallback)
@@ -686,25 +613,6 @@ public static class Program
     {
         string value = (string)parent?.Element(name);
         return string.IsNullOrEmpty(value) ? fallback : value;
-    }
-
-    private static int RelationValue(string value)
-    {
-        return value == "Hostile" ? 0 : value == "Ally" ? 2
-            : int.TryParse(value, out int parsed) ? parsed : 1;
-    }
-
-    private static int FactionSourceValue(string value)
-    {
-        return value == "NewWorldFaction" ? 1
-            : int.TryParse(value, out int parsed) ? parsed : 0;
-    }
-
-    private static int SettlementOriginValue(string value)
-    {
-        return value == "ReallocatedFromWorldPool" ? 1
-            : value == "ScenarioOverride" ? 2
-            : int.TryParse(value, out int parsed) ? parsed : 0;
     }
 
     private static void Require(bool condition, string failure)

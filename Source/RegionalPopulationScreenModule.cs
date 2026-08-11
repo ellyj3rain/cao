@@ -12,7 +12,8 @@ namespace ColonistAwareness
     // region, faction, settlement, and population objects used by generation.
     // Factions own settlements, relations, knowledge, political beliefs, and
     // structure. Settlements own local population, facilities, infrastructure,
-    // and provisions. Culture and Ideoligion remain population facts.
+    // and provisions. Cultural background and Ideoligion remain population
+    // facts; cultural expression is derived from local life.
     internal sealed class Page_CAStartingRegion : Page
     {
         private enum CARegionLayoutMode
@@ -107,6 +108,10 @@ namespace ColonistAwareness
                 foreach (CARegionalFactionPlan group in plan.factions
                     .Where(item => item != null))
                     group.EnsureCultureAndPolitics(plan);
+                CARegionalSettlements.EnsureSettlementPattern(plan);
+                foreach (CARegionalSettlementPlan settlement in
+                    plan.settlements.Where(item => item != null))
+                    CASettlementComposition.EnsureDerived(plan, settlement);
                 CACompatibilityReport compatibility =
                     CARegionalContentCompatibility.Evaluate(plan);
                 Log.Message("[CA][Regional][StartingRegion] content check: "
@@ -478,7 +483,6 @@ namespace ColonistAwareness
 
         private void DrawRegionOverview(ref float y, float width)
         {
-            CARegionalSettlements.EnsureSettlementPattern(plan);
             CARegionalProjectionKernel kernel =
                 CARegionalProjectionPreview.KernelFor(plan);
             CARegionalCandidateFacts facts =
@@ -711,9 +715,6 @@ namespace ColonistAwareness
             CARegionalFactionPlan owner = plan.FactionPlan(
                 place.factionKey);
             FactionDef def = owner?.ResolvedFactionDef;
-            CARegionalSettlements.EnsureSettlementPattern(plan);
-            CASettlementStartingState.Sync(plan, place, def);
-            CASettlementComposition.EnsureDerived(plan, place);
             CARegionMapWidget.hoveredSlot = place.slot;
 
             Back(ref y, width, "All of this region");
@@ -747,6 +748,12 @@ namespace ColonistAwareness
                     + place.tradeConnectivity + "/3 · history "
                     + place.historicalDevelopment + "/3");
             }
+
+            Rule(ref y, width);
+            Title(ref y, width, "Cultural expression");
+            CACulturalExpression expression =
+                CACulturalExpressionModel.ForSettlement(plan, place);
+            Note(ref y, width, expression.Presented(inspectorExpanded));
 
             Widgets.Label(new Rect(0f, y + 3f, LabelWidth, Row), "Name");
             place.customName = Widgets.TextField(
@@ -837,6 +844,12 @@ namespace ColonistAwareness
                 + "structure, and faction knowledge. Facility choices change "
                 + "the generated starting provisions.");
             y += Row + Gap;
+
+            Readout(ref y, width, "Development profile",
+                CASettlementStartingState.ProfileWords(
+                    place.developmentProfile) + " - "
+                + CASettlementStartingState.ProfileEffect(
+                    place.developmentProfile));
 
             InfrastructureRow(ref y, width, place, "Transport access",
                 place.accessInfrastructure,
@@ -1163,7 +1176,7 @@ namespace ColonistAwareness
                 ? "Existing knowledge, ideoligion, and settlement rules "
                     + "remain in force."
                 : "The faction type supplies world integration, knowledge, "
-                    + "and settlement rules. Culture, ideoligion, political "
+                    + "and settlement rules. Cultural background, Ideoligion, political "
                     + "beliefs, and faction structure "
                     + "remain separate.");
             y += Row + Gap;
@@ -1191,11 +1204,11 @@ namespace ColonistAwareness
 
             Rule(ref y, width);
             Title(ref y, width, "Population");
-            Readout(ref y, width, "Principal culture",
-                group.culture?.name ?? "Generated culture");
+            Readout(ref y, width, "Carried background",
+                group.culture?.name ?? "Generated background");
             Rect cultureEdit = new Rect(0f, y, width, 28f);
             if (Widgets.ButtonText(cultureEdit,
-                    "Edit culture: "
+                    "Edit background: "
                     + CACultureModel.Summary(group.culture)))
                 Verse.Find.WindowStack.Add(new Dialog_CACultureEditor(
                     group.culture, group.Summary,
@@ -1225,7 +1238,7 @@ namespace ColonistAwareness
                 Verse.Find.WindowStack.Add(Dialog_CAAxisEditor.ForStructure(
                     group.factionStructure, group.politicalBeliefs,
                     (plan.candidateId ?? "ca") + ":faction:" + group.key,
-                    CARegionalSetupSession.SavePending));
+                    () => FactionSettingsChanged(group)));
             y += Row + Gap;
 
             // Authority between settlements is independent of political
@@ -1312,19 +1325,30 @@ namespace ColonistAwareness
             List<CARegionalSettlementPlan> owned = plan.settlements.Where(item =>
                 item != null && item.factionKey == group.key)
                 .OrderBy(item => item.slot).ToList();
+            IReadOnlyList<CACulturalExpression> expressions =
+                CACulturalExpressionModel.ForFaction(plan, group);
             if (owned.Count == 0)
                 Note(ref y, width, group.authored
                     ? "No settlements. This faction remains in the world."
                     : "No settlements. This generated faction is removed if "
                         + "it remains unconfirmed.");
-            foreach (CARegionalSettlementPlan place in owned)
+            for (int index = 0; index < owned.Count; index++)
+            {
+                CARegionalSettlementPlan place = owned[index];
+                CACulturalExpression expression = index < expressions.Count
+                    ? expressions[index] : null;
                 if (Entry(ref y, width,
                         CARegionalPlanUtility.SettlementName(plan, place),
                         "Settlement · "
                         + CARegionalPlanUtility.TileWords(
-                            place.memberTileId),
+                            place.memberTileId)
+                        + (expression == null ? "" : "\n"
+                            + CACulturalExpression.StatusWords(
+                                expression.Status) + ": "
+                            + expression.Summary),
                         CARegionalWorldOverlay.FactionColor(group.key)))
                     CARegionMapWidget.SelectSettlement(place.slot);
+            }
             bool room = plan.settlements.Count < MaxAuthoredSettlements;
             Rect foundRect = new Rect(0f, y, width, 28f);
             if (Widgets.ButtonText(foundRect,
@@ -2530,6 +2554,39 @@ namespace ColonistAwareness
                 + Counted(structureUnset,
                     "faction-structure field") + " · "
                 + Counted(unsetPopulations, "settlement population"));
+            if (plan.settlements.Any(item => item != null))
+            {
+                text.AppendLine();
+                text.AppendLine("Settlement development:");
+                foreach (CARegionalSettlementPlan place in plan.settlements
+                    .Where(item => item != null).OrderBy(item => item.slot))
+                {
+                    int facilities =
+                        CASettlementStartingState.ResolveFacilityMask(plan,
+                            place);
+                    int facilityOverrides = CountFacilityOverrides(
+                        place.startingFacilityAuthoredMask);
+                    text.AppendLine("  "
+                        + CARegionalPlanUtility.SettlementName(plan, place)
+                        + ": " + CASettlementStartingState.ProfileWords(
+                            place.developmentProfile) + " · transport "
+                        + CASettlementStartingState.InfrastructureWords(
+                            CASettlementStartingState.Access(plan, place))
+                        + (place.accessInfrastructure >= 0
+                            ? " (set)" : " (generated)") + ", services "
+                        + CASettlementStartingState.InfrastructureWords(
+                            CASettlementStartingState.Services(plan, place))
+                        + (place.serviceInfrastructure >= 0
+                            ? " (set)" : " (generated)") + ", public works "
+                        + CASettlementStartingState.InfrastructureWords(
+                            CASettlementStartingState.Civic(plan, place))
+                        + (place.civicInfrastructure >= 0
+                            ? " (set)" : " (generated)") + " · "
+                        + FacilityNames(facilities).ToLowerInvariant()
+                        + " · " + Counted(facilityOverrides,
+                            "facility override"));
+                }
+            }
             if (tensions.Count > 0)
             {
                 text.AppendLine();
@@ -2549,6 +2606,18 @@ namespace ColonistAwareness
                 if (blocker != null) text.AppendLine("  " + blocker);
             }
             return text.ToString().TrimEnd();
+        }
+
+        private static int CountFacilityOverrides(int mask)
+        {
+            int count = 0;
+            int remaining = mask & CASettlementStartingState.AllFacilityMask;
+            while (remaining != 0)
+            {
+                count += remaining & 1;
+                remaining >>= 1;
+            }
+            return count;
         }
 
         // Nearby world settlements are the available population sources.
@@ -2993,7 +3062,9 @@ namespace ColonistAwareness
             int mask = CASettlementStartingState.ResolveFacilityMask(plan, place,
                 plan.FactionPlan(place.factionKey)?.ResolvedFactionDef);
             string prefix = place.startingFacilityAuthoredMask == 0
-                ? "Generated: " : "Customized: ";
+                ? "Generated by " + CASettlementStartingState.ProfileWords(
+                    place.developmentProfile).ToLowerInvariant() + ": "
+                : "Generated with explicit overrides: ";
             return prefix + FacilityNames(mask);
         }
 
@@ -3019,7 +3090,10 @@ namespace ColonistAwareness
         {
             Widgets.Label(new Rect(0f, y + 3f, LabelWidth, Row), label);
             Rect button = new Rect(LabelWidth, y, width - LabelWidth, 28f);
-            string value = (authored < 0 ? "Generated: " : "Set: ")
+            string value = (authored < 0
+                    ? "Generated by " + CASettlementStartingState.ProfileWords(
+                        place.developmentProfile).ToLowerInvariant() + ": "
+                    : "Set: ")
                 + CASettlementStartingState.InfrastructureWords(resolved);
             if (Widgets.ButtonText(button, value))
                 OpenInfrastructureMenu(place, dimension);
@@ -3115,9 +3189,28 @@ namespace ColonistAwareness
             // Infrastructure and facilities are causes of settlement scale,
             // trade support, and provisions. Replace the prior realization
             // before any consumer reads the edited value.
+            plan.confirmed = false;
+            plan.operatorAuthored = true;
             CARegionalSettlements.Invalidate(plan);
             CARegionalSettlements.EnsureSettlementPattern(plan);
             CASettlementComposition.ReconcileStartingProvisions(plan, place);
+            CARegionalSetupSession.SavePending();
+        }
+
+        private void FactionSettingsChanged(CARegionalFactionPlan faction)
+        {
+            // Political beliefs and current structure can change generated
+            // facilities for this faction's settlements. Refresh the saved
+            // realization at the edit boundary, then reconcile its provisions.
+            plan.confirmed = false;
+            plan.operatorAuthored = true;
+            CARegionalSettlements.Invalidate(plan);
+            CARegionalSettlements.EnsureSettlementPattern(plan);
+            foreach (CARegionalSettlementPlan place in plan.settlements
+                .Where(item => item != null
+                    && item.factionKey == faction.key))
+                CASettlementComposition.ReconcileStartingProvisions(plan,
+                    place);
             CARegionalSetupSession.SavePending();
         }
 

@@ -106,7 +106,9 @@ internal static class Program
                 && regionEditors.Contains("Political beliefs")
                 && regionEditors.Contains("Set the group's size")
                 && regionEditors.Contains("SetFacilityOverride")
-                && regionEditors.Contains("new[] { \"Generated\", \"Include\", \"Omit\" }"),
+                && regionEditors.Contains("\"Generated: included\"")
+                && regionEditors.Contains("\"Generated: omitted\"")
+                && regionEditors.Contains("\"Include\", \"Omit\""),
                 "population or facility causes are not independently editable");
             Require(region.Contains("Rect actionArea")
                 && region.Contains("\"New faction\"")

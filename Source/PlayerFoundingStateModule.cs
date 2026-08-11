@@ -472,11 +472,9 @@ namespace ColonistAwareness
                 failure = "The founding plan is unavailable.";
                 return false;
             }
-            if (draft.culture == null || draft.culture.id.NullOrEmpty()
-                || CACultureModel.Domains.Any(domain =>
-                    draft.culture.Value(domain.Field).NullOrEmpty()))
+            if (draft.culture == null || draft.culture.id.NullOrEmpty())
             {
-                failure = "Choose or generate the founders' culture.";
+                failure = "Set the founders' cultural background.";
                 return false;
             }
             string cultureFailure = CACultureModel.CompatibilityFailure(
@@ -595,8 +593,8 @@ namespace ColonistAwareness
             return true;
         }
 
-        // Culture and political beliefs are carried by the founders and may
-        // therefore be available to map generation. This deliberately leaves
+        // Background and political beliefs are carried by the founders and
+        // may therefore be available to map generation. This deliberately leaves
         // factionStructure alone: it records realized institutions, not the
         // four narrower landing terms in the founding arrangement.
         internal static void ApplyCarriedState(CAPlayerFoundingPlan draft,

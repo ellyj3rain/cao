@@ -201,7 +201,8 @@ namespace ColonistAwareness
             if (place != null && place.realizedAccessInfrastructure >= 0)
                 return Mathf.Clamp(place.realizedAccessInfrastructure, 0, 3);
             return ResolveInfrastructure(place?.accessInfrastructure ?? -1,
-                DerivedAccess(plan, place));
+                DerivedAccess(plan, place), place?.developmentProfile
+                    ?? CASettlementDevelopmentProfile.Contextual);
         }
 
         internal static int Services(CARegionalPlan plan,
@@ -210,7 +211,8 @@ namespace ColonistAwareness
             if (place != null && place.realizedServiceInfrastructure >= 0)
                 return Mathf.Clamp(place.realizedServiceInfrastructure, 0, 3);
             return ResolveInfrastructure(place?.serviceInfrastructure ?? -1,
-                DerivedServices(plan, place));
+                DerivedServices(plan, place), place?.developmentProfile
+                    ?? CASettlementDevelopmentProfile.Contextual);
         }
 
         internal static int Civic(CARegionalPlan plan,
@@ -219,7 +221,8 @@ namespace ColonistAwareness
             if (place != null && place.realizedCivicInfrastructure >= 0)
                 return Mathf.Clamp(place.realizedCivicInfrastructure, 0, 3);
             return ResolveInfrastructure(place?.civicInfrastructure ?? -1,
-                DerivedCivic(plan, place));
+                DerivedCivic(plan, place), place?.developmentProfile
+                    ?? CASettlementDevelopmentProfile.Contextual);
         }
 
         internal static int ResolveFacilityMask(CARegionalPlan plan,
@@ -230,10 +233,9 @@ namespace ColonistAwareness
                 ownerDef = plan?.FactionPlan(place.factionKey)
                     ?.ResolvedFactionDef;
             int derived = DerivedFacilityMask(plan, place, ownerDef);
-            int authored = place.startingFacilityAuthoredMask
-                & AllFacilityMask;
-            int values = place.startingFacilityValues;
-            return (derived & ~authored) | (values & authored);
+            return CACulturalExpressionCausalKernel.ResolveFacilityMask(
+                derived, place.startingFacilityAuthoredMask,
+                place.startingFacilityValues, AllFacilityMask);
         }
 
         internal static int Sync(CARegionalPlan plan,
@@ -250,15 +252,6 @@ namespace ColonistAwareness
             if (place == null) return;
             place.startingFacilityAuthoredMask = 0;
             place.startingFacilityValues = 0;
-            Sync(plan, place);
-        }
-
-        internal static void ApplyFacilityPreset(CARegionalPlan plan,
-            CARegionalSettlementPlan place, int values)
-        {
-            if (place == null) return;
-            place.startingFacilityAuthoredMask = AllFacilityMask;
-            place.startingFacilityValues = values & AllFacilityMask;
             Sync(plan, place);
         }
 
@@ -283,10 +276,43 @@ namespace ColonistAwareness
                 : value == 2 ? "established" : "developed";
         }
 
-        private static int ResolveInfrastructure(int authored, int derived)
+        internal static string ProfileWords(
+            CASettlementDevelopmentProfile profile)
         {
-            return authored < 0 ? Mathf.Clamp(derived, 0, 3)
-                : Mathf.Clamp(authored, 0, 3);
+            switch (profile)
+            {
+                case CASettlementDevelopmentProfile.Minimal: return "Minimal";
+                case CASettlementDevelopmentProfile.Extensive: return "Extensive";
+                default: return "Contextual";
+            }
+        }
+
+        internal static string ProfileEffect(
+            CASettlementDevelopmentProfile profile)
+        {
+            switch (profile)
+            {
+                case CASettlementDevelopmentProfile.Minimal:
+                    return "Generated transport, services, and public works are one level lower where possible.";
+                case CASettlementDevelopmentProfile.Extensive:
+                    return "Generated transport, services, and public works are one level higher where possible.";
+                default:
+                    return "Generated development follows the settlement's population, land, role, links, knowledge, and history.";
+            }
+        }
+
+        private static int ResolveInfrastructure(int authored, int derived,
+            CASettlementDevelopmentProfile profile)
+        {
+            return CACulturalExpressionCausalKernel.ResolveDevelopment(
+                authored, derived, (int)profile);
+        }
+
+        internal static int ApplyDevelopmentProfile(int derived,
+            CASettlementDevelopmentProfile profile)
+        {
+            return CACulturalExpressionCausalKernel.ApplyDevelopmentProfile(
+                derived, (int)profile);
         }
 
         private static int DerivedAccess(CARegionalPlan plan,
@@ -356,7 +382,6 @@ namespace ColonistAwareness
             int civic = Civic(plan, place);
             CARegionalFactionPlan faction = plan?.FactionPlan(
                 place?.factionKey ?? -1);
-            faction?.EnsureCultureAndPolitics(plan);
             string Current(string axis)
             {
                 return CAFactionAxes.KeyOf(faction?.factionStructure, axis)

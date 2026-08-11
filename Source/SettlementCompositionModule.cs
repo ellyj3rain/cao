@@ -12,9 +12,11 @@ namespace ColonistAwareness
 {
     // A settlement population consists of population groups. Each group
     // carries faction affiliation, Ideoligion, political beliefs, population
-    // share, and starting certainty. Culture is set for the settlement
-    // population as a whole. Faction and Ideoligion use RimWorld's native pawn
-    // fields where possible; political beliefs remain durable CA state.
+    // share, and starting certainty. Carried background belongs to factions;
+    // local cultural expression is derived from the weighted population and
+    // realized settlement conditions. Faction and Ideoligion use RimWorld's
+    // native pawn fields where possible; political beliefs remain durable CA
+    // state.
     // Starting provisions are generated from population, faction structure,
     // facilities, infrastructure, and settlement role. Each generated basis
     // may be overridden independently.
@@ -396,6 +398,7 @@ namespace ColonistAwareness
                 startingFacilityAuthoredMask =
                     source.startingFacilityAuthoredMask,
                 startingFacilityValues = source.startingFacilityValues,
+                developmentProfile = source.developmentProfile,
                 accessInfrastructure = source.accessInfrastructure,
                 serviceInfrastructure = source.serviceInfrastructure,
                 civicInfrastructure = source.civicInfrastructure

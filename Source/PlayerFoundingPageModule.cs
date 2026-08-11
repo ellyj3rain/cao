@@ -43,7 +43,7 @@ namespace ColonistAwareness
                 current = current.next;
             }
 
-            // Culture, political beliefs, and the founding arrangement still
+            // Background, political beliefs, and the founding arrangement still
             // exist when the Ideology expansion is inactive.
             if (insertionAnchor != null)
             {
@@ -205,7 +205,7 @@ namespace ColonistAwareness
 
         private string FoundingOverview()
         {
-            string compact = "Culture: "
+            string compact = "Cultural background: "
                 + CAAuthoringChoices.CultureIdentity(draft?.culture)
                 + " · Ideoligion: "
                 + (CAPlayerFoundingModel.NativeIdeo?.name
@@ -265,21 +265,14 @@ namespace ColonistAwareness
 
         private void DrawCultureCard(Rect rect)
         {
-            float y = BeginCard(rect, "Cultural practices",
+            float y = BeginCard(rect, "Cultural background",
                 CultureDescription());
             DrawSummary(rect, ref y, CACultureModel.Icon(draft?.culture),
-                draft?.culture?.name ?? "Culture not set",
+                draft?.culture?.name ?? "Background not set",
                 CACultureModel.Summary(draft?.culture), CultureStateWords());
             DrawButtons(rect, ref y,
-                new CAFoundingAction("Profiles...",
+                new CAFoundingAction("Backgrounds...",
                     OpenCulturePresets),
-                new CAFoundingAction("Generate missing", delegate
-                {
-                    CACultureModel.EnsureGenerated(draft.culture,
-                        CAPlayerFoundingModel.Seed + ":culture-fill",
-                        CAPlayerFoundingModel.PlayerCultureDef());
-                    Changed();
-                }),
                 new CAFoundingAction("Edit", delegate
                 {
                     Find.WindowStack.Add(new Dialog_CACultureEditor(
@@ -392,12 +385,13 @@ namespace ColonistAwareness
         private string CultureDescription()
         {
             return CAInformationPresentation.Select(
-                "Practices and visual tradition carried by the founders.",
-                "Public gathering, hospitality, shared meals, public memory, "
-                    + "and a native visual style source.",
-                "These practices materialize settlement furnishings. "
-                    + "Ideoligion owns moral and religious precepts; political "
-                    + "beliefs own preferred social order.", localExpanded);
+                "Background and visual tradition carried by the founders.",
+                "The founders bring a named background and optional visual "
+                    + "tradition. Their local culture is still developing.",
+                "Ideoligion and political beliefs are carried separately. "
+                    + "The colony's cultural expression will develop from its "
+                    + "population, adopted order, material conditions, and history.",
+                localExpanded);
         }
 
         private static string IdeoDescription()
@@ -406,7 +400,7 @@ namespace ColonistAwareness
                 ? "Religious and moral belief. This is RimWorld's native "
                     + "Ideoligion and remains distinct from culture and "
                     + "political belief."
-                : "The Ideology expansion is inactive. Culture, political "
+                : "The Ideology expansion is inactive. Cultural background, political "
                     + "beliefs, and the founding terms remain active.";
         }
 
@@ -434,7 +428,7 @@ namespace ColonistAwareness
         private float MeasureCultureCard(float width)
         {
             return MeasureCard(width, CultureDescription(),
-                draft?.culture?.name ?? "Culture not set",
+                draft?.culture?.name ?? "Background not set",
                 CACultureModel.Summary(draft?.culture), CultureStateWords());
         }
 
@@ -626,7 +620,7 @@ namespace ColonistAwareness
             if (draft?.culture != null
                 && !draft.culture.presetName.NullOrEmpty())
                 return "Preset";
-            return "Generated";
+            return "Carried";
         }
 
         private string PoliticalStateWords()
@@ -667,9 +661,9 @@ namespace ColonistAwareness
 
         private void OpenCulturePresets()
         {
-            CACreationUI.OpenChoices("Culture profiles",
-                "Apply a built-in or saved set of practices. Values are "
-                    + "copied into this founding draft and remain editable.",
+            CACreationUI.OpenChoices("Cultural backgrounds",
+                "Choose a native visual tradition or a saved carried background. "
+                    + "Local culture develops after landing.",
                 CAAuthoringChoices.CultureProfiles(draft?.culture,
                     CAPlayerFoundingModel.Seed, Changed));
         }

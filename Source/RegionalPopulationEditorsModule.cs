@@ -543,28 +543,56 @@ namespace ColonistAwareness
                 "Starting facilities");
             Text.Font = GameFont.Small;
             GUI.color = new Color(0.74f, 0.78f, 0.82f);
-            const string introduction = "Generate facilities from realized "
-                + "settlement facts, or override individual programs. Each "
-                + "row owns one facility.";
+            const string introduction = "Set relative local development, then "
+                + "override individual facilities where needed. The profile "
+                + "adjusts generated infrastructure; it is not a facility bundle.";
             float introductionHeight = Text.CalcHeight(introduction,
                 inRect.width);
             Widgets.Label(new Rect(0f, 38f, inRect.width,
                 introductionHeight), introduction);
             GUI.color = Color.white;
             float actionY = 38f + introductionHeight + 8f;
-            if (Widgets.ButtonText(new Rect(0f, actionY, 210f, 32f),
-                    "Facility presets..."))
-                OpenPresets();
-            CACreationUI.DrawChip(new Rect(222f, actionY + 6f,
-                inRect.width - 222f, 20f),
-                settlement.startingFacilityAuthoredMask == 0
-                    ? "Generated" : "Customized",
-                settlement.startingFacilityAuthoredMask == 0
-                    ? CACreationUI.Generated : CACreationUI.Authored);
-
+            Widgets.Label(new Rect(0f, actionY + 5f, 170f, 28f),
+                "Development profile");
+            int profile = (int)settlement.developmentProfile + 1;
+            CACreationUI.DrawSegment(new Rect(174f, actionY,
+                    inRect.width - 174f, 34f),
+                new[] { "Minimal", "Contextual", "Extensive" }, profile,
+                index =>
+                {
+                    settlement.developmentProfile =
+                        (CASettlementDevelopmentProfile)(index - 1);
+                    changed?.Invoke();
+                });
+            TooltipHandler.TipRegion(new Rect(174f, actionY,
+                    inRect.width - 174f, 34f),
+                CASettlementStartingState.ProfileEffect(
+                    settlement.developmentProfile));
+            actionY += 42f;
+            if (Widgets.ButtonText(new Rect(0f, actionY, 270f, 32f),
+                    "Return all facilities to generated"))
+            {
+                CASettlementStartingState.UseDerivedFacilities(plan, settlement);
+                changed?.Invoke();
+            }
             int resolved = CASettlementStartingState.ResolveFacilityMask(plan,
                 settlement, plan.FactionPlan(settlement.factionKey)
                     ?.ResolvedFactionDef);
+            int includedCount = CAStartingFacilityCatalog.All.Count(item =>
+                (resolved & item.Bit) != 0);
+            int overrideCount = CAStartingFacilityCatalog.All.Count(item =>
+                (settlement.startingFacilityAuthoredMask & item.Bit) != 0);
+            CACreationUI.DrawChip(new Rect(282f, actionY + 6f,
+                inRect.width - 282f, 20f),
+                CASettlementStartingState.ProfileWords(
+                    settlement.developmentProfile) + ": " + includedCount
+                    + " included, " + (CAStartingFacilityCatalog.All.Length
+                        - includedCount) + " omitted"
+                    + (overrideCount == 0 ? "" : " · " + overrideCount
+                        + " local override" + (overrideCount == 1 ? "" : "s")),
+                overrideCount == 0
+                    ? CACreationUI.Generated : CACreationUI.Authored);
+
             float bodyTop = actionY + 42f;
             Rect outRect = new Rect(0f, bodyTop, inRect.width,
                 Mathf.Max(80f, inRect.height - bodyTop - 55f));
@@ -585,14 +613,28 @@ namespace ColonistAwareness
                 Widgets.Label(new Rect(44f, y, 176f, 22f), program.Label);
                 Text.Font = GameFont.Tiny;
                 GUI.color = ColoredText.SubtleGrayColor;
-                Widgets.Label(new Rect(44f, y + 22f, 270f, 28f),
-                    program.Description);
+                float controlsX = Mathf.Max(280f, view.width * 0.51f);
+                float descriptionWidth = Mathf.Max(160f, controlsX - 52f);
+                string description = program.Description + (authored
+                        ? " Explicit local choice."
+                        : " Generated after the "
+                            + CASettlementStartingState.ProfileWords(
+                                settlement.developmentProfile).ToLowerInvariant()
+                            + " profile; currently "
+                            + (included ? "included." : "omitted."));
+                float descriptionHeight = Text.CalcHeight(description,
+                    descriptionWidth);
+                Widgets.Label(new Rect(44f, y + 22f, descriptionWidth,
+                    descriptionHeight), description);
                 GUI.color = Color.white;
                 Text.Font = GameFont.Small;
+                float rowHeight = Mathf.Max(66f, 28f + descriptionHeight);
                 int selected = !authored ? 0 : included ? 1 : 2;
-                CACreationUI.DrawSegment(new Rect(320f, y + 5f,
-                    view.width - 320f, 34f),
-                    new[] { "Generated", "Include", "Omit" }, selected,
+                CACreationUI.DrawSegment(new Rect(controlsX,
+                    y + (rowHeight - 34f) * 0.5f,
+                    view.width - controlsX, 34f),
+                    new[] { included ? "Generated: included"
+                            : "Generated: omitted", "Include", "Omit" }, selected,
                     index =>
                     {
                         CASettlementStartingState.SetFacilityOverride(plan,
@@ -600,82 +642,11 @@ namespace ColonistAwareness
                             index == 0 ? (bool?)null : index == 1);
                         changed?.Invoke();
                     });
-                y += 58f;
+                y += rowHeight;
             }
             viewHeight = y + 8f;
             Widgets.EndScrollView();
         }
 
-        private void OpenPresets()
-        {
-            var options = new List<CACreationChoice>
-            {
-                Preset("generated", "Generated facilities",
-                    "Derive every facility from population, settlement role, "
-                        + "infrastructure, faction structure, and knowledge.",
-                    0, true, "Rimshare/WorldMapIcons/cog"),
-                Preset("sparse", "Sparse settlement",
-                    "A hearth, stores, and a dining hall.",
-                    CAStartingFacilities.MaskHearth
-                        | CAStartingFacilities.MaskStores
-                        | CAStartingFacilities.MaskDining,
-                    false, "Rimshare/WorldMapIcons/flowers"),
-                Preset("established", "Established settlement",
-                    "Adds local care and production to the sparse program.",
-                    CAStartingFacilities.MaskHearth
-                        | CAStartingFacilities.MaskStores
-                        | CAStartingFacilities.MaskInfirmary
-                        | CAStartingFacilities.MaskWorkshop
-                        | CAStartingFacilities.MaskDining,
-                    false, "Rimshare/WorldMapIcons/factory"),
-                Preset("all", "All starting facilities",
-                    "Include every available facility program.",
-                    CASettlementStartingState.AllFacilityMask,
-                    false, "Rimshare/WorldMapIcons/castle")
-            };
-            CACreationUI.OpenChoices("Facility presets",
-                "Apply a complete facility program. Individual rows remain "
-                + "editable afterward.", options);
-        }
-
-        private CACreationChoice Preset(string key, string name,
-            string summary, int mask, bool generated, string icon)
-        {
-            return new CACreationChoice
-            {
-                Key = key,
-                Name = name,
-                Summary = summary,
-                Traits = generated ? "Uses realized settlement facts"
-                    : FacilityNames(mask),
-                Badge = "Facility preset",
-                Icon = CACreationUI.Icon(icon),
-                Accent = generated
-                    ? CACreationUI.Generated : CACreationUI.Preset,
-                Selected = generated
-                    ? settlement.startingFacilityAuthoredMask == 0
-                    : settlement.startingFacilityAuthoredMask
-                        == CASettlementStartingState.AllFacilityMask
-                        && settlement.startingFacilityMask == mask,
-                ConfirmLabel = "Use this facility program",
-                Choose = delegate
-                {
-                    if (generated)
-                        CASettlementStartingState.UseDerivedFacilities(plan,
-                            settlement);
-                    else
-                        CASettlementStartingState.ApplyFacilityPreset(plan,
-                            settlement, mask);
-                    changed?.Invoke();
-                }
-            };
-        }
-
-        private static string FacilityNames(int mask)
-        {
-            return string.Join(" · ", CAStartingFacilityCatalog.All
-                .Where(item => (mask & item.Bit) != 0)
-                .Select(item => item.Label).ToArray());
-        }
     }
 }

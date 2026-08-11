@@ -206,9 +206,6 @@ namespace ColonistAwareness
                         org.Record("research", "a study bench raised - "
                             + "this settlement develops its own arts");
                 }
-                CACultureMaterialization.Furnish(record, Next,
-                    (rm, def, stuff) => Place(org, record, map, rm,
-                        def, stuff, reportFailure: true));
                 Log.Message("[CA] " + (record.name ?? "settlement")
                     + " starting facilities: mask " + mask + ", tier "
                     + tier + ", " + record.seededAssets.Count + " assets");
@@ -239,8 +236,8 @@ namespace ColonistAwareness
                     stuff = GenStuff.DefaultStuffFor(def);
                 Thing t = ThingMaker.MakeThing(def, stuff);
                 ThingStyleDef culturalStyle =
-                    CACultureMaterialization.StyleFor(
-                        CACultureMaterialization.CultureFor(record), def);
+                    CAVisualTraditionStyle.StyleFor(
+                        CAVisualTraditionStyle.CultureFor(record), def);
                 if (culturalStyle != null)
                     t.SetStyleDef(culturalStyle);
                 GenSpawn.Spawn(t, cell, map, Rot4.South);

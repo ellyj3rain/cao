@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -54,29 +55,37 @@ namespace ColonistAwareness
             CACulture culture, string seed, Action changed)
         {
             var choices = new List<CACreationChoice>();
-            foreach (CACulturePreset preset in CACultureModel.Presets)
+            foreach (CultureDef def in DefDatabase<CultureDef>
+                .AllDefsListForReading.OrderBy(item => item.label))
             {
-                CACulturePreset local = preset;
+                CultureDef local = def;
                 choices.Add(new CACreationChoice
                 {
-                    Key = local.Key,
-                    Name = local.Label,
-                    Summary = local.Description,
-                    CompactSummary = CultureTraits(local, 2),
-                    Traits = CultureTraits(local, 4),
-                    Details = CultureDetails(local),
-                    Group = "Built-in",
-                    Badge = "Built-in profile",
-                    Icon = ContentFinder<Texture2D>.Get(local.IconPath),
+                    Key = "visual:" + local.defName,
+                    Name = local.LabelCap.ToString(),
+                    Summary = local.description.NullOrEmpty()
+                        ? "A native visual tradition."
+                        : local.description,
+                    CompactSummary = "Carried background and visual tradition",
+                    Traits = "Visual source: " + local.LabelCap,
+                    Details = "Copies this native visual source into the carried "
+                        + "background. Local practices remain derived from each "
+                        + "settlement's population, institutions, and conditions.",
+                    Group = "Visual traditions",
+                    Badge = "Native style",
+                    Icon = local.Icon,
                     Accent = CACreationUI.Preset,
-                    Selected = CACultureModel.UsesPreset(culture, local),
-                    ConfirmLabel = "Apply this profile",
+                    Selected = culture?.sourceCultureDefName == local.defName
+                        && culture?.profileKey.NullOrEmpty() != false,
+                    ConfirmLabel = "Use this visual tradition",
                     Choose = delegate
                     {
-                        CACultureModel.ApplyPreset(culture, local);
-                        CACultureModel.EnsureGenerated(culture,
-                            seed + ":culture-profile:" + local.Key,
-                            CACultureModel.NativeDef(culture));
+                        if (culture == null) return;
+                        culture.Choose(CACulture.SourceCultureField,
+                            local.defName);
+                        culture.profileKey = null;
+                        if (culture.name.NullOrEmpty())
+                            culture.name = local.LabelCap + " background";
                         changed?.Invoke();
                     }
                 });
@@ -91,17 +100,17 @@ namespace ColonistAwareness
                     Key = local.key,
                     Name = local.displayName,
                     Summary = CACultureModel.Summary(local.values),
-                    CompactSummary = "Saved culture profile",
+                    CompactSummary = "Saved background profile",
                     Traits = CultureDetails(local.values),
-                    Details = "Applying this profile copies its values into "
-                        + "the current world draft. Later edits do not change "
-                        + "the saved library copy.",
-                    Group = "Saved",
+                    Details = "Applying this profile copies its name and visual "
+                        + "source into the current draft. Later edits do not "
+                        + "change the saved library copy.",
+                    Group = "Saved backgrounds",
                     Badge = "Saved profile",
                     Icon = CACultureModel.Icon(local.values),
                     Accent = CACreationUI.Authored,
                     Selected = culture?.profileKey == local.key,
-                    ConfirmLabel = "Apply saved profile",
+                    ConfirmLabel = "Apply saved background",
                     Choose = delegate
                     {
                         CAAuthoringProfileLibrary.Apply(local, culture);
@@ -114,14 +123,10 @@ namespace ColonistAwareness
 
         internal static string CultureIdentity(CACulture culture)
         {
-            if (culture == null) return "Culture not set";
-            CAUserCultureProfile saved = CAAuthoringProfileLibrary.Cultures
-                .FirstOrDefault(item => item.key == culture.profileKey);
-            return saved?.displayName
-                ?? CACultureModel.Preset(culture.presetName)?.Label
-                ?? culture.name
-                ?? "Custom culture";
+            if (culture == null) return "Background not set";
+            return culture.name ?? "Carried background";
         }
+
 
         internal static List<CACreationChoice> PoliticalProfiles(
             CAPoliticalBeliefs beliefs, string seed, Action changed)
@@ -198,52 +203,20 @@ namespace ColonistAwareness
                 ?? "Custom political beliefs";
         }
 
-        internal static string CultureTraits(CACulturePreset preset,
-            int count)
-        {
-            if (preset == null) return "No cultural practices recorded";
-            return string.Join(" · ", CACultureModel.Domains
-                .Where(domain => preset.Positions.ContainsKey(domain.Field))
-                .Take(count)
-                .Select(domain => CACultureModel.Option(domain.Field,
-                    preset.Positions[domain.Field])?.Label)
-                .Where(value => !value.NullOrEmpty()).ToArray());
-        }
-
-        internal static string CultureDetails(CACulturePreset preset)
-        {
-            if (preset == null) return "No cultural practices recorded.";
-            string visualKey;
-            string visual = preset.Positions.TryGetValue(
-                    CACulture.SourceCultureField, out visualKey)
-                ? "Visual style source: " + visualKey + "."
-                : "Visual style source: chosen separately.";
-            return visual + "\n" + string.Join("\n",
-                CACultureModel.Domains.Select(domain =>
-            {
-                string key;
-                if (!preset.Positions.TryGetValue(domain.Field, out key))
-                    return domain.Label + ": generated when applied.";
-                CACultureOptionDef option = CACultureModel.Option(
-                    domain.Field, key);
-                return domain.Label + ": " + (option?.Label ?? key) + ". "
-                    + (option?.Summary ?? "") + " "
-                    + (option?.Consumer ?? "");
-            }).ToArray());
-        }
-
         internal static string CultureDetails(CACulture culture)
         {
-            if (culture == null) return "No culture recorded.";
-            return string.Join("\n", CACultureModel.Domains.Select(domain =>
-            {
-                CACultureOptionDef option = CACultureModel.Option(
-                    domain.Field, culture.Value(domain.Field));
-                return domain.Label + ": "
-                    + (option?.Label ?? "No custom chosen") + ". "
-                    + (option?.Consumer ?? "Generated at materialization.");
-            }).ToArray());
+            if (culture == null) return "No background recorded.";
+            CultureDef native = CACultureModel.NativeDef(culture);
+            string source = native?.LabelCap.ToString()
+                ?? (culture.sourceCultureDefName.NullOrEmpty()
+                    ? "neutral fallback"
+                    : culture.sourceCultureDefName
+                        + " unavailable; neutral fallback");
+            return "Background: " + (culture.name ?? "carried background")
+                + ". Visual source: " + source
+                + ". Local cultural expression is derived at the settlement.";
         }
+
 
         internal static string PoliticalFingerprint(
             CAFactionAxes.PoliticalPreset preset)
@@ -355,7 +328,7 @@ namespace ColonistAwareness
             bool cultures = culture != null;
             Text.Font = GameFont.Medium;
             Widgets.Label(new Rect(0f, 0f, inRect.width, 34f),
-                cultures ? "Saved culture profiles"
+                cultures ? "Saved background profiles"
                     : "Saved political profiles");
             Text.Font = GameFont.Small;
             Widgets.Label(new Rect(0f, 38f, inRect.width, 42f),
@@ -396,7 +369,7 @@ namespace ColonistAwareness
                     CAAuthoringProfileLibrary.Apply(profile, culture);
                     changed?.Invoke();
                 }, () => Find.WindowStack.Add(new Dialog_CAProfileName(
-                    "Rename culture profile", profile.displayName,
+                    "Rename background profile", profile.displayName,
                     value => CAAuthoringProfileLibrary.Rename(profile, value))),
                 () => CAAuthoringProfileLibrary.Duplicate(profile),
                 () => Find.WindowStack.Add(

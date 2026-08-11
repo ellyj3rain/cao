@@ -633,6 +633,8 @@ namespace ColonistAwareness
         // was obtained. These fields preserve per-facility authorship and the
         // generated (-1) versus chosen capacity values for durable receipts.
         public int startingFacilityAuthoredMask;
+        public CASettlementDevelopmentProfile developmentProfile =
+            CASettlementDevelopmentProfile.Contextual;
         public int authoredAccessInfrastructure = -1;
         public int authoredServiceInfrastructure = -1;
         public int authoredCivicInfrastructure = -1;
@@ -653,6 +655,11 @@ namespace ColonistAwareness
         public int factionEra = -1;
         public int settlementForm = -1;
         public string generationSummary;
+        // Receipt of the deterministic cultural read at materialization. The
+        // live inspector may recompute from current saved facts as play changes.
+        public string culturalExpressionSummary;
+        public string culturalExpressionSourceSignature;
+        public byte culturalExpressionStatus;
         public List<string> seededAssets = new List<string>();
         public List<CAStartingStockRecord> startingStock =
             new List<CAStartingStockRecord>();
@@ -725,6 +732,9 @@ namespace ColonistAwareness
                 "civicInfrastructure", 0);
             Scribe_Values.Look(ref startingFacilityAuthoredMask,
                 "startingFacilityAuthoredMask", 0);
+            Scribe_Values.Look(ref developmentProfile,
+                "developmentProfile",
+                CASettlementDevelopmentProfile.Contextual);
             Scribe_Values.Look(ref authoredAccessInfrastructure,
                 "authoredAccessInfrastructure", -1);
             Scribe_Values.Look(ref authoredServiceInfrastructure,
@@ -750,6 +760,12 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref factionEra, "factionEra", -1);
             Scribe_Values.Look(ref settlementForm, "settlementForm", -1);
             Scribe_Values.Look(ref generationSummary, "generationSummary");
+            Scribe_Values.Look(ref culturalExpressionSummary,
+                "culturalExpressionSummary");
+            Scribe_Values.Look(ref culturalExpressionSourceSignature,
+                "culturalExpressionSourceSignature");
+            Scribe_Values.Look(ref culturalExpressionStatus,
+                "culturalExpressionStatus", (byte)0);
             Scribe_Collections.Look(ref seededAssets, "seededAssets",
                 LookMode.Value);
             Scribe_Collections.Look(ref startingStock, "startingStock",
@@ -1324,6 +1340,8 @@ namespace ColonistAwareness
                 civicInfrastructure = resolvedCivic,
                 startingFacilityAuthoredMask = settlement
                     ?.startingFacilityAuthoredMask ?? 0,
+                developmentProfile = settlement?.developmentProfile
+                    ?? CASettlementDevelopmentProfile.Contextual,
                 authoredAccessInfrastructure = settlement
                     ?.accessInfrastructure ?? -1,
                 authoredServiceInfrastructure = settlement
@@ -1384,6 +1402,15 @@ namespace ColonistAwareness
                             nodes = arrangement.nodes,
                             reach = arrangement.reach
                         });
+
+            CACulturalExpression culturalExpression =
+                CACulturalExpressionModel.ForSettlement(localRegion,
+                    settlement);
+            record.culturalExpressionSummary = culturalExpression.Summary;
+            record.culturalExpressionSourceSignature =
+                culturalExpression.SourceSignature;
+            record.culturalExpressionStatus =
+                (byte)culturalExpression.Status;
 
             Rand.PushState(seed);
             try
@@ -1503,6 +1530,12 @@ namespace ColonistAwareness
 
         public CARegionalSettlementMapComponent(Map map) : base(map) { }
 
+        public override void FinalizeInit()
+        {
+            base.FinalizeInit();
+            Reconcile("map-loaded");
+        }
+
         public override void MapGenerated()
         {
             Reconcile("map-generated");
@@ -1518,7 +1551,8 @@ namespace ColonistAwareness
         internal void Reconcile(string reason)
         {
             CARegionalWorldComponent world = CARegionalWorldComponent.Current;
-            if (world?.FindRegionForMap(map) == null) return;
+            CARegionalPlan region = world?.FindRegionForMap(map);
+            if (region == null) return;
             if (reason != "interval")
                 CARegionalSettlementGenerationAudit.Audit(map, reason);
             int now = Find.TickManager.TicksGame;
@@ -1526,6 +1560,7 @@ namespace ColonistAwareness
             {
                 if (record.localRect == CellRect.Empty) continue;
                 ReconcileRecord(record, map);
+                ReconcileCulturalExpression(record, map);
                 record.lastMapId = map.uniqueID;
                 record.lastReconciliationTick = now;
                 if (reason != "interval")
@@ -1537,6 +1572,7 @@ namespace ColonistAwareness
                         + record.infrastructureCount + ", cultivated plants "
                         + record.cultivatedPlantCount);
             }
+            CARegionalSettlementMarkers.Ensure(region, world.ForMap(map));
             if (reason == "map-generated")
                 CARegionalSettlementGenerationAudit.Finish(map);
         }
@@ -1575,6 +1611,19 @@ namespace ColonistAwareness
             record.buildingCount = buildings;
             record.infrastructureCount = infrastructure;
             record.cultivatedPlantCount = cultivated;
+        }
+
+        internal static void ReconcileCulturalExpression(
+            CARegionalSettlementRecord record, Map map)
+        {
+            if (record == null) return;
+            CACulturalExpression expression =
+                CACulturalExpressionModel.ForMaterializedSettlement(record,
+                    map);
+            record.culturalExpressionSummary = expression.Summary;
+            record.culturalExpressionSourceSignature =
+                expression.SourceSignature;
+            record.culturalExpressionStatus = (byte)expression.Status;
         }
     }
 
@@ -2089,6 +2138,8 @@ namespace ColonistAwareness
 
             CARegionalSettlementMapComponent.ReconcileRecord(record, map);
             CARegionalSettlementGenerationAudit.Capture(record, map);
+            CARegionalSettlementMapComponent.ReconcileCulturalExpression(
+                record, map);
             record.populationBaseline = Math.Max(record.populationBaseline,
                 record.populationCurrent);
             record.lastReconciliationTick = now;

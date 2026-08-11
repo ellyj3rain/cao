@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using ColonistAwareness;
 
 internal static class Program
 {
@@ -30,12 +31,19 @@ internal static class Program
             string setup = Read("RegionalSetupModule.cs");
             string settings = Read("ModEntry.cs");
             string facilities = Read("StartingFacilitiesModule.cs");
+            string expression = Read("CulturalExpressionModule.cs");
+            string causal = Read("CulturalExpressionCausalKernel.cs");
+            string settlementAxes = Read("SettlementAxesModule.cs");
+            string settlementModel = Read("RegionalSettlementModelModule.cs");
+            string world = Read("RegionalWorldModule.cs");
 
             var report = new StringBuilder();
             report.AppendLine("AUTHORING CONVERGENCE RECEIPT");
             CheckInformationDetail(repository, presentation, creation, region,
                 settings, report);
-            CheckCulture(culture, support, facilities, report);
+            CheckCulture(repository, culture, support, facilities, expression,
+                causal, founding, foundingState, region, regionEditors, setup,
+                settlementAxes, settlementModel, world, report);
             CheckPolitics(axes, culture, support, report);
             CheckProfiles(presentation, support, culture, report);
             CheckNativeFlow(founding, foundingState, report);
@@ -44,7 +52,7 @@ internal static class Program
             CheckEstablishedState(setup, culture, report);
             CheckTechnologyOwnership(region, report);
             CheckSharedAuthoring(founding, culture, support, report);
-            CheckCopyIsolation(presentation, culture, report);
+            CheckCopyIsolation(presentation, culture, support, report);
             if (args.Length == 2)
                 CheckFixture(Path.GetFullPath(args[1]), report);
 
@@ -99,114 +107,376 @@ internal static class Program
             + "locally expandable, presentation-only");
     }
 
-    private static void CheckCulture(string culture, string support,
-        string facilities, StringBuilder report)
+    private static void CheckCulture(string repository, string culture,
+        string support, string facilities, string expression, string causal,
+        string founding, string foundingState, string region, string regionEditors,
+        string setup, string settlementAxes, string settlementModel,
+        string world, StringBuilder report)
     {
-        Require(culture.Contains("CACulture.CurrentSchemaVersion = 2")
-            || culture.Contains("const int CurrentSchemaVersion = 2"),
-            "culture schema 2 is absent");
-        foreach (string field in new[]
-        {
-            "hospitalityKey", "mealsKey", "remembranceKey", "profileKey"
-        })
-            Require(culture.Contains("Scribe_Values.Look(ref " + field),
-                "culture field is not serialized: " + field);
-        foreach (string domain in new[]
-        {
-            "Key = \"gathering\"", "Key = \"hospitality\"",
-            "Key = \"meals\"", "Key = \"remembrance\""
-        })
-            Require(culture.Contains(domain),
-                "culture domain is absent: " + domain);
-        foreach (string consumer in new[]
-        {
-            "Campfire", "Bedroll", "Table2x2c", "Sarcophagus", "PartySpot"
-        })
-            Require(culture.Contains("\"" + consumer + "\""),
-                "culture domain has no verified furnishing contract: " + consumer);
-        Require(culture.Contains("foreach (CACultureDomainDef domain in "
-                + "CACultureModel.Domains)")
-            && culture.Contains("option.ThingDefName")
-            && culture.Contains("option.StuffDefName"),
-            "culture materialization does not consume every shipped domain");
-        Require(facilities.Contains(
-                "CACultureMaterialization.Furnish(record, Next")
-            && facilities.Contains("CACultureMaterialization.StyleFor("),
-            "culture materialization has no settlement-furnishing caller");
-        string furnish = Slice(culture,
-            "internal static void Furnish(CARegionalSettlementRecord",
+        string activeEnvelope = Slice(culture,
+            "public sealed class CACulture",
+            "public sealed class CAPoliticalBeliefs");
+        Require(culture.Contains("const int CurrentSchemaVersion = 3")
+            && !culture.Contains("class CACultureDomainDef")
+            && !culture.Contains("class CACultureOptionDef")
+            && !activeEnvelope.Contains("ThingDefName")
+            && !activeEnvelope.Contains("StuffDefName"),
+            "B5-01 active Culture still owns physical definitions");
+
+        Require(!culture.Contains("class CACultureMaterialization")
+            && !facilities.Contains("CACultureMaterialization.Furnish")
+            && !facilities.Contains("CACultureMaterialization.StyleFor")
+            && facilities.Contains("CAVisualTraditionStyle.StyleFor"),
+            "B5-02 settlement materialization still calls cultural furnishing");
+
+        string compatibility = Slice(culture,
+            "internal static string CompatibilityFailure(CACulture culture)",
+            "internal static void Migrate(CACulture culture)");
+        Require(compatibility.Contains("return null")
+            && !compatibility.Contains("ThingDef")
+            && !compatibility.Contains("Texture")
+            && !compatibility.Contains("DefDatabase")
+            && culture.Contains("BaseContent.BadTex")
+            && culture.Contains(
+                "\"Rimshare/WorldMapIcons/feather\", false"),
+            "B5-03 Culture validity still depends on visual or construction assets");
+
+        string visualStyle = Slice(culture,
+            "internal static class CAVisualTraditionStyle",
             "internal static class CAFactionStartingState");
-        Require(!furnish.Contains("EnsureGenerated")
-            && furnish.Contains("CompatibilityFailure")
-            && furnish.Contains("catch (Exception exception)"),
-            "settlement furnishing mutates culture or lacks per-domain containment");
-        var expectedThings = new Dictionary<string, string>
-        {
-            ["hearth"] = "Campfire", ["feast"] = "Table3x3c",
-            ["waymeet"] = "HorseshoesPin",
-            ["memorial"] = "SculptureSmall",
-            ["guest_bedding"] = "Bedroll",
-            ["open_seating"] = "Stool",
-            ["hosted_seating"] = "DiningChair",
-            ["private_receiving"] = "Armchair",
-            ["household_tables"] = "Table2x2c",
-            ["common_table"] = "Table3x3c",
-            ["fireside_meals"] = "Campfire",
-            ["carved_memory"] = "SculptureSmall",
-            ["burial_memory"] = "Sarcophagus",
-            ["assembly_marker"] = "PartySpot"
-        };
-        MatchCollection optionContracts = Regex.Matches(culture,
-            "OptionDef\\(\\\"(?<key>[^\\\"]+)\\\",\\s*\\\"[^\\\"]+\\\","
-                + "\\s*\\\"[^\\\"]+\\\",\\s*\\\"[^\\\"]+\\\","
-                + "\\s*\\\"(?<thing>[^\\\"]+)\\\"",
-            RegexOptions.Singleline);
-        var realized = optionContracts.Cast<Match>().ToDictionary(
-            match => match.Groups["key"].Value,
-            match => match.Groups["thing"].Value);
-        foreach (KeyValuePair<string, string> expected in expectedThings)
-            Require(realized.TryGetValue(expected.Key, out string thing)
-                && thing == expected.Value,
-                "culture practice has the wrong placed output: "
-                    + expected.Key);
+        Require(visualStyle.Contains(
+                "if (native?.thingStyleCategories == null) return null")
+            && visualStyle.Contains("return null")
+            && culture.Contains("neutral visual fallback")
+            && culture.Contains(
+                "!culture.Authored(CACulture.SourceCultureField)")
+            && culture.Contains(
+                "culture.Choose(CACulture.SourceCultureField, null)"),
+            "B5-04 missing native style does not have a neutral fallback");
 
-        string[] stableKeys =
-        {
-            "hearth_common", "road_exchange", "memorial_households",
-            "festival_market"
-        };
-        string[] oldLabels =
-        {
-            "Hearth customs", "Traveling customs", "Memorial customs",
-            "Festival customs"
-        };
-        foreach (string value in stableKeys.Concat(oldLabels))
-            Require(culture.Contains("\"" + value + "\""),
-                "culture profile identity or alias missing: " + value);
-        foreach (string style in new[]
-        {
-            "Rustican", "Corunan", "Sophian", "Astropolitan"
-        })
-            Require(culture.Contains("ProfilePositions(\"" + style + "\""),
-                "culture profile lacks a distinct visual source: " + style);
+        CACulturalExpressionCausalResult constrained =
+            CACulturalExpressionCausalKernel.Evaluate(
+                ExpressionCause(0, 0, 0));
+        CACulturalExpressionCausalResult developed =
+            CACulturalExpressionCausalKernel.Evaluate(
+                ExpressionCause(3, 3, 3));
+        Require(expression.Contains(
+                "CACulturalExpressionCausalKernel.Evaluate")
+            && expression.Contains("Access = input.Access")
+            && expression.Contains("Services = input.Services")
+            && expression.Contains("Civic = input.Civic")
+            && constrained.Status == 2 && developed.Status == 0
+            && constrained.Summary != developed.Summary
+            && constrained.Signature != developed.Signature,
+            "B5-05 material conditions do not alter a fixed-belief reading");
 
-        string migration = Slice(culture, "internal static void Migrate(CACulture",
+        CACulturalExpressionCausalInput councilCause = ExpressionCause(2, 2, 2);
+        CACulturalExpressionCausalInput rulerCause = ExpressionCause(2, 2, 2);
+        rulerCause.PoliticalBeliefs[0].Option = "single_leader";
+        CACulturalExpressionCausalResult council =
+            CACulturalExpressionCausalKernel.Evaluate(councilCause);
+        CACulturalExpressionCausalResult ruler =
+            CACulturalExpressionCausalKernel.Evaluate(rulerCause);
+        Require(expression.Contains(
+                "PoliticalBeliefs = CausalAxes(input.Beliefs)")
+            && !string.IsNullOrWhiteSpace(council.Summary)
+            && !string.IsNullOrWhiteSpace(ruler.Summary)
+            && council.Signature != ruler.Signature,
+            "B5-06 political beliefs do not alter a fixed-settlement reading");
+
+        CACulturalExpressionCausalInput uniformCause = ExpressionCause(2, 2, 2);
+        CACulturalExpressionCausalInput pluralCause = ExpressionCause(2, 2, 2);
+        pluralCause.Populations[0].Share = 60;
+        pluralCause.Populations.Add(new CACulturalPopulationCause
+        {
+            Key = "minority",
+            Share = 40,
+            IdeoligionSource = "founders",
+            BeliefSource = "single_leader",
+            SeparateQuarter = true
+        });
+        pluralCause.WeightedBeliefs[0].Share = 60;
+        pluralCause.WeightedBeliefs.Add(new CACulturalWeightedBeliefCause
+        {
+            Identity = "minority-beliefs",
+            Share = 40,
+            Positions = new List<CACulturalAxisCause>
+            {
+                new CACulturalAxisCause
+                {
+                    Axis = "leadership",
+                    Option = "single_leader"
+                }
+            }
+        });
+        CACulturalExpressionCausalResult uniform =
+            CACulturalExpressionCausalKernel.Evaluate(uniformCause);
+        CACulturalExpressionCausalResult plural =
+            CACulturalExpressionCausalKernel.Evaluate(pluralCause);
+        Require(expression.Contains(
+                "WeightedBeliefs = input.PopulationBeliefs.Select")
+            && expression.Contains("BeliefSource(item)")
+            && expression.Contains("PopulationBeliefs(")
+            && expression.Contains("PreferredAxis(")
+            && uniform.Status == 0 && plural.Status == 3
+            && uniform.Summary.Contains("one resident community")
+            && plural.Summary.Contains("several resident groups")
+            && uniform.Signature != plural.Signature,
+            "B5-07 weighted political plurality is not causal");
+
+        Require(expression.Contains("retain separate quarters")
+            && expression.Contains("IdeoligionSource")
+            && causal.Contains("ideologySources")
+            && !expression.Contains("ThingDef")
+            && !expression.Contains("ThingMaker")
+            && !expression.Contains("GenSpawn"),
+            "B5-08 quarters or Ideoligion plurality force a physical object");
+
+        string settlementDraw = Slice(region,
+            "private void DrawSettlementPanel",
+            "private void DrawFactionPanel");
+        Require(expression.Contains("CopyAxes(")
+            && expression.Contains("CopyPopulations(")
+            && !expression.Contains("Rand.")
+            && !expression.Contains("Scribe_")
+            && !expression.Contains(".Destroy(")
+            && !expression.Contains(".DeSpawn(")
+            && !settlementDraw.Contains("EnsureSettlementPattern")
+            && !settlementDraw.Contains("CASettlementStartingState.Sync")
+            && Count(settlementDraw,
+                "CASettlementComposition.EnsureDerived") == 1
+            && settlementDraw.Contains("\"Generate population\"")
+            && settlementDraw.IndexOf(
+                "CASettlementComposition.EnsureDerived",
+                StringComparison.Ordinal) > settlementDraw.IndexOf(
+                    "\"Generate population\"", StringComparison.Ordinal),
+            "B5-09 opening or drawing cultural expression can mutate state");
+
+        string applyCarried = Slice(foundingState,
+            "internal static void ApplyCarriedState",
+            "internal static string ArrangementSourceWords");
+        Require(founding.Contains("Their local culture is still developing")
+            && expression.Contains("ForFounders(")
+            && causal.Contains("culture is")
+            && causal.Contains("developing from")
+            && applyCarried.Contains("draft.culture?.Copy()")
+            && applyCarried.Contains("draft.politicalBeliefs?.Copy()")
+            && !applyCarried.Contains("startingFacility")
+            && !applyCarried.Contains("gatheringKey"),
+            "B5-10 founding pre-realizes mature local culture");
+
+        string materialized = Slice(expression,
+            "internal static CACulturalExpression ForMaterializedSettlement",
+            "internal static CACulturalExpression ForFounders");
+        Require(materialized.Contains("populationGroups")
+            && materialized.Contains("factionStructure")
+            && materialized.Contains("accessInfrastructure")
+            && materialized.Contains("economicCapacity")
+            && materialized.Contains("tradeConnectivity")
+            && materialized.Contains("historicalDevelopment")
+            && materialized.Contains("realizedRole")
+            && materialized.Contains("realizedScale")
+            && materialized.Contains("settlementForm")
+            && materialized.Contains("fortification")
+            && materialized.Contains("organization")
+            && materialized.Contains("startingProvisions")
+            && materialized.Contains("relationAtMaterialization")
+            && materialized.Contains("ConstituentHasRoad")
+            && materialized.Contains("ConstituentHasRiver")
+            && materialized.Contains("ConstituentIsCoastal")
+            && materialized.Contains("CountRelations")
+            && expression.Contains("item.funding")
+            && expression.Contains("item.populationGroupKey")
+            && expression.Contains("item.waterSecured")
+            && expression.Contains("item.nodes")
+            && expression.Contains("item.reach")
+            && expression.Contains("CAFactionAxes.WarConduct"),
+            "B5-11 established settlement readings omit saved causal state");
+
+        Require(expression.Contains("IdeoligionCommitmentKeys")
+            && expression.Contains("IdeoligionCommitmentLabels")
+            && expression.Contains("PopulationIdeoligions")
+            && expression.Contains("PreceptsListForReading")
+            && causal.Contains("Ideoligion commitments=")
+            && causal.Contains("political beliefs=")
+            && region.Contains("CACulturalExpressionModel.ForFaction")
+            && region.Contains("expression.Summary")
+            && settlementModel.Contains("culturalExpressionSummary")
+            && settlementModel.Contains("cultural expression: ")
+            && expression.Contains("MaterializedIdeoligions")
+            && expression.Contains("CAPopulationProjection.Residents")
+            && world.Contains("ReconcileCulturalExpression(record, map)")
+            && world.Contains("CARegionalSettlementMarkers.Ensure(region"),
+            "B5-11a Ideoligion commitments or established/runtime cultural "
+                + "surfaces are disconnected");
+
+        Require(expression.Contains(
+                "CACulturalExpressionCausalKernel.Evaluate")
+            && expression.Contains("result.SourceSignature = causal.Signature")
+            && causal.Contains("Signature(facts)")
+            && causal.Contains("Status(input.Tension, plural, input.Founding")
+            && CACulturalExpressionCausalKernel.Status(false, false, false,
+                2, 2, 0, 0) == 0
+            && CACulturalExpressionCausalKernel.Status(false, true, false,
+                2, 2, 0, 0) == 3
+            && CACulturalExpressionCausalKernel.Status(true, false, false,
+                2, 2, 0, 0) == 4,
+            "B5-11b production cultural causality is not exercised by the "
+                + "receipt kernel");
+
+        string presented = Slice(expression,
+            "internal string Presented(bool locallyExpanded = false)",
+            "internal static string StatusWords");
+        string presentationState = "belief=council|population=60/40|infra=2/1/3";
+        string presentationHash = Hash(presentationState);
+        foreach (string detail in new[] { "Compact", "Standard", "Expanded" })
+            _ = detail + ":" + presentationState;
+        Require(presented.Contains("CAInformationPresentation.Select")
+            && !presented.Contains("Signature:")
+            && !presented.Contains("scope=")
+            && presentationHash == Hash(presentationState)
+            && region.Contains("expression.Presented(inspectorExpanded)"),
+            "B5-12 presentation detail changes simulation state");
+
+        bool boundedProfiles = true;
+        for (int basis = 0; basis <= 3; basis++)
+            boundedProfiles &= ResolveDevelopment(-1, basis, -1)
+                    == Math.Max(0, basis - 1)
+                && ResolveDevelopment(-1, basis, 0) == basis
+                && ResolveDevelopment(-1, basis, 1)
+                    == Math.Min(3, basis + 1);
+        Require(boundedProfiles
+            && settlementAxes.Contains(
+                "CACulturalExpressionCausalKernel.ApplyDevelopmentProfile"),
+            "B5-13 relative development offsets are not bounded");
+
+        Require(ResolveDevelopment(2, 0, -1) == 2
+            && ResolveDevelopment(2, 3, 1) == 2
+            && settlementAxes.Contains(
+                "CACulturalExpressionCausalKernel.ResolveDevelopment"),
+            "B5-14 explicit infrastructure does not survive profile changes");
+
+        string profileSetter = Slice(regionEditors,
+            "int profile = (int)settlement.developmentProfile + 1;",
+            "TooltipHandler.TipRegion");
+        int facilityAuthoredMask = 37;
+        int facilityValues = 5;
+        int generatedA = CACulturalExpressionCausalKernel.ResolveFacilityMask(
+            3, facilityAuthoredMask, facilityValues, 127);
+        int generatedB = CACulturalExpressionCausalKernel.ResolveFacilityMask(
+            67, facilityAuthoredMask, facilityValues, 127);
+        Require(facilityAuthoredMask == 37 && facilityValues == 5
+            && (generatedA & facilityAuthoredMask) == facilityValues
+            && (generatedB & facilityAuthoredMask) == facilityValues
+            && !profileSetter.Contains("startingFacilityAuthoredMask")
+            && !profileSetter.Contains("startingFacilityValues")
+            && regionEditors.Contains("\"Generated: included\"")
+            && regionEditors.Contains("\"Generated: omitted\"")
+            && regionEditors.Contains("\"Include\", \"Omit\""),
+            "B5-15 facility Include/Omit is replaced by profile changes");
+
+        string startingChange = Slice(region,
+            "private void StartingSettingsChanged",
+            "private void FactionSettingsChanged");
+        Require(startingChange.Contains("plan.confirmed = false;")
+            && startingChange.IndexOf("plan.confirmed = false;",
+                    StringComparison.Ordinal) < startingChange.IndexOf(
+                    "CARegionalSettlements.Invalidate(plan);",
+                    StringComparison.Ordinal),
+            "B5-15a confirmed Back-to-authoring edits cannot recompute their "
+                + "preview");
+
+        string finalRepresentation = Slice(region,
+            "private string FinalRepresentation",
+            "private static int CountFacilityOverrides");
+        Require(finalRepresentation.Contains("Settlement development:")
+            && finalRepresentation.Contains("place.developmentProfile")
+            && finalRepresentation.Contains("place.accessInfrastructure")
+            && finalRepresentation.Contains("place.serviceInfrastructure")
+            && finalRepresentation.Contains("place.civicInfrastructure")
+            && finalRepresentation.Contains(
+                "place.startingFacilityAuthoredMask"),
+            "B5-15b final representation omits settlement development or "
+                + "exact facility overrides");
+
+        string profileEnum = Slice(setup,
+            "public enum CASettlementDevelopmentProfile",
+            "public sealed class CARegionalSettlementPlan");
+        Require(profileEnum.Contains("Minimal = -1")
+            && profileEnum.Contains("Contextual = 0")
+            && profileEnum.Contains("Extensive = 1")
+            && !profileEnum.Contains("Mask")
+            && !regionEditors.Contains("Sparse settlement")
+            && !regionEditors.Contains("Established settlement")
+            && !regionEditors.Contains("All starting facilities")
+            && !regionEditors.Contains("OpenPresets"),
+            "B5-16 development profiles still encode fixed facility masks");
+
+        string realizationHash = Slice(settlementModel,
+            "private static int RealizationSourceHash",
+            "private static void RealizeRelations");
+        Require(realizationHash.Contains(
+                "(int)settlement.developmentProfile")
+            && realizationHash.Contains(
+                "faction.institutionalStateIncomplete ? 1 : 0")
+            && realizationHash.Contains("faction.politicalBeliefs")
+            && setup.Contains("Scribe_Values.Look(ref developmentProfile")
+            && world.Contains("Scribe_Values.Look(ref developmentProfile"),
+            "B5-17 realization hashing or persistence omits the profile");
+
+        string migration = Slice(culture,
+            "internal static void Migrate(CACulture culture)",
             "internal static void EnsureGenerated");
-        Require(migration.Contains("culture.presetName = preset.Key")
-            && migration.Contains("if (!culture.Value(pair.Key).NullOrEmpty()) continue")
-            && !migration.Contains("authoredMask = 0"),
-            "culture migration does not preserve existing authored values");
-        Require(culture.Contains("culture.schemaVersion = "
-                + "CACulture.CurrentSchemaVersion")
-            && culture.Contains("Roadside meeting place")
-            && culture.Contains("CompatibilityFailure(CACulture culture)"),
-            "culture migration or corrected display casing is incomplete");
-        Require(support.Contains("Visual style source:")
-            && support.Contains("CultureDetails")
-            && support.Contains("CultureIdentity"),
-            "culture profile overview omits its substantive identity");
-        report.AppendLine("PASS culture -> schema 2, aliases, four materialized "
-            + "practice domains, distinct visual profiles");
+        var legacyCases = new Dictionary<string, string>
+        {
+            ["hearth_common"] = "Rustican",
+            ["road_exchange"] = "Corunan",
+            ["memorial_households"] = "Sophian",
+            ["festival_market"] = "Astropolitan"
+        };
+        bool legacyCasesPass = legacyCases.All(item =>
+        {
+            CACultureLegacyMigrationResult migrated =
+                CACultureLegacyMigrationKernel.Migrate(
+                    new CACultureLegacyMigrationInput
+                    {
+                        SchemaVersion = 2,
+                        PresetName = item.Key,
+                        Name = item.Key.Replace('_', ' ') + " customs",
+                        NameAuthored = false
+                    });
+            return migrated.SchemaVersion == 3
+                && migrated.PresetName == null
+                && migrated.SourceCultureDefName == item.Value
+                && migrated.Name == item.Value + " background"
+                && migrated.ClearLegacyPractices;
+        });
+        Require(migration.Contains("CACultureLegacyMigrationKernel.Migrate")
+            && migration.Contains("culture.schemaVersion = migrated.SchemaVersion")
+            && migration.Contains("culture.name = migrated.Name")
+            && migration.Contains(
+                "culture.sourceCultureDefName = migrated.SourceCultureDefName")
+            && migration.Contains("culture.ClearLegacyPractices()")
+            && legacyCasesPass,
+            "B5-18 schema-2 Culture migration is not deterministic");
+
+        Require(!migration.Contains(".Destroy(")
+            && !migration.Contains(".DeSpawn(")
+            && !migration.Contains("Map")
+            && !migration.Contains("Thing")
+            && !migration.Contains("Furnish")
+            && !Directory.GetFiles(Path.Combine(repository, "Source"), "*.cs",
+                    SearchOption.AllDirectories)
+                .Where(path => Path.GetFileName(path).Contains("Migration",
+                    StringComparison.OrdinalIgnoreCase))
+                .Any(path => File.ReadAllText(path).Contains(
+                    "CACulture") && (File.ReadAllText(path).Contains(
+                        ".Destroy(") || File.ReadAllText(path).Contains(
+                        ".DeSpawn("))),
+            "B5-19 Culture migration can delete materialized objects");
+
+        report.AppendLine("PASS B5 culture and settlement ownership -> "
+            + "19 causal receipts; fixture receipt follows");
     }
 
     private static void CheckPolitics(string axes, string culture,
@@ -443,14 +713,22 @@ internal static class Program
     }
 
     private static void CheckCopyIsolation(string presentation,
-        string culture, StringBuilder report)
+        string culture, string support, StringBuilder report)
     {
         string cultureCopy = Slice(culture, "internal CACulture Copy()",
             "internal void CopyFrom(CACulture source)");
-        foreach (string field in new[] { "hospitalityKey", "mealsKey",
-            "remembranceKey", "authoredMask", "presetMask" })
-            Require(cultureCopy.Contains(field + " = " + field),
-                "culture clone omits " + field);
+        Require(cultureCopy.Contains(
+                "schemaVersion = CurrentSchemaVersion")
+            && cultureCopy.Contains("sourceCultureDefName = sourceCultureDefName")
+            && cultureCopy.Contains("profileKey = profileKey")
+            && cultureCopy.Contains(
+                "authoredMask = authoredMask & (NameField | SourceCultureField)")
+            && cultureCopy.Contains("presetMask = 0")
+            && !cultureCopy.Contains("gatheringKey")
+            && !cultureCopy.Contains("hospitalityKey")
+            && !cultureCopy.Contains("mealsKey")
+            && !cultureCopy.Contains("remembranceKey"),
+            "background clone retains recipes or omits active provenance");
         string politicalCopy = Slice(culture,
             "internal CAPoliticalBeliefs Copy()",
             "internal void CopyFrom(CAPoliticalBeliefs source)");
@@ -468,16 +746,24 @@ internal static class Program
         Require(library["leadership"] == "council"
             && applied["leadership"] == "single",
             "profile copy test did not isolate later world edits");
+        string cultureIdentity = Slice(support,
+            "internal static string CultureIdentity",
+            "internal static List<CACreationChoice> PoliticalProfiles");
+        Require(cultureIdentity.Contains("return culture.name")
+            && !cultureIdentity.Contains("CAAuthoringProfileLibrary")
+            && !cultureIdentity.Contains("displayName"),
+            "saved-profile rename can change already-applied background "
+                + "identity");
 
         XElement state = new XElement("state",
-            new XElement("culture", "road_exchange"),
+            new XElement("background", "Corunan"),
             new XElement("politics", "worker_federation"));
         string before = state.ToString(SaveOptions.DisableFormatting);
         foreach (string detail in new[] { "Compact", "Standard", "Expanded" })
-            _ = detail + ":" + state.Element("culture")?.Value;
+            _ = detail + ":" + state.Element("background")?.Value;
         Require(before == state.ToString(SaveOptions.DisableFormatting),
             "presentation-detail test changed authored state");
-        report.AppendLine("PASS deterministic invariants -> profile edits are "
+        report.AppendLine("PASS deterministic invariants -> background profile edits are "
             + "copy-isolated; detail selection does not alter state");
     }
 
@@ -485,45 +771,44 @@ internal static class Program
     {
         XDocument document = XDocument.Load(path,
             LoadOptions.PreserveWhitespace);
-        XElement plan = document.Root?.Element("plan")
+        XElement root = document.Root
+            ?? throw new InvalidDataException("fixture has no root element");
+        XElement plan = root.Element("plan")
             ?? throw new InvalidDataException("fixture has no plan element");
         List<XElement> factions = Items(plan, "factions");
         List<XElement> settlements = Items(plan, "settlements");
         int groups = settlements.Sum(item =>
             Items(item, "populationGroups").Count);
         Require(factions.Count == 3 && settlements.Count == 4 && groups == 9,
-            "fixture composition changed from 3 factions, 4 settlements, 9 groups");
+            "B5-20 fixture composition changed from 3 factions, 4 settlements, 9 groups");
+
+        Require(Value(plan, "schemaVersion") == "4"
+            && Value(root, "worldIdentity")
+                == "alysaliu|1|Algorab Markab"
+            && Value(plan, "regionalId") == "CA-RG-EB596A12"
+            && Value(plan, "candidateId") == "613b1fe44104"
+            && Value(plan, "bundleRootTileId") == "389638"
+            && Value(plan, "startTileId") == "389638"
+            && Value(plan, "mapSize") == "350",
+            "fixture identity or schema changed during B5 migration");
 
         var cultures = factions.Select(item => item.Element("culture"))
             .Concat(new[] { plan.Element("playerFounding")?.Element("culture") })
             .Where(item => item != null).ToList();
-        Require(cultures.Count == 4,
-            "fixture does not contain three faction cultures and one founding culture");
-        var allowedCultureKeys = new Dictionary<string, HashSet<string>>
-        {
-            ["gatheringKey"] = new HashSet<string>
-                { "hearth", "feast", "waymeet", "memorial" },
-            ["hospitalityKey"] = new HashSet<string>
-                { "guest_bedding", "open_seating", "hosted_seating",
-                    "private_receiving" },
-            ["mealsKey"] = new HashSet<string>
-                { "household_tables", "common_table", "fireside_meals" },
-            ["remembranceKey"] = new HashSet<string>
-                { "carved_memory", "burial_memory", "assembly_marker" }
-        };
-        foreach (XElement culture in cultures)
-        {
-            Require(Value(culture, "schemaVersion") == "2"
-                && !string.IsNullOrEmpty(Value(culture, "gatheringKey"))
-                && !string.IsNullOrEmpty(Value(culture, "hospitalityKey"))
-                && !string.IsNullOrEmpty(Value(culture, "mealsKey"))
-                && !string.IsNullOrEmpty(Value(culture, "remembranceKey")),
-                "fixture culture is not converged to schema 2");
-            foreach (KeyValuePair<string, HashSet<string>> domain in
-                allowedCultureKeys)
-                Require(domain.Value.Contains(Value(culture, domain.Key)),
-                    "fixture culture has an unavailable " + domain.Key);
-        }
+        Require(cultures.Count == 4
+            && cultures.All(item => Value(item, "schemaVersion") == "3")
+            && cultures.All(item => !string.IsNullOrEmpty(Value(item, "id")))
+            && cultures.All(item => item.Element("gatheringKey") == null
+                && item.Element("hospitalityKey") == null
+                && item.Element("mealsKey") == null
+                && item.Element("remembranceKey") == null),
+            "fixture culture did not converge to schema 3 carried state");
+
+        Require(settlements.All(item =>
+                Value(item, "developmentProfile") == "Contextual")
+            && settlements.All(item =>
+                !string.IsNullOrEmpty(Value(item, "startingFacilityMask"))),
+            "fixture settlements did not acquire contextual development provenance");
 
         var politics = factions.Select(item => item.Element("politicalBeliefs"))
             .Concat(new[]
@@ -532,7 +817,12 @@ internal static class Program
             }).Where(item => item != null).ToList();
         Require(politics.Count == 4
             && politics.All(item => Value(item, "schemaVersion") == "2"),
-            "fixture political beliefs are not converged to schema 2");
+            "fixture political beliefs changed during Culture migration");
+
+        Require(Items(plan, "relations").Count >= 3
+            && settlements.All(item => Items(item, "populationGroups").Count > 0)
+            && plan.Element("playerFounding")?.Element("arrangement") != null,
+            "fixture relationships, populations, or founding arrangement were dropped");
 
         string serialized = document.ToString(SaveOptions.DisableFormatting);
         string before = Hash(serialized);
@@ -540,7 +830,7 @@ internal static class Program
                 LoadOptions.PreserveWhitespace)
             .ToString(SaveOptions.DisableFormatting));
         Require(before == after, "fixture changed across XML readback");
-        report.AppendLine("PASS keyed fixture -> schema 2 authoring state; "
+        report.AppendLine("PASS B5-20 keyed fixture -> schema 4; Culture 3; "
             + "3 factions; 4 settlements; 9 groups; stable XML readback");
     }
 
@@ -559,6 +849,88 @@ internal static class Program
     {
         return Convert.ToHexString(SHA256.HashData(
             Encoding.UTF8.GetBytes(value)));
+    }
+
+    private static int ResolveDevelopment(int authored, int derived,
+        int profile)
+    {
+        return CACulturalExpressionCausalKernel.ResolveDevelopment(authored,
+            derived, profile);
+    }
+
+    private static CACulturalExpressionCausalInput ExpressionCause(
+        int access, int services, int civic)
+    {
+        return new CACulturalExpressionCausalInput
+        {
+            Scope = "settlement:test",
+            Background = "Rustican background",
+            Ideoligion = "Founders' Ideoligion",
+            IdeoligionCommitments = new List<string> { "collectivist" },
+            PoliticalBeliefs = new List<CACulturalAxisCause>
+            {
+                new CACulturalAxisCause
+                {
+                    Axis = "leadership",
+                    Option = "council"
+                }
+            },
+            InstitutionalPractice = new List<CACulturalAxisCause>
+            {
+                new CACulturalAxisCause
+                {
+                    Axis = "leadership",
+                    Option = "council"
+                }
+            },
+            Populations = new List<CACulturalPopulationCause>
+            {
+                new CACulturalPopulationCause
+                {
+                    Key = "founders",
+                    Share = 100,
+                    IdeoligionSource = "founders",
+                    BeliefSource = "council"
+                }
+            },
+            WeightedBeliefs = new List<CACulturalWeightedBeliefCause>
+            {
+                new CACulturalWeightedBeliefCause
+                {
+                    Identity = "founder-beliefs",
+                    Share = 100,
+                    Positions = new List<CACulturalAxisCause>
+                    {
+                        new CACulturalAxisCause
+                        {
+                            Axis = "leadership",
+                            Option = "council"
+                        }
+                    }
+                }
+            },
+            PopulationIdeoligionIdentities = new List<string> { "founders" },
+            Residents = 60,
+            Land = 2,
+            Access = access,
+            Services = services,
+            Civic = civic,
+            Economy = 2,
+            Trade = 2,
+            Specialization = 1,
+            History = 1,
+            Facilities = 3,
+            Role = 1,
+            Scale = 1,
+            Form = 1,
+            Fortification = 1,
+            Organization = 1,
+            ProvisionFingerprint = "food=shared",
+            InstitutionSummary = "Current institutions follow council rule",
+            MaterialSummary = access <= 1 && services <= 1 && civic <= 1
+                ? "material conditions are limited"
+                : "material conditions are developed"
+        };
     }
 
     private static int Count(string value, string needle)

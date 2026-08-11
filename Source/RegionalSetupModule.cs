@@ -669,6 +669,15 @@ namespace ColonistAwareness
         ScenarioOverride
     }
 
+    // A relative nudge to generated local development. It changes only
+    // generated infrastructure; explicit per-dimension values remain final.
+    public enum CASettlementDevelopmentProfile : sbyte
+    {
+        Minimal = -1,
+        Contextual = 0,
+        Extensive = 1
+    }
+
     public sealed class CARegionalSettlementPlan : IExposable
     {
         public int slot;
@@ -685,6 +694,8 @@ namespace ColonistAwareness
         // leaves that one facility derived from the settlement and faction.
         public int startingFacilityAuthoredMask;
         public int startingFacilityValues;
+        public CASettlementDevelopmentProfile developmentProfile =
+            CASettlementDevelopmentProfile.Contextual;
         // Local material development is not a synonym for facilities or for
         // faction knowledge. Each dimension is independently authorable;
         // -1 derives it from the actual area, role, scale, and settlement form.
@@ -739,6 +750,9 @@ namespace ColonistAwareness
                 "startingFacilityAuthoredMask", 0);
             Scribe_Values.Look(ref startingFacilityValues,
                 "startingFacilityValues", 0);
+            Scribe_Values.Look(ref developmentProfile,
+                "developmentProfile",
+                CASettlementDevelopmentProfile.Contextual);
             Scribe_Values.Look(ref accessInfrastructure,
                 "accessInfrastructure", -1);
             Scribe_Values.Look(ref serviceInfrastructure,
@@ -825,10 +839,11 @@ namespace ColonistAwareness
 
     public sealed class CARegionalPlan : IExposable
     {
-        internal const int CurrentSchemaVersion = 3;
+        internal const int CurrentSchemaVersion = 4;
 
-        // Pending plans are pre-release authoring artifacts. Only the current
-        // schema loads; abandoned development schemas are not migrated.
+        // B4 schema 3 is the sole supported development migration because B5
+        // changes settlement realization ownership without changing its
+        // factual composition. Older abandoned schemas remain unsupported.
         public int schemaVersion = CurrentSchemaVersion;
         public string regionalId;
         // The player's geographic name for this realized region. This lives on
@@ -980,6 +995,11 @@ namespace ColonistAwareness
                     frontierHoldings = new List<CAFrontierHoldingPlan>();
                 if (playerFounding == null)
                     playerFounding = new CAPlayerFoundingPlan();
+                if (schemaVersion == 3)
+                {
+                    CARegionalSettlements.MigrateB4ContextualDevelopment(this);
+                    schemaVersion = CurrentSchemaVersion;
+                }
             }
         }
 

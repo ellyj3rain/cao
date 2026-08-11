@@ -6,4 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Source\WorldTendencyCausalKernel.cs"
+             Link="WorldTendencyCausalKernel.cs" />
+    <Compile Include="..\RegionalFixtureContracts.cs"
+             Link="RegionalFixtureContracts.cs" />
+  </ItemGroup>
 </Project>
