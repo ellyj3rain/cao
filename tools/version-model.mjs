@@ -19,8 +19,8 @@ export const KOHAI_HARD_CAP = 16;
 export const PATCH_HARD_CAP = 24;
 export const MATURITY_LADDER = Object.freeze(["pre-alpha", "alpha", "beta", "rc"]);
 export const ROOT_REPLAY_START_VERSION = "0.1.0.0-pre-alpha";
-export const CLOSED_BATCH_TIP = "B5";
-export const NEXT_BATCH = "B6";
+export const CLOSED_BATCH_TIP = "B6";
+export const NEXT_BATCH = "B7";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_REPO_ROOT = resolve(here, "..");
@@ -351,6 +351,17 @@ export const VERSION_UNITS = Object.freeze([
     threads: ["T-002", "T-015", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
     rationale: "B5 replaces B4's invalid furniture-recipe model with a player-visible causal cultural-expression contract derived from carried background, Ideoligion, political beliefs, population, institutions, material conditions, geography, relations, and history. It also adds relative settlement-development authoring with exact per-facility overrides, current-schema migration, persisted runtime reconciliation, and shared executable causal receipts. These are new authoring and runtime capabilities, so the unit carries the minor tier.",
   },
+  {
+    id: "VU-033",
+    series: "B",
+    first: 6,
+    last: 6,
+    dates: "2026-08-11",
+    tier: "minor",
+    name: "Behavior contract, authority, playability, and test convergence",
+    threads: ["T-002", "T-003", "T-004", "T-005", "T-006", "T-007", "T-008", "T-009", "T-010", "T-012", "T-013", "T-014", "T-015", "T-016", "T-017", "T-019", "T-021", "T-022", "T-023", "T-025", "T-028", "T-029", "T-030"],
+    rationale: "B6 replaces distributed four-tier and raw-integer behavior interpretation with one typed three-tier initiative contract, an 87-entry behavior catalog, structured authority, knowledge, capability, and material gating, saved intent provenance, separate player and NPC authorization, and native RimWorld execution. Its 107-case behavior suite joins the retained authoring and generation receipts at the gameplay boundary. This is a new runtime and authoring contract rather than an in-place correction, so the unit carries the minor tier.",
+  },
 ]);
 
 function parseVersion(version) {
@@ -498,7 +509,7 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | Hard caps | minor ${MINOR_HARD_CAP}; kohai ${KOHAI_HARD_CAP}; patch ${PATCH_HARD_CAP} |
 | Replay start | \`${ROOT_REPLAY_START_VERSION}\` |
 | Current version | \`${replay.currentVersion}\` |
-| Closed chronology | \`A1-B5\` |
+| Closed chronology | \`A1-B6\` |
 | Next batch | \`${NEXT_BATCH}\` |
 | Executable source | [\`tools/version-model.mjs\`](tools/version-model.mjs) |
 
@@ -590,9 +601,10 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     "B3",
     "B4",
     "B5",
+    "B6",
   ];
   if (JSON.stringify(covered) !== JSON.stringify(expected)) {
-    errors.push("version units must cover A1-B5 exactly once, contiguously, and in order");
+    errors.push("version units must cover A1-B6 exactly once, contiguously, and in order");
   }
   VERSION_UNITS.forEach((unit, index) => {
     const expectedId = `VU-${String(index + 1).padStart(3, "0")}`;
@@ -607,19 +619,19 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     .sort((left, right) => left[0].localeCompare(right[0])
       || Number(left.slice(1)) - Number(right.slice(1)));
   if (JSON.stringify(closedIds) !== JSON.stringify(expected)) {
-    errors.push("Batches/ must contain exactly the closed A001-A102 and B001-B005 record set");
+    errors.push("Batches/ must contain exactly the closed A001-A102 and B001-B006 record set");
   }
-  if (batchFiles.some((name) => /^B0*6-.*\.md$/.test(name))) {
-    errors.push("B6 must remain unconsumed until the next development batch");
+  if (batchFiles.some((name) => /^B0*7-.*\.md$/.test(name))) {
+    errors.push("B7 must remain unconsumed until the next development batch");
   }
 
   const batchLog = readFileSync(join(repoRoot, "BATCH_LOG.md"), "utf8");
   const logIds = [...batchLog.matchAll(/^\| \[([A-Z])(\d+)\]/gm)]
     .map((match) => `${match[1]}${Number(match[2])}`);
   if (JSON.stringify(logIds) !== JSON.stringify(closedIds)) {
-    errors.push("BATCH_LOG.md must index A1-B5 exactly once and in order");
+    errors.push("BATCH_LOG.md must index A1-B6 exactly once and in order");
   }
-  if (/^\| \[B6\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B6 record yet");
+  if (/^\| \[B7\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B7 record yet");
 
   const threads = readFileSync(join(repoRoot, "Batches", "THREADS.md"), "utf8");
   const declaredThreads = new Set([...threads.matchAll(/<a id="t-(\d{3})"><\/a>T-(\d{3})/g)].map((match) => `T-${match[1]}`));
@@ -704,7 +716,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (args.has("--write")) writeGenerated(DEFAULT_REPO_ROOT);
   const result = validateRepository(DEFAULT_REPO_ROOT);
   if (args.has("--json")) console.log(JSON.stringify(result, null, 2));
-  else if (result.ok) console.log(`version-model: OK — ${result.currentVersion}; ${result.unitCount} units cover A1-B5; ${result.nextBatch} remains next`);
+  else if (result.ok) console.log(`version-model: OK — ${result.currentVersion}; ${result.unitCount} units cover A1-B6; ${result.nextBatch} remains next`);
   else result.errors.forEach((error) => console.error(`version-model: ${error}`));
   process.exit(result.ok ? 0 : 1);
 }

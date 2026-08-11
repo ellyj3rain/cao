@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Core |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.2.0.0-alpha` · closed batch tip `B5` · next `B6` |
+| Version | `1.3.0.0-alpha` · closed batch tip `B6` · next `B7` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `CORE.md` |
@@ -57,6 +57,22 @@ the game's native machinery. `ARCHITECTURE.md` holds the ratified shape.
 
 Doctrine ships first and rides the game's native substrate; the other three are
 what make the mod a framework rather than a feature set.
+
+Every CA-originated behavior also crosses one typed authorization contract.
+Its stable definition names the behavior domain, form, applicable actor,
+permission, minimum initiative, required evidence, authority, native execution
+lane, intent owner, completion, and stand-down condition. The dynamic gate keeps
+permission, initiative, authority, actor-held knowledge, capability, material
+conditions, and player ownership separate. The same catalog supplies runtime
+authorization, settings text, tracing, diagnostics, and executable receipts.
+
+The active initiative ladder is Standard, Proactive, and Autonomous. Standard
+retains ordinary RimWorld agency, enabled safeguards, observation, direct and
+accepted relayed orders, and continuation of owned work. Proactive may originate
+one finite response to a current fact. Autonomous may retain, compare, or
+coordinate persistent work inside delegated authority. Initiative never creates
+knowledge, office, materials, access, or permission, and explicit player intent
+remains authoritative at every tier.
 
 ## The regional program
 

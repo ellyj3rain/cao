@@ -1,115 +1,87 @@
 | Document | Colonist Awareness Overhaul Session State |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.2.0.0-alpha` · closed batch tip `B5` · next `B6` |
+| Version | `1.3.0.0-alpha` · closed batch tip `B6` · next `B7` |
 <!-- cao:generated:version END -->
 | Repository | `SESSION_STATE.md` |
 | Status | ACTIVE - current operational state. |
 
 # Session state
 
-Updated 2026-08-11 07:55 UTC / 2026-08-11 00:55 PST.
+Updated 2026-08-11 UTC / 2026-08-11 PST.
 
-Read this before claiming where creation-flow work stands. Compile and receipt
-evidence, deployment, and operator runtime judgment remain separate.
+Read this before claiming where creation or gameplay testing stands. Compile,
+receipt, deployment, and operator runtime evidence remain separate.
 
-## Version control
+## Version control and governed history
 
 | Surface | State |
 |---|---|
-| Canonical project state | The current tracked local tree and governed records. `git status --short` identifies checkout-local changes. |
-| Development closure | `B5` closes contextual cultural expression and settlement development; `B6` is next. Source closure is `2bca1e16b240a24a00ddab385909a81674a17cee`; the following governance closure carries generated version projections, the README twin, and the batch record. |
-| Authority branch | `mallowfluff/b3-creation-flow-interaction`, following B4 governance tip `9efcd1df6efae6d7ec85064bbab8a88f680f392c`. |
-| Local Git history | May retain earlier engineering history. It is supporting evidence, not the portable project history. |
-| Published forge | No B5 push or publication action is part of this gate. |
+| Branch | `mallowfluff/b3-creation-flow-interaction` |
+| B6 start | Clean B5 governance tip `73efd9dad2ec44de2034d6927e9f0b4c190d4d5d` |
+| B6 source closure | `45e571d63c996fdba43cc7101b4edca7ca24f56f` |
+| B6 governance closure | The following governance commit carries this state, B6's append-only record, generated projections, and the README twin. |
+| Publication | No push or forge publication action is part of B6. |
 
-The linked branch checkout is the implementation and governance authority. The
-project root is the live mod junction and now carries the same verified B5
-assembly.
+The portable chronology contains 108 closed batches: `A1-A102` and `B1-B6`.
+Thirty-three contiguous version units cover that chronology exactly once; B6 is
+minor unit `VU-033`, deriving `1.3.0.0-alpha`. Twelve `TF-*` families and thirty
+series-neutral `T-*` threads classify work without changing chronology. `B7` is
+the next ordinary batch.
 
-## Development record
+## Current behavior contract
 
-The A sequence is closed at `A102`; the chronology continues through closed
-`B5`, and `B6` is the next development batch. `BATCH_LOG.md` is the chronological
-index. `Batches/THREADS.md` classifies related work across time without changing
-chronology. `VERSION_MAP.md` partitions the closed chronology into contiguous
-capability units and derives `VERSION`.
+The canonical chain remains:
 
-| Evidence | State |
+`Knowledge triggers -> Disposition ranks -> Authority channels -> Doctrine executes through native RimWorld systems`
+
+| Concern | Current rule |
 |---|---|
-| Chronology | 107 dated batches: `A1` through `A102`, followed by `B1-B5` |
-| Thematic organization | 12 series-neutral `TF-*` families and 30 many-to-many `T-*` threads |
-| Version chronology | 32 contiguous units cover A1-B5 exactly once; B5 is the `minor` capability unit `VU-032`, deriving `1.2.0.0-alpha` |
-| Next work | `B6` remains the next ordinary batch; its actual content determines its version tier |
+| Initiative | Standard, Proactive, Autonomous. Old 0/1 map to Standard; old 2 to Proactive; old 3 to Autonomous. |
+| Standard | Native agency, direct and accepted relayed orders, owned continuation, declared safeguards, survival floor; no open-ended discretionary plan. |
+| Proactive | One bounded response to a current actionable fact with finite target, scope, ownership, and completion. |
+| Autonomous | Persistent, adaptive, or coordinated action inside delegated or institutional authority. |
+| Behavior definitions | 87 stable entries, each with domain, form, permission, tier/authority, evidence, execution, owner, cadence, and termination. |
+| Independent causes | Permission, initiative, authority, knowledge, capability, material feasibility, culture, disposition, and player ownership remain separate. |
+| Execution | Native jobs, duties, think trees, Lords, interactions, and world simulation remain the substrate. |
 
-## Current creation and authoring flow
+The catalog realizes 14 primary domains and 13 behavior forms. Settings are
+grouped by domain and ownership kind. The pawn Behavior scope and both developer
+censuses are read-only. Player autonomy never controls NPC institutional action.
+Culture and disposition rank only otherwise permitted choices.
 
-The creation path is one coordinated interaction:
+Squad support has separate owners for hold, field medicine, raid response,
+flank/objective work, and command relay. Operational access is colony policy;
+personal threat equipment remains pawn-specific. Proactive custody can secure
+and stabilize, while ordinary irreversible resolution requires Autonomous
+initiative plus valid law or office. All multi-actor and persisted CA work names
+the actual actor, behavior, episode, authority, controller or issuer, owner, and
+termination.
 
-`World -> Landing -> Starting Region -> native Ideoligion -> Starting arrangements -> Starting Pawns -> game start`
-
-RimWorld's native fixed, fluid, preset, customized, and loaded Ideoligion paths
-remain first-class. Starting arrangements follows the native chooser and owns
-the founders' carried cultural background, normative political beliefs, and
-limited rules adopted at landing. Existing factions remain descriptive
-established societies: their carried backgrounds, native Ideoligions, political
-beliefs, realized structure, institutions, and accumulated histories are facts
-when encountered.
-
-Culture schema 3 owns only stable background identity, an optional name, an
-optional native visual-tradition source, and provenance. It no longer owns public
-gathering, hospitality, meal, memory, furnishing, ThingDef, or StuffDef recipes.
-Missing style content is a neutral visual fallback rather than a compatibility
-failure. Explicitly choosing no visual source remains durable.
-
-Cultural expression is a deterministic contextual reading. Its causes include
-carried background, actual Ideoligion commitments, political beliefs, population
-groups and certainty, institutions or founding arrangement, provisions,
-settlement form and role, infrastructure, facilities, economy, trade, geography,
-relations, buildings, and history. It yields one persisted status, summary, and
-signature plus five readable facets. Starting Region presents the result at the
-settlement; faction views aggregate settlement results; materialized maps
-reconcile against actual residents; world markers consume the persisted result.
-
-Each settlement owns a Minimal, Contextual, or Extensive development profile.
-The profile applies a bounded shift to generated access, services, and civic
-development. Explicit infrastructure values win. Facilities are then derived
-from the actual settlement and expose independent Generated, Include, or Omit
-ownership. The final representation states every settlement's profile,
-infrastructure provenance, generated facilities, explicit overrides, and
-override count.
-
-Information detail remains a presentation-only Compact, Standard, or Expanded
-setting. Critical warnings, contradictions, and blockers remain visible at every
-level. Founding remains earlier than an existing settlement: background,
-Ideoligion, and beliefs arrive with the founders; only landing terms are adopted;
-local institutions and historical culture develop through play.
+B5's Culture and spatial contracts remain intact. Player and NPC planning share
+typed demands, assets, siting, material checks, and causal ranking. Creation
+writes confirmed starting state directly. Player spatial action then requires
+delegated authority; later NPC development requires a current named institution.
 
 ## Build, receipts, and review
 
-| Artifact | SHA-256 | State |
-|---|---|---|
-| Built `Assemblies/ColonistAwareness.dll` | `529A4327416070FE4832BF2CFD8514DA45DC1AB5BF6C247816136BD1BD9312C1` | Full no-incremental Release build: 3,039,232 bytes, 0 errors, and the same 12 existing warnings. |
-| Live root `Assemblies/ColonistAwareness.dll` | `529A4327416070FE4832BF2CFD8514DA45DC1AB5BF6C247816136BD1BD9312C1` | Deployed while RimWorld was closed; byte-identical to the verified B5 build. |
-
-| Executable evidence | Result |
+| Evidence | Result |
 |---|---|
-| Authoring convergence | PASS - 126 assertions against mirror and 126 against keyed |
+| Behavior convergence | PASS - 107 numbered cases: 98 statically verified; 9 operator-runtime cases pending |
+| Registered behavior domains | AnimalCare 2; CombatSelfPreservation 6; CustodyAndAftermath 5; Diagnostics 2; DomesticAndSpatial 5; HazardResponse 3; InstitutionalDevelopment 2; KnowledgeAndCommunication 9; LogisticsAndProvision 6; OperationalReadiness 6; Presentation 2; SurvivalAndImmediateSafety 7; TacticalCoordination 24; WelfareAndCare 8 |
+| Registered behavior forms | AdaptivePlanning 12; CoordinatedResponse 5; Diagnostic 2; DirectOrder 14; ExecutionCapability 4; InstitutionalAction 6; NativeAugmentation 10; Observation 2; PersistentObjective 3; Presentation 2; PreventiveReadiness 5; ReactiveResponse 18; Safeguard 4 |
+| Authoring convergence | PASS - 126 mirror and 126 keyed assertions |
 | Creation-flow interaction | PASS - 65 assertions |
-| Player founding | PASS - 48 assertions across mirror and keyed |
-| World tendencies causal contract | PASS - 185 assertions across mirror and keyed |
-| Combined | PASS - 424 unique assertions; 550 assertions actually executed |
+| Player founding | PASS - 48 assertions |
+| World tendencies | PASS - 185 assertions |
+| Retained total | PASS - 424 unique assertions; 550 executions |
+| Frozen-tree review | Correctness and structural reviewers report no remaining Critical or High findings |
+| Release build | Full `--no-incremental` Release build: 0 errors; the same 12 existing warnings |
+| Built assembly | 3,215,872 bytes; SHA-256 `8737CDDD1AED9124C6D4A3CCBD738EAF8844E4666A60FCDCFC0AA58830145298` |
+| Deployment | RimWorld was closed. The live project DLL was replaced and is byte-identical to the verified build at SHA-256 `8737CDDD1AED9124C6D4A3CCBD738EAF8844E4666A60FCDCFC0AA58830145298`. |
 
-The correctness, structural, and surface review panel reports no remaining
-Critical or High findings. The final correction replaced receipt-local cultural
-expression and migration stand-ins with production-shared typed kernels. The
-source/tool fingerprint remained
-`8BC6CC02C41B9BC561B42348E9ABD92DF80B498B8397EF7911EB6D0EC0E0951C`
-before the build, before each receipt run, and at the final gate.
-
-`git diff --check` passed with no whitespace errors. The 12 compiler warnings are
-the existing member-hiding and DefOf assignment warnings recorded by the build;
-there are no B5 compile errors.
+The twelve warnings are the existing member-hiding and DefOf assignment
+warnings. No B6 warning or compile error remains. `git diff --check` passes.
 
 ## Authored runtime fixture
 
@@ -122,7 +94,6 @@ there are no B5 compile errors.
 | Map scale | 350 |
 | Composition | 3 factions, 4 settlements, 9 population groups |
 | Schema | Regional plan 4; Culture 3; political beliefs 2 |
-| Development | Four Contextual settlement profiles; exact facility state retained |
 
 Active mirror:
 
@@ -132,45 +103,39 @@ Active keyed plan:
 
 `C:\Users\jleyv\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlans\regional-plan-9bcbba2fdcd1e7f334711a69635242a2.xml`
 
-Both files were written at 2026-08-11 07:05:47 UTC. They are byte-identical at
-27,220 bytes and SHA-256
+Both files are byte-identical at 27,220 bytes and SHA-256
 `F60DC069CC30686E4B1694E91B61EF9458F37BD8E6E26FBCF621778FB916D583`.
-Both parse in the current schema, round-trip the same composition, preserve
-relations and population assignments, and carry the current realization hash.
+They parse and round-trip the current schema with the same world, region,
+candidate, composition, population assignments, relations, founding state, and
+realization hash.
 
-## Runtime handoff
+## Operator runtime boundary
 
-B5 is compiled, statically verified, and deployed. RimWorld remains closed. The
-next action is the operator runtime test:
+The B6 build is deployed and the static gate is complete. Cases 97-105 remain
+for the operator in RimWorld:
 
-1. Load the preserved plan and confirm all 3 factions, 4 settlements, population
-   groups, relations, arrival area, map scale, and founding state remain present.
-2. Inspect settlement Culture in Starting Region. Confirm it reads as contextual
-   expression rather than an authored furniture list and that faction views show
-   distinct settlement results.
-3. Change one carried background or political belief and confirm the expression
-   changes without fabricating physical objects or resetting unrelated state.
-4. Compare Minimal, Contextual, and Extensive settlement development; confirm
-   only generated infrastructure shifts and explicit infrastructure survives.
-5. Include or omit individual starting facilities, return all facilities to
-   generated, and confirm the summary and final representation report exact
-   provenance and override counts.
-6. Start the world and confirm materialized settlement records, residents,
-   Ideoligions, cultural summaries, and world markers survive generation without
-   rerolling the authored state.
+| Case | Runtime observation |
+|---|---|
+| 97 | Complete creation and reach map generation. |
+| 98 | Confirm player map generation completes and behavior components initialize. |
+| 99 | Confirm missing optional assets remain nonfatal and expose their fallback receipt. |
+| 100 | Observe ordinary native work at Standard. |
+| 101 | Observe one bounded Proactive response. |
+| 102 | Observe one persistent Autonomous objective. |
+| 103 | Issue direct work around every initiative tier and confirm player authority. |
+| 104 | Save, reload, and compare registered intent identity and ownership. |
+| 105 | Run through the first in-game hour and inspect `Player.log` for repeating exceptions. |
 
-Static evidence does not select options, advance the game, alter saves, or
-substitute for how the flow looks and plays.
+Static evidence does not select options, advance the game, change saves, or
+substitute for how the behavior looks and plays.
 
 ## Environment and preserved evidence
 
 - RimWorld target: 1.6.4871 rev590.
-- Odyssey is installed. Its active runtime state is not asserted without a game
-  launch.
-- `PARALLEL_ONTOLOGY_AUDIT.md` remains a damaged consolidation; the recovered
+- Odyssey is installed; active runtime state is not asserted without a launch.
+- `PARALLEL_ONTOLOGY_AUDIT.md` remains a damaged consolidation; its recovered
   full copy remains in the preservation package.
 - Preservation package:
   `Projects\colonist-awareness-preservation-20260806-0614Z-2314PDT`, with a
   verified mirror on `D:`.
-- The RS-008 source save and recovered documents remain out-of-band evidence;
-  no file in B5 replaces them.
+- The RS-008 source save and recovered documents remain out-of-band evidence.

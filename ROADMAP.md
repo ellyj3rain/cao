@@ -1,7 +1,7 @@
 # Colonist Awareness - roadmap
 
-The A sequence is closed at `A102`; the chronology is complete through `B5`,
-and `B6` is the next development batch.
+The A sequence is closed at `A102`; the chronology is complete through `B6`,
+and `B7` is the next development batch.
 Historical batch identifiers below use the current sequence. Thematic `T-*`
 identifiers link continuing work across nonadjacent batches. The chronological
 catalog is [`BATCH_LOG.md`](BATCH_LOG.md); thematic links are in
@@ -152,9 +152,9 @@ presentation remain pending operator judgment after a full restart.
 - A fresh external-violence impact now reaches the existing humanlike 30-tick
   reaction lane before the later mind-state/contact notification. The pawn derives
   immediate survival pressure from live injury, bleeding, cover, ability to
-  engage, combat skill, and Disposition. Undrafted Proactive+ colonists and exact
+  engage, combat skill, and Disposition. Undrafted Proactive or Autonomous colonists and exact
   generic settlement assaulters may hold, improve position, or break contact;
-  Directed/Standard control and explicit player/emergency/tactical work retain
+  Standard initiative and explicit player/emergency/tactical work retain
   priority.
 - Against a currently visible contact, an eligible ranged pawn without an existing
   CA automatic-defense post compares nearby locally visible, reachable cells by
@@ -524,7 +524,12 @@ The levels stay BEHAVIORAL MODES. What follows is the intended EFFECT when the m
   installed Sim Settlements 2 configuration is design evidence for needs, role
   qualifications, budgets, leader effects, staged upgrades, limits, and notices—not
   an engine model to import wholesale.
-- Order/mode interaction (shipped): maneuver orders (ambush) at Directed/Standard require DRAFT (piloted play); Proactive is the hybrid (orders drafted or not); Autonomous minimizes manual low-level deliberation. Main-character pattern = the existing dial: your main (often the colony leader role) runs low-mode piloted, everyone else Autonomous.
+- Order/initiative interaction (shipped): direct maneuver orders remain valid at
+  every tier and preserve player ownership. Standard does not originate an
+  unowned maneuver; Proactive may make one bounded adaptation to a current fact;
+  Autonomous may retain a delegated objective and coordinate within its saved
+  authority. Draft state remains part of the command itself, not another
+  initiative tier.
 - Hold-position + deviation + report-up: SHIPPED (HoldModule + standing CATactical Lord) - right-click "Hold this position": walk there, fight from the duty post without melee pursuit, re-anchor if displaced, and persist the standing order through saves. Proactive+ deviation reads only the holder's remembered contacts; live hostile positions enter immediate overrun/flank checks only under current LOS. Deviation = suppressive movement away from remembered pressure + report-up when the leader has command contact. Piloted holds never self-release.
 - Mode dynamics - convene-plan-disperse: SHIPPED (RaidResponse) - Autonomous squadded fighters under a live commanding leader rally, plan, and disperse through persistent defensive duties. The leader plan uses that leader's relayed facts; individual positioning uses each pawn's own facts. Cover candidates require actual directional block chance, active defense posts retain their claims, and direct player/emergency/withdrawal control tears automatic defense down. PROACTIVE drafted HOI4 painted lines remain shipped through LineOrdersModule; later polish: multi-segment painting, saved plans, arrows.
 - Tactics taxonomy: guerrilla isolated-pawn tactics / organized guerrilla / conventional - a doctrine spectrum units operate along, per skills, structure, and comms.
@@ -1005,7 +1010,7 @@ itself a shelf requirement. Candidate proof must cover the developed mixed fridg
 at least one sparse aboveground stockpile, and the operator's visual judgment.
 
 After that proof, the selected native zone receives a CA initiative ceiling using
-Directed, Standard, Proactive, or Autonomous, defaulting to Standard. Effective
+Standard, Proactive, or Autonomous, defaulting to Standard. Effective
 initiative is the lower of pawn autonomy and zone autonomy. Native priority and
 filters remain unchanged and orthogonal. The zone control and its operative shelf
 consumer ship together; there is no inert checkbox phase. The consumer may place
@@ -1031,7 +1036,7 @@ receipts passed without a gameplay mutation. Pure visual props remain outside th
 utility model unless an explicit adapter supplies truthful semantic evidence.
 
 The next local gate is one shared per-space initiative-ceiling substrate using the
-existing Directed, Standard, Proactive, and Autonomous levels. It must remain a
+current Standard, Proactive, and Autonomous levels. It must remain a
 single parameter across native stockpile authorities and authored room programs,
 while each UI surface appears only when an operative consumer exists. The first
 bounded consumer is native shelf/capacity work inside a selected stockpile: it may
@@ -1457,4 +1462,33 @@ surfaces.
 The verified assembly is deployed. The current gate is the operator's runtime
 test of the preserved three-faction/four-settlement plan, settlement-scoped
 cultural readings, relative development, exact facility provenance, generation,
-and materialized readback. `B6` remains the next development batch.
+and materialized readback.
+
+## Behavior contract, authority, and playable runtime convergence - B6 / T-003–T-010, T-012, T-013, T-015, T-019, T-021, T-022, T-025
+
+B6 makes the runtime behavior model as explicit as the authoring ontology. The
+active initiative ladder is Standard, Proactive, and Autonomous; old Directed
+and Standard saves converge on Standard. A stable behavior catalog classifies
+each behavior by domain, form, actor, permission, evidence, authority, execution
+lane, ownership, completion, and stand-down condition. Its cached effective
+profile is only a prefilter. Every autonomous mutation or CA-owned native job
+must cross the dynamic gate at commitment and record its causal identity.
+
+The pass separates colony access policy from personal equipment initiative,
+bounded hostile stabilization from irreversible custody resolution, direct
+player delegation from NPC institutional authority, and each squad-support
+behavior from the old shared `holdOrders` owner. Actor-private facts remain
+actor-private: paired support and withdrawal require each executor's own current
+fact or a real delivered request, and uncertainty may rank permitted choices but
+does not create permission. Home, spatial, starting-facility, road, research,
+repair, and settlement-development paths share typed demands while keeping
+creation and later institutional action causally separate. Native jobs and
+material success remain the source of physical outcomes.
+
+Settings are grouped by behavior domain and distinguish feature permission,
+communication infrastructure, execution capability, presentation, and
+diagnostics. The read-only behavior census shows the selected actor's effective
+tier, catalog permissions, recent dynamic decision, and owned intent without
+authorizing work. The retained authoring suites and the B6 behavior-convergence
+suite provide the static gate; the named operator cases remain the next test of
+how the system looks, reads, and plays. `B7` is next.

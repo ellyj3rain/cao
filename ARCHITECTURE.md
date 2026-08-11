@@ -136,23 +136,56 @@ job-stomping loop or manufacture an identified threat from ambiguous sound.
 
 ## Autonomy tier canon (ratified)
 
-Explicit orders persist at ALL tiers. Directed = most controlled, survival floor
-only. Standard = floor + vanilla behavior. The dial governs SELF-INITIATION only.
-UI is UI: the order surface is never gated by tier.
+Explicit orders persist at every tier. The dial governs self-initiation only.
 
-Operational access is a bounded projection of that dial, not a second autonomy
-system. At colony creation, a Proactive or Autonomous default makes the scenario's
-shared starting cargo arrive allowed instead of inheriting RimWorld's automatic
-red-X forbid. Whenever any Proactive or Autonomous colonist is present, ordinary,
-visible, non-quest items across the colony map are maintained as allowed. A
-Proactive+ pawn with a known threat may then select a nearby weapon or genuinely
-protective apparel through the constant-think lane. CA observes the native item
-toggle and Forbid/Allow designators, scribes explicit player-denied item IDs, and
-never reverses those later denials. The former migration that protected every
-originless red X is cleared once because it preserved RimWorld's automatic locks
-as though the player had chosen them. Drafted control, queued forced work, allowed
-areas, and standing tactical orders remain authoritative. Category policy and
-general action authorization are still separate, unbuilt surfaces.
+| Tier | Active meaning |
+|---|---|
+| Standard | Ordinary RimWorld agency, enabled CA safeguards and native augmentation, direct and accepted relayed orders, observation, and continuation of an owned intent. It does not originate discretionary plans or unowned collective work. |
+| Proactive | One finite response to a current actionable fact, with bounded target, space, time, authority, completion, and interruption. |
+| Autonomous | Persistent, comparative, adaptive, or multi-actor work inside explicit delegation, office, institution, ownership, and material limits. |
+
+Old Directed `0` and old Standard `1` migrate to Standard. Old Proactive `2`
+and Autonomous `3` migrate to the corresponding active tiers. The current save
+schema and UI use only the three active identities.
+
+Operational access is colony policy, not an aggregate of pawn initiative.
+When enabled, the colony policy may reconcile ordinary visible non-quest items
+with the native forbid system while preserving every explicit player denial.
+Pawn initiative separately controls personal equipment choices. A Proactive pawn
+may select one weapon or genuinely protective apparel only for a current
+actor-held threat fact, through the exact behavior gate and native equipment job.
+Restricted categories still require their own authority. Drafted control, current
+and queued forced work, allowed areas, ownership, and standing tactical orders
+remain authoritative.
+
+## Behavior catalog and commitment gate
+
+`BehaviorCatalogModule.cs` is the shared definition surface for every CA
+behavior. Each stable key owns one primary domain and one form, plus actor
+contexts, feature permission, minimum initiative, evidence requirement,
+authority origins, execution lane, cadence, intent owner, completion, and
+stand-down conditions. Domains organize ownership and settings; forms distinguish
+observation, native augmentation, safeguards, finite responses, readiness,
+coordination, persistent objectives, adaptive plans, institutional action,
+direct orders, execution capabilities, presentation, and diagnostics.
+
+The effective profile is a cached stable prefilter. It may exclude an impossible
+setting/tier/actor combination, but it never authorizes a commitment. At the
+actual mutation or native-job boundary, `CABehaviorGate.Evaluate` must separately
+validate feature permission, initiative, authority ceiling, authority origin,
+actor-held knowledge and its provenance, live target state, player ownership,
+capability, material conditions, and current-intent compatibility. Every
+CA-originated native job is registered with its behavior key, episode, origin,
+controller, issuer, authority, owner, target, creation tick, and termination.
+
+Player pawns and NPC institutions may consume the same planning facts without
+sharing authority. Player action requires direct, accepted relay, native duty,
+continuation, or explicit delegation. NPC settlements act from saved offices,
+households, organizations, law, demands, and material means; player initiative is
+not an NPC policy. Culture and disposition rank permitted alternatives but never
+manufacture permission or authority. RimWorld jobs, duties, reservations,
+blueprints, work designations, social interactions, and world objects remain the
+physical executors.
 
 ## Settlement-objective projection
 
@@ -209,8 +242,9 @@ veto for that exact construction objective. It is demand staging, not durable
 inventory classification, and native hauling remains the physical executor.
 
 `CASpatialInitiativeMapComponent` attaches one saved CA initiative ceiling to each
-native stockpile and authored room program: Directed `0`, Standard `1`, Proactive
-`2`, or Autonomous `3`. An unspecified space is Standard. Effective initiative is
+native stockpile and authored room program: Standard `0`, Proactive `1`, or
+Autonomous `2`. An unspecified space is Standard. Old `0` and `1` values both
+migrate to Standard; old `2` and `3` become Proactive and Autonomous. Effective initiative is
 the lower of the acting pawn's autonomy and the space ceiling, so a space never
 elevates a pawn. Native priority continues to choose among valid storage
 destinations and native filters continue to define accepted items. The operative

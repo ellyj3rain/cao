@@ -2065,3 +2065,62 @@
   notification, including after native editor Back.
   Political Beliefs remain standards for judging practice. Organization customs
   come from the social order actually in force, not from belief alone.
+
+- **DR-98** (2026-08-11) - **The active initiative ladder has three tiers.**
+  Standard permits ordinary RimWorld behavior, enabled CA safeguards, direct and
+  accepted relayed orders, observation, and continuation of an owned intent.
+  Proactive adds finite responses to current facts. Autonomous adds persistent,
+  adaptive, or collective action inside delegated authority. Old Directed `0`
+  and old Standard `1` both migrate to Standard; old Proactive `2` and Autonomous
+  `3` retain their meanings at the new compact identities. This supersedes the
+  four-tier portions of earlier autonomy decisions without weakening explicit
+  player orders.
+
+- **DR-99** (2026-08-11) - **Permission, initiative, authority, knowledge,
+  capability, and material conditions are separate gates.** A feature setting
+  permits a behavior family. Initiative permits the actor to originate that form
+  of action. Authority identifies who may commit it. Actor-held knowledge
+  supplies the actionable fact. Native capability and material conditions decide
+  whether it can be executed. Passing one gate never implies the others.
+
+- **DR-100** (2026-08-11) - **Every CA behavior has one stable typed
+  definition.** A behavior key owns its domain, form, actor contexts, minimum
+  initiative, permission, required evidence, authority class, interruption rule,
+  native execution lane, owner, and termination condition. Each behavior belongs
+  to one primary domain even when it relates to others.
+
+- **DR-101** (2026-08-11) - **Runtime authorization, settings presentation,
+  tracing, diagnostics, and receipts read one behavior catalog.** Module-local
+  labels and raw tier comparisons do not define public behavior semantics. The
+  behavior census is a read-only view of that shared catalog and saved decisions;
+  it does not become a scheduler.
+
+- **DR-102** (2026-08-11) - **Player delegation and NPC institutions share
+  planning facts but use different authority.** Player pawns may act only through
+  operator, accepted relay, native duty, continuation, or explicitly delegated
+  authority. NPC settlements and institutions act through their saved offices,
+  households, organizations, laws, demands, and material means. NPC initiative is
+  not presented as a player pawn setting.
+
+- **DR-103** (2026-08-11) - **Culture and disposition rank permitted choices;
+  they do not create permission or authority.** Cultural background, Ideoligion,
+  political beliefs, local expression, skills, traits, mood, and pain may alter
+  priority, confidence, method, or willingness inside the valid choice set. They
+  cannot authorize a behavior that its setting, initiative, knowledge, office,
+  ownership, or material conditions deny.
+
+- **DR-104** (2026-08-11) - **Direct operator intent remains authoritative.**
+  Player orders, drafted control, queued forced work, player-authored spaces,
+  permissions, ownership, and explicit denials override self-originated CA work.
+  Saved autonomous intent must carry its behavior key, episode, origin,
+  controller, issuer, authority basis, owner, target, creation tick, and
+  termination condition so it can be rechecked rather than silently replacing
+  operator intent.
+
+- **DR-105** (2026-08-11) - **RimWorld remains the physical execution
+  substrate.** Authorized CA behavior uses native think trees, jobs, duties,
+  reservations, blueprints, work designations, social interactions, world
+  objects, and settlement records. Consequences that depend on a native job are
+  committed only after that job succeeds. The behavior contract classifies,
+  authorizes, records, and explains action; it is not a parallel central
+  scheduler.

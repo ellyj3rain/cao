@@ -8,9 +8,9 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | Form | `major.minor.kohai.patch-maturity` |
 | Hard caps | minor 12; kohai 16; patch 24 |
 | Replay start | `0.1.0.0-pre-alpha` |
-| Current version | `1.2.0.0-alpha` |
-| Closed chronology | `A1-B5` |
-| Next batch | `B6` |
+| Current version | `1.3.0.0-alpha` |
+| Closed chronology | `A1-B6` |
+| Next batch | `B7` |
 | Executable source | [`tools/version-model.mjs`](tools/version-model.mjs) |
 
 ## Tier meanings
@@ -60,6 +60,7 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | VU-030 | B3 | 2026-08-10 | kohai | `1.0.1.0-alpha` | Creation-flow interaction convergence | `T-002`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-026`, `T-028`, `T-030` | B3 matures the B1-B2 creation capability into one coherent interaction system across World tendencies, Starting Region, Culture, native Ideoligion, Political Beliefs, and Founding terms. Shared graphical choices, explicit focus and applied states, bounded comparison layouts, neutral presets, independent population causes, and executable interaction receipts improve legibility and correctness without opening a new simulation capability. |
 | VU-031 | B4 | 2026-08-10 to 2026-08-11 | minor | `1.1.0.0-alpha` | Culture, politics, and responsive authoring | `T-002`, `T-015`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B4 adds a player-visible cultural-practice and reusable-profile contract rather than only restyling B3. Four independently authored culture domains now materialize real settlement objects, political beliefs and realized structure share a grouped comparison composer, native Ideoligion remains first-class, explanation depth is a presentation-only preference, and the creation surfaces adapt across the supported width and UI-scale matrix. These new authoring and runtime consumers form a minor capability unit. |
 | VU-032 | B5 | 2026-08-11 | minor | `1.2.0.0-alpha` | Contextual cultural expression and settlement development | `T-002`, `T-015`, `T-019`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B5 replaces B4's invalid furniture-recipe model with a player-visible causal cultural-expression contract derived from carried background, Ideoligion, political beliefs, population, institutions, material conditions, geography, relations, and history. It also adds relative settlement-development authoring with exact per-facility overrides, current-schema migration, persisted runtime reconciliation, and shared executable causal receipts. These are new authoring and runtime capabilities, so the unit carries the minor tier. |
+| VU-033 | B6 | 2026-08-11 | minor | `1.3.0.0-alpha` | Behavior contract, authority, playability, and test convergence | `T-002`, `T-003`, `T-004`, `T-005`, `T-006`, `T-007`, `T-008`, `T-009`, `T-010`, `T-012`, `T-013`, `T-014`, `T-015`, `T-016`, `T-017`, `T-019`, `T-021`, `T-022`, `T-023`, `T-025`, `T-028`, `T-029`, `T-030` | B6 replaces distributed four-tier and raw-integer behavior interpretation with one typed three-tier initiative contract, an 87-entry behavior catalog, structured authority, knowledge, capability, and material gating, saved intent provenance, separate player and NPC authorization, and native RimWorld execution. Its 107-case behavior suite joins the retained authoring and generation receipts at the gameplay boundary. This is a new runtime and authoring contract rather than an in-place correction, so the unit carries the minor tier. |
 
 ## Historical version evidence
 
@@ -69,12 +70,12 @@ A22 is the maturity boundary: reproducible assembly followed an end-to-end runti
 
 ## Next movement
 
-`B6` is the next ordinary batch. Its content determines its tier after it exists:
+`B7` is the next ordinary batch. Its content determines its tier after it exists:
 
-| If B6 is | Result |
+| If B7 is | Result |
 |---|---|
-| patch or hotfix | `1.2.0.1-alpha` |
-| kohai | `1.2.1.0-alpha` |
-| minor | `1.3.0.0-alpha` (the minor tier advances capability; maturity remains unchanged) |
+| patch or hotfix | `1.3.0.1-alpha` |
+| kohai | `1.3.1.0-alpha` |
+| minor | `1.4.0.0-alpha` (the minor tier advances capability; maturity remains unchanged) |
 
 The thematic catalog is series-neutral in [`Batches/THREADS.md`](Batches/THREADS.md). Temporary `AT-*` and `ATF-*` identifiers resolve through [`Batches/THREAD_ID_CROSSWALK.md`](Batches/THREAD_ID_CROSSWALK.md).
