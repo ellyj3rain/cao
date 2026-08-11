@@ -47,8 +47,6 @@ namespace ColonistAwareness
         public bool operationalAccess = true;
         public bool autonomousHomePlanning = false;
         public int autonomousHomePlanningResetGeneration;
-        public CAInformationDetail informationDetail =
-            CAInformationDetail.Standard;
         public List<CAUserCultureProfile> cultureProfiles =
             new List<CAUserCultureProfile>();
         public List<CAUserPoliticalProfile> politicalProfiles =
@@ -107,8 +105,6 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref autonomousHomePlanning, "autonomousHomePlanning", false);
             Scribe_Values.Look(ref autonomousHomePlanningResetGeneration,
                 "autonomousHomePlanningResetGeneration", 0);
-            Scribe_Values.Look(ref informationDetail, "informationDetail",
-                CAInformationDetail.Standard);
             Scribe_Collections.Look(ref cultureProfiles, "cultureProfiles",
                 LookMode.Deep);
             Scribe_Collections.Look(ref politicalProfiles,
@@ -185,40 +181,6 @@ namespace ColonistAwareness
             Instance?.WriteSettings();
         }
 
-        private void DrawInformationDetail(Listing_Standard listing)
-        {
-            listing.Label("Explanation detail");
-            Rect detailRow = listing.GetRect(34f);
-            Widgets.Label(new Rect(detailRow.x, detailRow.y + 6f,
-                detailRow.width * 0.42f, 28f), "Detail");
-            Rect detailButton = new Rect(detailRow.x
-                + detailRow.width * 0.44f, detailRow.y,
-                detailRow.width * 0.56f, 30f);
-            if (Widgets.ButtonText(detailButton,
-                    CAInformationPresentation.Label(
-                        Settings.informationDetail)))
-            {
-                var options = new List<FloatMenuOption>();
-                foreach (CAInformationDetail level in Enum.GetValues(
-                    typeof(CAInformationDetail)).Cast<CAInformationDetail>())
-                {
-                    CAInformationDetail local = level;
-                    options.Add(new FloatMenuOption(
-                        CAInformationPresentation.Label(local), delegate
-                        {
-                            Settings.informationDetail = local;
-                            CABehaviorRevisions.SettingsChanged();
-                            WriteSettings();
-                        }));
-                }
-                Find.WindowStack.Add(new FloatMenu(options));
-            }
-            listing.Label(CAInformationPresentation.Description(
-                Settings.informationDetail)
-                + " Presentation only; simulation state is unchanged.");
-            listing.Gap(4f);
-        }
-
         private void DrawBehaviorSettings(Rect inRect)
         {
             var viewRect = new Rect(0f, 0f, inRect.width - 16f,
@@ -256,7 +218,7 @@ namespace ColonistAwareness
                 Find.WindowStack.Add(new FloatMenu(options));
             }
             listing.Label(CAInitiativePresentation.Description(
-                Settings.defaultInitiative, Settings.informationDetail));
+                Settings.defaultInitiative));
             listing.Label("Initiative controls origination. Feature permission, authority, knowledge, capability, material feasibility, and direct player ownership remain separate checks.");
             listing.GapLine(10f);
 
@@ -271,8 +233,6 @@ namespace ColonistAwareness
                     section = setting.Section;
                     kind = null;
                     listing.Label(section);
-                    if (section == "Presentation")
-                        DrawInformationDetail(listing);
                 }
                 if (kind != setting.Kind)
                 {
@@ -282,16 +242,13 @@ namespace ColonistAwareness
                 bool enabled = CABehaviorSettings.IsEnabled(setting.Key,
                     Settings);
                 bool previous = enabled;
-                string description = CABehaviorSettings.Description(setting,
-                    Settings.informationDetail);
+                string description = CABehaviorSettings.Description(setting);
                 listing.CheckboxLabeled(setting.Label, ref enabled,
                     description);
                 if (enabled != previous)
                     CABehaviorSettings.SetEnabled(setting.Key, Settings,
                         enabled);
-                if (Settings.informationDetail
-                    != CAInformationDetail.Compact)
-                    listing.Label(description);
+                listing.Label(description);
                 listing.Gap(4f);
             }
 

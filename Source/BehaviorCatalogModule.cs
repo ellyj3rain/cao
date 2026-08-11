@@ -153,7 +153,6 @@ namespace ColonistAwareness
         BodyWeight,
         DualWield,
         RenderArms,
-        InformationDetail,
         TraceBehavior
     }
 
@@ -162,9 +161,7 @@ namespace ColonistAwareness
         public int Index { get; internal set; }
         public string Key { get; }
         public string Label { get; }
-        public string CompactText { get; }
-        public string StandardText { get; }
-        public string ExpandedText { get; }
+        public string Description { get; }
         public CABehaviorDomain Domain { get; }
         public CABehaviorDomain[] RelatedDomains { get; }
         public CABehaviorForm Form { get; }
@@ -204,7 +201,7 @@ namespace ColonistAwareness
             && Form != CABehaviorForm.Diagnostic;
 
         internal CABehaviorDefinition(string key, string label,
-            string compactText, CABehaviorDomain domain, CABehaviorForm form,
+            string description, CABehaviorDomain domain, CABehaviorForm form,
             CAActorContext actorContexts, CASettingKey setting,
             CAInitiativeTier minimumInitiative, bool initiativeIndependent,
             bool standardMayContinue, bool authorityCeilingApplies,
@@ -213,7 +210,7 @@ namespace ColonistAwareness
             CADispositionAxis axes, CAAuthorityOrigin origins,
             string authorityRequirement, string executorOwner,
             string nativeExecutor, string cadence, string intentOwnership,
-            string completion, string standDown, string expanded = null,
+            string completion, string standDown,
             CABehaviorDomain[] relatedDomains = null,
             CABehaviorForm[] relatedForms = null, bool exposeInUi = true,
             float minimumKnowledgeConfidence = -1f,
@@ -221,7 +218,7 @@ namespace ColonistAwareness
         {
             Key = key;
             Label = label;
-            CompactText = compactText;
+            Description = description;
             Domain = domain;
             Form = form;
             ActorContexts = actorContexts;
@@ -255,10 +252,6 @@ namespace ColonistAwareness
             RelatedDomains = relatedDomains ?? Array.Empty<CABehaviorDomain>();
             RelatedForms = relatedForms ?? Array.Empty<CABehaviorForm>();
             ExposeInUi = exposeInUi;
-            StandardText = compactText + " Uses " + NativeExecutor + ".";
-            ExpandedText = expanded ?? StandardText + " Authority: "
-                + AuthorityRequirement + " Cadence: " + Cadence
-                + " Completion: " + CompletionCondition;
         }
 
         public bool AppliesTo(CAActorContext context)
@@ -382,13 +375,13 @@ namespace ColonistAwareness
             Add(list, "spatial.resident_roster_negotiation", "Resident roster choice", "Lets one resident choose a compatible authored sleeping program from current bed and relationship facts.", CABehaviorDomain.DomesticAndSpatial, CABehaviorForm.AdaptivePlanning, Player | Spatial, CASettingKey.AutonomousHomePlanning, CAInitiativeTier.Autonomous, false, true, true, false, CAKnowledgeRequirement.CurrentFact, false, true, 0, CADispositionAxis.Initiative | CADispositionAxis.Conformity, PlayerOrigins, "the resident's own choice inside a player-authored sleeping program", "PlannedUseMapComponent", "saved space-program roster and native bed ownership", "600-tick home pass", "one resident roster episode", "the resident has a compatible sleeping assignment", "program, relationship, capacity, player ownership, or authority changes");
             Add(list, "spatial.program_furnishing", "Program furnishing", "Furnishes one functional or contextual need inside an authored space program.", CABehaviorDomain.DomesticAndSpatial, CABehaviorForm.AdaptivePlanning, Player | Spatial, CASettingKey.AutonomousHomePlanning, CAInitiativeTier.Proactive, false, true, true, false, CAKnowledgeRequirement.MaterialDeficit, false, false, 0, CADispositionAxis.Initiative | CADispositionAxis.Discipline, PlayerOrigins, "authored space program and effective initiative ceiling", "SpatialFurnishingModule", "B5 asset registry and native blueprint", "600-tick spatial pass", "one program demand", "the demand is satisfied", "program, cells, residents, requirement, material, ceiling, or veto fails");
             Add(list, "spatial.npc_settlement_development", "NPC settlement development", "Consumes shared settlement demands through an explicit simulated institution.", CABehaviorDomain.InstitutionalDevelopment, CABehaviorForm.InstitutionalAction, Npc | NpcInstitution, CASettingKey.None, CAInitiativeTier.Standard, true, false, false, true, CAKnowledgeRequirement.MaterialDeficit, false, false, 0, CADispositionAxis.None, NpcOrigins, "named household, operator, organization, guild, religious body, military, or government", "SettlementPlanningContextModule", "B5 demand, asset, siting, and material pipeline", "world or settlement simulation cadence", "institutional proposal and commitment", "the demand is satisfied", "approver, owner, labor, funding, material, or siting fails");
+            Add(list, "culture.longitudinal_update", "Cultural continuity", "Records durable cultural change from lived population, spatial, social, institutional, political, and material history.", CABehaviorDomain.SocialAndPolitical, CABehaviorForm.Observation, Colony | NpcInstitution | CAActorContext.WorldSimulation, CASettingKey.None, CAInitiativeTier.Standard, true, false, false, false, CAKnowledgeRequirement.None, false, false, 0, CADispositionAxis.None, PlayerOrigins | NpcOrigins | CAAuthorityOrigin.WorldAuthoring, "persisted lived evidence at the owning settlement or colony", "CultureLongitudinalModule", "saved Culture evidence and practice transition", "60000-tick historical evaluation", "one evidence period", "a changed evidence period is recorded once", "no meaningful evidence changed", exposeInUi: false);
             Add(list, "spatial.creation_authoring", "Starting-region authoring", "Writes confirmed creation state directly as simulation history.", CABehaviorDomain.DomesticAndSpatial, CABehaviorForm.DirectOrder, CAActorContext.CreationAuthor, CASettingKey.None, CAInitiativeTier.Standard, true, false, false, false, CAKnowledgeRequirement.None, false, false, 0, CADispositionAxis.None, CAAuthorityOrigin.WorldAuthoring, "creation author confirmation", "RegionalSetupModule", "B5 authoring and materialization pipeline", "creation flow", "confirmed initial state", "the confirmed state materializes", "authoring validation blocks confirmation");
             Add(list, "institution.frontier_household_activity", "Frontier household activity", "Carries one bounded household movement under the realized frontier holding.", CABehaviorDomain.InstitutionalDevelopment, CABehaviorForm.InstitutionalAction, Npc | NpcInstitution, CASettingKey.None, CAInitiativeTier.Standard, true, true, false, true, CAKnowledgeRequirement.None, false, false, 0, CADispositionAxis.None, CAAuthorityOrigin.Household | CAAuthorityOrigin.Continuation | CAAuthorityOrigin.SaveRestore, "realized frontier household and current household role", "FrontierModule", "native movement job", "bounded frontier household cadence", "one household episode", "the household member reaches the current site objective", "the holding, route, household, or role becomes invalid");
             Add(list, "survival.frontier_flight", "Frontier flight", "Moves a frontier resident toward a reachable edge under the current household alarm without granting hostile identity.", CABehaviorDomain.SurvivalAndImmediateSafety, CABehaviorForm.Safeguard, Npc, CASettingKey.None, CAInitiativeTier.Standard, true, false, false, false, CAKnowledgeRequirement.None, false, false, 0, CADispositionAxis.Courage | CADispositionAxis.Discipline, CAAuthorityOrigin.Household | CAAuthorityOrigin.NativeDuty, "current frontier household alarm and actor-local survival", "FrontierModule", "native movement job", "frontier threat response", "one flight episode", "the resident clears the holding", "the alarm, route, or holding becomes invalid");
 
             // Presentation and diagnostics never authorize simulation.
             Add(list, "presentation.arms", "Arm rendering", "Renders arms without changing simulation state.", CABehaviorDomain.Presentation, CABehaviorForm.Presentation, Player | Npc, CASettingKey.RenderArms, CAInitiativeTier.Standard, true, false, false, false, CAKnowledgeRequirement.None, false, false, 0, CADispositionAxis.None, PlayerOrigins | NpcOrigins, "presentation setting", "ArmsModule", "rendering", "draw pass", "presentation only", "the frame is drawn", "presentation is disabled", exposeInUi: false);
-            Add(list, "presentation.information_detail", "Information detail", "Changes explanation density without changing simulation state.", CABehaviorDomain.Presentation, CABehaviorForm.Presentation, CAActorContext.PlayerPawn | Colony | Spatial | NpcInstitution | CAActorContext.CreationAuthor, CASettingKey.InformationDetail, CAInitiativeTier.Standard, true, false, false, false, CAKnowledgeRequirement.None, false, false, 0, CADispositionAxis.None, CAAuthorityOrigin.OperatorDirect, "presentation setting", "AuthoringPresentationModule", "UI formatting", "on draw", "presentation only", "the requested explanation is shown", "the surface closes", exposeInUi: false);
             Add(list, "diagnostic.behavior_trace", "Behavior trace", "Records meaningful behavior transitions without authorizing them.", CABehaviorDomain.Diagnostics, CABehaviorForm.Diagnostic, Player | Npc | Colony | NpcInstitution, CASettingKey.TraceBehavior, CAInitiativeTier.Standard, true, false, false, false, CAKnowledgeRequirement.None, false, false, 0, CADispositionAxis.None, PlayerOrigins | NpcOrigins, "diagnostic setting", "TraceModule", "diagnostic log", "meaningful transition only", "diagnostic only", "the receipt is written", "tracing is disabled", exposeInUi: false);
             Add(list, "diagnostic.behavior_census", "Behavior census", "Reads current behavior state without changing it.", CABehaviorDomain.Diagnostics, CABehaviorForm.Diagnostic, Player | Npc | Colony | Spatial | NpcInstitution, CASettingKey.None, CAInitiativeTier.Standard, true, false, false, false, CAKnowledgeRequirement.None, false, false, 0, CADispositionAxis.None, PlayerOrigins | NpcOrigins, "developer request", "DevTestModule", "read-only census", "on request", "diagnostic only", "the census is emitted", "no valid subject is selected", exposeInUi: false);
 
@@ -433,10 +426,7 @@ namespace ColonistAwareness
                     throw new InvalidOperationException(definition.Key
                         + " has no cadence or termination contract.");
                 if (definition.ExposeInUi
-                    && (string.IsNullOrWhiteSpace(definition.CompactText)
-                        || string.IsNullOrWhiteSpace(definition.StandardText)
-                        || string.IsNullOrWhiteSpace(
-                            definition.ExpandedText)))
+                    && string.IsNullOrWhiteSpace(definition.Description))
                     throw new InvalidOperationException(definition.Key
                         + " has incomplete presentation text.");
             }
@@ -451,7 +441,7 @@ namespace ColonistAwareness
             CADispositionAxis axes, CAAuthorityOrigin origins,
             string authority, string owner, string executor, string cadence,
             string intentOwner, string completion, string standDown,
-            string expanded = null, CABehaviorDomain[] relatedDomains = null,
+            CABehaviorDomain[] relatedDomains = null,
             CABehaviorForm[] relatedForms = null, bool exposeInUi = true,
             float minimumKnowledgeConfidence = -1f,
             bool uncertaintyAffectsRanking = false)
@@ -460,7 +450,7 @@ namespace ColonistAwareness
                 actors, setting, minimum, independent, continuation, ceiling,
                 institutional, knowledge, relayed, liveValidation, maxAge, axes,
                 origins, authority, owner, executor, cadence, intentOwner,
-                completion, standDown, expanded, relatedDomains, relatedForms,
+                completion, standDown, relatedDomains, relatedForms,
                 exposeInUi, minimumKnowledgeConfidence,
                 uncertaintyAffectsRanking));
         }
@@ -1275,7 +1265,6 @@ namespace ColonistAwareness
                 case CASettingKey.BodyWeight: return s.bodyWeight;
                 case CASettingKey.DualWield: return s.dualWield;
                 case CASettingKey.RenderArms: return s.renderArms;
-                case CASettingKey.InformationDetail: return true;
                 case CASettingKey.TraceBehavior: return s.traceBehavior;
                 default: return false;
             }
@@ -1369,11 +1358,8 @@ namespace ColonistAwareness
             CABehaviorRevisions.SettingsChanged();
         }
 
-        public static string Description(CASettingDefinition setting,
-            CAInformationDetail detail)
+        public static string Description(CASettingDefinition setting)
         {
-            if (detail == CAInformationDetail.Compact)
-                return setting.ImmediateEffect;
             CABehaviorDefinition[] behaviors = CABehaviorCatalog.ForSetting(
                 setting.Key);
             string tiers = TierSummary(behaviors);
@@ -1382,11 +1368,6 @@ namespace ColonistAwareness
             if (tiers.Length > 0) result += " Origination: " + tiers + ".";
             string interaction = CrossSettingNote(setting.Key);
             if (interaction.Length > 0) result += " " + interaction;
-            if (detail == CAInformationDetail.Expanded && behaviors.Length > 0)
-            {
-                result += " Behaviors: " + string.Join(", ", behaviors
-                    .Where(b => b.ExposeInUi).Select(b => b.Label).ToArray()) + ".";
-            }
             return result;
         }
 
@@ -1459,7 +1440,7 @@ namespace ColonistAwareness
         }
 
         public static string Description(CAInitiativeTier tier,
-            CAInformationDetail detail, Pawn pawn = null)
+            Pawn pawn = null)
         {
             string compact;
             switch (tier)
@@ -1474,7 +1455,6 @@ namespace ColonistAwareness
                     compact = "Native behavior, direct orders, and baseline safety.";
                     break;
             }
-            if (detail == CAInformationDetail.Compact) return compact;
             CABehaviorDefinition[] definitions = pawn != null
                 ? CAEffectiveBehaviorProfileCache.Of(pawn)?.Definitions()
                     .Where(d => d.ExposeInUi).ToArray()
@@ -1487,16 +1467,6 @@ namespace ColonistAwareness
             if (domains.Length > 0) result += pawn != null
                 ? " Active scope: " + domains + "."
                 : " Tier examples: " + domains + ".";
-            if (detail == CAInformationDetail.Expanded)
-            {
-                string labels = string.Join(", ", definitions.Take(18)
-                    .Select(d => d.Label).ToArray());
-                if (labels.Length > 0) result += pawn != null
-                    ? " Enabled behaviors: " + labels
-                        + (definitions.Length > 18 ? ", and more." : ".")
-                    : " These may originate only when their separate permission, authority, knowledge, and material conditions allow: "
-                        + labels + (definitions.Length > 18 ? ", and more." : ".");
-            }
             return result;
         }
 

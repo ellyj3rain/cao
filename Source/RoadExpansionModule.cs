@@ -197,8 +197,9 @@ namespace ColonistAwareness
                 worker.jobs.EndCurrentJob(JobCondition.Incompletable);
         }
 
-        // What a settlement wants to reach: first its own security
-        // posts, then the nearest settlement with an active agreement.
+        // Culture ranks two already valid institutional projects: a way to a
+        // watch post or a road toward an agreement partner. It does not create
+        // either target, funding, labor, authority, or a passable route.
         private CARoadProject Propose(CARegionalSettlementRecord record,
             CAOrganization org, string key,
             CARegionalWorldComponent world)
@@ -216,33 +217,47 @@ namespace ColonistAwareness
             var patrols = map.GetComponent<CAPatrolSystemMapComponent>();
             IntVec3 post = patrols != null
                 ? patrols.NearestNodeFor(key, start) : IntVec3.Invalid;
-            if (post.IsValid && post.DistanceTo(start) > 12f)
+            if (!post.IsValid || post.DistanceTo(start) <= 12f)
+                post = IntVec3.Invalid;
+
+            IntVec3 agreementTarget = IntVec3.Invalid;
+            string agreementWhy = null;
+            float best = float.MaxValue;
+            foreach (CARegionalSettlementRecord other in
+                world.ForMap(map))
+            {
+                if (other == record || other?.faction == null
+                    || other.localRect == CellRect.Empty) continue;
+                string otherKey = other.regionalId + "#" + other.slot;
+                var wc = CAOrganizationWorldComponent.Current;
+                if (wc == null || !wc.HasAnyActiveAgreement(key,
+                    otherKey)) continue;
+                float d = other.localRect.CenterCell.DistanceTo(start);
+                if (d < best && d > 15f)
+                {
+                    best = d;
+                    agreementTarget = other.localRect.CenterCell;
+                    agreementWhy = "a road toward " + other.name
+                        + ", who they are bound to";
+                }
+            }
+
+            int defense = CACultureHistory.PracticeStrength(record.culture,
+                "defensive-boundary");
+            int exchange = CACultureHistory.PracticeStrength(record.culture,
+                "outsider-exchange");
+            if (CACultureConsumerKernel.PreferExchangeRoad(
+                    agreementTarget.IsValid, post.IsValid, exchange, defense))
+            {
+                target = agreementTarget;
+                why = agreementWhy + "; retained exchange practice "
+                    + exchange + "/100";
+            }
+            else if (post.IsValid)
             {
                 target = post;
-                why = "a way out to their own watch post";
-            }
-            else
-            {
-                float best = float.MaxValue;
-                foreach (CARegionalSettlementRecord other in
-                    world.ForMap(map))
-                {
-                    if (other == record || other?.faction == null
-                        || other.localRect == CellRect.Empty) continue;
-                    string otherKey = other.regionalId + "#" + other.slot;
-                    var wc = CAOrganizationWorldComponent.Current;
-                    if (wc == null || !wc.HasAnyActiveAgreement(key,
-                        otherKey)) continue;
-                    float d = other.localRect.CenterCell
-                        .DistanceTo(start);
-                    if (d < best && d > 15f)
-                    {
-                        best = d;
-                        target = other.localRect.CenterCell;
-                        why = "a road toward " + other.name
-                            + ", who they are bound to";
-                    }
-                }
+                why = "a way out to their own watch post; retained defensive "
+                    + "practice " + defense + "/100";
             }
             if (!target.IsValid) return null;
 

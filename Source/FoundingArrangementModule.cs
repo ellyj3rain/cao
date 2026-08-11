@@ -125,12 +125,13 @@ namespace ColonistAwareness
                 durationDays = 30
             };
 
-        public static readonly CAFoundingArrangement EstablishedSettlement =
+        public static readonly CAFoundingArrangement AncestralCommons =
             new CAFoundingArrangement
             {
-                id = "established-settlement",
-                label = "customary settlement",
-                premise = "The founders adopt their customary local rules.",
+                id = "ancestral-commons",
+                label = "ancestral commons",
+                premise = "The group carries inherited customs into the "
+                    + "rules adopted at landing.",
                 leaderRule = "none",
                 workRequired = false,
                 foundersDecide = true,
@@ -153,7 +154,7 @@ namespace ColonistAwareness
 
         public static readonly CAFoundingArrangement[] All =
         {
-            SharedSurvival, EmergencyCommand, EstablishedSettlement,
+            SharedSurvival, EmergencyCommand, AncestralCommons,
             SingleFounder
         };
 
@@ -163,7 +164,7 @@ namespace ColonistAwareness
             bool ancestral)
         {
             if (alone) return SingleFounder;
-            if (ancestral) return EstablishedSettlement;
+            if (ancestral) return AncestralCommons;
             return SharedSurvival;
         }
     }
@@ -206,6 +207,8 @@ namespace ColonistAwareness
                 .ConfirmedForRuntime();
             CAPlayerFoundingModel.ApplyCarriedState(founding,
                 Faction.OfPlayer);
+            CACultureLongitudinalMapComponent.For(map)
+                ?.EstablishPlayerCulture(founding, now);
 
             // Scenario facts used to choose a default arrangement.
             bool fellFromSky = ArrivedViolently();
@@ -242,7 +245,7 @@ namespace ColonistAwareness
                 .PoliticalBeliefsOf(Faction.OfPlayer);
 
             if (founding != null)
-                colony.Record("founding", "Cultural background: "
+                colony.Record("founding", "Culture: "
                     + (founding.culture?.name ?? "not recorded")
                     + ". Ideoligion: "
                     + (founding.nativeIdeoName ?? "not active")

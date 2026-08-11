@@ -584,6 +584,8 @@ namespace ColonistAwareness
 
     public sealed class CARegionalSettlementRecord : IExposable
     {
+        public const int CurrentSchemaVersion = 3;
+        public int schemaVersion = CurrentSchemaVersion;
         public string regionalId;
         public string name;
         // Stable region identity. Moving the landing tile does not change it.
@@ -629,21 +631,22 @@ namespace ColonistAwareness
         public int accessInfrastructure;
         public int serviceInfrastructure;
         public int civicInfrastructure;
-        // Resolved material state above is kept separate from how each choice
-        // was obtained. These fields preserve per-facility authorship and the
-        // generated (-1) versus chosen capacity values for durable receipts.
-        public int startingFacilityAuthoredMask;
-        public CASettlementDevelopmentProfile developmentProfile =
-            CASettlementDevelopmentProfile.Contextual;
-        public int authoredAccessInfrastructure = -1;
-        public int authoredServiceInfrastructure = -1;
-        public int authoredCivicInfrastructure = -1;
+        public int facilityExceptionMask;
+        public string migrationEvidence;
+        private int legacyFacilityAuthoredMask;
+        private CALegacySettlementDevelopmentProfile
+            legacyDevelopmentProfile =
+                CALegacySettlementDevelopmentProfile.Contextual;
+        private int legacyAuthoredAccess = -1;
+        private int legacyAuthoredServices = -1;
+        private int legacyAuthoredCivic = -1;
         // Population groups and starting provisions are copied from the plan
         // and resolved into pawns, ideoligions, and organizations.
         public List<CASettlementPopulationGroup> populationGroups =
             new List<CASettlementPopulationGroup>();
         public List<CAStartingProvision> startingProvisions =
             new List<CAStartingProvision>();
+        public CACulture culture;
         public List<string> populationAssignments = new List<string>();
         // Material wealth and the era represented by the original buildings.
         public int wealth = -1;
@@ -665,6 +668,7 @@ namespace ColonistAwareness
             new List<CAStartingStockRecord>();
         public int researchStock;
         public int researchMilestones;
+        public int lastResearchActivityTick = -1;
         // Machine-readable settlement gates, paths, center, and facilities.
         public CASettlementLayout layout;
         public int firstMaterializationTick = -1;
@@ -722,6 +726,7 @@ namespace ColonistAwareness
 
         public void ExposeData()
         {
+            Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
             Scribe_Values.Look(ref regionalId, "regionalId");
             Scribe_Values.Look(ref name, "name");
             Scribe_Values.Look(ref regionKey, "regionKey");
@@ -778,20 +783,28 @@ namespace ColonistAwareness
                 "serviceInfrastructure", 0);
             Scribe_Values.Look(ref civicInfrastructure,
                 "civicInfrastructure", 0);
-            Scribe_Values.Look(ref startingFacilityAuthoredMask,
-                "startingFacilityAuthoredMask", 0);
-            Scribe_Values.Look(ref developmentProfile,
-                "developmentProfile",
-                CASettlementDevelopmentProfile.Contextual);
-            Scribe_Values.Look(ref authoredAccessInfrastructure,
-                "authoredAccessInfrastructure", -1);
-            Scribe_Values.Look(ref authoredServiceInfrastructure,
-                "authoredServiceInfrastructure", -1);
-            Scribe_Values.Look(ref authoredCivicInfrastructure,
-                "authoredCivicInfrastructure", -1);
+            Scribe_Values.Look(ref facilityExceptionMask,
+                "facilityExceptionMask", 0);
+            Scribe_Values.Look(ref migrationEvidence,
+                "migrationEvidence");
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                Scribe_Values.Look(ref legacyFacilityAuthoredMask,
+                    "startingFacilityAuthoredMask", 0);
+                Scribe_Values.Look(ref legacyDevelopmentProfile,
+                    "developmentProfile",
+                    CALegacySettlementDevelopmentProfile.Contextual);
+                Scribe_Values.Look(ref legacyAuthoredAccess,
+                    "authoredAccessInfrastructure", -1);
+                Scribe_Values.Look(ref legacyAuthoredServices,
+                    "authoredServiceInfrastructure", -1);
+                Scribe_Values.Look(ref legacyAuthoredCivic,
+                    "authoredCivicInfrastructure", -1);
+            }
             Scribe_Collections.Look(ref populationGroups, "populationGroups", LookMode.Deep);
             Scribe_Collections.Look(ref startingProvisions, "startingProvisions",
                 LookMode.Deep);
+            Scribe_Deep.Look(ref culture, "culture");
             Scribe_Collections.Look(ref populationAssignments,
                 "populationAssignments", LookMode.Value);
             Scribe_Values.Look(ref wealth, "wealth", -1);
@@ -805,6 +818,18 @@ namespace ColonistAwareness
                 populationAssignments = new List<string>();
             if (statusAssignments == null)
                 statusAssignments = new List<string>();
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
+                if (facilityExceptionMask == 0)
+                    facilityExceptionMask = legacyFacilityAuthoredMask;
+                if (schemaVersion < CurrentSchemaVersion)
+                {
+                    migrationEvidence = "B5/B6 realized material state and "
+                        + "facility exceptions preserved; retired profile and "
+                        + "ordinal authoring no longer govern this record.";
+                    schemaVersion = CurrentSchemaVersion;
+                }
+            }
             Scribe_Values.Look(ref factionEra, "factionEra", -1);
             Scribe_Values.Look(ref settlementForm, "settlementForm", -1);
             Scribe_Values.Look(ref generationSummary, "generationSummary");
@@ -821,6 +846,8 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref researchStock, "researchStock", 0);
             Scribe_Values.Look(ref researchMilestones,
                 "researchMilestones", 0);
+            Scribe_Values.Look(ref lastResearchActivityTick,
+                "lastResearchActivityTick", -1);
             Scribe_Deep.Look(ref layout, "layout");
             Scribe_Values.Look(ref firstMaterializationTick,
                 "firstMaterializationTick", -1);
@@ -1519,16 +1546,9 @@ namespace ColonistAwareness
                 accessInfrastructure = resolvedAccess,
                 serviceInfrastructure = resolvedServices,
                 civicInfrastructure = resolvedCivic,
-                startingFacilityAuthoredMask = settlement
-                    ?.startingFacilityAuthoredMask ?? 0,
-                developmentProfile = settlement?.developmentProfile
-                    ?? CASettlementDevelopmentProfile.Contextual,
-                authoredAccessInfrastructure = settlement
-                    ?.accessInfrastructure ?? -1,
-                authoredServiceInfrastructure = settlement
-                    ?.serviceInfrastructure ?? -1,
-                authoredCivicInfrastructure = settlement
-                    ?.civicInfrastructure ?? -1,
+                facilityExceptionMask = settlement
+                    ?.facilityExceptionMask ?? 0,
+                culture = settlement?.localCulture?.Copy(),
                 persistent = settlement?.persistent ?? true,
                 faction = faction,
                 factionDefName = faction?.def?.defName ?? "none",
@@ -1628,10 +1648,6 @@ namespace ColonistAwareness
                             distribution = arrangement.distribution,
                             basisKey = arrangement.basisKey,
                             basisLabel = arrangement.basisLabel,
-                            distributionAuthored =
-                                arrangement.distributionAuthored,
-                            authoredDistribution =
-                                arrangement.authoredDistribution,
                             active = true,
                             waterSecured = arrangement.waterSecured,
                             nodes = arrangement.nodes,
@@ -1668,19 +1684,11 @@ namespace ColonistAwareness
                     knowledge);
                 record.generationSummary = CASettlementAxes.Provenance(
                     settlement?.authoredForm ?? CASettlementAxes.Derive,
-                    record.startingFacilityAuthoredMask,
-                    record.authoredAccessInfrastructure,
-                    record.authoredServiceInfrastructure,
-                    record.authoredCivicInfrastructure)
-                    + "; local practice ceiling " + ceiling
-                    + "; access capacity " + CASettlementStartingState
-                        .InfrastructureWords(record.accessInfrastructure)
-                    + ", service capacity " + CASettlementStartingState
-                        .InfrastructureWords(record.serviceInfrastructure)
-                    + ", civic capacity " + CASettlementStartingState
-                        .InfrastructureWords(record.civicInfrastructure)
-                    + (roadLinked ? ", road-linked" : ", no road")
-                    + (coastal ? ", coastal" : ", inland");
+                    record.facilityExceptionMask)
+                    + "; facilities " + record.startingFacilityMask
+                    + "; practice ceiling " + ceiling
+                    + (roadLinked ? "; road present" : "; no road")
+                    + (coastal ? "; coast present" : "; inland");
                 record.communications = CASettlementAxes.PracticedCapability(
                     CASettlementAxes.CapCommunications, knowledge,
                     ceiling);
@@ -1852,6 +1860,27 @@ namespace ColonistAwareness
             CARegionalSettlementRecord record, Map map)
         {
             if (record == null) return;
+            if (record.culture == null && map != null)
+            {
+                CARegionalWorldComponent world =
+                    CARegionalWorldComponent.Current;
+                CARegionalPlan region = world?.FindRegionForMap(map);
+                CARegionalSettlementPlan settlement = region?.settlements?
+                    .FirstOrDefault(item => item != null
+                        && item.slot == record.slot);
+                if (settlement != null)
+                {
+                    CACultureHistory.EnsureSettlementCulture(region,
+                        settlement);
+                    record.culture = settlement.localCulture?.Copy();
+                    if (record.culture != null)
+                        record.migrationEvidence =
+                            (record.migrationEvidence.NullOrEmpty() ? ""
+                                : record.migrationEvidence + " ")
+                            + "B7 settlement Culture recovered from the "
+                            + "authoritative regional plan.";
+                }
+            }
             CACulturalExpression expression =
                 CACulturalExpressionModel.ForMaterializedSettlement(record,
                     map);

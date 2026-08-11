@@ -71,16 +71,9 @@ internal static class CARegionalFixtureContracts
                 IntValue(settlement, "reallocatedFromTileId", -1),
                 IntValue(settlement, "operationalRoleMask", 0));
             hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                IntValue(settlement, "startingFacilityAuthoredMask", 0),
-                IntValue(settlement, "startingFacilityValues", 0),
-                IntValue(settlement, "accessInfrastructure", -1));
-            hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                IntValue(settlement, "serviceInfrastructure", -1),
-                IntValue(settlement, "civicInfrastructure", -1),
+                IntValue(settlement, "facilityExceptionMask", 0),
+                IntValue(settlement, "facilityExceptionValues", 0),
                 IntValue(settlement, "authoredForm", -1));
-            hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                DevelopmentProfileValue(StringValue(settlement,
-                    "developmentProfile", "Contextual")));
         }
         return hash;
     }
@@ -107,10 +100,6 @@ internal static class CARegionalFixtureContracts
                     StringValue(axis, "option", "none")),
                 IntValue(axis, "source", 0));
     }
-
-    private static int DevelopmentProfileValue(string value) =>
-        value == "Minimal" ? -1 : value == "Extensive" ? 1
-            : int.TryParse(value, out int parsed) ? parsed : 0;
 
     private static int IntValue(XElement parent, string name, int fallback) =>
         int.TryParse((string)parent?.Element(name), out int value)

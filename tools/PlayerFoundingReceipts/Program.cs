@@ -71,16 +71,33 @@ public static class Program
                 LoadOptions.PreserveWhitespace);
             MergeMissingPolicy(plan, Plan(evidence));
         }
-        SetValue(plan, "schemaVersion", "4");
+        SetValue(plan, "schemaVersion", "5");
         plan.Element("foundingArrangement")?.Remove();
         plan.Element("foundingArrangementAuthored")?.Remove();
         foreach (XElement settlement in Items(plan, "settlements"))
-            if (settlement.Element("developmentProfile") == null)
-                settlement.Element("startingFacilityMask")?.AddAfterSelf(
-                    new XElement("developmentProfile", "Contextual"));
+        {
+            settlement.Element("developmentProfile")?.Remove();
+            settlement.Element("accessInfrastructure")?.Remove();
+            settlement.Element("serviceInfrastructure")?.Remove();
+            settlement.Element("civicInfrastructure")?.Remove();
+            XElement oldMask = settlement.Element(
+                "startingFacilityAuthoredMask");
+            XElement oldValues = settlement.Element("startingFacilityValues");
+            if (oldMask != null && settlement.Element(
+                    "facilityExceptionMask") == null)
+                settlement.Add(new XElement("facilityExceptionMask",
+                    oldMask.Value));
+            if (oldValues != null && settlement.Element(
+                    "facilityExceptionValues") == null)
+                settlement.Add(new XElement("facilityExceptionValues",
+                    oldValues.Value));
+            oldMask?.Remove();
+            oldValues?.Remove();
+        }
         if (plan.Element("playerFounding") == null)
         {
             var player = new XElement("playerFounding",
+                new XElement("schemaVersion", "2"),
                 new XElement("culture"),
                 new XElement("politicalBeliefs",
                     new XElement("positions")),
@@ -98,11 +115,13 @@ public static class Program
         }
         IEnumerable<XElement> cultures = Items(plan, "factions")
             .Select(item => item.Element("culture"))
+            .Concat(Items(plan, "settlements")
+                .Select(item => item.Element("localCulture")))
             .Concat(new[] { plan.Element("playerFounding")
                 ?.Element("culture") }).Where(item => item != null);
         foreach (XElement culture in cultures)
         {
-            SetValue(culture, "schemaVersion", "3");
+            SetValue(culture, "schemaVersion", "5");
             culture.Element("gatheringKey")?.Remove();
             culture.Element("hospitalityKey")?.Remove();
             culture.Element("mealsKey")?.Remove();
@@ -115,7 +134,7 @@ public static class Program
             + document.ToString();
         WriteExact(mirrorPath, rendered);
         WriteExact(keyedPath, rendered);
-        Console.WriteLine("converted fixture -> schema 4 player founding; "
+        Console.WriteLine("converted fixture -> schema 5 player founding; "
             + "active surfaces written identically");
     }
 
@@ -211,7 +230,7 @@ public static class Program
             "native preset/custom/load navigation or notification state is incomplete");
         foreach (string label in new[]
         {
-            "Cultural background", "Ideoligion", "Political beliefs",
+            "Culture", "Ideoligion", "Political beliefs",
             "Rules at landing"
         })
             Require(page.Contains("\"" + label + "\""),
@@ -235,10 +254,10 @@ public static class Program
             && page.Contains("Starting supplies")
             && page.Contains("Whether provisions are pooled and rationed."),
             "the four founding-term causes are incomplete");
-        Require(setup.Contains("CurrentSchemaVersion = 4")
+        Require(setup.Contains("CurrentSchemaVersion = 5")
             && setup.Contains("Scribe_Deep.Look(ref playerFounding, "
                 + "\"playerFounding\")"),
-            "regional plan does not own schema-4 founding state");
+            "regional plan does not own schema-5 founding state");
         Require(!setup.Contains("CAPlayerFoundingModel.ApplyCarriedState")
             && !setup.Contains("CAPlayerFoundingModel.ApplyToPlayer"),
             "regional resolution still owns or replays player founding");
@@ -265,7 +284,8 @@ public static class Program
             && fixtureContracts.Contains(
                 "internal static int RealizationSourceHash")
             && fixtureContracts.Contains("politicalBeliefs")
-            && fixtureContracts.Contains("developmentProfile"),
+            && fixtureContracts.Contains("facilityExceptionMask")
+            && !fixtureContracts.Contains("developmentProfile"),
             "fixture conversion can stamp current schema around a stale "
                 + "settlement realization receipt");
         report.AppendLine("PASS source path -> authoring, persistence, native "
@@ -277,8 +297,8 @@ public static class Program
         StringBuilder report)
     {
         XElement plan = Plan(document);
-        Require(Value(plan, "schemaVersion") == "4",
-            label + " fixture is not schema 4");
+        Require(Value(plan, "schemaVersion") == "5",
+            label + " fixture is not schema 5");
         Require(int.TryParse(Value(plan,
                     "settlementRealizationSourceHash"), out int savedHash)
                 && savedHash
@@ -314,7 +334,7 @@ public static class Program
         {
             Require(!string.IsNullOrEmpty(Value(player.Element("culture"),
                     "id"))
-                && Value(player.Element("culture"), "schemaVersion") == "3"
+                && Value(player.Element("culture"), "schemaVersion") == "5"
                 && player.Element("culture")?.Element("gatheringKey") == null
                 && player.Element("culture")?.Element("hospitalityKey") == null
                 && player.Element("culture")?.Element("mealsKey") == null
@@ -371,7 +391,7 @@ public static class Program
             && plan.Element("foundingArrangementAuthored") == null,
             label + " fixture retains obsolete root founding fields");
         report.AppendLine("PASS " + label
-            + " -> schema 4; 3 factions; 4 settlements; 9 population groups; "
+            + " -> schema 5; 3 factions; 4 settlements; 9 population groups; "
             + (confirmed ? "confirmed founding state"
                 : arrangementNull ? "unconfirmed founding authoring state"
                 : "unconfirmed authored founding draft"));

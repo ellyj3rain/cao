@@ -8,11 +8,41 @@ using Verse;
 
 namespace ColonistAwareness
 {
+    public interface ICAEstablishedPlayerStart
+    {
+        string CATemporalBasis { get; }
+    }
+
+    // Scenario metadata owns the exceptional established-player boundary.
+    // Similar class names do not opt a scenario into mature starting history.
+    public sealed class ScenPart_CAEstablishedPlayerSettlement : ScenPart,
+        ICAEstablishedPlayerStart
+    {
+        public string temporalBasis = "The scenario begins with an existing "
+            + "player settlement.";
+
+        public string CATemporalBasis => temporalBasis;
+
+        public override void ExposeData()
+        {
+            base.ExposeData();
+            Scribe_Values.Look(ref temporalBasis, "temporalBasis",
+                "The scenario begins with an existing player settlement.");
+        }
+
+        public override string Summary(Scenario scenario)
+        {
+            return temporalBasis;
+        }
+    }
+
     // The player authors a founding population, not an already mature NPC
     // faction. Culture, native Ideoligion, and political beliefs arrive with
     // the founders. The arrangement is what they establish at landing.
     public sealed class CAPlayerFoundingPlan : IExposable
     {
+        public const int CurrentSchemaVersion = 2;
+        public int schemaVersion = CurrentSchemaVersion;
         public CACulture culture = new CACulture();
         public CAPoliticalBeliefs politicalBeliefs =
             new CAPoliticalBeliefs();
@@ -22,10 +52,17 @@ namespace ColonistAwareness
         public string nativeIdeoName;
         public string nativeIdeoSignature;
         public bool nativeIdeoNotified;
+        // A new landing and an already inhabited player settlement are
+        // different historical situations. This boundary is derived from
+        // scenario evidence and persisted; it is not inferred from faction
+        // technology, pawn count, or whether the player owns the faction.
+        public bool establishedStart;
+        public string temporalBasis;
         public bool confirmed;
 
         public void ExposeData()
         {
+            Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
             Scribe_Deep.Look(ref culture, "culture");
             Scribe_Deep.Look(ref politicalBeliefs, "politicalBeliefs");
             Scribe_Deep.Look(ref arrangement, "arrangement");
@@ -37,10 +74,27 @@ namespace ColonistAwareness
                 "nativeIdeoSignature");
             Scribe_Values.Look(ref nativeIdeoNotified,
                 "nativeIdeoNotified", false);
+            Scribe_Values.Look(ref establishedStart,
+                "establishedStart", false);
+            Scribe_Values.Look(ref temporalBasis, "temporalBasis");
             Scribe_Values.Look(ref confirmed, "confirmed", false);
             if (culture == null) culture = new CACulture();
             if (politicalBeliefs == null)
                 politicalBeliefs = new CAPoliticalBeliefs();
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
+                schemaVersion = CurrentSchemaVersion;
+                if (arrangement?.id == "established-settlement")
+                {
+                    arrangement.id = "ancestral-commons";
+                    arrangement.label = "ancestral commons";
+                    arrangement.premise = "The group carries inherited "
+                        + "customs into the rules adopted at landing.";
+                }
+                if (temporalBasis.NullOrEmpty())
+                    temporalBasis = "Pre-B7 founding state: no evidence of "
+                        + "a pre-existing player settlement was recorded.";
+            }
         }
 
         internal CAAxisSource ArrangementSource
@@ -61,6 +115,7 @@ namespace ColonistAwareness
         {
             return new CAPlayerFoundingPlan
             {
+                schemaVersion = CurrentSchemaVersion,
                 culture = culture?.Copy() ?? new CACulture(),
                 politicalBeliefs = politicalBeliefs?.Copy()
                     ?? new CAPoliticalBeliefs(),
@@ -70,6 +125,8 @@ namespace ColonistAwareness
                 nativeIdeoName = nativeIdeoName,
                 nativeIdeoSignature = nativeIdeoSignature,
                 nativeIdeoNotified = nativeIdeoNotified,
+                establishedStart = establishedStart,
+                temporalBasis = temporalBasis,
                 confirmed = confirmed
             };
         }
@@ -107,6 +164,8 @@ namespace ColonistAwareness
                 return founding;
             }
         }
+
+        internal CAPlayerFoundingPlan FoundingOrNull => founding;
 
         internal bool Applied
         {
@@ -179,6 +238,19 @@ namespace ColonistAwareness
             }
         }
 
+        // Inspection and diagnostics use this path so opening a census cannot
+        // create a regional plan, world draft, or fallback state.
+        internal static CAPlayerFoundingPlan CurrentOrNull()
+        {
+            CAPlayerFoundingPlan pending = CARegionalSetupSession
+                .CurrentPlanOrNull()?.playerFounding;
+            if (pending != null) return pending;
+            CAPlayerFoundingPlan world = CAPlayerFoundingWorldComponent.Current
+                ?.FoundingOrNull;
+            if (world != null) return world;
+            return fallbackWorld == WorldIdentity() ? fallback : null;
+        }
+
         internal static void Save()
         {
             CARegionalPlan regional = CARegionalSetupSession
@@ -234,6 +306,9 @@ namespace ColonistAwareness
             if (draft.culture == null) draft.culture = new CACulture();
             if (draft.politicalBeliefs == null)
                 draft.politicalBeliefs = new CAPoliticalBeliefs();
+            draft.schemaVersion = CAPlayerFoundingPlan.CurrentSchemaVersion;
+            if (draft.temporalBasis.NullOrEmpty())
+                DetermineTemporalBoundary(draft);
 
             string seed = Seed;
             CACultureModel.EnsureGenerated(draft.culture,
@@ -364,7 +439,7 @@ namespace ColonistAwareness
         {
             if (draft == null) return;
             CAFoundingArrangement situational = CAFoundingArrangements
-                .DefaultFor(StartingPawnCount() == 1, AncestralStart());
+                .DefaultFor(StartingPawnCount() == 1, AncestralGroup());
             draft.arrangement = CAPoliticalBeliefPractice.ShapeDefault(
                 draft.politicalBeliefs, null, situational)?.Copy();
             draft.arrangementSource = (byte)CAAxisSource.Generated;
@@ -421,12 +496,34 @@ namespace ColonistAwareness
             return configured > 0 ? configured : 3;
         }
 
-        internal static bool AncestralStart()
+        internal static bool AncestralGroup()
         {
             if (ArrivedViolently()) return false;
             return StartingPawnCount() >= 4
                 && (Faction.OfPlayer?.def?.techLevel
                     ?? TechLevel.Industrial) <= TechLevel.Neolithic;
+        }
+
+        private static void DetermineTemporalBoundary(
+            CAPlayerFoundingPlan draft)
+        {
+            draft.establishedStart = false;
+            draft.temporalBasis = "The scenario begins with founders at a "
+                + "new landing; no prior player settlement history is "
+                + "represented.";
+            foreach (ScenPart part in Find.Scenario?.AllParts
+                ?? Enumerable.Empty<ScenPart>())
+            {
+                ICAEstablishedPlayerStart established = part
+                    as ICAEstablishedPlayerStart;
+                if (established == null) continue;
+                draft.establishedStart = true;
+                draft.temporalBasis = established.CATemporalBasis.NullOrEmpty()
+                    ? "The scenario explicitly supplies a pre-existing player "
+                        + "settlement."
+                    : established.CATemporalBasis;
+                break;
+            }
         }
 
         internal static bool ArrivedViolently()
@@ -451,9 +548,10 @@ namespace ColonistAwareness
         internal static string StartingContextSummary()
         {
             int count = StartingPawnCount();
-            if (AncestralStart())
+            if (AncestralGroup())
                 return "An ancestral group of " + count
-                    + " brings mature traditions and chooses the rules in force at the new settlement.";
+                    + " brings inherited traditions and chooses the rules "
+                    + "in force at the new settlement.";
             if (count == 1)
                 return ArrivedViolently()
                     ? "One founder arrives violently with carried beliefs and adopts immediate survival rules."
@@ -474,7 +572,7 @@ namespace ColonistAwareness
             }
             if (draft.culture == null || draft.culture.id.NullOrEmpty())
             {
-                failure = "Set the founders' cultural background.";
+                failure = "Set the founders' culture.";
                 return false;
             }
             string cultureFailure = CACultureModel.CompatibilityFailure(
@@ -593,10 +691,10 @@ namespace ColonistAwareness
             return true;
         }
 
-        // Background and political beliefs are carried by the founders and
-        // may therefore be available to map generation. This deliberately leaves
-        // factionStructure alone: it records realized institutions, not the
-        // four narrower landing terms in the founding arrangement.
+        // Inherited Culture and political beliefs are carried by the founders
+        // and may therefore be available to map generation. This deliberately
+        // leaves factionStructure alone: it records realized institutions,
+        // not the four narrower landing terms in the founding arrangement.
         internal static void ApplyCarriedState(CAPlayerFoundingPlan draft,
             Faction player)
         {

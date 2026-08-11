@@ -214,7 +214,6 @@ namespace ColonistAwareness
         private string group;
         private string search = "";
         private bool showDetails;
-        private bool localExpanded;
         private Vector2 gridScroll;
         private Vector2 detailScroll;
 
@@ -390,8 +389,7 @@ namespace ColonistAwareness
             string summary = choice.CompactSummary.NullOrEmpty()
                 ? choice.Summary : choice.CompactSummary;
             float body = Text.CalcHeight(summary ?? "", textWidth);
-            bool traits = CAInformationPresentation.Shows(
-                CAInformationDetail.Standard) && !choice.Traits.NullOrEmpty();
+            bool traits = !choice.Traits.NullOrEmpty();
             float traitHeight = traits
                 ? Text.CalcHeight(choice.Traits, width - 20f) : 0f;
             Text.Font = GameFont.Small;
@@ -464,8 +462,7 @@ namespace ColonistAwareness
             float headerHeight = Mathf.Max(iconHeight,
                 titleHeight + summaryHeight + 4f);
             float contentY = rect.y + 10f + headerHeight + 8f;
-            bool showTraits = CAInformationPresentation.Shows(
-                CAInformationDetail.Standard) && !choice.Traits.NullOrEmpty();
+            bool showTraits = !choice.Traits.NullOrEmpty();
             if (showTraits)
             {
                 Text.Font = GameFont.Tiny;
@@ -503,15 +500,11 @@ namespace ColonistAwareness
                 return;
             }
 
-            bool showTraits = CAInformationPresentation.Shows(
-                CAInformationDetail.Standard, localExpanded);
-            bool showExplanation = CAInformationPresentation.Shows(
-                CAInformationDetail.Expanded, localExpanded);
+            bool showTraits = true;
+            bool showExplanation = true;
             string explanation = choice.ExpandedDetails.NullOrEmpty()
                 ? choice.Details : choice.ExpandedDetails;
-            bool allowLocalExpansion = CAInformationPresentation.Current
-                < CAInformationDetail.Expanded;
-            float footerHeight = allowLocalExpansion ? 82f : 42f;
+            float footerHeight = 42f;
             Rect contentOut = new Rect(inner.x, inner.y, inner.width,
                 inner.height - footerHeight);
             float textWidth = contentOut.width - 18f;
@@ -608,9 +601,6 @@ namespace ColonistAwareness
 
             string confirm = choice.ConfirmLabel.NullOrEmpty()
                 ? "Use this choice" : choice.ConfirmLabel;
-            if (allowLocalExpansion)
-                CAInformationPresentation.DrawLocalExpansion(new Rect(inner.x,
-                    inner.yMax - 72f, inner.width, 28f), ref localExpanded);
             Rect use = new Rect(inner.x, inner.yMax - 36f,
                 inner.width, 34f);
             if (Widgets.ButtonText(use, confirm, true, true,

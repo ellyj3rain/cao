@@ -152,7 +152,8 @@ namespace ColonistAwareness
 
             if (!main)
                 SegmentRow(ref y, view.width, "Settlement pattern",
-                    "A separate quarter develops its local services separately.",
+                    "A separate quarter keeps distinct households, gathering "
+                        + "space, and provision nodes.",
                     new[] { "Mixed throughout", "Separate quarter" },
                     population.quarter ? 1 : 0, index =>
                     {
@@ -173,7 +174,7 @@ namespace ColonistAwareness
             ChoiceRow(ref y, view.width, "Political beliefs",
                 PoliticalWords(),
                 "Sets what this population considers proper; it does not "
-                    + "change the settlement's realized order.", OpenPolitics,
+                    + "change the settlement's current rules.", OpenPolitics,
                 PoliticalSourceState());
 
             viewHeight = y + 8f;
@@ -224,13 +225,16 @@ namespace ColonistAwareness
             Widgets.Label(new Rect(0f, y + 1f, labelWidth - 12f, 22f), label);
             Text.Font = GameFont.Tiny;
             GUI.color = ColoredText.SubtleGrayColor;
-            Widgets.Label(new Rect(0f, y + 23f, labelWidth - 12f, 22f),
+            float explanationHeight = Text.CalcHeight(explanation,
+                labelWidth - 12f);
+            Widgets.Label(new Rect(0f, y + 23f, labelWidth - 12f,
+                    explanationHeight),
                 explanation);
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
             CACreationUI.DrawSegment(new Rect(labelWidth, y + 4f,
                 width - labelWidth, 34f), options, selected, choose);
-            y += 52f;
+            y += Mathf.Max(46f, 27f + explanationHeight);
         }
 
         private static void ReadOnlyRow(ref float y, float width,
@@ -240,7 +244,10 @@ namespace ColonistAwareness
             Widgets.Label(new Rect(0f, y + 1f, labelWidth - 12f, 22f), label);
             Text.Font = GameFont.Tiny;
             GUI.color = ColoredText.SubtleGrayColor;
-            Widgets.Label(new Rect(0f, y + 23f, labelWidth - 12f, 22f),
+            float explanationHeight = Text.CalcHeight(explanation,
+                labelWidth - 12f);
+            Widgets.Label(new Rect(0f, y + 23f, labelWidth - 12f,
+                    explanationHeight),
                 explanation);
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
@@ -250,7 +257,7 @@ namespace ColonistAwareness
             Text.Anchor = TextAnchor.MiddleLeft;
             Widgets.Label(valueRect.ContractedBy(10f, 0f), value);
             Text.Anchor = TextAnchor.UpperLeft;
-            y += 52f;
+            y += Mathf.Max(46f, 27f + explanationHeight);
         }
 
         private static void ChoiceRow(ref float y, float width, string label,
@@ -260,7 +267,10 @@ namespace ColonistAwareness
             Widgets.Label(new Rect(0f, y + 1f, labelWidth - 12f, 22f), label);
             Text.Font = GameFont.Tiny;
             GUI.color = ColoredText.SubtleGrayColor;
-            Widgets.Label(new Rect(0f, y + 23f, labelWidth - 12f, 24f),
+            float explanationHeight = Text.CalcHeight(explanation,
+                labelWidth - 12f);
+            Widgets.Label(new Rect(0f, y + 23f, labelWidth - 12f,
+                    explanationHeight),
                 explanation);
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
@@ -279,7 +289,7 @@ namespace ColonistAwareness
             CACreationUI.DrawChip(new Rect(width - stateWidth, y + 11f,
                 stateWidth, 20f), state, edit == null
                     ? CACreationUI.Generated : CACreationUI.Authored);
-            y += 56f;
+            y += Mathf.Max(50f, 27f + explanationHeight);
         }
 
         private string AffiliationWords()
@@ -506,147 +516,9 @@ namespace ColonistAwareness
             }
             CACreationUI.OpenChoices("Political beliefs",
                 "Choose what this population considers proper. Ideoligion, "
-                + "faction affiliation, and realized social order remain "
+                + "faction affiliation, and current settlement rules remain "
                 + "unchanged.", options);
         }
     }
 
-    internal sealed class Dialog_CAStartingFacilities : Window
-    {
-        private readonly CARegionalPlan plan;
-        private readonly CARegionalSettlementPlan settlement;
-        private readonly Action changed;
-        private Vector2 scroll;
-        private float viewHeight;
-
-        internal Dialog_CAStartingFacilities(CARegionalPlan plan,
-            CARegionalSettlementPlan settlement, Action changed)
-        {
-            this.plan = plan;
-            this.settlement = settlement;
-            this.changed = changed;
-            doCloseX = true;
-            doCloseButton = true;
-            forcePause = true;
-            absorbInputAroundWindow = true;
-            closeOnClickedOutside = false;
-        }
-
-        public override Vector2 InitialSize => new Vector2(
-            Mathf.Min(860f, UI.screenWidth - 48f),
-            Mathf.Min(650f, UI.screenHeight - 48f));
-
-        public override void DoWindowContents(Rect inRect)
-        {
-            Text.Font = GameFont.Medium;
-            Widgets.Label(new Rect(0f, 0f, inRect.width, 34f),
-                "Starting facilities");
-            Text.Font = GameFont.Small;
-            GUI.color = new Color(0.74f, 0.78f, 0.82f);
-            const string introduction = "Set relative local development, then "
-                + "override individual facilities where needed. The profile "
-                + "adjusts generated infrastructure; it is not a facility bundle.";
-            float introductionHeight = Text.CalcHeight(introduction,
-                inRect.width);
-            Widgets.Label(new Rect(0f, 38f, inRect.width,
-                introductionHeight), introduction);
-            GUI.color = Color.white;
-            float actionY = 38f + introductionHeight + 8f;
-            Widgets.Label(new Rect(0f, actionY + 5f, 170f, 28f),
-                "Development profile");
-            int profile = (int)settlement.developmentProfile + 1;
-            CACreationUI.DrawSegment(new Rect(174f, actionY,
-                    inRect.width - 174f, 34f),
-                new[] { "Minimal", "Contextual", "Extensive" }, profile,
-                index =>
-                {
-                    settlement.developmentProfile =
-                        (CASettlementDevelopmentProfile)(index - 1);
-                    changed?.Invoke();
-                });
-            TooltipHandler.TipRegion(new Rect(174f, actionY,
-                    inRect.width - 174f, 34f),
-                CASettlementStartingState.ProfileEffect(
-                    settlement.developmentProfile));
-            actionY += 42f;
-            if (Widgets.ButtonText(new Rect(0f, actionY, 270f, 32f),
-                    "Return all facilities to generated"))
-            {
-                CASettlementStartingState.UseDerivedFacilities(plan, settlement);
-                changed?.Invoke();
-            }
-            int resolved = CASettlementStartingState.ResolveFacilityMask(plan,
-                settlement, plan.FactionPlan(settlement.factionKey)
-                    ?.ResolvedFactionDef);
-            int includedCount = CAStartingFacilityCatalog.All.Count(item =>
-                (resolved & item.Bit) != 0);
-            int overrideCount = CAStartingFacilityCatalog.All.Count(item =>
-                (settlement.startingFacilityAuthoredMask & item.Bit) != 0);
-            CACreationUI.DrawChip(new Rect(282f, actionY + 6f,
-                inRect.width - 282f, 20f),
-                CASettlementStartingState.ProfileWords(
-                    settlement.developmentProfile) + ": " + includedCount
-                    + " included, " + (CAStartingFacilityCatalog.All.Length
-                        - includedCount) + " omitted"
-                    + (overrideCount == 0 ? "" : " · " + overrideCount
-                        + " local override" + (overrideCount == 1 ? "" : "s")),
-                overrideCount == 0
-                    ? CACreationUI.Generated : CACreationUI.Authored);
-
-            float bodyTop = actionY + 42f;
-            Rect outRect = new Rect(0f, bodyTop, inRect.width,
-                Mathf.Max(80f, inRect.height - bodyTop - 55f));
-            Rect view = new Rect(0f, 0f, outRect.width - 18f,
-                Mathf.Max(outRect.height, viewHeight));
-            Widgets.BeginScrollView(outRect, ref scroll, view);
-            float y = 0f;
-            foreach (CAStartingFacilityCatalog.Program program
-                in CAStartingFacilityCatalog.All)
-            {
-                bool authored = (settlement.startingFacilityAuthoredMask
-                    & program.Bit) != 0;
-                bool included = (resolved & program.Bit) != 0;
-                Rect icon = new Rect(0f, y + 3f, 34f, 34f);
-                Texture2D texture = CACreationUI.Icon(program.IconPath);
-                if (texture != null)
-                    GUI.DrawTexture(icon, texture, ScaleMode.ScaleToFit, true);
-                Widgets.Label(new Rect(44f, y, 176f, 22f), program.Label);
-                Text.Font = GameFont.Tiny;
-                GUI.color = ColoredText.SubtleGrayColor;
-                float controlsX = Mathf.Max(280f, view.width * 0.51f);
-                float descriptionWidth = Mathf.Max(160f, controlsX - 52f);
-                string description = program.Description + (authored
-                        ? " Explicit local choice."
-                        : " Generated after the "
-                            + CASettlementStartingState.ProfileWords(
-                                settlement.developmentProfile).ToLowerInvariant()
-                            + " profile; currently "
-                            + (included ? "included." : "omitted."));
-                float descriptionHeight = Text.CalcHeight(description,
-                    descriptionWidth);
-                Widgets.Label(new Rect(44f, y + 22f, descriptionWidth,
-                    descriptionHeight), description);
-                GUI.color = Color.white;
-                Text.Font = GameFont.Small;
-                float rowHeight = Mathf.Max(66f, 28f + descriptionHeight);
-                int selected = !authored ? 0 : included ? 1 : 2;
-                CACreationUI.DrawSegment(new Rect(controlsX,
-                    y + (rowHeight - 34f) * 0.5f,
-                    view.width - controlsX, 34f),
-                    new[] { included ? "Generated: included"
-                            : "Generated: omitted", "Include", "Omit" }, selected,
-                    index =>
-                    {
-                        CASettlementStartingState.SetFacilityOverride(plan,
-                            settlement, program.Bit,
-                            index == 0 ? (bool?)null : index == 1);
-                        changed?.Invoke();
-                    });
-                y += rowHeight;
-            }
-            viewHeight = y + 8f;
-            Widgets.EndScrollView();
-        }
-
-    }
 }

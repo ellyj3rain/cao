@@ -242,18 +242,14 @@ namespace ColonistAwareness
             plan.settlementRealizationSourceHash = 0;
         }
 
-        // B4 had the same contextual infrastructure derivation but no named
-        // profile field. Preserve its realized facts, adopt the neutral
-        // profile, and renew only the causal hash that gained this one input.
-        internal static void MigrateB4ContextualDevelopment(
+        // B5/B6 stored profile and ordinal authoring beside the realized
+        // settlement facts. B7 keeps the facts and concrete facility
+        // exceptions, retires the competing authoring authority, and renews
+        // the causal hash against the current contract.
+        internal static void MigrateB6SettlementAuthority(
             CARegionalPlan plan)
         {
             if (plan == null) return;
-            foreach (CARegionalSettlementPlan settlement in plan.settlements
-                ?? new List<CARegionalSettlementPlan>())
-                if (settlement != null)
-                    settlement.developmentProfile =
-                        CASettlementDevelopmentProfile.Contextual;
             if (plan.settlementRealizationComplete)
                 plan.settlementRealizationSourceHash =
                     RealizationSourceHash(plan);
@@ -300,8 +296,6 @@ namespace ColonistAwareness
             foreach (CARegionalSettlementPlan settlement in settlements)
             {
                 if (settlement.residentPopulation < 18
-                    || !Enum.IsDefined(typeof(CASettlementDevelopmentProfile),
-                        settlement.developmentProfile)
                     || settlement.landCapacity < 1
                     || settlement.landCapacity > 3
                     || settlement.realizedAccessInfrastructure < 0
@@ -327,7 +321,7 @@ namespace ColonistAwareness
                         + " has an incomplete or out-of-range realized fact";
                     return false;
                 }
-                int expectedEconomy = EconomicCapacity(settlement);
+                int expectedEconomy = EconomicCapacity(plan, settlement);
                 int expectedSupport = CAWorldTendencyCausalKernel.UrbanSupport(
                     settlement.residentPopulation, settlement.landCapacity,
                     settlement.realizedAccessInfrastructure,
@@ -526,6 +520,12 @@ namespace ColonistAwareness
                     settlement.memberTileId);
                 settlement.historicalDevelopment = HistoricalDevelopment(
                     plan, settlement, seed);
+                CACultureHistory.EnsureSettlementCulture(plan, settlement);
+                if (settlement.historicalDevelopment >= 2)
+                    CACultureHistory.MarkEstablished(settlement.localCulture,
+                        "established history realized",
+                        "Saved pre-game development establishes this as a "
+                            + "mature local culture.");
                 int tier = TechTier(plan.FactionPlan(settlement.factionKey));
                 settlement.residentPopulation =
                     CAWorldTendencyCausalKernel.GeneratedPopulation(seed,
@@ -579,7 +579,8 @@ namespace ColonistAwareness
                             ?.ResolvedFactionDef);
                 settlement.specialization = Mathf.Clamp(
                     CountBits(settlement.operationalRoleMask), 0, 3);
-                settlement.economicCapacity = EconomicCapacity(settlement);
+                settlement.economicCapacity = EconomicCapacity(plan,
+                    settlement);
                 settlement.tradeConnectivity = TradeConnectivity(plan,
                     settlement);
                 settlement.urbanSupport =
@@ -766,15 +767,9 @@ namespace ColonistAwareness
                     settlement.reallocatedFromTileId,
                     settlement.operationalRoleMask);
                 hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                    settlement.startingFacilityAuthoredMask,
-                    settlement.startingFacilityValues,
-                    settlement.accessInfrastructure);
-                hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                    settlement.serviceInfrastructure,
-                    settlement.civicInfrastructure,
+                    settlement.facilityExceptionMask,
+                    settlement.facilityExceptionValues,
                     settlement.authoredForm);
-                hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                    (int)settlement.developmentProfile);
             }
             return hash;
         }
@@ -870,11 +865,12 @@ namespace ColonistAwareness
             return Mathf.Clamp(value, 0, 3);
         }
 
-        private static int EconomicCapacity(
+        private static int EconomicCapacity(CARegionalPlan plan,
             CARegionalSettlementPlan settlement)
         {
-            int facilities = settlement.startingFacilityValues
-                & settlement.startingFacilityAuthoredMask;
+            int facilities = CASettlementStartingState.ResolveFacilityMask(
+                plan, settlement,
+                plan?.FactionPlan(settlement.factionKey)?.ResolvedFactionDef);
             return CAWorldTendencyCausalKernel.EconomicCapacity(
                 settlement.residentPopulation,
                 settlement.realizedCivicInfrastructure,
@@ -990,16 +986,9 @@ namespace ColonistAwareness
             CARegionalPlan plan, CARegionalFactionPlan group)
         {
             if (group.settlementAuthorityExplicit)
-            {
-                CASettlementAuthority authored = NormalizeAuthority(
+                return NormalizeAuthority(
                     (CASettlementAuthority)group.settlementAuthority);
-                group.settlementAuthority = (byte)authored;
-                return authored;
-            }
-            CASettlementAuthority derived =
-                DeriveSettlementAuthority(plan, group);
-            group.settlementAuthority = (byte)derived;
-            return derived;
+            return DeriveSettlementAuthority(plan, group);
         }
 
         // Responsibilities shared by member settlements at faction level.

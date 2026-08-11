@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <ScenPartDef>
+    <defName>CA_EstablishedPlayerSettlement</defName>
+    <label>established player settlement</label>
+    <description>The player begins in an existing settlement with history before the scenario starts.</description>
+    <category>StartingImportant</category>
+    <scenPartClass>ColonistAwareness.ScenPart_CAEstablishedPlayerSettlement</scenPartClass>
+    <canBeRandomlyAdded>false</canBeRandomlyAdded>
+    <canBePlayerAddedRemoved>true</canBePlayerAddedRemoved>
+  </ScenPartDef>
+</Defs>

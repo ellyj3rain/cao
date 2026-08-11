@@ -291,8 +291,8 @@ public static class Program
             Require(setup.Contains(field), field + " is not persisted");
             Require(dialog.Contains(field), field + " has no visible control");
         }
-        Require(setup.Contains("CurrentSchemaVersion = 4"),
-            "current plan schema is not 4");
+        Require(setup.Contains("CurrentSchemaVersion = 5"),
+            "current plan schema is not 5");
         Require(setup.Contains("localFactionChance = 0.45f")
             && setup.Contains("regionalConflictChance = 0.4f"),
             "the neutral profile does not begin on the middle faction bands");
@@ -396,18 +396,18 @@ public static class Program
     private static void CheckFixture(string mirrorPath, string keyedPath,
         StringBuilder report)
     {
-        byte[] mirrorBytes = File.ReadAllBytes(mirrorPath);
-        byte[] keyedBytes = File.ReadAllBytes(keyedPath);
-        Require(mirrorBytes.SequenceEqual(keyedBytes),
-            "active and keyed fixtures differ");
         XDocument document = XDocument.Load(mirrorPath,
             LoadOptions.PreserveWhitespace);
+        XDocument keyedDocument = XDocument.Load(keyedPath,
+            LoadOptions.PreserveWhitespace);
+        Require(XNode.DeepEquals(document.Root, keyedDocument.Root),
+            "active and keyed fixture plans differ");
         XElement plan = document.Root?.Element("plan")
             ?? throw new InvalidOperationException("fixture plan missing");
         Require((string)document.Root?.Element("worldIdentity")
                 == "alysaliu|1|Algorab Markab",
             "fixture world identity changed");
-        Require((string)plan.Element("schemaVersion") == "4",
+        Require((string)plan.Element("schemaVersion") == "5",
             "fixture schema is not current");
         XElement savedPolicy = plan.Element("worldPolicy");
         Require(savedPolicy != null
@@ -464,9 +464,11 @@ public static class Program
         }
         foreach (XElement settlement in settlements)
         {
-            Require(StringValue(settlement, "developmentProfile",
-                    "missing") == "Contextual",
-                "fixture settlement development profile changed");
+            Require(settlement.Element("developmentProfile") == null
+                    && settlement.Element("accessInfrastructure") == null
+                    && settlement.Element("serviceInfrastructure") == null
+                    && settlement.Element("civicInfrastructure") == null,
+                "fixture retains retired generic development inputs");
             string[] facts =
             {
                 "residentPopulation", "landCapacity",
@@ -480,14 +482,13 @@ public static class Program
             foreach (string fact in facts)
                 Require(settlement.Element(fact) != null,
                     "fixture settlement lacks " + fact);
-            int authoredFacilities = IntValue(settlement,
-                "startingFacilityAuthoredMask", 0)
-                & IntValue(settlement, "startingFacilityValues", 0);
+            int realizedFacilities = IntValue(settlement,
+                "startingFacilityMask", 0);
             int expectedEconomy = CAWorldTendencyCausalKernel.EconomicCapacity(
                 IntValue(settlement, "residentPopulation", -1),
                 IntValue(settlement, "realizedCivicInfrastructure", -1),
-                (authoredFacilities & 8) != 0,
-                (authoredFacilities & 2) != 0);
+                (realizedFacilities & 8) != 0,
+                (realizedFacilities & 2) != 0);
             Require(IntValue(settlement, "economicCapacity", -1)
                     == expectedEconomy,
                 "fixture economic capacity does not match saved causes");
@@ -558,7 +559,7 @@ public static class Program
         Require(hostile != null
             && (string)hostile.Element("relation") == "Hostile"
             && hostile.Element("authorRelation") == null,
-            "authored hostile relation between factions 1 and 3 changed");
+            "realized hostile relation between factions 1 and 3 changed");
         Require(settlements.Sum(item => item.Element("populationGroups")
                 ?.Elements("li").Count() ?? 0) == 9,
             "fixture population assignments changed");
@@ -584,7 +585,7 @@ public static class Program
         Require(!fixtureText.Contains("realizedFrontierHoldings")
             && !fixtureText.Contains("frontierSettlement"),
             "fixture retains obsolete schema fields");
-        report.AppendLine("PASS current fixture -> schema 4, causal hash, relative development, 3 factions, 4 settlements, 9 population groups, mirrored XML readback");
+        report.AppendLine("PASS current fixture -> schema 5, causal hash, derived settlement state, 3 factions, 4 settlements, 9 population groups, mirrored XML readback");
     }
 
     private static int IntValue(XElement parent, string name, int fallback)

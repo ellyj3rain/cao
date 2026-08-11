@@ -89,32 +89,34 @@ internal static class Program
                 && authoring.Contains("CultureProfiles(")
                 && authoring.Contains("PoliticalProfiles("),
                 "shared political/culture editors do not expose source and preset detail");
-            Require(presentation.Contains("CAInformationDetail")
-                && presentation.Contains("DrawLocalExpansion")
+            Require(!presentation.Contains("CAInformationDetail")
+                && !presentation.Contains("DrawLocalExpansion")
+                && !shared.Contains("Show full details")
+                && !shared.Contains("Use normal detail")
                 && shared.Contains("rowHeights")
                 && !shared.Contains("132f"),
-                "information detail or responsive choice cards are incomplete");
+                "global information detail remains or choice cards are rigid");
             report.AppendLine("PASS founding belief-versus-practice interaction");
 
             Require(!region.Contains("new FloatMenu")
                 && region.Contains("\"Replace composition...\"")
                 && region.Contains("Dialog_CAPopulationGroupEditor")
-                && region.Contains("Dialog_CAStartingFacilities"),
+                && !region.Contains("Dialog_CAStartingFacilities")
+                && region.Contains("These facilities and routes follow"),
                 "Starting Region still exposes an unbounded authoring menu");
             Require(regionEditors.Contains("Faction affiliation")
                 && regionEditors.Contains("Ideoligion")
                 && regionEditors.Contains("Political beliefs")
                 && regionEditors.Contains("Set the group's size")
-                && regionEditors.Contains("SetFacilityOverride")
-                && regionEditors.Contains("\"Generated: included\"")
-                && regionEditors.Contains("\"Generated: omitted\"")
-                && regionEditors.Contains("\"Include\", \"Omit\""),
-                "population or facility causes are not independently editable");
+                && !regionEditors.Contains("SetFacilityOverride")
+                && !regionEditors.Contains("\"Generated: included\"")
+                && !regionEditors.Contains("\"Include\", \"Omit\""),
+                "population editing is incomplete or the rejected facility tuner remains");
             Require(region.Contains("Rect actionArea")
                 && region.Contains("\"New faction\"")
                 && region.Contains("\"New settlement\""),
                 "Starting Region object creation is not pinned to the object rail");
-            report.AppendLine("PASS Starting Region object and generated-choice interaction");
+            report.AppendLine("PASS Starting Region objects, population, and realized-state interaction");
 
             CheckInteractionContracts(report, region, regionEditors,
                 foundingState, culture);

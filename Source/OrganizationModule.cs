@@ -4433,14 +4433,25 @@ namespace ColonistAwareness
                     why = "no one with standing to speak";
                     continue;
                 }
-                IntVec3 spot = IntVec3.Invalid;
-                for (int i = 0; i < cols.Count && !spot.IsValid; i++)
-                {
-                    IntVec3 c = cols[i].Position;
-                    string reason;
-                    if (CanConvene(speaker, c, map, out reason))
-                        spot = c;
-                }
+                CACulture culture = CACultureLongitudinalMapComponent.For(map)
+                    ?.PlayerLocalCulture;
+                List<IntVec3> candidates = map.listerThings.AllThings
+                    .Where(thing => thing != null && thing.Spawned
+                        && (thing.def?.surfaceType == SurfaceType.Eat
+                            || thing.def?.defName == "Campfire"
+                            || (thing.def?.building != null
+                                && thing.def.building.isSittable)))
+                    .Select(thing => thing.Position).Distinct()
+                    .Where(cell =>
+                    {
+                        string reason;
+                        return CanConvene(speaker, cell, map, out reason);
+                    })
+                    .OrderByDescending(cell => GatheringScore(cell, speaker,
+                        cols, culture))
+                    .ThenBy(cell => cell.x).ThenBy(cell => cell.z).ToList();
+                IntVec3 spot = candidates.Count == 0
+                    ? IntVec3.Invalid : candidates[0];
                 if (!spot.IsValid)
                 {
                     why = "no gathering is possible - it needs a table or"
@@ -4471,6 +4482,19 @@ namespace ColonistAwareness
             }
             if (why == null) why = "no gathering is possible";
             return false;
+        }
+
+        private static float GatheringScore(IntVec3 cell, Pawn speaker,
+            List<Pawn> colonists, CACulture culture)
+        {
+            int near = colonists.Count(pawn => pawn != null
+                && pawn.Position.InHorDistOf(cell, 12f));
+            int shared = CACultureHistory.PracticeStrength(culture,
+                "shared-public-life");
+            // Culture ranks real gathering places only. Standing, attendance,
+            // reachability, and the player-authored policy remain unchanged.
+            return CACultureConsumerKernel.GatheringScore(near,
+                cell.DistanceTo(speaker.Position), shared);
         }
 
         public static void Convene(Pawn speaker, IntVec3 spot, Map map,

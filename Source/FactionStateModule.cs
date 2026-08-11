@@ -6,8 +6,8 @@ using Verse;
 
 namespace ColonistAwareness
 {
-    // CA state attached directly to a native RimWorld faction. Carried
-    // background, political beliefs, and current faction structure remain
+    // CA state attached directly to a native RimWorld faction. Inherited
+    // Culture, political beliefs, and current faction structure remain
     // separate from the faction's native Ideoligion.
     public sealed class CAFactionState : IExposable
     {
@@ -136,7 +136,7 @@ namespace ColonistAwareness
         }
     }
 
-    // Completes carried background, political beliefs, and current structure
+    // Completes inherited Culture, political beliefs, and current structure
     // for every humanlike faction. Native Ideoligion remains untouched.
     internal static class CAFactionStateGenerator
     {
@@ -195,7 +195,7 @@ namespace ColonistAwareness
             }
 
             return "[CA][Faction] setup pass (" + reason + "): "
-                + cultures + " cultural backgrounds, " + beliefSets
+                + cultures + " Cultures, " + beliefSets
                 + " political-belief sets, " + beliefFields
                 + " political-belief fields, " + structureFields
                 + " faction-structure fields generated; " + skipped

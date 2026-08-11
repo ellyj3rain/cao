@@ -43,7 +43,7 @@ namespace ColonistAwareness
                 current = current.next;
             }
 
-            // Background, political beliefs, and the founding arrangement still
+            // Culture, political beliefs, and the founding arrangement still
             // exist when the Ideology expansion is inactive.
             if (insertionAnchor != null)
             {
@@ -61,7 +61,6 @@ namespace ColonistAwareness
         private CAPlayerFoundingPlan draft;
         private string validationFailure;
         private Vector2 cardScroll;
-        private bool localExpanded;
         private bool openedOnce;
         private bool awaitingNativeReturn;
         private readonly Page nativeIdeoChooser;
@@ -96,7 +95,7 @@ namespace ColonistAwareness
             base.PostOpen();
             bool nativeFlowJustAccepted = ModsConfig.IdeologyActive
                 && (!openedOnce || awaitingNativeReturn)
-                && (prev is Page_ChooseIdeoPreset
+                && (nativeIdeoChooser != null
                     || prev is Page_ConfigureIdeo);
             openedOnce = true;
             awaitingNativeReturn = false;
@@ -126,8 +125,6 @@ namespace ColonistAwareness
                 inRect.width - 176f);
             Widgets.Label(new Rect(0f, 38f, inRect.width - 176f,
                 introductionHeight), introduction);
-            CAInformationPresentation.DrawLocalExpansion(new Rect(
-                inRect.width - 166f, 38f, 166f, 28f), ref localExpanded);
             float flowY = 44f + introductionHeight;
             CACreationUI.DrawFlow(new Rect(0f, flowY, inRect.width, 24f), 3);
             float overviewY = flowY + 30f;
@@ -139,7 +136,10 @@ namespace ColonistAwareness
                 overviewHeight), overview);
 
             float top = overviewY + overviewHeight + 20f;
-            float bottom = 52f;
+            float validationWidth = inRect.width * 0.48f;
+            float validationHeight = validationFailure.NullOrEmpty() ? 0f
+                : Text.CalcHeight(validationFailure, validationWidth);
+            float bottom = Mathf.Max(52f, validationHeight + 12f);
             float gap = 12f;
             Rect cardsOut = new Rect(0f, top, inRect.width,
                 inRect.height - top - bottom);
@@ -195,7 +195,8 @@ namespace ColonistAwareness
                 GUI.color = ColorLibrary.RedReadable;
                 Text.Anchor = TextAnchor.MiddleRight;
                 Widgets.Label(new Rect(inRect.width * 0.35f,
-                    inRect.height - 42f, inRect.width * 0.48f, 38f),
+                    inRect.height - validationHeight - 6f,
+                    validationWidth, validationHeight),
                     validationFailure);
                 Text.Anchor = TextAnchor.UpperLeft;
                 GUI.color = Color.white;
@@ -205,14 +206,14 @@ namespace ColonistAwareness
 
         private string FoundingOverview()
         {
-            string compact = "Cultural background: "
+            string compact = "Culture: "
                 + CAAuthoringChoices.CultureIdentity(draft?.culture)
                 + " · Ideoligion: "
                 + (CAPlayerFoundingModel.NativeIdeo?.name
                     ?? (ModsConfig.IdeologyActive ? "not set" : "inactive"));
             string political = CAAuthoringChoices.PoliticalIdentity(
                 draft?.politicalBeliefs);
-            string standard = compact + " · Politics: " + political
+            string standard = compact + " · Political beliefs: " + political
                 + " · Landing rules: "
                 + (draft?.arrangement?.label ?? "not set");
             int tensions = CAPoliticalBeliefPractice
@@ -222,8 +223,7 @@ namespace ColonistAwareness
                     && !item.conforms);
             string expanded = standard + " · " + tensions
                 + (tensions == 1 ? " belief-term tension" : " belief-term tensions");
-            return CAInformationPresentation.Select(compact, standard,
-                expanded, localExpanded);
+            return expanded;
         }
 
         protected override bool CanDoNext()
@@ -265,13 +265,13 @@ namespace ColonistAwareness
 
         private void DrawCultureCard(Rect rect)
         {
-            float y = BeginCard(rect, "Cultural background",
+            float y = BeginCard(rect, "Culture",
                 CultureDescription());
             DrawSummary(rect, ref y, CACultureModel.Icon(draft?.culture),
-                draft?.culture?.name ?? "Background not set",
+                draft?.culture?.name ?? "Culture not set",
                 CACultureModel.Summary(draft?.culture), CultureStateWords());
             DrawButtons(rect, ref y,
-                new CAFoundingAction("Backgrounds...",
+                new CAFoundingAction("Saved Cultures...",
                     OpenCulturePresets),
                 new CAFoundingAction("Edit", delegate
                 {
@@ -286,8 +286,8 @@ namespace ColonistAwareness
             Ideo ideo = CAPlayerFoundingModel.NativeIdeo;
             string detail = IdeoDetail(ideo);
             DrawSummary(rect, ref y, ideo?.Icon, ideo?.name ?? "Not active",
-                detail, ModsConfig.IdeologyActive ? "RimWorld system"
-                    : "Inactive");
+                detail, !ModsConfig.IdeologyActive ? "Inactive"
+                    : ideo == null ? "Not set" : "Chosen");
             if (!ModsConfig.IdeologyActive) return;
             DrawButtons(rect, ref y,
                 new CAFoundingAction("Choose again...",
@@ -384,14 +384,10 @@ namespace ColonistAwareness
 
         private string CultureDescription()
         {
-            return CAInformationPresentation.Select(
-                "Background and visual tradition carried by the founders.",
-                "The founders bring a named background and optional visual "
-                    + "tradition. Their local culture is still developing.",
-                "Ideoligion and political beliefs are carried separately. "
-                    + "The colony's cultural expression will develop from its "
-                    + "population, adopted order, material conditions, and history.",
-                localExpanded);
+            return "The founders bring an inherited culture. Ideoligion and "
+                + "political beliefs remain separate; local practice develops "
+                + "from the population, adopted rules, material conditions, "
+                + "and history.";
         }
 
         private static string IdeoDescription()
@@ -400,7 +396,7 @@ namespace ColonistAwareness
                 ? "Religious and moral belief. This is RimWorld's native "
                     + "Ideoligion and remains distinct from culture and "
                     + "political belief."
-                : "The Ideology expansion is inactive. Cultural background, political "
+                : "The Ideology expansion is inactive. Culture, political "
                     + "beliefs, and the founding terms remain active.";
         }
 
@@ -428,7 +424,7 @@ namespace ColonistAwareness
         private float MeasureCultureCard(float width)
         {
             return MeasureCard(width, CultureDescription(),
-                draft?.culture?.name ?? "Background not set",
+                draft?.culture?.name ?? "Culture not set",
                 CACultureModel.Summary(draft?.culture), CultureStateWords());
         }
 
@@ -437,7 +433,8 @@ namespace ColonistAwareness
             Ideo ideo = CAPlayerFoundingModel.NativeIdeo;
             return MeasureCard(width, IdeoDescription(),
                 ideo?.name ?? "Not active", IdeoDetail(ideo),
-                ModsConfig.IdeologyActive ? "RimWorld system" : "Inactive");
+                !ModsConfig.IdeologyActive ? "Inactive"
+                    : ideo == null ? "Not set" : "Chosen");
         }
 
         private float MeasurePoliticalCard(float width)
@@ -615,12 +612,9 @@ namespace ColonistAwareness
         {
             if (draft?.culture != null
                 && !draft.culture.profileKey.NullOrEmpty())
-                return "Saved profile";
+                return "Saved Culture";
             if ((draft?.culture?.authoredMask ?? 0) != 0) return "Edited";
-            if (draft?.culture != null
-                && !draft.culture.presetName.NullOrEmpty())
-                return "Preset";
-            return "Carried";
+            return "Inherited";
         }
 
         private string PoliticalStateWords()
@@ -661,9 +655,9 @@ namespace ColonistAwareness
 
         private void OpenCulturePresets()
         {
-            CACreationUI.OpenChoices("Cultural backgrounds",
-                "Choose a native visual tradition or a saved carried background. "
-                    + "Local culture develops after landing.",
+            CACreationUI.OpenChoices("Saved Cultures",
+                "Use a saved Culture. Choose native RimWorld styles separately "
+                    + "in the Culture editor under Visual tradition.",
                 CAAuthoringChoices.CultureProfiles(draft?.culture,
                     CAPlayerFoundingModel.Seed, Changed));
         }
@@ -735,7 +729,7 @@ namespace ColonistAwareness
                 ? "Rimshare/WorldMapIcons/crenulated-shield"
                 : terms?.id == "single-founder"
                     ? "Rimshare/WorldMapIcons/corporal"
-                    : terms?.id == "established-settlement"
+                    : terms?.id == "ancestral-commons"
                         ? "Rimshare/WorldMapIcons/castle"
                         : "Rimshare/WorldMapIcons/divided-square";
             return CACreationUI.Icon(path);
@@ -1006,18 +1000,42 @@ namespace ColonistAwareness
             string explanation, string[] choices, int selected,
             Action<int> choose)
         {
+            if (width < 700f)
+            {
+                Text.Font = GameFont.Small;
+                float labelHeight = Mathf.Max(22f,
+                    Text.CalcHeight(label, width));
+                Widgets.Label(new Rect(0f, y, width, labelHeight), label);
+                y += labelHeight + 2f;
+                Text.Font = GameFont.Tiny;
+                GUI.color = ColoredText.SubtleGrayColor;
+                float narrowExplanationHeight = Mathf.Max(20f,
+                    Text.CalcHeight(explanation, width));
+                Widgets.Label(new Rect(0f, y, width, narrowExplanationHeight),
+                    explanation);
+                GUI.color = Color.white;
+                Text.Font = GameFont.Small;
+                y += narrowExplanationHeight + 5f;
+                float segmentHeight = CACreationUI.DrawSegmentRows(
+                    new Rect(0f, y, width, 34f), choices, selected, choose,
+                    135f);
+                y += segmentHeight + 12f;
+                return;
+            }
             const float labelWidth = 290f;
             Widgets.Label(new Rect(0f, y + 1f, labelWidth - 12f, 22f),
                 label);
             Text.Font = GameFont.Tiny;
             GUI.color = ColoredText.SubtleGrayColor;
-            Widgets.Label(new Rect(0f, y + 23f, labelWidth - 12f, 22f),
-                explanation);
+            float explanationHeight = Mathf.Max(22f, Text.CalcHeight(
+                explanation, labelWidth - 12f));
+            Widgets.Label(new Rect(0f, y + 23f, labelWidth - 12f,
+                explanationHeight), explanation);
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
             CACreationUI.DrawSegment(new Rect(labelWidth, y + 4f,
                 width - labelWidth, 34f), choices, selected, choose);
-            y += 50f;
+            y += Mathf.Max(50f, 23f + explanationHeight + 6f);
         }
 
         private void Authored()

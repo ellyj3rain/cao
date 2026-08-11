@@ -35,19 +35,12 @@ namespace ColonistAwareness
         internal readonly List<string> ContributingFacts =
             new List<string>();
 
-        internal string Presented(bool locallyExpanded = false)
+        internal string Presented()
         {
             string compact = StatusWords(Status) + ": " + Summary;
-            string standard = compact + "\n" + string.Join("\n",
-                Readings.Take(2).Select(item => item.Family + ": "
-                    + item.Summary).ToArray());
-            string expanded = compact + "\n\n" + string.Join("\n\n",
-                Readings.Select(item => item.Family + "\n" + item.Summary
-                    + (item.Facts.Count == 0 ? "" : "\n"
-                        + string.Join("\n", item.Facts.Select(fact =>
-                            "  " + fact).ToArray()))).ToArray());
-            return CAInformationPresentation.Select(compact, standard,
-                expanded, locallyExpanded);
+            return compact + "\n\n" + string.Join("\n\n",
+                Readings.Select(item => item.Family + "\n" + item.Summary)
+                    .ToArray());
         }
 
         internal static string StatusWords(CACulturalExpressionStatus status)
@@ -86,7 +79,9 @@ namespace ColonistAwareness
         private sealed class Inputs
         {
             internal string Scope;
-            internal string Background;
+            internal string CultureName;
+            internal CACulture Culture;
+            internal List<string> CultureFacts = new List<string>();
             internal string Ideoligion;
             internal List<string> IdeoligionCommitmentKeys =
                 new List<string>();
@@ -160,7 +155,10 @@ namespace ColonistAwareness
             var input = new Inputs
             {
                 Scope = "settlement:" + settlement.slot,
-                Background = faction?.culture?.name ?? "carried background",
+                CultureName = settlement.localCulture?.name
+                    ?? faction?.culture?.name ?? "inherited culture",
+                Culture = settlement.localCulture ?? faction?.culture,
+                CultureFacts = CultureFacts(settlement.localCulture),
                 Ideoligion = faction?.LivingIdeo?.name ?? "local Ideoligion",
                 IdeoligionCommitmentKeys = IdeoligionCommitmentKeys(
                     faction?.LivingIdeo),
@@ -232,7 +230,10 @@ namespace ColonistAwareness
             var input = new Inputs
             {
                 Scope = settlement.regionalId ?? "materialized-settlement",
-                Background = faction?.culture?.name ?? "carried background",
+                CultureName = settlement.culture?.name
+                    ?? faction?.culture?.name ?? "inherited culture",
+                Culture = settlement.culture ?? faction?.culture,
+                CultureFacts = CultureFacts(settlement.culture),
                 Ideoligion = settlement.faction?.ideos?.PrimaryIdeo?.name
                     ?? "local Ideoligion",
                 IdeoligionCommitmentKeys = IdeoligionCommitmentKeys(
@@ -296,7 +297,9 @@ namespace ColonistAwareness
             var input = new Inputs
             {
                 Scope = "player-founding",
-                Background = founding.culture?.name ?? "carried background",
+                CultureName = founding.culture?.name ?? "inherited culture",
+                Culture = founding.culture,
+                CultureFacts = CultureFacts(founding.culture),
                 Ideoligion = founding.nativeIdeoName ?? "founders' Ideoligion",
                 IdeoligionCommitmentKeys = IdeoligionCommitmentKeys(nativeIdeo),
                 IdeoligionCommitmentLabels =
@@ -337,17 +340,30 @@ namespace ColonistAwareness
                 .Where(item => item != null && item.share > 0)
                 .OrderByDescending(item => item.share).ThenBy(item => item.key)
                 .ToList();
-            int quartered = populations.Count(item => item.quarter);
+            AddReading(result, "Continuity and change",
+                input.CultureFacts.Count == 0
+                    ? "No cultural history is recorded."
+                    : input.CultureFacts[0],
+                input.CultureFacts.Skip(1).ToArray());
 
-            AddReading(result, "Belief and institutional practice",
+            AddReading(result, "Lived practices",
+                CACultureHistory.PracticeSummary(input.Culture));
+
+            AddReading(result, "Population and inheritance",
+                PopulationCultureSummary(input.Culture, populations),
+                "Resident groups: " + PopulationWords(populations),
+                "Resident belief sources: "
+                    + WeightedBeliefWords(input.PopulationBeliefs),
+                "Resident Ideoligions: "
+                    + WeightedIdeoligionWords(input.PopulationIdeoligions));
+
+            AddReading(result, "Belief and instituted order",
                 tensions.Count > 0
                     ? tensions.Count + " preferred positions differ from current practice."
                     : input.Founding
                         ? "The founders carry beliefs; only the landing arrangement is adopted."
                         : "Recorded political beliefs and institutions are aligned.",
                 "Beliefs held: " + AxisSetWords(input.Beliefs),
-                "Resident belief sources: "
-                    + WeightedBeliefWords(input.PopulationBeliefs),
                 input.Founding
                     ? "Rules adopted at landing: "
                         + FoundingWords(input.Arrangement)
@@ -360,60 +376,29 @@ namespace ColonistAwareness
                 result.Readings[result.Readings.Count - 1].Facts.AddRange(
                     tensions.Select(item => "Conflict: " + item));
 
-            AddReading(result, "Work, ownership, and material provision",
-                WorkSummary(input),
-                "Ownership considered proper: "
-                    + PreferredAxis(input, CAFactionAxes.Ownership),
-                "Work considered proper: "
-                    + PreferredAxis(input, CAFactionAxes.Work),
-                "Support considered proper: "
-                    + PreferredAxis(input, CAFactionAxes.Support),
-                "Provision arrangements: " + ProvisionWords(input.Provisions),
-                "Local services are " + CapacityWords(input.Services)
-                    + "; economic capacity is "
-                    + CapacityWords(input.Economy) + ".");
-
-            AddReading(result, "Participation and public life",
-                PublicLifeSummary(input, populations, quartered),
-                "Participation considered proper: " + PreferredAxis(input,
-                    CAFactionAxes.Participation),
-                "Decision-making considered proper: "
-                    + PreferredAxis(input, CAFactionAxes.Decisions),
-                "Recorded residents: " + input.Residents,
-                "Resident groups: " + PopulationWords(populations));
-
-            AddReading(result, "Exchange and local environment",
-                ExchangeSummary(input),
-                "Transport access is " + CapacityWords(input.Access)
-                    + "; trade is " + CapacityWords(input.Trade) + ".",
-                "Land capacity is " + CapacityWords(input.Land)
-                    + "; specialization is "
-                    + CapacityWords(input.Specialization) + ".",
+            AddReading(result, "Present setting",
+                input.Founding
+                    ? "The settlement has not yet accumulated local material history."
+                    : "Current ground and institutions constrain how culture is lived; they do not define it.",
+                "Residents: " + input.Residents,
                 "Ground and routes: " + GeographyWords(input) + ".",
-                "Settlement: " + SettlementWords(input) + ".");
-
-            AddReading(result, "Security and social order",
-                SecuritySummary(input),
-                "Local order considered proper: " + PreferredAxis(input,
-                    CAFactionAxes.LocalOrder),
-                "Defense considered proper: "
-                    + PreferredAxis(input, CAFactionAxes.Defense),
-                "Treatment in war considered proper: "
-                    + PreferredAxis(input, CAFactionAxes.WarConduct),
-                "Regional relations: " + input.HostileRelations
-                    + " hostile, " + input.NeutralRelations + " neutral.",
-                "Local fortification is "
-                    + CapabilityWords(input.Fortification)
-                    + "; organization is "
-                    + CapabilityWords(input.Organization) + ".",
-                "Starting facilities: " + FacilityWords(input.Facilities));
+                "Provision arrangements: " + ProvisionWords(input.Provisions),
+                "Current order: " + InstitutionSummary(input) + ".",
+                "Material setting: " + MaterialSummary(input) + ".");
 
             CACulturalExpressionCausalResult causal =
                 CACulturalExpressionCausalKernel.Evaluate(
                     new CACulturalExpressionCausalInput
                     {
                         Scope = input.Scope,
-                        Background = input.Background,
+                        CultureName = input.CultureName,
+                        CultureMaturity = input.Culture?.maturity.ToString(),
+                        CultureRevision = input.Culture?.revision ?? 0,
+                        CultureTransitionCount = input.Culture?.transitions?
+                            .Count(item => item != null) ?? 0,
+                        CultureConstituents = CausalConstituents(
+                            input.Culture),
+                        CulturePractices = CausalPractices(input.Culture),
                         Ideoligion = input.Ideoligion,
                         IdeoligionCommitments = input.IdeoligionCommitmentKeys
                             .ToList(),
@@ -470,13 +455,70 @@ namespace ColonistAwareness
                             .CapitalizeFirst(),
                         MaterialSummary = MaterialSummary(input),
                         ReadingFacts = result.Readings.SelectMany(item =>
-                            item.Facts).ToList()
+                            item.Facts).Concat(input.CultureFacts).ToList()
                     });
             result.Status = (CACulturalExpressionStatus)causal.Status;
             result.Summary = causal.Summary;
             result.ContributingFacts.AddRange(causal.Facts);
             result.SourceSignature = causal.Signature;
             return result;
+        }
+
+        private static List<string> CultureFacts(CACulture culture)
+        {
+            if (culture == null) return new List<string>();
+            var result = new List<string>
+            {
+                CACultureHistory.ContinuitySummary(culture),
+                "culture identity=" + (culture.id ?? "unrecorded"),
+                "culture maturity=" + culture.maturity,
+                "culture composition="
+                    + (culture.compositionSignature ?? "unrecorded")
+            };
+            foreach (CACultureTransition transition in (culture.transitions
+                ?? new List<CACultureTransition>()).Where(item => item != null)
+                .OrderBy(item => item.sequence))
+                result.Add("culture transition " + transition.sequence + ": "
+                    + (transition.cause ?? "change") + " - "
+                    + (transition.summary ?? "no summary"));
+            foreach (CACulturePractice practice in (culture.practices
+                    ?? new List<CACulturePractice>()).Where(item => item != null)
+                .OrderByDescending(item => item.strength)
+                .ThenBy(item => item.key))
+                result.Add("culture practice " + (practice.key ?? "unrecorded")
+                    + ": " + practice.strength + "/100 - "
+                    + (practice.sourceSignature ?? "unrecorded source"));
+            return result;
+        }
+
+        private static List<CACulturalConstituentState> CausalConstituents(
+            CACulture culture)
+        {
+            return (culture?.constituents
+                    ?? new List<CACultureConstituent>())
+                .Where(item => item != null && item.share > 0)
+                .Select(item => new CACulturalConstituentState
+                {
+                    CultureId = item.cultureId,
+                    Label = item.label,
+                    Share = item.share,
+                    Inherited = item.inherited,
+                    SeparateQuarter = item.separateQuarter
+                }).ToList();
+        }
+
+        private static List<CACulturalPracticeState> CausalPractices(
+            CACulture culture)
+        {
+            return (culture?.practices ?? new List<CACulturePractice>())
+                .Where(item => item != null && item.strength > 0)
+                .Select(item => new CACulturalPracticeState
+                {
+                    Key = item.key,
+                    Summary = item.summary,
+                    Strength = item.strength,
+                    SourceSignature = item.sourceSignature
+                }).ToList();
         }
 
         private static List<CACulturalAxisCause> CausalAxes(
@@ -512,64 +554,15 @@ namespace ColonistAwareness
 
         private static string MaterialSummary(Inputs input)
         {
-            return CapacityWords(input.Access) + " transport, "
-                + CapacityWords(input.Services) + " local services, and "
-                + CapacityWords(input.Civic) + " public works";
-        }
-
-        private static string WorkSummary(Inputs input)
-        {
-            string baseText = PreferredAxis(input, CAFactionAxes.Ownership)
-                + " and " + PreferredAxis(input, CAFactionAxes.Work);
-            return input.Services < 0 ? baseText + " arrive as preferences."
-                : baseText + " are lived amid "
-                    + CapacityWords(input.Services) + " services and "
-                    + input.Provisions.Count(item => item?.active == true)
-                    + " active provision arrangement"
-                    + (input.Provisions.Count(item => item?.active == true)
-                        == 1 ? "." : "s.");
-        }
-
-        private static string PublicLifeSummary(Inputs input,
-            List<CASettlementPopulationGroup> populations, int quartered)
-        {
             if (input.Founding)
-                return "Participation begins with the adopted founding terms.";
-            return populations.Count + " population group"
-                + (populations.Count == 1 ? "" : "s") + " share public life"
-                + (quartered > 0 ? "; " + quartered
-                    + " retain separate quarters" : "")
-                + " amid " + CapacityWords(input.Civic) + " public works.";
-        }
-
-        private static string ExchangeSummary(Inputs input)
-        {
-            if (input.Founding) return "Local exchange has not yet developed.";
-            string links = input.Road || input.River || input.Coast
-                ? string.Join(", ", new[] { input.Road ? "road" : null,
-                    input.River ? "river" : null, input.Coast ? "coast" : null }
-                    .Where(item => item != null).ToArray())
-                : "isolated ground";
-            return PreferredAxis(input, CAFactionAxes.Membership)
-                + " membership and " + PreferredAxis(input,
-                    CAFactionAxes.Economy) + " meet "
-                + CapacityWords(input.Trade) + " trade through " + links
-                + " on " + CapacityWords(input.Land) + " land.";
-        }
-
-        private static string SecuritySummary(Inputs input)
-        {
-            string order = PreferredAxis(input, CAFactionAxes.LocalOrder);
-            if (input.Founding)
-                return "The landing arrangement establishes initial order; no institutional history exists yet.";
-            return order + " local order and "
-                + PreferredAxis(input, CAFactionAxes.WarConduct)
-                + " treatment in war face " + input.HostileRelations
-                + " hostile and " + input.NeutralRelations
-                + " neutral regional relations; fortification is "
-                + CapabilityWords(input.Fortification)
-                + " and organization is "
-                + CapabilityWords(input.Organization) + ".";
+                return "No local buildings or routes have yet become history";
+            string facilities = FacilityWords(input.Facilities);
+            string counts = input.Buildings > 0 || input.InfrastructureObjects > 0
+                ? "; " + input.Buildings + " buildings and "
+                    + input.InfrastructureObjects + " route or utility objects"
+                : "";
+            return "facilities: " + facilities + "; routes: "
+                + GeographyWords(input) + counts;
         }
 
         private static string Axis(Inputs input, string key)
@@ -659,6 +652,42 @@ namespace ColonistAwareness
                     + AxisSetWords(item.Positions)).ToArray();
             return words.Length == 0 ? "the shared founding beliefs"
                 : string.Join("; ", words);
+        }
+
+        private static string WeightedIdeoligionWords(
+            List<WeightedIdeoligionSource> sources)
+        {
+            string[] words = (sources
+                    ?? new List<WeightedIdeoligionSource>())
+                .OrderByDescending(item => item.Share)
+                .ThenBy(item => item.Label)
+                .Select(item => item.Label + " (" + item.Share + "%): "
+                    + (item.Name ?? "Ideoligion not recorded"))
+                .ToArray();
+            return words.Length == 0 ? "the shared founding Ideoligion"
+                : string.Join("; ", words);
+        }
+
+        private static string PopulationCultureSummary(CACulture culture,
+            List<CASettlementPopulationGroup> populations)
+        {
+            CACultureConstituent[] sources = (culture?.constituents
+                    ?? new List<CACultureConstituent>())
+                .Where(item => item != null && item.share > 0)
+                .OrderByDescending(item => item.share)
+                .ThenBy(item => item.label).ToArray();
+            if (sources.Length > 0)
+                return string.Join("; ", sources.Select(item =>
+                    (item.label ?? item.cultureId ?? "Culture not recorded")
+                    + " (" + item.share + "%"
+                    + (item.separateQuarter ? ", separate quarter" : "")
+                    + ")"));
+            return populations.Count == 0
+                ? "No constituent population history is recorded."
+                : populations.Count + " resident population group"
+                    + (populations.Count == 1 ? " is" : "s are")
+                    + " recorded; inherited Culture identities are not yet "
+                    + "resolved.";
         }
 
         private static string IdeoligionCommitmentWords(Inputs input)
@@ -751,41 +780,6 @@ namespace ColonistAwareness
                 : string.Join(", ", links);
         }
 
-        private static string SettlementWords(Inputs input)
-        {
-            if (input.Role < 0 && input.Scale < 0 && input.Form < 0)
-                return "newly founded";
-            string role = input.Role < 0 ? "role not recorded"
-                : CARegionalSettlements.RoleWords(
-                    (CASettlementRole)input.Role);
-            string scale = input.Scale < 0 ? "scale not recorded"
-                : CARegionalSettlements.ScaleWords(
-                    (CASettlementScale)input.Scale);
-            string form = input.Form < 0 ? "form not recorded"
-                : ((CAMorphForm)input.Form).ToString().ToLowerInvariant()
-                    + " form";
-            return role + ", " + scale + ", " + form
-                + ", " + CapacityWords(input.History) + " history";
-        }
-
-        private static string CapacityWords(int value)
-        {
-            return value < 0 ? "not yet known"
-                : value == 0 ? "minimal"
-                : value == 1 ? "limited"
-                : value == 2 ? "established" : "developed";
-        }
-
-        private static string CapabilityWords(int value)
-        {
-            return value < 0 ? "not yet known"
-                : value == 0 ? "minimal"
-                : value == 1 ? "basic"
-                : value == 2 ? "practiced"
-                : value == 3 ? "established"
-                : value == 4 ? "advanced" : "extensive";
-        }
-
         private static string AxisFingerprint(List<CAAxisEntry> axes)
         {
             return string.Join(",", (axes ?? new List<CAAxisEntry>())
@@ -860,9 +854,7 @@ namespace ColonistAwareness
                 .Select(item => item.key + ":" + item.basisKey + "="
                     + item.operatorKind + "/group=" + item.populationGroupKey
                     + "/" + item.access + "/" + item.funding + "/"
-                    + item.distribution + "/authored="
-                    + item.distributionAuthored + "/preferred="
-                    + item.authoredDistribution + "/active=" + item.active
+                    + item.distribution + "/active=" + item.active
                     + "/reason=" + (item.inactiveReason ?? "none")
                     + "/water=" + item.waterSecured + "/nodes=" + item.nodes
                     + "/reach=" + item.reach).ToArray());
@@ -1085,8 +1077,6 @@ namespace ColonistAwareness
                     access = item.access,
                     funding = item.funding,
                     distribution = item.distribution,
-                    distributionAuthored = item.distributionAuthored,
-                    authoredDistribution = item.authoredDistribution,
                     active = item.active,
                     inactiveReason = item.inactiveReason,
                     waterSecured = item.waterSecured,

@@ -12,9 +12,9 @@ namespace ColonistAwareness
 {
     // A settlement population consists of population groups. Each group
     // carries faction affiliation, Ideoligion, political beliefs, population
-    // share, and starting certainty. Carried background belongs to factions;
-    // local cultural expression is derived from the weighted population and
-    // realized settlement conditions. Faction and Ideoligion use RimWorld's
+    // share, and starting certainty. Inherited Culture belongs to its source
+    // populations; local Culture records what the weighted population lives
+    // through. Faction and Ideoligion use RimWorld's
     // native pawn fields where possible; political beliefs remain durable CA
     // state.
     // Starting provisions are generated from population, faction structure,
@@ -142,11 +142,12 @@ namespace ColonistAwareness
 
     public sealed class CAStartingProvision : IExposable
     {
+        public const int CurrentSchemaVersion = 2;
+        public int schemaVersion = CurrentSchemaVersion;
         public int key;
         // Stable causal slot. Generated provisions are reconciled by this
         // identity, so changing access, facilities, population, or faction
-        // parameters refreshes the generated plan without stacking another
-        // copy. A saved distribution with the same basis overrides that field.
+        // parameters refreshes the arrangement without stacking another copy.
         public string basisKey;
         public string basisLabel;
         public CAProvisionOperator operatorKind;
@@ -156,11 +157,9 @@ namespace ColonistAwareness
         public CAProvisionAccess access;
         public CAProvisionFunding funding;
         public CAProvisionDistribution distribution;
-        // The operator's saved distribution preference is separate from the
-        // currently feasible distribution. A household fallback can therefore
-        // become active without erasing the chosen neighborhood/central form.
-        public bool distributionAuthored;
-        public int authoredDistribution = -1;
+        private bool legacyDistributionAuthored;
+        private int legacyAuthoredDistribution = -1;
+        public string migrationEvidence;
         public bool active = true;
         public string inactiveReason;
         // Stamped when the settlement materializes: whether this
@@ -178,6 +177,7 @@ namespace ColonistAwareness
 
         public void ExposeData()
         {
+            Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
             Scribe_Values.Look(ref key, "key", 0);
             Scribe_Values.Look(ref basisKey, "basisKey");
             Scribe_Values.Look(ref basisLabel, "basisLabel");
@@ -190,16 +190,31 @@ namespace ColonistAwareness
                 CAProvisionFunding.Household);
             Scribe_Values.Look(ref distribution, "distribution",
                 CAProvisionDistribution.Centralized);
-            Scribe_Values.Look(ref distributionAuthored,
-                "distributionAuthored", false);
-            Scribe_Values.Look(ref authoredDistribution,
-                "authoredDistribution", -1);
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                Scribe_Values.Look(ref legacyDistributionAuthored,
+                    "distributionAuthored", false);
+                Scribe_Values.Look(ref legacyAuthoredDistribution,
+                    "authoredDistribution", -1);
+            }
+            Scribe_Values.Look(ref migrationEvidence,
+                "migrationEvidence");
             Scribe_Values.Look(ref active, "active", true);
             Scribe_Values.Look(ref inactiveReason, "inactiveReason");
             Scribe_Values.Look(ref waterSecured, "waterSecured", true);
             Scribe_Values.Look(ref nodes, "nodes", 1);
             Scribe_Values.Look(ref reach, "reach",
                 CAProvisionReach.Settlement);
+            if (Scribe.mode == LoadSaveMode.PostLoadInit
+                && schemaVersion < CurrentSchemaVersion)
+            {
+                if (legacyDistributionAuthored)
+                    migrationEvidence = "B5/B6 distribution preference "
+                        + legacyAuthoredDistribution + " was retired; the "
+                        + "current arrangement follows its operator, access, "
+                        + "funding, facilities, population, and reach.";
+                schemaVersion = CurrentSchemaVersion;
+            }
         }
 
         internal string OperatorWords
@@ -251,16 +266,6 @@ namespace ColonistAwareness
             }
         }
 
-        internal CAProvisionDistribution PreferredDistribution
-        {
-            get
-            {
-                return authoredDistribution >= 0
-                    ? (CAProvisionDistribution)authoredDistribution
-                    : distribution;
-            }
-        }
-
     }
 
     // Generated settlement composition fills unset fields from saved facts.
@@ -294,6 +299,7 @@ namespace ColonistAwareness
                 settlementPlan.startingProvisions = new List<CAStartingProvision>();
             if (settlementPlan.populationGroups.Count == 0)
                 DerivePopulationGroups(plan, settlementPlan);
+            CACultureHistory.EnsureSettlementCulture(plan, settlementPlan);
             ReconcileStartingProvisions(plan, settlementPlan);
         }
 
@@ -306,13 +312,7 @@ namespace ColonistAwareness
             List<CAStartingProvision> generated = GenerateStartingProvisions(
                 plan, settlementPlan);
 
-            var distributionByBasis = settlementPlan.startingProvisions.Where(item =>
-                    item != null && item.distributionAuthored
-                    && IsGeneratedBasis(item.basisKey))
-                .GroupBy(item => item.basisKey)
-                .ToDictionary(group => group.Key, group => group.First());
             var reconciled = new List<CAStartingProvision>();
-            var consumed = new HashSet<CAStartingProvision>();
             int facilities = CASettlementStartingState.Sync(plan, settlementPlan,
                 plan.FactionPlan(settlementPlan.factionKey)?.ResolvedFactionDef);
             int access = CASettlementStartingState.Access(plan, settlementPlan);
@@ -320,47 +320,11 @@ namespace ColonistAwareness
             int civic = CASettlementStartingState.Civic(plan, settlementPlan);
             foreach (CAStartingProvision derived in generated)
             {
-                CAStartingProvision saved;
-                if (distributionByBasis.TryGetValue(derived.basisKey,
-                        out saved))
-                {
-                    // Start from a newly derived basis so operator identity and
-                    // facility preconditions cannot go stale. Overlay only the
-                    // saved distribution, then recompute its consequences.
-                    if (saved.distributionAuthored)
-                    {
-                        derived.authoredDistribution = (int)saved
-                            .PreferredDistribution;
-                        derived.distribution = saved
-                            .PreferredDistribution;
-                    }
-                    derived.distributionAuthored =
-                        saved.distributionAuthored;
-                    derived.waterSecured = saved.waterSecured;
-                    derived.active = true;
-                    derived.inactiveReason = null;
-                    ApplyProvisionConsequences(plan, settlementPlan, derived,
-                        facilities, access, services, civic);
-                    reconciled.Add(derived);
-                    consumed.Add(saved);
-                }
-                else reconciled.Add(derived);
-            }
-            // A generated basis whose cause disappeared is not materialized,
-            // but its authored distribution remains as one inactive override.
-            // If stores or the population group returns, the normal overlay
-            // above consumes
-            // it and reactivates the same basis without stacking a duplicate.
-            foreach (CAStartingProvision saved in settlementPlan.startingProvisions
-                .Where(item => item != null && item.distributionAuthored
-                    && !consumed.Contains(item)
-                    && IsGeneratedBasis(item.basisKey)))
-            {
-                saved.active = false;
-                saved.inactiveReason = saved.basisKey == "reserve"
-                    ? "no emergency reserve is generated"
-                    : "the community that caused this basis is absent";
-                reconciled.Add(saved);
+                derived.active = true;
+                derived.inactiveReason = null;
+                ApplyProvisionConsequences(plan, settlementPlan, derived,
+                    facilities, access, services, civic);
+                reconciled.Add(derived);
             }
             settlementPlan.startingProvisions = reconciled
                 .Where(item => item != null
@@ -395,13 +359,9 @@ namespace ColonistAwareness
                 populationGroups = source.populationGroups,
                 startingProvisions = new List<CAStartingProvision>(),
                 startingFacilityMask = source.startingFacilityMask,
-                startingFacilityAuthoredMask =
-                    source.startingFacilityAuthoredMask,
-                startingFacilityValues = source.startingFacilityValues,
-                developmentProfile = source.developmentProfile,
-                accessInfrastructure = source.accessInfrastructure,
-                serviceInfrastructure = source.serviceInfrastructure,
-                civicInfrastructure = source.civicInfrastructure
+                facilityExceptionMask = source.facilityExceptionMask,
+                facilityExceptionValues = source.facilityExceptionValues,
+                localCulture = source.localCulture
             };
             DeriveStartingProvisions(plan, target);
             List<CAStartingProvision> result = target.startingProvisions;

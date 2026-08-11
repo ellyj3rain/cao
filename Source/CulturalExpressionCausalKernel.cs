@@ -30,7 +30,14 @@ namespace ColonistAwareness
     public sealed class CACulturalExpressionCausalInput
     {
         public string Scope;
-        public string Background;
+        public string CultureName;
+        public string CultureMaturity;
+        public int CultureRevision;
+        public int CultureTransitionCount;
+        public List<CACulturalConstituentState> CultureConstituents =
+            new List<CACulturalConstituentState>();
+        public List<CACulturalPracticeState> CulturePractices =
+            new List<CACulturalPracticeState>();
         public string Ideoligion;
         public List<string> IdeoligionCommitments = new List<string>();
         public List<CACulturalAxisCause> PoliticalBeliefs =
@@ -83,6 +90,53 @@ namespace ColonistAwareness
         public IReadOnlyList<string> Facts;
     }
 
+    public static class CACultureConsumerKernel
+    {
+        public static float SpatialPreference(float semanticLegibility,
+            float strategicTopology, int sharedPublicLife,
+            int defensiveBoundary)
+        {
+            float shared = Clamp01(sharedPublicLife / 100f);
+            float defense = Clamp01(defensiveBoundary / 100f);
+            return shared * Math.Max(0f, semanticLegibility) * 0.28f
+                + defense * Math.Max(0f, strategicTopology) * 0.18f;
+        }
+
+        public static float GatheringScore(int nearbyResidents,
+            float distanceFromSpeaker, int sharedPublicLife)
+        {
+            float shared = Clamp01(sharedPublicLife / 100f);
+            return nearbyResidents * (1f + shared * 0.8f)
+                - distanceFromSpeaker * 0.05f;
+        }
+
+        public static bool PrioritizeResearch(int researchTradition)
+        {
+            return researchTradition >= 40;
+        }
+
+        public static int PoliticalHabituationTicks(int baseTicks,
+            int sharedPublicLife)
+        {
+            float salience = Clamp01(sharedPublicLife / 100f);
+            return (int)Math.Round(baseTicks * (1f + salience * 0.5f),
+                MidpointRounding.AwayFromZero);
+        }
+
+        public static bool PreferExchangeRoad(bool agreementTargetAvailable,
+            bool existingPostAvailable, int outsiderExchange,
+            int defensiveBoundary)
+        {
+            return agreementTargetAvailable && (!existingPostAvailable
+                || outsiderExchange > defensiveBoundary);
+        }
+
+        private static float Clamp01(float value)
+        {
+            return Math.Max(0f, Math.Min(1f, value));
+        }
+    }
+
     public sealed class CACultureLegacyMigrationInput
     {
         public int SchemaVersion;
@@ -99,6 +153,317 @@ namespace ColonistAwareness
         public string Name;
         public string SourceCultureDefName;
         public bool ClearLegacyPractices;
+    }
+
+    // A practice is recorded only when lived evidence establishes it. These
+    // records are not a menu of universal cultural axes: absent evidence does
+    // not create a value, and contradictory practices may coexist while
+    // historical inertia decays them gradually.
+    public sealed class CACulturalPracticeEvidence
+    {
+        public string Key;
+        public string Summary;
+        public int Strength;
+        public string SourceOwner;
+        public string SourceDomain;
+        public string SourceSignature;
+        public int EvidenceStartTick = -1;
+        public int ObservedTick = -1;
+    }
+
+    public sealed class CACulturalHistoryEvidence
+    {
+        public int Tick = -1;
+        public string RecordedSignature;
+        public string Population;
+        public string Spatial;
+        public string Social;
+        public string Institutional;
+        public string Political;
+        public string Material;
+        public List<CACulturalPracticeEvidence> Practices =
+            new List<CACulturalPracticeEvidence>();
+
+        public string StableSignature()
+        {
+            if (!string.IsNullOrWhiteSpace(RecordedSignature))
+                return RecordedSignature;
+            return CACulturalExpressionCausalKernel.Signature(new[]
+            {
+                "population=" + (Population ?? "unrecorded"),
+                "spatial=" + (Spatial ?? "unrecorded"),
+                "social=" + (Social ?? "unrecorded"),
+                "institutional=" + (Institutional ?? "unrecorded"),
+                "political=" + (Political ?? "unrecorded"),
+                "material=" + (Material ?? "unrecorded"),
+                "practices=" + string.Join(",", (Practices
+                        ?? new List<CACulturalPracticeEvidence>())
+                    .Where(item => item != null)
+                    .OrderBy(item => item.Key, StringComparer.Ordinal)
+                    .Select(item => (item.Key ?? "unrecorded") + ":"
+                        + item.Strength + ":"
+                        + (item.SourceSignature ?? "unrecorded")))
+            });
+        }
+    }
+
+    public sealed class CACulturalPracticeState
+    {
+        public string Key;
+        public string Summary;
+        public int Strength;
+        public string SourceSignature;
+    }
+
+    public sealed class CACulturalConstituentState
+    {
+        public string CultureId;
+        public string Label;
+        public int Share;
+        public bool Inherited;
+        public bool SeparateQuarter;
+    }
+
+    public sealed class CACulturalTransitionState
+    {
+        public int Sequence;
+        public int Tick = -1;
+        public string Cause;
+        public string Summary;
+        public string SuccessorSignature;
+        public string PredecessorCultureSignature;
+        public string EvidenceSignature;
+        public string ChangedDomains;
+    }
+
+    public sealed class CACulturalPersistedStateInput
+    {
+        public string Identity;
+        public string ParentIdentity;
+        public string Locality;
+        public string Maturity;
+        public int Revision;
+        public string CompositionSignature;
+        public string VisualTradition;
+        public List<CACulturalPracticeState> Practices =
+            new List<CACulturalPracticeState>();
+        public List<CACulturalTransitionState> Transitions =
+            new List<CACulturalTransitionState>();
+
+        public string HistoricalSignature()
+        {
+            return CACulturalExpressionCausalKernel.Signature(new[]
+            {
+                "id=" + (Identity ?? "unrecorded"),
+                "parent=" + (ParentIdentity ?? "none"),
+                "locality=" + (Locality ?? "none"),
+                "maturity=" + (Maturity ?? "unrecorded"),
+                "revision=" + Revision,
+                "composition=" + (CompositionSignature ?? "unrecorded"),
+                "practices=" + CACulturalExpressionCausalKernel
+                    .PracticeFingerprint(Practices),
+                "transitions=" + CACulturalExpressionCausalKernel
+                    .TransitionFingerprint(Transitions)
+            });
+        }
+
+        public string VisualExpressionSignature()
+        {
+            return CACulturalExpressionCausalKernel.Signature(new[]
+            {
+                HistoricalSignature(),
+                "visual=" + (VisualTradition ?? "none")
+            });
+        }
+    }
+
+    public sealed class CACulturalTransitionEvaluation
+    {
+        public bool Changed;
+        public string PriorEvidenceSignature;
+        public string EvidenceSignature;
+        public string TransitionSignature;
+        public IReadOnlyList<string> ChangedDomains;
+        public IReadOnlyList<CACulturalPracticeState> Practices;
+    }
+
+    public static class CACultureLongitudinalKernel
+    {
+        private const int HistoricalPeriod = 60000;
+
+        public static CACulturalTransitionEvaluation Evaluate(
+            CACulturalHistoryEvidence previous,
+            CACulturalHistoryEvidence current,
+            IEnumerable<CACulturalPracticeState> priorPractices,
+            string priorCultureSignature)
+        {
+            if (current == null)
+                throw new ArgumentNullException(nameof(current));
+            string before = previous?.StableSignature();
+            string after = current.StableSignature();
+            List<CACulturalPracticeState> existing = (priorPractices
+                    ?? Enumerable.Empty<CACulturalPracticeState>())
+                .Where(item => item != null && !string.IsNullOrWhiteSpace(
+                    item.Key))
+                .Select(Copy).OrderBy(item => item.Key,
+                    StringComparer.Ordinal).ToList();
+            if (previous == null)
+                return new CACulturalTransitionEvaluation
+                {
+                    Changed = false,
+                    PriorEvidenceSignature = before,
+                    EvidenceSignature = after,
+                    TransitionSignature = null,
+                    ChangedDomains = Array.Empty<string>(),
+                    Practices = existing
+                };
+
+            List<string> observedDomainChanges = ChangedDomains(previous,
+                current);
+            int elapsed = previous.Tick >= 0 && current.Tick >= previous.Tick
+                ? current.Tick - previous.Tick : 0;
+            int periods = elapsed / HistoricalPeriod;
+            var updated = existing.ToDictionary(item => item.Key,
+                item => item, StringComparer.Ordinal);
+            var observed = (current.Practices
+                    ?? new List<CACulturalPracticeEvidence>())
+                .Where(item => item != null
+                    && !string.IsNullOrWhiteSpace(item.Key))
+                .GroupBy(item => item.Key, StringComparer.Ordinal)
+                .Select(group => group.OrderByDescending(item =>
+                    item.Strength).First())
+                .OrderBy(item => item.Key, StringComparer.Ordinal).ToList();
+            var observedKeys = new HashSet<string>(observed.Select(item =>
+                item.Key), StringComparer.Ordinal);
+            if (periods > 0)
+            {
+                foreach (CACulturalPracticeEvidence evidence in observed)
+                {
+                    CACulturalPracticeState prior;
+                    int strength = Math.Max(0, Math.Min(100,
+                        evidence.Strength));
+                    if (updated.TryGetValue(evidence.Key, out prior))
+                        strength = (int)Math.Round(
+                            (prior.Strength * 3d + strength) / 4d,
+                            MidpointRounding.AwayFromZero);
+                    updated[evidence.Key] = new CACulturalPracticeState
+                    {
+                        Key = evidence.Key,
+                        Summary = evidence.Summary,
+                        Strength = strength,
+                        SourceSignature = evidence.SourceSignature ?? after
+                    };
+                }
+                foreach (CACulturalPracticeState prior in existing)
+                {
+                    if (observedKeys.Contains(prior.Key)) continue;
+                    int decayed = Math.Max(0, prior.Strength - 10 * periods);
+                    if (decayed == 0) updated.Remove(prior.Key);
+                    else updated[prior.Key] = new CACulturalPracticeState
+                    {
+                        Key = prior.Key,
+                        Summary = prior.Summary,
+                        Strength = decayed,
+                        SourceSignature = prior.SourceSignature
+                    };
+                }
+            }
+            List<CACulturalPracticeState> practices = updated.Values
+                .OrderBy(item => item.Key, StringComparer.Ordinal).ToList();
+            bool practicesChanged = !SamePractices(existing, practices);
+            // Only state with cultural significance becomes a Culture
+            // transition. Spatial, social, and material snapshots remain
+            // evidence until they produce a qualified lived practice. A
+            // population, institution, or political-order change is itself a
+            // historically meaningful social boundary after an elapsed cycle.
+            List<string> changed = observedDomainChanges.Where(domain =>
+                    periods > 0 && (domain == "population"
+                        || domain == "institutional"
+                        || domain == "political"))
+                .ToList();
+            if (practicesChanged) changed.Add("lived practice");
+            string practiceFingerprint = string.Join(",", practices.Select(
+                item => item.Key + ":" + item.Strength + ":"
+                    + (item.SourceSignature ?? "unrecorded")));
+            return new CACulturalTransitionEvaluation
+            {
+                Changed = changed.Count > 0,
+                PriorEvidenceSignature = before,
+                EvidenceSignature = after,
+                ChangedDomains = changed,
+                Practices = practices,
+                TransitionSignature = CACulturalExpressionCausalKernel
+                    .Signature(new[]
+                    {
+                        "prior-culture=" + (priorCultureSignature
+                            ?? "unrecorded"),
+                        "prior-evidence=" + (before ?? "unrecorded"),
+                        "evidence=" + after,
+                        "period=" + previous.Tick + "->" + current.Tick,
+                        "domains=" + string.Join(",", changed),
+                        "practices=" + practiceFingerprint
+                    })
+            };
+        }
+
+        private static bool SamePractices(
+            IReadOnlyList<CACulturalPracticeState> before,
+            IReadOnlyList<CACulturalPracticeState> after)
+        {
+            if (before.Count != after.Count) return false;
+            for (int i = 0; i < before.Count; i++)
+            {
+                if (!string.Equals(before[i].Key, after[i].Key,
+                        StringComparison.Ordinal)
+                    || before[i].Strength != after[i].Strength
+                    || !string.Equals(before[i].Summary, after[i].Summary,
+                        StringComparison.Ordinal)
+                    || !string.Equals(before[i].SourceSignature,
+                        after[i].SourceSignature,
+                        StringComparison.Ordinal))
+                    return false;
+            }
+            return true;
+        }
+
+        private static List<string> ChangedDomains(
+            CACulturalHistoryEvidence previous,
+            CACulturalHistoryEvidence current)
+        {
+            var result = new List<string>();
+            AddIfChanged(result, "population", previous.Population,
+                current.Population);
+            AddIfChanged(result, "spatial", previous.Spatial,
+                current.Spatial);
+            AddIfChanged(result, "social", previous.Social,
+                current.Social);
+            AddIfChanged(result, "institutional", previous.Institutional,
+                current.Institutional);
+            AddIfChanged(result, "political", previous.Political,
+                current.Political);
+            AddIfChanged(result, "material", previous.Material,
+                current.Material);
+            return result;
+        }
+
+        private static void AddIfChanged(List<string> result, string domain,
+            string before, string after)
+        {
+            if (!string.Equals(before, after, StringComparison.Ordinal))
+                result.Add(domain);
+        }
+
+        private static CACulturalPracticeState Copy(
+            CACulturalPracticeState value)
+        {
+            return new CACulturalPracticeState
+            {
+                Key = value.Key,
+                Summary = value.Summary,
+                Strength = value.Strength,
+                SourceSignature = value.SourceSignature
+            };
+        }
     }
 
     // Pure B5 causal operations shared by production adapters and executable
@@ -136,35 +501,44 @@ namespace ColonistAwareness
                     .Distinct(StringComparer.Ordinal).Count()
                 : populations.Select(item => item.BeliefSource ?? "default")
                     .Distinct(StringComparer.Ordinal).Count();
-            bool plural = populations.Count > 1
-                && (ideologySources > 1 || beliefSources > 1 || quartered > 0);
-            int materialAverage = AverageKnown(input.Access, input.Services,
-                input.Civic, input.Economy, input.Trade);
+            List<CACulturalConstituentState> constituents =
+                NormalizeConstituents(input.CultureConstituents);
+            List<CACulturalPracticeState> practices = (input.CulturePractices
+                    ?? new List<CACulturalPracticeState>())
+                .Where(item => item != null
+                    && !string.IsNullOrWhiteSpace(item.Key)
+                    && item.Strength > 0)
+                .OrderByDescending(item => item.Strength)
+                .ThenBy(item => item.Key, StringComparer.Ordinal).ToList();
+            bool plural = constituents.Count > 1 || (populations.Count > 1
+                && (ideologySources > 1 || beliefSources > 1
+                    || quartered > 0));
             int status = Status(input.Tension, plural, input.Founding,
-                materialAverage, input.Land, input.History,
-                input.HostileRelations);
+                input.CultureTransitionCount, practices.Count);
 
             string plurality = populations.Count == 0
                 ? "residents whose composition is not yet recorded"
                 : populations.Count == 1 ? "one resident community"
                     : "several resident groups";
             string summary = input.Founding
-                ? ((input.Background ?? "carried background")
-                    + " is carried into a new settlement; local culture is "
-                    + "developing from "
-                    + (input.Ideoligion ?? "the founders' Ideoligion")
-                    + " and the founding arrangement.")
-                : ((input.Background ?? "carried background")
-                    + " is being lived by " + plurality + ". "
-                    + (input.InstitutionSummary ?? "Current institutions are not recorded")
-                    + "; "
-                    + (input.MaterialSummary ?? "material conditions are not recorded")
-                    + ".");
+                ? ((input.CultureName ?? "The founders' culture")
+                    + " is inherited at landing. Its local history begins "
+                    + "with the founders' conduct and adopted arrangement.")
+                : ((input.CultureName ?? "Local culture")
+                    + " is the recorded continuity and lived practice of "
+                    + plurality + ".");
 
             var facts = new List<string>
             {
                 "scope=" + (input.Scope ?? "unrecorded"),
-                "background=" + (input.Background ?? "unrecorded"),
+                "culture=" + (input.CultureName ?? "unrecorded"),
+                "culture maturity=" + (input.CultureMaturity
+                    ?? "unrecorded"),
+                "culture revision/transitions=" + input.CultureRevision
+                    + "/" + input.CultureTransitionCount,
+                "culture constituents=" + ConstituentFingerprint(
+                    constituents),
+                "culture practices=" + PracticeFingerprint(practices),
                 "Ideoligion=" + (input.Ideoligion ?? "unrecorded"),
                 "Ideoligion commitments=" + JoinValues(
                     input.IdeoligionCommitments),
@@ -221,34 +595,80 @@ namespace ColonistAwareness
         }
 
         public static int Status(bool tension, bool plural, bool founding,
-            int materialAverage, int land, int history, int hostileRelations)
+            int transitionCount, int practiceCount)
         {
             if (tension) return 4;
             if (plural) return 3;
-            if (!founding && (materialAverage <= 1 || land <= 1)) return 2;
-            if (history >= 2 || hostileRelations > 0) return 1;
+            if (!founding && transitionCount > 0 && practiceCount > 0)
+                return 1;
             return 0;
         }
 
-        public static int ApplyDevelopmentProfile(int derived, int profile)
+        public static List<CACulturalConstituentState> NormalizeConstituents(
+            IEnumerable<CACulturalConstituentState> values)
         {
-            int offset = Math.Clamp(profile, -1, 1);
-            return Math.Clamp(derived + offset, 0, 3);
+            return (values ?? Enumerable.Empty<CACulturalConstituentState>())
+                .Where(item => item != null && item.Share > 0)
+                .GroupBy(item => item.CultureId ?? "unrecorded",
+                    StringComparer.Ordinal)
+                .Select(group => new CACulturalConstituentState
+                {
+                    CultureId = group.Key,
+                    Label = group.Select(item => item.Label)
+                        .FirstOrDefault(value =>
+                            !string.IsNullOrWhiteSpace(value))
+                        ?? "Culture not recorded",
+                    Share = group.Sum(item => item.Share),
+                    Inherited = group.Any(item => item.Inherited),
+                    SeparateQuarter = group.Any(item => item.SeparateQuarter)
+                })
+                .OrderByDescending(item => item.Share)
+                .ThenBy(item => item.CultureId, StringComparer.Ordinal)
+                .ToList();
         }
 
-        public static int ResolveDevelopment(int authored, int derived,
-            int profile)
+        public static string ConstituentFingerprint(
+            IEnumerable<CACulturalConstituentState> values)
         {
-            return authored >= 0 ? Math.Clamp(authored, 0, 3)
-                : ApplyDevelopmentProfile(derived, profile);
+            return string.Join(",", NormalizeConstituents(values).Select(item =>
+                item.CultureId + ":" + item.Share + ":"
+                    + (item.Inherited ? "inherited" : "local") + ":"
+                    + (item.SeparateQuarter ? "separate" : "shared")));
         }
 
-        public static int ResolveFacilityMask(int generated, int authoredMask,
-            int authoredValues, int allowedMask)
+        public static string PracticeFingerprint(
+            IEnumerable<CACulturalPracticeState> values)
         {
-            int authored = authoredMask & allowedMask;
-            return ((generated & allowedMask) & ~authored)
-                | (authoredValues & authored);
+            return string.Join(",", (values
+                    ?? Enumerable.Empty<CACulturalPracticeState>())
+                .Where(item => item != null
+                    && !string.IsNullOrWhiteSpace(item.Key))
+                .OrderBy(item => item.Key, StringComparer.Ordinal)
+                .Select(item => item.Key + ":" + item.Strength + ":"
+                    + (item.SourceSignature ?? "unrecorded")));
+        }
+
+        public static string TransitionFingerprint(
+            IEnumerable<CACulturalTransitionState> values)
+        {
+            return string.Join(",", (values
+                    ?? Enumerable.Empty<CACulturalTransitionState>())
+                .Where(item => item != null)
+                .OrderBy(item => item.Sequence)
+                .Select(item => item.Sequence + ":" + item.Tick + ":"
+                    + (item.Cause ?? "unrecorded") + ":"
+                    + (item.SuccessorSignature ?? "unrecorded") + ":"
+                    + (item.PredecessorCultureSignature ?? "unrecorded")
+                    + ":" + (item.EvidenceSignature ?? "unrecorded") + ":"
+                    + (item.ChangedDomains ?? "unrecorded")));
+        }
+
+        public static int ResolveFacilityMask(int generated, int exceptionMask,
+            int exceptionValues, int allowedMask)
+        {
+            int exceptions = exceptionMask & allowedMask;
+            return ((generated & allowedMask) & ~exceptions)
+                | (exceptionValues & exceptions);
         }
 
         private static int AverageKnown(params int[] values)
@@ -308,7 +728,7 @@ namespace ColonistAwareness
 
     public static class CACultureLegacyMigrationKernel
     {
-        private const int CurrentSchemaVersion = 3;
+        private const int CurrentSchemaVersion = 5;
 
         private static readonly Dictionary<string, string> LegacyVisualSources =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -342,7 +762,7 @@ namespace ColonistAwareness
                         out visual))
                     source = visual;
                 if (string.IsNullOrWhiteSpace(name))
-                    name = LegacyBackgroundName(input.PresetName);
+                    name = LegacyCultureName(input.PresetName);
             }
             if (input.SchemaVersion < CurrentSchemaVersion
                 && !input.NameAuthored
@@ -350,8 +770,8 @@ namespace ColonistAwareness
                 && name.EndsWith(" customs",
                     StringComparison.OrdinalIgnoreCase))
                 name = !string.IsNullOrWhiteSpace(source)
-                    ? source + " background"
-                    : LegacyBackgroundName(name);
+                    ? source + " Culture"
+                    : LegacyCultureName(name);
             return new CACultureLegacyMigrationResult
             {
                 SchemaVersion = CurrentSchemaVersion,
@@ -362,17 +782,17 @@ namespace ColonistAwareness
             };
         }
 
-        private static string LegacyBackgroundName(string value)
+        private static string LegacyCultureName(string value)
         {
-            if (string.IsNullOrWhiteSpace(value)) return "Carried background";
+            if (string.IsNullOrWhiteSpace(value)) return "Inherited Culture";
             if (value.IndexOf("road", StringComparison.OrdinalIgnoreCase) >= 0
                 || value.IndexOf("travel", StringComparison.OrdinalIgnoreCase) >= 0)
-                return "Traveling background";
+                return "Traveling Culture";
             if (value.IndexOf("memorial", StringComparison.OrdinalIgnoreCase) >= 0)
-                return "Memorial background";
+                return "Memorial Culture";
             if (value.IndexOf("festival", StringComparison.OrdinalIgnoreCase) >= 0)
-                return "Market-town background";
-            return "Settled background";
+                return "Market-town Culture";
+            return "Settled Culture";
         }
     }
 }

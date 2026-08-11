@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -149,36 +150,19 @@ namespace ColonistAwareness
             catch { return null; }
         }
 
-        // Records which settlement settings were authored and which were
-        // generated.
+        // Developer-facing receipt of the concrete material causes used for
+        // this settlement. Player UI names the resulting facts directly.
         internal static string Provenance(int authoredForm,
-            int facilityAuthoredMask, int authoredAccess,
-            int authoredServices, int authoredCivic)
+            int facilityExceptionMask)
         {
-            var authored = new List<string>();
-            var derived = new List<string>();
-            derived.Add("knowledge (from faction)");
-            (authoredForm >= 0 ? authored : derived).Add("form");
-            derived.Add("capabilities");
             int facilityCount = 0;
             for (int bit = 1; bit <= CAStartingFacilities.MaskLab; bit <<= 1)
-                if ((facilityAuthoredMask & bit) != 0) facilityCount++;
-            (facilityCount > 0 ? authored : derived).Add(facilityCount > 0
-                && facilityCount < 7
-                    ? "starting facilities (" + facilityCount + " of 7)"
-                    : "starting facilities");
-            (authoredAccess >= 0 ? authored : derived).Add(
-                "access capacity");
-            (authoredServices >= 0 ? authored : derived).Add(
-                "service capacity");
-            (authoredCivic >= 0 ? authored : derived).Add(
-                "civic capacity");
-            string a = authored.Count == 0 ? "nothing"
-                : string.Join(", ", authored.ToArray());
-            string d = derived.Count == 0 ? "nothing"
-                : string.Join(", ", derived.ToArray());
-            return "explicit: " + a
-                + "; generated from settlement and faction parameters: " + d;
+                if ((facilityExceptionMask & bit) != 0) facilityCount++;
+            return "form=" + (authoredForm >= 0 ? "specified" : "faction")
+                + "; facilities=population+role+institutions+knowledge+ground"
+                + (facilityCount == 0 ? ""
+                    : "; facility exceptions=" + facilityCount)
+                + "; capacities=population+land+links+history+facilities";
         }
     }
 
@@ -200,9 +184,7 @@ namespace ColonistAwareness
         {
             if (place != null && place.realizedAccessInfrastructure >= 0)
                 return Mathf.Clamp(place.realizedAccessInfrastructure, 0, 3);
-            return ResolveInfrastructure(place?.accessInfrastructure ?? -1,
-                DerivedAccess(plan, place), place?.developmentProfile
-                    ?? CASettlementDevelopmentProfile.Contextual);
+            return DerivedAccess(plan, place);
         }
 
         internal static int Services(CARegionalPlan plan,
@@ -210,9 +192,7 @@ namespace ColonistAwareness
         {
             if (place != null && place.realizedServiceInfrastructure >= 0)
                 return Mathf.Clamp(place.realizedServiceInfrastructure, 0, 3);
-            return ResolveInfrastructure(place?.serviceInfrastructure ?? -1,
-                DerivedServices(plan, place), place?.developmentProfile
-                    ?? CASettlementDevelopmentProfile.Contextual);
+            return DerivedServices(plan, place);
         }
 
         internal static int Civic(CARegionalPlan plan,
@@ -220,9 +200,7 @@ namespace ColonistAwareness
         {
             if (place != null && place.realizedCivicInfrastructure >= 0)
                 return Mathf.Clamp(place.realizedCivicInfrastructure, 0, 3);
-            return ResolveInfrastructure(place?.civicInfrastructure ?? -1,
-                DerivedCivic(plan, place), place?.developmentProfile
-                    ?? CASettlementDevelopmentProfile.Contextual);
+            return DerivedCivic(plan, place);
         }
 
         internal static int ResolveFacilityMask(CARegionalPlan plan,
@@ -234,8 +212,8 @@ namespace ColonistAwareness
                     ?.ResolvedFactionDef;
             int derived = DerivedFacilityMask(plan, place, ownerDef);
             return CACulturalExpressionCausalKernel.ResolveFacilityMask(
-                derived, place.startingFacilityAuthoredMask,
-                place.startingFacilityValues, AllFacilityMask);
+                derived, place.facilityExceptionMask,
+                place.facilityExceptionValues, AllFacilityMask);
         }
 
         internal static int Sync(CARegionalPlan plan,
@@ -246,73 +224,28 @@ namespace ColonistAwareness
             return place.startingFacilityMask;
         }
 
-        internal static void UseDerivedFacilities(CARegionalPlan plan,
+        internal static void ClearFacilityExceptions(CARegionalPlan plan,
             CARegionalSettlementPlan place)
         {
             if (place == null) return;
-            place.startingFacilityAuthoredMask = 0;
-            place.startingFacilityValues = 0;
+            place.facilityExceptionMask = 0;
+            place.facilityExceptionValues = 0;
             Sync(plan, place);
         }
 
-        internal static void SetFacilityOverride(CARegionalPlan plan,
+        internal static void SetFacilityException(CARegionalPlan plan,
             CARegionalSettlementPlan place, int bit, bool? included)
         {
             if (place == null || (bit & AllFacilityMask) == 0) return;
             if (!included.HasValue)
-                place.startingFacilityAuthoredMask &= ~bit;
+                place.facilityExceptionMask &= ~bit;
             else
             {
-                place.startingFacilityAuthoredMask |= bit;
-                if (included.Value) place.startingFacilityValues |= bit;
-                else place.startingFacilityValues &= ~bit;
+                place.facilityExceptionMask |= bit;
+                if (included.Value) place.facilityExceptionValues |= bit;
+                else place.facilityExceptionValues &= ~bit;
             }
             Sync(plan, place);
-        }
-
-        internal static string InfrastructureWords(int value)
-        {
-            return value <= 0 ? "minimal" : value == 1 ? "limited"
-                : value == 2 ? "established" : "developed";
-        }
-
-        internal static string ProfileWords(
-            CASettlementDevelopmentProfile profile)
-        {
-            switch (profile)
-            {
-                case CASettlementDevelopmentProfile.Minimal: return "Minimal";
-                case CASettlementDevelopmentProfile.Extensive: return "Extensive";
-                default: return "Contextual";
-            }
-        }
-
-        internal static string ProfileEffect(
-            CASettlementDevelopmentProfile profile)
-        {
-            switch (profile)
-            {
-                case CASettlementDevelopmentProfile.Minimal:
-                    return "Generated transport, services, and public works are one level lower where possible.";
-                case CASettlementDevelopmentProfile.Extensive:
-                    return "Generated transport, services, and public works are one level higher where possible.";
-                default:
-                    return "Generated development follows the settlement's population, land, role, links, knowledge, and history.";
-            }
-        }
-
-        private static int ResolveInfrastructure(int authored, int derived,
-            CASettlementDevelopmentProfile profile)
-        {
-            return CACulturalExpressionCausalKernel.ResolveDevelopment(
-                authored, derived, (int)profile);
-        }
-
-        internal static int ApplyDevelopmentProfile(int derived,
-            CASettlementDevelopmentProfile profile)
-        {
-            return CACulturalExpressionCausalKernel.ApplyDevelopmentProfile(
-                derived, (int)profile);
         }
 
         private static int DerivedAccess(CARegionalPlan plan,
@@ -345,8 +278,8 @@ namespace ColonistAwareness
                 CASettlementAxes.TemplateEraPrior(owner));
             int value = place.residentPopulation >= 500 ? 2
                 : place.residentPopulation >= 140 ? 1 : 0;
-            int explicitFacilities = place.startingFacilityValues
-                & place.startingFacilityAuthoredMask;
+            int explicitFacilities = place.facilityExceptionValues
+                & place.facilityExceptionMask;
             if ((explicitFacilities & (CAStartingFacilities.MaskInfirmary
                     | CAStartingFacilities.MaskDining
                     | CAStartingFacilities.MaskStores)) != 0)

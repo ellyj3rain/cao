@@ -669,9 +669,9 @@ namespace ColonistAwareness
         ScenarioOverride
     }
 
-    // A relative nudge to generated local development. It changes only
-    // generated infrastructure; explicit per-dimension values remain final.
-    public enum CASettlementDevelopmentProfile : sbyte
+    // Serialized only while reading B5/B6 regional plans. The profile and
+    // ordinal authoring it represented are not current settlement authority.
+    internal enum CALegacySettlementDevelopmentProfile : sbyte
     {
         Minimal = -1,
         Contextual = 0,
@@ -687,21 +687,22 @@ namespace ColonistAwareness
         public int reallocatedFromTileId = -1;
         public int siteClusterKey = -1;
         public int operationalRoleMask;
-        // Facilities resolved from the current per-facility settings.
+        // Facilities resolved from the settlement's concrete causes.
         public int startingFacilityMask = -1;
-        // One bit says that this facility was decided here; the matching bit
-        // in startingFacilityValues says include/omit. A clear authored bit
-        // leaves that one facility derived from the settlement and faction.
-        public int startingFacilityAuthoredMask;
-        public int startingFacilityValues;
-        public CASettlementDevelopmentProfile developmentProfile =
-            CASettlementDevelopmentProfile.Contextual;
-        // Local material development is not a synonym for facilities or for
-        // faction knowledge. Each dimension is independently authorable;
-        // -1 derives it from the actual area, role, scale, and settlement form.
-        public int accessInfrastructure = -1;
-        public int serviceInfrastructure = -1;
-        public int civicInfrastructure = -1;
+        // Exact facility exceptions are sparse and secondary. A set bit says
+        // the named facility is exceptional; its value bit says present or
+        // absent. Everything else follows the settlement's concrete state.
+        public int facilityExceptionMask;
+        public int facilityExceptionValues;
+        public string migrationEvidence;
+        private int legacyFacilityAuthoredMask;
+        private int legacyFacilityValues;
+        private CALegacySettlementDevelopmentProfile
+            legacyDevelopmentProfile =
+                CALegacySettlementDevelopmentProfile.Contextual;
+        private int legacyAccessInfrastructure = -1;
+        private int legacyServiceInfrastructure = -1;
+        private int legacyCivicInfrastructure = -1;
         // Realized settlement facts. These are generated once from the
         // settlement's population source, ground, links, facilities, faction,
         // regional role, and history. Runtime generation consumes these saved
@@ -723,6 +724,10 @@ namespace ColonistAwareness
             new List<CASettlementPopulationGroup>();
         public List<CAStartingProvision> startingProvisions =
             new List<CAStartingProvision>();
+        // The settlement's own persistent culture. It begins from its
+        // populations' inherited cultures and changes only through recorded
+        // historical transitions.
+        public CACulture localCulture;
         // This settlement's realized regional role. Persisted so generation
         // cannot choose a different center.
         public byte realizedRole; // CASettlementRole
@@ -746,19 +751,28 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref operationalRoleMask,
                 "operationalRoleMask", 0);
             Scribe_Values.Look(ref startingFacilityMask, "startingFacilityMask", -1);
-            Scribe_Values.Look(ref startingFacilityAuthoredMask,
-                "startingFacilityAuthoredMask", 0);
-            Scribe_Values.Look(ref startingFacilityValues,
-                "startingFacilityValues", 0);
-            Scribe_Values.Look(ref developmentProfile,
-                "developmentProfile",
-                CASettlementDevelopmentProfile.Contextual);
-            Scribe_Values.Look(ref accessInfrastructure,
-                "accessInfrastructure", -1);
-            Scribe_Values.Look(ref serviceInfrastructure,
-                "serviceInfrastructure", -1);
-            Scribe_Values.Look(ref civicInfrastructure,
-                "civicInfrastructure", -1);
+            Scribe_Values.Look(ref facilityExceptionMask,
+                "facilityExceptionMask", 0);
+            Scribe_Values.Look(ref facilityExceptionValues,
+                "facilityExceptionValues", 0);
+            Scribe_Values.Look(ref migrationEvidence,
+                "migrationEvidence");
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                Scribe_Values.Look(ref legacyFacilityAuthoredMask,
+                    "startingFacilityAuthoredMask", 0);
+                Scribe_Values.Look(ref legacyFacilityValues,
+                    "startingFacilityValues", 0);
+                Scribe_Values.Look(ref legacyDevelopmentProfile,
+                    "developmentProfile",
+                    CALegacySettlementDevelopmentProfile.Contextual);
+                Scribe_Values.Look(ref legacyAccessInfrastructure,
+                    "accessInfrastructure", -1);
+                Scribe_Values.Look(ref legacyServiceInfrastructure,
+                    "serviceInfrastructure", -1);
+                Scribe_Values.Look(ref legacyCivicInfrastructure,
+                    "civicInfrastructure", -1);
+            }
             Scribe_Values.Look(ref residentPopulation,
                 "residentPopulation", -1);
             Scribe_Values.Look(ref landCapacity, "landCapacity", -1);
@@ -781,9 +795,29 @@ namespace ColonistAwareness
             Scribe_Collections.Look(ref populationGroups, "populationGroups", LookMode.Deep);
             Scribe_Collections.Look(ref startingProvisions, "startingProvisions",
                 LookMode.Deep);
+            Scribe_Deep.Look(ref localCulture, "localCulture");
             if (populationGroups == null) populationGroups = new List<CASettlementPopulationGroup>();
             if (startingProvisions == null)
                 startingProvisions = new List<CAStartingProvision>();
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
+                if (facilityExceptionMask == 0
+                    && legacyFacilityAuthoredMask != 0)
+                {
+                    facilityExceptionMask = legacyFacilityAuthoredMask;
+                    facilityExceptionValues = legacyFacilityValues;
+                }
+                bool retiredOrdinals = legacyDevelopmentProfile
+                        != CALegacySettlementDevelopmentProfile.Contextual
+                    || legacyAccessInfrastructure >= 0
+                    || legacyServiceInfrastructure >= 0
+                    || legacyCivicInfrastructure >= 0;
+                if (legacyFacilityAuthoredMask != 0 || retiredOrdinals)
+                    migrationEvidence = "B5/B6 facility exceptions were "
+                        + "preserved; the retired development profile and "
+                        + "ordinal infrastructure choices no longer govern "
+                        + "realized settlement state.";
+            }
             Scribe_Values.Look(ref realizedRole, "realizedRole", (byte)0);
             Scribe_Values.Look(ref persistent, "persistent", true);
             Scribe_Values.Look(ref customName, "customName");
@@ -839,11 +873,11 @@ namespace ColonistAwareness
 
     public sealed class CARegionalPlan : IExposable
     {
-        internal const int CurrentSchemaVersion = 4;
+        internal const int CurrentSchemaVersion = 5;
 
-        // B4 schema 3 is the sole supported development migration because B5
-        // changes settlement realization ownership without changing its
-        // factual composition. Older abandoned schemas remain unsupported.
+        // Schema 5 preserves B5/B6 composition while retiring their generic
+        // detail and settlement-authoring authorities. Older abandoned
+        // schemas remain unsupported.
         public int schemaVersion = CurrentSchemaVersion;
         public string regionalId;
         // The player's geographic name for this realized region. This lives on
@@ -995,11 +1029,23 @@ namespace ColonistAwareness
                     frontierHoldings = new List<CAFrontierHoldingPlan>();
                 if (playerFounding == null)
                     playerFounding = new CAPlayerFoundingPlan();
-                if (schemaVersion == 3)
+                if (candidateId.NullOrEmpty())
+                    candidateId = operatorAuthored
+                        ? CARegionalPlanUtility.MintCandidateId()
+                        : "auto" + unchecked((uint)GenText.StableStringHash(
+                            regionalId ?? "regional-plan")).ToString("X8");
+                if (schemaVersion == 4)
                 {
-                    CARegionalSettlements.MigrateB4ContextualDevelopment(this);
+                    CARegionalSettlements.MigrateB6SettlementAuthority(this);
                     schemaVersion = CurrentSchemaVersion;
                 }
+                foreach (CARegionalFactionPlan faction in factions.Where(
+                    item => item != null))
+                    faction.EnsureCultureAndPolitics(this);
+                foreach (CARegionalSettlementPlan settlement in settlements
+                    .Where(item => item != null))
+                    CACultureHistory.EnsureSettlementCulture(this,
+                        settlement);
             }
         }
 
@@ -2358,6 +2404,7 @@ namespace ColonistAwareness
                 return;
             try
             {
+                RefreshDraftRealization(Pending);
                 foreach (CARegionalFactionPlan group in
                     Pending.factions)
                     if (group != null) group.resolvedFaction = null;
@@ -2467,6 +2514,19 @@ namespace ColonistAwareness
                 Log.Warning("[CA][Regional] pending-plan restore failed from "
                     + path + ": " + e);
             }
+        }
+
+        // Every persisted draft and every confirmation preview uses the same
+        // deterministic realization path. Cause edits therefore cannot leave
+        // stale routes, facilities, provisions, or settlement axes on screen.
+        internal static void RefreshDraftRealization(CARegionalPlan plan)
+        {
+            if (plan == null || plan.confirmed) return;
+            CARegionalSettlements.Invalidate(plan);
+            CARegionalSettlements.RealizeForConfirmation(plan);
+            foreach (CARegionalSettlementPlan settlement in plan.settlements
+                .Where(item => item != null))
+                CASettlementComposition.EnsureDerived(plan, settlement);
         }
 
         private static bool TryValidateRestoredPlan(CARegionalPlan plan,
@@ -2807,6 +2867,7 @@ namespace ColonistAwareness
                     MessageTypeDefOf.RejectInput, false);
                 return false;
             }
+            RefreshDraftRealization(plan);
             if (!plan.ValidFor(profile))
             {
                 Messages.Message(InvalidPlanMessage(plan, profile),

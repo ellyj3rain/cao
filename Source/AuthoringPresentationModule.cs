@@ -6,80 +6,9 @@ using Verse;
 
 namespace ColonistAwareness
 {
-    public enum CAInformationDetail : byte
-    {
-        Compact = 0,
-        Standard = 1,
-        Expanded = 2
-    }
-
-    // One presentation policy owns explanatory depth. Callers provide the
-    // facts; this class decides how many non-critical layers are shown.
-    // Generation and persisted world state never depend on this value.
-    internal static class CAInformationPresentation
-    {
-        internal static CAInformationDetail Current =>
-            AwarenessMod.Settings?.informationDetail
-                ?? CAInformationDetail.Standard;
-
-        internal static bool Shows(CAInformationDetail level,
-            bool localExpanded = false)
-        {
-            return localExpanded || Current >= level;
-        }
-
-        internal static string Select(string compact, string standard,
-            string expanded, bool localExpanded = false)
-        {
-            if (Shows(CAInformationDetail.Expanded, localExpanded))
-                return expanded.NullOrEmpty() ? standard ?? compact : expanded;
-            if (Shows(CAInformationDetail.Standard, localExpanded))
-                return standard.NullOrEmpty() ? compact : standard;
-            return compact ?? "";
-        }
-
-        internal static string Description(CAInformationDetail level)
-        {
-            switch (level)
-            {
-                case CAInformationDetail.Compact:
-                    return "Shows identity, current state, direct effects, and all warnings.";
-                case CAInformationDetail.Expanded:
-                    return "Adds causes, constraints, generation provenance, and detailed tensions.";
-                default:
-                    return "Adds neighboring systems, important secondary effects, and provenance.";
-            }
-        }
-
-        internal static string Label(CAInformationDetail level)
-        {
-            switch (level)
-            {
-                case CAInformationDetail.Compact: return "Compact";
-                case CAInformationDetail.Expanded: return "Expanded";
-                default: return "Standard";
-            }
-        }
-
-        internal static bool DrawLocalExpansion(Rect rect,
-            ref bool localExpanded)
-        {
-            if (Current >= CAInformationDetail.Expanded)
-            {
-                localExpanded = false;
-                return false;
-            }
-            string label = localExpanded ? "Use normal detail"
-                : "Show full details";
-            if (!Widgets.ButtonText(rect, label)) return false;
-            localExpanded = !localExpanded;
-            return true;
-        }
-    }
-
     public sealed class CAUserCultureProfile : IExposable
     {
-        public const int CurrentSchemaVersion = 2;
+        public const int CurrentSchemaVersion = 3;
         public int schemaVersion = CurrentSchemaVersion;
         public string key;
         public string displayName;
@@ -95,6 +24,7 @@ namespace ColonistAwareness
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 CACultureModel.Migrate(values);
+                values = values.CopyAsInheritedTemplate();
                 schemaVersion = CurrentSchemaVersion;
             }
         }
@@ -106,7 +36,8 @@ namespace ColonistAwareness
             {
                 key = newKey,
                 displayName = newName,
-                values = values?.Copy() ?? new CACulture()
+                values = values?.CopyAsInheritedTemplate()
+                    ?? new CACulture()
             };
         }
     }
@@ -172,6 +103,8 @@ namespace ColonistAwareness
                 if (item.displayName.NullOrEmpty()) item.displayName = "Saved background";
                 if (item.values == null) item.values = new CACulture();
                 CACultureModel.Migrate(item.values);
+                item.values = item.values.CopyAsInheritedTemplate();
+                item.schemaVersion = CAUserCultureProfile.CurrentSchemaVersion;
             }
             foreach (CAUserPoliticalProfile item in settings.politicalProfiles)
             {
@@ -193,11 +126,8 @@ namespace ColonistAwareness
                 key = NewKey(CulturePrefix),
                 displayName = UniqueName(name, settings.cultureProfiles
                     .Select(item => item.displayName)),
-                values = culture.Copy()
+                values = culture.CopyAsInheritedTemplate()
             };
-            profile.values.id = null;
-            profile.values.presetName = null;
-            profile.values.profileKey = null;
             settings.cultureProfiles.Add(profile);
             AwarenessMod.SaveSettings();
             return profile;
@@ -228,9 +158,7 @@ namespace ColonistAwareness
             CACulture target)
         {
             if (profile?.values == null || target == null) return;
-            string worldIdentity = target.id;
-            target.CopyFrom(profile.values);
-            target.id = worldIdentity;
+            target.ApplyInheritedTemplate(profile.values);
             target.profileKey = profile.key;
         }
 

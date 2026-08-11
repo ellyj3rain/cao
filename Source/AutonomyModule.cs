@@ -192,16 +192,12 @@ namespace ColonistAwareness
             var p = __instance;
             if (p == null || !p.IsColonistPlayerControlled) yield break;
             CAInitiativeTier tier = AutonomyComponent.TierOf(p);
-            CAInformationDetail detail = AwarenessMod.Settings != null
-                ? AwarenessMod.Settings.informationDetail
-                : CAInformationDetail.Standard;
             yield return new Command_Autonomy
             {
                 pawn = p,
                 defaultLabel = "Initiative: "
                     + CAInitiativePresentation.Label(tier),
-                defaultDesc = CAInitiativePresentation.Description(tier,
-                    detail, p)
+                defaultDesc = CAInitiativePresentation.Description(tier, p)
                     + "\n\nLeft-click cycles. Right-click chooses a tier or opens Behavior scope.",
                 icon = TexCommand.HoldOpen,
                 action = delegate
@@ -257,13 +253,10 @@ namespace ColonistAwareness
             CAEffectiveBehaviorProfile profile =
                 CAEffectiveBehaviorProfileCache.Of(pawn);
             CAInitiativeTier tier = AutonomyComponent.TierOf(pawn);
-            CAInformationDetail detail = AwarenessMod.Settings != null
-                ? AwarenessMod.Settings.informationDetail
-                : CAInformationDetail.Standard;
             var text = new StringBuilder();
             text.Append("Initiative: ").Append(
                 CAInitiativePresentation.Label(tier)).Append("\n")
-                .Append(CAInitiativePresentation.Description(tier, detail,
+                .Append(CAInitiativePresentation.Description(tier,
                     pawn)).Append("\n\n")
                 .Append("Squad position: ").Append(profile?.Role ?? "none")
                 .Append("\n");

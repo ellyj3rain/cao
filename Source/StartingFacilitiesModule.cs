@@ -183,7 +183,19 @@ namespace ColonistAwareness
                     if (room.CellCount < 6) continue;
                     rooms.Add(room);
                 }
-                rooms = rooms.OrderByDescending(r => r.CellCount).ToList();
+                // Retained Culture changes which otherwise valid rooms are
+                // preferred. Shared public life pulls common facilities
+                // toward the settlement core. It never creates a room or
+                // bypasses facility feasibility.
+                int sharedPractice = CACultureHistory.PracticeStrength(
+                    record.culture, "shared-public-life");
+                IntVec3 culturalCore = record.layout?.core
+                    ?? record.localRect.CenterCell;
+                rooms = sharedPractice > 0
+                    ? rooms.OrderBy(room => RoomDistance(room, culturalCore))
+                        .ThenByDescending(room => room.CellCount).ToList()
+                    : rooms.OrderByDescending(room => room.CellCount)
+                        .ToList();
                 int cursor = 0;
                 Room Next()
                 {
@@ -407,6 +419,15 @@ namespace ColonistAwareness
             }
         }
 
+        private static float RoomDistance(Room room, IntVec3 anchor)
+        {
+            if (room == null || !anchor.IsValid) return float.MaxValue;
+            IntVec3 nearest = room.Cells.OrderBy(cell =>
+                cell.DistanceToSquared(anchor)).FirstOrDefault();
+            return nearest.IsValid ? nearest.DistanceTo(anchor)
+                : float.MaxValue;
+        }
+
         private static int Stock(CAOrganization org,
             CARegionalSettlementRecord record, Map map, Room room,
             string defName, int count, string providerOrgKey)
@@ -546,6 +567,11 @@ namespace ColonistAwareness
                 Pawn worker = FindWorker(record);
                 if (worker == null) continue;
 
+                int researchTradition = CACultureHistory.PracticeStrength(
+                    record.culture, "research-tradition");
+                if (CACultureConsumerKernel.PrioritizeResearch(
+                        researchTradition)
+                    && TryResearch(record, worker, org)) continue;
                 if (TryRepair(record, worker, org)) continue;
                 if (TryRebuild(record, worker, org)) continue;
                 TryResearch(record, worker, org);
@@ -725,13 +751,13 @@ namespace ColonistAwareness
             return false;
         }
 
-        private void TryResearch(CARegionalSettlementRecord record,
+        private bool TryResearch(CARegionalSettlementRecord record,
             Pawn worker, CAOrganization org)
         {
-            if (org == null) return;
+            if (org == null) return false;
             string settlementKey = record.regionalId + "#" + record.slot;
             if (researchWork.Any(work => work != null
-                    && work.settlementKey == settlementKey)) return;
+                    && work.settlementKey == settlementKey)) return false;
             IntVec3 bench = IntVec3.Invalid;
             foreach (IntVec3 cell in record.localRect)
             {
@@ -747,7 +773,7 @@ namespace ColonistAwareness
                 }
                 if (bench.IsValid) break;
             }
-            if (!bench.IsValid || !bench.InBounds(map)) return;
+            if (!bench.IsValid || !bench.InBounds(map)) return false;
 
             bool attended = worker.Position.InHorDistOf(bench, 5f);
             if (!attended)
@@ -765,22 +791,23 @@ namespace ColonistAwareness
                         if (worker.CurJob != approach)
                             CABehaviorIntentMapComponent.For(map)?.Unregister(
                                 worker, approach);
+                        else return true;
                     }
                 }
-                return;
+                return false;
             }
             Job study = JobMaker.MakeJob(JobDefOf.Wait, bench);
             study.expiryInterval = 300;
             if (!CASettlementInstitutionalAuthorization.TryAuthorizeJob(record,
                     worker, study, "research at " + bench,
                     out CABehaviorDecision _,
-                    out CAIntentContext intent)) return;
+                    out CAIntentContext intent)) return false;
             worker.jobs.StartJob(study, JobCondition.InterruptForced);
             if (worker.CurJob != study)
             {
                 CABehaviorIntentMapComponent.For(map)?.Unregister(worker,
                     study);
-                return;
+                return false;
             }
             researchWork.Add(new CASettlementResearchWork
             {
@@ -796,6 +823,7 @@ namespace ColonistAwareness
                 createdTick = intent.CreatedTick,
                 terminationCondition = intent.TerminationCondition
             });
+            return true;
         }
 
         // The native job tracker owns repair and research completion truth.
@@ -873,6 +901,8 @@ namespace ColonistAwareness
                     && thing.Faction == researchRecord.faction);
             if (!currentBench || researchOrg == null) return;
             researchRecord.researchStock++;
+            researchRecord.lastResearchActivityTick =
+                Find.TickManager?.TicksGame ?? -1;
             if (researchRecord.researchStock == 25
                 || researchRecord.researchStock == 75
                 || researchRecord.researchStock == 150)

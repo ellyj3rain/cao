@@ -142,10 +142,14 @@ internal static class Program
                 HasAll(catalog, "CompletionCondition", "StandDownCondition",
                     "has no cadence or termination contract"),
                 "startup validation enforces termination", "executable");
-            C(9, "UI behaviors have all three text densities",
-                HasAll(catalog, "CompactText", "StandardText", "ExpandedText",
-                    "has incomplete presentation text"),
-                "startup validation enforces Compact/Standard/Expanded",
+            C(9, "UI behaviors have one owned description",
+                HasAll(catalog, "public string Description",
+                    "string.IsNullOrWhiteSpace(definition.Description)",
+                    "has incomplete presentation text")
+                    && !catalog.Contains("CompactText")
+                    && !catalog.Contains("StandardText")
+                    && !catalog.Contains("ExpandedText"),
+                "startup validation enforces one contextual description without arbitrary presentation tiers",
                 "executable");
             C(10, "Autonomy-sensitive settings map to behaviors",
                 FeaturePermissionsHaveConsumers(catalog, runtimeSource)
@@ -207,9 +211,9 @@ internal static class Program
                 ActiveTierCount(catalog) + " active tier entries", "executable");
             C(22, "Saved fixtures round-trip with the new schema",
                 RoundTrips(mirror) && RoundTrips(keyed)
-                    && Value(mirrorPlan, "schemaVersion") == "4"
+                    && Value(mirrorPlan, "schemaVersion") == "5"
                     && autonomy.Contains("CA_initiativeSchema"),
-                "regional schema 4 round-trip plus initiative schema marker",
+                "regional schema 5 round-trip plus initiative schema marker",
                 "executable");
 
             // Authority: 23-32.
@@ -382,12 +386,11 @@ internal static class Program
                     && catalog.Contains("LiveValidated"),
                 "native sight check supplies separate live-validation fact",
                 "source-contract");
-            C(38, "Information detail never changes knowledge",
-                catalog.Contains("InformationDetail")
-                    && catalog.Contains("return true")
-                    && catalog.Contains("Form != CABehaviorForm.Presentation")
+            C(38, "Presentation density is absent from knowledge",
+                !catalog.Contains("InformationDetail")
+                    && !modEntry.Contains("informationDetail")
                     && !knowledge.Contains("informationDetail"),
-                "detail is presentation-only and absent from knowledge state",
+                "the retired global detail policy has no knowledge state",
                 "source-contract");
 
             // Standard: 39-44.
@@ -554,9 +557,13 @@ internal static class Program
 
             // Spatial/B5: 70-79.
             C(70, "Culture changes ranking, never permission",
-                HasAll(planning, "culturalExpression", "ranking", "permission")
-                    && planning.Contains("CACulturalExpressionModel.ForFounders"),
-                "culture contributes bounded candidate score only",
+                CatalogEntryHas(catalog, "culture.longitudinal_update",
+                    "SocialAndPolitical", "WorldSimulation")
+                    && HasAll(planning, "CACultureHistory.PracticeStrength",
+                        "shared-public-life", "defensive-boundary")
+                    && HasAll(planning, "Culture never grants permission",
+                        "result.culturalExpression"),
+                "persistent Culture has an executor and ranks only otherwise-valid candidates",
                 "source-contract");
             C(71, "Player-authored spatial constraints remain authoritative",
                 HasAll(spatial, "player-authored", "initiative ceiling")
@@ -754,11 +761,12 @@ internal static class Program
                     && catalog.Contains("CASettingKind.Presentation")
                     && catalog.Contains("CASettingKind.Diagnostic"),
                 "Behavior scope and settings name each owner", "source-contract");
-            C(94, "Text density cannot mutate simulation state",
-                catalog.Contains("presentation.information_detail")
-                    && catalog.Contains("Changes explanation density without changing simulation state")
-                    && !catalog.Contains("case CASettingKey.InformationDetail: s."),
-                "detail setting is read-only presentation", "source-contract");
+            C(94, "Global text-density state is removed",
+                !catalog.Contains("presentation.information_detail")
+                    && !catalog.Contains("CASettingKey.InformationDetail")
+                    && !modEntry.Contains("informationDetail"),
+                "contextual explanations have no simulation-setting surrogate",
+                "source-contract");
             C(95, "NPC inspectors expose no pawn tier controls",
                 census.Contains("Settlement behavior census")
                     && !census.Contains("SetTier("),

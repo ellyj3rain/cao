@@ -947,36 +947,18 @@ namespace ColonistAwareness
             if (settlementCenter.IsValid)
                 result.strategicTopology = Mathf.Max(-4f,
                     1f - cell.DistanceTo(settlementCenter) * 0.04f);
-            // B5 cultural expression shapes ranking only. It cannot grant
-            // permission, expand an authored program, create material, or
-            // bypass a native placement constraint.
-            CAPlayerFoundingPlan founding = CAPlayerFoundingSession
-                .ConfirmedForRuntime();
-            CACulturalExpression expression = founding == null ? null
-                : CACulturalExpressionModel.ForFounders(founding);
-            switch (expression?.Status)
-            {
-                case CACulturalExpressionStatus.Adaptive:
-                    result.culturalExpression = Mathf.Max(0f,
-                        result.environmentalFit) * 0.24f;
-                    break;
-                case CACulturalExpressionStatus.Constrained:
-                    result.culturalExpression = Mathf.Max(0f,
-                        result.operationalCoherence) * 0.24f;
-                    break;
-                case CACulturalExpressionStatus.Plural:
-                    result.culturalExpression = Mathf.Max(0f,
-                        result.socialFit) * 0.20f;
-                    break;
-                case CACulturalExpressionStatus.Tension:
-                    result.culturalExpression = Mathf.Max(0f,
-                        result.semanticLegibility) * 0.12f;
-                    break;
-                default:
-                    result.culturalExpression = Mathf.Max(0f,
-                        result.historicalContinuity) * 0.20f;
-                    break;
-            }
+            // Persisted lived practices rank otherwise valid placement
+            // choices. Culture never grants permission, expands the authored
+            // program, supplies material, or bypasses a native constraint.
+            CACulture culture = CACultureLongitudinalMapComponent.For(map)
+                ?.PlayerLocalCulture;
+            int shared = CACultureHistory.PracticeStrength(culture,
+                "shared-public-life");
+            int defense = CACultureHistory.PracticeStrength(culture,
+                "defensive-boundary");
+            result.culturalExpression = CACultureConsumerKernel
+                .SpatialPreference(result.semanticLegibility,
+                    result.strategicTopology, shared, defense);
             return result;
         }
 
