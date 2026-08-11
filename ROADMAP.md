@@ -1,7 +1,7 @@
 # Colonist Awareness - roadmap
 
-The A sequence is closed at `A102`; the chronology is complete through `B2`,
-and `B3` is the next development batch.
+The A sequence is closed at `A102`; the chronology is complete through `B5`,
+and `B6` is the next development batch.
 Historical batch identifiers below use the current sequence. Thematic `T-*`
 identifiers link continuing work across nonadjacent batches. The chronological
 catalog is [`BATCH_LOG.md`](BATCH_LOG.md); thematic links are in
@@ -799,30 +799,36 @@ judgment is the eventual built composition after native work supplies the Bed.
 ## Regional living-world program — T-019–T-026
 
 The current regional implementation uses one direct model: regions contain
-factions and settlements. Factions own culture, Ideoligion, political beliefs,
-faction structure, settlement authority, and faction era. Settlements own
-population groups, form, role, starting facilities, access, services, civic
-development, economic capacity, trade connectivity, historical development,
-starting provisions, and derived capability. Settlement pattern and urban scale
-are realized results, not independent authoring categories.
+factions and settlements. Factions own carried cultural background, Ideoligion,
+political beliefs, faction structure, settlement authority, and faction era.
+Settlements own population groups, form, role, relative development, starting
+facilities and exact overrides, infrastructure, economic and trade conditions,
+history, provisions, and derived capability. Contextual cultural expression,
+settlement pattern, and urban scale are realized results, not independent
+authoring categories.
 
 Built and statically verified:
 
 1. **Regional geography.** One projection carries the selected visual land shape,
    coast, water depth, roads, rivers, caves, and supported geographic features.
    Settlement positions resolve on valid visual land.
-2. **Current pending-plan persistence.** One keyed file per world identity stores
-   the confirmed candidate directly as `factions`, `settlements`, relations,
-   population groups, facilities, infrastructure, and provisions. The current
-   authored composition is converted to this schema.
-3. **Faction and settlement authoring.** Culture, Ideoligion, political beliefs,
-   faction structure, settlement authority, settlement form, facilities,
+2. **Current pending-plan persistence.** One keyed file per world identity and
+   its active mirror store the same confirmed candidate directly as `factions`,
+   `settlements`, relations, population groups, development profiles,
+   facilities, infrastructure, provisions, and founding state. The current
+   authored composition is converted to schema 4.
+3. **Faction and settlement authoring.** Carried cultural background,
+   Ideoligion, political beliefs, faction structure, settlement authority,
+   settlement form, relative development, facilities,
    infrastructure, population groups, and provision distribution are independently
    readable and editable where they affect generation. Settlement placement,
    relations, population, land, access, services, civic development, economic and
    trade conditions, specialization, regional role, and history produce the saved
    settlement pattern and scale.
-4. **Materialization.** The confirmed candidate creates native factions,
+4. **Cultural expression and materialization.** One typed causal kernel derives
+   each settlement's cultural expression from its actual people, beliefs,
+   institutions, material state, geography, relations, and history. The
+   confirmed candidate creates native factions,
    settlements, residents, Ideoligions, organizations, buildings, provisions,
    geography, and faction relations. Derived capability reads faction era and
    local supports.
@@ -835,15 +841,19 @@ Built and statically verified:
 
 Immediate runtime gates, in operator order:
 
-1. Restore the keyed authored composition without losing factions, settlements,
-   population groups, world tendencies, arrival area, or confirmation.
+1. Restore the byte-identical keyed and mirror composition without losing
+   factions, settlements, population groups, world tendencies, arrival area, or
+   confirmation.
 2. Start generation from that exact candidate without “regional bundle
    incomplete” or “select an arrival area” failures.
 3. Confirm that the generated map matches the preview's visual land shape and
    that selected geographic features resolve inside it.
-4. Confirm that settlement identifiers, buildings, residents, facilities, and
-   provisions appear on the intended land and reflect the authored settings.
-5. Record performance and generation receipts for the selected 350-cell local
+4. Confirm that settlement identifiers, buildings, residents, contextual
+   cultural expression, facilities, and provisions appear on the intended land
+   and reflect the authored settings.
+5. Compare Minimal, Contextual, and Extensive development; confirm explicit
+   infrastructure and exact per-facility overrides retain their ownership.
+6. Record performance and generation receipts for the selected 350-cell local
    scale and multi-area backing map.
 
 After that runtime gate, continue the same model into off-map economy, reports,
@@ -1426,3 +1436,25 @@ organization customs merely because the founders hold them.
 The next evidence is the operator's runtime test of hierarchy, copy fit,
 Back/Next stability, native Ideoligion editing, preset/custom continuity,
 belief-versus-arrangement clarity, and materialization in the real colony flow.
+
+## Contextual cultural expression and settlement development - B5 / T-015, T-019, T-021, T-023, T-025
+
+B5 corrects the B4 Culture model at its ownership boundary. A population carries
+background identity and an optional native visual tradition; it does not carry a
+furniture recipe. Settlement Culture is a realized expression of actual
+Ideoligion commitments, political beliefs, population, institutions, provisions,
+material conditions, geography, relations, and history. Starting Region,
+established-faction summaries, materialized records, loaded maps, and world
+markers consume that same deterministic reading.
+
+Settlement development is now relative. Minimal, Contextual, and Extensive
+shift only generated access, services, and civic development within bounded
+limits. Explicit infrastructure wins, and every starting facility independently
+remains Generated or receives an Include or Omit override. Plan schema 4 and
+Culture schema 3 preserve the authored composition across both active fixture
+surfaces.
+
+The verified assembly is deployed. The current gate is the operator's runtime
+test of the preserved three-faction/four-settlement plan, settlement-scoped
+cultural readings, relative development, exact facility provenance, generation,
+and materialized readback. `B6` remains the next development batch.

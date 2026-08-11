@@ -301,21 +301,40 @@ Authority.
 The root world-tile graph is the authoritative regional topology. A saved regional
 plan owns its footprint, arrival area, factions, settlements, faction relations,
 world tendencies, settlement pattern, scale, and player founding state. Each settlement plan owns its
-population groups, form, role, starting facilities, access, services, civic
-development, and provisions. Persistent world objects mark settlements and
+population groups, form, role, relative development profile, starting facilities
+and exact overrides, access, services, civic development, and provisions.
+Persistent world objects mark settlements and
 visible moving actors. Maps materialize player homes, entered settlements,
 encounters, and other events that need pawn-, thing-, job-, or Lord-level detail.
 
-A faction owns culture, Ideoligion, political beliefs, current faction structure,
-and the authority shared between its settlements. A settlement keeps a stable CA
+A faction owns carried cultural background and optional native visual tradition,
+Ideoligion, political beliefs, current faction structure, and the authority
+shared between its settlements. Cultural background does not own furniture or
+other physical recipes. A settlement keeps a stable CA
 identity even when its faction changes. Its realized record owns residents,
 population groups, organizations, material state, relationships, and
 materialization history. Faction era records what the faction knows. Facilities
 and infrastructure record what a settlement can support. Local capability is
 derived from those facts; it is not a separately authored source of truth.
 
+Cultural expression is also derived rather than authored as a second profile.
+One typed causal kernel reads carried background, actual Ideoligion commitments,
+political beliefs, population composition, institutions or founding arrangement,
+provisions, settlement form and role, infrastructure, facilities, economy,
+trade, geography, relations, buildings, and history. The resulting status,
+summary, facets, facts, and signature are stable under the same inputs. Settlement
+records persist the realized status, summary, and signature. Loaded maps
+reconcile them against actual resident Ideoligions and current material state;
+Starting Region, faction summaries, and world markers consume the same result.
+
+Settlement development is a relative input to generation. Minimal, Contextual,
+or Extensive shifts only generated access, services, and civic development by a
+bounded step. Explicit infrastructure remains authoritative. Facilities derive
+from the resulting settlement and then apply exact per-facility Include or Omit
+overrides; the profile itself never encodes a facility mask.
+
 An existing faction's structure is realized state from a society with history.
-The player founding state is intentionally earlier: it owns the Culture and
+The player founding state is intentionally earlier: it owns the cultural background and
 Political Beliefs brought by the founders, a receipt for their native
 Ideoligion content and revision, and the Founding Arrangement adopted at
 landing. Native Ideoligion validity is checked before the receipt may authorize

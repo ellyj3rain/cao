@@ -11,8 +11,8 @@ A regional plan contains:
 | Level | Saved facts |
 |---|---|
 | Region | selected world areas, arrival area, world tendencies, settlement pattern, principal settlement scale, regional relation pattern, frontier holdings |
-| Faction | source faction, culture, Ideoligion, political beliefs, faction structure, settlement authority, faction era |
-| Settlement | owning faction, world area, population origin, resident population, land capacity, regional role, form, starting facilities, access, services, civic development, economic capacity, trade connectivity, specialization, historical development, urban support, realized scale, population groups, starting provisions |
+| Faction | source faction, carried cultural background and visual tradition, Ideoligion, political beliefs, faction structure, settlement authority, faction era |
+| Settlement | owning faction, world area, population origin, resident population, land capacity, regional role, form, relative development profile, starting facilities and exact overrides, access, services, civic development, economic capacity, trade connectivity, specialization, historical development, urban support, realized scale, population groups, starting provisions, realized cultural expression |
 | Faction relation | left faction, right faction, relation, whether the player set it |
 | Frontier holding | world area, household size, land capacity, material level, form, faction status |
 
@@ -61,16 +61,19 @@ Generation resolves one confirmed candidate in this order:
    owners, place them, and persist faction relations. Starting-region rows
    retain their authored settlement count, positions, owners, and relation
    overrides.
-3. Apply the Culture and Political Beliefs carried by the founders, then
+3. Apply the cultural background and Political Beliefs carried by the founders, then
    materialize the exact Founding Arrangement once as duration-aware relations.
    Leave broader player faction-structure questions unset until play establishes
    them. Resolve
-   each existing faction's Culture, Ideoligion, Political Beliefs, realized
+   each existing faction's carried background, Ideoligion, Political Beliefs, realized
    social order, and settlement authority. Existing societies may begin with
    mature institutions; the player's remaining institutional state develops
    through play.
-4. Resolve and save each settlement's population, land capacity, access,
-   services, civic development, economic capacity, trade connectivity,
+4. Resolve and save each settlement's population and land capacity. Apply its
+   relative development profile to generated access, services, and civic
+   development while retaining any explicit values. Resolve facilities from
+   that current settlement state and then apply exact Include or Omit overrides.
+   Resolve economic capacity, trade connectivity,
    specialization, regional role, and
    historical development. Resolve frontier sites, households, and material
    forms separately.
@@ -81,7 +84,9 @@ Generation resolves one confirmed candidate in this order:
    infrastructure, settlement scale, and role. A player override changes one
    provision's distribution without replacing its generated cause or operator.
 8. Derive material capability from faction era and local supports.
-9. Materialize settlements, frontier holdings, residents, organizations,
+9. Derive and persist contextual cultural expression from the realized
+   population, beliefs, institutions, material state, geography, relations, and
+   history. Materialize settlements, frontier holdings, residents, organizations,
    facilities, provisions,
    faction relations, and map geography from those saved results.
 
@@ -92,7 +97,9 @@ screen, previewing, or drawing the UI does not regenerate saved choices.
 
 Culture, Ideoligion, Political Beliefs, and social order are distinct.
 
-- Culture supplies names, style, and ordinary customs.
+- Cultural background supplies stable identity, an optional name, and an
+  optional native visual tradition. It does not prescribe ordinary customs or
+  physical objects.
 - Ideoligion uses RimWorld's native `Ideo` state.
 - Political Beliefs describe what a population believes about leadership,
   decisions, participation, dissent, ownership, economy, work, support,
@@ -106,7 +113,17 @@ Each Political Belief and faction-structure answer records its source as unset,
 generated, authored, or preset. Presets fill answers; they are not additional
 political entities.
 
-The player founding plan is temporally narrower. Culture, native Ideoligion,
+Local cultural expression is a contextual read rather than another authored
+profile. It combines carried background, actual Ideoligion commitments,
+political beliefs, population composition, current institutions or founding
+arrangement, provisions, settlement role and form, infrastructure, facilities,
+economy, trade, geography, relations, buildings, and history. The realized
+status, summary, and signature are persisted once and consumed by Starting
+Region, faction summaries, materialized maps, and world markers. Reconciliation
+uses actual resident Ideoligions and current material facts; it does not reroll
+an authoring tendency.
+
+The player founding plan is temporally narrower. Cultural background, native Ideoligion,
 and Political Beliefs arrive with the founders. The Founding Arrangement stores
 the authority, work, voice, supplies, and duration rules adopted at landing.
 Those exact rules materialize once as founding relations. They do not imply a
@@ -119,8 +136,17 @@ player structure before the colony has lived its history.
 Settlement form, starting facilities, infrastructure, provisions, and capability
 are separate facts.
 
-Starting facilities are individually generated or set. The current facility set
-is hearth, stores, infirmary, workshop, jail, dining hall, and laboratory.
+Each settlement carries one relative development profile. `Minimal` shifts
+generated infrastructure down one bounded step, `Contextual` leaves it at the
+derived value, and `Extensive` shifts it up one bounded step. Population, land,
+access conditions, economy, trade, specialization, regional role, history, and
+faction knowledge remain independent causes. An explicitly authored access,
+services, or civic value always replaces the profile-adjusted result.
+
+Starting facilities are derived from the resulting settlement, then individually
+left Generated or set to Include or Omit. The current facility set is hearth,
+stores, infirmary, workshop, jail, dining hall, and laboratory. Returning all
+facilities to generated clears only those exact overrides.
 
 Infrastructure has three independent dimensions:
 
@@ -167,15 +193,18 @@ it does not override them.
 
 ## Persistence
 
-The current pending-plan schema is `3`. It writes `factions`, `settlements`,
+The current pending-plan schema is `4`. It writes `factions`, `settlements`,
 `populationGroups`, `startingProvisions`, `factionStructure`, `politicalBeliefs`,
 `settlementAuthority`, `relations`, `frontierHoldings`, `settlementPattern`,
 `settlementScale`, `regionalRelationPattern`, and
 `settlementRealizationComplete` directly. It also writes one `playerFounding`
 object containing Culture, Political Beliefs, the Founding Arrangement and its
 provenance, confirmation state, and a receipt for RimWorld's native player
-Ideoligion. Each settlement row carries the
-realized facts used to derive its scale. A confirmed plan consumes those facts;
+Ideoligion. Each settlement row carries its relative development profile,
+infrastructure provenance, generated and overridden facility state, and the
+realized facts used to derive its scale and contextual cultural expression.
+Materialized settlement records retain the expression summary, status, and
+signature. A confirmed plan consumes those facts;
 generation does not consult its tendencies again.
 
 This project is pre-1.0. Superseded experimental plan and save schemas are not a

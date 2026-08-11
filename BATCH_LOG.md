@@ -2,8 +2,8 @@
 
 This is the chronological index of Colonist Awareness's append-only atomic batch sequence. Together with the recorded provenance, these governed records are the project's portable history; they do not depend on a particular Git host. Batch files use one alphanumeric namespace and live together under [`Batches/`](Batches/). Letter changes mark development eras; they do not create separate history systems. Series-neutral thematic classification lives in [`Batches/THREADS.md`](Batches/THREADS.md); contiguous tier-bearing development units live in [`VERSION_MAP.md`](VERSION_MAP.md).
 
-The A sequence closes at `A102`. The closed chronology continues through `B4`;
-`B5` is the next development batch.
+The A sequence closes at `A102`. The closed chronology continues through `B5`;
+`B6` is the next development batch.
 
 | Batch | Date | Descriptive name | Threads |
 |---|---|---|---|
@@ -113,5 +113,6 @@ The A sequence closes at `A102`. The closed chronology continues through `B4`;
 | [B2](Batches/B002-2026-08-10-player-founding-authoring.md) | 2026-08-10 18:06–19:46 UTC / 11:06–12:46 PST | Player founding authoring | [`T-022`](Batches/THREADS.md#t-022), [`T-023`](Batches/THREADS.md#t-023), [`T-024`](Batches/THREADS.md#t-024), [`T-025`](Batches/THREADS.md#t-025), [`T-028`](Batches/THREADS.md#t-028), [`T-030`](Batches/THREADS.md#t-030) |
 | [B3](Batches/B003-2026-08-10-creation-flow-interaction-convergence.md) | 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST | Creation-flow interaction convergence | [`T-002`](Batches/THREADS.md#t-002), [`T-021`](Batches/THREADS.md#t-021), [`T-022`](Batches/THREADS.md#t-022), [`T-023`](Batches/THREADS.md#t-023), [`T-024`](Batches/THREADS.md#t-024), [`T-025`](Batches/THREADS.md#t-025), [`T-026`](Batches/THREADS.md#t-026), [`T-028`](Batches/THREADS.md#t-028), [`T-030`](Batches/THREADS.md#t-030) |
 | [B4](Batches/B004-2026-08-11-culture-politics-and-responsive-authoring.md) | 2026-08-10–2026-08-11 UTC / 2026-08-10 PST | Culture, politics, and responsive authoring | [`T-002`](Batches/THREADS.md#t-002), [`T-015`](Batches/THREADS.md#t-015), [`T-021`](Batches/THREADS.md#t-021), [`T-022`](Batches/THREADS.md#t-022), [`T-023`](Batches/THREADS.md#t-023), [`T-024`](Batches/THREADS.md#t-024), [`T-025`](Batches/THREADS.md#t-025), [`T-028`](Batches/THREADS.md#t-028), [`T-030`](Batches/THREADS.md#t-030) |
+| [B5](Batches/B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) | 2026-08-11 UTC / 2026-08-11 PST | Contextual cultural expression and settlement development | [`T-002`](Batches/THREADS.md#t-002), [`T-015`](Batches/THREADS.md#t-015), [`T-019`](Batches/THREADS.md#t-019), [`T-021`](Batches/THREADS.md#t-021), [`T-022`](Batches/THREADS.md#t-022), [`T-023`](Batches/THREADS.md#t-023), [`T-024`](Batches/THREADS.md#t-024), [`T-025`](Batches/THREADS.md#t-025), [`T-028`](Batches/THREADS.md#t-028), [`T-030`](Batches/THREADS.md#t-030) |
 
 Former pre-recatalog labels resolve through [`Batches/FORMER_LABELS.md`](Batches/FORMER_LABELS.md).

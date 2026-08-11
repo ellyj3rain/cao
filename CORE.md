@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Core |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.1.0.0-alpha` · closed batch tip `B4` · next `B5` |
+| Version | `1.2.0.0-alpha` · closed batch tip `B5` · next `B6` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `CORE.md` |
@@ -62,7 +62,8 @@ what make the mod a framework rather than a feature set.
 
 The regional work is not a detached map-size mod. It is the physical theater for
 the same framework. Regions contain factions, settlements, population groups,
-culture, Ideoligion, political beliefs, faction structure, starting conditions,
+carried cultural backgrounds, contextual cultural expression, Ideoligion,
+political beliefs, faction structure, starting conditions,
 relationships, operations, economies, diplomacy and conflict. Loaded maps are
 detailed materializations and native physical executors. The projection rule:
 
@@ -72,10 +73,12 @@ contract → native world/incident/quest/map/Lord projection → reconciled outc
 Native RimWorld physical execution remains authoritative while materialized; this
 mod owns the persistent organizational reason and continuity.
 
-Existing societies and the player founding use the same Culture, native
+Existing societies and the player founding use the same cultural-background, native
 Ideoligion, Political Beliefs, and social-order concepts at different points in
 time. Existing faction and settlement authoring records realized institutions
-and accumulated history. Player authoring records what the founders bring and
+and accumulated history; local cultural expression is derived from those people,
+beliefs, institutions, material conditions, geography, relations, and history.
+Player authoring records what the founders bring and
 the Founding Arrangement they adopt at landing; later institutions and practice
 must be produced by play rather than generated as pre-existing history.
 The arrangement is applied once as its exact, duration-aware relations. Political
