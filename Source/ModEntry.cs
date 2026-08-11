@@ -1,4 +1,7 @@
 using HarmonyLib;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Verse;
 
@@ -40,6 +43,12 @@ namespace ColonistAwareness
         public bool operationalAccess = true;
         public bool autonomousHomePlanning = false;
         public int autonomousHomePlanningResetGeneration;
+        public CAInformationDetail informationDetail =
+            CAInformationDetail.Standard;
+        public List<CAUserCultureProfile> cultureProfiles =
+            new List<CAUserCultureProfile>();
+        public List<CAUserPoliticalProfile> politicalProfiles =
+            new List<CAUserPoliticalProfile>();
         // A behavior system without its causal receipts cannot be evaluated during
         // ordinary play. Tracing is therefore the default operating posture; the
         // player may still disable it explicitly from the mod settings.
@@ -83,12 +92,21 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref autonomousHomePlanning, "autonomousHomePlanning", false);
             Scribe_Values.Look(ref autonomousHomePlanningResetGeneration,
                 "autonomousHomePlanningResetGeneration", 0);
+            Scribe_Values.Look(ref informationDetail, "informationDetail",
+                CAInformationDetail.Standard);
+            Scribe_Collections.Look(ref cultureProfiles, "cultureProfiles",
+                LookMode.Deep);
+            Scribe_Collections.Look(ref politicalProfiles,
+                "politicalProfiles", LookMode.Deep);
             Scribe_Values.Look(ref traceBehavior, "traceBehavior", true);
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+                CAAuthoringProfileLibrary.Normalize(this);
         }
     }
 
     public class AwarenessMod : Mod
     {
+        internal static AwarenessMod Instance;
         public static AwarenessSettings Settings;
 
         private Vector2 settingsScrollPosition;
@@ -96,6 +114,7 @@ namespace ColonistAwareness
 
         public AwarenessMod(ModContentPack content) : base(content)
         {
+            Instance = this;
             Settings = GetSettings<AwarenessSettings>();
             var harmony = new Harmony("ellyj3rain.colonistawareness");
             harmony.PatchAll();
@@ -132,6 +151,11 @@ namespace ColonistAwareness
             return "Colonist Awareness";
         }
 
+        internal static void SaveSettings()
+        {
+            Instance?.WriteSettings();
+        }
+
         public override void DoSettingsWindowContents(Rect inRect)
         {
             var viewRect = new Rect(0f, 0f, inRect.width - 16f,
@@ -142,6 +166,33 @@ namespace ColonistAwareness
             var listingRect = viewRect;
             listingRect.height = 99999f;
             l.Begin(listingRect);
+            l.Label("Creation-flow information");
+            Rect detailRow = l.GetRect(34f);
+            Widgets.Label(new Rect(detailRow.x, detailRow.y + 6f,
+                detailRow.width * 0.42f, 28f), "Information detail");
+            Rect detailButton = new Rect(detailRow.x + detailRow.width * 0.44f,
+                detailRow.y, detailRow.width * 0.56f, 30f);
+            if (Widgets.ButtonText(detailButton,
+                    CAInformationPresentation.Label(
+                        Settings.informationDetail)))
+            {
+                var options = new List<FloatMenuOption>();
+                foreach (CAInformationDetail level in Enum.GetValues(
+                    typeof(CAInformationDetail)).Cast<CAInformationDetail>())
+                {
+                    CAInformationDetail local = level;
+                    options.Add(new FloatMenuOption(
+                        CAInformationPresentation.Label(local), delegate
+                        {
+                            Settings.informationDetail = local;
+                            WriteSettings();
+                        }));
+                }
+                Find.WindowStack.Add(new FloatMenu(options));
+            }
+            l.Label(CAInformationPresentation.Description(
+                Settings.informationDetail));
+            l.GapLine(10f);
             l.CheckboxLabeled("Eat smart", ref Settings.eatSmart,
                 "Hold off on kibble, raw food, and corpses while a proper meal is actively being cooked. A routine food job also avoids an exposed food destination while that pawn has a fresh nearby hostile contact; inventory, close, sheltered, and urgently needed food remain available.");
             l.Gap(6f);

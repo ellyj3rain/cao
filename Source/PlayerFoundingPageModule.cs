@@ -8,10 +8,10 @@ using Verse;
 
 namespace ColonistAwareness
 {
-    // Replaces vanilla's preset-only Ideoligion page with one founding
-    // authoring surface. Native Ideoligion remains native RimWorld state;
-    // Culture, Political Beliefs, and the adopted arrangement use CA's shared
-    // faction models.
+    // Keeps RimWorld's native Ideoligion chooser in the scenario chain and
+    // inserts CA's starting-arrangements page after it. The native page owns
+    // preset discovery, fixed/fluid creation, load, memes, precepts, roles,
+    // rituals, and Scenario.PostIdeoChosen; CA owns the adjacent founding state.
     [HarmonyPatch(typeof(Scenario), nameof(Scenario.GetFirstConfigPage))]
     internal static class CAPlayerFoundingPageChainPatch
     {
@@ -31,11 +31,12 @@ namespace ColonistAwareness
                     insertionAnchor = current;
                 if (current is Page_ChooseIdeoPreset)
                 {
-                    var replacement = new Page_CAPlayerFounding(previous,
-                        current.next);
-                    replacement.nextAct = current.nextAct;
-                    if (previous == null) __result = replacement;
-                    else previous.next = replacement;
+                    Page following = current.next;
+                    var inserted = new Page_CAPlayerFounding(current,
+                        following);
+                    inserted.nextAct = current.nextAct;
+                    current.nextAct = null;
+                    current.next = inserted;
                     return;
                 }
                 previous = current;
@@ -60,9 +61,13 @@ namespace ColonistAwareness
         private CAPlayerFoundingPlan draft;
         private string validationFailure;
         private Vector2 cardScroll;
-        private Vector2 arrangementScroll;
+        private bool localExpanded;
+        private bool openedOnce;
+        private bool awaitingNativeReturn;
+        private readonly Page nativeIdeoChooser;
 
-        public override string PageTitle => "Founding society";
+        public override string PageTitle =>
+            CAPlayerFoundingModel.StartingContextTitle();
 
         public override Vector2 InitialSize
         {
@@ -75,6 +80,8 @@ namespace ColonistAwareness
 
         internal Page_CAPlayerFounding(Page previous, Page following)
         {
+            nativeIdeoChooser = previous is Page_ChooseIdeoPreset
+                ? previous : null;
             prev = previous;
             next = following;
             if (following != null) following.prev = this;
@@ -87,12 +94,18 @@ namespace ColonistAwareness
         public override void PostOpen()
         {
             base.PostOpen();
+            bool nativeFlowJustAccepted = ModsConfig.IdeologyActive
+                && (!openedOnce || awaitingNativeReturn)
+                && (prev is Page_ChooseIdeoPreset
+                    || prev is Page_ConfigureIdeo);
+            openedOnce = true;
+            awaitingNativeReturn = false;
             draft = CAPlayerFoundingSession.Current;
-            EnsureEstablishedIdeos();
             EnsureNativeIdeo();
             CAPlayerFoundingModel.Ensure(draft);
             CAPlayerFoundingModel.CaptureNativeIdeo(draft,
-                CAPlayerFoundingModel.NativeIdeo, null);
+                CAPlayerFoundingModel.NativeIdeo,
+                nativeFlowJustAccepted ? (bool?)true : null);
             CAPlayerFoundingSession.Save();
         }
 
@@ -108,34 +121,72 @@ namespace ColonistAwareness
         {
             DrawPageTitle(inRect);
             Text.Font = GameFont.Small;
-            const string introduction = "The founders arrive with a culture, "
-                + "an Ideoligion, and political beliefs. Choose the first "
-                + "rules of the settlement separately; institutions develop "
-                + "through play.";
-            Widgets.Label(new Rect(0f, 38f, inRect.width, 42f), introduction);
-            CACreationUI.DrawFlow(new Rect(0f, 82f, inRect.width, 24f), 3);
+            string introduction = CAPlayerFoundingModel.StartingContextSummary();
+            float introductionHeight = Text.CalcHeight(introduction,
+                inRect.width - 176f);
+            Widgets.Label(new Rect(0f, 38f, inRect.width - 176f,
+                introductionHeight), introduction);
+            CAInformationPresentation.DrawLocalExpansion(new Rect(
+                inRect.width - 166f, 38f, 166f, 28f), ref localExpanded);
+            float flowY = 44f + introductionHeight;
+            CACreationUI.DrawFlow(new Rect(0f, flowY, inRect.width, 24f), 3);
+            float overviewY = flowY + 30f;
+            string overview = FoundingOverview();
+            float overviewHeight = Text.CalcHeight(overview, inRect.width);
+            Widgets.DrawLightHighlight(new Rect(0f, overviewY, inRect.width,
+                overviewHeight + 12f));
+            Widgets.Label(new Rect(8f, overviewY + 6f, inRect.width - 16f,
+                overviewHeight), overview);
 
-            float top = 114f;
+            float top = overviewY + overviewHeight + 20f;
             float bottom = 52f;
             float gap = 12f;
             Rect cardsOut = new Rect(0f, top, inRect.width,
                 inRect.height - top - bottom);
-            float gridHeight = Mathf.Max(cardsOut.height, 752f);
-            bool needsScroll = gridHeight > cardsOut.height + 0.5f;
-            float gridWidth = cardsOut.width - (needsScroll ? 18f : 0f);
+            float gridWidth = Mathf.Max(240f, cardsOut.width - 18f);
+            bool twoColumns = gridWidth >= 900f;
+            float cardWidth = twoColumns ? (gridWidth - gap) / 2f
+                : gridWidth;
+            float cultureHeight = MeasureCultureCard(cardWidth);
+            float ideoHeight = MeasureIdeoCard(cardWidth);
+            float politicalHeight = MeasurePoliticalCard(cardWidth);
+            float arrangementHeight = MeasureArrangementCard(cardWidth);
+            float gridHeight = twoColumns
+                ? Mathf.Max(cultureHeight, ideoHeight) + gap
+                    + Mathf.Max(politicalHeight, arrangementHeight)
+                : cultureHeight + ideoHeight + politicalHeight
+                    + arrangementHeight + gap * 3f;
             Rect cardsView = new Rect(0f, 0f, gridWidth, gridHeight);
             Widgets.BeginScrollView(cardsOut, ref cardScroll, cardsView);
             try
             {
-                float cardWidth = (gridWidth - gap) / 2f;
-                float cardHeight = (gridHeight - gap) / 2f;
-                DrawCultureCard(new Rect(0f, 0f, cardWidth, cardHeight));
-                DrawIdeoCard(new Rect(cardWidth + gap, 0f, cardWidth,
-                    cardHeight));
-                DrawPoliticalCard(new Rect(0f, cardHeight + gap,
-                    cardWidth, cardHeight));
-                DrawArrangementCard(new Rect(cardWidth + gap,
-                    cardHeight + gap, cardWidth, cardHeight));
+                if (twoColumns)
+                {
+                    float firstRow = Mathf.Max(cultureHeight, ideoHeight);
+                    float secondRow = Mathf.Max(politicalHeight,
+                        arrangementHeight);
+                    DrawCultureCard(new Rect(0f, 0f, cardWidth, firstRow));
+                    DrawIdeoCard(new Rect(cardWidth + gap, 0f, cardWidth,
+                        firstRow));
+                    DrawPoliticalCard(new Rect(0f, firstRow + gap,
+                        cardWidth, secondRow));
+                    DrawArrangementCard(new Rect(cardWidth + gap,
+                        firstRow + gap, cardWidth, secondRow));
+                }
+                else
+                {
+                    float cardY = 0f;
+                    DrawCultureCard(new Rect(0f, cardY, gridWidth,
+                        cultureHeight));
+                    cardY += cultureHeight + gap;
+                    DrawIdeoCard(new Rect(0f, cardY, gridWidth, ideoHeight));
+                    cardY += ideoHeight + gap;
+                    DrawPoliticalCard(new Rect(0f, cardY, gridWidth,
+                        politicalHeight));
+                    cardY += politicalHeight + gap;
+                    DrawArrangementCard(new Rect(0f, cardY, gridWidth,
+                        arrangementHeight));
+                }
             }
             finally { Widgets.EndScrollView(); }
 
@@ -150,6 +201,29 @@ namespace ColonistAwareness
                 GUI.color = Color.white;
             }
             DoBottomButtons(inRect, "Continue");
+        }
+
+        private string FoundingOverview()
+        {
+            string compact = "Culture: "
+                + CAAuthoringChoices.CultureIdentity(draft?.culture)
+                + " · Ideoligion: "
+                + (CAPlayerFoundingModel.NativeIdeo?.name
+                    ?? (ModsConfig.IdeologyActive ? "not set" : "inactive"));
+            string political = CAAuthoringChoices.PoliticalIdentity(
+                draft?.politicalBeliefs);
+            string standard = compact + " · Politics: " + political
+                + " · Landing rules: "
+                + (draft?.arrangement?.label ?? "not set");
+            int tensions = CAPoliticalBeliefPractice
+                .ReadAgainstPoliticalBeliefs(draft?.politicalBeliefs,
+                    draft?.arrangement)
+                .Count(item => item != null && !item.Silent
+                    && !item.conforms);
+            string expanded = standard + " · " + tensions
+                + (tensions == 1 ? " belief-term tension" : " belief-term tensions");
+            return CAInformationPresentation.Select(compact, standard,
+                expanded, localExpanded);
         }
 
         protected override bool CanDoNext()
@@ -191,14 +265,13 @@ namespace ColonistAwareness
 
         private void DrawCultureCard(Rect rect)
         {
-            float y = BeginCard(rect, "Culture",
-                "Shared styles, customs, and gathering places. Culture is "
-                + "separate from Ideoligion and political belief.");
+            float y = BeginCard(rect, "Cultural practices",
+                CultureDescription());
             DrawSummary(rect, ref y, CACultureModel.Icon(draft?.culture),
                 draft?.culture?.name ?? "Culture not set",
                 CACultureModel.Summary(draft?.culture), CultureStateWords());
             DrawButtons(rect, ref y,
-                new CAFoundingAction("Presets...",
+                new CAFoundingAction("Profiles...",
                     OpenCulturePresets),
                 new CAFoundingAction("Generate missing", delegate
                 {
@@ -216,42 +289,32 @@ namespace ColonistAwareness
 
         private void DrawIdeoCard(Rect rect)
         {
-            string description = ModsConfig.IdeologyActive
-                ? "Religious and moral belief. This is RimWorld's native "
-                    + "Ideoligion and remains distinct from culture and "
-                    + "political belief."
-                : "The Ideology expansion is inactive. Culture, political "
-                    + "beliefs, and the founding terms remain active.";
-            float y = BeginCard(rect, "Ideoligion", description);
+            float y = BeginCard(rect, "Ideoligion", IdeoDescription());
             Ideo ideo = CAPlayerFoundingModel.NativeIdeo;
-            string detail = ideo == null ? "Not set"
-                : (ideo.Fluid ? "Fluid Ideoligion" : "Fixed Ideoligion")
-                    + " | " + ideo.memes.Count + " meme"
-                    + (ideo.memes.Count == 1 ? "" : "s");
+            string detail = IdeoDetail(ideo);
             DrawSummary(rect, ref y, ideo?.Icon, ideo?.name ?? "Not active",
                 detail, ModsConfig.IdeologyActive ? "RimWorld system"
                     : "Inactive");
             if (!ModsConfig.IdeologyActive) return;
             DrawButtons(rect, ref y,
-                new CAFoundingAction("Presets...",
-                    OpenIdeoPresets),
+                new CAFoundingAction("Choose again...",
+                    ReturnToNativeIdeo),
                 new CAFoundingAction("Load saved...", LoadIdeo),
-                new CAFoundingAction("Customize...", OpenIdeoEditorMenu));
+                new CAFoundingAction("Edit current...", CustomizeIdeo));
         }
 
         private void DrawPoliticalCard(Rect rect)
         {
             float y = BeginCard(rect, "Political beliefs",
-                "What the founders believe society should permit, require, "
-                + "and protect. Belief does not automatically become law.");
+                PoliticalDescription());
             DrawSummary(rect, ref y,
                 CAPoliticalBeliefsModel.Icon(draft?.politicalBeliefs),
-                draft?.politicalBeliefs?.presetName
-                    ?? "Custom political beliefs",
+                CAAuthoringChoices.PoliticalIdentity(
+                    draft?.politicalBeliefs),
                 CAPoliticalBeliefsModel.Summary(draft?.politicalBeliefs),
                 PoliticalStateWords());
             DrawButtons(rect, ref y,
-                new CAFoundingAction("Presets...",
+                new CAFoundingAction("Profiles...",
                     OpenPoliticalPresets),
                 new CAFoundingAction("Generate missing", delegate
                 {
@@ -276,9 +339,8 @@ namespace ColonistAwareness
 
         private void DrawArrangementCard(Rect rect)
         {
-            float y = BeginCard(rect, "Founding terms",
-                "The rules put in force at landing. They may follow or "
-                + "contradict the founders' political beliefs.");
+            float y = BeginCard(rect, "Rules at landing",
+                ArrangementDescription());
             CAFoundingArrangement arrangement = draft?.arrangement;
             string title = arrangement?.label?.CapitalizeFirst()
                 ?? "Arrangement not set";
@@ -293,25 +355,11 @@ namespace ColonistAwareness
                 CAPoliticalBeliefPractice.ReadAgainstPoliticalBeliefs(
                     draft?.politicalBeliefs, arrangement);
             Rect inner = rect.ContractedBy(14f);
-            float comparisonBottom = rect.yMax - 54f;
-            Rect comparisonOut = new Rect(inner.x, y, inner.width,
-                Mathf.Max(44f, comparisonBottom - y));
-            float comparisonWidth = Mathf.Max(120f, comparisonOut.width - 18f);
-            float comparisonHeight = readings.Sum(reading =>
-                ComparisonHeight(reading, comparisonWidth));
-            Rect comparisonView = new Rect(0f, 0f, comparisonWidth,
-                Mathf.Max(comparisonOut.height, comparisonHeight));
-            Widgets.BeginScrollView(comparisonOut, ref arrangementScroll,
-                comparisonView);
-            try
-            {
-                float comparisonY = 0f;
-                foreach (CAPoliticalBeliefPractice.CAFoundingBeliefReading
-                    reading in readings)
-                    DrawComparison(comparisonView, ref comparisonY, reading);
-            }
-            finally { Widgets.EndScrollView(); }
-            y = rect.yMax - 51f;
+            Rect comparisonArea = new Rect(inner.x, 0f, inner.width,
+                rect.height);
+            foreach (CAPoliticalBeliefPractice.CAFoundingBeliefReading
+                reading in readings)
+                DrawComparison(comparisonArea, ref y, reading);
             DrawButtons(rect, ref y,
                 new CAFoundingAction("Use suggested", delegate
                 {
@@ -341,30 +389,153 @@ namespace ColonistAwareness
             return inner.y + 34f + height + 10f;
         }
 
+        private string CultureDescription()
+        {
+            return CAInformationPresentation.Select(
+                "Practices and visual tradition carried by the founders.",
+                "Public gathering, hospitality, shared meals, public memory, "
+                    + "and a native visual style source.",
+                "These practices materialize settlement furnishings. "
+                    + "Ideoligion owns moral and religious precepts; political "
+                    + "beliefs own preferred social order.", localExpanded);
+        }
+
+        private static string IdeoDescription()
+        {
+            return ModsConfig.IdeologyActive
+                ? "Religious and moral belief. This is RimWorld's native "
+                    + "Ideoligion and remains distinct from culture and "
+                    + "political belief."
+                : "The Ideology expansion is inactive. Culture, political "
+                    + "beliefs, and the founding terms remain active.";
+        }
+
+        private static string IdeoDetail(Ideo ideo)
+        {
+            return ideo == null ? "Not set"
+                : (ideo.Fluid ? "Fluid Ideoligion" : "Fixed Ideoligion")
+                    + " | " + ideo.memes.Count + " meme"
+                    + (ideo.memes.Count == 1 ? "" : "s");
+        }
+
+        private static string PoliticalDescription()
+        {
+            return "What the founders believe society should permit, "
+                + "require, and protect. Belief does not automatically "
+                + "become law.";
+        }
+
+        private static string ArrangementDescription()
+        {
+            return "The rules put in force at landing. They may follow or "
+                + "contradict the founders' political beliefs.";
+        }
+
+        private float MeasureCultureCard(float width)
+        {
+            return MeasureCard(width, CultureDescription(),
+                draft?.culture?.name ?? "Culture not set",
+                CACultureModel.Summary(draft?.culture), CultureStateWords());
+        }
+
+        private float MeasureIdeoCard(float width)
+        {
+            Ideo ideo = CAPlayerFoundingModel.NativeIdeo;
+            return MeasureCard(width, IdeoDescription(),
+                ideo?.name ?? "Not active", IdeoDetail(ideo),
+                ModsConfig.IdeologyActive ? "RimWorld system" : "Inactive");
+        }
+
+        private float MeasurePoliticalCard(float width)
+        {
+            return MeasureCard(width, PoliticalDescription(),
+                CAAuthoringChoices.PoliticalIdentity(
+                    draft?.politicalBeliefs),
+                CAPoliticalBeliefsModel.Summary(draft?.politicalBeliefs),
+                PoliticalStateWords());
+        }
+
+        private float MeasureArrangementCard(float width)
+        {
+            CAFoundingArrangement arrangement = draft?.arrangement;
+            float innerWidth = Mathf.Max(120f, width - 28f);
+            float comparisons = CAPoliticalBeliefPractice
+                .ReadAgainstPoliticalBeliefs(draft?.politicalBeliefs,
+                    arrangement)
+                .Sum(reading => ComparisonHeight(reading, innerWidth));
+            return MeasureCard(width, ArrangementDescription(),
+                arrangement?.label?.CapitalizeFirst()
+                    ?? "Arrangement not set",
+                arrangement?.premise ?? "Choose or generate an arrangement.",
+                CAPlayerFoundingModel.ArrangementSourceWords(draft),
+                comparisons);
+        }
+
+        private static float MeasureCard(float width, string description,
+            string title, string detail, string badge, float extra = 0f)
+        {
+            float innerWidth = Mathf.Max(120f, width - 28f);
+            GameFont prior = Text.Font;
+            Text.Font = GameFont.Small;
+            float descriptionHeight = Text.CalcHeight(description,
+                innerWidth);
+            Text.Font = prior;
+            return 14f + 34f + descriptionHeight + 10f
+                + SummaryHeight(innerWidth, title, detail, badge)
+                + 8f + extra + 51f;
+        }
+
+        private static float SummaryHeight(float innerWidth, string title,
+            string detail, string badge)
+        {
+            float textX = 68f;
+            GameFont prior = Text.Font;
+            Text.Font = GameFont.Small;
+            float badgeWidth = badge.NullOrEmpty() ? 0f
+                : Mathf.Min(108f, Text.CalcSize(badge).x + 16f);
+            float textWidth = Mathf.Max(90f,
+                innerWidth - textX - badgeWidth - 12f);
+            float titleHeight = Text.CalcHeight(title ?? "Not set", textWidth);
+            Text.Font = GameFont.Tiny;
+            float detailHeight = Text.CalcHeight(detail ?? "Not set",
+                innerWidth - textX - 7f);
+            Text.Font = prior;
+            return Mathf.Max(72f,
+                14f + titleHeight + detailHeight + 8f);
+        }
+
         private static void DrawSummary(Rect card, ref float y,
             Texture2D icon, string title, string detail, string badge)
         {
             Rect inner = card.ContractedBy(14f);
-            Rect summary = new Rect(inner.x, y, inner.width, 72f);
+            float textX = inner.x + (icon == null ? 9f : 68f);
+            Text.Font = GameFont.Small;
+            float badgeWidth = badge.NullOrEmpty() ? 0f
+                : Mathf.Min(108f, Text.CalcSize(badge).x + 16f);
+            float textWidth = Mathf.Max(90f,
+                inner.xMax - textX - badgeWidth - 12f);
+            float titleHeight = Text.CalcHeight(title ?? "Not set", textWidth);
+            Text.Font = GameFont.Tiny;
+            float detailHeight = Text.CalcHeight(detail ?? "Not set",
+                inner.xMax - textX - 7f);
+            Text.Font = GameFont.Small;
+            float summaryHeight = SummaryHeight(inner.width, title, detail,
+                badge);
+            Rect summary = new Rect(inner.x, y, inner.width, summaryHeight);
             Widgets.DrawLightHighlight(summary);
             if (icon != null)
                 GUI.DrawTexture(new Rect(summary.x + 8f, summary.y + 10f,
                     52f, 52f), icon, ScaleMode.ScaleToFit);
-            float textX = icon == null ? summary.x + 9f : summary.x + 68f;
-            Text.Font = GameFont.Small;
-            float badgeWidth = badge.NullOrEmpty() ? 0f
-                : Mathf.Min(108f, Text.CalcSize(badge).x + 16f);
-            Widgets.Label(new Rect(textX, summary.y + 7f,
-                summary.xMax - textX - badgeWidth - 12f, 23f),
-                title ?? "Not set");
+            Widgets.Label(new Rect(textX, summary.y + 7f, textWidth,
+                titleHeight), title ?? "Not set");
             if (!badge.NullOrEmpty())
                 CACreationUI.DrawChip(new Rect(summary.xMax - badgeWidth - 6f,
                     summary.y + 6f, badgeWidth, 20f), badge,
                     StateColor(badge));
             Text.Font = GameFont.Tiny;
             GUI.color = ColoredText.SubtleGrayColor;
-            Widgets.Label(new Rect(textX, summary.y + 31f,
-                summary.xMax - textX - 7f, 36f), detail ?? "Not set");
+            Widgets.Label(new Rect(textX, summary.y + 11f + titleHeight,
+                summary.xMax - textX - 7f, detailHeight), detail ?? "Not set");
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
             y = summary.yMax + 8f;
@@ -448,6 +619,9 @@ namespace ColonistAwareness
 
         private string CultureStateWords()
         {
+            if (draft?.culture != null
+                && !draft.culture.profileKey.NullOrEmpty())
+                return "Saved profile";
             if ((draft?.culture?.authoredMask ?? 0) != 0) return "Edited";
             if (draft?.culture != null
                 && !draft.culture.presetName.NullOrEmpty())
@@ -457,6 +631,9 @@ namespace ColonistAwareness
 
         private string PoliticalStateWords()
         {
+            if (draft?.politicalBeliefs != null
+                && !draft.politicalBeliefs.profileKey.NullOrEmpty())
+                return "Saved profile";
             List<CAAxisEntry> positions = draft?.politicalBeliefs?.positions;
             if (positions?.Any(item => item != null && item.source
                     == (byte)CAAxisSource.Authored) == true) return "Edited";
@@ -468,6 +645,7 @@ namespace ColonistAwareness
         private static Color StateColor(string words)
         {
             if (words == "Preset") return CACreationUI.Preset;
+            if (words == "Saved profile") return CACreationUI.Authored;
             if (words == "Generated") return CACreationUI.Generated;
             if (words == "Inactive" || words == "Not set")
                 return CACreationUI.Unset;
@@ -489,69 +667,24 @@ namespace ColonistAwareness
 
         private void OpenCulturePresets()
         {
-            var options = new List<CACreationChoice>();
-            foreach (CACulturePreset preset in CACultureModel.Presets)
-            {
-                CACulturePreset local = preset;
-                options.Add(new CACreationChoice
-                {
-                    Key = local.Name,
-                    Name = local.Name,
-                    Summary = local.Description,
-                    Traits = CACultureModel.Words("gathering",
-                        local.Gathering),
-                    Details = "Sets the founders' gathering custom. Native "
-                        + "style categories remain editable separately.",
-                    Badge = "Culture preset",
-                    Icon = ContentFinder<Texture2D>.Get(local.IconPath),
-                    Accent = CACreationUI.Preset,
-                    Selected = CACultureModel.UsesPreset(draft?.culture,
-                        local),
-                    ConfirmLabel = "Use this culture",
-                    Choose = delegate
-                    {
-                        CACultureModel.ApplyPreset(draft.culture, local);
-                        Changed();
-                    }
-                });
-            }
-            CACreationUI.OpenChoices("Culture presets",
-                "Choose a starting set of customs. Every field remains "
-                + "editable after the preset is applied.", options);
+            CACreationUI.OpenChoices("Culture profiles",
+                "Apply a built-in or saved set of practices. Values are "
+                    + "copied into this founding draft and remain editable.",
+                CAAuthoringChoices.CultureProfiles(draft?.culture,
+                    CAPlayerFoundingModel.Seed, Changed));
         }
 
         private void OpenPoliticalPresets()
         {
-            var options = new List<CACreationChoice>();
-            foreach (CAFactionAxes.PoliticalPreset preset in
-                CAFactionAxes.Presets)
-            {
-                CAFactionAxes.PoliticalPreset local = preset;
-                options.Add(new CACreationChoice
-                {
-                    Key = local.Name,
-                    Name = local.Name,
-                    Summary = PoliticalPresetIdentity(local),
-                    Traits = CAPoliticalBeliefsModel.PresetTraits(local, 3),
-                    Details = CAPoliticalBeliefsModel.PresetDetails(local),
-                    Badge = "Political preset",
-                    Icon = CAPoliticalBeliefsModel.Icon(local),
-                    Accent = CACreationUI.Preset,
-                    Selected = CAPoliticalBeliefsModel.UsesPreset(
-                        draft?.politicalBeliefs, local),
-                    ConfirmLabel = "Use these beliefs",
-                    Choose = delegate
+            List<CACreationChoice> options =
+                CAAuthoringChoices.PoliticalProfiles(
+                    draft?.politicalBeliefs,
+                    CAPlayerFoundingModel.Seed, delegate
                     {
-                        CAPoliticalBeliefsModel.ChoosePreset(
-                            draft.politicalBeliefs, local,
-                            CAPlayerFoundingModel.Seed + ":preset:"
-                                + local.Name);
                         RefreshSuggestedArrangement();
                         Changed();
-                    }
-                });
-            }
-            CACreationUI.OpenChoices("Political-belief presets",
+                    });
+            CACreationUI.OpenChoices("Political profiles",
                 "Choose what the founders broadly consider proper. The "
                 + "individual positions remain editable, and these beliefs "
                 + "do not automatically become settlement rules.", options);
@@ -590,62 +723,6 @@ namespace ColonistAwareness
                 + "retained as part of the colony's state.", options);
         }
 
-        private void OpenIdeoPresets()
-        {
-            var options = new List<CACreationChoice>();
-            foreach (IdeoPresetDef preset in DefDatabase<IdeoPresetDef>
-                .AllDefsListForReading.OrderBy(item => item.categoryDef?.label)
-                .ThenBy(item => item.label))
-            {
-                IdeoPresetDef local = preset;
-                string traits = string.Join(" · ", local.memes
-                    .Take(3).Select(item => item.LabelCap.ToString())
-                    .ToArray());
-                options.Add(new CACreationChoice
-                {
-                    Key = local.defName,
-                    Name = local.LabelCap.ToString(),
-                    Summary = local.description.NullOrEmpty()
-                        ? "A native RimWorld Ideoligion preset."
-                        : local.description,
-                    Traits = traits,
-                    Details = local.memes.Count == 0 ? null
-                        : "Memes\n" + string.Join("\n", local.memes
-                            .Select(item => "- " + item.LabelCap)
-                            .ToArray()),
-                    Group = local.categoryDef?.LabelCap.ToString(),
-                    Badge = "Ideoligion preset",
-                    Icon = local.Icon,
-                    Accent = CACreationUI.Preset,
-                    Selected = IdeoMatches(local),
-                    ConfirmLabel = "Use this Ideoligion",
-                    Choose = delegate
-                    {
-                        AssignPreset(local);
-                        Changed();
-                    }
-                });
-            }
-            CACreationUI.OpenChoices("Ideoligion presets",
-                "Choose a native RimWorld Ideoligion as a starting point. "
-                + "Its memes, precepts, roles, and rituals remain available "
-                + "through the native editor.", options);
-        }
-
-        private static string PoliticalPresetIdentity(
-            CAFactionAxes.PoliticalPreset preset)
-        {
-            var temporary = new CAPoliticalBeliefs();
-            CAPoliticalBeliefsModel.ApplyPreset(temporary, preset);
-            string leadership = CAFactionAxes.OptionOf(temporary.positions,
-                CAFactionAxes.Leadership)?.Label;
-            string decisions = CAFactionAxes.OptionOf(temporary.positions,
-                CAFactionAxes.Decisions)?.Label;
-            if (!leadership.NullOrEmpty() && !decisions.NullOrEmpty())
-                return leadership.CapitalizeFirst() + "; " + decisions + ".";
-            return "A coherent starting set of political positions.";
-        }
-
         private static string FoundingTermsTraits(
             CAFoundingArrangement terms)
         {
@@ -670,14 +747,6 @@ namespace ColonistAwareness
             return CACreationUI.Icon(path);
         }
 
-        private static bool IdeoMatches(IdeoPresetDef preset)
-        {
-            Ideo current = CAPlayerFoundingModel.NativeIdeo;
-            if (current == null || preset == null) return false;
-            return current.memes.Count == preset.memes.Count
-                && preset.memes.All(current.memes.Contains);
-        }
-
         private void LoadIdeo()
         {
             Find.WindowStack.Add(new Dialog_IdeoList_Load(delegate(Ideo ideo)
@@ -687,55 +756,15 @@ namespace ColonistAwareness
             }));
         }
 
-        private void OpenIdeoEditorMenu()
+        private void ReturnToNativeIdeo()
         {
-            var options = new List<CACreationChoice>
-            {
-                new CACreationChoice
-                {
-                    Key = "edit",
-                    Name = "Edit current Ideoligion",
-                    Summary = "Open RimWorld's native editor for the current belief.",
-                    Traits = CAPlayerFoundingModel.NativeIdeo?.name
-                        ?? "Current Ideoligion",
-                    Badge = "Native editor",
-                    Icon = CAPlayerFoundingModel.NativeIdeo?.Icon,
-                    Accent = CACreationUI.Authored,
-                    ConfirmLabel = "Open editor",
-                    Choose = CustomizeIdeo
-                },
-                new CACreationChoice
-                {
-                    Key = "fixed",
-                    Name = "Create fixed Ideoligion",
-                    Summary = "Create a complete Ideoligion before play begins.",
-                    Traits = "Fixed memes and precepts",
-                    Badge = "New Ideoligion",
-                    Icon = CACreationUI.Icon(
-                        "Rimshare/WorldMapIcons/cog"),
-                    Accent = CACreationUI.Preset,
-                    ConfirmLabel = "Create fixed Ideoligion",
-                    Choose = delegate { CreateIdeoEditor(false); }
-                },
-                new CACreationChoice
-                {
-                    Key = "fluid",
-                    Name = "Create fluid Ideoligion",
-                    Summary = "Begin simply and develop the Ideoligion through play.",
-                    Traits = "Fluid development",
-                    Badge = "New Ideoligion",
-                    Icon = CACreationUI.Icon(
-                        "Rimshare/WorldMapIcons/forward-sun"),
-                    Accent = CACreationUI.Preset,
-                    ConfirmLabel = "Create fluid Ideoligion",
-                    Choose = delegate { CreateIdeoEditor(true); }
-                }
-            };
-            CACreationUI.OpenChoices("Customize Ideoligion",
-                "Use RimWorld's native Ideology editor. Returning from the "
-                + "editor restores the Founding society page and preserves "
-                + "the culture, political beliefs, and founding terms.",
-                options);
+            CAPlayerFoundingModel.CaptureNativeIdeo(draft,
+                CAPlayerFoundingModel.NativeIdeo, null);
+            draft.confirmed = false;
+            awaitingNativeReturn = true;
+            CAPlayerFoundingSession.Save();
+            if (nativeIdeoChooser != null) prev = nativeIdeoChooser;
+            DoBack();
         }
 
         private void CustomizeIdeo()
@@ -745,24 +774,6 @@ namespace ColonistAwareness
             Page editor = CAPlayerFoundingModel.NativeIdeo?.Fluid == true
                 ? (Page)new Page_CAConfigureFoundingFluidIdeo(draft)
                 : new Page_CAConfigureFoundingIdeo(draft);
-            editor.prev = this;
-            editor.next = this;
-            Find.WindowStack.Add(editor);
-            Close();
-        }
-
-        private void CreateIdeoEditor(bool fluid)
-        {
-            foreach (Ideo item in Find.IdeoManager.IdeosListForReading)
-                item.initialPlayerIdeo = false;
-            Faction.OfPlayer.ideos.RemoveAll();
-            Find.IdeoManager.RemoveUnusedStartingIdeos();
-            Page_ConfigureIdeo editor = fluid
-                ? (Page_ConfigureIdeo)new Page_CAConfigureFoundingFluidIdeo(
-                    draft)
-                : new Page_CAConfigureFoundingIdeo(draft);
-            editor.SelectOrMakeNewIdeo();
-            editor.ideo.Fluid = fluid;
             editor.prev = this;
             editor.next = this;
             Find.WindowStack.Add(editor);
@@ -783,33 +794,6 @@ namespace ColonistAwareness
                 chosen = presets[index];
             }
             AssignPreset(chosen);
-        }
-
-        private static void EnsureEstablishedIdeos()
-        {
-            if (!ModsConfig.IdeologyActive || Find.FactionManager == null)
-                return;
-            foreach (Faction faction in Find.FactionManager
-                .AllFactionsListForReading)
-            {
-                if (faction == null || faction == Faction.OfPlayer
-                    || faction.ideos == null) continue;
-                Ideo primary = faction.ideos.PrimaryIdeo;
-                if (primary != null && !primary.memes.NullOrEmpty()) continue;
-                FactionDef def = faction.def;
-                if (def.fixedIdeo)
-                {
-                    faction.ideos.ChooseOrGenerateIdeo(
-                        new IdeoGenerationParms(def, false, null, null,
-                            def.forcedMemes, false, false, false, true,
-                            def.ideoName, def.styles, def.deityPresets,
-                            def.hiddenIdeo, def.ideoDescription,
-                            def.requiredPreceptsOnly));
-                }
-                else
-                    faction.ideos.ChooseOrGenerateIdeo(
-                        new IdeoGenerationParms(def));
-            }
         }
 
         private void AssignPreset(IdeoPresetDef preset)
@@ -926,6 +910,8 @@ namespace ColonistAwareness
     {
         private readonly CAPlayerFoundingPlan draft;
         private readonly Action changed;
+        private Vector2 scroll;
+        private float viewHeight;
 
         public override Vector2 InitialSize => new Vector2(
             Mathf.Min(820f, UI.screenWidth - 48f),
@@ -951,12 +937,21 @@ namespace ColonistAwareness
             Widgets.Label(new Rect(0f, 0f, inRect.width, 34f),
                 "Founding terms");
             Text.Font = GameFont.Small;
-            Widgets.Label(new Rect(0f, 38f, inRect.width, 48f),
-                "These rules take effect at landing. Political beliefs state "
-                + "what the founders consider proper; agreement or tension "
-                + "between belief and practice is retained.");
-            float y = 98f;
-            Choice(ref y, inRect.width, "Settlement leadership",
+            const string introduction = "These rules take effect at landing. "
+                + "Political beliefs state what the founders consider proper; "
+                + "agreement or tension between belief and practice is retained.";
+            float introductionHeight = Text.CalcHeight(introduction,
+                inRect.width);
+            Widgets.Label(new Rect(0f, 38f, inRect.width,
+                introductionHeight), introduction);
+            float bodyTop = 38f + introductionHeight + 10f;
+            Rect outRect = new Rect(0f, bodyTop, inRect.width,
+                Mathf.Max(80f, inRect.height - bodyTop - 55f));
+            Rect view = new Rect(0f, 0f, outRect.width - 18f,
+                Mathf.Max(outRect.height, viewHeight));
+            Widgets.BeginScrollView(outRect, ref scroll, view);
+            float y = 0f;
+            Choice(ref y, view.width, "Settlement leadership",
                 "Who may give binding orders.",
                 new[] { "Founders decide", "Chosen leader" },
                 value.leaderRule == "none" ? 0 : 1, index =>
@@ -964,7 +959,7 @@ namespace ColonistAwareness
                     value.leaderRule = index == 0 ? "none" : "chosen";
                     Authored();
                 });
-            Choice(ref y, inRect.width, "Required work",
+            Choice(ref y, view.width, "Required work",
                 "Whether work and defense may be assigned.",
                 new[] { "Voluntary", "May be assigned" },
                 value.workRequired ? 1 : 0, index =>
@@ -972,7 +967,7 @@ namespace ColonistAwareness
                     value.workRequired = index == 1;
                     Authored();
                 });
-            Choice(ref y, inRect.width, "First decisions",
+            Choice(ref y, view.width, "First decisions",
                 "Who votes on decisions from the first day.",
                 new[] { "No founder vote", "All founders vote" },
                 value.foundersDecide ? 1 : 0, index =>
@@ -980,7 +975,7 @@ namespace ColonistAwareness
                     value.foundersDecide = index == 1;
                     Authored();
                 });
-            Choice(ref y, inRect.width, "Starting supplies",
+            Choice(ref y, view.width, "Starting supplies",
                 "Whether provisions are pooled and rationed.",
                 new[] { "Held separately", "Held in common" },
                 value.sharedSupplies ? 1 : 0, index =>
@@ -990,7 +985,7 @@ namespace ColonistAwareness
                 });
             int duration = value.durationDays == 30 ? 1
                 : value.durationDays == 60 ? 2 : 0;
-            Choice(ref y, inRect.width, "Term",
+            Choice(ref y, view.width, "Term",
                 "When these starting rules expire automatically.",
                 new[] { "No fixed end", "30 days", "60 days" },
                 duration, index =>
@@ -1000,10 +995,17 @@ namespace ColonistAwareness
                     Authored();
                 });
 
-            Rect consequence = new Rect(0f, y + 10f, inRect.width, 82f);
+            string consequenceText = value.Consequence(
+                CAPlayerFoundingModel.StartingPawnCount());
+            float consequenceHeight = Mathf.Max(54f, Text.CalcHeight(
+                consequenceText, view.width - 20f) + 20f);
+            Rect consequence = new Rect(0f, y + 10f, view.width,
+                consequenceHeight);
             Widgets.DrawLightHighlight(consequence);
             Widgets.Label(consequence.ContractedBy(10f),
-                value.Consequence(CAPlayerFoundingModel.StartingPawnCount()));
+                consequenceText);
+            viewHeight = consequence.yMax + 8f;
+            Widgets.EndScrollView();
         }
 
         private static void Choice(ref float y, float width, string label,

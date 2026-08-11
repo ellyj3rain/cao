@@ -421,7 +421,7 @@ namespace ColonistAwareness
             return configured > 0 ? configured : 3;
         }
 
-        private static bool AncestralStart()
+        internal static bool AncestralStart()
         {
             if (ArrivedViolently()) return false;
             return StartingPawnCount() >= 4
@@ -443,6 +443,26 @@ namespace ColonistAwareness
             return false;
         }
 
+        internal static string StartingContextTitle()
+        {
+            return "Starting arrangements";
+        }
+
+        internal static string StartingContextSummary()
+        {
+            int count = StartingPawnCount();
+            if (AncestralStart())
+                return "An ancestral group of " + count
+                    + " brings mature traditions and chooses the rules in force at the new settlement.";
+            if (count == 1)
+                return ArrivedViolently()
+                    ? "One founder arrives violently with carried beliefs and adopts immediate survival rules."
+                    : "One founder arrives with carried beliefs and chooses the settlement's first rules.";
+            return ArrivedViolently()
+                ? count + " founders arrive violently with carried traditions and adopt immediate landing rules."
+                : count + " founders arrive with carried traditions and choose the rules in force at landing.";
+        }
+
         internal static bool TryValidate(CAPlayerFoundingPlan draft,
             out string failure)
         {
@@ -453,9 +473,18 @@ namespace ColonistAwareness
                 return false;
             }
             if (draft.culture == null || draft.culture.id.NullOrEmpty()
-                || draft.culture.gatheringKey.NullOrEmpty())
+                || CACultureModel.Domains.Any(domain =>
+                    draft.culture.Value(domain.Field).NullOrEmpty()))
             {
                 failure = "Choose or generate the founders' culture.";
+                return false;
+            }
+            string cultureFailure = CACultureModel.CompatibilityFailure(
+                draft.culture);
+            if (!cultureFailure.NullOrEmpty())
+            {
+                failure = "The founders' culture cannot be used: "
+                    + cultureFailure;
                 return false;
             }
             if (draft.politicalBeliefs == null

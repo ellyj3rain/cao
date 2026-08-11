@@ -502,7 +502,10 @@ namespace ColonistAwareness
         // preset and replace individual answers. Explicit answers survive.
         internal sealed class PoliticalPreset
         {
+            internal string Key;
             internal string Name;
+            internal string[] Aliases = new string[0];
+            internal string Description;
             internal string Parent;
             internal Dictionary<string, string> Positions =
                 new Dictionary<string, string>();
@@ -512,7 +515,10 @@ namespace ColonistAwareness
         {
             new PoliticalPreset
             {
+                Key = "civic_council",
                 Name = "Elected council and public support",
+                Description = "Open civic government with elected leadership, "
+                    + "public support, mixed property, and protected dissent.",
                 Positions = new Dictionary<string, string>
                 {
                     { Leadership, "council" }, { Decisions, "majority" },
@@ -524,8 +530,11 @@ namespace ColonistAwareness
             },
             new PoliticalPreset
             {
+                Key = "cooperative_council",
                 Name = "Elected council and worker ownership",
-                Parent = "Elected council and public support",
+                Description = "Elected civic government joined to cooperative "
+                    + "ownership and organized work.",
+                Parent = "civic_council",
                 Positions = new Dictionary<string, string>
                 {
                     { Ownership, "cooperative" },
@@ -534,7 +543,10 @@ namespace ColonistAwareness
             },
             new PoliticalPreset
             {
+                Key = "worker_federation",
                 Name = "Worker councils",
+                Description = "Delegated worker councils coordinate cooperative "
+                    + "production, shared support, and protected dissent.",
                 Positions = new Dictionary<string, string>
                 {
                     { Leadership, "federated" }, { Decisions, "majority" },
@@ -546,7 +558,10 @@ namespace ColonistAwareness
             },
             new PoliticalPreset
             {
+                Key = "common_ownership",
                 Name = "Common ownership",
+                Description = "Productive property, distribution, work, and "
+                    + "support are held as common obligations.",
                 Positions = new Dictionary<string, string>
                 {
                     { Ownership, "common" }, { Economy, "planned" },
@@ -555,8 +570,11 @@ namespace ColonistAwareness
             },
             new PoliticalPreset
             {
+                Key = "independent_communes",
                 Name = "Independent communes",
-                Parent = "Common ownership",
+                Description = "Self-governing communes delegate limited authority "
+                    + "while retaining shared stores and common ownership.",
+                Parent = "common_ownership",
                 Positions = new Dictionary<string, string>
                 {
                     { Leadership, "federated" }, { Decisions, "majority" },
@@ -565,8 +583,11 @@ namespace ColonistAwareness
             },
             new PoliticalPreset
             {
+                Key = "central_party",
                 Name = "Central party rule",
-                Parent = "Common ownership",
+                Description = "A single party directs common property, work, "
+                    + "distribution, doctrine, and internal order.",
+                Parent = "common_ownership",
                 Positions = new Dictionary<string, string>
                 {
                     { Leadership, "single" }, { Decisions, "decree" },
@@ -576,7 +597,10 @@ namespace ColonistAwareness
             },
             new PoliticalPreset
             {
+                Key = "market_council",
                 Name = "Elected council and private trade",
+                Description = "Open elected government protects dissent while "
+                    + "private ownership and market trade organize work.",
                 Positions = new Dictionary<string, string>
                 {
                     { Leadership, "council" }, { Decisions, "majority" },
@@ -587,7 +611,10 @@ namespace ColonistAwareness
             },
             new PoliticalPreset
             {
+                Key = "command_state",
                 Name = "Dictatorial state",
+                Description = "Central command directs political life, planned "
+                    + "work, internal order, and professional defense.",
                 Positions = new Dictionary<string, string>
                 {
                     { Leadership, "single" }, { Decisions, "decree" },
@@ -600,7 +627,10 @@ namespace ColonistAwareness
             },
             new PoliticalPreset
             {
+                Key = "stateless_pluralism",
                 Name = "No central rule",
+                Description = "No permanent central ruler; membership is open, "
+                    + "rank is limited, and local order is voluntary.",
                 Positions = new Dictionary<string, string>
                 {
                     { Leadership, "none" }, { Dissent, "plural" },
@@ -610,8 +640,11 @@ namespace ColonistAwareness
             },
             new PoliticalPreset
             {
+                Key = "free_commons",
                 Name = "Common stores, no rulers",
-                Parent = "No central rule",
+                Description = "Consensus, common stores, shared ownership, and "
+                    + "general defense operate without permanent rulers.",
+                Parent = "stateless_pluralism",
                 Positions = new Dictionary<string, string>
                 {
                     { Decisions, "consensus" }, { Participation, "universal" },
@@ -621,8 +654,11 @@ namespace ColonistAwareness
             },
             new PoliticalPreset
             {
+                Key = "free_trade_custom",
                 Name = "Private trade, no rulers",
-                Parent = "No central rule",
+                Description = "Private exchange and household custom organize an "
+                    + "open society without central rule.",
+                Parent = "stateless_pluralism",
                 Positions = new Dictionary<string, string>
                 {
                     { Decisions, "custom" }, { Participation, "heads" },
@@ -633,7 +669,10 @@ namespace ColonistAwareness
             },
             new PoliticalPreset
             {
+                Key = "hereditary_rule",
                 Name = "Hereditary ruler",
+                Description = "Inherited rank supports a single ruler and a "
+                    + "household-based social order.",
                 Positions = new Dictionary<string, string>
                 {
                     { Leadership, "single" }, { Participation, "standing" },
@@ -644,8 +683,11 @@ namespace ColonistAwareness
             },
             new PoliticalPreset
             {
+                Key = "landed_houses",
                 Name = "Landed houses",
-                Parent = "Hereditary ruler",
+                Description = "Hereditary houses govern through custom, service, "
+                    + "levies, and inherited membership.",
+                Parent = "hereditary_rule",
                 Positions = new Dictionary<string, string>
                 {
                     { Decisions, "custom" },
@@ -656,8 +698,11 @@ namespace ColonistAwareness
             },
             new PoliticalPreset
             {
+                Key = "absolute_rule",
                 Name = "Absolute ruler",
-                Parent = "Hereditary ruler",
+                Description = "A hereditary ruler governs by decree with planned "
+                    + "distribution and professional force.",
+                Parent = "hereditary_rule",
                 Positions = new Dictionary<string, string>
                 {
                     { Decisions, "decree" },
@@ -666,6 +711,14 @@ namespace ColonistAwareness
                 }
             }
         };
+
+        internal static PoliticalPreset Preset(string keyOrAlias)
+        {
+            if (keyOrAlias.NullOrEmpty()) return null;
+            return Presets.FirstOrDefault(item => item.Key == keyOrAlias
+                || item.Name == keyOrAlias
+                || (item.Aliases?.Contains(keyOrAlias) ?? false));
+        }
 
         // Political-belief and current-structure differences are preserved.
         internal static List<string> Conflicts(

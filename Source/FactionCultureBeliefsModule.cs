@@ -13,41 +13,79 @@ namespace ColonistAwareness
     // these customs.
     public sealed class CACulture : IExposable
     {
+        public const int CurrentSchemaVersion = 2;
         public const int NameField = 1;
         public const int SourceCultureField = 2;
         public const int GatheringField = 8;
+        public const int HospitalityField = 16;
+        public const int MealsField = 32;
+        public const int RemembranceField = 64;
+        public int schemaVersion = CurrentSchemaVersion;
         public string id;
         public string name;
         public string sourceCultureDefName;
         public string gatheringKey;
+        public string hospitalityKey;
+        public string mealsKey;
+        public string remembranceKey;
         public string presetName;
+        public string profileKey;
         public int authoredMask;
         public int presetMask;
 
         public void ExposeData()
         {
+            Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
             Scribe_Values.Look(ref id, "id");
             Scribe_Values.Look(ref name, "name");
             Scribe_Values.Look(ref sourceCultureDefName,
                 "sourceCultureDefName");
             Scribe_Values.Look(ref gatheringKey, "gatheringKey");
+            Scribe_Values.Look(ref hospitalityKey, "hospitalityKey");
+            Scribe_Values.Look(ref mealsKey, "mealsKey");
+            Scribe_Values.Look(ref remembranceKey, "remembranceKey");
             Scribe_Values.Look(ref presetName, "presetName");
+            Scribe_Values.Look(ref profileKey, "profileKey");
             Scribe_Values.Look(ref authoredMask, "authoredMask", 0);
             Scribe_Values.Look(ref presetMask, "presetMask", 0);
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+                CACultureModel.Migrate(this);
         }
 
         internal CACulture Copy()
         {
             return new CACulture
             {
+                schemaVersion = schemaVersion,
                 id = id,
                 name = name,
                 sourceCultureDefName = sourceCultureDefName,
                 gatheringKey = gatheringKey,
+                hospitalityKey = hospitalityKey,
+                mealsKey = mealsKey,
+                remembranceKey = remembranceKey,
                 presetName = presetName,
+                profileKey = profileKey,
                 authoredMask = authoredMask,
                 presetMask = presetMask
             };
+        }
+
+        internal void CopyFrom(CACulture source)
+        {
+            if (source == null) return;
+            schemaVersion = CurrentSchemaVersion;
+            id = source.id;
+            name = source.name;
+            sourceCultureDefName = source.sourceCultureDefName;
+            gatheringKey = source.gatheringKey;
+            hospitalityKey = source.hospitalityKey;
+            mealsKey = source.mealsKey;
+            remembranceKey = source.remembranceKey;
+            presetName = source.presetName;
+            profileKey = source.profileKey;
+            authoredMask = source.authoredMask;
+            presetMask = source.presetMask;
         }
 
         internal bool Authored(int field)
@@ -60,8 +98,8 @@ namespace ColonistAwareness
             Set(field, value);
             authoredMask |= field;
             presetMask &= ~field;
-            if (!CACultureModel.PresetStillDescribes(this))
-                presetName = null;
+            profileKey = null;
+            presetName = null;
         }
 
         internal void Set(int field, string value)
@@ -72,7 +110,19 @@ namespace ColonistAwareness
                 case SourceCultureField:
                     sourceCultureDefName = value; break;
                 case GatheringField: gatheringKey = value; break;
+                case HospitalityField: hospitalityKey = value; break;
+                case MealsField: mealsKey = value; break;
+                case RemembranceField: remembranceKey = value; break;
             }
+        }
+
+        internal void Release(int field)
+        {
+            Set(field, null);
+            authoredMask &= ~field;
+            presetMask &= ~field;
+            presetName = null;
+            profileKey = null;
         }
 
         internal string Value(int field)
@@ -82,6 +132,9 @@ namespace ColonistAwareness
                 case NameField: return name;
                 case SourceCultureField: return sourceCultureDefName;
                 case GatheringField: return gatheringKey;
+                case HospitalityField: return hospitalityKey;
+                case MealsField: return mealsKey;
+                case RemembranceField: return remembranceKey;
                 default: return null;
             }
         }
@@ -91,80 +144,328 @@ namespace ColonistAwareness
     // disagreement is readable without collapsing the two persisted states.
     public sealed class CAPoliticalBeliefs : IExposable
     {
+        public const int CurrentSchemaVersion = 2;
+        public int schemaVersion = CurrentSchemaVersion;
         public string id;
         public string presetName;
+        public string profileKey;
         public List<CAAxisEntry> positions = new List<CAAxisEntry>();
         public void ExposeData()
         {
+            Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
             Scribe_Values.Look(ref id, "id");
             Scribe_Values.Look(ref presetName, "presetName");
+            Scribe_Values.Look(ref profileKey, "profileKey");
             Scribe_Collections.Look(ref positions, "positions", LookMode.Deep);
             if (positions == null) positions = new List<CAAxisEntry>();
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+                CAPoliticalBeliefsModel.Migrate(this);
         }
 
         internal CAPoliticalBeliefs Copy()
         {
             return new CAPoliticalBeliefs
             {
+                schemaVersion = schemaVersion,
                 id = id,
                 presetName = presetName,
+                profileKey = profileKey,
                 positions = CAFactionStartingState.CopyAxes(positions)
             };
         }
+
+        internal void CopyFrom(CAPoliticalBeliefs source)
+        {
+            if (source == null) return;
+            schemaVersion = CurrentSchemaVersion;
+            id = source.id;
+            presetName = source.presetName;
+            profileKey = source.profileKey;
+            positions = CAFactionStartingState.CopyAxes(source.positions);
+        }
+    }
+
+    internal sealed class CACultureOptionDef
+    {
+        internal string Key;
+        internal string Label;
+        internal string Summary;
+        internal string Consumer;
+        internal string ThingDefName;
+        internal string StuffDefName;
+    }
+
+    internal sealed class CACultureDomainDef
+    {
+        internal int Field;
+        internal string Key;
+        internal string Label;
+        internal string Question;
+        internal CACultureOptionDef[] Options;
     }
 
     internal sealed class CACulturePreset
     {
-        internal string Name;
+        internal string Key;
+        internal string Label;
+        internal string[] Aliases;
         internal string Description;
-        internal string Gathering;
         internal string IconPath;
+        internal Dictionary<int, string> Positions =
+            new Dictionary<int, string>();
     }
 
     internal static class CACultureModel
     {
+        internal static readonly CACultureDomainDef[] Domains =
+        {
+            new CACultureDomainDef
+            {
+                Field = CACulture.GatheringField, Key = "gathering",
+                Label = "Public gathering",
+                Question = "Where do people normally gather in public?",
+                Options = new[]
+                {
+                    OptionDef("hearth", "Shared hearth",
+                        "Meetings gather around a common fire.",
+                        "Adds a communal hearth.", "Campfire"),
+                    OptionDef("feast", "Festival ground",
+                        "Large shared meals anchor public occasions.",
+                        "Adds a large communal table.", "Table3x3c", "WoodLog"),
+                    OptionDef("waymeet", "Roadside meeting place",
+                        "Travel routes and open meeting grounds anchor gatherings.",
+                        "Adds an outdoor meeting game.", "HorseshoesPin"),
+                    OptionDef("memorial", "Memorial ground",
+                        "Public remembrance provides the usual meeting place.",
+                        "Adds a carved public memorial.", "SculptureSmall",
+                        "BlocksGranite")
+                }
+            },
+            new CACultureDomainDef
+            {
+                Field = CACulture.HospitalityField, Key = "hospitality",
+                Label = "Hospitality",
+                Question = "What space is normally kept for visitors?",
+                Options = new[]
+                {
+                    OptionDef("guest_bedding", "Guest bedding",
+                        "Visitors are offered a place to sleep.",
+                        "Adds a guest bedroll.", "Bedroll", "Cloth"),
+                    OptionDef("open_seating", "Open seating",
+                        "Simple seats are kept for whoever arrives.",
+                        "Adds a plain visitor seat.", "Stool", "WoodLog"),
+                    OptionDef("hosted_seating", "Hosted seating",
+                        "Visitors are received at a prepared seat.",
+                        "Adds a dining chair for receiving guests.",
+                        "DiningChair", "WoodLog"),
+                    OptionDef("private_receiving", "Private receiving place",
+                        "Guests are received in a quieter furnished place.",
+                        "Adds a comfortable receiving chair.", "Armchair", "Cloth")
+                }
+            },
+            new CACultureDomainDef
+            {
+                Field = CACulture.MealsField, Key = "meals",
+                Label = "Shared meals",
+                Question = "How are ordinary shared meals arranged?",
+                Options = new[]
+                {
+                    OptionDef("household_tables", "Household tables",
+                        "Small groups normally eat together.",
+                        "Adds a small dining table.", "Table2x2c", "WoodLog"),
+                    OptionDef("common_table", "Common table",
+                        "The larger group normally eats together.",
+                        "Adds a large dining table.", "Table3x3c", "WoodLog"),
+                    OptionDef("fireside_meals", "Fireside meals",
+                        "Food is commonly shared around an open fire.",
+                        "Adds a cooking and eating fire.", "Campfire")
+                }
+            },
+            new CACultureDomainDef
+            {
+                Field = CACulture.RemembranceField, Key = "remembrance",
+                Label = "Public memory",
+                Question = "How is shared history marked in settlement space?",
+                Options = new[]
+                {
+                    OptionDef("carved_memory", "Carved memorials",
+                        "Shared history is marked with public art.",
+                        "Adds a small stone sculpture.", "SculptureSmall",
+                        "BlocksGranite"),
+                    OptionDef("burial_memory", "Burial memorials",
+                        "The dead and the past are marked at a formal tomb.",
+                        "Adds a stone sarcophagus.", "Sarcophagus",
+                        "BlocksGranite"),
+                    OptionDef("assembly_marker", "Assembly marker",
+                        "Public occasions themselves keep memory alive.",
+                        "Adds a designated gathering place.", "PartySpot")
+                }
+            }
+        };
+
+        private static CACultureOptionDef OptionDef(string key,
+            string label, string summary, string consumer, string thingDef,
+            string stuffDef = null)
+        {
+            return new CACultureOptionDef
+            {
+                Key = key, Label = label, Summary = summary,
+                Consumer = consumer, ThingDefName = thingDef,
+                StuffDefName = stuffDef
+            };
+        }
+
+        private static Dictionary<int, string> ProfilePositions(
+            string visualStyle, string gathering, string hospitality,
+            string meals, string remembrance)
+        {
+            return new Dictionary<int, string>
+            {
+                { CACulture.SourceCultureField, visualStyle },
+                { CACulture.GatheringField, gathering },
+                { CACulture.HospitalityField, hospitality },
+                { CACulture.MealsField, meals },
+                { CACulture.RemembranceField, remembrance }
+            };
+        }
         internal static readonly CACulturePreset[] Presets =
         {
             new CACulturePreset
             {
-                Name = "Hearth customs",
-                Description = "Shared meals and meetings gather around the "
-                    + "settlement hearth.",
-                Gathering = "hearth",
+                Key = "hearth_common", Label = "Hearth commons",
+                Aliases = new[] { "Hearth customs" },
+                Description = "A settled communal tradition centered on a "
+                    + "shared hearth, common table, guest bedding, and carved memory.",
+                Positions = ProfilePositions("Rustican", "hearth",
+                    "guest_bedding", "common_table", "carved_memory"),
                 IconPath = "Rimshare/WorldMapIcons/flowers"
             },
             new CACulturePreset
             {
-                Name = "Traveling customs",
-                Description = "Gatherings are held at roads, camps, and "
-                    + "meeting places used by travelers.",
-                Gathering = "waymeet",
+                Key = "road_exchange", Label = "Road exchange",
+                Aliases = new[] { "Traveling customs" },
+                Description = "An itinerant tradition of roadside meetings, "
+                    + "open hospitality, fireside meals, and remembered assemblies.",
+                Positions = ProfilePositions("Corunan", "waymeet",
+                    "open_seating", "fireside_meals", "assembly_marker"),
                 IconPath = "Rimshare/WorldMapIcons/compass"
             },
             new CACulturePreset
             {
-                Name = "Memorial customs",
-                Description = "Public memory and memorial gatherings anchor "
-                    + "community life.",
-                Gathering = "memorial",
+                Key = "memorial_households", Label = "Memorial households",
+                Aliases = new[] { "Memorial customs" },
+                Description = "Household meals and private hospitality gather "
+                    + "around memorial grounds and formal remembrance.",
+                Positions = ProfilePositions("Sophian", "memorial",
+                    "private_receiving", "household_tables", "burial_memory"),
                 IconPath = "Rimshare/WorldMapIcons/feather"
             },
             new CACulturePreset
             {
-                Name = "Festival customs",
-                Description = "Communal feasts and festivals mark shared "
-                    + "occasions.",
-                Gathering = "feast",
+                Key = "festival_market", Label = "Festival market",
+                Aliases = new[] { "Festival customs" },
+                Description = "Large feasts, prepared hospitality, common "
+                    + "tables, and recurring assemblies shape public life.",
+                Positions = ProfilePositions("Astropolitan", "feast",
+                    "hosted_seating", "common_table", "assembly_marker"),
                 IconPath = "Rimshare/WorldMapIcons/carnival-mask"
             }
         };
 
-        internal static readonly string[] GatheringKeys =
-        { "hearth", "feast", "waymeet", "memorial" };
+        internal static CACultureDomainDef Domain(string key)
+        {
+            return Domains.FirstOrDefault(item => item.Key == key);
+        }
+
+        internal static CACultureDomainDef Domain(int field)
+        {
+            return Domains.FirstOrDefault(item => item.Field == field);
+        }
+
+        internal static string[] Keys(string domain)
+        {
+            return Domain(domain)?.Options.Select(item => item.Key).ToArray()
+                ?? new string[0];
+        }
+
+        internal static CACultureOptionDef Option(int field, string key)
+        {
+            return Domain(field)?.Options.FirstOrDefault(item => item.Key == key);
+        }
+
+        private static string StableOptionKey(CACultureDomainDef domain,
+            string value)
+        {
+            if (domain == null || value.NullOrEmpty()) return value;
+            CACultureOptionDef direct = domain.Options.FirstOrDefault(item =>
+                item.Key == value);
+            if (direct != null) return direct.Key;
+            CACultureOptionDef byLabel = domain.Options.FirstOrDefault(item =>
+                string.Equals(item.Label, value,
+                    StringComparison.OrdinalIgnoreCase));
+            if (byLabel != null) return byLabel.Key;
+            if (domain.Field == CACulture.GatheringField
+                && string.Equals(value, "meetings along the way",
+                    StringComparison.OrdinalIgnoreCase))
+                return "waymeet";
+            return value;
+        }
+
+        internal static string CompatibilityFailure(CACulture culture)
+        {
+            if (culture == null) return "No culture is recorded.";
+            if (!culture.sourceCultureDefName.NullOrEmpty()
+                && NativeDef(culture) == null)
+                return "Visual style source '"
+                    + culture.sourceCultureDefName + "' is unavailable.";
+            foreach (CACultureDomainDef domain in Domains)
+            {
+                string key = culture.Value(domain.Field);
+                if (key.NullOrEmpty())
+                    return domain.Label + " has not been chosen.";
+                if (Option(domain.Field, key) == null)
+                    return domain.Label + " uses unavailable practice '"
+                        + key + "'.";
+            }
+            return null;
+        }
+
+        internal static CACulturePreset Preset(string keyOrAlias)
+        {
+            if (keyOrAlias.NullOrEmpty()) return null;
+            return Presets.FirstOrDefault(item => item.Key == keyOrAlias
+                || item.Label == keyOrAlias
+                || (item.Aliases?.Contains(keyOrAlias) ?? false));
+        }
+
+        internal static void Migrate(CACulture culture)
+        {
+            if (culture == null) return;
+            CACulturePreset preset = Preset(culture.presetName);
+            if (preset != null)
+            {
+                culture.presetName = preset.Key;
+                foreach (KeyValuePair<int, string> pair in preset.Positions)
+                {
+                    if (!culture.Value(pair.Key).NullOrEmpty()) continue;
+                    culture.Set(pair.Key, pair.Value);
+                    culture.presetMask |= pair.Key;
+                }
+            }
+            foreach (CACultureDomainDef domain in Domains)
+            {
+                string value = culture.Value(domain.Field);
+                string stable = StableOptionKey(domain, value);
+                if (stable != value) culture.Set(domain.Field, stable);
+            }
+            culture.schemaVersion = CACulture.CurrentSchemaVersion;
+        }
+
         internal static void EnsureGenerated(CACulture culture,
             string seed, CultureDef fallback)
         {
             if (culture == null) return;
+            Migrate(culture);
             int hash = GenText.StableStringHash(seed ?? "ca-culture");
             if (culture.id.NullOrEmpty())
                 culture.id = "culture:" + Math.Abs((long)hash);
@@ -174,71 +475,76 @@ namespace ColonistAwareness
                 culture.name = fallback != null
                     ? fallback.LabelCap + " customs"
                     : "Local customs";
-            Fill(ref culture.gatheringKey, GatheringKeys, hash, 17);
-        }
-
-        private static void Fill(ref string value, string[] choices,
-            int hash, int salt)
-        {
-            if (!value.NullOrEmpty()) return;
-            int index = (int)(Math.Abs((long)Gen.HashCombineInt(hash, salt))
-                % choices.Length);
-            value = choices[index];
+            for (int i = 0; i < Domains.Length; i++)
+            {
+                CACultureDomainDef domain = Domains[i];
+                if (!culture.Value(domain.Field).NullOrEmpty()) continue;
+                int index = (int)(Math.Abs((long)Gen.HashCombineInt(hash,
+                    17 + i * 43)) % domain.Options.Length);
+                culture.Set(domain.Field, domain.Options[index].Key);
+            }
         }
 
         internal static void ApplyPreset(CACulture culture,
             CACulturePreset preset)
         {
             if (culture == null || preset == null) return;
-            culture.presetName = preset.Name;
-            culture.Set(CACulture.GatheringField, preset.Gathering);
-            culture.authoredMask &= ~CACulture.GatheringField;
-            culture.presetMask |= CACulture.GatheringField;
+            culture.presetName = preset.Key;
+            culture.profileKey = null;
+            foreach (KeyValuePair<int, string> pair in preset.Positions)
+            {
+                culture.Set(pair.Key, pair.Value);
+                culture.authoredMask &= ~pair.Key;
+                culture.presetMask |= pair.Key;
+            }
         }
 
         internal static bool PresetStillDescribes(CACulture culture)
         {
             if (culture == null || culture.presetName.NullOrEmpty())
                 return true;
-            CACulturePreset preset = Presets.FirstOrDefault(item =>
-                item.Name == culture.presetName);
+            CACulturePreset preset = Preset(culture.presetName);
             if (preset == null) return false;
-            return culture.gatheringKey == preset.Gathering;
+            return preset.Positions.All(pair =>
+                culture.Value(pair.Key) == pair.Value);
         }
 
         internal static bool UsesPreset(CACulture culture,
             CACulturePreset preset)
         {
             return culture != null && preset != null
-                && culture.presetName == preset.Name
+                && Preset(culture.presetName)?.Key == preset.Key
                 && PresetStillDescribes(culture);
         }
 
         internal static string Words(string domain, string key)
         {
-            if (domain == "gathering")
-            {
-                if (key == "feast") return "communal feasts";
-                if (key == "waymeet") return "meetings along the way";
-                if (key == "memorial") return "memorial gatherings";
-                return "the shared hearth";
-            }
-            return key ?? "not set";
+            CACultureDomainDef def = Domain(domain);
+            return def?.Options.FirstOrDefault(item => item.Key == key)?.Label
+                ?? (key.NullOrEmpty() ? "No custom chosen" : key);
         }
 
         internal static string Summary(CACulture culture)
         {
             if (culture == null) return "Culture not set";
             CultureDef source = NativeDef(culture);
-            return (source?.LabelCap.ToString() ?? "Generated")
-                + " styles · "
-                + Words("gathering", culture.gatheringKey);
+            string compact = CAAuthoringChoices.CultureIdentity(culture)
+                + " · "
+                + (source?.LabelCap.ToString() ?? "Generated")
+                + " visual style";
+            string standard = compact + " · "
+                + Words("gathering", culture.gatheringKey) + " · "
+                + Words("meals", culture.mealsKey);
+            string expanded = standard + " · "
+                + Words("hospitality", culture.hospitalityKey) + " · "
+                + Words("remembrance", culture.remembranceKey);
+            return CAInformationPresentation.Select(compact, standard,
+                expanded);
         }
 
         internal static Texture2D Icon(CACulture culture)
         {
-            CACulturePreset preset = Presets.FirstOrDefault(item =>
-                item.Name == culture?.presetName);
+            CACulturePreset preset = Preset(culture?.presetName);
             if (preset != null)
                 return ContentFinder<Texture2D>.Get(preset.IconPath);
             CultureDef native = NativeDef(culture);
@@ -258,10 +564,20 @@ namespace ColonistAwareness
 
     internal static class CAPoliticalBeliefsModel
     {
+        internal static void Migrate(CAPoliticalBeliefs beliefs)
+        {
+            if (beliefs == null) return;
+            CAFactionAxes.PoliticalPreset preset =
+                CAFactionAxes.Preset(beliefs.presetName);
+            if (preset != null) beliefs.presetName = preset.Key;
+            beliefs.schemaVersion = CAPoliticalBeliefs.CurrentSchemaVersion;
+        }
+
         internal static void Ensure(CAPoliticalBeliefs beliefs,
             string seed)
         {
             if (beliefs == null) return;
+            Migrate(beliefs);
             if (beliefs.id.NullOrEmpty())
                 beliefs.id = "politics:" + Math.Abs((long)
                     GenText.StableStringHash(seed ?? "ca-politics"));
@@ -297,7 +613,8 @@ namespace ColonistAwareness
                     == (byte)CAAxisSource.Preset)
                     entry.source = (byte)CAAxisSource.Unset;
             ApplyPresetLayer(beliefs, preset);
-            beliefs.presetName = preset.Name;
+            beliefs.presetName = preset.Key;
+            beliefs.profileKey = null;
         }
 
         // Choosing a preset is one explicit authoring transition. It replaces
@@ -311,7 +628,8 @@ namespace ColonistAwareness
             Ensure(beliefs, seed);
             beliefs.positions.Clear();
             ApplyPresetLayer(beliefs, preset);
-            beliefs.presetName = preset.Name;
+            beliefs.presetName = preset.Key;
+            beliefs.profileKey = null;
             GenerateUnset(beliefs, seed + ":preset-fill");
         }
 
@@ -319,7 +637,7 @@ namespace ColonistAwareness
             CAFactionAxes.PoliticalPreset preset)
         {
             return beliefs != null && preset != null
-                && beliefs.presetName == preset.Name
+                && CAFactionAxes.Preset(beliefs.presetName)?.Key == preset.Key
                 && PresetStillDescribes(beliefs);
         }
 
@@ -329,8 +647,8 @@ namespace ColonistAwareness
         {
             if (preset.Parent != null)
             {
-                CAFactionAxes.PoliticalPreset parent = CAFactionAxes.Presets
-                    .FirstOrDefault(item => item.Name == preset.Parent);
+                CAFactionAxes.PoliticalPreset parent =
+                    CAFactionAxes.Preset(preset.Parent);
                 if (parent != null) ApplyPresetLayer(beliefs, parent);
             }
             foreach (KeyValuePair<string, string> position in
@@ -348,8 +666,8 @@ namespace ColonistAwareness
         {
             CAFactionAxes.Set(beliefs.positions, axisKey, optionKey,
                 CAAxisSource.Authored);
-            if (!PresetStillDescribes(beliefs))
-                beliefs.presetName = null;
+            beliefs.profileKey = null;
+            beliefs.presetName = null;
         }
 
         internal static void Release(CAPoliticalBeliefs beliefs,
@@ -357,8 +675,8 @@ namespace ColonistAwareness
         {
             if (beliefs == null) return;
             CAFactionAxes.Release(beliefs.positions, axisKey);
-            if (!PresetStillDescribes(beliefs))
-                beliefs.presetName = null;
+            beliefs.profileKey = null;
+            beliefs.presetName = null;
         }
 
         private static bool PresetStillDescribes(
@@ -366,9 +684,8 @@ namespace ColonistAwareness
         {
             if (beliefs == null
                 || beliefs.presetName.NullOrEmpty()) return true;
-            CAFactionAxes.PoliticalPreset preset = CAFactionAxes.Presets
-                .FirstOrDefault(item => item.Name
-                    == beliefs.presetName);
+            CAFactionAxes.PoliticalPreset preset =
+                CAFactionAxes.Preset(beliefs.presetName);
             if (preset == null) return false;
             var expected = new Dictionary<string, string>();
             CollectPreset(preset, expected);
@@ -384,8 +701,8 @@ namespace ColonistAwareness
         {
             if (preset.Parent != null)
             {
-                CAFactionAxes.PoliticalPreset parent = CAFactionAxes.Presets
-                    .FirstOrDefault(item => item.Name == preset.Parent);
+                CAFactionAxes.PoliticalPreset parent =
+                    CAFactionAxes.Preset(preset.Parent);
                 if (parent != null) CollectPreset(parent, expected);
             }
             foreach (KeyValuePair<string, string> pair in preset.Positions)
@@ -395,9 +712,7 @@ namespace ColonistAwareness
         internal static string Summary(CAPoliticalBeliefs beliefs)
         {
             if (beliefs == null) return "Political beliefs not set";
-            string preset = beliefs.presetName.NullOrEmpty()
-                ? "Custom political beliefs"
-                : beliefs.presetName;
+            string preset = CAAuthoringChoices.PoliticalIdentity(beliefs);
             string leadership = CAFactionAxes.OptionOf(beliefs.positions,
                 CAFactionAxes.Leadership)?.Label;
             string ownership = CAFactionAxes.OptionOf(beliefs.positions,
@@ -567,31 +882,51 @@ namespace ColonistAwareness
             CACulture culture = CultureFor(record);
             if (culture == null || next == null || place == null)
                 return;
-            string defName;
-            string stuff = null;
-            switch (culture.gatheringKey)
+            string incompatibility = CACultureModel.CompatibilityFailure(
+                culture);
+            if (!incompatibility.NullOrEmpty())
             {
-                case "feast":
-                    defName = "Table3x3c";
-                    stuff = "WoodLog";
-                    break;
-                case "waymeet":
-                    defName = "HorseshoesPin";
-                    break;
-                case "memorial":
-                    defName = "SculptureSmall";
-                    stuff = "BlocksGranite";
-                    break;
-                default:
-                    defName = "Campfire";
-                    break;
+                Log.Warning("[CA][Culture] "
+                    + (record.name ?? "settlement")
+                    + " cannot materialize culture: " + incompatibility);
+                return;
             }
-            int laid = place(next(), defName, stuff);
-            if (laid > 0)
-                Log.Message("[CA][Culture] " + (record.name ?? "settlement")
-                    + " materialized " + culture.gatheringKey
-                    + " custom for " + (culture.name ?? "its culture")
-                    + " as " + defName + ".");
+            int laid = 0;
+            foreach (CACultureDomainDef domain in CACultureModel.Domains)
+            {
+                CACultureOptionDef option = CACultureModel.Option(
+                    domain.Field, culture.Value(domain.Field));
+                if (option == null || option.ThingDefName.NullOrEmpty())
+                    continue;
+                try
+                {
+                    Room room = next();
+                    int placed = place(room, option.ThingDefName,
+                        option.StuffDefName);
+                    laid += placed;
+                    if (placed > 0)
+                        Log.Message("[CA][Culture] "
+                            + (record.name ?? "settlement")
+                            + " materialized " + domain.Key + "="
+                            + option.Key + " as " + option.ThingDefName
+                            + ".");
+                    else
+                        Log.Warning("[CA][Culture] "
+                            + (record.name ?? "settlement")
+                            + " had no valid place for " + domain.Label
+                            + " (" + option.ThingDefName + ").");
+                }
+                catch (Exception exception)
+                {
+                    Log.Warning("[CA][Culture] "
+                        + (record.name ?? "settlement") + " could not place "
+                        + domain.Label + ": " + exception.Message);
+                }
+            }
+            if (laid == 0)
+                Log.Warning("[CA][Culture] "
+                    + (record.name ?? "settlement")
+                    + " had cultural practices but no furnishing could be placed.");
         }
     }
 
@@ -637,6 +972,13 @@ namespace ColonistAwareness
                     ?? group.ResolvedFactionDef?.allowedCultures?
                         .FirstOrDefault());
             CAPoliticalBeliefsModel.Ensure(group.politicalBeliefs, seed);
+            if (!group.institutionalStateIncomplete)
+            {
+                CAPoliticalBeliefsModel.GenerateUnset(group.politicalBeliefs,
+                    seed + ":beliefs");
+                CAFactionStructureModel.GenerateUnset(group.factionStructure,
+                    group.politicalBeliefs, seed + ":structure");
+            }
         }
 
         internal static void ApplyPlan(Faction faction,
@@ -676,8 +1018,12 @@ namespace ColonistAwareness
         private readonly Action changed;
         private Vector2 scroll;
         private float viewHeight;
+        private int groupIndex;
+        private bool localExpanded;
 
-        public override Vector2 InitialSize => new Vector2(840f, 720f);
+        public override Vector2 InitialSize => new Vector2(
+            Mathf.Min(1080f, UI.screenWidth - 48f),
+            Mathf.Min(790f, UI.screenHeight - 48f));
 
         private Dialog_CAAxisEditor(CAPoliticalBeliefs beliefs,
             List<CAAxisEntry> structure, string seed, Action changed)
@@ -712,73 +1058,231 @@ namespace ColonistAwareness
             Text.Font = GameFont.Medium;
             Widgets.Label(new Rect(0f, 0f, inRect.width, 34f),
                 editingBeliefs ? "Political beliefs"
-                    : "Faction structure");
+                    : "Political beliefs and current structure");
             Text.Font = old;
             string description = editingBeliefs
-                ? "Preferred leadership, ownership, law, support, and "
-                    + "membership. Presets remain editable."
-                : "Current leadership, ownership, law, support, and "
-                    + "membership. May differ from political beliefs.";
+                ? CAInformationPresentation.Select(
+                    "Set what this population considers proper.",
+                    "Set preferred government, participation, property, "
+                        + "membership, support, and conflict positions.",
+                    "These are normative beliefs. Existing institutions may "
+                        + "agree or differ; landing terms are narrower still.",
+                    localExpanded)
+                : CAInformationPresentation.Select(
+                    "Compare preferred positions with institutions in force.",
+                    "Political beliefs state what should be proper. Current "
+                        + "structure records what this faction actually does.",
+                    "Each side is persisted and editable independently. "
+                        + "Generated structure leans toward belief without "
+                        + "being forced to match it.", localExpanded);
             float descriptionHeight = Text.CalcHeight(description,
                 inRect.width);
             Widgets.Label(new Rect(0f, 38f, inRect.width,
                 descriptionHeight), description);
             float y = 38f + descriptionHeight + 12f;
-            float buttonWidth = (inRect.width - 12f) / 2f;
-            if (editingBeliefs)
-            {
-                if (Widgets.ButtonText(new Rect(0f, y, buttonWidth, 30f),
-                        "Presets..."))
-                    OpenPoliticalPresets();
-                if (Widgets.ButtonText(new Rect(buttonWidth + 12f, y,
-                        buttonWidth, 30f), "Generate missing"))
+            y = DrawPoliticalActions(inRect, y, editingBeliefs);
+            string[] tabs = new[] { "Overview" }.Concat(
+                CAAuthoringChoices.PoliticalGroups.Select(item => item.Label))
+                .ToArray();
+            float tabHeight = CACreationUI.DrawSegmentRows(new Rect(0f, y,
+                inRect.width, 30f), tabs, groupIndex, value =>
                 {
-                    CAPoliticalBeliefsModel.GenerateUnset(beliefs,
-                        seed + ":fill");
-                    changed?.Invoke();
-                }
-            }
-            else
-            {
-                if (Widgets.ButtonText(new Rect(0f, y, inRect.width, 30f),
-                        "Generate missing"))
-                {
-                    CAFactionStructureModel.GenerateUnset(structure, beliefs,
-                        seed + ":structure-fill");
-                    changed?.Invoke();
-                }
-            }
-            y += 40f;
+                    groupIndex = value;
+                    scroll = Vector2.zero;
+                }, 165f);
+            y += tabHeight + 10f;
             Rect outRect = new Rect(0f, y, inRect.width,
                 inRect.height - y - 48f);
             Rect view = new Rect(0f, 0f, outRect.width - 18f,
                 Math.Max(viewHeight, outRect.height));
             Widgets.BeginScrollView(outRect, ref scroll, view);
             float rowY = 0f;
-            List<CAAxisEntry> target = editingBeliefs
-                ? beliefs.positions : structure;
-            foreach (CAAxisDef def in CAFactionAxes.Axes)
-            {
-                Widgets.Label(new Rect(0f, rowY + 3f, 205f, 28f),
-                    def.Label);
-                CAAxisOption selected = CAFactionAxes.OptionOf(target,
-                    def.Key);
-                CAAxisSource state = CAFactionAxes.StateOf(target, def.Key);
-                Rect valueRect = new Rect(210f, rowY,
-                    view.width - 306f, 30f);
-                if (Widgets.ButtonText(valueRect, selected?.Label
-                        .CapitalizeFirst() ?? "Not set"))
-                    OpenAxis(def, target, editingBeliefs);
-                CACreationUI.DrawChip(new Rect(view.width - 88f,
-                    rowY + 5f, 88f, 20f),
-                    CACreationUI.SourceWords(state),
-                    CACreationUI.SourceColor(state));
-                TooltipHandler.TipRegion(valueRect, def.Question
-                    + (selected == null ? "" : "\n\n" + selected.Words));
-                rowY += 38f;
-            }
+            if (groupIndex == 0)
+                DrawPoliticalOverview(ref rowY, view.width, editingBeliefs);
+            else
+                DrawPoliticalGroup(ref rowY, view.width,
+                    CAAuthoringChoices.PoliticalGroups[groupIndex - 1],
+                    editingBeliefs);
             viewHeight = rowY + 8f;
             Widgets.EndScrollView();
+            CAInformationPresentation.DrawLocalExpansion(new Rect(
+                inRect.width - 160f, inRect.height - 38f, 160f, 28f),
+                ref localExpanded);
+        }
+
+        private float DrawPoliticalActions(Rect inRect, float y,
+            bool editingBeliefs)
+        {
+            var labels = new List<string> { "Profiles...", "Save profile...",
+                "Manage saved...", "Generate missing" };
+            var actions = new List<Action>
+            {
+                OpenPoliticalPresets, SavePoliticalProfile,
+                () => Find.WindowStack.Add(new Dialog_CAProfileManager(
+                    null, beliefs, changed)),
+                () =>
+                {
+                    CAPoliticalBeliefsModel.GenerateUnset(beliefs,
+                        seed + ":beliefs-fill");
+                    if (!editingBeliefs)
+                        CAFactionStructureModel.GenerateUnset(structure,
+                            beliefs, seed + ":structure-fill");
+                    changed?.Invoke();
+                }
+            };
+            int columns = inRect.width >= 720f ? 4 : 2;
+            float gap = 6f;
+            float width = (inRect.width - gap * (columns - 1)) / columns;
+            int rows = (labels.Count + columns - 1) / columns;
+            for (int i = 0; i < labels.Count; i++)
+            {
+                int row = i / columns;
+                int column = i % columns;
+                if (Widgets.ButtonText(new Rect(column * (width + gap),
+                        y + row * 36f, width, 30f), labels[i]))
+                    actions[i]();
+            }
+            return y + rows * 36f + 4f;
+        }
+
+        private void DrawPoliticalOverview(ref float y, float width,
+            bool beliefsOnly)
+        {
+            string fingerprint = CAAuthoringChoices.PoliticalFingerprint(
+                beliefs);
+            string profile = CAAuthoringChoices.PoliticalIdentity(beliefs);
+            DrawText(ref y, width, profile + "\n" + fingerprint,
+                GameFont.Medium, Color.white);
+            if (beliefsOnly)
+            {
+                string set = CAFactionAxes.CountByState(beliefs.positions,
+                    CAAxisSource.Unset) == 0
+                    ? "All thirteen positions are set."
+                    : CAFactionAxes.CountByState(beliefs.positions,
+                        CAAxisSource.Unset) + " positions remain unset.";
+                DrawText(ref y, width, set, GameFont.Small,
+                    new Color(0.72f, 0.76f, 0.81f));
+            }
+            else
+            {
+                List<string> tensions = CAFactionStructureModel.Tensions(
+                    beliefs, structure);
+                DrawText(ref y, width, tensions.Count == 0
+                    ? "Belief and current structure are aligned on every set axis."
+                    : tensions.Count + " institutional tensions", GameFont.Small,
+                    tensions.Count == 0 ? CACreationUI.Authored
+                        : ColorLibrary.Yellow);
+                foreach (string tension in tensions)
+                    DrawText(ref y, width, "• " + tension, GameFont.Small,
+                        new Color(0.86f, 0.78f, 0.52f));
+            }
+            foreach (CAAxisGroupDef group in
+                CAAuthoringChoices.PoliticalGroups)
+            {
+                string summary = string.Join(" · ", group.Axes.Select(axis =>
+                    CAFactionAxes.OptionOf(beliefs.positions, axis)?.Label
+                        ?? "unset").ToArray());
+                DrawText(ref y, width, group.Label + ": " + summary,
+                    GameFont.Small, new Color(0.78f, 0.81f, 0.85f));
+            }
+        }
+
+        private void DrawPoliticalGroup(ref float y, float width,
+            CAAxisGroupDef group, bool beliefsOnly)
+        {
+            if (!beliefsOnly)
+            {
+                DrawText(ref y, width, "Preferred position"
+                    + new string(' ', 12) + "Current institution",
+                    GameFont.Tiny, ColoredText.SubtleGrayColor);
+            }
+            foreach (string axisKey in group.Axes)
+            {
+                CAAxisDef def = CAFactionAxes.AxisDef(axisKey);
+                DrawAxisRow(ref y, width, def, beliefsOnly);
+            }
+        }
+
+        private void DrawAxisRow(ref float y, float width, CAAxisDef def,
+            bool beliefsOnly)
+        {
+            Widgets.DrawAltRect(new Rect(0f, y, width, 1f));
+            float labelHeight = Text.CalcHeight(def.Label + " — "
+                + def.Question, width);
+            Widgets.Label(new Rect(0f, y + 4f, width, labelHeight),
+                def.Label + " — " + def.Question);
+            y += labelHeight + 8f;
+            if (beliefsOnly)
+            {
+                DrawPositionButton(ref y, width, def, beliefs.positions, true);
+            }
+            else
+            {
+                float half = (width - 12f) / 2f;
+                float leftY = y;
+                float rightY = y;
+                DrawPositionButton(ref leftY, half, def, beliefs.positions,
+                    true, 0f);
+                DrawPositionButton(ref rightY, half, def, structure, false,
+                    half + 12f);
+                y = Mathf.Max(leftY, rightY);
+                string preferred = CAFactionAxes.KeyOf(beliefs.positions,
+                    def.Key);
+                string current = CAFactionAxes.KeyOf(structure, def.Key);
+                Color relation = preferred.NullOrEmpty()
+                    || current.NullOrEmpty() ? CACreationUI.Unset
+                    : preferred == current ? CACreationUI.Authored
+                        : ColorLibrary.Yellow;
+                DrawText(ref y, width, preferred.NullOrEmpty()
+                        || current.NullOrEmpty() ? "Comparison incomplete"
+                        : preferred == current ? "Aligned"
+                            : "In tension: preferred "
+                                + (CAFactionAxes.OptionOf(beliefs.positions,
+                                    def.Key)?.Label ?? preferred)
+                                + "; current "
+                                + (CAFactionAxes.OptionOf(structure,
+                                    def.Key)?.Label ?? current) + ".",
+                    GameFont.Tiny, relation);
+            }
+            y += 8f;
+        }
+
+        private void DrawPositionButton(ref float y, float width,
+            CAAxisDef def, List<CAAxisEntry> target, bool belief,
+            float x = 0f)
+        {
+            CAAxisOption selected = CAFactionAxes.OptionOf(target, def.Key);
+            CAAxisSource state = CAFactionAxes.StateOf(target, def.Key);
+            Rect chip = new Rect(x, y + 5f, 84f, 20f);
+            CACreationUI.DrawChip(chip, CACreationUI.SourceWords(state),
+                CACreationUI.SourceColor(state));
+            Rect value = new Rect(x + 90f, y, width - 90f, 30f);
+            if (Widgets.ButtonText(value, selected?.Label.CapitalizeFirst()
+                    ?? "Choose position"))
+                OpenAxis(def, target, belief);
+            y += 36f;
+            if (CAInformationPresentation.Shows(CAInformationDetail.Standard,
+                    localExpanded) && selected != null)
+            {
+                float words = Text.CalcHeight(selected.Words, width);
+                GUI.color = new Color(0.72f, 0.76f, 0.81f);
+                Widgets.Label(new Rect(x, y, width, words), selected.Words);
+                GUI.color = Color.white;
+                y += words + 4f;
+            }
+        }
+
+        private static void DrawText(ref float y, float width, string value,
+            GameFont font, Color color)
+        {
+            GameFont previous = Text.Font;
+            Text.Font = font;
+            float height = Text.CalcHeight(value, width);
+            GUI.color = color;
+            Widgets.Label(new Rect(0f, y, width, height), value);
+            GUI.color = Color.white;
+            Text.Font = previous;
+            y += height + 8f;
         }
 
         private void OpenAxis(CAAxisDef def, List<CAAxisEntry> target,
@@ -819,7 +1323,7 @@ namespace ColonistAwareness
                 Summary = "No position is chosen. Generation may fill it "
                     + "later.",
                 Details = def.Question,
-                Badge = current == null ? "Current" : "Not set",
+                Badge = current == null ? "Current" : "Unset",
                 Accent = CACreationUI.Unset,
                 Selected = current == null,
                 ConfirmLabel = "Leave this unset",
@@ -837,35 +1341,28 @@ namespace ColonistAwareness
 
         private void OpenPoliticalPresets()
         {
-            var options = new List<CACreationChoice>();
-            foreach (CAFactionAxes.PoliticalPreset preset in
-                CAFactionAxes.Presets)
-            {
-                CAFactionAxes.PoliticalPreset local = preset;
-                options.Add(new CACreationChoice
+            CACreationUI.OpenChoices("Political profiles",
+                "Apply a built-in or saved set of preferred positions. "
+                    + "Every axis remains independently editable.",
+                CAAuthoringChoices.PoliticalProfiles(beliefs, seed, changed));
+        }
+
+        private void SavePoliticalProfile()
+        {
+            string initial = CAFactionAxes.Preset(beliefs?.presetName)?.Name
+                ?? "Saved political profile";
+            Find.WindowStack.Add(new Dialog_CAProfileName(
+                "Save political profile", initial, value =>
                 {
-                    Key = local.Name,
-                    Name = local.Name,
-                    Summary = CAPoliticalBeliefsModel.PresetTraits(local, 2),
-                    Traits = CAPoliticalBeliefsModel.PresetTraits(local, 4),
-                    Details = CAPoliticalBeliefsModel.PresetDetails(local),
-                    Badge = "Political preset",
-                    Icon = CAPoliticalBeliefsModel.Icon(local),
-                    Accent = CACreationUI.Preset,
-                    Selected = CAPoliticalBeliefsModel.UsesPreset(
-                        beliefs, local),
-                    ConfirmLabel = "Use these beliefs",
-                    Choose = delegate
+                    CAUserPoliticalProfile saved =
+                        CAAuthoringProfileLibrary.SavePolitics(value, beliefs);
+                    if (saved != null)
                     {
-                        CAPoliticalBeliefsModel.ChoosePreset(beliefs, local,
-                            seed + ":preset:" + local.Name);
-                        changed?.Invoke();
+                        beliefs.presetName = null;
+                        beliefs.profileKey = saved.key;
                     }
-                });
-            }
-            CACreationUI.OpenChoices("Political-belief presets",
-                "Apply a coherent set of positions. Every position remains "
-                + "editable after the preset is applied.", options);
+                    changed?.Invoke();
+                }));
         }
     }
 
@@ -874,8 +1371,14 @@ namespace ColonistAwareness
         private readonly CACulture culture;
         private readonly string factionLabel;
         private readonly Action changed;
+        private int section;
+        private bool localExpanded;
+        private Vector2 scroll;
+        private float viewHeight;
 
-        public override Vector2 InitialSize => new Vector2(720f, 570f);
+        public override Vector2 InitialSize => new Vector2(
+            Mathf.Min(980f, UI.screenWidth - 48f),
+            Mathf.Min(580f, UI.screenHeight - 48f));
 
         internal Dialog_CACultureEditor(CACulture culture,
             string factionLabel, Action changed)
@@ -904,118 +1407,226 @@ namespace ColonistAwareness
                 GUI.color = Color.white;
                 y += 28f;
             }
-            string description = "Culture controls styles and the gathering "
-                + "place. Ideoligion controls rituals.";
+            string description = CAInformationPresentation.Select(
+                "Set cultural practices and visual tradition.",
+                "Set cultural practices and the native visual style source. "
+                    + "Ideoligion separately owns memes, precepts, rituals, and roles.",
+                "These practices materialize settlement furnishings for public "
+                    + "gathering, hospitality, shared meals, and public memory. "
+                    + "Political beliefs and Ideoligion remain separate owners.",
+                localExpanded);
             float descriptionHeight = Text.CalcHeight(description,
                 inRect.width);
             Widgets.Label(new Rect(0f, y, inRect.width,
                 descriptionHeight), description);
             y += descriptionHeight + 12f;
 
-            Row(ref y, inRect.width, "Name",
-                culture.name ?? "Local customs", delegate
+            y = DrawActions(inRect, y);
+            string[] tabs = { "Overview", "Visual", "Gathering",
+                "Hospitality", "Meals", "Memory" };
+            float tabHeight = CACreationUI.DrawSegmentRows(new Rect(0f, y,
+                inRect.width, 30f), tabs, section, value =>
                 {
-                    Verse.Find.WindowStack.Add(new Dialog_CARenameCulture(
-                        culture, changed));
-                }, FieldState(CACulture.NameField));
-            CultureDef native = CACultureModel.NativeDef(culture);
-            Row(ref y, inRect.width, "Source culture",
-                native?.LabelCap.ToString() ?? "None", OpenSourceCulture,
-                FieldState(CACulture.SourceCultureField));
-            Row(ref y, inRect.width, "Preset",
-                culture.presetName ?? "Custom culture",
-                OpenCulturePreset, culture.presetName.NullOrEmpty()
-                    ? CAAxisSource.Authored : CAAxisSource.Preset);
-            Row(ref y, inRect.width, "Gathering place",
-                CACultureModel.Words("gathering", culture.gatheringKey),
-                () => OpenField(CACulture.GatheringField,
-                    "gathering", CACultureModel.GatheringKeys),
-                FieldState(CACulture.GatheringField));
-            Rect generate = new Rect(0f, y + 4f, 220f, 30f);
-            if (Widgets.ButtonText(generate, "Generate missing"))
+                    section = value;
+                    scroll = Vector2.zero;
+                }, 112f);
+            y += tabHeight + 10f;
+
+            Rect outRect = new Rect(0f, y, inRect.width,
+                inRect.height - y - 34f);
+            Rect view = new Rect(0f, 0f, outRect.width - 18f,
+                Mathf.Max(outRect.height, viewHeight));
+            Widgets.BeginScrollView(outRect, ref scroll, view);
+            float rowY = 0f;
+            if (section == 0) DrawOverview(ref rowY, view.width);
+            else if (section == 1) DrawVisual(ref rowY, view.width);
+            else
             {
-                CACultureModel.EnsureGenerated(culture,
-                    (culture.id ?? factionLabel ?? "ca-culture") + ":fill",
-                    CACultureModel.NativeDef(culture));
+                CACultureDomainDef domain = CACultureModel.Domains[section - 2];
+                DrawDomain(ref rowY, view.width, domain);
+            }
+            viewHeight = rowY + 12f;
+            Widgets.EndScrollView();
+            CAInformationPresentation.DrawLocalExpansion(new Rect(
+                inRect.width - 160f, inRect.height - 30f, 160f, 28f),
+                ref localExpanded);
+        }
+
+        private float DrawActions(Rect inRect, float y)
+        {
+            string[] labels = { "Profiles...", "Save profile...",
+                "Manage saved...", "Generate missing" };
+            Action[] actions = { OpenCulturePreset, SaveProfile,
+                () => Find.WindowStack.Add(new Dialog_CAProfileManager(
+                    culture, null, changed)), GenerateMissing };
+            int columns = inRect.width >= 700f ? 4 : 2;
+            float gap = 6f;
+            float width = (inRect.width - gap * (columns - 1)) / columns;
+            int rows = (labels.Length + columns - 1) / columns;
+            for (int i = 0; i < labels.Length; i++)
+            {
+                int row = i / columns;
+                int column = i % columns;
+                if (Widgets.ButtonText(new Rect(column * (width + gap),
+                        y + row * 36f, width, 30f), labels[i]))
+                    actions[i]();
+            }
+            return y + rows * 36f + 4f;
+        }
+
+        private void DrawOverview(ref float y, float width)
+        {
+            Row(ref y, width, "Name", culture.name ?? "Local customs",
+                () => Find.WindowStack.Add(new Dialog_CARenameCulture(
+                    culture, changed)), FieldState(CACulture.NameField));
+            CACulturePreset preset = CACultureModel.Preset(culture.presetName);
+            CAUserCultureProfile saved = CAAuthoringProfileLibrary.Cultures
+                .FirstOrDefault(item => item.key == culture.profileKey);
+            string profile = CAAuthoringChoices.CultureIdentity(culture);
+            Row(ref y, width, "Profile", profile, OpenCulturePreset,
+                saved != null ? CAAxisSource.Authored
+                    : preset != null ? CAAxisSource.Preset
+                        : CAAxisSource.Authored);
+            CultureDef native = CACultureModel.NativeDef(culture);
+            Row(ref y, width, "Visual style source",
+                native?.LabelCap.ToString() ?? "No source chosen",
+                OpenSourceCulture, FieldState(CACulture.SourceCultureField));
+            foreach (CACultureDomainDef domain in CACultureModel.Domains)
+                Row(ref y, width, domain.Label,
+                    CACultureModel.Words(domain.Key,
+                        culture.Value(domain.Field)),
+                    () => OpenField(domain), FieldState(domain.Field));
+        }
+
+        private void DrawVisual(ref float y, float width)
+        {
+            CultureDef native = CACultureModel.NativeDef(culture);
+            Row(ref y, width, "Native visual style source",
+                native?.LabelCap.ToString() ?? "No source chosen",
+                OpenSourceCulture, FieldState(CACulture.SourceCultureField));
+            DrawExplanation(ref y, width,
+                "This selects RimWorld's native ThingStyleDef categories. "
+                + "It does not define religious, moral, or political belief.");
+        }
+
+        private void DrawDomain(ref float y, float width,
+            CACultureDomainDef domain)
+        {
+            CACultureOptionDef option = CACultureModel.Option(domain.Field,
+                culture.Value(domain.Field));
+            Row(ref y, width, domain.Label,
+                option?.Label ?? "Choose a practice", () => OpenField(domain),
+                FieldState(domain.Field));
+            DrawExplanation(ref y, width, domain.Question + "\n\n"
+                + (option?.Summary ?? "No practice is currently set.")
+                + (CAInformationPresentation.Shows(
+                    CAInformationDetail.Standard, localExpanded)
+                        ? "\n\nDirect result: " + (option?.Consumer
+                            ?? "Generate the missing practice before materialization.")
+                        : ""));
+            if (Widgets.ButtonText(new Rect(0f, y, 220f, 30f),
+                    "Clear for generation"))
+            {
+                culture.Release(domain.Field);
                 changed?.Invoke();
             }
-            TooltipHandler.TipRegion(generate, "Generates culture fields that "
-                + "are not set. Existing choices remain unchanged.");
+            TooltipHandler.TipRegion(new Rect(0f, y, 220f, 30f),
+                "Removes this position. Generate missing can fill it without "
+                + "changing other authored practices.");
+            y += 40f;
+        }
+
+        private static void DrawExplanation(ref float y, float width,
+            string text)
+        {
+            float height = Text.CalcHeight(text, width);
+            GUI.color = new Color(0.72f, 0.76f, 0.81f);
+            Widgets.Label(new Rect(0f, y, width, height), text);
+            GUI.color = Color.white;
+            y += height + 12f;
         }
 
         private static void Row(ref float y, float width, string label,
             string value, Action edit, CAAxisSource source)
         {
-            const float labelWidth = 210f;
-            Widgets.Label(new Rect(0f, y + 5f, 112f, 28f),
-                label);
-            CACreationUI.DrawChip(new Rect(116f, y + 5f, 86f, 20f),
-                CACreationUI.SourceWords(source),
+            bool stacked = width < 580f;
+            float labelWidth = stacked ? width : Mathf.Min(250f, width * 0.34f);
+            float labelHeight = Mathf.Max(24f, Text.CalcHeight(label,
+                Mathf.Max(80f, labelWidth - 90f)));
+            Widgets.Label(new Rect(0f, y + 4f, labelWidth - 90f,
+                labelHeight), label);
+            CACreationUI.DrawChip(new Rect(labelWidth - 84f, y + 5f,
+                84f, 20f), CACreationUI.SourceWords(source),
                 CACreationUI.SourceColor(source));
-            if (Widgets.ButtonText(new Rect(labelWidth, y,
-                    width - labelWidth, 30f), value ?? "Not set"))
-                edit?.Invoke();
-            y += 38f;
+            Rect valueRect = stacked
+                ? new Rect(0f, y + labelHeight + 4f, width, 32f)
+                : new Rect(labelWidth + 8f, y, width - labelWidth - 8f,
+                    Mathf.Max(32f, labelHeight));
+            if (Widgets.ButtonText(valueRect, value ?? "Choose")) edit?.Invoke();
+            y = valueRect.yMax + 8f;
         }
 
-        private void OpenField(int field, string domain, string[] choices)
+        private void OpenField(CACultureDomainDef domain)
         {
             var options = new List<CACreationChoice>();
-            string current = culture.Value(field);
-            foreach (string choice in choices)
+            string current = culture.Value(domain.Field);
+            foreach (CACultureOptionDef option in domain.Options)
             {
-                string local = choice;
+                CACultureOptionDef local = option;
                 options.Add(new CACreationChoice
                 {
-                    Key = local,
-                    Name = CACultureModel.Words(domain, local)
-                        .CapitalizeFirst(),
-                    Summary = GatheringDescription(local),
-                    Badge = current == local ? "Current" : "Custom",
-                    Accent = current == local
+                    Key = local.Key,
+                    Name = local.Label,
+                    Summary = local.Summary,
+                    Traits = local.Consumer,
+                    Details = domain.Question,
+                    Badge = current == local.Key ? "Current" : "Practice",
+                    Accent = current == local.Key
                         ? CACreationUI.Authored : CACreationUI.Accent,
-                    Selected = current == local,
-                    ConfirmLabel = "Use this custom",
+                    Selected = current == local.Key,
+                    ConfirmLabel = "Use this practice",
                     Choose = delegate
                     {
-                        culture.Choose(field, local);
+                        culture.Choose(domain.Field, local.Key);
                         changed?.Invoke();
                     }
                 });
             }
-            CACreationUI.OpenChoices("Gathering place",
-                "Choose where public gatherings normally take place.",
-                options);
+            CACreationUI.OpenChoices(domain.Label, domain.Question, options);
         }
 
         private void OpenCulturePreset()
         {
-            var options = new List<CACreationChoice>();
-            foreach (CACulturePreset preset in CACultureModel.Presets)
-            {
-                CACulturePreset local = preset;
-                options.Add(new CACreationChoice
+            CACreationUI.OpenChoices("Culture profiles",
+                "Apply a built-in or saved set of practices. Every field "
+                    + "remains editable after values are copied into this draft.",
+                CAAuthoringChoices.CultureProfiles(culture,
+                    culture.id ?? factionLabel ?? "ca-culture", changed));
+        }
+
+        private void SaveProfile()
+        {
+            Find.WindowStack.Add(new Dialog_CAProfileName(
+                "Save culture profile", culture.name ?? "Saved culture",
+                value =>
                 {
-                    Key = local.Name,
-                    Name = local.Name,
-                    Summary = local.Description,
-                    Traits = CACultureModel.Words("gathering",
-                        local.Gathering),
-                    Badge = "Culture preset",
-                    Icon = ContentFinder<Texture2D>.Get(local.IconPath),
-                    Accent = CACreationUI.Preset,
-                    Selected = CACultureModel.UsesPreset(culture, local),
-                    ConfirmLabel = "Use this culture",
-                    Choose = delegate
+                    CAUserCultureProfile saved =
+                        CAAuthoringProfileLibrary.SaveCulture(value, culture);
+                    if (saved != null)
                     {
-                        CACultureModel.ApplyPreset(culture, local);
-                        changed?.Invoke();
+                        culture.presetName = null;
+                        culture.profileKey = saved.key;
                     }
-                });
-            }
-            CACreationUI.OpenChoices("Culture presets",
-                "Apply a starting set of customs. Each field remains "
-                + "editable.", options);
+                    changed?.Invoke();
+                }));
+        }
+
+        private void GenerateMissing()
+        {
+            CACultureModel.EnsureGenerated(culture,
+                (culture.id ?? factionLabel ?? "ca-culture") + ":fill",
+                CACultureModel.NativeDef(culture));
+            changed?.Invoke();
         }
 
         private void OpenSourceCulture()
@@ -1045,7 +1656,7 @@ namespace ColonistAwareness
                     }
                 });
             }
-            CACreationUI.OpenChoices("Source culture",
+            CACreationUI.OpenChoices("Visual style source",
                 "Choose the native RimWorld culture that supplies visual "
                 + "styles. This does not set Ideoligion or political belief.",
                 options);
@@ -1059,16 +1670,6 @@ namespace ColonistAwareness
                 ? CAAxisSource.Unset : CAAxisSource.Generated;
         }
 
-        private static string GatheringDescription(string key)
-        {
-            if (key == "feast")
-                return "Shared meals and public feasts anchor gatherings.";
-            if (key == "waymeet")
-                return "Travel routes, camps, and meeting places anchor gatherings.";
-            if (key == "memorial")
-                return "Memorials and public remembrance anchor gatherings.";
-            return "The settlement hearth anchors gatherings.";
-        }
     }
 
     internal sealed class Dialog_CARenameCulture : Window

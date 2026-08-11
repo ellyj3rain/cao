@@ -53,6 +53,8 @@ namespace ColonistAwareness
         private readonly CASettlementPopulationGroup population;
         private readonly Action changed;
         private readonly Action remove;
+        private Vector2 scroll;
+        private float viewHeight;
 
         internal Dialog_CAPopulationGroupEditor(CARegionalPlan plan,
             CARegionalSettlementPlan settlement,
@@ -87,14 +89,24 @@ namespace ColonistAwareness
                 population.label ?? "Population group");
             Text.Font = GameFont.Small;
             GUI.color = new Color(0.74f, 0.78f, 0.82f);
-            Widgets.Label(new Rect(0f, 38f, inRect.width, 44f),
-                "Set the group's size, settlement pattern, affiliation, "
-                + "Ideoligion, and political beliefs. Belief sources may "
-                + "follow affiliation or remain independent.");
+            const string introduction = "Set the group's size, settlement "
+                + "pattern, affiliation, Ideoligion, and political beliefs. "
+                + "Belief sources may follow affiliation or remain independent.";
+            float introductionHeight = Text.CalcHeight(introduction,
+                inRect.width);
+            Widgets.Label(new Rect(0f, 38f, inRect.width,
+                introductionHeight), introduction);
             GUI.color = Color.white;
 
-            float y = 92f;
             bool main = population.kind == CAPopulationGroupKind.Main;
+            float bodyTop = 38f + introductionHeight + 10f;
+            const float footerHeight = 55f;
+            Rect outRect = new Rect(0f, bodyTop, inRect.width,
+                Mathf.Max(80f, inRect.height - bodyTop - footerHeight));
+            Rect view = new Rect(0f, 0f, outRect.width - 18f,
+                Mathf.Max(outRect.height, viewHeight));
+            Widgets.BeginScrollView(outRect, ref scroll, view);
+            float y = 0f;
             if (!main)
             {
                 int otherShares = settlement.populationGroups.Where(item =>
@@ -109,11 +121,11 @@ namespace ColonistAwareness
                     .Where(value => value > 0 && value <= maximum)
                     .Distinct().OrderBy(value => value).ToArray();
                 if (shares.Length == 0)
-                    ReadOnlyRow(ref y, inRect.width, "Population share", "0%",
+                    ReadOnlyRow(ref y, view.width, "Population share", "0%",
                         "Other groups already use the available minority "
                             + "share. Reduce one of them or remove this group.");
                 else
-                    SegmentRow(ref y, inRect.width, "Population share",
+                    SegmentRow(ref y, view.width, "Population share",
                         "Share of this settlement's residents. At least 20% "
                             + "remains for the main population.",
                         shares.Select(value => value + "%").ToArray(),
@@ -124,12 +136,12 @@ namespace ColonistAwareness
                         });
             }
             else
-                ReadOnlyRow(ref y, inRect.width, "Population share",
+                ReadOnlyRow(ref y, view.width, "Population share",
                     population.share + "%",
                     "The main population receives the remainder after "
                     + "minority shares are set.");
 
-            SegmentRow(ref y, inRect.width, "Ideoligion certainty",
+            SegmentRow(ref y, view.width, "Ideoligion certainty",
                 "Directly changes conversion resistance.",
                 new[] { "Low", "Normal", "High" },
                 Mathf.Clamp(population.ideoligionCertainty, 0, 2), index =>
@@ -139,7 +151,7 @@ namespace ColonistAwareness
                 });
 
             if (!main)
-                SegmentRow(ref y, inRect.width, "Settlement pattern",
+                SegmentRow(ref y, view.width, "Settlement pattern",
                     "A separate quarter develops its local services separately.",
                     new[] { "Mixed throughout", "Separate quarter" },
                     population.quarter ? 1 : 0, index =>
@@ -148,31 +160,24 @@ namespace ColonistAwareness
                         MarkChanged();
                     });
 
-            ChoiceRow(ref y, inRect.width, "Faction affiliation",
+            ChoiceRow(ref y, view.width, "Faction affiliation",
                 AffiliationWords(),
                 "Membership only. Belief sources marked 'Follows affiliation' "
                     + "change with it.",
                 main ? null : OpenAffiliations,
                 main ? "Owned settlement" : "Chosen");
-            ChoiceRow(ref y, inRect.width, "Ideoligion",
+            ChoiceRow(ref y, view.width, "Ideoligion",
                 IdeoligionWords(),
                 "Sets religious and moral belief only.", OpenIdeoligions,
                 IdeoligionSourceState());
-            ChoiceRow(ref y, inRect.width, "Political beliefs",
+            ChoiceRow(ref y, view.width, "Political beliefs",
                 PoliticalWords(),
                 "Sets what this population considers proper; it does not "
                     + "change the settlement's realized order.", OpenPolitics,
                 PoliticalSourceState());
 
-            Rect summary = new Rect(0f, y + 8f, inRect.width,
-                Mathf.Min(90f, inRect.height - y - 72f));
-            Widgets.DrawLightHighlight(summary);
-            Text.Font = GameFont.Tiny;
-            Widgets.Label(summary.ContractedBy(10f),
-                "Affiliation: " + AffiliationWords()
-                + "\nIdeoligion: " + IdeoligionWords()
-                + "\nPolitical beliefs: " + PoliticalWords());
-            Text.Font = GameFont.Small;
+            viewHeight = y + 8f;
+            Widgets.EndScrollView();
 
             if (!main && remove != null)
             {
@@ -483,8 +488,8 @@ namespace ColonistAwareness
                     Summary = "Political beliefs of "
                         + CARegionalPlanUtility.FactionName(local) + ".",
                     Traits = CAPoliticalBeliefsModel.PresetTraits(
-                        CAFactionAxes.Presets.FirstOrDefault(item =>
-                            item.Name == local.politicalBeliefs?.presetName), 3),
+                        CAFactionAxes.Preset(
+                            local.politicalBeliefs?.presetName), 3),
                     Badge = "Political-belief source",
                     Icon = CAPoliticalBeliefsModel.Icon(local.politicalBeliefs),
                     Accent = CARegionalWorldOverlay.FactionColor(local.key),
@@ -511,6 +516,8 @@ namespace ColonistAwareness
         private readonly CARegionalPlan plan;
         private readonly CARegionalSettlementPlan settlement;
         private readonly Action changed;
+        private Vector2 scroll;
+        private float viewHeight;
 
         internal Dialog_CAStartingFacilities(CARegionalPlan plan,
             CARegionalSettlementPlan settlement, Action changed)
@@ -536,14 +543,19 @@ namespace ColonistAwareness
                 "Starting facilities");
             Text.Font = GameFont.Small;
             GUI.color = new Color(0.74f, 0.78f, 0.82f);
-            Widgets.Label(new Rect(0f, 38f, inRect.width, 44f),
-                "Generate facilities from realized settlement facts, or "
-                + "override individual programs. Each row owns one facility.");
+            const string introduction = "Generate facilities from realized "
+                + "settlement facts, or override individual programs. Each "
+                + "row owns one facility.";
+            float introductionHeight = Text.CalcHeight(introduction,
+                inRect.width);
+            Widgets.Label(new Rect(0f, 38f, inRect.width,
+                introductionHeight), introduction);
             GUI.color = Color.white;
-            if (Widgets.ButtonText(new Rect(0f, 86f, 210f, 32f),
+            float actionY = 38f + introductionHeight + 8f;
+            if (Widgets.ButtonText(new Rect(0f, actionY, 210f, 32f),
                     "Facility presets..."))
                 OpenPresets();
-            CACreationUI.DrawChip(new Rect(222f, 92f,
+            CACreationUI.DrawChip(new Rect(222f, actionY + 6f,
                 inRect.width - 222f, 20f),
                 settlement.startingFacilityAuthoredMask == 0
                     ? "Generated" : "Customized",
@@ -553,7 +565,13 @@ namespace ColonistAwareness
             int resolved = CASettlementStartingState.ResolveFacilityMask(plan,
                 settlement, plan.FactionPlan(settlement.factionKey)
                     ?.ResolvedFactionDef);
-            float y = 132f;
+            float bodyTop = actionY + 42f;
+            Rect outRect = new Rect(0f, bodyTop, inRect.width,
+                Mathf.Max(80f, inRect.height - bodyTop - 55f));
+            Rect view = new Rect(0f, 0f, outRect.width - 18f,
+                Mathf.Max(outRect.height, viewHeight));
+            Widgets.BeginScrollView(outRect, ref scroll, view);
+            float y = 0f;
             foreach (CAStartingFacilityCatalog.Program program
                 in CAStartingFacilityCatalog.All)
             {
@@ -573,7 +591,7 @@ namespace ColonistAwareness
                 Text.Font = GameFont.Small;
                 int selected = !authored ? 0 : included ? 1 : 2;
                 CACreationUI.DrawSegment(new Rect(320f, y + 5f,
-                    inRect.width - 320f, 34f),
+                    view.width - 320f, 34f),
                     new[] { "Generated", "Include", "Omit" }, selected,
                     index =>
                     {
@@ -584,6 +602,8 @@ namespace ColonistAwareness
                     });
                 y += 58f;
             }
+            viewHeight = y + 8f;
+            Widgets.EndScrollView();
         }
 
         private void OpenPresets()

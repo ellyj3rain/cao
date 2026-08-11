@@ -24,6 +24,8 @@ internal static class Program
             string founding = Read("PlayerFoundingPageModule.cs");
             string foundingState = Read("PlayerFoundingStateModule.cs");
             string culture = Read("FactionCultureBeliefsModule.cs");
+            string authoring = Read("AuthoringComposerSupportModule.cs");
+            string presentation = Read("AuthoringPresentationModule.cs");
 
             var report = new StringBuilder();
             Require(shared.Contains("Dialog_CACreationChoices")
@@ -43,7 +45,9 @@ internal static class Program
                 "creation-flow continuity is not visible across custom surfaces");
             Require(setup.Contains("InstallStartingRegionPage")
                 && founding.Contains("CAPlayerFoundingPageChainPatch")
-                && founding.Contains("editor.next = this"),
+                && founding.Contains("editor.next = this")
+                && founding.Contains("current is Page_ChooseIdeoPreset")
+                && founding.Contains("current.next = inserted"),
                 "page chain or native Ideoligion return path is missing");
             report.AppendLine("PASS continuous world-to-founding page chain");
 
@@ -68,10 +72,9 @@ internal static class Program
                     "retired mechanism-facing world label remains: " + label);
             report.AppendLine("PASS neutral causal World tendencies interaction");
 
-            Require(founding.Contains("\"Founding terms\"")
+            Require(founding.Contains("\"Rules at landing\"")
                 && !founding.Contains("\"Founding arrangement\"")
                 && founding.Contains("ReadAgainstPoliticalBeliefs")
-                && founding.Contains("arrangementScroll")
                 && founding.Contains("ComparisonHeight")
                 && !founding.Contains("Comparable("),
                 "founding terms do not use the exact belief/practice comparison");
@@ -81,9 +84,16 @@ internal static class Program
             Require(culture.Contains("CACreationUI.SourceWords")
                 && culture.Contains("PresetDetails")
                 && culture.Contains("ChoosePreset")
-                && founding.Contains("CAPoliticalBeliefsModel.ChoosePreset")
-                && culture.Contains("Dialog_CAAxisEditor"),
+                && authoring.Contains("CAPoliticalBeliefsModel.ChoosePreset")
+                && culture.Contains("Dialog_CAAxisEditor")
+                && authoring.Contains("CultureProfiles(")
+                && authoring.Contains("PoliticalProfiles("),
                 "shared political/culture editors do not expose source and preset detail");
+            Require(presentation.Contains("CAInformationDetail")
+                && presentation.Contains("DrawLocalExpansion")
+                && shared.Contains("rowHeights")
+                && !shared.Contains("132f"),
+                "information detail or responsive choice cards are incomplete");
             report.AppendLine("PASS founding belief-versus-practice interaction");
 
             Require(!region.Contains("new FloatMenu")

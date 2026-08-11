@@ -208,7 +208,7 @@ namespace ColonistAwareness
                 }
                 CACultureMaterialization.Furnish(record, Next,
                     (rm, def, stuff) => Place(org, record, map, rm,
-                        def, stuff));
+                        def, stuff, reportFailure: true));
                 Log.Message("[CA] " + (record.name ?? "settlement")
                     + " starting facilities: mask " + mask + ", tier "
                     + tier + ", " + record.seededAssets.Count + " assets");
@@ -223,7 +223,7 @@ namespace ColonistAwareness
         private static int Place(CAOrganization org,
             CARegionalSettlementRecord record, Map map, Room room,
             string defName, string stuffName, bool forPrisoners = false,
-            string providerKey = null)
+            string providerKey = null, bool reportFailure = false)
         {
             try
             {
@@ -255,7 +255,13 @@ namespace ColonistAwareness
                     + (providerKey ?? ""));
                 return 1;
             }
-            catch { return 0; }
+            catch (Exception exception)
+            {
+                if (reportFailure)
+                    throw new InvalidOperationException("could not place "
+                        + defName, exception);
+                return 0;
+            }
         }
 
         private static int Stock(CAOrganization org,

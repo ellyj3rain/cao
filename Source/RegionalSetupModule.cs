@@ -507,6 +507,10 @@ namespace ColonistAwareness
 
         // Current faction structure.
         public List<CAAxisEntry> factionStructure = new List<CAAxisEntry>();
+        // Explicit evidence-only state for a faction whose institutions are
+        // intentionally unknown. Established generated factions otherwise
+        // realize every institutional axis at initialization.
+        public bool institutionalStateIncomplete;
 
         // Default population culture and political beliefs. Ideoligion remains
         // native faction state. Population groups may carry different
@@ -545,6 +549,8 @@ namespace ColonistAwareness
                 "settlementAuthorityExplicit", false);
             Scribe_Collections.Look(ref factionStructure, "factionStructure",
                 LookMode.Deep);
+            Scribe_Values.Look(ref institutionalStateIncomplete,
+                "institutionalStateIncomplete", false);
             Scribe_Deep.Look(ref culture, "culture");
             Scribe_Deep.Look(ref politicalBeliefs,
                 "politicalBeliefs");
@@ -1494,6 +1500,17 @@ namespace ColonistAwareness
             if (!TryValidateDistinctFactionClaims(plan, out failure))
                 return false;
 
+            foreach (CARegionalFactionPlan group in plan.factions)
+            {
+                if (group == null) continue;
+                string cultureFailure = CACultureModel.CompatibilityFailure(
+                    group.culture);
+                if (cultureFailure.NullOrEmpty()) continue;
+                failure = "Culture for " + FactionName(group)
+                    + " cannot be used: " + cultureFailure;
+                return false;
+            }
+
             if (plan.playerFounding?.ArrangementChosen == true)
             {
                 CAFoundingArrangement founding = plan.playerFounding.arrangement;
@@ -2077,6 +2094,7 @@ namespace ColonistAwareness
         private static bool committing;
         private static int lastObservedSelection = -1;
         private static bool relocationConfirmationOpen;
+        private static Vector2 landingPanelScroll;
 
         // Chosen extent and orientation, held outside the plan so they survive
         // plan replacement.
@@ -2108,6 +2126,7 @@ namespace ColonistAwareness
             committing = false;
             relocationConfirmationOpen = false;
             lastObservedSelection = -1;
+            landingPanelScroll = Vector2.zero;
             InstallStartingRegionPage(page);
             string identity = WorldIdentity();
             // Keep setup preferences through Back/Next and reset them when the
@@ -3018,28 +3037,33 @@ namespace ColonistAwareness
             // derive every following position from its measured height.
             const float titleH = 30f;
             const float gap = 6f;
-            float innerWidth = width - 24f;
-            float bodyH = Text.CalcHeight(bodyText, innerWidth);
-            float surveyH = Text.CalcHeight(surveyText, innerWidth);
-            float noteH = Text.CalcHeight(noteText, innerWidth);
-            float bodyY = titleH + 2f;
-            float surveyY = bodyY + bodyH + gap;
+            float contentWidth = width - 42f;
+            float bodyH = Text.CalcHeight(bodyText, contentWidth);
+            float surveyH = Text.CalcHeight(surveyText, contentWidth);
+            float noteH = Text.CalcHeight(noteText, contentWidth);
+            float surveyY = bodyH + gap;
             float buttonsY = surveyY + surveyH + gap;
             float noteY = buttonsY + 38f + 8f + 38f + 8f + 38f + 8f;
-            Rect panel = RegionalPanelRect(width, noteY + noteH + 24f);
+            float contentHeight = noteY + noteH + 8f;
+            Rect panel = RegionalPanelRect(width,
+                titleH + contentHeight + 26f);
             Widgets.DrawWindowBackground(panel);
             Rect inner = panel.ContractedBy(12f);
             Text.Font = GameFont.Medium;
             Widgets.Label(new Rect(inner.x, inner.y, inner.width, titleH),
                 CARegionalPlanUtility.RegionName(plan));
             Text.Font = GameFont.Small;
-            Widgets.Label(new Rect(inner.x, inner.y + bodyY,
-                inner.width, bodyH), bodyText);
-            Widgets.Label(new Rect(inner.x, inner.y + surveyY,
-                inner.width, surveyH), surveyText);
+            Rect outRect = new Rect(inner.x, inner.y + titleH + 2f,
+                inner.width, Mathf.Max(80f, inner.height - titleH - 2f));
+            Rect view = new Rect(0f, 0f, contentWidth,
+                Mathf.Max(outRect.height, contentHeight));
+            Widgets.BeginScrollView(outRect, ref landingPanelScroll, view);
+            Widgets.Label(new Rect(0f, 0f, view.width, bodyH), bodyText);
+            Widgets.Label(new Rect(0f, surveyY, view.width, surveyH),
+                surveyText);
 
-            float buttonWidth = (inner.width - 8f) / 2f;
-            Rect extent = new Rect(inner.x, inner.y + buttonsY,
+            float buttonWidth = (view.width - 8f) / 2f;
+            Rect extent = new Rect(0f, buttonsY,
                 buttonWidth, 38f);
             string extentLabel = actualAreas == requestedAreas
                 ? "Size: " + actualAreas + " areas"
@@ -3056,8 +3080,8 @@ namespace ColonistAwareness
                 buttonWidth, extent.height);
             if (Widgets.ButtonText(rotate, "Turn shape"))
                 RotateRegionFootprint(profile, plan);
-            Rect anchor = new Rect(inner.x, extent.yMax + 8f,
-                inner.width, 38f);
+            Rect anchor = new Rect(0f, extent.yMax + 8f,
+                view.width, 38f);
             if (Widgets.ButtonText(anchor, ChoosingLandingAnchor
                     ? "Choose an area..." : "Choose arrival area"))
             {
@@ -3066,24 +3090,26 @@ namespace ColonistAwareness
                     + "colony inside this region.",
                     MessageTypeDefOf.NeutralEvent, false);
             }
-            Rect nextStep = new Rect(inner.x, anchor.yMax + 8f,
-                inner.width, 38f);
-            Widgets.DrawHighlight(nextStep);
-            Widgets.DrawBox(nextStep, 1);
+            Rect nextStep = new Rect(0f, anchor.yMax + 8f,
+                view.width, 38f);
+            GUI.color = ColoredText.SubtleGrayColor;
             Text.Anchor = TextAnchor.MiddleCenter;
             Widgets.Label(nextStep, "Next: set factions, settlements, and "
                 + "populations");
             Text.Anchor = TextAnchor.UpperLeft;
+            GUI.color = Color.white;
 
-            Widgets.Label(new Rect(inner.x, inner.y + noteY,
-                inner.width, noteH), noteText);
+            Widgets.Label(new Rect(0f, noteY, view.width, noteH), noteText);
+            Widgets.EndScrollView();
         }
 
         private static Rect RegionalPanelRect(float width, float height)
         {
             const float margin = 18f;
+            float cappedHeight = Mathf.Min(height,
+                Mathf.Max(120f, UI.screenHeight - 142f - margin));
             Rect panel = new Rect(UI.screenWidth - width - margin, 142f,
-                width, height);
+                width, cappedHeight);
             Window preview = Verse.Find.WindowStack?.Windows
                 .FirstOrDefault(window => window?.GetType().FullName
                     == "MapPreview.MapPreviewWindow");
@@ -3093,15 +3119,15 @@ namespace ColonistAwareness
             float leftOfPreview = preview.windowRect.x - width - 12f;
             if (leftOfPreview >= margin)
                 return new Rect(leftOfPreview, preview.windowRect.y,
-                    width, height);
+                    width, cappedHeight);
 
             float belowPreview = preview.windowRect.yMax + 12f;
-            if (belowPreview + height <= UI.screenHeight - 96f)
+            if (belowPreview + cappedHeight <= UI.screenHeight - margin)
                 return new Rect(Mathf.Clamp(preview.windowRect.x, margin,
                         UI.screenWidth - width - margin), belowPreview,
-                    width, height);
+                    width, cappedHeight);
 
-            return new Rect(margin, 142f, width, height);
+            return new Rect(margin, 142f, width, cappedHeight);
         }
 
         private static bool HasDesignedRegion(CARegionalPlan plan)

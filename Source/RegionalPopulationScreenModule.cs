@@ -15,6 +15,13 @@ namespace ColonistAwareness
     // and provisions. Culture and Ideoligion remain population facts.
     internal sealed class Page_CAStartingRegion : Page
     {
+        private enum CARegionLayoutMode
+        {
+            Wide,
+            Medium,
+            Compact
+        }
+
         private CARegionalPlan plan;
         private CAExpandedLandmassProfile profile;
         private bool profileReady;
@@ -28,6 +35,9 @@ namespace ColonistAwareness
         private Vector2 scroll;
         private Vector2 railScroll;
         private bool showTechnicalGeography;
+        private bool inspectorExpanded;
+        private int compactPane = 1;
+        private CARegionLayoutMode layoutMode;
 
         private const float Row = 28f;
         private const float Gap = 6f;
@@ -123,8 +133,12 @@ namespace ColonistAwareness
             DrawPageTitle(inRect);
             Text.Font = GameFont.Small;
             Widgets.Label(new Rect(0f, 32f, inRect.width, 24f),
-                "Set the starting region: factions, settlements, and "
-                + "populations on their actual ground.");
+                CAInformationPresentation.Select(
+                    "Set factions, settlements, and populations on the region map.",
+                    "Set the starting region: factions, settlements, and "
+                        + "populations on their actual ground.",
+                    "The object list, spatial map, and selected-object inspector "
+                        + "edit one persisted regional plan.", inspectorExpanded));
 
             if (plan == null || !profileReady)
             {
@@ -138,20 +152,44 @@ namespace ColonistAwareness
             CACreationUI.DrawFlow(new Rect(0f, 60f, inRect.width, 24f), 2);
             float bodyTop = 92f;
             float bodyHeight = inRect.height - bodyTop - 54f;
-            float railWidth = Mathf.Clamp(inRect.width * 0.18f, 215f, 280f);
-            float panelWidth = Mathf.Clamp(inRect.width * 0.30f, 450f, 540f);
             const float paneGap = 10f;
-            Rect rail = new Rect(0f, bodyTop, railWidth, bodyHeight);
-            Rect panel = new Rect(inRect.width - panelWidth, bodyTop,
-                panelWidth, bodyHeight);
-            Rect mapRect = new Rect(rail.xMax + paneGap, bodyTop,
-                panel.x - rail.xMax - paneGap * 2f, bodyHeight);
-
             CARegionMapWidget.hoveredSlot = -1;
-            DrawObjectRail(rail);
-            CARegionMapWidget.Draw(mapRect, plan,
-                CARegionalSetupSession.SavePending);
-            DrawInspector(panel);
+            layoutMode = inRect.width >= 1600f ? CARegionLayoutMode.Wide
+                : inRect.width >= 1180f ? CARegionLayoutMode.Medium
+                    : CARegionLayoutMode.Compact;
+            if (layoutMode == CARegionLayoutMode.Compact)
+            {
+                Rect tabs = new Rect(0f, bodyTop, inRect.width, 30f);
+                CACreationUI.DrawSegment(tabs,
+                    new[] { "Objects", "Map", "Details" }, compactPane,
+                    value => compactPane = value);
+                Rect body = new Rect(0f, bodyTop + 38f, inRect.width,
+                    bodyHeight - 38f);
+                if (compactPane == 0) DrawObjectRail(body);
+                else if (compactPane == 1)
+                    CARegionMapWidget.Draw(body, plan,
+                        CARegionalSetupSession.SavePending);
+                else DrawInspector(body);
+            }
+            else
+            {
+                float railWidth = layoutMode == CARegionLayoutMode.Wide
+                    ? Mathf.Clamp(inRect.width * 0.17f, 240f, 280f)
+                    : Mathf.Clamp(inRect.width * 0.17f, 190f, 220f);
+                float panelWidth = layoutMode == CARegionLayoutMode.Wide
+                    ? Mathf.Clamp(inRect.width * 0.29f, 470f, 540f)
+                    : Mathf.Clamp(inRect.width * 0.36f, 430f, 460f);
+                Rect rail = new Rect(0f, bodyTop, railWidth, bodyHeight);
+                Rect panel = new Rect(inRect.width - panelWidth, bodyTop,
+                    panelWidth, bodyHeight);
+                Rect mapRect = new Rect(rail.xMax + paneGap, bodyTop,
+                    Mathf.Max(440f, panel.x - rail.xMax - paneGap * 2f),
+                    bodyHeight);
+                DrawObjectRail(rail);
+                CARegionMapWidget.Draw(mapRect, plan,
+                    CARegionalSetupSession.SavePending);
+                DrawInspector(panel);
+            }
             DoBottomButtons(inRect, "Continue");
         }
 
@@ -217,7 +255,7 @@ namespace ColonistAwareness
             Rect navigation = new Rect(outRect.x, outRect.y,
                 outRect.width, outRect.height - 76f);
             float contentHeight = 150f
-                + plan.factions.Count * 58f
+                + plan.factions.Count * 96f
                 + plan.settlements.Count * 36f;
             Rect view = new Rect(0f, 0f, navigation.width - 18f,
                 Mathf.Max(navigation.height, contentHeight));
@@ -251,7 +289,11 @@ namespace ColonistAwareness
                     + (plan.settlements.Count == 1 ? "" : "s"));
                 GUI.color = Color.white;
                 if (Widgets.ButtonInvisible(regionCard))
+                {
                     CARegionMapWidget.SelectRegion();
+                    if (layoutMode == CARegionLayoutMode.Compact)
+                        compactPane = 1;
+                }
                 y += 60f;
 
                 Text.Font = GameFont.Tiny;
@@ -266,7 +308,17 @@ namespace ColonistAwareness
                         .OrderBy(item => item.key).ToList())
                 {
                     Color color = CARegionalWorldOverlay.FactionColor(group.key);
-                    Rect groupCard = new Rect(0f, y, view.width, 42f);
+                    int held = plan.settlements.Count(item => item != null
+                        && item.factionKey == group.key);
+                    string groupSubtitle = held + " settlement"
+                        + (held == 1 ? "" : "s") + " - "
+                        + CAFactionAxes.Characterize(plan, group);
+                    Text.Font = GameFont.Tiny;
+                    float subtitleHeight = Text.CalcHeight(groupSubtitle,
+                        view.width - 24f);
+                    float groupHeight = Mathf.Max(42f,
+                        27f + subtitleHeight + 4f);
+                    Rect groupCard = new Rect(0f, y, view.width, groupHeight);
                     if (CARegionMapWidget.selectedKind
                             == CARegionSelectionKind.Faction
                         && CARegionMapWidget.selectedFactionKey == group.key)
@@ -279,20 +331,20 @@ namespace ColonistAwareness
                     Text.Font = GameFont.Small;
                     Widgets.Label(new Rect(12f, y + 3f, view.width - 20f, 22f),
                         CARegionalPlanUtility.FactionName(group));
-                    int held = plan.settlements.Count(item => item != null
-                        && item.factionKey == group.key);
                     Text.Font = GameFont.Tiny;
                     GUI.color = new Color(0.72f, 0.76f, 0.81f);
                     Widgets.Label(new Rect(12f, y + 23f,
-                        view.width - 20f, 17f), held + " settlement"
-                        + (held == 1 ? "" : "s") + " - "
-                        + CAFactionAxes.Characterize(plan, group));
+                        view.width - 20f, subtitleHeight), groupSubtitle);
                     GUI.color = Color.white;
                     if (Mouse.IsOver(groupCard))
                         CARegionMapWidget.emphasisFactionKey = group.key;
                     if (Widgets.ButtonInvisible(groupCard))
+                    {
                         CARegionMapWidget.SelectFaction(group.key);
-                    y += 46f;
+                        if (layoutMode == CARegionLayoutMode.Compact)
+                            compactPane = 1;
+                    }
+                    y += groupHeight + 4f;
 
                     foreach (CARegionalSettlementPlan place in plan.settlements.Where(
                             item => item != null
@@ -316,7 +368,11 @@ namespace ColonistAwareness
                         if (Mouse.IsOver(placeRow))
                             CARegionMapWidget.hoveredSlot = place.slot;
                         if (Widgets.ButtonInvisible(placeRow))
+                        {
                             CARegionMapWidget.SelectSettlement(place.slot);
+                            if (layoutMode == CARegionLayoutMode.Compact)
+                                compactPane = 1;
+                        }
                         y += 32f;
                     }
                     y += 6f;
@@ -334,7 +390,11 @@ namespace ColonistAwareness
                         CARegionalPlanUtility.SettlementName(plan, place)
                         + " - choose a faction");
                     if (Widgets.ButtonInvisible(placeRow))
+                    {
                         CARegionMapWidget.SelectSettlement(place.slot);
+                        if (layoutMode == CARegionLayoutMode.Compact)
+                            compactPane = 1;
+                    }
                     y += 34f;
                 }
             }
@@ -360,6 +420,11 @@ namespace ColonistAwareness
         {
             Widgets.DrawMenuSection(panel);
             Rect outRect = panel.ContractedBy(8f);
+            Rect detailToggle = new Rect(outRect.xMax - 156f, outRect.y,
+                156f, 26f);
+            CAInformationPresentation.DrawLocalExpansion(detailToggle,
+                ref inspectorExpanded);
+            outRect.yMin += 34f;
             // The previous frame's measured content height prevents clipping
             // and empty trailing space.
             Rect viewRect = new Rect(0f, 0f, outRect.width - 18f,
@@ -919,11 +984,11 @@ namespace ColonistAwareness
             Body(ref y, width, MaterialState(place, owner, def));
 
             Rule(ref y, width);
-            Title(ref y, width, "Development capacity");
+            Title(ref y, width, "Local material capability");
             Body(ref y, width, MaterialProspect(place, owner, def));
 
             Rule(ref y, width);
-            Title(ref y, width, "Knowledge and research");
+            Title(ref y, width, "Knowledge access and research");
             Body(ref y, width, ResearchAccess(place, owner, def));
 
             Rule(ref y, width);
@@ -1045,11 +1110,17 @@ namespace ColonistAwareness
                     + "knows; "
                     + "the missing means are local, not a loss of knowledge."
                 : " Local capacity supports all current faction knowledge.";
-            return "Knowledge belongs to "
+            string compact = "Local research capability: "
+                + CASettlementWealth.TierWords(ceiling)
+                + ". Faction baseline: " + knowledge.ToString().ToLower()
+                + ".";
+            string standard = compact + " " + reach;
+            string expanded = "Knowledge belongs to "
                 + CARegionalPlanUtility.FactionName(owner)
-                + ", not to this settlement. It begins at a "
-                + knowledge.ToString().ToLower()
-                + " level of knowledge. " + reach + gap;
+                + ", not to this settlement. The faction baseline is "
+                + knowledge.ToString().ToLower() + ". " + reach + gap;
+            return CAInformationPresentation.Select(compact, standard,
+                expanded, inspectorExpanded);
         }
 
         // ---- one faction ---------------------------------------------------
@@ -1138,16 +1209,23 @@ namespace ColonistAwareness
                     : "Inactive");
 
             Rule(ref y, width);
-            Title(ref y, width, "Political beliefs");
-            Note(ref y, width,
-                CAPoliticalBeliefsModel.Summary(group.politicalBeliefs));
+            Title(ref y, width, "Beliefs and current order");
+            List<string> institutionalTensions =
+                CAFactionStructureModel.Tensions(group.politicalBeliefs,
+                    group.factionStructure);
+            Note(ref y, width, CAPoliticalBeliefsModel.Summary(
+                group.politicalBeliefs) + ". "
+                + (institutionalTensions.Count == 0
+                    ? "Current institutions align with every set belief."
+                    : institutionalTensions.Count
+                        + " preferred positions differ from current practice."));
             Rect beliefsEdit = new Rect(0f, y, width, 28f);
-            if (Widgets.ButtonText(beliefsEdit, "Edit..."))
-                Verse.Find.WindowStack.Add(
-                    Dialog_CAAxisEditor.ForBeliefs(
-                        group.politicalBeliefs,
-                        (plan.candidateId ?? "ca") + ":faction:" + group.key,
-                        CARegionalSetupSession.SavePending));
+            if (Widgets.ButtonText(beliefsEdit,
+                    "Compare and edit beliefs and practice..."))
+                Verse.Find.WindowStack.Add(Dialog_CAAxisEditor.ForStructure(
+                    group.factionStructure, group.politicalBeliefs,
+                    (plan.candidateId ?? "ca") + ":faction:" + group.key,
+                    CARegionalSetupSession.SavePending));
             y += Row + Gap;
 
             // Authority between settlements is independent of political
@@ -1175,25 +1253,16 @@ namespace ColonistAwareness
             y += Row + Gap;
 
             Rule(ref y, width);
-            Title(ref y, width, "Faction structure");
-            Note(ref y, width, "Arrangements in force. Political beliefs "
-                + "may agree or disagree.");
-            Note(ref y, width,
-                CAFactionStructureModel.Summary(group.factionStructure));
-            Rect structureEdit = new Rect(0f, y, width, 28f);
-            if (Widgets.ButtonText(structureEdit, "Edit..."))
-                Verse.Find.WindowStack.Add(Dialog_CAAxisEditor.ForStructure(
-                    group.factionStructure, group.politicalBeliefs,
-                    (plan.candidateId ?? "ca") + ":faction:" + group.key,
-                    CARegionalSetupSession.SavePending));
-            y += Row + Gap;
-
-            Rule(ref y, width);
-            Title(ref y, width, "Knowledge");
-            Body(ref y, width, "Faction knowledge begins at "
-                + group.TechnologySummary.ToLower()
-                + ". Settlement laboratories, workshops, roads, and "
-                + "coastal access determine local capability.");
+            Title(ref y, width, "Faction technology");
+            Body(ref y, width, CAInformationPresentation.Select(
+                group.TechnologySummary + " technological baseline.",
+                "The faction shares a " + group.TechnologySummary.ToLower()
+                    + " technological baseline: the designs and methods its "
+                    + "population can carry between settlements.",
+                "This baseline does not imply that every settlement can build "
+                    + "or research at that level. Local facilities, services, "
+                    + "and access are shown only on each settlement.",
+                inspectorExpanded));
 
             Rule(ref y, width);
             Title(ref y, width, "Relations");
@@ -2344,14 +2413,18 @@ namespace ColonistAwareness
             CASettlementWealth.Derive(plan.candidateId, place.slot,
                 facilities, access, services,
                 civic, knowledge, out wealth, out constructionEra);
-            int tier = CASettlementAxes.Tier(knowledge);
+            int knowledgeTier = CASettlementAxes.CapabilityBasis(knowledge);
+            int tier = CASettlementAxes.LocalPracticeCeiling(facilities,
+                access, services, civic, knowledge);
             var lines = new List<string>();
             lines.Add("Material wealth: "
                 + CASettlementWealth.WealthWords(wealth));
             lines.Add("Founded in its "
                 + CASettlementWealth.TierWords(constructionEra)
-                + " era · current capability "
-                + CASettlementWealth.TierWords(tier));
+                + " era · local capability "
+                + CASettlementWealth.TierWords(tier)
+                + " · faction knowledge "
+                + CASettlementWealth.TierWords(knowledgeTier));
             if (constructionEra < tier)
                 lines.Add("Older construction remains in roughly half of "
                     + "the settlement walls");
@@ -2366,6 +2439,9 @@ namespace ColonistAwareness
                     : "Windows use shutters or remain open");
             lines.Add("Starting personal silver depends on wealth and "
                 + "the Economy setting");
+            if (tier < knowledgeTier)
+                lines.Add("This settlement lacks the local means to practice "
+                    + "all methods known by its faction");
             return string.Join("\n", lines.ToArray());
         }
 
@@ -3688,20 +3764,32 @@ namespace ColonistAwareness
         private static bool Entry(ref float y, float width, float inset,
             string title, string subtitle, Color chip, out bool hovered)
         {
-            Rect row = new Rect(inset, y, width - inset, 38f);
+            float textWidth = Mathf.Max(80f, width - inset - 16f);
+            Text.Font = GameFont.Small;
+            float titleHeight = Mathf.Max(20f, Text.CalcHeight(title,
+                textWidth));
+            Text.Font = GameFont.Tiny;
+            float subtitleHeight = subtitle.NullOrEmpty() ? 0f
+                : Text.CalcHeight(subtitle.CapitalizeFirst(), textWidth);
+            Text.Font = GameFont.Small;
+            float rowHeight = 6f + titleHeight
+                + (subtitleHeight > 0f ? subtitleHeight + 2f : 0f) + 5f;
+            Rect row = new Rect(inset, y, width - inset, rowHeight);
             hovered = Mouse.IsOver(row);
             if (hovered) Widgets.DrawHighlight(row);
             Widgets.DrawBoxSolid(new Rect(inset, y + 8f, 10f, 10f), chip);
             Text.Font = GameFont.Small;
             Widgets.Label(new Rect(inset + 16f, y + 1f,
-                width - inset - 16f, 20f), title);
+                textWidth, titleHeight), title);
             Text.Font = GameFont.Tiny;
             GUI.color = new Color(0.74f, 0.77f, 0.81f);
-            Widgets.Label(new Rect(inset + 16f, y + 19f,
-                width - inset - 16f, 18f), subtitle.CapitalizeFirst());
+            if (subtitleHeight > 0f)
+                Widgets.Label(new Rect(inset + 16f,
+                    y + titleHeight + 3f, textWidth, subtitleHeight),
+                    subtitle.CapitalizeFirst());
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
-            y += 40f;
+            y += rowHeight + 2f;
             return Widgets.ButtonInvisible(row);
         }
     }

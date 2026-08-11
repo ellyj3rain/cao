@@ -18,31 +18,34 @@ public static class Program
                     Path.GetFullPath(args[args.Length - 1]));
                 return 0;
             }
-            if (args.Length != 3)
+            if (args.Length != 2 && args.Length != 3)
                 throw new ArgumentException(
-                    "usage: PlayerFoundingReceipts <repo> <mirror> <keyed> "
+                    "usage: PlayerFoundingReceipts <repo> <keyed> "
+                    + "or <repo> <mirror> <keyed> "
                     + "or --convert <source> [policy-evidence] <mirror> "
                     + "<keyed>");
             string repository = Path.GetFullPath(args[0]);
-            string mirrorPath = Path.GetFullPath(args[1]);
-            string keyedPath = Path.GetFullPath(args[2]);
+            string mirrorPath = args.Length == 3
+                ? Path.GetFullPath(args[1]) : null;
+            string keyedPath = Path.GetFullPath(args[args.Length - 1]);
             var report = new StringBuilder();
             report.AppendLine("PLAYER FOUNDING AUTHORING RECEIPT");
 
             CheckSourceContracts(repository, report);
-            XDocument mirror = XDocument.Load(mirrorPath,
-                LoadOptions.PreserveWhitespace);
             XDocument keyed = XDocument.Load(keyedPath,
                 LoadOptions.PreserveWhitespace);
-            CheckFixture("mirror", mirror, report);
             CheckFixture("keyed", keyed, report);
-
-            Require(Fingerprint(mirror) == Fingerprint(keyed),
-                "active and keyed fixture plans disagree");
-            report.AppendLine("PASS active surfaces -> one composition and "
-                + "one founding plan");
-
-            CheckRoundTrip(mirror, report);
+            if (mirrorPath != null)
+            {
+                XDocument mirror = XDocument.Load(mirrorPath,
+                    LoadOptions.PreserveWhitespace);
+                CheckFixture("mirror", mirror, report);
+                Require(Fingerprint(mirror) == Fingerprint(keyed),
+                    "active and keyed fixture plans disagree");
+                report.AppendLine("PASS active surfaces -> one composition "
+                    + "and one founding plan");
+                CheckRoundTrip(mirror, report);
+            }
             CheckRoundTrip(keyed, report);
             report.AppendLine("result: PASS (" + checks + " assertions)");
             Console.Write(report.ToString());
@@ -175,18 +178,28 @@ public static class Program
             "suggested arrangements do not read the scenario pawn total");
         Require(page.Contains("nameof(Scenario.GetFirstConfigPage)")
             && page.Contains("current is Page_ChooseIdeoPreset")
-            && page.Contains("new Page_CAPlayerFounding"),
-            "CA founding page does not replace vanilla preset flow");
+            && page.Contains("Page following = current.next")
+            && page.Contains("current.next = inserted")
+            && page.Contains("current.nextAct = null"),
+            "CA founding page is not inserted after the native preset flow");
+        Require(!page.Contains("OpenIdeoPresets")
+            && page.Contains("nativeIdeoChooser")
+            && page.Contains("prev is Page_ConfigureIdeo")
+            && page.Contains("nativeFlowJustAccepted")
+            && page.Contains("awaitingNativeReturn"),
+            "native preset/custom/load navigation or notification state is incomplete");
         foreach (string label in new[]
         {
-            "Culture", "Ideoligion", "Political beliefs",
-            "Founding terms"
+            "Cultural practices", "Ideoligion", "Political beliefs",
+            "Rules at landing"
         })
             Require(page.Contains("\"" + label + "\""),
                 label + " is absent from the founding page");
         Require(page.Contains("Page_CAConfigureFoundingIdeo")
             && page.Contains("Page_CAConfigureFoundingFluidIdeo")
-            && page.Contains("Dialog_IdeoList_Load"),
+            && page.Contains("Dialog_IdeoList_Load")
+            && page.Contains("Choose again...")
+            && page.Contains("Edit current..."),
             "native fixed, fluid, and load Ideoligion paths are incomplete");
         Require(page.Contains("CAPlayerFoundingSession.Confirm(draft)")
             && page.Contains("ApplyCarriedState(draft")
