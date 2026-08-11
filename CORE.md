@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Core |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.3.0.0-alpha` · closed batch tip `B6` · next `B7` |
+| Version | `1.3.0.1-alpha` · closed batch tip `B7` · next `B8` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `CORE.md` |
@@ -78,10 +78,10 @@ remains authoritative at every tier.
 
 The regional work is not a detached map-size mod. It is the physical theater for
 the same framework. Regions contain factions, settlements, population groups,
-carried cultural backgrounds, contextual cultural expression, Ideoligion,
-political beliefs, faction structure, starting conditions,
-relationships, operations, economies, diplomacy and conflict. Loaded maps are
-detailed materializations and native physical executors. The projection rule:
+persistent local Culture, Ideoligion, Political Beliefs, social order, starting
+conditions, relationships, operations, economies, diplomacy, and conflict.
+Loaded maps are detailed materializations and native physical executors. The
+projection rule:
 
 `pawn evidence → organization record → authorization → regional operation or
 contract → native world/incident/quest/map/Lord projection → reconciled outcome`
@@ -89,17 +89,26 @@ contract → native world/incident/quest/map/Lord projection → reconciled outc
 Native RimWorld physical execution remains authoritative while materialized; this
 mod owns the persistent organizational reason and continuity.
 
-Existing societies and the player founding use the same cultural-background, native
-Ideoligion, Political Beliefs, and social-order concepts at different points in
-time. Existing faction and settlement authoring records realized institutions
-and accumulated history; local cultural expression is derived from those people,
-beliefs, institutions, material conditions, geography, relations, and history.
-Player authoring records what the founders bring and
-the Founding Arrangement they adopt at landing; later institutions and practice
-must be produced by play rather than generated as pre-existing history.
-The arrangement is applied once as its exact, duration-aware relations. Political
-Beliefs judge what is practiced; they do not become organization customs or
-broader institutions merely because the founders hold them.
+Culture is persistent longitudinal social-historical state. A local Culture
+retains inherited origin, local identity, constituent populations, lived
+observations, recognized practices, transitions, and provenance. Bounded
+historical evaluations derive `Culture(T+1)` from `Culture(T)` and intervening
+evidence. Spatial, social, institutional, political, and settlement-development
+consumers may rank otherwise valid choices from that state, but Culture creates
+neither permission nor material capability. Cultural expression is a read-only
+interpretation of the relationship between Culture and current society; native
+`CultureDef` is one optional visual inheritance.
+
+Existing societies and player founding use the same Culture, native Ideoligion,
+Political Beliefs, and social-order concepts at different points in time.
+Existing faction and settlement records describe a society already present:
+established Culture, realized institutions, material conditions, and an explicit
+temporal basis. Player authoring records the inherited Culture, Ideoligion, and
+Political Beliefs the founders bring and the exact rules they adopt at landing.
+Later local Culture, institutions, and practice must be produced by play rather
+than fabricated as pre-existing event history. Political Beliefs judge what is
+practiced; they do not become organization customs or broader institutions merely
+because the founders hold them.
 
 ## Governing constraints
 
@@ -114,6 +123,13 @@ broader institutions merely because the founders hold them.
   a computed summary or cache.
 - **DR-89.** Goods move only when paid for, or when explicit terms authorise
   credit. An obligation is created by a basis, never by an empty purse.
+- **DR-106 through DR-115.** Authoring exposes meaningful persistent causes,
+  not every analytical category the simulation can derive. Culture is persistent
+  longitudinal social history; Ideoligion, Political Beliefs, institutions,
+  adopted rules, and practice remain distinct; established societies and new
+  founders retain their different temporal boundaries. Contextual explanation
+  belongs to the owning decision, and Starting Region preserves its spatial map
+  without universal detail, development-intensity, or facility-bundle controls.
 - Stitching controls geographic continuity only, never population or political
   intensity. Vanilla `OverallPopulation` stays authoritative for major-settlement
   abundance.

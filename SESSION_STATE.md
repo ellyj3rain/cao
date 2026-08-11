@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Session State |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.3.0.0-alpha` · closed batch tip `B6` · next `B7` |
+| Version | `1.3.0.1-alpha` · closed batch tip `B7` · next `B8` |
 <!-- cao:generated:version END -->
 | Repository | `SESSION_STATE.md` |
 | Status | ACTIVE - current operational state. |
@@ -18,70 +18,99 @@ receipt, deployment, and operator runtime evidence remain separate.
 | Surface | State |
 |---|---|
 | Branch | `mallowfluff/b3-creation-flow-interaction` |
-| B6 start | Clean B5 governance tip `73efd9dad2ec44de2034d6927e9f0b4c190d4d5d` |
-| B6 source closure | `45e571d63c996fdba43cc7101b4edca7ca24f56f` |
-| B6 governance closure | The following governance commit carries this state, B6's append-only record, generated projections, and the README twin. |
-| Publication | No push or forge publication action is part of B6. |
+| B7 baseline | Exact pushed B6 governance tip `ff1d7659e48baad03ca1e02b018a5f951e29befe` |
+| B7 source closure | `3043e6b737472ffb34cf47d856b880c4e6a07811` |
+| B7 governance closure | The following governance commit carries this state, B7's append-only record, generated projections, and the README twin. |
+| Publication | No push or forge publication action is part of B7. |
 
-The portable chronology contains 108 closed batches: `A1-A102` and `B1-B6`.
-Thirty-three contiguous version units cover that chronology exactly once; B6 is
-minor unit `VU-033`, deriving `1.3.0.0-alpha`. Twelve `TF-*` families and thirty
-series-neutral `T-*` threads classify work without changing chronology. `B7` is
-the next ordinary batch.
+The portable chronology contains 109 closed batches: `A1-A102` and `B1-B7`.
+Thirty-four contiguous version units cover that chronology exactly once; B7 is
+patch unit `VU-034`, deriving `1.3.0.1-alpha`. Twelve `TF-*` families and
+thirty series-neutral `T-*` threads classify work without changing chronology.
+`B8` is the next ordinary batch.
 
-## Current behavior contract
+## Current creation and authoring contract
 
-The canonical chain remains:
+Creation exposes direct facts and inspects derived consequences. Starting Region
+retains the selected region and arrival area, map, factions, settlements,
+locations, population groups and sources, ownership, relations, provisions, and
+sparse concrete starting exceptions. Generic development, transport, local
+services, civic capacity, research capability, facility profiles, per-facility
+Generated/Include/Omit rows, and global Compact/Standard/Expanded information
+detail are not ordinary authoring objects.
 
-`Knowledge triggers -> Disposition ranks -> Authority channels -> Doctrine executes through native RimWorld systems`
+Settlement scale, infrastructure, access, services, facilities, knowledge and
+research capability, spatial form, and other material conclusions are realized
+from actual population, land, geography, technology, knowledge, institutions,
+economy, trade, material state, relationships, and history. Contextual
+explanations belong to the inspected object or decision that owns them.
 
-| Concern | Current rule |
+The founding flow coordinates four distinct concepts:
+
+| Concept | Current meaning |
 |---|---|
-| Initiative | Standard, Proactive, Autonomous. Old 0/1 map to Standard; old 2 to Proactive; old 3 to Autonomous. |
-| Standard | Native agency, direct and accepted relayed orders, owned continuation, declared safeguards, survival floor; no open-ended discretionary plan. |
-| Proactive | One bounded response to a current actionable fact with finite target, scope, ownership, and completion. |
-| Autonomous | Persistent, adaptive, or coordinated action inside delegated or institutional authority. |
-| Behavior definitions | 87 stable entries, each with domain, form, permission, tier/authority, evidence, execution, owner, cadence, and termination. |
-| Independent causes | Permission, initiative, authority, knowledge, capability, material feasibility, culture, disposition, and player ownership remain separate. |
-| Execution | Native jobs, duties, think trees, Lords, interactions, and world simulation remain the substrate. |
+| Culture | Inherited and local longitudinal social history |
+| Ideoligion | RimWorld's native religious, ritual, and moral system |
+| Political Beliefs | What the founders consider legitimate, proper, permitted, or obligatory |
+| Rules at landing | The authority, work, voice, and supply arrangement actually adopted at founding |
 
-The catalog realizes 14 primary domains and 13 behavior forms. Settings are
-grouped by domain and ownership kind. The pawn Behavior scope and both developer
-censuses are read-only. Player autonomy never controls NPC institutional action.
-Culture and disposition rank only otherwise permitted choices.
+Political Beliefs remain normative. Adopted rules, institutions, and lived
+practice remain realized state. Agreement and contradiction both survive.
 
-Squad support has separate owners for hold, field medicine, raid response,
-flank/objective work, and command relay. Operational access is colony policy;
-personal threat equipment remains pawn-specific. Proactive custody can secure
-and stabilize, while ordinary irreversible resolution requires Autonomous
-initiative plus valid law or office. All multi-actor and persisted CA work names
-the actual actor, behavior, episode, authority, controller or issuer, owner, and
-termination.
+Existing and founding societies share this ontology at different temporal
+boundaries. Established settlements explicitly predate the scenario and may
+carry mature institutions and local Culture without invented event records. New
+founders bring inherited state and establish initial rules; local institutions
+and Culture develop through play. A typed established-player-start scenario is
+the only current exception to that founding boundary.
 
-B5's Culture and spatial contracts remain intact. Player and NPC planning share
-typed demands, assets, siting, material checks, and causal ranking. Creation
-writes confirmed starting state directly. Player spatial action then requires
-delegated authority; later NPC development requires a current named institution.
+## Persistent Culture contract
+
+Each settlement Culture saves stable inherited and local identities,
+constituent Cultures and population shares, typed observations of lived history,
+recognized practices and their sources, transition sequence, predecessor and
+evidence signatures, changed domains, and temporal provenance.
+
+The bounded world-simulation behavior `culture.longitudinal_update` evaluates
+historically meaningful changes. Inspection and drawing never advance Culture.
+Unchanged history does not manufacture transitions. Qualified lived practice or
+elapsed population, institutional, and political changes deterministically
+produce successor state.
+
+Production consumers use the same pure causal kernel:
+
+| Consumer family | Current use |
+|---|---|
+| Spatial | Placement and road/development ranking |
+| Social | Ordinary gathering preference |
+| Institutional | Legitimacy, friction, and research priority |
+| Political | Belief/practice contradiction and habituation |
+| Settlement development | Player-delegated and NPC institutional choice among otherwise valid candidates |
+
+Culture ranks permitted and feasible possibilities. It does not create
+authority, knowledge, technology, land, labor, materials, treasury, or native
+execution capability. Cultural expression is a nonmutating interpretation of
+Culture in its current society. Native `CultureDef` remains optional visual
+inheritance, not Culture itself.
 
 ## Build, receipts, and review
 
 | Evidence | Result |
 |---|---|
-| Behavior convergence | PASS - 107 numbered cases: 98 statically verified; 9 operator-runtime cases pending |
-| Registered behavior domains | AnimalCare 2; CombatSelfPreservation 6; CustodyAndAftermath 5; Diagnostics 2; DomesticAndSpatial 5; HazardResponse 3; InstitutionalDevelopment 2; KnowledgeAndCommunication 9; LogisticsAndProvision 6; OperationalReadiness 6; Presentation 2; SurvivalAndImmediateSafety 7; TacticalCoordination 24; WelfareAndCare 8 |
-| Registered behavior forms | AdaptivePlanning 12; CoordinatedResponse 5; Diagnostic 2; DirectOrder 14; ExecutionCapability 4; InstitutionalAction 6; NativeAugmentation 10; Observation 2; PersistentObjective 3; Presentation 2; PreventiveReadiness 5; ReactiveResponse 18; Safeguard 4 |
-| Authoring convergence | PASS - 126 mirror and 126 keyed assertions |
+| B7 authoring acceptance | PASS - 50 creation-ontology assertions |
+| Longitudinal Culture | PASS - 15 causal assertions |
 | Creation-flow interaction | PASS - 65 assertions |
 | Player founding | PASS - 48 assertions |
 | World tendencies | PASS - 185 assertions |
-| Retained total | PASS - 424 unique assertions; 550 executions |
-| Frozen-tree review | Correctness and structural reviewers report no remaining Critical or High findings |
-| Release build | Full `--no-incremental` Release build: 0 errors; the same 12 existing warnings |
-| Built assembly | 3,215,872 bytes; SHA-256 `8737CDDD1AED9124C6D4A3CCBD738EAF8844E4666A60FCDCFC0AA58830145298` |
-| Deployment | RimWorld was closed. The live project DLL was replaced and is byte-identical to the verified build at SHA-256 `8737CDDD1AED9124C6D4A3CCBD738EAF8844E4666A60FCDCFC0AA58830145298`. |
+| Behavior convergence | PASS - 107 numbered cases: 98 statically verified; 9 operator-runtime observations pending |
+| Frozen-tree reviews | Causality, ontology, UI, and playability: no unresolved Critical or High source finding |
+| Release build | Full Release rebuild: 0 errors; the same 12 inherited warnings |
+| Built assembly | 3,255,808 bytes; SHA-256 `2CF3982C3ECA6E83D335BD7BCEEDF0E4BE98DDF2B218A0DAF854F72EB630A4E1` |
+| Deployment | RimWorld was closed. The active project DLL is byte-identical to the verified build at SHA-256 `2CF3982C3ECA6E83D335BD7BCEEDF0E4BE98DDF2B218A0DAF854F72EB630A4E1`. |
 
 The twelve warnings are the existing member-hiding and DefOf assignment
-warnings. No B6 warning or compile error remains. `git diff --check` passes.
+warnings. No B7 compile error remains. `git diff --check` passes with only
+working-tree line-ending notices.
 
 ## Authored runtime fixture
 
@@ -93,26 +122,40 @@ warnings. No B6 warning or compile error remains. `git diff --check` passes.
 | Arrival/root tile | `389638` |
 | Map scale | 350 |
 | Composition | 3 factions, 4 settlements, 9 population groups |
-| Schema | Regional plan 4; Culture 3; political beliefs 2 |
+| Schema | Regional plan 5; Culture 5; political beliefs 2 |
+| Temporal basis | Four existing settlements are explicitly established before scenario start; no synthetic event history was invented |
+| Compatibility | `developerExercise=true`; transient runtime materialization only; durable saving disabled |
 
 Active mirror:
 
 `C:\Users\jleyv\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlan.xml`
 
+- 33,209 bytes
+- SHA-256 `849DA7D8EF3976DD3BB7C9BFBDF6A12CEDB2A3FA4DB651F42FD82E7D80A35A82`
+
 Active keyed plan:
 
 `C:\Users\jleyv\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlans\regional-plan-9bcbba2fdcd1e7f334711a69635242a2.xml`
 
-Both files are byte-identical at 27,220 bytes and SHA-256
-`F60DC069CC30686E4B1694E91B61EF9458F37BD8E6E26FBCF621778FB916D583`.
-They parse and round-trip the current schema with the same world, region,
+- 34,065 bytes
+- SHA-256 `A300889CE4B19445F8CEE28B28A1383CA3B42D65245BACCB46FE9EE951DEFDE9`
+
+Both files parse and round-trip the current schema with the same world, region,
 candidate, composition, population assignments, relations, founding state, and
-realization hash.
+Culture state. Their normalized XML content is identical. Their byte hashes
+differ because the keyed surface retains CRLF while the active mirror retains
+LF; this is formatting, not state divergence.
+
+The selected region contains unsupported world mutators. B7 preserves that
+truth through the explicit transient developer-exercise route: the plan is
+registered for this run, resolved, projected, and materialized, but not scribed.
+The compatibility backstop warns and continues only for that explicit stamp.
+Durably incompatible plans still fail.
 
 ## Operator runtime boundary
 
-The B6 build is deployed and the static gate is complete. Cases 97-105 remain
-for the operator in RimWorld:
+The B7 build is deployed and the static gate is complete. The selected fixture is
+ready for disposable runtime cases 97-103 and 105:
 
 | Case | Runtime observation |
 |---|---|
@@ -123,11 +166,11 @@ for the operator in RimWorld:
 | 101 | Observe one bounded Proactive response. |
 | 102 | Observe one persistent Autonomous objective. |
 | 103 | Issue direct work around every initiative tier and confirm player authority. |
-| 104 | Save, reload, and compare registered intent identity and ownership. |
+| 104 | Not runnable on this transient fixture. Use a later compatible-region save/reload run to compare registered intent identity and ownership. |
 | 105 | Run through the first in-game hour and inspect `Player.log` for repeating exceptions. |
 
 Static evidence does not select options, advance the game, change saves, or
-substitute for how the behavior looks and plays.
+substitute for how the creation flow and generated colony look and play.
 
 ## Environment and preserved evidence
 

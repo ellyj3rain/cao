@@ -1,7 +1,7 @@
 # Colonist Awareness - roadmap
 
-The A sequence is closed at `A102`; the chronology is complete through `B6`,
-and `B7` is the next development batch.
+The A sequence is closed at `A102`; the chronology is complete through `B7`,
+and `B8` is the next development batch.
 Historical batch identifiers below use the current sequence. Thematic `T-*`
 identifiers link continuing work across nonadjacent batches. The chronological
 catalog is [`BATCH_LOG.md`](BATCH_LOG.md); thematic links are in
@@ -1491,4 +1491,40 @@ diagnostics. The read-only behavior census shows the selected actor's effective
 tier, catalog permissions, recent dynamic decision, and owned intent without
 authorizing work. The retained authoring suites and the B6 behavior-convergence
 suite provide the static gate; the named operator cases remain the next test of
-how the system looks, reads, and plays. `B7` is next.
+how the system looks, reads, and plays. B7 records the corrective reconstruction
+of the creation ontology and the Culture acceptance boundary.
+
+## Creation ontology and authoring reconstruction - B7 / T-002, T-013-T-015, T-019, T-021-T-025, T-028, T-030
+
+B7 restores the distinction between authoring causes and inspecting realized
+consequences. Starting Region keeps the regional map, arrival area, factions,
+settlements, placement, relations, population composition and sources, and
+sparse concrete exceptions. Generic development, transport, services, civic
+capacity, facility-bundle, and information-detail selectors are removed from
+ordinary authoring. Their underlying simulation facts remain concrete and
+causal; the UI presents realized results and contextual explanations at the
+objects and decisions that own them.
+
+Culture now persists as local longitudinal social history rather than as a
+visual source or prose summary of other settlement state. Stable inherited and
+local identities, constituent populations, lived observations, recognized
+practices, and transition provenance survive serialization. A bounded
+world-simulation behavior evaluates meaningful historical evidence and records
+deterministic successor state. Spatial ranking, social gathering, institutional
+legitimacy and research priority, political contradiction habituation, and
+player-delegated or NPC settlement development consume the same substantive
+Culture state without manufacturing authority, materials, knowledge, or
+capability.
+
+The founding surface again coordinates inherited Culture, native RimWorld
+Ideoligion, Political Beliefs, and the actual rules adopted at landing. Existing
+settlements carry explicit established temporal state; founders begin at the
+founding boundary unless a scenario explicitly supplies prior history. The
+selected three-faction/four-settlement fixture remains a transient developer
+exercise because its regional world mutators are not durably save-compatible.
+It can test creation and first-map behavior; save/reload case 104 requires a
+later compatible-region run.
+
+B7's deterministic receipts and frozen-tree reviews close the static gate. The
+verified assembly is deployed for operator cases 97-103 and 105 on the selected
+fixture. `B8` is the next development batch.

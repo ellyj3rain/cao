@@ -2124,3 +2124,84 @@
   committed only after that job succeeds. The behavior contract classifies,
   authorizes, records, and explains action; it is not a parallel central
   scheduler.
+
+- **DR-106** (2026-08-11) - **Simulation complexity does not imply equivalent
+  authoring complexity.** Creation exposes persistent causes the operator can
+  meaningfully choose. The simulation may derive many layered consequences from
+  those facts without turning every consequence, cache, or diagnostic into a
+  control.
+
+- **DR-107** (2026-08-11) - **A descriptive analytical category is not
+  automatically a constitutive simulation variable.** Labels used to inspect,
+  compare, or explain realized state do not become saved causes merely because
+  they make a convenient selector. Every retained authoring control owns one
+  concrete persisted fact and has a real downstream consumer.
+
+- **DR-108** (2026-08-11) - **Continuous, relational, plural, and historical
+  social state is not discretized merely for UI convenience.** A universal
+  ordinal may be used only where the underlying phenomenon actually possesses
+  that ordered scale. Overlapping provision, affiliation, belief, practice,
+  access, and cultural relations retain their own causes and can remain
+  contradictory.
+
+- **DR-109** (2026-08-11) - **Culture is persistent longitudinal
+  social-historical state.** A local Culture retains stable identity, inherited
+  origin, local development, constituent populations, typed observations,
+  recognized practices, transitions, and predecessor/evidence/domain
+  provenance. Bounded historical evaluation derives `Culture(T+1)` from
+  `Culture(T)` plus lived evidence. Unchanged history does not manufacture a
+  transition. Cultural expression is a read-only contextual interpretation of
+  Culture, and native `CultureDef` is one optional visual inheritance rather
+  than the cultural model. This supersedes the insufficient cultural-background
+  and derived-expression portions of DR-103 while retaining its authority
+  boundary.
+
+- **DR-110** (2026-08-11) - **Culture, Political Beliefs, Ideoligion,
+  institutions, adopted rules, and actual practice remain distinct.** Culture
+  records socially reproduced historical pattern. Political Beliefs record what
+  populations hold proper. RimWorld Ideoligion owns religious, ritual, moral,
+  and spiritual commitments. Institutions and adopted rules record realized
+  order. Observed practice records what people actually do. Agreement,
+  adaptation, plurality, and contradiction are meaningful state and are not
+  collapsed to make summaries agree.
+
+- **DR-111** (2026-08-11) - **Established societies and new founders occupy
+  different temporal boundaries.** An established settlement may begin with
+  mature institutions and local Culture because it predates the scenario, but
+  authoring records an explicit temporal basis rather than inventing unobserved
+  events. New founders bring inherited Culture, Ideoligion, and Political
+  Beliefs, adopt rules at landing, and acquire local institutions and historical
+  Culture through play. Player identity alone does not decide maturity; an
+  explicitly established player-start scenario may carry earlier history.
+
+- **DR-112** (2026-08-11) - **Native Ideoligion remains first-class inside one
+  integrated CA founding flow.** Native presets, saved Ideoligions, fixed and
+  fluid creation, memes, precepts, roles, rituals, validation,
+  `Scenario.PostIdeoChosen`, and native persistence remain authoritative. The
+  surrounding flow preserves inherited Culture, Political Beliefs, and landing
+  rules across entry, Back, and return; the native chooser is neither forked nor
+  treated as the complete founding ontology.
+
+- **DR-113** (2026-08-11) - **Contextual explanation belongs to the decision or
+  inspected object, not to a universal detail mode.** The global Compact,
+  Standard, and Expanded authoring policy and repeated local detail toggles are
+  removed. A decision states its fact, direct effect, constraints, and relevant
+  consequences where it occurs. Diagnostics may retain technical provenance
+  outside ordinary player copy.
+
+- **DR-114** (2026-08-11) - **Starting Region preserves spatial authoring while
+  exposing only meaningful direct facts and realized state.** The selected
+  region, arrival area, map, factions, settlements, locations, population
+  composition, ownership, relations, and concrete exceptional starting
+  conditions remain authorable. Access, services, civic capacity, facilities,
+  infrastructure, and settlement scale are derived from the people, land,
+  institutions, technology, economy, material state, and history that actually
+  exist.
+
+- **DR-115** (2026-08-11) - **Generic settlement-intensity and facility-bundle
+  controls are not canonical authoring primitives.** Minimal, Contextual, and
+  Extensive development profiles; unrelated ordinal infrastructure controls;
+  and per-facility Generated, Include, and Omit menus do not define arbitrary
+  societies. Sparse exact exceptions may preserve or forbid a concrete starting
+  object when that fact matters, but they remain secondary to realization and
+  never become a universal settlement recipe.

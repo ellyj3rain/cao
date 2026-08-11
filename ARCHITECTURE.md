@@ -334,48 +334,63 @@ Authority.
 
 The root world-tile graph is the authoritative regional topology. A saved regional
 plan owns its footprint, arrival area, factions, settlements, faction relations,
-world tendencies, settlement pattern, scale, and player founding state. Each settlement plan owns its
-population groups, form, role, relative development profile, starting facilities
-and exact overrides, access, services, civic development, and provisions.
-Persistent world objects mark settlements and
-visible moving actors. Maps materialize player homes, entered settlements,
-encounters, and other events that need pawn-, thing-, job-, or Lord-level detail.
+world tendencies, settlement pattern, scale, and player founding state. A
+settlement plan owns direct facts: stable identity and location, faction,
+population composition and sources, settlement form and role, provisions, and a
+sparse exact exception mask where the operator must preserve or forbid a concrete
+starting object. Access, services, civic capacity, facilities, infrastructure,
+and settlement scale are realized consequences of population, land, geography,
+technology, knowledge, institutions, economy, trade, material state, and history.
+Persistent world objects mark settlements and visible moving actors. Maps
+materialize player homes, entered settlements, encounters, and other events that
+need pawn-, thing-, job-, or Lord-level detail.
 
-A faction owns carried cultural background and optional native visual tradition,
-Ideoligion, political beliefs, current faction structure, and the authority
-shared between its settlements. Cultural background does not own furniture or
-other physical recipes. A settlement keeps a stable CA
-identity even when its faction changes. Its realized record owns residents,
-population groups, organizations, material state, relationships, and
-materialization history. Faction era records what the faction knows. Facilities
+A faction owns inherited Culture and its optional native visual tradition,
+Ideoligion, Political Beliefs, current faction structure, and the authority shared
+between its settlements. A settlement keeps a stable CA identity even when its
+faction changes. Its realized record owns residents, population groups,
+organizations, material state, relationships, materialization history, and one
+persistent local Culture. Faction era records what the faction knows. Facilities
 and infrastructure record what a settlement can support. Local capability is
 derived from those facts; it is not a separately authored source of truth.
 
-Cultural expression is also derived rather than authored as a second profile.
-One typed causal kernel reads carried background, actual Ideoligion commitments,
-political beliefs, population composition, institutions or founding arrangement,
-provisions, settlement form and role, infrastructure, facilities, economy,
-trade, geography, relations, buildings, and history. The resulting status,
-summary, facets, facts, and signature are stable under the same inputs. Settlement
-records persist the realized status, summary, and signature. Loaded maps
-reconcile them against actual resident Ideoligions and current material state;
-Starting Region, faction summaries, and world markers consume the same result.
+Local Culture is longitudinal social-historical state, not a profile reconstructed
+from the current settlement summary. It records inherited origin, local identity,
+constituent populations, typed observations of lived events, recognized practices,
+successive transitions, and predecessor/evidence/domain provenance. A bounded
+world-simulation behavior evaluates elapsed historical cycles. Stable evidence
+refreshes observed practice without manufacturing change; meaningful accumulated
+evidence deterministically produces a successor state. Two settlements with the
+same inherited origin may therefore diverge through different histories, while
+plural constituents remain represented rather than collapsing arbitrarily.
 
-Settlement development is a relative input to generation. Minimal, Contextual,
-or Extensive shifts only generated access, services, and civic development by a
-bounded step. Explicit infrastructure remains authoritative. Facilities derive
-from the resulting settlement and then apply exact per-facility Include or Omit
-overrides; the profile itself never encodes a facility mask.
+Cultural expression is a read-only contextual interpretation of current Culture
+in relation to Ideoligion, Political Beliefs, population, institutions, founding
+or realized order, material conditions, geography, relations, and observed
+practice. Its status, summary, facets, facts, and signature remain stable under
+the same saved inputs. It does not define Culture by reverse-summarizing transport,
+services, public works, facilities, or provisioning. Starting Region, faction
+summaries, loaded maps, and world markers consume the same nonmutating reading.
+
+Culture ranks otherwise valid social, spatial, institutional, political, and
+settlement-development choices. Current practices can favor shared public life,
+spatial continuity, defensive boundaries, institutional acceptance or friction,
+political normalization or durable contradiction, and development paths that
+fit lived local history. Each consumer still requires its own authority,
+knowledge, land, technology, labor, materials, treasury, and execution lane.
+Culture never manufactures those causes.
 
 An existing faction's structure is realized state from a society with history.
-The player founding state is intentionally earlier: it owns the cultural background and
-Political Beliefs brought by the founders, a receipt for their native
-Ideoligion content and revision, and the Founding Arrangement adopted at
-landing. Native Ideoligion validity is checked before the receipt may authorize
-scenario notification. That arrangement materializes once as exact,
-duration-aware founding relations. It is not expanded into broader
-faction-structure answers that the player did not choose.
-The player structure and institutional history develop through simulation; the
+An established settlement begins with an explicit temporal basis and may retain
+mature institutions and local Culture, but authoring does not invent unobserved
+event history merely to make it established. The player founding state is
+intentionally earlier: it owns the inherited Culture and Political Beliefs brought
+by the founders, a receipt for their native Ideoligion content and revision, and
+the Founding Arrangement adopted at landing. Native Ideoligion validity is checked
+before the receipt may authorize scenario notification. That arrangement
+materializes once as exact, duration-aware founding relations. It is not expanded
+into broader faction-structure answers that the player did not choose. Player
+institutions and local historical Culture develop through simulation; the
 established-faction generator does not fill them at game start.
 
 Individual observation becomes collective action only through an explicit causal

@@ -38,6 +38,7 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ### <a id="t-030"></a>T-030 - Validation and evidence discipline
 
@@ -125,6 +126,7 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ## TF-02 - Pawn cognition and authority
 
@@ -251,6 +253,7 @@ Home planning, space programs, residents, furnishing, and facility siting.
 - [A41 - Feng Shui furnishing](A041-2026-07-28-feng-shui-furnishing.md) - 2026-07-28 08:40 UTC / 01:40 PST
 - [A57 - Native Bedroom construction-cause proof](A057-2026-07-30-native-bedroom-construction-cause-proof.md) - 2026-07-30 03:39–05:50 UTC / 20:39–22:50 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ### <a id="t-014"></a>T-014 - Space programs and residents
 
@@ -265,6 +268,7 @@ Home planning, space programs, residents, furnishing, and facility siting.
 - [A89 - Settlement composition, pawns, and provisioning](A089-2026-08-08-settlement-composition-pawns-and-provisioning.md) - 2026-08-08 05:26 UTC / 22:26 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ### <a id="t-015"></a>T-015 - Facility siting and furnishing
 
@@ -287,6 +291,7 @@ Home planning, space programs, residents, furnishing, and facility siting.
 - [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ## TF-07 - Logistics, waste, and economy
 
@@ -347,6 +352,7 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ### <a id="t-020"></a>T-020 - Regional geometry, projection, and scatter
 
@@ -389,6 +395,7 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ### <a id="t-026"></a>T-026 - World tendencies and geography
 
@@ -429,6 +436,7 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 - [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ### <a id="t-023"></a>T-023 - Culture, beliefs, and Ideoligion
 
@@ -454,6 +462,7 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 - [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ## TF-10 - Onboarding and authoring
 
@@ -481,6 +490,7 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
 - [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ### <a id="t-025"></a>T-025 - Authoring surfaces and UI grammar
 
@@ -514,6 +524,7 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 ## TF-11 - Runtime tooling and controls
 
@@ -573,3 +584,4 @@ Canonical vocabulary, model convergence, copy register, and product truthfulness
 - [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
