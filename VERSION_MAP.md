@@ -8,9 +8,9 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | Form | `major.minor.kohai.patch-maturity` |
 | Hard caps | minor 12; kohai 16; patch 24 |
 | Replay start | `0.1.0.0-pre-alpha` |
-| Current version | `1.0.1.0-alpha` |
-| Closed chronology | `A1-B3` |
-| Next batch | `B4` |
+| Current version | `1.1.0.0-alpha` |
+| Closed chronology | `A1-B4` |
+| Next batch | `B5` |
 | Executable source | [`tools/version-model.mjs`](tools/version-model.mjs) |
 
 ## Tier meanings
@@ -58,6 +58,7 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | VU-028 | B1 | 2026-08-10 | kohai | `0.12.4.0-alpha` | Causal world authoring | `T-002`, `T-019`, `T-021`, `T-024`, `T-025`, `T-026`, `T-028`, `T-030` | B1 converges the existing World tendencies surface into one causal policy, realization, persistence, and generation contract. It matures the A100-A102 creator line with fixed-seed isolation receipts, current-schema fixture repair, and a verified deployment rather than opening a separate gameplay capability. |
 | VU-029 | B2 | 2026-08-10 | minor | `1.0.0.0-alpha` | Player founding authoring | `T-022`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B2 restores a missing player-visible authoring and runtime contract: Culture, native Ideoligion, Political Beliefs, and the adopted Founding Arrangement now share the faction ontology while preserving the temporal difference between an established society and a new colony. The world-owned draft and one-shot arrangement receipt cover regional and non-regional starts without fabricating mature player institutions. This is a new setup capability rather than an in-place correction, so it carries the minor tier. |
 | VU-030 | B3 | 2026-08-10 | kohai | `1.0.1.0-alpha` | Creation-flow interaction convergence | `T-002`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-026`, `T-028`, `T-030` | B3 matures the B1-B2 creation capability into one coherent interaction system across World tendencies, Starting Region, Culture, native Ideoligion, Political Beliefs, and Founding terms. Shared graphical choices, explicit focus and applied states, bounded comparison layouts, neutral presets, independent population causes, and executable interaction receipts improve legibility and correctness without opening a new simulation capability. |
+| VU-031 | B4 | 2026-08-10 to 2026-08-11 | minor | `1.1.0.0-alpha` | Culture, politics, and responsive authoring | `T-002`, `T-015`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B4 adds a player-visible cultural-practice and reusable-profile contract rather than only restyling B3. Four independently authored culture domains now materialize real settlement objects, political beliefs and realized structure share a grouped comparison composer, native Ideoligion remains first-class, explanation depth is a presentation-only preference, and the creation surfaces adapt across the supported width and UI-scale matrix. These new authoring and runtime consumers form a minor capability unit. |
 
 ## Historical version evidence
 
@@ -67,12 +68,12 @@ A22 is the maturity boundary: reproducible assembly followed an end-to-end runti
 
 ## Next movement
 
-`B4` is the next ordinary batch. Its content determines its tier after it exists:
+`B5` is the next ordinary batch. Its content determines its tier after it exists:
 
-| If B4 is | Result |
+| If B5 is | Result |
 |---|---|
-| patch or hotfix | `1.0.1.1-alpha` |
-| kohai | `1.0.2.0-alpha` |
-| minor | `1.1.0.0-alpha` (the minor hard cap rolls the numeric major; maturity remains alpha) |
+| patch or hotfix | `1.1.0.1-alpha` |
+| kohai | `1.1.1.0-alpha` |
+| minor | `1.2.0.0-alpha` (the minor tier advances capability; maturity remains unchanged) |
 
 The thematic catalog is series-neutral in [`Batches/THREADS.md`](Batches/THREADS.md). Temporary `AT-*` and `ATF-*` identifiers resolve through [`Batches/THREAD_ID_CROSSWALK.md`](Batches/THREAD_ID_CROSSWALK.md).

@@ -35,6 +35,7 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
 
 - [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
+- [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 
 ### <a id="t-030"></a>T-030 - Validation and evidence discipline
 
@@ -119,6 +120,7 @@ Project identity, historical regulation, build provenance, validation, deploymen
 
 - [B2 - Player founding authoring](B002-2026-08-10-player-founding-authoring.md) - 2026-08-10 18:06–19:46 UTC / 11:06–12:46 PST
 - [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
+- [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 
 ## TF-02 - Pawn cognition and authority
 
@@ -267,6 +269,7 @@ Home planning, space programs, residents, furnishing, and facility siting.
 - [A53 - Room-furnishing authority transitions](A053-2026-07-29-room-furnishing-authority-transitions.md) - 2026-07-29 01:52 UTC / 18:52 PST
 - [A55 - Authored Bedroom requirement comparison](A055-2026-07-29-authored-bedroom-requirement-comparison.md) - 2026-07-29 03:32 UTC / 20:32 PST
 - [A94 - First consumers for every authoring axis](A094-2026-08-08-first-consumers-for-every-authoring-axis.md) - 2026-08-08 18:46 UTC / 11:46 PST
+- [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 
 ## TF-07 - Logistics, waste, and economy
 
@@ -362,6 +365,7 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
 
 - [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
+- [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 
 ### <a id="t-026"></a>T-026 - World tendencies and geography
 
@@ -399,6 +403,7 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 
 - [B2 - Player founding authoring](B002-2026-08-10-player-founding-authoring.md) - 2026-08-10 18:06–19:46 UTC / 11:06–12:46 PST
 - [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
+- [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 
 ### <a id="t-023"></a>T-023 - Culture, beliefs, and Ideoligion
 
@@ -421,6 +426,7 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 
 - [B2 - Player founding authoring](B002-2026-08-10-player-founding-authoring.md) - 2026-08-10 18:06–19:46 UTC / 11:06–12:46 PST
 - [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
+- [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 
 ## TF-10 - Onboarding and authoring
 
@@ -446,6 +452,7 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 
 - [B2 - Player founding authoring](B002-2026-08-10-player-founding-authoring.md) - 2026-08-10 18:06–19:46 UTC / 11:06–12:46 PST
 - [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
+- [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 
 ### <a id="t-025"></a>T-025 - Authoring surfaces and UI grammar
 
@@ -476,6 +483,7 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 
 - [B2 - Player founding authoring](B002-2026-08-10-player-founding-authoring.md) - 2026-08-10 18:06–19:46 UTC / 11:06–12:46 PST
 - [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
+- [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 
 ## TF-11 - Runtime tooling and controls
 
@@ -531,3 +539,4 @@ Canonical vocabulary, model convergence, copy register, and product truthfulness
 - [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
 - [B2 - Player founding authoring](B002-2026-08-10-player-founding-authoring.md) - 2026-08-10 18:06–19:46 UTC / 11:06–12:46 PST
 - [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
+- [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
