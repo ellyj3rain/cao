@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using HarmonyLib;
 using RimWorld;
@@ -2543,6 +2544,7 @@ namespace ColonistAwareness
         private static void SyncOffices(CAOrganization org, List<Pawn> colonists)
         {
             var live = new Dictionary<string, CAOffice>();
+            bool authorityChanged = false;
 
             for (int i = 0; i < colonists.Count; i++)
             {
@@ -2591,6 +2593,7 @@ namespace ColonistAwareness
                         + (held.holderLabel != null
                             ? " (last held by " + held.holderLabel + ")" : ""));
                     org.offices.RemoveAt(i);
+                    authorityChanged = true;
                     continue;
                 }
                 if (held.holderId != current.holderId)
@@ -2599,6 +2602,7 @@ namespace ColonistAwareness
                         + (held.holderLabel ?? "vacant") + " -> "
                         + current.holderLabel);
                     held.holderId = current.holderId;
+                    authorityChanged = true;
                 }
                 held.holderLabel = current.holderLabel;
                 held.seniority = current.seniority;
@@ -2610,8 +2614,10 @@ namespace ColonistAwareness
                 org.Record("office established - " + pair.Value.name
                     + ", held by " + pair.Value.holderLabel);
                 org.offices.Add(pair.Value);
+                authorityChanged = true;
             }
             org.offices.SortByDescending(o => o.seniority);
+            if (authorityChanged) CABehaviorRevisions.RoleChanged();
         }
 
         private static void AddOffice(Dictionary<string, CAOffice> live,
@@ -3017,11 +3023,41 @@ namespace ColonistAwareness
                 for (int i = 0; i < pawns.Count; i++)
                 {
                     Pawn p = pawns[i];
-                    if (p.Downed || AutonomyComponent.LevelOf(p) < 2)
+                    if (p.Downed || !CABehaviorGate.StableProfileAllows(p,
+                            "communication.status_report"))
                         continue;
                     int last;
                     if (laceLast.TryGetValue(p.thingIDNumber, out last)
                         && now - last < 15000) continue;
+                    ThreatContactSnapshot fact = default(
+                        ThreatContactSnapshot);
+                    bool hasFact = KnowledgeMapComponent.For(map)
+                        ?.TryGetFreshestContact(p, out fact) == true;
+                    if (!hasFact) continue;
+                    var reportContext = CABehaviorContext.ForPawn(p,
+                        CAAuthorityOrigin.Organization,
+                        authoritySatisfied: org.HasCustom(
+                            "status reporting"),
+                        knowledgeSatisfied: fact.State
+                            == ThreatContactState.Active,
+                        knowledgeFresh: now - fact.SourceTick <= 2500,
+                        liveValidated: true,
+                        knowledgeRelayed: !fact.Evidence.IsDirect,
+                        knowledgeAgeTicks: System.Math.Max(0,
+                            now - fact.SourceTick),
+                        knowledgeConfidence: fact.Evidence.Confidence,
+                        knowledgeUncertainty: fact.Evidence.Uncertainty,
+                        capabilitySatisfied: true, materialSatisfied: true,
+                        currentIntentCompatible: true,
+                        directPlayerOwnership: false,
+                        authorityBasis:
+                            "adopted colony status-reporting practice",
+                        knowledgeBasis: "actor-held threat fact",
+                        owner: "colony organization");
+                    CABehaviorDecision reportDecision =
+                        CABehaviorGate.Evaluate(
+                            "communication.status_report", reportContext);
+                    if (!reportDecision.Allowed) continue;
                     laceLast[p.thingIDNumber] = now;
                     CATrace.Pawn(p, "LACE (adopted practice): "
                         + CAStatusReport.For(p), anchor: p.Position);
@@ -3267,12 +3303,38 @@ namespace ColonistAwareness
                     mapId = map.uniqueID
                 });
 
-            SeedRepresentativeAssets(org, record, map);
-            CAStartingFacilities.Furnish(org, record, map);
+            CASettlementDevelopmentProposal creationProposal =
+                CASettlementAssetRegistry.CreationFromRecord(record);
+            record.creationSitingEvaluated = true;
+            record.creationSitingFeasible =
+                CASettlementAssetRegistry.CanSiteCreationDemands(map,
+                    record.localRect, creationProposal,
+                    out string creationSitingBlocker);
+            record.creationMaterialFeasible =
+                creationProposal.MaterialFeasible;
+            record.creationProposalSignature =
+                creationProposal.StableSignature();
+            record.creationExecutable = record.creationAuthorized
+                && record.creationMaterialFeasible
+                && record.creationSitingFeasible;
+            record.creationBlocker = record.creationExecutable
+                ? null : creationSitingBlocker ?? record.creationBlocker
+                    ?? "confirmed creation history is not materializable";
+            if (record.creationExecutable)
+            {
+                SeedRepresentativeAssets(org, record, map);
+                CAStartingFacilities.Furnish(org, record, map);
+            }
+            else
+                org.Record("works", "confirmed creation history blocked - "
+                    + record.creationBlocker);
             // Apply faction structure after residents and furnishings exist:
             // offices, facility holdings, staffed posts, membership, and
             // security practices.
             CAAxisMaterialization.Apply(org, record, map);
+            // Future work now reads the realized institution and current
+            // material settlement. It does not inherit creation feasibility.
+            RefreshDevelopmentAuthority(org, record, map);
             record.layout = CASettlementLayoutBuilder.Build(record, map);
             if (record.layout != null && record.layout.gates.Count > 0)
                 org.Record("settlement", "layout recorded - "
@@ -3281,6 +3343,66 @@ namespace ColonistAwareness
                     + record.layout.facilityKinds.Count
                     + " facilities");
             LogGraph(record, map);
+        }
+
+        internal static void RefreshDevelopmentAuthority(CAOrganization org,
+            CARegionalSettlementRecord record, Map map)
+        {
+            CASettlementDevelopmentProposal proposal =
+                CASettlementAssetRegistry.BuildInstitutionalProposal(record,
+                    org, map);
+            bool sitingFeasible = CASettlementAssetRegistry
+                .CanExerciseInstitutionalDevelopment(map, record, proposal,
+                    out string sitingBlocker);
+            CASettlementAssetRegistry.RecordInstitutionalFacts(record,
+                proposal, sitingFeasible, sitingBlocker);
+            bool developmentAuthorized =
+                CASettlementInstitutionalAuthorization
+                    .TryAuthorizeLaterDevelopment(record, org, proposal,
+                        out CABehaviorDecision developmentDecision,
+                        out CAIntentContext developmentIntent);
+            record.developmentBehaviorKey = developmentAuthorized
+                ? developmentIntent.BehaviorKey : null;
+            record.developmentEpisodeId = developmentAuthorized
+                ? developmentIntent.EpisodeId : 0;
+            record.developmentAuthorityOrigin = developmentAuthorized
+                ? (int)developmentIntent.AuthorityOrigin : 0;
+            record.developmentAuthorityIdentity = developmentAuthorized
+                ? developmentIntent.AuthorityIdentity : null;
+            record.developmentOwner = developmentAuthorized
+                ? developmentIntent.OwnershipScope : org?.organizationKey;
+            record.developmentProposer = org?.name ?? org?.organizationKey;
+            record.developmentApprover = developmentAuthorized
+                ? developmentIntent.AuthorityIdentity : null;
+            record.developmentLaborSource = "current native settlement residents";
+            record.developmentBeneficiaries = map?.mapPawns
+                    ?.SpawnedPawnsInFaction(record.faction)
+                    ?.Where(pawn => pawn != null && !pawn.Dead
+                        && pawn.RaceProps.Humanlike && !pawn.IsPrisoner)
+                    .Select(pawn => pawn.LabelShort)
+                    .Distinct().OrderBy(label => label,
+                        StringComparer.Ordinal).ToList()
+                ?? new List<string>();
+            if (record.developmentBeneficiaries.Count == 0)
+                record.developmentBeneficiaries.Add(
+                    "current settlement residents");
+            record.developmentTargetOrDemand = developmentAuthorized
+                ? developmentIntent.TargetOrDemand : proposal.StableSignature();
+            record.developmentCreatedTick = developmentAuthorized
+                ? developmentIntent.CreatedTick : -1;
+            record.developmentAuthorized = developmentAuthorized;
+            record.developmentExecutable = developmentAuthorized
+                && proposal.FundingFeasible && proposal.MaterialFeasible
+                && sitingFeasible;
+            record.developmentBlocker = record.developmentExecutable
+                ? null : !developmentAuthorized
+                    ? developmentDecision.PrimaryReason
+                    : !proposal.FundingFeasible
+                        ? proposal.FundingBasis
+                        : !proposal.MaterialFeasible
+                            ? proposal.MaterialBasis
+                            : sitingBlocker
+                                ?? "later institutional development is not executable";
         }
 
         // Prints the initial layout so missing entrances or rooms are visible
@@ -3595,6 +3717,7 @@ namespace ColonistAwareness
         {
             int now = Find.TickManager.TicksGame;
             List<Pawn> residents = ResidentsOf(record, map);
+            RefreshDevelopmentAuthority(org, record, map);
 
             // Fold-back: settlement losses cost their organization standing.
             if (org.lastPopulation >= 0

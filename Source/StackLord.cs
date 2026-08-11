@@ -29,7 +29,10 @@ namespace ColonistAwareness
         private IntVec3 doorCell = IntVec3.Invalid;
         private IntVec3 wallAxis = IntVec3.Invalid;
         private IntVec3 farSide = IntVec3.Invalid;   // into the room being cleared
+        // This is an auto-release request, not saved authorization. The full
+        // behavior contract is re-evaluated at the release boundary.
         private bool autoGo;
+        private int autoGoReadyTick = -1;
 
         private LordToil_CAForm formToil;
         private LordToil_CASet setToil;
@@ -165,7 +168,6 @@ namespace ColonistAwareness
 
             var go = new Transition(setToil, clearToil);
             go.AddTrigger(new Trigger_Memo(MemoGo));
-            if (autoGo) go.AddTrigger(new Trigger_TicksPassed(180));
             g.AddTransition(go);
 
             var roomClear = new Transition(clearToil, reconveneToil);
@@ -207,10 +209,89 @@ namespace ColonistAwareness
 
         public override void LordJobTick()
         {
-            // Kill switch: the settings toggle dissolves standing drills.
-            if (Find.TickManager.TicksGame % 120 == 0
-                && AwarenessMod.Settings != null && !AwarenessMod.Settings.battleDrills)
-                lord.ReceiveMemo(MemoStandDown);
+            if (!autoGo) return;
+
+            // A saved request never survives its permission being disabled.
+            // The player-authored stack itself remains available for an
+            // explicit Breach or Stand down order.
+            AwarenessSettings settings = AwarenessMod.Settings;
+            if (settings == null || !settings.battleDrills)
+            {
+                autoGo = false;
+                autoGoReadyTick = -1;
+                return;
+            }
+
+            if (lord.CurLordToil != setToil)
+            {
+                autoGoReadyTick = -1;
+                return;
+            }
+
+            int now = Find.TickManager.TicksGame;
+            if (autoGoReadyTick < 0)
+            {
+                autoGoReadyTick = now;
+                return;
+            }
+            if (now - autoGoReadyTick < 180) return;
+
+            CABehaviorDecision denied;
+            if (!CanAutoRelease(out denied))
+            {
+                // Authorization is consumed exactly once. A refused automatic
+                // release does not keep polling until circumstances happen to
+                // permit an action the player did not renew.
+                autoGo = false;
+                autoGoReadyTick = -1;
+                return;
+            }
+
+            autoGo = false;
+            autoGoReadyTick = -1;
+            lord.ReceiveMemo(MemoGo);
+        }
+
+        private bool CanAutoRelease(out CABehaviorDecision denied)
+        {
+            denied = default(CABehaviorDecision);
+            Map map = base.Map;
+            bool doorValid = door != null && door.Spawned && door.Map == map
+                && door.Position == doorCell && Entry.IsValid
+                && Entry.InBounds(map);
+            if (!doorValid) return false;
+
+            for (int i = 0; i < lord.ownedPawns.Count; i++)
+            {
+                Pawn pawn = lord.ownedPawns[i];
+                bool capable = pawn != null && !pawn.Dead && !pawn.Downed
+                    && pawn.Spawned && pawn.Map == map && pawn.jobs != null;
+                bool owned = capable && pawn.GetLord() == lord
+                    && !CATactical.HasForeignPlayerForcedJob(pawn);
+                bool set = owned && SlotFor(pawn).IsValid
+                    && pawn.Position.InHorDistOf(SlotFor(pawn), 1.5f);
+                var context = CABehaviorContext.ForPawn(pawn,
+                    CAAuthorityOrigin.PlayerDelegated,
+                    authoritySatisfied: owned,
+                    knowledgeSatisfied: set && doorValid,
+                    knowledgeFresh: set && doorValid,
+                    liveValidated: set && doorValid,
+                    capabilitySatisfied: capable,
+                    materialSatisfied: doorValid,
+                    currentIntentCompatible: owned,
+                    authorityBasis: "active player-authored stack episode",
+                    knowledgeBasis: "all assigned stack members set at "
+                        + doorCell,
+                    owner: "stack lord at " + doorCell);
+                CABehaviorDecision decision = CABehaviorGate.Evaluate(
+                    "support.stack_auto_breach", context);
+                if (!decision.Allowed)
+                {
+                    denied = decision;
+                    return false;
+                }
+            }
+            return lord.ownedPawns.Count > 0;
         }
 
         public override IEnumerable<Gizmo> GetPawnGizmos(Pawn p)
@@ -260,12 +341,19 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref wallAxis, "wallAxis", IntVec3.Invalid);
             Scribe_Values.Look(ref farSide, "farSide", IntVec3.Invalid);
             Scribe_Values.Look(ref autoGo, "autoGo", defaultValue: false);
+            Scribe_Values.Look(ref autoGoReadyTick, "autoGoReadyTick", -1);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 if (slotPawns == null) slotPawns = new List<Pawn>();
                 if (slotCells == null) slotCells = new List<IntVec3>();
                 if (clearPawns == null) clearPawns = new List<Pawn>();
                 if (clearCells == null) clearCells = new List<IntVec3>();
+                if (AwarenessMod.Settings == null
+                    || !AwarenessMod.Settings.battleDrills)
+                {
+                    autoGo = false;
+                    autoGoReadyTick = -1;
+                }
             }
         }
     }

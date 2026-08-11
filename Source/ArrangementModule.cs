@@ -62,6 +62,7 @@ namespace ColonistAwareness
             {
                 if (cells == null) cells = new List<IntVec3>();
                 if (memberIds == null) memberIds = new List<int>();
+                CACombatIntent.ObserveEpisode(episodeId);
             }
         }
 

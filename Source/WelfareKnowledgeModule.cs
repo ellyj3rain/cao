@@ -1370,8 +1370,8 @@ namespace ColonistAwareness
         {
             AwarenessSettings settings = AwarenessMod.Settings;
             if (owner == null || owner.Map != map || settings == null
-                || !settings.authorityObedience
-                || AutonomyComponent.LevelOf(owner) < 2
+                || !CABehaviorGate.StableProfileAllows(owner,
+                    "welfare.accountability_check")
                 || !CATactical.IsAutomaticDefense(owner)) return false;
             int now = Find.TickManager.TicksGame;
             for (int i = 0; i < accountability.Count; i++)
@@ -1469,8 +1469,8 @@ namespace ColonistAwareness
             snapshot = default;
             AwarenessSettings settings = AwarenessMod.Settings;
             if (owner == null || settings == null
-                || !settings.authorityObedience
-                || AutonomyComponent.LevelOf(owner) < 2
+                || !CABehaviorGate.StableProfileAllows(owner,
+                    "welfare.accountability_check")
                 || !OwnerHasActiveAccountabilityDuty(owner)) return false;
             CAAccountabilityRecord best = null;
             int bestDistance = int.MaxValue;
@@ -1508,7 +1508,7 @@ namespace ColonistAwareness
                 || !record.lastConfirmedCell.IsValid
                 || !record.lastConfirmedCell.InBounds(map)
                 || record.lastConfirmedCell.IsForbidden(owner)) return false;
-            if (AutonomyComponent.LevelOf(owner) == 2
+            if (AutonomyComponent.TierOf(owner) == CAInitiativeTier.Proactive
                 && owner.Position.DistanceToSquared(record.lastConfirmedCell) > 900)
                 return false;
             return owner.CanReach(record.lastConfirmedCell,
@@ -1811,7 +1811,8 @@ namespace ColonistAwareness
                 || pawn.InMentalState || !pawn.Awake() || pawn.jobs == null)
                 return null;
             bool proactiveHold = CATactical.IsHold(pawn)
-                && AutonomyComponent.LevelOf(pawn) >= 2
+                && CABehaviorGate.StableProfileAllows(pawn,
+                    "combat.hold_deviation")
                 && !CATactical.HasForeignPlayerForcedJob(pawn);
             if (pawn.CurJob != null && pawn.CurJob.playerForced
                 && !proactiveHold) return null;
@@ -1855,7 +1856,8 @@ namespace ColonistAwareness
                 if (rescue != null) return rescue;
             }
 
-            if (AutonomyComponent.LevelOf(pawn) >= 2 && !immediateDanger)
+            if (CABehaviorGate.StableProfileAllows(pawn,
+                    "welfare.accountability_check") && !immediateDanger)
             {
                 Job check = TryWelfareCheck(pawn, settings, knowledge,
                     factBuffer, visiblePeerOnly);
@@ -1877,6 +1879,8 @@ namespace ColonistAwareness
                         accountability.Revision,
                         accountability.LastConfirmedCell,
                         WelfareCheckOrigin.Accountability);
+                    if (!AuthorizeAccountabilityJob(pawn, job,
+                            accountability)) return null;
                     CATrace.Pawn(pawn, "checks last confirmed position of direct report "
                         + accountability.SubjectId + " at "
                         + accountability.LastConfirmedCell);
@@ -1890,7 +1894,8 @@ namespace ColonistAwareness
             AwarenessSettings settings, KnowledgeMapComponent knowledge,
             List<WelfareFactSnapshot> facts, bool visiblePeerOnly)
         {
-            if (!settings.fieldMedicine || AutonomyComponent.LevelOf(pawn) < 2)
+            if (!CABehaviorGate.StableProfileAllows(pawn,
+                    "welfare.accountability_check"))
                 return null;
             if (pawn.WorkTagIsDisabled(WorkTags.Caring)) return null;
             int medicineSkill = CAClinicalObservation.SkillLevel(pawn,
@@ -1931,6 +1936,10 @@ namespace ColonistAwareness
             if (bestPatient == null) return null;
             Job tend = CAClinicalObservation.TendJob(pawn, bestPatient);
             if (tend == null) return null;
+            tend = AuthorizeWelfareJob(pawn, tend,
+                "welfare.local_treatment", best, bestPatient,
+                "stabilize a known casualty");
+            if (tend == null) return null;
             knowledge.MarkWelfareUnassessed(pawn, best.SubjectId);
             CATrace.Pawn(pawn, "stabilizes known casualty "
                 + bestPatient.LabelShort + " (assessed bleed death "
@@ -1946,6 +1955,7 @@ namespace ColonistAwareness
             if ((!settings.fieldMedicine && !settings.lifeSafety)
                 || rescuer.WorkTagIsDisabled(WorkTags.Caring)) return null;
             Pawn best = null;
+            WelfareFactSnapshot bestFact = default(WelfareFactSnapshot);
             int bestUrgency = int.MaxValue;
             int bestDistance = int.MaxValue;
             for (int i = 0; i < facts.Count; i++)
@@ -1969,6 +1979,7 @@ namespace ColonistAwareness
                     || urgency == bestUrgency && distance < bestDistance)
                 {
                     best = patient;
+                    bestFact = fact;
                     bestUrgency = urgency;
                     bestDistance = distance;
                 }
@@ -1982,6 +1993,11 @@ namespace ColonistAwareness
                     Danger.Deadly)) return null;
             Job rescue = JobMaker.MakeJob(JobDefOf.Rescue, best, bed);
             rescue.count = 1;
+            string behaviorKey = settings.lifeSafety
+                ? "welfare.local_rescue" : "welfare.local_treatment";
+            rescue = AuthorizeWelfareJob(rescuer, rescue, behaviorKey,
+                bestFact, best, "rescue a known same-team casualty");
+            if (rescue == null) return null;
             CATrace.Pawn(rescuer, "carries known same-team casualty "
                 + best.LabelShort + " to " + bed.LabelShort
                 + " before considering hostile aftermath",
@@ -1996,7 +2012,7 @@ namespace ColonistAwareness
         {
             if (!settings.fieldMedicine && !settings.lifeSafety) return null;
             if (pawn.WorkTagIsDisabled(WorkTags.Caring)) return null;
-            int level = AutonomyComponent.LevelOf(pawn);
+            CAInitiativeTier tier = AutonomyComponent.TierOf(pawn);
             WelfareFactSnapshot best = default;
             bool foundBest = false;
             int bestDistance = int.MaxValue;
@@ -2028,7 +2044,8 @@ namespace ColonistAwareness
                     else if (fact.Evidence.IsDirect) continue;
                 }
                 int distance = pawn.Position.DistanceToSquared(fact.Cell);
-                if (level == 2 && distance > 900) continue;
+                if (tier == CAInitiativeTier.Proactive && distance > 900)
+                    continue;
                 if (!pawn.CanReach(fact.Cell, PathEndMode.Touch,
                     Danger.Deadly)) continue;
                 if (!foundBest || distance < bestDistance)
@@ -2056,10 +2073,83 @@ namespace ColonistAwareness
             knowledge.RegisterWelfareCheck(job, best.SubjectId,
                 best.SourceTick, best.StateTick, best.Revision, best.Cell,
                 WelfareCheckOrigin.WelfareFact);
+            job = AuthorizeWelfareJob(pawn, job,
+                "welfare.accountability_check", best, null,
+                "check a last-confirmed welfare concern");
+            if (job == null) return null;
             support?.MarkRequesterReleased(pawn, job);
             CATrace.Pawn(pawn, "locates and assesses known welfare concern pawn "
                 + best.SubjectId + " at " + best.Cell);
             return job;
+        }
+
+        private static Job AuthorizeWelfareJob(Pawn actor, Job job,
+            string behaviorKey, WelfareFactSnapshot fact, Pawn liveSubject,
+            string demand)
+        {
+            if (actor == null || job == null) return null;
+            int now = Find.TickManager?.TicksGame ?? 0;
+            bool live = liveSubject == null || liveSubject.Spawned
+                && !liveSubject.Dead;
+            var context = CABehaviorContext.ForPawn(actor,
+                CAAuthorityOrigin.PlayerDelegated,
+                authoritySatisfied: true,
+                knowledgeSatisfied: fact.Actionable,
+                knowledgeFresh: fact.Actionable,
+                liveValidated: live,
+                knowledgeRelayed: !fact.Evidence.IsDirect,
+                knowledgeAgeTicks: Math.Max(0, now - fact.SourceTick),
+                knowledgeConfidence: fact.Evidence.Confidence,
+                knowledgeUncertainty: fact.Evidence.UncertaintyTicks,
+                capabilitySatisfied: !actor.WorkTagIsDisabled(
+                    WorkTags.Caring), materialSatisfied: job != null,
+                currentIntentCompatible: true,
+                directPlayerOwnership: actor.CurJob != null
+                    && actor.CurJob.playerForced,
+                authorityBasis: "current same-team care responsibility",
+                knowledgeBasis: fact.Evidence.IsDirect
+                    ? "direct current welfare evidence"
+                    : "relayed welfare evidence with preserved source age",
+                owner: "one welfare response");
+            CABehaviorDecision decision;
+            CAIntentContext intent;
+            return CABehaviorJobOrigin.TryAuthorizeAndRegister(actor, job,
+                behaviorKey, CAIntentController.Welfare, context,
+                out decision, out intent,
+                liveSubject?.LabelShort ?? demand,
+                "one welfare response", 10000) ? job : null;
+        }
+
+        private static bool AuthorizeAccountabilityJob(Pawn actor, Job job,
+            AccountabilitySnapshot accountability)
+        {
+            int now = Find.TickManager?.TicksGame ?? 0;
+            var context = CABehaviorContext.ForPawn(actor,
+                CAAuthorityOrigin.PlayerDelegated,
+                authoritySatisfied: accountability.State
+                    == AccountabilityState.Checking,
+                knowledgeSatisfied: accountability.LastConfirmedCell.IsValid,
+                knowledgeFresh: now - accountability.LastConfirmedTick
+                    <= 2500,
+                liveValidated: true, knowledgeRelayed: false,
+                knowledgeAgeTicks: Math.Max(0,
+                    now - accountability.LastConfirmedTick),
+                capabilitySatisfied: job != null,
+                materialSatisfied: accountability.LastConfirmedCell
+                    .InBounds(actor.Map),
+                directPlayerOwnership: actor.CurJob != null
+                    && actor.CurJob.playerForced,
+                authorityBasis: "recorded responsibility for a direct report",
+                knowledgeBasis: "last confirmed location and overdue state",
+                owner: "one accountability check");
+            CABehaviorDecision decision;
+            CAIntentContext intent;
+            return CABehaviorJobOrigin.TryAuthorizeAndRegister(actor, job,
+                "welfare.accountability_check",
+                CAIntentController.Welfare, context,
+                out decision, out intent,
+                "pawn " + accountability.SubjectId,
+                "one accountability check", 10000);
         }
 
         private static bool IsSameTeamPeer(Pawn actor, Pawn subject)

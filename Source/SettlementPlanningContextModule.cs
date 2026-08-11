@@ -5,9 +5,695 @@ using System.Text;
 using RimWorld;
 using UnityEngine;
 using Verse;
+using Verse.AI;
 
 namespace ColonistAwareness
 {
+    internal enum CASettlementDemandKind : byte
+    {
+        Unknown = 0,
+        FoodPreparation = 1,
+        Storage = 2,
+        Medicine = 3,
+        Production = 4,
+        Custody = 5,
+        Dining = 6,
+        Research = 7,
+        Defense = 8,
+        Maintenance = 9,
+        Access = 10
+    }
+
+    // A settlement proposal names needs and native assets before authority is
+    // evaluated. It is the common factual input for player spatial planning and
+    // established-settlement development; neither path gains permission merely
+    // because a candidate exists.
+    internal sealed class CASettlementDevelopmentProposal
+    {
+        internal readonly List<CASettlementDemandKind> Demands =
+            new List<CASettlementDemandKind>();
+        internal readonly List<string> AssetCandidates =
+            new List<string>();
+        internal string FundingBasis;
+        internal string MaterialBasis;
+        internal bool FundingFeasible;
+        internal bool MaterialFeasible;
+
+        internal bool HasCandidate(CASettlementDemandKind demand)
+        {
+            string prefix = ((int)demand) + "|";
+            return AssetCandidates.Any(candidate => candidate != null
+                && candidate.StartsWith(prefix, StringComparison.Ordinal));
+        }
+
+        internal IEnumerable<ThingDef> Candidates(
+            CASettlementDemandKind demand)
+        {
+            string prefix = ((int)demand) + "|";
+            foreach (string candidate in AssetCandidates)
+            {
+                if (candidate == null || !candidate.StartsWith(prefix,
+                        StringComparison.Ordinal)) continue;
+                ThingDef def = DefDatabase<ThingDef>.GetNamedSilentFail(
+                    candidate.Substring(prefix.Length));
+                if (def != null) yield return def;
+            }
+        }
+
+        internal string StableSignature()
+        {
+            return string.Join(",", Demands.OrderBy(demand => (int)demand)
+                    .Select(demand => ((int)demand).ToString()).ToArray())
+                + ":" + string.Join(",", AssetCandidates
+                    .OrderBy(candidate => candidate, StringComparer.Ordinal)
+                    .ToArray())
+                + ":funding=" + FundingFeasible
+                + ":material=" + MaterialFeasible;
+        }
+    }
+
+    internal static class CASettlementAssetRegistry
+    {
+        private static readonly Dictionary<CASettlementDemandKind, string[]>
+            Preferred = new Dictionary<CASettlementDemandKind, string[]>
+            {
+                { CASettlementDemandKind.FoodPreparation,
+                    new[] { "Campfire", "FueledStove", "TableButcher" } },
+                { CASettlementDemandKind.Storage,
+                    new[] { "Shelf" } },
+                { CASettlementDemandKind.Medicine,
+                    new[] { "Bedroll", "Bed", "HospitalBed" } },
+                { CASettlementDemandKind.Production,
+                    new[] { "CraftingSpot", "FueledSmithy" } },
+                { CASettlementDemandKind.Custody,
+                    new[] { "Bedroll", "Bed" } },
+                { CASettlementDemandKind.Dining,
+                    new[] { "Table2x2c", "Stool", "DiningChair" } },
+                { CASettlementDemandKind.Research,
+                    new[] { "SimpleResearchBench" } },
+                { CASettlementDemandKind.Defense,
+                    new[] { "Sandbags", "Barricade" } }
+            };
+
+        internal static List<ThingDef> Candidates(
+            CASettlementDemandKind demand)
+        {
+            if (demand == CASettlementDemandKind.Storage)
+            {
+                ThingCategoryDef furniture = DefDatabase<ThingCategoryDef>
+                    .GetNamedSilentFail("BuildingsFurniture");
+                return DefDatabase<ThingDef>.AllDefsListForReading.Where(def =>
+                        def != null && def.category == ThingCategory.Building
+                        && def.thingClass != null
+                        && typeof(Building_Storage).IsAssignableFrom(
+                            def.thingClass)
+                        && def.BuildableByPlayer && def.blueprintDef != null
+                        && def.blueprintDef.thingClass != null
+                        && typeof(Blueprint_Storage).IsAssignableFrom(
+                            def.blueprintDef.thingClass)
+                        && def.building != null
+                        && def.building.maxItemsInCell > 1
+                        && (furniture == null
+                            || def.IsWithinCategory(furniture)))
+                    .OrderBy(def => def.defName, StringComparer.Ordinal)
+                    .ToList();
+            }
+
+            if (!Preferred.TryGetValue(demand, out string[] names))
+                return new List<ThingDef>();
+            var result = new List<ThingDef>();
+            for (int i = 0; i < names.Length; i++)
+            {
+                ThingDef def = DefDatabase<ThingDef>.GetNamedSilentFail(
+                    names[i]);
+                if (def == null || def.category != ThingCategory.Building
+                    || !def.BuildableByPlayer || def.blueprintDef == null)
+                    continue;
+                result.Add(def);
+            }
+            return result;
+        }
+
+        internal static CASettlementDemandKind DemandFor(string defName)
+        {
+            if (defName.NullOrEmpty()) return CASettlementDemandKind.Unknown;
+            foreach (KeyValuePair<CASettlementDemandKind, string[]> pair in
+                Preferred)
+                if (pair.Value.Contains(defName)) return pair.Key;
+            ThingDef def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
+            if (def?.thingClass != null
+                && typeof(Building_Storage).IsAssignableFrom(def.thingClass))
+                return CASettlementDemandKind.Storage;
+            return CASettlementDemandKind.Unknown;
+        }
+
+        internal static ThingDef Resolve(CASettlementDemandKind demand,
+            string preferredDefName)
+        {
+            // An explicit loaded def is evidence, even when no CA demand mapping
+            // knows its name. Preserve it and let native placement decide. An
+            // unknown or unloaded explicit name is a blocker, never a request to
+            // substitute storage furniture.
+            if (!preferredDefName.NullOrEmpty())
+            {
+                ThingDef explicitDef = DefDatabase<ThingDef>
+                    .GetNamedSilentFail(preferredDefName);
+                if (explicitDef != null
+                    && explicitDef.category == ThingCategory.Building
+                    && explicitDef.BuildableByPlayer
+                    && explicitDef.blueprintDef != null)
+                    return explicitDef;
+                return null;
+            }
+            if (demand == CASettlementDemandKind.Unknown) return null;
+            List<ThingDef> candidates = Candidates(demand);
+            return candidates.FirstOrDefault();
+        }
+
+        // The authority-neutral typed fact used by player spatial planning and
+        // NPC institutional planning. The consumers decide authority separately.
+        internal static CASettlementDevelopmentProposal BuildDemandFact(
+            CASettlementDemandKind demand)
+        {
+            var fact = new CASettlementDevelopmentProposal
+            {
+                FundingFeasible = true,
+                FundingBasis = "funding is evaluated by the consuming planning authority",
+                MaterialBasis = "loaded native buildable definitions"
+            };
+            fact.Demands.Add(demand);
+            foreach (ThingDef def in Candidates(demand))
+                fact.AssetCandidates.Add(((int)demand) + "|" + def.defName);
+            fact.MaterialFeasible = fact.HasCandidate(demand)
+                && fact.Candidates(demand).Any(def => !def.MadeFromStuff
+                    || GenStuff.DefaultStuffFor(def) != null);
+            return fact;
+        }
+
+        internal static CASettlementDevelopmentProposal BuildCreationProposal(
+            int facilityMask, int economicCapacity, int landCapacity)
+        {
+            var proposal = new CASettlementDevelopmentProposal
+            {
+                FundingFeasible = economicCapacity >= 0,
+                FundingBasis = economicCapacity >= 0
+                    ? "authored historical economic capacity "
+                        + economicCapacity
+                    : "no historical funding capacity",
+                MaterialBasis = landCapacity >= 0
+                    ? "native buildable definitions and authored land capacity "
+                        + landCapacity
+                    : "no authored land capacity"
+            };
+            AddDemand(proposal, facilityMask, CAStartingFacilities.MaskHearth,
+                CASettlementDemandKind.FoodPreparation);
+            AddDemand(proposal, facilityMask, CAStartingFacilities.MaskStores,
+                CASettlementDemandKind.Storage);
+            AddDemand(proposal, facilityMask,
+                CAStartingFacilities.MaskInfirmary,
+                CASettlementDemandKind.Medicine);
+            AddDemand(proposal, facilityMask,
+                CAStartingFacilities.MaskWorkshop,
+                CASettlementDemandKind.Production);
+            AddDemand(proposal, facilityMask, CAStartingFacilities.MaskJail,
+                CASettlementDemandKind.Custody);
+            AddDemand(proposal, facilityMask, CAStartingFacilities.MaskDining,
+                CASettlementDemandKind.Dining);
+            AddDemand(proposal, facilityMask, CAStartingFacilities.MaskLab,
+                CASettlementDemandKind.Research);
+
+            // An explicit empty starting-facility selection is a complete
+            // creation fact. There is nothing to place, so candidate and stuff
+            // feasibility are vacuously satisfied; valid authored ground is the
+            // only material condition that remains.
+            proposal.MaterialFeasible = landCapacity >= 0
+                && proposal.Demands.All(proposal.HasCandidate)
+                && proposal.Demands.All(demand => proposal.Candidates(demand)
+                    .Any(def => !def.MadeFromStuff
+                        || GenStuff.DefaultStuffFor(def) != null));
+            return proposal;
+        }
+
+        internal static CASettlementDevelopmentProposal CreationFromRecord(
+            CARegionalSettlementRecord record)
+        {
+            if (record == null) return new CASettlementDevelopmentProposal
+            {
+                FundingBasis = "no creation record",
+                MaterialBasis = "no creation record"
+            };
+            int mask = record.startingFacilityMask >= 0
+                ? record.startingFacilityMask : CAStartingFacilities
+                    .DerivedMask(record);
+            return BuildCreationProposal(mask, record.economicCapacity,
+                record.landCapacity);
+        }
+
+        // Creation history is deterministically derived from the authored
+        // starting-facility selection. It never rewrites the independent facts
+        // recorded for later institutional development.
+        internal static bool ReconcileRecord(CARegionalSettlementRecord record,
+            out string correction)
+        {
+            correction = null;
+            if (record == null) return false;
+            int mask = record.startingFacilityMask >= 0
+                ? record.startingFacilityMask
+                : CAStartingFacilities.DerivedMask(record);
+            CASettlementDevelopmentProposal expected = BuildCreationProposal(mask,
+                record.economicCapacity, record.landCapacity);
+            string signature = expected.StableSignature();
+            bool mismatch = record.startingFacilityMask != mask
+                || record.creationProposalSignature != signature
+                || record.creationMaterialFeasible
+                    != expected.MaterialFeasible;
+            if (mismatch)
+            {
+                correction = "starting-facility mask, loaded candidates, and creation signature were re-derived";
+                record.startingFacilityMask = mask;
+            }
+            record.creationProposalSignature = signature;
+            record.creationMaterialFeasible = expected.MaterialFeasible;
+            record.creationTargetOrDemand = signature;
+            return mismatch;
+        }
+
+        internal static bool CanSiteCreationDemands(Map map, CellRect rect,
+            CASettlementDevelopmentProposal proposal, out string blocker)
+        {
+            blocker = null;
+            if (map == null || rect == CellRect.Empty || proposal == null)
+            {
+                blocker = "no materialized settlement ground";
+                return false;
+            }
+            foreach (CASettlementDemandKind demand in proposal.Demands)
+            {
+                bool found = false;
+                foreach (ThingDef def in proposal.Candidates(demand))
+                {
+                    ThingDef stuff = def.MadeFromStuff
+                        ? GenStuff.DefaultStuffFor(def) : null;
+                    foreach (IntVec3 cell in rect)
+                    {
+                        if (CASettlementSitingConstraints.CanPlaceNativeBlueprint(
+                                map, def, cell, Rot4.South, stuff).Accepted)
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) break;
+                }
+                if (!found)
+                {
+                    blocker = "no native placement for " + demand;
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Later development is a fact about the settlement that exists now,
+        // not a replay of its starting-facility selection. Maintenance is
+        // available over current faction structures, access over current
+        // settlement ground, and research only where a real bench exists.
+        internal static CASettlementDevelopmentProposal
+            BuildInstitutionalProposal(CARegionalSettlementRecord record,
+                CAOrganization organization, Map map)
+        {
+            var proposal = new CASettlementDevelopmentProposal();
+            bool validGround = record != null && organization != null
+                && map != null && record.faction != null
+                && !record.faction.IsPlayer
+                && record.localRect != CellRect.Empty;
+            int residents = 0;
+            int structures = 0;
+            int researchBenches = 0;
+            int usableCells = 0;
+            var seenStructures = new HashSet<int>();
+            if (validGround)
+            {
+                IReadOnlyList<Pawn> pawns = map.mapPawns
+                    .SpawnedPawnsInFaction(record.faction);
+                for (int i = 0; i < pawns.Count; i++)
+                {
+                    Pawn pawn = pawns[i];
+                    if (pawn != null && !pawn.Dead && pawn.RaceProps.Humanlike
+                        && !pawn.IsPrisoner)
+                        residents++;
+                }
+                foreach (IntVec3 cell in record.localRect)
+                {
+                    if (!cell.InBounds(map)) continue;
+                    if (cell.Walkable(map)) usableCells++;
+                    List<Thing> things = cell.GetThingList(map);
+                    for (int i = 0; i < things.Count; i++)
+                    {
+                        Building building = things[i] as Building;
+                        if (building == null
+                            || building.Faction != record.faction
+                            || !seenStructures.Add(
+                                building.thingIDNumber)) continue;
+                        structures++;
+                        if (building.def?.defName == "SimpleResearchBench")
+                            researchBenches++;
+                    }
+                }
+            }
+
+            proposal.FundingFeasible = organization != null;
+            proposal.FundingBasis = organization == null
+                ? "no current settlement institution"
+                : "current institutional treasury "
+                    + organization.treasury.ToString("F0")
+                    + "; job-specific costs remain action-bound";
+            proposal.MaterialFeasible = validGround && residents > 0
+                && usableCells > 0;
+            proposal.MaterialBasis = !validGround
+                ? "no current materialized settlement ground"
+                : "current settlement ground with " + residents
+                    + " resident workers, " + structures
+                    + " faction structures, and " + usableCells
+                    + " usable cells";
+            if (validGround && usableCells > 0)
+            {
+                proposal.Demands.Add(CASettlementDemandKind.Access);
+                proposal.AssetCandidates.Add(((int)
+                    CASettlementDemandKind.Access)
+                    + "|current-ground:" + usableCells);
+            }
+            if (structures > 0 || record?.seededAssets?.Count > 0)
+            {
+                proposal.Demands.Add(CASettlementDemandKind.Maintenance);
+                proposal.AssetCandidates.Add(((int)
+                    CASettlementDemandKind.Maintenance)
+                    + "|current-structures:" + structures);
+            }
+            if (researchBenches > 0)
+            {
+                proposal.Demands.Add(CASettlementDemandKind.Research);
+                proposal.AssetCandidates.Add(((int)
+                    CASettlementDemandKind.Research)
+                    + "|current-benches:" + researchBenches);
+            }
+            return proposal;
+        }
+
+        internal static bool CanExerciseInstitutionalDevelopment(Map map,
+            CARegionalSettlementRecord record,
+            CASettlementDevelopmentProposal proposal, out string blocker)
+        {
+            blocker = null;
+            if (map == null || record == null
+                || record.localRect == CellRect.Empty || proposal == null)
+            {
+                blocker = "no current materialized settlement ground";
+                return false;
+            }
+            if (proposal.Demands.Count == 0)
+            {
+                blocker = "the current settlement has no actionable institutional demand";
+                return false;
+            }
+            foreach (IntVec3 cell in record.localRect)
+                if (cell.InBounds(map) && cell.Walkable(map)) return true;
+            blocker = "the current settlement has no usable institutional ground";
+            return false;
+        }
+
+        internal static void RecordInstitutionalFacts(
+            CARegionalSettlementRecord record,
+            CASettlementDevelopmentProposal proposal, bool sitingFeasible,
+            string sitingBlocker)
+        {
+            if (record == null || proposal == null) return;
+            record.developmentDemandKinds = proposal.Demands
+                .Select(demand => (int)demand).ToList();
+            record.developmentAssetCandidates = proposal.AssetCandidates
+                .ToList();
+            record.developmentProposalSignature = proposal.StableSignature();
+            record.developmentFundingFeasible = proposal.FundingFeasible;
+            record.developmentMaterialFeasible = proposal.MaterialFeasible;
+            record.developmentFundingBasis = proposal.FundingBasis;
+            record.developmentMaterialBasis = proposal.MaterialBasis;
+            record.developmentSitingEvaluated = true;
+            record.developmentSitingFeasible = sitingFeasible;
+            if (!sitingFeasible) record.developmentBlocker = sitingBlocker;
+        }
+
+        private static void AddDemand(CASettlementDevelopmentProposal proposal,
+            int mask, int bit, CASettlementDemandKind demand)
+        {
+            if ((mask & bit) == 0) return;
+            proposal.Demands.Add(demand);
+            foreach (ThingDef def in Candidates(demand))
+                proposal.AssetCandidates.Add(((int)demand) + "|"
+                    + def.defName);
+        }
+    }
+
+    // Confirmed creation history and later NPC development are separate causal
+    // surfaces. Creation reads the authored starting state. Institutional work
+    // reads the settlement, people, ground, and material means that exist now.
+    internal static class CASettlementInstitutionalAuthorization
+    {
+        internal static bool TryAuthorizeCreationHistory(
+            CARegionalPlan region, CARegionalSettlementPlan settlement,
+            CASettlementDevelopmentProposal proposal,
+            out CABehaviorDecision decision, out CAIntentContext intent)
+        {
+            intent = default(CAIntentContext);
+            bool confirmed = region != null && region.confirmed
+                && settlement != null;
+            string candidate = region?.candidateId ?? "unidentified candidate";
+            var context = new CABehaviorContext(null,
+                CAActorContext.CreationAuthor, CAInitiativeTier.Standard,
+                CAAuthorityOrigin.WorldAuthoring,
+                authoritySatisfied: confirmed,
+                knowledgeSatisfied: proposal != null,
+                knowledgeFresh: true, liveValidated: confirmed,
+                knowledgeRelayed: false, knowledgeAgeTicks: 0,
+                knowledgeConfidence: confirmed ? 1f : 0f,
+                knowledgeUncertainty: confirmed ? 0f : 1f,
+                capabilitySatisfied: settlement != null,
+                materialSatisfied: proposal != null
+                    && proposal.FundingFeasible
+                    && proposal.MaterialFeasible,
+                currentIntentCompatible: true,
+                directPlayerOwnership: false,
+                authorityBasis: "confirmed starting-region candidate "
+                    + candidate,
+                knowledgeBasis: proposal?.StableSignature(),
+                owner: "creation author");
+            decision = CABehaviorGate.Evaluate("spatial.creation_authoring",
+                context);
+            if (!decision.Allowed) return false;
+            intent = CACombatIntent.Authorized(null,
+                CAIntentController.SettlementDevelopment,
+                "spatial.creation_authoring", CAAuthorityOrigin.WorldAuthoring,
+                context.AuthorityBasis, "creation author",
+                proposal.StableSignature(), intentOrigin:
+                    CAIntentOrigin.WorldAuthoring);
+            return true;
+        }
+
+        internal static bool TryAuthorizeJob(CARegionalSettlementRecord record,
+            Pawn worker, Job job, string targetOrDemand,
+            out CABehaviorDecision decision, out CAIntentContext intent)
+        {
+            intent = default(CAIntentContext);
+            CAOrganization organization = record == null ? null
+                : CAOrganizationWorldComponent.Current?.ByKey(
+                    record.regionalId + "#" + record.slot);
+            Map currentMap = worker?.Map;
+            CASettlementDevelopmentProposal proposal =
+                CASettlementAssetRegistry.BuildInstitutionalProposal(record,
+                    organization, currentMap);
+            bool currentSiting = CASettlementAssetRegistry
+                .CanExerciseInstitutionalDevelopment(currentMap, record,
+                    proposal, out string sitingBlocker);
+            CASettlementAssetRegistry.RecordInstitutionalFacts(record,
+                proposal, currentSiting, sitingBlocker);
+            bool validAuthority = record != null && record.developmentAuthorized
+                && record.developmentEpisodeId > 0
+                && !record.developmentAuthorityIdentity.NullOrEmpty();
+            bool material = proposal.FundingFeasible
+                && proposal.MaterialFeasible && currentSiting;
+            var context = CABehaviorContext.ForPawn(worker,
+                CAAuthorityOrigin.Continuation,
+                authoritySatisfied: validAuthority,
+                knowledgeSatisfied: proposal.Demands.Count > 0,
+                knowledgeFresh: true, liveValidated: true,
+                knowledgeRelayed: false, knowledgeAgeTicks: 0,
+                knowledgeConfidence: 1f, knowledgeUncertainty: 0f,
+                capabilitySatisfied: worker != null && job != null,
+                materialSatisfied: material,
+                currentIntentCompatible: worker != null
+                    && !worker.Drafted && !worker.InMentalState,
+                directPlayerOwnership: false,
+                authorityBasis: record?.developmentAuthorityIdentity,
+                knowledgeBasis: proposal.StableSignature(),
+                owner: record?.developmentOwner
+                    ?? "existing settlement institution");
+            return CABehaviorJobOrigin.TryAuthorizeAndRegister(worker, job,
+                "spatial.npc_settlement_development",
+                CAIntentController.SettlementDevelopment, context,
+                record?.developmentEpisodeId ?? 0, out decision, out intent,
+                targetOrDemand, record?.developmentOwner,
+                lifetimeTicks: 12000);
+        }
+
+        // Native completion may satisfy the demand that originally justified
+        // work, so completion reauthorization checks the exact saved commitment
+        // and the institution that still owns it rather than rerolling demand.
+        // A job-backed completion additionally requires the central owned-job
+        // receipt restored by CABehaviorIntentMapComponent.
+        internal static bool TryReauthorizeCompletion(
+            CARegionalSettlementRecord record, Map map, Pawn worker, Job job,
+            string behaviorKey, int episodeId,
+            CAAuthorityOrigin savedAuthorityOrigin,
+            string authorityIdentity, string owner, string targetOrDemand,
+            out CABehaviorDecision decision)
+        {
+            behaviorKey = behaviorKey
+                ?? "spatial.npc_settlement_development";
+            CAOrganization organization = record == null ? null
+                : CAOrganizationWorldComponent.Current?.ByKey(
+                    record.regionalId + "#" + record.slot);
+            CAAuthorityOrigin currentOrigin = record == null
+                ? CAAuthorityOrigin.None
+                : (CAAuthorityOrigin)record.developmentAuthorityOrigin;
+            CAAuthorityOrigin institutionalOrigins =
+                CAAuthorityOrigin.Institutional
+                | CAAuthorityOrigin.Household
+                | CAAuthorityOrigin.Organization;
+            bool savedOriginValid = (savedAuthorityOrigin
+                    & (institutionalOrigins | CAAuthorityOrigin.Continuation
+                        | CAAuthorityOrigin.SaveRestore)) != 0;
+            bool currentAuthority = record != null && map != null
+                && organization != null && record.faction != null
+                && !record.faction.IsPlayer && record.developmentAuthorized
+                && record.developmentBehaviorKey == behaviorKey
+                && record.developmentEpisodeId == episodeId
+                && episodeId > 0
+                && savedOriginValid
+                && (currentOrigin & institutionalOrigins) != 0
+                && record.developmentAuthorityIdentity == authorityIdentity
+                && record.developmentOwner == owner
+                && organization.organizationKey == owner
+                && !authorityIdentity.NullOrEmpty()
+                && !owner.NullOrEmpty();
+
+            bool ownedJob = job == null && worker == null;
+            if (job != null || worker != null)
+            {
+                CAIntentContext saved = default(CAIntentContext);
+                ownedJob = worker != null && job != null
+                    && worker.Map == map && worker.Faction == record?.faction
+                    && CABehaviorIntentMapComponent.For(map)
+                        ?.TryGet(worker, job, out saved) == true
+                    && saved.BehaviorKey == behaviorKey
+                    && saved.EpisodeId == episodeId
+                    && saved.AuthorityOrigin == savedAuthorityOrigin
+                    && saved.AuthorityIdentity == authorityIdentity
+                    && saved.OwnershipScope == owner
+                    && saved.OwnerId == worker.thingIDNumber;
+            }
+
+            CAActorContext actorContext = worker == null
+                ? CAActorContext.NPCSettlement | CAActorContext.NPCInstitution
+                : CAActorContext.NPCPawn;
+            var context = new CABehaviorContext(worker, actorContext,
+                CAInitiativeTier.Standard, currentOrigin,
+                authoritySatisfied: currentAuthority && ownedJob,
+                knowledgeSatisfied: currentAuthority && ownedJob,
+                knowledgeFresh: true, liveValidated: true,
+                knowledgeRelayed: false, knowledgeAgeTicks: 0,
+                knowledgeConfidence: currentAuthority && ownedJob ? 1f : 0f,
+                knowledgeUncertainty: currentAuthority && ownedJob ? 0f : 1f,
+                capabilitySatisfied: job == null
+                    ? map != null : worker != null && !worker.Dead
+                        && !worker.Downed && !worker.InMentalState,
+                materialSatisfied: true,
+                currentIntentCompatible: currentAuthority && ownedJob,
+                directPlayerOwnership: false,
+                authorityBasis: authorityIdentity,
+                knowledgeBasis: "exact saved institutional commitment for "
+                    + (targetOrDemand ?? "native completion"),
+                owner: owner);
+            decision = CABehaviorGate.Evaluate(behaviorKey, context);
+            return decision.Allowed;
+        }
+
+        internal static bool TryAuthorizeLaterDevelopment(
+            CARegionalSettlementRecord record, CAOrganization organization,
+            CASettlementDevelopmentProposal proposal,
+            out CABehaviorDecision decision, out CAIntentContext intent)
+        {
+            intent = default(CAIntentContext);
+            string authorityIdentity = record?.faction?.Name
+                ?? organization?.name ?? "unnamed settlement";
+            bool valid = record != null && organization != null
+                && record.faction != null && !record.faction.IsPlayer;
+            var context = new CABehaviorContext(null,
+                CAActorContext.NPCSettlement | CAActorContext.NPCInstitution,
+                CAInitiativeTier.Standard, CAAuthorityOrigin.Institutional,
+                authoritySatisfied: valid,
+                knowledgeSatisfied: proposal != null
+                    && proposal.Demands.Count > 0,
+                knowledgeFresh: true, liveValidated: true,
+                knowledgeRelayed: false, knowledgeAgeTicks: 0,
+                knowledgeConfidence: 1f, knowledgeUncertainty: 0f,
+                capabilitySatisfied: valid,
+                materialSatisfied: proposal != null
+                    && proposal.FundingFeasible
+                    && proposal.MaterialFeasible
+                    && record?.developmentSitingFeasible == true,
+                currentIntentCompatible: true,
+                directPlayerOwnership: false,
+                authorityBasis: authorityIdentity
+                    + " settlement institution",
+                knowledgeBasis: proposal?.StableSignature(),
+                owner: organization?.organizationKey);
+            decision = CABehaviorGate.Evaluate(
+                "spatial.npc_settlement_development", context);
+            if (!decision.Allowed) return false;
+            bool existing = record.developmentAuthorized
+                && record.developmentEpisodeId > 0
+                && record.developmentBehaviorKey
+                    == "spatial.npc_settlement_development"
+                && record.developmentOwner == organization.organizationKey
+                && !record.developmentAuthorityIdentity.NullOrEmpty();
+            if (existing)
+            {
+                CACombatIntent.ObserveEpisode(record.developmentEpisodeId);
+                intent = new CAIntentContext(record.developmentEpisodeId,
+                    CAIntentOrigin.Institutional,
+                    CAIntentController.SettlementDevelopment,
+                    record.faction.loadID,
+                    behaviorKey: "spatial.npc_settlement_development",
+                    authorityOrigin: CAAuthorityOrigin.Institutional,
+                    authorityIdentity: record.developmentAuthorityIdentity,
+                    ownershipScope: organization.organizationKey,
+                    ownerId: record.faction.loadID,
+                    targetOrDemand: proposal.StableSignature(),
+                    createdTick: record.developmentCreatedTick);
+            }
+            else
+            {
+                intent = CACombatIntent.Authorized(null,
+                    CAIntentController.SettlementDevelopment,
+                    "spatial.npc_settlement_development",
+                    CAAuthorityOrigin.Institutional, context.AuthorityBasis,
+                    organization.organizationKey, proposal.StableSignature(),
+                    intentOrigin: CAIntentOrigin.Institutional,
+                    ownerId: record.faction.loadID);
+            }
+            return true;
+        }
+    }
+
     public class CASettlementIdeoligionEvidence : IExposable
     {
         public Ideo ideoligion;
@@ -78,6 +764,7 @@ namespace ColonistAwareness
     {
         public float semanticLegibility;
         public float socialFit;
+        public float culturalExpression;
         public float ideoligionExpression;
         public float environmentalFit;
         public float operationalCoherence;
@@ -85,6 +772,7 @@ namespace ColonistAwareness
         public float strategicTopology;
 
         public float Total => semanticLegibility + socialFit
+            + culturalExpression
             + ideoligionExpression + environmentalFit
             + operationalCoherence + historicalContinuity
             + strategicTopology;
@@ -93,6 +781,7 @@ namespace ColonistAwareness
         {
             return "legibility " + Signed(semanticLegibility)
                 + ", social " + Signed(socialFit)
+                + ", culture " + Signed(culturalExpression)
                 + ", ideoligion " + Signed(ideoligionExpression)
                 + ", environment " + Signed(environmentalFit)
                 + ", operations " + Signed(operationalCoherence)
@@ -104,6 +793,32 @@ namespace ColonistAwareness
         private static string Signed(float value)
         {
             return (value >= 0f ? "+" : "") + value.ToString("F2");
+        }
+    }
+
+    // Both player-authored furnishing and established-settlement development
+    // cross this native material boundary. Semantic ranking may differ above
+    // it; neither authority path can make an invalid footprint buildable.
+    internal static class CASettlementSitingConstraints
+    {
+        internal static bool HasMaterialFootprint(Map map, ThingDef def,
+            IntVec3 center, Rot4 rotation)
+        {
+            if (map == null || def == null || !center.IsValid) return false;
+            foreach (IntVec3 cell in GenAdj.OccupiedRect(center, rotation,
+                def.Size))
+                if (!cell.InBounds(map) || !cell.Standable(map))
+                    return false;
+            return true;
+        }
+
+        internal static AcceptanceReport CanPlaceNativeBlueprint(Map map,
+            ThingDef def, IntVec3 center, Rot4 rotation, ThingDef stuff)
+        {
+            if (!HasMaterialFootprint(map, def, center, rotation))
+                return "terrain cannot support the requested footprint";
+            return GenConstruct.CanPlaceBlueprintAt(def, center, rotation,
+                map, godMode: false, null, null, stuff);
         }
     }
 
@@ -232,6 +947,36 @@ namespace ColonistAwareness
             if (settlementCenter.IsValid)
                 result.strategicTopology = Mathf.Max(-4f,
                     1f - cell.DistanceTo(settlementCenter) * 0.04f);
+            // B5 cultural expression shapes ranking only. It cannot grant
+            // permission, expand an authored program, create material, or
+            // bypass a native placement constraint.
+            CAPlayerFoundingPlan founding = CAPlayerFoundingSession
+                .ConfirmedForRuntime();
+            CACulturalExpression expression = founding == null ? null
+                : CACulturalExpressionModel.ForFounders(founding);
+            switch (expression?.Status)
+            {
+                case CACulturalExpressionStatus.Adaptive:
+                    result.culturalExpression = Mathf.Max(0f,
+                        result.environmentalFit) * 0.24f;
+                    break;
+                case CACulturalExpressionStatus.Constrained:
+                    result.culturalExpression = Mathf.Max(0f,
+                        result.operationalCoherence) * 0.24f;
+                    break;
+                case CACulturalExpressionStatus.Plural:
+                    result.culturalExpression = Mathf.Max(0f,
+                        result.socialFit) * 0.20f;
+                    break;
+                case CACulturalExpressionStatus.Tension:
+                    result.culturalExpression = Mathf.Max(0f,
+                        result.semanticLegibility) * 0.12f;
+                    break;
+                default:
+                    result.culturalExpression = Mathf.Max(0f,
+                        result.historicalContinuity) * 0.20f;
+                    break;
+            }
             return result;
         }
 

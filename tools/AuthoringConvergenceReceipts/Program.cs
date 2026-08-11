@@ -79,7 +79,8 @@ internal static class Program
             "neutral information-detail levels are incomplete");
         Require(settings.Contains("CAInformationDetail.Standard")
             && settings.Contains("Scribe_Values.Look(ref informationDetail")
-            && settings.Contains("Creation-flow information")
+            && settings.Contains("Explanation detail")
+            && settings.Contains("Presentation only; simulation state is unchanged.")
             && settings.Contains("CAInformationPresentation.Description"),
             "information detail is not persisted and editable in ModSettings");
         Require(presentation.Contains("internal static string Select")
@@ -99,7 +100,8 @@ internal static class Program
             .OrderBy(value => value).ToArray();
         Require(directReads.SequenceEqual(new[]
             {
-                "AuthoringPresentationModule.cs", "ModEntry.cs"
+                "AuthoringPresentationModule.cs", "AutonomyModule.cs",
+                "ModEntry.cs"
             }, StringComparer.OrdinalIgnoreCase),
             "information detail leaked outside the presentation owner: "
                 + string.Join(", ", directReads));

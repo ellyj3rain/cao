@@ -23,7 +23,8 @@ namespace ColonistAwareness
         {
             if (Find.TickManager.TicksGame % IntervalTicks != 0) return;
             var s = AwarenessMod.Settings;
-            if (s == null || !s.enemyRestraint) return;
+            if (!CABehaviorSettings.IsEnabled(
+                    CASettingKey.EnemyRestraint, s)) return;
             try
             {
                 var pawns = map.mapPawns.AllPawnsSpawned;
@@ -35,6 +36,27 @@ namespace ColonistAwareness
                     var carried = r.carryTracker != null ? r.carryTracker.CarriedThing as Pawn : null;
                     if (carried == null || carried.Dead || !carried.Downed) continue;
                     if (carried.health == null || carried.health.hediffSet.BleedRateTotal < 0.25f) continue;
+                    var context = CABehaviorContext.ForPawn(r,
+                        CAAuthorityOrigin.NativeDuty,
+                        authoritySatisfied: r.CurJob != null,
+                        knowledgeSatisfied: true, knowledgeFresh: true,
+                        liveValidated: carried.Spawned || r.carryTracker
+                            ?.CarriedThing == carried,
+                        knowledgeRelayed: false, knowledgeAgeTicks: 0,
+                        knowledgeConfidence: 1f,
+                        knowledgeUncertainty: 0f,
+                        capabilitySatisfied: r.health != null
+                            && !r.Downed,
+                        materialSatisfied: carried.health != null,
+                        currentIntentCompatible: true,
+                        directPlayerOwnership: false,
+                        authorityBasis: "current raider custody duty",
+                        knowledgeBasis:
+                            "directly carried captive with current bleeding",
+                        owner: "raider captive custody");
+                    CABehaviorDecision decision = CABehaviorGate.Evaluate(
+                        "npc.captive_stabilization", context);
+                    if (!decision.Allowed) continue;
                     TendUtility.DoTend(r, carried, null);
                     Messages.Message(r.LabelShortCap + " field-dressed " + carried.LabelShortCap + " before carrying them off.",
                         new TargetInfo(r.Position, map), MessageTypeDefOf.NeutralEvent, historical: false);
@@ -87,15 +109,19 @@ namespace ColonistAwareness
         public static void BestTargetPrefix(IAttackTargetSearcher searcher, ref System.Predicate<Thing> validator)
         {
             var s = AwarenessMod.Settings;
-            if (s == null || (!s.enemyRestraint && !s.survivalResponses)) return;
+            if (!CABehaviorSettings.IsEnabled(CASettingKey.EnemyRestraint, s)
+                && !CABehaviorSettings.IsEnabled(
+                    CASettingKey.SurvivalResponses, s)) return;
             var shooter = searcher == null ? null : searcher.Thing as Pawn;
             if (shooter == null || !shooter.RaceProps.Humanlike) return;
             if (shooter.Faction == null || !shooter.Faction.HostileTo(Faction.OfPlayer)) return;
 
             var original = validator;
             var atk = shooter;
-            bool restraint = s.enemyRestraint;
-            bool concealment = s.survivalResponses;
+            bool restraint = CABehaviorSettings.IsEnabled(
+                CASettingKey.EnemyRestraint, s);
+            bool concealment = CABehaviorSettings.IsEnabled(
+                CASettingKey.SurvivalResponses, s);
             validator = delegate (Thing t)
             {
                 if (original != null && !original(t)) return false;
@@ -157,7 +183,8 @@ namespace ColonistAwareness
             try
             {
                 var s = AwarenessMod.Settings;
-                if (s == null || !s.enemyRestraint) return;
+                if (!CABehaviorSettings.IsEnabled(
+                        CASettingKey.EnemyRestraint, s)) return;
                 if (!__result || victim == null) return;
                 if (!victim.RaceProps.Humanlike || victim.DevelopmentalStage == DevelopmentalStage.Adult) return;
                 var map = kidnapper != null ? kidnapper.Map : victim.Map;
@@ -200,7 +227,8 @@ namespace ColonistAwareness
             try
             {
                 var s = AwarenessMod.Settings;
-                if (s == null || !s.enemyRestraint) return;
+                if (!CABehaviorSettings.IsEnabled(
+                        CASettingKey.EnemyRestraint, s)) return;
 
                 var shooter = searcher == null ? null : searcher.Thing as Pawn;
                 if (shooter == null || !shooter.RaceProps.Humanlike) return;

@@ -18,12 +18,13 @@ namespace ColonistAwareness
         internal static Job TryGiveJob(Pawn actor, bool allowDraftedIdle)
         {
             AwarenessSettings settings = AwarenessMod.Settings;
-            if (actor == null || settings == null || !settings.raidResponse
+            if (actor == null || settings == null
                 || !actor.IsColonistPlayerControlled || !actor.Spawned
                 || actor.Dead || actor.Downed || !actor.Awake()
                 || actor.InMentalState || actor.jobs == null
                 || actor.Drafted && !allowDraftedIdle
-                || AutonomyComponent.LevelOf(actor) < 2
+                || !CABehaviorGate.StableProfileAllows(actor,
+                    "aftermath.secure_hostile")
                 || CAImmediateCombat.RequiresCombatRecoveryNow(actor)
                 || HiddenRegistry.IsHiddenOrOrdered(actor)) return null;
             bool proactiveHold = CATactical.IsHold(actor)
@@ -76,6 +77,30 @@ namespace ColonistAwareness
                 }
             }
             if (best == null) return null;
+            CABehaviorContext secureContext = CABehaviorContext.ForPawn(actor,
+                CAAuthorityOrigin.PlayerDelegated,
+                authoritySatisfied: true,
+                knowledgeSatisfied: true, knowledgeFresh: true,
+                liveValidated: best.Spawned && best.Downed
+                    && GenSight.LineOfSight(actor.Position, best.Position,
+                        actor.Map, true),
+                capabilitySatisfied: bestBuddy != null,
+                currentIntentCompatible:
+                    !CATactical.HasForeignPlayerForcedJob(actor),
+                directPlayerOwnership:
+                    CATactical.HasForeignPlayerForcedJob(actor),
+                authorityBasis: "delegated local field security",
+                knowledgeBasis: "personally confirmed downed hostile",
+                owner: "field custody intake");
+            CABehaviorDecision secureDecision = CABehaviorGate.Evaluate(
+                "aftermath.secure_hostile", secureContext);
+            if (!secureDecision.Allowed)
+            {
+                CATrace.Pawn(actor, "field custody BLOCKED - "
+                    + secureDecision.PrimaryReason,
+                    contact: best.Position, anchor: actor.Position);
+                return null;
+            }
             // Custody has character: who this pawn IS decides what "handling
             // the enemy" means before the job is even taken. A cold pawn that
             // walks away leaves the captive for someone warmer - abandonment
@@ -83,6 +108,92 @@ namespace ColonistAwareness
             string custodyTrace;
             CACustodyIntent intent = ResolveCustodyIntent(actor, best,
                 out custodyTrace);
+            string behaviorKey = "aftermath.secure_hostile";
+            string authorityIdentity = "delegated local field security";
+            CAAuthorityOrigin authorityOrigin =
+                CAAuthorityOrigin.PlayerDelegated;
+            bool irreversible = intent == CACustodyIntent.Abandon
+                || intent == CACustodyIntent.Execute
+                || intent == CACustodyIntent.ImpulsiveExecute
+                || intent == CACustodyIntent.MercyKill;
+            if (irreversible)
+            {
+                if (intent == CACustodyIntent.ImpulsiveExecute)
+                {
+                    behaviorKey = "aftermath.unlawful_execution_breach";
+                    authorityIdentity = "unlawful character breach; no "
+                        + "institutional legitimacy";
+                    CABehaviorDecision breachDecision = CABehaviorGate
+                        .Evaluate(behaviorKey, CABehaviorContext.ForPawn(actor,
+                            CAAuthorityOrigin.PlayerDelegated,
+                            authoritySatisfied: true,
+                            knowledgeSatisfied: true, knowledgeFresh: true,
+                            liveValidated: best.Spawned && best.Downed,
+                            capabilitySatisfied: true,
+                            authorityBasis: authorityIdentity,
+                            knowledgeBasis:
+                                "personally confirmed captive at execution",
+                            owner: "character accountability"));
+                    if (!breachDecision.Allowed)
+                    {
+                        custodyTrace += "; unlawful breach blocked: "
+                            + breachDecision.PrimaryReason;
+                        intent = CACustodyIntent.Secure;
+                        behaviorKey = "aftermath.secure_hostile";
+                        authorityIdentity =
+                            "delegated local field security";
+                    }
+                    else
+                        custodyTrace = "UNLAWFUL CHARACTER BREACH; "
+                            + custodyTrace;
+                }
+                else
+                {
+                    string authorityBasis;
+                    bool authority = HasIrreversibleCustodyAuthority(actor,
+                        intent, out authorityBasis);
+                    CABehaviorDecision resolutionDecision = CABehaviorGate
+                        .Evaluate("aftermath.custody_resolution",
+                            CABehaviorContext.ForPawn(actor,
+                                CAAuthorityOrigin.PlayerDelegated,
+                                authoritySatisfied: authority,
+                                knowledgeSatisfied: true,
+                                knowledgeFresh: true,
+                                liveValidated: best.Spawned && best.Downed,
+                                capabilitySatisfied: true,
+                                authorityBasis: authorityBasis,
+                                knowledgeBasis:
+                                    "personally confirmed captive at resolution",
+                                owner: "custody authority",
+                                authorityCeiling:
+                                    CAInitiativeTier.Autonomous));
+                    if (!authority || !resolutionDecision.Allowed)
+                    {
+                        CACustodyIntent proposed = intent;
+                        intent = proposed == CACustodyIntent.MercyKill
+                            ? CACustodyIntent.SecureStabilize
+                            : CACustodyIntent.Secure;
+                        custodyTrace += "; ordinary irreversible outcome "
+                            + proposed + " blocked: "
+                            + (!authority ? authorityBasis
+                                : resolutionDecision.PrimaryReason)
+                            + "; secure intake retained";
+                    }
+                    else
+                    {
+                        behaviorKey = "aftermath.custody_resolution";
+                        authorityIdentity = authorityBasis;
+                        authorityOrigin = CAAuthorityOrigin.Institutional;
+                    }
+                }
+            }
+            CAIntentContext ownedIntent = CACombatIntent.Authorized(actor,
+                CAIntentController.RaidDefense, behaviorKey,
+                authorityOrigin, authorityIdentity,
+                behaviorKey == "aftermath.custody_resolution"
+                    ? "custody institution" : "field custody intake",
+                "custody-intent=" + intent
+                    + "; captive=" + best.thingIDNumber);
             if (intent == CACustodyIntent.Abandon)
             {
                 abandonedCustody[ActorCaptiveKey(actor, best)] =
@@ -90,7 +201,8 @@ namespace ColonistAwareness
                 CATrace.Pawn(actor, "field custody DECLINED - leaves "
                     + best.LabelShort + " to their wounds (" + custodyTrace
                     + "); another pair of hands may still choose otherwise",
-                    contact: best.Position, anchor: actor.Position);
+                    contact: best.Position, anchor: actor.Position,
+                    intent: ownedIntent);
                 return null;
             }
             custodyIntents[best.thingIDNumber] =
@@ -99,17 +211,54 @@ namespace ColonistAwareness
                     ActorId = actor.thingIDNumber,
                     Intent = intent,
                     Trace = custodyTrace,
-                    Tick = Find.TickManager.TicksGame
+                    Tick = Find.TickManager.TicksGame,
+                    Context = ownedIntent
                 };
             Job job = JobMaker.MakeJob(CA_Defs.SecureEPW, best);
             job.count = bestBuddy.thingIDNumber;
             job.expiryInterval = 750;
+            bool finalAuthority = behaviorKey
+                    != "aftermath.custody_resolution"
+                || HasIrreversibleCustodyAuthority(actor, intent,
+                    out authorityIdentity);
+            CABehaviorContext finalContext = CABehaviorContext.ForPawn(actor,
+                authorityOrigin, authoritySatisfied: finalAuthority,
+                knowledgeSatisfied: true, knowledgeFresh: true,
+                liveValidated: best.Spawned && best.Downed,
+                knowledgeRelayed: false, knowledgeAgeTicks: 0,
+                capabilitySatisfied: bestBuddy != null,
+                materialSatisfied: true,
+                currentIntentCompatible:
+                    !CATactical.HasForeignPlayerForcedJob(actor),
+                directPlayerOwnership:
+                    CATactical.HasForeignPlayerForcedJob(actor),
+                authorityBasis: authorityIdentity,
+                knowledgeBasis: "personally confirmed captive",
+                owner: behaviorKey == "aftermath.custody_resolution"
+                    ? "custody institution" : "field custody intake",
+                authorityCeiling: CAInitiativeTier.Autonomous);
+            CABehaviorDecision finalDecision;
+            if (!CABehaviorJobOrigin.TryAuthorizeAndRegister(actor, job,
+                behaviorKey, CAIntentController.RaidDefense, finalContext,
+                out finalDecision, out ownedIntent,
+                targetOrDemand: "custody-intent=" + intent
+                    + "; captive=" + best.thingIDNumber,
+                ownershipScope: finalContext.Owner,
+                lifetimeTicks: 5000))
+            {
+                custodyIntents.Remove(best.thingIDNumber);
+                CATrace.Pawn(actor, "field custody BLOCKED - "
+                    + finalDecision.PrimaryReason,
+                    contact: best.Position, anchor: actor.Position);
+                return null;
+            }
+            custodyIntents[best.thingIDNumber].Context = ownedIntent;
             CATrace.Pawn(actor, "post-contact successor SELECTED: secure downed hostile "
                 + best.LabelShort + " while " + bestBuddy.LabelShort
                 + " retains local security; friendly casualty priority clear"
                 + "; custody resolution " + intent + " (" + custodyTrace + ")",
                 contact: best.Position, destination: best.Position,
-                anchor: actor.Position);
+                anchor: actor.Position, intent: ownedIntent);
             return job;
         }
 
@@ -131,6 +280,7 @@ namespace ColonistAwareness
             public CACustodyIntent Intent;
             public string Trace;
             public int Tick;
+            public CAIntentContext Context;
         }
 
         internal static readonly Dictionary<int, PendingCustody> custodyIntents =
@@ -142,19 +292,12 @@ namespace ColonistAwareness
         // are braked and the caring path is easier to reach. The weight only
         // lands on someone whose conscience actually objects (ideoligion
         // unwilling, or real empathy); a true psychopath carries nothing.
-        // Session-only, like the rest of the aftermath ledger.
-        private static readonly Dictionary<int, int> executionWeight =
-            new Dictionary<int, int>();
-        private static readonly Dictionary<int, string> executionWeightWhy =
-            new Dictionary<int, string>();
-
         internal static void RecordExecutionWeight(Pawn actor, string victim,
-            bool conscienceObjects)
+            bool conscienceObjects, int episodeId, string cause)
         {
             if (!conscienceObjects) return;
-            executionWeight[actor.thingIDNumber] =
-                Find.TickManager.TicksGame + 240000;
-            executionWeightWhy[actor.thingIDNumber] = victim;
+            CAAftermathAccountabilityMapComponent.For(actor.Map)?.Record(actor,
+                episodeId, victim, cause, 1f, 240000);
             CATrace.Pawn(actor, "carries the weight of " + victim
                 + "'s death - the next custody will feel it",
                 anchor: actor.Position);
@@ -163,10 +306,78 @@ namespace ColonistAwareness
         private static bool CarriesExecutionWeight(Pawn actor, out string victim)
         {
             victim = null;
-            int expiry;
-            if (!executionWeight.TryGetValue(actor.thingIDNumber, out expiry)
-                || Find.TickManager.TicksGame >= expiry) return false;
-            executionWeightWhy.TryGetValue(actor.thingIDNumber, out victim);
+            float ignored;
+            return CAAftermathAccountabilityMapComponent.For(actor?.Map)
+                ?.TryActive(actor, out victim, out ignored) == true;
+        }
+
+        internal static bool RevalidateIrreversibleCustody(Pawn actor,
+            Pawn captive, Job job, CACustodyIntent intent,
+            CAIntentContext context, out string reason)
+        {
+            reason = "current custody authority is valid";
+            if (actor == null || actor.Dead || actor.Downed || !actor.Spawned
+                || captive == null || captive.Dead || !captive.Downed
+                || !captive.Spawned || captive.Map != actor.Map)
+            {
+                reason = "actor or captive is no longer valid";
+                return false;
+            }
+            CAIntentContext persisted;
+            if (!context.IsValid || job == null
+                || CABehaviorIntentMapComponent.For(actor.Map)?.TryGet(actor,
+                    job, out persisted) != true
+                || persisted.EpisodeId != context.EpisodeId
+                || persisted.BehaviorKey != context.BehaviorKey)
+            {
+                reason = "the persisted custody episode no longer owns this job";
+                return false;
+            }
+            if (context.TargetOrDemand == null
+                || !context.TargetOrDemand.Contains("captive="
+                    + captive.thingIDNumber))
+            {
+                reason = "the persisted custody target does not match";
+                return false;
+            }
+
+            bool impulsive = intent == CACustodyIntent.ImpulsiveExecute;
+            string key = impulsive
+                ? "aftermath.unlawful_execution_breach"
+                : "aftermath.custody_resolution";
+            if (context.BehaviorKey != key)
+            {
+                reason = "the persisted behavior does not authorize this outcome";
+                return false;
+            }
+            string authorityBasis = null;
+            bool authority = impulsive || HasIrreversibleCustodyAuthority(
+                actor, intent, out authorityBasis);
+            if (impulsive)
+                authorityBasis = "unlawful character breach with explicit accountability";
+            CABehaviorContext gateContext = CABehaviorContext.ForPawn(actor,
+                impulsive ? CAAuthorityOrigin.PlayerDelegated
+                    : CAAuthorityOrigin.Institutional,
+                authoritySatisfied: authority,
+                knowledgeSatisfied: true, knowledgeFresh: true,
+                liveValidated: GenSight.LineOfSight(actor.Position,
+                    captive.Position, actor.Map, true),
+                knowledgeRelayed: false, knowledgeAgeTicks: 0,
+                capabilitySatisfied: true, materialSatisfied: true,
+                currentIntentCompatible: actor.CurJob == job,
+                directPlayerOwnership: false,
+                authorityBasis: authorityBasis,
+                knowledgeBasis: "personally confirmed captive at execution",
+                owner: impulsive ? "character accountability"
+                    : "custody institution",
+                authorityCeiling: CAInitiativeTier.Autonomous);
+            CABehaviorDecision decision = CABehaviorGate.Evaluate(key,
+                gateContext);
+            if (!decision.Allowed)
+            {
+                reason = decision.PrimaryReason;
+                return false;
+            }
             return true;
         }
 
@@ -182,6 +393,50 @@ namespace ColonistAwareness
             return abandonedCustody.TryGetValue(ActorCaptiveKey(actor, captive),
                     out expiry)
                 && Find.TickManager.TicksGame < expiry;
+        }
+
+        private static bool HasIrreversibleCustodyAuthority(Pawn actor,
+            CACustodyIntent intent, out string basis)
+        {
+            if (!CABehaviorGate.StableProfileAllows(actor,
+                    "aftermath.custody_resolution"))
+            {
+                basis = "initiative below Autonomous";
+                return false;
+            }
+            AwarenessSettings settings = AwarenessMod.Settings;
+            if (settings == null || !settings.enemyRestraint)
+            {
+                basis = "custody-resolution permission disabled";
+                return false;
+            }
+            string law = CAPolicyLookup.Colony("prisoner treatment");
+            if (law == "forbid execution"
+                && (intent == CACustodyIntent.Execute
+                    || intent == CACustodyIntent.MercyKill))
+            {
+                basis = "colony law forbids execution";
+                return false;
+            }
+            if (law == "prefer capture")
+            {
+                basis = "colony law requires capture when possible";
+                return false;
+            }
+            if (CAOrganizationAuthority.HasColonyCommand(actor))
+            {
+                basis = "held colony command office";
+                return true;
+            }
+            if (SquadComponent.IsLeader(actor)
+                && SquadComponent.SquadOf(actor) > 0)
+            {
+                basis = "held squad command authority";
+                return true;
+            }
+            basis = "no custody office, command role, or binding law "
+                + "authorizes the irreversible outcome";
+            return false;
         }
 
         // The outcome is conditional on who the pawn is, not just what the
@@ -497,6 +752,104 @@ namespace ColonistAwareness
         }
     }
 
+    public sealed class CAExecutionAccountabilityRecord : IExposable
+    {
+        public int ActorId;
+        public int EpisodeId;
+        public string Victim;
+        public string Cause;
+        public float Weight;
+        public int CreatedTick;
+        public int ExpiryTick;
+
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref ActorId, "actorId", -1);
+            Scribe_Values.Look(ref EpisodeId, "episodeId", 0);
+            Scribe_Values.Look(ref Victim, "victim");
+            Scribe_Values.Look(ref Cause, "cause");
+            Scribe_Values.Look(ref Weight, "weight", 0f);
+            Scribe_Values.Look(ref CreatedTick, "createdTick", 0);
+            Scribe_Values.Look(ref ExpiryTick, "expiryTick", 0);
+        }
+    }
+
+    public sealed class CAAftermathAccountabilityMapComponent : MapComponent
+    {
+        private List<CAExecutionAccountabilityRecord> records =
+            new List<CAExecutionAccountabilityRecord>();
+        private int pruneCooldown;
+
+        public CAAftermathAccountabilityMapComponent(Map map) : base(map) { }
+
+        public static CAAftermathAccountabilityMapComponent For(Map map)
+        {
+            return map?.GetComponent<CAAftermathAccountabilityMapComponent>();
+        }
+
+        public override void ExposeData()
+        {
+            base.ExposeData();
+            Scribe_Collections.Look(ref records,
+                "CA_executionAccountability", LookMode.Deep);
+            if (records == null)
+                records = new List<CAExecutionAccountabilityRecord>();
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+                for (int i = 0; i < records.Count; i++)
+                    if (records[i] != null)
+                        CACombatIntent.ObserveEpisode(records[i].EpisodeId);
+        }
+
+        public override void MapComponentTick()
+        {
+            if (--pruneCooldown > 0) return;
+            pruneCooldown = 2500;
+            int now = Find.TickManager.TicksGame;
+            records.RemoveAll(record => record == null
+                || record.ActorId < 0 || record.ExpiryTick <= now);
+        }
+
+        internal void Record(Pawn actor, int episodeId, string victim,
+            string cause, float weight, int lifetimeTicks)
+        {
+            if (actor == null || actor.Map != map || episodeId <= 0) return;
+            int now = Find.TickManager.TicksGame;
+            records.Add(new CAExecutionAccountabilityRecord
+            {
+                ActorId = actor.thingIDNumber,
+                EpisodeId = episodeId,
+                Victim = victim,
+                Cause = cause,
+                Weight = UnityEngine.Mathf.Max(0f, weight),
+                CreatedTick = now,
+                ExpiryTick = now + System.Math.Max(1, lifetimeTicks)
+            });
+        }
+
+        internal bool TryActive(Pawn actor, out string victim,
+            out float weight)
+        {
+            victim = null;
+            weight = 0f;
+            if (actor == null) return false;
+            int now = Find.TickManager.TicksGame;
+            CAExecutionAccountabilityRecord latest = null;
+            for (int i = 0; i < records.Count; i++)
+            {
+                CAExecutionAccountabilityRecord record = records[i];
+                if (record == null || record.ActorId != actor.thingIDNumber
+                    || record.ExpiryTick <= now) continue;
+                weight += record.Weight;
+                if (latest == null
+                    || record.CreatedTick > latest.CreatedTick)
+                    latest = record;
+            }
+            if (latest == null) return false;
+            victim = latest.Victim;
+            return true;
+        }
+    }
+
     public class JobGiver_CACombatAftermath : ThinkNode_JobGiver
     {
         protected override Job TryGiveJob(Pawn pawn)
@@ -558,6 +911,32 @@ namespace ColonistAwareness
                     && pending.ActorId == pawn.thingIDNumber
                         ? pending.Intent
                         : CACombatAftermath.CACustodyIntent.Secure;
+                CAIntentContext ownedIntent = default(CAIntentContext);
+                bool hasOwnedIntent = pending != null
+                    && pending.Context.IsValid;
+                if (hasOwnedIntent) ownedIntent = pending.Context;
+                else hasOwnedIntent = CABehaviorIntentMapComponent
+                    .For(pawn.Map)?.TryGet(pawn, job,
+                        out ownedIntent) == true;
+                if (pending == null && hasOwnedIntent
+                    && ownedIntent.TargetOrDemand != null)
+                {
+                    const string prefix = "custody-intent=";
+                    int start = ownedIntent.TargetOrDemand.IndexOf(prefix,
+                        System.StringComparison.Ordinal);
+                    int end = ownedIntent.TargetOrDemand.IndexOf(';');
+                    if (start >= 0)
+                    {
+                        string value = ownedIntent.TargetOrDemand.Substring(
+                            start + prefix.Length,
+                            end > start ? end - start - prefix.Length
+                                : ownedIntent.TargetOrDemand.Length - start
+                                    - prefix.Length);
+                        CACombatAftermath.CACustodyIntent restored;
+                        if (System.Enum.TryParse(value, out restored))
+                            intent = restored;
+                    }
+                }
                 CACombatAftermath.custodyIntents.Remove(captive.thingIDNumber);
 
                 if (intent == CACombatAftermath.CACustodyIntent.Execute
@@ -565,6 +944,21 @@ namespace ColonistAwareness
                         .ImpulsiveExecute
                     || intent == CACombatAftermath.CACustodyIntent.MercyKill)
                 {
+                    string authorityFailure = "no persisted custody intent";
+                    if (!hasOwnedIntent
+                        || !CACombatAftermath.RevalidateIrreversibleCustody(
+                            pawn, captive, job, intent, ownedIntent,
+                            out authorityFailure))
+                    {
+                        CATrace.Pawn(pawn,
+                            "irreversible custody STANDS DOWN - "
+                            + authorityFailure,
+                            contact: captive.Position,
+                            anchor: pawn.Position,
+                            intent: hasOwnedIntent
+                                ? (CAIntentContext?)ownedIntent : null);
+                        return;
+                    }
                     // The finish, through the native execution pipeline so
                     // ideoligion and witnesses answer organically - mercy and
                     // rage alike are paid for in the coin the colony's
@@ -581,7 +975,12 @@ namespace ColonistAwareness
                             HistoryEventDefOf.ExecutedPrisonerGuilty,
                             pawn.Named(HistoryEventArgsNames.Doer)));
                     }
-                    catch { }
+                    catch (System.Exception ex)
+                    {
+                        Log.ErrorOnce("[Colonist Awareness] custody execution failed: "
+                            + ex, 937542311);
+                        return;
+                    }
                     CATrace.Pawn(pawn, (mercy
                         ? "field custody ended in a MERCY END for "
                         : impulsive
@@ -589,13 +988,16 @@ namespace ColonistAwareness
                         : "field custody became a DELIBERATE EXECUTION of ")
                         + label + (pending != null
                             ? " (" + pending.Trace + ")" : ""),
-                        contact: captive.Position, anchor: pawn.Position);
+                        contact: captive.Position, anchor: pawn.Position,
+                        intent: hasOwnedIntent
+                            ? (CAIntentContext?)ownedIntent : null);
                     // Redemption's seed: rage that a conscience objects to
                     // becomes a carried weight - mercy leaves none.
                     if (impulsive
                         && CACombatAftermath.ConscienceObjects(pawn))
                         CACombatAftermath.RecordExecutionWeight(pawn, label,
-                            true);
+                            true, ownedIntent.EpisodeId,
+                            "unlawful impulsive execution");
                     return;
                 }
 
@@ -605,7 +1007,9 @@ namespace ColonistAwareness
                     + captive.LabelShort
                     + "; native capture disarmed the captive and finite compliance began; transport and treatment remain follow-on outcomes"
                     + (pending != null ? " (" + pending.Trace + ")" : ""),
-                    contact: captive.Position, anchor: pawn.Position);
+                    contact: captive.Position, anchor: pawn.Position,
+                    intent: hasOwnedIntent
+                        ? (CAIntentContext?)ownedIntent : null);
                 if (intent == CACombatAftermath.CACustodyIntent
                     .SecureStabilize)
                 {

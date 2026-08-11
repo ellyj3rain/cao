@@ -65,6 +65,7 @@ namespace ColonistAwareness
             Instance.squadOf[p.thingIDNumber] = squad;
             if (!Instance.leaderOf.ContainsKey(squad)) Instance.leaderOf[squad] = p.thingIDNumber;
             CommsModule.InvalidateTopologyCache();
+            CABehaviorRevisions.RoleChanged();
         }
 
         public static void Leave(Pawn p)
@@ -76,6 +77,7 @@ namespace ColonistAwareness
             if (s > 0 && Instance.leaderOf.TryGetValue(s, out lid) && lid == p.thingIDNumber)
                 Instance.leaderOf.Remove(s);
             CommsModule.InvalidateTopologyCache();
+            CABehaviorRevisions.RoleChanged();
         }
 
         public static void SetLeader(Pawn p)
@@ -86,6 +88,7 @@ namespace ColonistAwareness
             {
                 Instance.leaderOf[s] = p.thingIDNumber;
                 CommsModule.InvalidateTopologyCache();
+                CABehaviorRevisions.RoleChanged();
             }
         }
 
@@ -221,6 +224,7 @@ namespace ColonistAwareness
                 if (!Instance.ftLeaderOf.ContainsKey(key)) Instance.ftLeaderOf[key] = p.thingIDNumber;
             }
             CommsModule.InvalidateTopologyCache();
+            CABehaviorRevisions.RoleChanged();
         }
 
         public static void SetFireteamLeader(Pawn p)
@@ -232,6 +236,7 @@ namespace ColonistAwareness
             {
                 Instance.ftLeaderOf[sq * 10 + t] = p.thingIDNumber;
                 CommsModule.InvalidateTopologyCache();
+                CABehaviorRevisions.RoleChanged();
             }
         }
 

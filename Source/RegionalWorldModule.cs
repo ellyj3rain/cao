@@ -671,6 +671,54 @@ namespace ColonistAwareness
         public int lastReconciliationTick = -1;
         public int materializationCount;
         public string materializationSummary;
+        // Confirmed creation history is a distinct, durable authority receipt.
+        // Later NPC development reads the institution and material settlement
+        // that exist in play; it does not inherit creation feasibility.
+        public string creationBehaviorKey;
+        public int creationEpisodeId;
+        public int creationAuthorityOrigin;
+        public string creationAuthorityIdentity;
+        public string creationOwner;
+        public string creationTargetOrDemand;
+        public int creationCreatedTick = -1;
+        public string creationProposer;
+        public string creationApprover;
+        public string creationLaborSource;
+        public List<string> creationBeneficiaries = new List<string>();
+        public string creationCulturalBasis;
+        public string creationPoliticalBasis;
+        public bool creationAuthorized;
+        public bool creationExecutable;
+        public bool creationMaterialFeasible;
+        public string creationProposalSignature;
+        public bool creationSitingEvaluated;
+        public bool creationSitingFeasible;
+        public string creationBlocker;
+        public string developmentBehaviorKey;
+        public int developmentEpisodeId;
+        public int developmentAuthorityOrigin;
+        public string developmentAuthorityIdentity;
+        public string developmentOwner;
+        public string developmentProposer;
+        public string developmentApprover;
+        public string developmentLaborSource;
+        public List<string> developmentBeneficiaries = new List<string>();
+        public string developmentCulturalBasis;
+        public string developmentPoliticalBasis;
+        public string developmentTargetOrDemand;
+        public int developmentCreatedTick = -1;
+        public bool developmentAuthorized;
+        public bool developmentExecutable;
+        public bool developmentFundingFeasible;
+        public bool developmentMaterialFeasible;
+        public bool developmentSitingEvaluated;
+        public bool developmentSitingFeasible;
+        public List<int> developmentDemandKinds = new List<int>();
+        public List<string> developmentAssetCandidates = new List<string>();
+        public string developmentFundingBasis;
+        public string developmentMaterialBasis;
+        public string developmentProposalSignature;
+        public string developmentBlocker;
 
         public void ExposeData()
         {
@@ -782,6 +830,92 @@ namespace ColonistAwareness
                 "materializationCount", 0);
             Scribe_Values.Look(ref materializationSummary,
                 "materializationSummary");
+            Scribe_Values.Look(ref creationBehaviorKey,
+                "creationBehaviorKey");
+            Scribe_Values.Look(ref creationEpisodeId,
+                "creationEpisodeId", 0);
+            Scribe_Values.Look(ref creationAuthorityOrigin,
+                "creationAuthorityOrigin", 0);
+            Scribe_Values.Look(ref creationAuthorityIdentity,
+                "creationAuthorityIdentity");
+            Scribe_Values.Look(ref creationOwner, "creationOwner");
+            Scribe_Values.Look(ref creationTargetOrDemand,
+                "creationTargetOrDemand");
+            Scribe_Values.Look(ref creationCreatedTick,
+                "creationCreatedTick", -1);
+            Scribe_Values.Look(ref creationProposer, "creationProposer");
+            Scribe_Values.Look(ref creationApprover, "creationApprover");
+            Scribe_Values.Look(ref creationLaborSource,
+                "creationLaborSource");
+            Scribe_Collections.Look(ref creationBeneficiaries,
+                "creationBeneficiaries", LookMode.Value);
+            Scribe_Values.Look(ref creationCulturalBasis,
+                "creationCulturalBasis");
+            Scribe_Values.Look(ref creationPoliticalBasis,
+                "creationPoliticalBasis");
+            Scribe_Values.Look(ref creationAuthorized,
+                "creationAuthorized", false);
+            Scribe_Values.Look(ref creationExecutable,
+                "creationExecutable", false);
+            Scribe_Values.Look(ref creationMaterialFeasible,
+                "creationMaterialFeasible", false);
+            Scribe_Values.Look(ref creationProposalSignature,
+                "creationProposalSignature");
+            Scribe_Values.Look(ref creationSitingEvaluated,
+                "creationSitingEvaluated", false);
+            Scribe_Values.Look(ref creationSitingFeasible,
+                "creationSitingFeasible", false);
+            Scribe_Values.Look(ref creationBlocker, "creationBlocker");
+            Scribe_Values.Look(ref developmentBehaviorKey,
+                "developmentBehaviorKey");
+            Scribe_Values.Look(ref developmentEpisodeId,
+                "developmentEpisodeId", 0);
+            Scribe_Values.Look(ref developmentAuthorityOrigin,
+                "developmentAuthorityOrigin", 0);
+            Scribe_Values.Look(ref developmentAuthorityIdentity,
+                "developmentAuthorityIdentity");
+            Scribe_Values.Look(ref developmentOwner,
+                "developmentOwner");
+            Scribe_Values.Look(ref developmentProposer,
+                "developmentProposer");
+            Scribe_Values.Look(ref developmentApprover,
+                "developmentApprover");
+            Scribe_Values.Look(ref developmentLaborSource,
+                "developmentLaborSource");
+            Scribe_Collections.Look(ref developmentBeneficiaries,
+                "developmentBeneficiaries", LookMode.Value);
+            Scribe_Values.Look(ref developmentCulturalBasis,
+                "developmentCulturalBasis");
+            Scribe_Values.Look(ref developmentPoliticalBasis,
+                "developmentPoliticalBasis");
+            Scribe_Values.Look(ref developmentTargetOrDemand,
+                "developmentTargetOrDemand");
+            Scribe_Values.Look(ref developmentCreatedTick,
+                "developmentCreatedTick", -1);
+            Scribe_Values.Look(ref developmentAuthorized,
+                "developmentAuthorized", false);
+            Scribe_Values.Look(ref developmentExecutable,
+                "developmentExecutable", false);
+            Scribe_Values.Look(ref developmentFundingFeasible,
+                "developmentFundingFeasible", false);
+            Scribe_Values.Look(ref developmentMaterialFeasible,
+                "developmentMaterialFeasible", false);
+            Scribe_Values.Look(ref developmentSitingEvaluated,
+                "developmentSitingEvaluated", false);
+            Scribe_Values.Look(ref developmentSitingFeasible,
+                "developmentSitingFeasible", false);
+            Scribe_Collections.Look(ref developmentDemandKinds,
+                "developmentDemandKinds", LookMode.Value);
+            Scribe_Collections.Look(ref developmentAssetCandidates,
+                "developmentAssetCandidates", LookMode.Value);
+            Scribe_Values.Look(ref developmentFundingBasis,
+                "developmentFundingBasis");
+            Scribe_Values.Look(ref developmentMaterialBasis,
+                "developmentMaterialBasis");
+            Scribe_Values.Look(ref developmentProposalSignature,
+                "developmentProposalSignature");
+            Scribe_Values.Look(ref developmentBlocker,
+                "developmentBlocker");
             if (Scribe.mode == LoadSaveMode.PostLoadInit && residentIds == null)
                 residentIds = new List<string>();
             if (Scribe.mode == LoadSaveMode.PostLoadInit
@@ -790,6 +924,25 @@ namespace ColonistAwareness
             if (Scribe.mode == LoadSaveMode.PostLoadInit
                 && startingStock == null)
                 startingStock = new List<CAStartingStockRecord>();
+            if (Scribe.mode == LoadSaveMode.PostLoadInit
+                && developmentDemandKinds == null)
+                developmentDemandKinds = new List<int>();
+            if (Scribe.mode == LoadSaveMode.PostLoadInit
+                && developmentAssetCandidates == null)
+                developmentAssetCandidates = new List<string>();
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
+                if (creationBeneficiaries == null)
+                    creationBeneficiaries = new List<string>();
+                if (developmentBeneficiaries == null)
+                    developmentBeneficiaries = new List<string>();
+                if (CASettlementAssetRegistry.ReconcileRecord(this,
+                        out string correction))
+                    Log.Warning("[CA][Regional] " + (regionalId ?? "settlement")
+                        + " readback correction: " + correction);
+                CACombatIntent.ObserveEpisode(creationEpisodeId);
+                CACombatIntent.ObserveEpisode(developmentEpisodeId);
+            }
         }
 
         internal string FactionEraLabel
@@ -1312,6 +1465,34 @@ namespace ColonistAwareness
                 settlement?.factionKey ?? -1);
             if (factionGroup != null)
                 factionGroup.EnsureCultureAndPolitics(localRegion);
+            CABehaviorDecision creationDecision;
+            CAIntentContext creationIntent;
+            CASettlementDevelopmentProposal creationProposal =
+                CASettlementAssetRegistry.BuildCreationProposal(
+                    resolvedFacilities,
+                    settlement?.economicCapacity ?? -1,
+                    settlement?.landCapacity ?? -1);
+            bool creationAuthorized =
+                CASettlementInstitutionalAuthorization
+                    .TryAuthorizeCreationHistory(localRegion, settlement,
+                        creationProposal, out creationDecision,
+                        out creationIntent);
+            string culturalBasis = factionGroup?.culture == null
+                ? "no carried cultural basis"
+                : CACultureModel.Summary(factionGroup.culture);
+            string politicalBasis = factionGroup?.politicalBeliefs == null
+                ? "no recorded political basis"
+                : CAPoliticalBeliefsModel.Summary(
+                    factionGroup.politicalBeliefs);
+            List<string> beneficiaries = settlement?.populationGroups == null
+                ? new List<string> { "settlement residents" }
+                : settlement.populationGroups.Where(group => group != null)
+                    .Select(group => group.label
+                        ?? "population group " + group.key)
+                    .Where(label => !label.NullOrEmpty()).Distinct()
+                    .OrderBy(label => label, StringComparer.Ordinal).ToList();
+            if (beneficiaries.Count == 0)
+                beneficiaries.Add("settlement residents");
             int seed = Gen.HashCombineInt(world.info.Seed,
                 GenText.StableStringHash(regionKey));
             seed = Gen.HashCombineInt(seed, localMapSize, slot, 0);
@@ -1353,7 +1534,61 @@ namespace ColonistAwareness
                 factionDefName = faction?.def?.defName ?? "none",
                 materializationSummary = "world seed + bundled world-tile member + "
                     + "operator-authored faction; native faction settlement "
-                    + "generation"
+                    + "generation; " + (creationAuthorized
+                        ? "confirmed history authored by "
+                            + creationIntent.AuthorityIdentity
+                        : "creation history blocked: "
+                            + creationDecision.PrimaryReason),
+                creationBehaviorKey = creationAuthorized
+                    ? creationIntent.BehaviorKey : null,
+                creationEpisodeId = creationAuthorized
+                    ? creationIntent.EpisodeId : 0,
+                creationAuthorityOrigin = creationAuthorized
+                    ? (int)creationIntent.AuthorityOrigin : 0,
+                creationAuthorityIdentity = creationAuthorized
+                    ? creationIntent.AuthorityIdentity : null,
+                creationOwner = creationAuthorized
+                    ? creationIntent.OwnershipScope : null,
+                creationTargetOrDemand = creationAuthorized
+                    ? creationIntent.TargetOrDemand : creationProposal
+                        .StableSignature(),
+                creationCreatedTick = creationAuthorized
+                    ? creationIntent.CreatedTick : -1,
+                creationProposer = "creation author",
+                creationApprover = localRegion?.confirmed == true
+                    ? "confirmed starting-region candidate "
+                        + localRegion.candidateId
+                    : "unconfirmed starting region",
+                creationLaborSource = "materialized settlement history",
+                creationBeneficiaries = beneficiaries.ToList(),
+                creationCulturalBasis = culturalBasis,
+                creationPoliticalBasis = politicalBasis,
+                creationAuthorized = creationAuthorized,
+                creationExecutable = false,
+                creationMaterialFeasible = creationProposal.MaterialFeasible,
+                creationProposalSignature = creationProposal.StableSignature(),
+                creationSitingEvaluated = false,
+                creationSitingFeasible = false,
+                creationBlocker = creationAuthorized ? null
+                    : creationDecision.PrimaryReason,
+                // Institutional development is derived only after a current
+                // organization and material settlement exist.
+                developmentAuthorized = false,
+                developmentExecutable = false,
+                developmentFundingFeasible = false,
+                developmentMaterialFeasible = false,
+                developmentSitingEvaluated = false,
+                developmentSitingFeasible = false,
+                developmentDemandKinds = new List<int>(),
+                developmentAssetCandidates = new List<string>(),
+                developmentFundingBasis =
+                    "awaiting a current settlement institution",
+                developmentMaterialBasis =
+                    "awaiting current settlement ground and residents",
+                developmentProposalSignature = null,
+                developmentCulturalBasis = culturalBasis,
+                developmentPoliticalBasis = politicalBasis,
+                developmentBlocker = "institutional development has not yet read the materialized settlement"
             };
             // The drafted composition becomes the settlement's own. Deep
             // copies, not shared references - the plan remains a draft

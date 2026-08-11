@@ -116,7 +116,11 @@ namespace ColonistAwareness
                 CAIntentContext value = intent.Value;
                 text.Append("[origin=").Append(Origin(value.Origin)).Append(']')
                     .Append("[controller=").Append(Controller(value.Controller)).Append(']')
-                    .Append("[episode=").Append(value.EpisodeId).Append(']');
+                    .Append("[episode=").Append(value.EpisodeId).Append(']')
+                    .Append("[behavior=").Append(value.BehaviorKey)
+                    .Append(']')
+                    .Append("[authority=").Append(value.AuthorityOrigin)
+                    .Append(':').Append(value.AuthorityIdentity).Append(']');
                 if (value.IssuerId >= 0)
                     text.Append("[issuer=").Append(value.IssuerId).Append(']');
             }
@@ -134,6 +138,12 @@ namespace ColonistAwareness
                 case CAIntentOrigin.Continuation: return "continuation";
                 case CAIntentOrigin.SaveRestore: return "save-restore";
                 case CAIntentOrigin.PeerRelay: return "peer-relay";
+                case CAIntentOrigin.PlayerDelegated: return "player-delegated";
+                case CAIntentOrigin.NativeDuty: return "native-duty";
+                case CAIntentOrigin.Institutional: return "institutional";
+                case CAIntentOrigin.Household: return "household";
+                case CAIntentOrigin.Organization: return "organization";
+                case CAIntentOrigin.WorldAuthoring: return "world-authoring";
                 default: return "unknown";
             }
         }

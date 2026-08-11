@@ -225,7 +225,32 @@ namespace ColonistAwareness
                     Job walk = JobMaker.MakeJob(JobDefOf.Goto,
                         enemies[0].Position);
                     walk.playerForced = false;
-                    householder.jobs.TryTakeOrderedJob(walk);
+                    var context = CABehaviorContext.ForPawn(householder,
+                        CAAuthorityOrigin.Household,
+                        authoritySatisfied: true,
+                        capabilitySatisfied: householder.CanReach(
+                            enemies[0].Position, PathEndMode.OnCell,
+                            Danger.Deadly),
+                        materialSatisfied: enemies[0].Position
+                            .Standable(map),
+                        currentIntentCompatible: householder.CurJob == null
+                            || !householder.CurJob.playerForced,
+                        directPlayerOwnership: householder.CurJob != null
+                            && householder.CurJob.playerForced,
+                        authorityBasis: "frontier household " + org.name,
+                        knowledgeBasis:
+                            "householder directly confronts the visible armed party",
+                        owner: org.name + " household");
+                    CABehaviorDecision decision;
+                    CAIntentContext intent;
+                    if (CABehaviorJobOrigin.TryAuthorizeAndRegister(
+                            householder, walk,
+                            "institution.frontier_household_activity",
+                            CAIntentController.Frontier, context,
+                            out decision, out intent,
+                            "meet armed party at " + enemies[0].Position,
+                            org.name + " household", 1800))
+                        householder.jobs.TryTakeOrderedJob(walk);
                 }
                 catch { }
                 Messages.Message(householder.LabelShort + " walks out to"
@@ -431,7 +456,30 @@ namespace ColonistAwareness
                         map, CellFinder.EdgeRoadChance_Neutral,
                         out edge)) continue;
                     Job go = JobMaker.MakeJob(JobDefOf.Goto, edge);
-                    folk[i].jobs.TryTakeOrderedJob(go);
+                    Pawn resident = folk[i];
+                    var context = CABehaviorContext.ForPawn(resident,
+                        CAAuthorityOrigin.Household,
+                        authoritySatisfied: true,
+                        capabilitySatisfied: resident.CanReach(edge,
+                            PathEndMode.OnCell, Danger.Deadly),
+                        materialSatisfied: edge.Standable(map),
+                        currentIntentCompatible: resident.CurJob == null
+                            || !resident.CurJob.playerForced,
+                        directPlayerOwnership: resident.CurJob != null
+                            && resident.CurJob.playerForced,
+                        authorityBasis: "current frontier household alarm",
+                        knowledgeBasis:
+                            "household alarm; no hostile identity granted",
+                        owner: "frontier household survival");
+                    CABehaviorDecision decision;
+                    CAIntentContext intent;
+                    if (CABehaviorJobOrigin.TryAuthorizeAndRegister(resident,
+                            go, "survival.frontier_flight",
+                            CAIntentController.Frontier, context,
+                            out decision, out intent,
+                            "clear holding toward edge " + edge,
+                            "frontier household survival", 1800))
+                        resident.jobs.TryTakeOrderedJob(go);
                 }
                 catch { }
             }

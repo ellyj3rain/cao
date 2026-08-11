@@ -28,8 +28,12 @@ namespace ColonistAwareness
         public override IEnumerable<Thing> PotentialWorkThingsGlobal(Pawn pawn)
         {
             var s = AwarenessMod.Settings;
-            if (s == null || !s.animalCare) yield break;
-            if (AutonomyComponent.LevelOf(pawn) < 1) yield break;
+            CAEffectiveBehaviorProfile profile =
+                CAEffectiveBehaviorProfileCache.Of(pawn);
+            if (s == null || profile == null
+                || !profile.Includes("animal.emergency_care")
+                    && !profile.Includes("animal.preventive_feeding"))
+                yield break;
             var list = pawn.Map.mapPawns.SpawnedPawnsInFaction(Faction.OfPlayer);
             for (int i = 0; i < list.Count; i++)
             {
@@ -43,20 +47,29 @@ namespace ColonistAwareness
 
         public override bool HasJobOnThing(Pawn pawn, Thing t, bool forced = false)
         {
-            return JobOnThing(pawn, t, forced) != null;
+            return BuildJob(pawn, t as Pawn, forced, register: false) != null;
         }
 
         public override Job JobOnThing(Pawn pawn, Thing t, bool forced = false)
         {
-            var animal = t as Pawn;
+            return BuildJob(pawn, t as Pawn, forced, register: true);
+        }
+
+        private static Job BuildJob(Pawn pawn, Pawn animal, bool forced,
+            bool register)
+        {
             if (animal == null || !animal.RaceProps.Animal || animal.Faction != Faction.OfPlayer) return null;
             if (animal.Dead || !animal.Spawned || animal.needs == null || animal.needs.food == null) return null;
             var need = animal.needs.food;
+            string behaviorKey = need.Starving
+                ? "animal.emergency_care" : "animal.preventive_feeding";
             if (!need.Starving)
             {
                 // Urgently hungry is preemptive care - Proactive+. Starving is everyone's problem.
                 if (need.CurCategory != HungerCategory.UrgentlyHungry) return null;
-                if (AutonomyComponent.LevelOf(pawn) < 2) return null;
+                if (CAEffectiveBehaviorProfileCache.Of(pawn)?
+                    .Includes("animal.preventive_feeding") != true)
+                    return null;
             }
             if (!pawn.CanReach(animal, PathEndMode.Touch, Danger.Some)) return null;
 
@@ -76,7 +89,8 @@ namespace ColonistAwareness
                     : CA_Defs.FeedDownedAnimal;
                 Job job = JobMaker.MakeJob(jobDef, feed, animal);
                 job.count = UnityEngine.Mathf.Clamp(ingest, 1, count);
-                return job;
+                return Authorize(pawn, animal, job, behaviorKey, forced,
+                    register, "feed a downed animal");
             }
 
             // Mobile animals can feed themselves once the food is in reach.
@@ -88,7 +102,37 @@ namespace ColonistAwareness
             Job haul = JobMaker.MakeJob(JobDefOf.HaulToCell, feed, dropCell);
             haul.count = count;
             haul.haulMode = HaulMode.ToCellNonStorage;
-            return haul;
+            return Authorize(pawn, animal, haul, behaviorKey, forced,
+                register, "bring food to a hungry animal");
+        }
+
+        private static Job Authorize(Pawn pawn, Pawn animal, Job job,
+            string behaviorKey, bool forced, bool register, string demand)
+        {
+            CAAuthorityOrigin origin = forced
+                ? CAAuthorityOrigin.OperatorDirect
+                : CAAuthorityOrigin.NativeDuty;
+            var context = CABehaviorContext.ForPawn(pawn, origin,
+                authoritySatisfied: true, knowledgeSatisfied: true,
+                knowledgeFresh: true, liveValidated: animal != null
+                    && animal.Spawned && !animal.Dead,
+                capabilitySatisfied: job != null,
+                materialSatisfied: job != null,
+                directPlayerOwnership: !forced && pawn?.CurJob != null
+                    && pawn.CurJob.playerForced,
+                authorityBasis: forced ? "direct animal-care order"
+                    : "enabled animal-handling work",
+                knowledgeBasis: "current visible animal care state",
+                owner: "animal care work");
+            if (!register)
+                return CABehaviorGate.Evaluate(behaviorKey, context).Allowed
+                    ? job : null;
+            CABehaviorDecision decision;
+            CAIntentContext intent;
+            return CABehaviorJobOrigin.TryAuthorizeAndRegister(pawn, job,
+                behaviorKey, CAIntentController.Welfare, context,
+                out decision, out intent, animal?.LabelShort ?? demand,
+                "animal care work", 2500) ? job : null;
         }
 
         // Animal feed first (hay, kibble, raw), proper meals only as a last resort -
@@ -210,8 +254,8 @@ namespace ColonistAwareness
         public override IEnumerable<Thing> PotentialWorkThingsGlobal(Pawn pawn)
         {
             var s = AwarenessMod.Settings;
-            if (s == null || !s.animalCare) yield break;
-            if (AutonomyComponent.LevelOf(pawn) < 1) yield break;
+            if (s == null || CAEffectiveBehaviorProfileCache.Of(pawn)?
+                .Includes("animal.emergency_care") != true) yield break;
             var list = pawn.Map.mapPawns.SpawnedPawnsInFaction(Faction.OfPlayer);
             for (int i = 0; i < list.Count; i++)
             {
@@ -223,12 +267,17 @@ namespace ColonistAwareness
 
         public override bool HasJobOnThing(Pawn pawn, Thing t, bool forced = false)
         {
-            return JobOnThing(pawn, t, forced) != null;
+            return BuildJob(pawn, t as Pawn, forced, register: false) != null;
         }
 
         public override Job JobOnThing(Pawn pawn, Thing t, bool forced = false)
         {
-            var animal = t as Pawn;
+            return BuildJob(pawn, t as Pawn, forced, register: true);
+        }
+
+        private static Job BuildJob(Pawn pawn, Pawn animal, bool forced,
+            bool register)
+        {
             if (animal == null || !animal.RaceProps.Animal || animal.Faction != Faction.OfPlayer) return null;
             if (!animal.Downed || animal.Dead || !animal.Spawned || animal.CurrentBed() != null) return null;
             // Vanilla's rescue safety gates: don't grab caravan-loading or
@@ -241,7 +290,28 @@ namespace ColonistAwareness
             if (bed == null) return null;
             Job job = JobMaker.MakeJob(JobDefOf.Rescue, animal, bed);
             job.count = 1;
-            return job;
+            CAAuthorityOrigin origin = forced
+                ? CAAuthorityOrigin.OperatorDirect
+                : CAAuthorityOrigin.NativeDuty;
+            var context = CABehaviorContext.ForPawn(pawn, origin,
+                authoritySatisfied: true, knowledgeSatisfied: true,
+                knowledgeFresh: true, liveValidated: true,
+                capabilitySatisfied: true, materialSatisfied: true,
+                directPlayerOwnership: !forced && pawn?.CurJob != null
+                    && pawn.CurJob.playerForced,
+                authorityBasis: forced ? "direct animal rescue order"
+                    : "enabled animal-handling work",
+                knowledgeBasis: "current visible downed animal",
+                owner: "animal care work");
+            if (!register)
+                return CABehaviorGate.Evaluate("animal.emergency_care",
+                    context).Allowed ? job : null;
+            CABehaviorDecision decision;
+            CAIntentContext intent;
+            return CABehaviorJobOrigin.TryAuthorizeAndRegister(pawn, job,
+                "animal.emergency_care", CAIntentController.Welfare,
+                context, out decision, out intent, animal.LabelShort,
+                "animal care work", 2500) ? job : null;
         }
     }
 }

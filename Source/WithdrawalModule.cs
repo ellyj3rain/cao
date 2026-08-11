@@ -48,6 +48,19 @@ namespace ColonistAwareness
             public int issuerId = -1;
             public int aOrigin;
             public int bOrigin;
+            public string behaviorKey;
+            public int authorityOrigin;
+            public string authorityIdentity;
+            public int bAuthorityOrigin;
+            public string bAuthorityIdentity;
+            public string ownershipScope;
+            public int ownerId = -1;
+            public int bOwnerId = -1;
+            public int createdTick;
+            public int creationTier;
+            public int bCreationTier;
+            public string targetOrDemand;
+            public string terminationCondition;
 
             // Derived contact cache. It is intentionally not scribed: knowledge is
             // authoritative and the drivers recompute it on their first post-load tick.
@@ -79,6 +92,23 @@ namespace ColonistAwareness
                 Scribe_Values.Look(ref issuerId, "intentIssuerId", -1);
                 Scribe_Values.Look(ref aOrigin, "aIntentOrigin", 0);
                 Scribe_Values.Look(ref bOrigin, "bIntentOrigin", 0);
+                Scribe_Values.Look(ref behaviorKey, "behaviorKey");
+                Scribe_Values.Look(ref authorityOrigin, "authorityOrigin");
+                Scribe_Values.Look(ref authorityIdentity,
+                    "authorityIdentity");
+                Scribe_Values.Look(ref bAuthorityOrigin,
+                    "bAuthorityOrigin");
+                Scribe_Values.Look(ref bAuthorityIdentity,
+                    "bAuthorityIdentity");
+                Scribe_Values.Look(ref ownershipScope, "ownershipScope");
+                Scribe_Values.Look(ref ownerId, "ownerId", -1);
+                Scribe_Values.Look(ref bOwnerId, "bOwnerId", -1);
+                Scribe_Values.Look(ref createdTick, "createdTick");
+                Scribe_Values.Look(ref creationTier, "creationTier");
+                Scribe_Values.Look(ref bCreationTier, "bCreationTier");
+                Scribe_Values.Look(ref targetOrDemand, "targetOrDemand");
+                Scribe_Values.Look(ref terminationCondition,
+                    "terminationCondition");
             }
         }
 
@@ -93,6 +123,32 @@ namespace ColonistAwareness
                 Known = known;
                 VisiblePawn = visiblePawn;
                 Cell = cell;
+            }
+        }
+
+        private readonly struct WithdrawalKnowledge
+        {
+            public readonly bool Satisfied;
+            public readonly bool Fresh;
+            public readonly bool Relayed;
+            public readonly bool Live;
+            public readonly int Age;
+            public readonly float Confidence;
+            public readonly float Uncertainty;
+            public readonly string Basis;
+
+            public WithdrawalKnowledge(bool satisfied, bool fresh,
+                bool relayed, bool live, int age, float confidence,
+                float uncertainty, string basis)
+            {
+                Satisfied = satisfied;
+                Fresh = fresh;
+                Relayed = relayed;
+                Live = live;
+                Age = age;
+                Confidence = confidence;
+                Uncertainty = uncertainty;
+                Basis = basis;
             }
         }
 
@@ -196,10 +252,25 @@ namespace ColonistAwareness
             var s = AwarenessMod.Settings;
             if (s == null || !s.withdrawals || !ValidDestination(dest)
                 || !CanOfferSolo(p, dest)) return;
+            Job job = MakeWithdrawalJob(dest);
+            string behaviorKey = IsDirectOrder(context)
+                ? "order.withdrawal"
+                : "combat.withdrawal_self_preservation";
+            CAIntentContext registered;
+            CABehaviorDecision decision;
+            if (!TryAuthorizeWithdrawalJob(p, p, job, dest, context,
+                    behaviorKey, relayAccepted: true,
+                    out decision, out registered))
+            {
+                CATrace.Skip(p, "solo withdrawal",
+                    decision.PrimaryReason, destination: dest,
+                    anchor: p.Position, intent: context);
+                return;
+            }
             Cancel(p);
             CATrace.Pawn(p,
                 "tactical ownership TRANSITION -> solo withdrawal",
-                destination: dest, anchor: p.Position, intent: context);
+                destination: dest, anchor: p.Position, intent: registered);
             ReleaseSelectedTacticalOwnership(p);
 
             var plan = new Plan
@@ -207,13 +278,21 @@ namespace ColonistAwareness
                 aId = p.thingIDNumber,
                 dest = dest,
                 aDrafted = p.Drafted,
-                episodeId = context.EpisodeId,
-                controller = (int)context.Controller,
-                issuerId = context.IssuerId,
-                aOrigin = (int)context.Origin
+                episodeId = registered.EpisodeId,
+                controller = (int)registered.Controller,
+                issuerId = registered.IssuerId,
+                aOrigin = (int)registered.Origin,
+                behaviorKey = registered.BehaviorKey,
+                authorityOrigin = (int)registered.AuthorityOrigin,
+                authorityIdentity = registered.AuthorityIdentity,
+                ownershipScope = registered.OwnershipScope,
+                ownerId = registered.OwnerId,
+                createdTick = registered.CreatedTick,
+                creationTier = (int)registered.CreationTier,
+                targetOrDemand = registered.TargetOrDemand,
+                terminationCondition = registered.TerminationCondition
             };
             NormalizeIntent(plan, p);
-            Job job = MakeWithdrawalJob(dest);
             plan.aJobId = job.loadID;
             plans.Add(plan);
             MovingFire.Set(p, true);
@@ -221,6 +300,7 @@ namespace ColonistAwareness
             {
                 MovingFire.Set(p, false);
                 plans.Remove(plan);
+                CABehaviorIntentMapComponent.For(map)?.Unregister(p, job);
                 return;
             }
             CATrace.Pawn(p, "starts solo suppressive withdrawal",
@@ -275,11 +355,71 @@ namespace ColonistAwareness
                 return;
             }
 
+            bool relayAccepted = TryAcceptWithdrawalRelay(p, buddy,
+                out string relayReason);
+            if (!relayAccepted)
+            {
+                if (allowSharedHoldRelease)
+                {
+                    CAIntentContext solo = CACombatIntent.Continuation(p,
+                        CAIntentController.Withdrawal,
+                        "combat.withdrawal_self_preservation");
+                    OrderSolo(p, dest, solo);
+                }
+                else
+                {
+                    CATrace.Skip(buddy, "covered withdrawal relay",
+                        relayReason, destination: dest,
+                        anchor: buddy.Position, intent: context);
+                    Messages.Message("Covered movement was not issued: "
+                        + relayReason + ".", new LookTargets(buddy),
+                        MessageTypeDefOf.RejectInput, false);
+                }
+                return;
+            }
+
+            Job aJob = MakeWithdrawalJob(dest);
+            Job bJob = MakeWithdrawalJob(dest);
+            string behaviorKey = IsDirectOrder(context)
+                ? "order.withdrawal"
+                : "combat.withdrawal_coordinated";
+            CABehaviorDecision actorDecision;
+            CABehaviorDecision buddyDecision;
+            CAIntentContext actorIntent;
+            CAIntentContext buddyIntent;
+            if (!TryAuthorizeWithdrawalJob(p, p, aJob, dest, context,
+                    behaviorKey, relayAccepted: true,
+                    out actorDecision, out actorIntent))
+            {
+                CATrace.Skip(p, "covered withdrawal",
+                    actorDecision.PrimaryReason, destination: dest,
+                    anchor: p.Position, intent: context);
+                if (allowSharedHoldRelease)
+                    OrderSolo(p, dest, CACombatIntent.Continuation(p,
+                        CAIntentController.Withdrawal,
+                        "combat.withdrawal_self_preservation"));
+                return;
+            }
+            if (!TryAuthorizeWithdrawalJob(buddy, p, bJob, dest,
+                    context, behaviorKey, relayAccepted,
+                    out buddyDecision, out buddyIntent))
+            {
+                CABehaviorIntentMapComponent.For(map)?.Unregister(p, aJob);
+                CATrace.Skip(buddy, "covered withdrawal",
+                    buddyDecision.PrimaryReason, destination: dest,
+                    anchor: buddy.Position, intent: context);
+                if (allowSharedHoldRelease)
+                    OrderSolo(p, dest, CACombatIntent.Continuation(p,
+                        CAIntentController.Withdrawal,
+                        "combat.withdrawal_self_preservation"));
+                return;
+            }
+
             Cancel(p);
             Cancel(buddy);
             CATrace.Pawn(p,
                 "tactical ownership TRANSITION -> covered withdrawal",
-                destination: dest, anchor: p.Position, intent: context);
+                destination: dest, anchor: p.Position, intent: actorIntent);
             ReleaseSelectedTacticalOwnership(p);
             if (allowSharedHoldRelease && CATactical.IsHold(buddy))
                 ReleaseSelectedTacticalOwnership(buddy);
@@ -292,18 +432,26 @@ namespace ColonistAwareness
                 dest = dest,
                 aDrafted = p.Drafted,
                 bDrafted = buddy.Drafted,
-                episodeId = context.EpisodeId,
-                controller = (int)context.Controller,
-                issuerId = context.IssuerId,
-                aOrigin = (int)context.Origin,
-                bOrigin = context.Origin == CAIntentOrigin.OperatorDirect
-                    || context.Origin == CAIntentOrigin.OperatorRelay
-                        ? (int)CAIntentOrigin.OperatorRelay
-                        : (int)context.Origin
+                episodeId = actorIntent.EpisodeId,
+                controller = (int)actorIntent.Controller,
+                issuerId = actorIntent.IssuerId,
+                aOrigin = (int)actorIntent.Origin,
+                bOrigin = (int)buddyIntent.Origin,
+                behaviorKey = actorIntent.BehaviorKey,
+                authorityOrigin = (int)actorIntent.AuthorityOrigin,
+                authorityIdentity = actorIntent.AuthorityIdentity,
+                bAuthorityOrigin = (int)buddyIntent.AuthorityOrigin,
+                bAuthorityIdentity = buddyIntent.AuthorityIdentity,
+                ownershipScope = actorIntent.OwnershipScope,
+                ownerId = actorIntent.OwnerId,
+                bOwnerId = buddyIntent.OwnerId,
+                createdTick = actorIntent.CreatedTick,
+                creationTier = (int)actorIntent.CreationTier,
+                bCreationTier = (int)buddyIntent.CreationTier,
+                targetOrDemand = actorIntent.TargetOrDemand,
+                terminationCondition = actorIntent.TerminationCondition
             };
             NormalizeIntent(plan, p);
-            Job aJob = MakeWithdrawalJob(dest);
-            Job bJob = MakeWithdrawalJob(dest);
             plan.aJobId = aJob.loadID;
             plan.bJobId = bJob.loadID;
             plans.Add(plan);
@@ -313,8 +461,16 @@ namespace ColonistAwareness
             bool aStarted = StartWithdrawalJob(p, aJob, allowCurrentForced: true);
             bool bStarted = StartWithdrawalJob(buddy, bJob,
                 allowCurrentForced: allowSharedHoldRelease);
-            if (!aStarted) RemoveMember(plan, p.thingIDNumber);
-            if (!bStarted) RemoveMember(plan, buddy.thingIDNumber);
+            if (!aStarted)
+            {
+                CABehaviorIntentMapComponent.For(map)?.Unregister(p, aJob);
+                RemoveMember(plan, p.thingIDNumber);
+            }
+            if (!bStarted)
+            {
+                CABehaviorIntentMapComponent.For(map)?.Unregister(buddy, bJob);
+                RemoveMember(plan, buddy.thingIDNumber);
+            }
             if (aStarted && plans.Contains(plan))
                 CATrace.Pawn(p, "starts covered bounded withdrawal",
                     destination: dest, anchor: p.Position, intent: Intent(plan, true));
@@ -323,6 +479,247 @@ namespace ColonistAwareness
                     destination: dest, anchor: buddy.Position,
                     intent: Intent(plan,
                         plan.aId == buddy.thingIDNumber));
+        }
+
+        private static bool IsDirectOrder(CAIntentContext context)
+        {
+            return context.IsValid
+                && (context.Origin == CAIntentOrigin.OperatorDirect
+                    || context.Origin == CAIntentOrigin.OperatorRelay
+                    || context.AuthorityOrigin
+                        == CAAuthorityOrigin.OperatorDirect
+                    || context.AuthorityOrigin
+                        == CAAuthorityOrigin.OperatorRelay);
+        }
+
+        private bool TryAcceptWithdrawalRelay(Pawn requester, Pawn member,
+            out string reason)
+        {
+            reason = null;
+            if (requester == null || member == null || requester == member)
+            {
+                reason = "a distinct available partner is required";
+                return false;
+            }
+            CommandRouteReceipt route;
+            if (!CommsModule.CanRelayOrder(requester, member,
+                    new List<Pawn> { member }, out route))
+            {
+                reason = route?.Detail ?? "the request was not delivered";
+                return false;
+            }
+            string obedienceReason;
+            Obedience obedience = Authority.Check(requester, member,
+                out obedienceReason);
+            if (obedience == Obedience.Refuses)
+            {
+                reason = obedienceReason ?? "the partner refused the request";
+                return false;
+            }
+            return true;
+        }
+
+        private WithdrawalKnowledge CaptureWithdrawalKnowledge(Pawn actor,
+            int freshnessTicks)
+        {
+            int now = Find.TickManager?.TicksGame ?? 0;
+            AwarenessSettings settings = AwarenessMod.Settings;
+            KnowledgeMapComponent knowledge = KnowledgeMapComponent.For(map);
+            if (settings?.knowledgeContacts == true && knowledge != null)
+            {
+                List<ThreatContactSnapshot> contacts =
+                    knowledge.FreshContacts(actor);
+                ThreatContactSnapshot selected =
+                    default(ThreatContactSnapshot);
+                float nearest = 42f;
+                bool found = false;
+                for (int i = 0; i < contacts.Count; i++)
+                {
+                    if (!contacts[i].Cell.IsValid) continue;
+                    float distance = actor.Position.DistanceTo(
+                        contacts[i].Cell);
+                    if (distance >= nearest) continue;
+                    nearest = distance;
+                    selected = contacts[i];
+                    found = true;
+                }
+                if (found)
+                {
+                    int age = System.Math.Max(0,
+                        now - selected.SourceTick);
+                    bool live = VisiblePawnById(actor,
+                        selected.HostileId, 42f) != null;
+                    return new WithdrawalKnowledge(true,
+                        age <= freshnessTicks,
+                        !selected.Evidence.IsDirect, live, age,
+                        selected.Evidence.Confidence,
+                        selected.Evidence.Uncertainty,
+                        (selected.Evidence.IsDirect ? "direct" : "relayed")
+                            + " actor-held threat contact #"
+                            + selected.HostileId + " age " + age
+                            + " ticks");
+                }
+            }
+            else
+            {
+                IReadOnlyList<Pawn> pawns = map.mapPawns.AllPawnsSpawned;
+                for (int i = 0; i < pawns.Count; i++)
+                {
+                    Pawn hostile = pawns[i];
+                    if (!KnowledgeMapComponent.CanCurrentlySeeHostile(
+                            actor, hostile, 42f)) continue;
+                    return new WithdrawalKnowledge(true, true, false,
+                        true, 0, 1f, 0f,
+                        "direct current sight of hostile #"
+                            + hostile.thingIDNumber);
+                }
+            }
+            return new WithdrawalKnowledge(false, false, false, false,
+                0, 0f, 0f,
+                "no current threat fact held by this executor");
+        }
+
+        private bool TryAuthorizeWithdrawalJob(Pawn member, Pawn requester,
+            Job job, IntVec3 destination, CAIntentContext prototype,
+            string behaviorKey, bool relayAccepted,
+            out CABehaviorDecision decision,
+            out CAIntentContext registered)
+        {
+            bool direct = behaviorKey == "order.withdrawal";
+            bool requesterMember = member == requester;
+            CAAuthorityOrigin authorityOrigin = direct
+                ? requesterMember ? CAAuthorityOrigin.OperatorDirect
+                    : CAAuthorityOrigin.OperatorRelay
+                : requesterMember ? CAAuthorityOrigin.PlayerDelegated
+                    : CAAuthorityOrigin.PeerRequest;
+            CAIntentContext requesterHold;
+            bool requesterOwnsHold = !direct && requester != null
+                && CATactical.IsHold(requester)
+                && CATactical.TryGetContext(requester, out requesterHold)
+                && requesterHold.IsValid
+                && requesterHold.EpisodeId == prototype.EpisodeId;
+            bool memberSharesHold = requesterMember || !direct
+                && CanJoinSharedHoldBuddy(requester, member);
+            bool authoritySatisfied = prototype.IsValid
+                && (direct
+                    ? requesterMember || relayAccepted
+                    : requesterOwnsHold
+                        && (requesterMember
+                            || relayAccepted && (memberSharesHold
+                                || CanJoinAsBuddy(member))));
+            int freshness = behaviorKey
+                == "combat.withdrawal_coordinated" ? 600 : 300;
+            WithdrawalKnowledge knowledge = direct
+                ? new WithdrawalKnowledge(true, true, false, true,
+                    0, 1f, 0f, "direct operator order")
+                : CaptureWithdrawalKnowledge(member, freshness);
+            bool foreignPlayerOrder = !direct
+                && CATactical.HasForeignPlayerForcedJob(member);
+            bool reachable = member != null && member.CanReach(destination,
+                PathEndMode.OnCell, Danger.Some);
+            var gateContext = new CABehaviorContext(member,
+                member?.Faction == Faction.OfPlayer
+                    ? CAActorContext.PlayerPawn
+                    : behaviorKey == "combat.withdrawal_coordinated"
+                        ? CAActorContext.NPCInstitution
+                        : CAActorContext.NPCPawn,
+                member?.Faction == Faction.OfPlayer
+                    ? AutonomyComponent.TierOf(member)
+                    : CAInitiativeTier.Standard,
+                authorityOrigin,
+                authoritySatisfied: authoritySatisfied,
+                knowledgeSatisfied: knowledge.Satisfied,
+                knowledgeFresh: knowledge.Fresh,
+                liveValidated: knowledge.Live,
+                knowledgeRelayed: knowledge.Relayed,
+                knowledgeAgeTicks: knowledge.Age,
+                knowledgeConfidence: knowledge.Confidence,
+                knowledgeUncertainty: knowledge.Uncertainty,
+                capabilitySatisfied: Able(member) && reachable
+                    && (behaviorKey != "combat.withdrawal_coordinated"
+                        || HasRangedWeapon(member)),
+                materialSatisfied: ValidDestination(destination),
+                currentIntentCompatible: direct
+                    ? CanStartSelected(member)
+                    : authoritySatisfied && !foreignPlayerOrder,
+                directPlayerOwnership: foreignPlayerOrder,
+                authorityCeiling: CAInitiativeTier.Autonomous,
+                authorityBasis: direct
+                    ? requesterMember ? "direct operator withdrawal"
+                        : "delivered and accepted operator relay from "
+                            + requester.LabelShort
+                    : requesterMember
+                        ? prototype.AuthorityIdentity
+                            ?? "player-authored hold continuation"
+                        : "delivered and accepted peer request from "
+                            + requester.LabelShort,
+                knowledgeBasis: knowledge.Basis,
+                owner: behaviorKey
+                    + " episode " + prototype.EpisodeId);
+            return CABehaviorJobOrigin.TryAuthorizeAndRegister(member,
+                job, behaviorKey, CAIntentController.Withdrawal,
+                gateContext, prototype, out decision, out registered,
+                targetOrDemand: "withdraw to " + destination,
+                ownershipScope: behaviorKey + " episode",
+                lifetimeTicks: 60000);
+        }
+
+        private bool TryAuthorizeRestoredWithdrawalJob(Pawn member, Job job,
+            IntVec3 destination, CAIntentContext prototype,
+            out CABehaviorDecision decision,
+            out CAIntentContext registered)
+        {
+            string behaviorKey = string.IsNullOrEmpty(prototype.BehaviorKey)
+                ? "combat.withdrawal_self_preservation"
+                : prototype.BehaviorKey;
+            bool direct = behaviorKey == "order.withdrawal";
+            int freshness = behaviorKey
+                == "combat.withdrawal_coordinated" ? 600 : 300;
+            WithdrawalKnowledge knowledge = direct
+                ? new WithdrawalKnowledge(true, true, false, true,
+                    0, 1f, 0f, "saved direct withdrawal order")
+                : CaptureWithdrawalKnowledge(member, freshness);
+            bool foreignPlayerOrder =
+                CATactical.HasForeignPlayerForcedJob(member);
+            var context = new CABehaviorContext(member,
+                member?.Faction == Faction.OfPlayer
+                    ? CAActorContext.PlayerPawn
+                    : behaviorKey == "combat.withdrawal_coordinated"
+                        ? CAActorContext.NPCInstitution
+                        : CAActorContext.NPCPawn,
+                member?.Faction == Faction.OfPlayer
+                    ? AutonomyComponent.TierOf(member)
+                    : CAInitiativeTier.Standard,
+                CAAuthorityOrigin.SaveRestore,
+                authoritySatisfied: prototype.IsValid,
+                knowledgeSatisfied: knowledge.Satisfied,
+                knowledgeFresh: knowledge.Fresh,
+                liveValidated: knowledge.Live,
+                knowledgeRelayed: knowledge.Relayed,
+                knowledgeAgeTicks: knowledge.Age,
+                knowledgeConfidence: knowledge.Confidence,
+                knowledgeUncertainty: knowledge.Uncertainty,
+                capabilitySatisfied: Able(member)
+                    && member.CanReach(destination,
+                        PathEndMode.OnCell, Danger.Some)
+                    && (behaviorKey != "combat.withdrawal_coordinated"
+                        || HasRangedWeapon(member)),
+                materialSatisfied: ValidDestination(destination),
+                currentIntentCompatible: !foreignPlayerOrder,
+                directPlayerOwnership: foreignPlayerOrder,
+                authorityBasis: prototype.AuthorityIdentity
+                    ?? "saved withdrawal episode",
+                knowledgeBasis: knowledge.Basis,
+                owner: prototype.OwnershipScope
+                    ?? "saved withdrawal episode");
+            return CABehaviorJobOrigin.TryAuthorizeAndRegister(member,
+                job, behaviorKey, CAIntentController.Withdrawal,
+                context, prototype, out decision, out registered,
+                targetOrDemand: prototype.TargetOrDemand
+                    ?? "withdraw to " + destination,
+                ownershipScope: prototype.OwnershipScope
+                    ?? "withdrawal episode",
+                lifetimeTicks: 60000);
         }
 
         public void Cancel(Pawn p)
@@ -378,7 +775,9 @@ namespace ColonistAwareness
                 if (!CanJoinAsBuddy(c)
                     && !(allowSharedHold && CanJoinSharedHoldBuddy(p, c)))
                     continue;
-                if (!(AutonomyComponent.LevelOf(c) >= 2 || c.Drafted)) continue;
+                if (!CABehaviorGate.StableProfileAllows(c,
+                        "combat.withdrawal_coordinated"))
+                    continue;
                 if (c.equipment == null || c.equipment.Primary == null
                     || !c.equipment.Primary.def.IsRangedWeapon) continue;
                 float d = p.Position.DistanceTo(c.Position);
@@ -941,6 +1340,23 @@ namespace ColonistAwareness
                 plan.issuerId = restored.IssuerId;
                 plan.aOrigin = (int)restored.Origin;
                 if (plan.bId >= 0) plan.bOrigin = (int)restored.Origin;
+                plan.behaviorKey = restored.BehaviorKey;
+                plan.authorityOrigin = (int)restored.AuthorityOrigin;
+                plan.authorityIdentity = restored.AuthorityIdentity;
+                if (plan.bId >= 0)
+                {
+                    plan.bAuthorityOrigin = (int)restored.AuthorityOrigin;
+                    plan.bAuthorityIdentity = restored.AuthorityIdentity;
+                }
+                plan.ownershipScope = restored.OwnershipScope;
+                plan.ownerId = restored.OwnerId;
+                if (plan.bId >= 0) plan.bOwnerId = plan.bId;
+                plan.createdTick = restored.CreatedTick;
+                plan.creationTier = (int)restored.CreationTier;
+                if (plan.bId >= 0)
+                    plan.bCreationTier = (int)restored.CreationTier;
+                plan.targetOrDemand = restored.TargetOrDemand;
+                plan.terminationCondition = restored.TerminationCondition;
             }
             else CACombatIntent.ObserveEpisode(plan.episodeId);
             if (plan.controller == 0)
@@ -948,13 +1364,47 @@ namespace ColonistAwareness
             if (plan.aOrigin == 0) plan.aOrigin = (int)CAIntentOrigin.SaveRestore;
             if (plan.bId >= 0 && plan.bOrigin == 0)
                 plan.bOrigin = (int)CAIntentOrigin.SaveRestore;
+            if (string.IsNullOrEmpty(plan.behaviorKey))
+                plan.behaviorKey = "combat.withdrawal_self_preservation";
+            if (plan.authorityOrigin == 0)
+                plan.authorityOrigin = (int)CAIntentAuthority.FromIntentOrigin(
+                    (CAIntentOrigin)plan.aOrigin);
+            if (string.IsNullOrEmpty(plan.authorityIdentity))
+                plan.authorityIdentity = "migrated withdrawal intent";
+            if (plan.bId >= 0 && plan.bAuthorityOrigin == 0)
+                plan.bAuthorityOrigin = (int)CAIntentAuthority.FromIntentOrigin(
+                    (CAIntentOrigin)plan.bOrigin);
+            if (plan.bId >= 0
+                && string.IsNullOrEmpty(plan.bAuthorityIdentity))
+                plan.bAuthorityIdentity = "migrated withdrawal partner intent";
+            if (string.IsNullOrEmpty(plan.ownershipScope))
+                plan.ownershipScope = "withdrawal episode";
+            if (plan.ownerId < 0) plan.ownerId = plan.aId;
+            if (plan.bId >= 0 && plan.bOwnerId < 0)
+                plan.bOwnerId = plan.bId;
+            if (string.IsNullOrEmpty(plan.terminationCondition))
+                plan.terminationCondition = CABehaviorCatalog
+                    .Get(plan.behaviorKey)?.CompletionCondition
+                    ?? "the bounded withdrawal completes";
         }
 
         private static CAIntentContext Intent(Plan plan, bool isA)
         {
             return new CAIntentContext(plan.episodeId,
                 (CAIntentOrigin)(isA ? plan.aOrigin : plan.bOrigin),
-                (CAIntentController)plan.controller, plan.issuerId);
+                (CAIntentController)plan.controller, plan.issuerId,
+                behaviorKey: plan.behaviorKey,
+                authorityOrigin: (CAAuthorityOrigin)(isA
+                    ? plan.authorityOrigin : plan.bAuthorityOrigin),
+                authorityIdentity: isA ? plan.authorityIdentity
+                    : plan.bAuthorityIdentity,
+                ownershipScope: plan.ownershipScope,
+                ownerId: isA ? plan.ownerId : plan.bOwnerId,
+                creationTier: (CAInitiativeTier)(isA
+                    ? plan.creationTier : plan.bCreationTier),
+                targetOrDemand: plan.targetOrDemand,
+                terminationCondition: plan.terminationCondition,
+                createdTick: plan.createdTick);
         }
 
         private static void MakeSolo(Plan plan, int pawnId, bool draftedAtOrder)
@@ -971,8 +1421,19 @@ namespace ColonistAwareness
             plan.bDrafted = false;
             plan.aJobId = jobId;
             plan.bJobId = -1;
-            if (!fromA) plan.aOrigin = plan.bOrigin;
+            if (!fromA)
+            {
+                plan.aOrigin = plan.bOrigin;
+                plan.authorityOrigin = plan.bAuthorityOrigin;
+                plan.authorityIdentity = plan.bAuthorityIdentity;
+                plan.ownerId = plan.bOwnerId;
+                plan.creationTier = plan.bCreationTier;
+            }
             plan.bOrigin = 0;
+            plan.bAuthorityOrigin = 0;
+            plan.bAuthorityIdentity = null;
+            plan.bOwnerId = -1;
+            plan.bCreationTier = 0;
             plan.aMoving = true;
             plan.aGoal = goal;
             plan.bGoal = IntVec3.Invalid;
@@ -1085,7 +1546,32 @@ namespace ColonistAwareness
             int jobId = isA ? plan.aJobId : plan.bJobId;
             Job current = pawn.CurJob;
             if (current != null && current.def == CA_Defs.FightingWithdrawal
-                && current.loadID == jobId) return true;
+                && current.loadID == jobId)
+            {
+                CAIntentContext prototype = Intent(plan, isA);
+                CAIntentContext saved = default(CAIntentContext);
+                CABehaviorIntentMapComponent receipts =
+                    CABehaviorIntentMapComponent.For(map);
+                bool exactReceipt = receipts != null
+                    && receipts.TryGet(pawn, current, out saved)
+                    && saved.BehaviorKey == prototype.BehaviorKey
+                    && saved.EpisodeId == prototype.EpisodeId
+                    && saved.Controller == prototype.Controller
+                    && saved.IssuerId == prototype.IssuerId
+                    && saved.AuthorityIdentity == prototype.AuthorityIdentity
+                    && saved.OwnershipScope == prototype.OwnershipScope
+                    && saved.OwnerId == prototype.OwnerId
+                    && saved.TargetOrDemand == prototype.TargetOrDemand;
+                CAIntentContext reauthorized;
+                CABehaviorDecision reauthorization;
+                if (exactReceipt && TryAuthorizeRestoredWithdrawalJob(pawn,
+                        current, plan.dest, prototype, out reauthorization,
+                        out reauthorized))
+                    return true;
+                receipts?.Unregister(pawn, current);
+                MovingFire.Set(pawn, false);
+                return false;
+            }
             if (!allowLegacyMigration || current == null
                 || current.loadID != jobId || current.playerForced
                 || (current.def != JobDefOf.Goto
@@ -1093,11 +1579,19 @@ namespace ColonistAwareness
 
             SeedLegacyMotion(plan, pawn, current, isA);
             Job replacement = MakeWithdrawalJob(plan.dest);
+            CAIntentContext restoredIntent;
+            CABehaviorDecision restoredDecision;
+            if (!TryAuthorizeRestoredWithdrawalJob(pawn, replacement,
+                    plan.dest, Intent(plan, isA),
+                    out restoredDecision, out restoredIntent))
+                return false;
             if (isA) plan.aJobId = replacement.loadID;
             else plan.bJobId = replacement.loadID;
             current.playerInterruptedForced = true;
             if (StartWithdrawalJob(pawn, replacement, allowCurrentForced: false))
                 return true;
+            CABehaviorIntentMapComponent.For(map)?.Unregister(
+                pawn, replacement);
             return false;
         }
 

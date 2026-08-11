@@ -26,6 +26,7 @@ namespace ColonistAwareness
 
     internal sealed class CAHomeMaterialDemand : IExposable
     {
+        private const int CurrentInitiativeSchema = 1;
         public string provisionDefName;
         public string stuffDefName;
         public string kind;
@@ -38,12 +39,28 @@ namespace ColonistAwareness
         public int authorPawnId = -1;
         public int authorFactionId = -1;
         public int producerPawnId = -1;
-        public int minimumAutonomy = 2;
+        public CAInitiativeTier minimumInitiative =
+            CAInitiativeTier.Proactive;
+        private int initiativeSchema = CurrentInitiativeSchema;
+        private int legacyMinimumAutonomy = 2;
         public bool outdoor;
         public bool seatForJoy;
         public int createdTick = -1;
         public int updatedTick = -1;
         public string status;
+        public string behaviorKey;
+        public int episodeId;
+        public CAIntentOrigin intentOrigin;
+        public CAIntentController intentController;
+        public CAAuthorityOrigin authorityOrigin;
+        public string authorityIdentity;
+        public string ownershipScope;
+        public int issuerId = -1;
+        public int ownerId = -1;
+        public int intentCreatedTick = -1;
+        public CAInitiativeTier creationTier = CAInitiativeTier.Standard;
+        public string targetOrDemand;
+        public string terminationCondition;
         public List<CAHomeMaterialRequirement> requirements =
             new List<CAHomeMaterialRequirement>();
 
@@ -55,7 +72,13 @@ namespace ColonistAwareness
                 && programId == (plan.program?.id ?? 0)
                 && cell == plan.cell && rotation == plan.rotation.AsInt
                 && targetResidentId == plan.targetResidentId
-                && minimumAutonomy == Mathf.Max(2, plan.minimumAutonomy)
+                && behaviorKey == plan.behaviorKey
+                && episodeId == plan.episodeId
+                && intentController == plan.intentController
+                && minimumInitiative == (plan.minimumInitiative
+                    < CAInitiativeTier.Proactive
+                        ? CAInitiativeTier.Proactive
+                        : plan.minimumInitiative)
                 && outdoor == plan.outdoor
                 && seatForJoy == plan.seatForJoy;
         }
@@ -74,16 +97,57 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref authorPawnId, "authorPawnId", -1);
             Scribe_Values.Look(ref authorFactionId, "authorFactionId", -1);
             Scribe_Values.Look(ref producerPawnId, "producerPawnId", -1);
-            Scribe_Values.Look(ref minimumAutonomy, "minimumAutonomy", 2);
+            Scribe_Values.Look(ref initiativeSchema, "initiativeSchema", 0);
+            if (Scribe.mode == LoadSaveMode.Saving
+                || initiativeSchema >= CurrentInitiativeSchema)
+            {
+                Scribe_Values.Look(ref minimumInitiative,
+                    "minimumInitiative", CAInitiativeTier.Proactive);
+            }
+            else
+            {
+                Scribe_Values.Look(ref legacyMinimumAutonomy,
+                    "minimumAutonomy", 2);
+            }
             Scribe_Values.Look(ref outdoor, "outdoor", false);
             Scribe_Values.Look(ref seatForJoy, "seatForJoy", false);
             Scribe_Values.Look(ref createdTick, "createdTick", -1);
             Scribe_Values.Look(ref updatedTick, "updatedTick", -1);
             Scribe_Values.Look(ref status, "status");
+            Scribe_Values.Look(ref behaviorKey, "behaviorKey");
+            Scribe_Values.Look(ref episodeId, "episodeId", 0);
+            Scribe_Values.Look(ref intentOrigin, "intentOrigin",
+                CAIntentOrigin.Unknown);
+            Scribe_Values.Look(ref intentController, "intentController",
+                CAIntentController.Unknown);
+            Scribe_Values.Look(ref authorityOrigin, "authorityOrigin",
+                CAAuthorityOrigin.None);
+            Scribe_Values.Look(ref authorityIdentity, "authorityIdentity");
+            Scribe_Values.Look(ref ownershipScope, "ownershipScope");
+            Scribe_Values.Look(ref issuerId, "issuerId", -1);
+            Scribe_Values.Look(ref ownerId, "ownerId", -1);
+            Scribe_Values.Look(ref intentCreatedTick, "intentCreatedTick", -1);
+            Scribe_Values.Look(ref creationTier, "creationTier",
+                CAInitiativeTier.Standard);
+            Scribe_Values.Look(ref targetOrDemand, "targetOrDemand");
+            Scribe_Values.Look(ref terminationCondition,
+                "terminationCondition");
             Scribe_Collections.Look(ref requirements, "requirements",
                 LookMode.Deep);
             if (requirements == null)
                 requirements = new List<CAHomeMaterialRequirement>();
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
+                if (initiativeSchema < CurrentInitiativeSchema)
+                {
+                    minimumInitiative = AutonomyComponent
+                        .MigrateLegacyLevel(legacyMinimumAutonomy);
+                    initiativeSchema = CurrentInitiativeSchema;
+                }
+                minimumInitiative = AutonomyComponent.Normalize(
+                    minimumInitiative);
+                CACombatIntent.ObserveEpisode(episodeId);
+            }
         }
     }
 
@@ -243,6 +307,63 @@ namespace ColonistAwareness
                 outcome = "the material objective has no valid author or provision";
                 lastOutcome = outcome;
                 return false;
+            }
+
+            var proposedDeficits = new List<string>();
+            List<ThingDefCountClass> proposedCosts = plan.def.CostListAdjusted(
+                plan.stuff, errorOnNullStuff: false);
+            for (int i = 0; i < proposedCosts.Count; i++)
+            {
+                ThingDefCountClass cost = proposedCosts[i];
+                if (cost?.thingDef == null || cost.count <= 0) continue;
+                int available = AvailableCountFor(planner, cost.thingDef,
+                    cost.count);
+                if (available < cost.count)
+                    proposedDeficits.Add(cost.thingDef.defName + " "
+                        + available + "/" + cost.count + " available");
+            }
+            bool hasDeficit = proposedDeficits.Count > 0;
+            if (hasDeficit)
+            {
+                CASpaceProgram program = plan.program;
+                CAInitiativeTier ceiling = program != null
+                    ? CASpatialInitiativeMapComponent.For(map)?.TierFor(program)
+                        ?? CAInitiativeTier.Standard
+                    : CAInitiativeTier.Standard;
+                bool foreignPlayerWork = CATactical
+                    .HasForeignPlayerForcedJob(planner);
+                var stagingContext = new CABehaviorContext(planner,
+                    CAActorContext.PlayerPawn
+                        | CAActorContext.PlayerSpatialAuthority,
+                    AutonomyComponent.TierOf(planner),
+                    CAAuthorityOrigin.PlayerDelegated,
+                    authoritySatisfied: program != null
+                        && program.author == CASpaceAuthor.Player,
+                    knowledgeSatisfied: hasDeficit,
+                    knowledgeFresh: hasDeficit,
+                    liveValidated: planner.Spawned && planner.Map == map,
+                    knowledgeRelayed: false,
+                    knowledgeAgeTicks: 0, knowledgeConfidence: 1f,
+                    knowledgeUncertainty: 0f,
+                    capabilitySatisfied: proposedCosts.Count > 0,
+                    materialSatisfied: true,
+                    currentIntentCompatible: !foreignPlayerWork,
+                    directPlayerOwnership: foreignPlayerWork,
+                    authorityCeiling: ceiling,
+                    authorityBasis: "player-authored space program #"
+                        + (program?.id ?? 0),
+                    knowledgeBasis: "exact native construction cost deficit: "
+                        + string.Join(", ", proposedDeficits.ToArray()),
+                    owner: "home material objective");
+                CABehaviorDecision stagingDecision = CABehaviorGate.Evaluate(
+                    "logistics.material_staging", stagingContext);
+                if (!stagingDecision.Allowed)
+                {
+                    outcome = "material staging blocked: "
+                        + stagingDecision.PrimaryReason;
+                    lastOutcome = outcome;
+                    return false;
+                }
             }
 
             if (demand == null || !demand.Matches(plan))
@@ -413,10 +534,27 @@ namespace ColonistAwareness
                 reason = demand.reason,
                 placementEvidence = demand.placementEvidence,
                 targetResidentId = demand.targetResidentId,
-                minimumAutonomy = Mathf.Max(2, demand.minimumAutonomy),
+                minimumInitiative = demand.minimumInitiative
+                    < CAInitiativeTier.Proactive
+                        ? CAInitiativeTier.Proactive
+                        : demand.minimumInitiative,
                 outdoor = demand.outdoor,
-                seatForJoy = demand.seatForJoy
+                seatForJoy = demand.seatForJoy,
+                behaviorKey = demand.behaviorKey,
+                episodeId = demand.episodeId,
+                intentOrigin = demand.intentOrigin,
+                intentController = demand.intentController,
+                authorityOrigin = demand.authorityOrigin,
+                authorityIdentity = demand.authorityIdentity,
+                ownershipScope = demand.ownershipScope,
+                issuerId = demand.issuerId,
+                ownerId = demand.ownerId,
+                createdTick = demand.intentCreatedTick,
+                creationTier = demand.creationTier,
+                targetOrDemand = demand.targetOrDemand,
+                terminationCondition = demand.terminationCondition
             };
+            CACombatIntent.ObserveEpisode(plan.episodeId);
             return true;
         }
 
@@ -483,6 +621,17 @@ namespace ColonistAwareness
                 + playerVetoedTreeIds.Count + "; last " + lastOutcome;
         }
 
+        // Read-only form used by the settlement behavior census. Lifecycle
+        // repair remains owned by component ticks and the existing detailed
+        // developer receipt.
+        internal string CensusForObservation()
+        {
+            return demand == null ? "no active material demand; last "
+                + lastOutcome : DemandSummary(demand) + "; CA tree source "
+                + "records " + ownedTreeSourceIds.Count + "; player vetoes "
+                + playerVetoedTreeIds.Count;
+        }
+
         private CAHomeMaterialDemand NewDemand(Pawn planner, CAHomePlan plan)
         {
             int now = Find.TickManager.TicksGame;
@@ -499,9 +648,25 @@ namespace ColonistAwareness
                 targetResidentId = plan.targetResidentId,
                 authorPawnId = planner.thingIDNumber,
                 authorFactionId = planner.Faction?.loadID ?? -1,
-                minimumAutonomy = Mathf.Max(2, plan.minimumAutonomy),
+                minimumInitiative = plan.minimumInitiative
+                    < CAInitiativeTier.Proactive
+                        ? CAInitiativeTier.Proactive
+                        : plan.minimumInitiative,
                 outdoor = plan.outdoor,
                 seatForJoy = plan.seatForJoy,
+                behaviorKey = plan.behaviorKey,
+                episodeId = plan.episodeId,
+                intentOrigin = plan.intentOrigin,
+                intentController = plan.intentController,
+                authorityOrigin = plan.authorityOrigin,
+                authorityIdentity = plan.authorityIdentity,
+                ownershipScope = plan.ownershipScope,
+                issuerId = plan.issuerId,
+                ownerId = plan.ownerId,
+                intentCreatedTick = plan.createdTick,
+                creationTier = plan.creationTier,
+                targetOrDemand = plan.targetOrDemand,
+                terminationCondition = plan.terminationCondition,
                 createdTick = now,
                 updatedTick = now,
                 status = "material vector created"
@@ -587,6 +752,43 @@ namespace ColonistAwareness
             int reachChecks = 0;
             Plant firstAdded = null;
             List<CAHomeTreeCandidate> candidates = RankedTreeCandidates(forester);
+            CASpaceProgram program = PlannedUseMapComponent.For(map)
+                ?.FindProgram(demand.programId);
+            CAInitiativeTier ceiling = program != null
+                ? CASpatialInitiativeMapComponent.For(map)?.TierFor(program)
+                    ?? CAInitiativeTier.Standard
+                : CAInitiativeTier.Standard;
+            bool foreignPlayerWork = CATactical
+                .HasForeignPlayerForcedJob(forester);
+            var sourceContext = new CABehaviorContext(forester,
+                CAActorContext.PlayerPawn
+                    | CAActorContext.PlayerSpatialAuthority,
+                AutonomyComponent.TierOf(forester),
+                CAAuthorityOrigin.PlayerDelegated,
+                authoritySatisfied: program != null
+                    && program.author == CASpaceAuthor.Player,
+                knowledgeSatisfied: deficit > 0, knowledgeFresh: true,
+                liveValidated: forester.Spawned && forester.Map == map,
+                knowledgeRelayed: false,
+                knowledgeAgeTicks: 0, knowledgeConfidence: 1f,
+                knowledgeUncertainty: 0f,
+                capabilitySatisfied: candidates.Count > 0,
+                materialSatisfied: candidates.Count > 0,
+                currentIntentCompatible: !foreignPlayerWork,
+                directPlayerOwnership: foreignPlayerWork,
+                authorityCeiling: ceiling,
+                authorityBasis: "player-authored material source for program #"
+                    + demand.programId,
+                knowledgeBasis: "persisted exact wood deficit " + deficit,
+                owner: "home material source objective");
+            CABehaviorDecision sourceDecision = CABehaviorGate.Evaluate(
+                "logistics.material_source", sourceContext);
+            if (!sourceDecision.Allowed)
+            {
+                outcome = "wood deficit " + deficit + "; source blocked: "
+                    + sourceDecision.PrimaryReason;
+                return;
+            }
             for (int i = 0; i < candidates.Count
                 && remaining > expectedAdded
                 && ownedTreeSourceIds.Count < MaximumTreeSources; i++)
@@ -639,7 +841,8 @@ namespace ColonistAwareness
                 Pawn pawn = pawns[i];
                 if (pawn == null || !pawn.Spawned || pawn.Downed || pawn.Drafted
                     || pawn.InMentalState || !pawn.Awake()
-                    || AutonomyComponent.LevelOf(pawn) < 2
+                    || !CABehaviorGate.StableProfileAllows(pawn,
+                        "logistics.material_source")
                     || pawn.workSettings == null
                     || pawn.WorkTypeIsDisabled(WorkTypeDefOf.PlantCutting)
                     || !pawn.workSettings.WorkIsActive(WorkTypeDefOf.PlantCutting))
@@ -984,6 +1187,9 @@ namespace ColonistAwareness
                     + value.targetResidentId : "")
                 + " by pawn " + value.authorPawnId + " faction "
                 + value.authorFactionId
+                + "; behavior " + (value.behaviorKey ?? "unregistered")
+                + " episode " + value.episodeId + " authority "
+                + (value.authorityIdentity ?? "unknown")
                 + " producer " + value.producerPawnId + ": "
                 + (parts.Count == 0 ? "no materials" : string.Join(", ",
                     parts.ToArray()))

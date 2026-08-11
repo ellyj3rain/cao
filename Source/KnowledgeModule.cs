@@ -587,15 +587,15 @@ namespace ColonistAwareness
                         ReportKnowledgeFailure("contact observation", ex,
                             ref contactObserveFailureReported, 104923741);
                     }
-                }
-                try
-                {
-                    ObserveWelfare();
-                }
-                catch (System.Exception ex)
-                {
-                    ReportKnowledgeFailure("welfare observation", ex,
-                        ref welfareObserveFailureReported, 104923742);
+                    try
+                    {
+                        ObserveWelfare();
+                    }
+                    catch (System.Exception ex)
+                    {
+                        ReportKnowledgeFailure("welfare observation", ex,
+                            ref welfareObserveFailureReported, 104923742);
+                    }
                 }
             }
             if (--relayCooldown <= 0)
@@ -609,15 +609,15 @@ namespace ColonistAwareness
                         ReportKnowledgeFailure("contact relay", ex,
                             ref contactRelayFailureReported, 104923743);
                     }
-                }
-                try
-                {
-                    PropagateWelfare();
-                }
-                catch (System.Exception ex)
-                {
-                    ReportKnowledgeFailure("welfare relay", ex,
-                        ref welfareRelayFailureReported, 104923744);
+                    try
+                    {
+                        PropagateWelfare();
+                    }
+                    catch (System.Exception ex)
+                    {
+                        ReportKnowledgeFailure("welfare relay", ex,
+                            ref welfareRelayFailureReported, 104923744);
+                    }
                 }
                 try { Expire(); }
                 catch (System.Exception ex)

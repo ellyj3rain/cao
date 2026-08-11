@@ -51,7 +51,11 @@ namespace ColonistAwareness
             if (victim.InBed()) return false;
             bool ours = victim.IsColonist || victim.IsPrisonerOfColony || victim.IsSlaveOfColony
                 || (victim.Faction != null && rescuer.Faction != null && victim.Faction == rescuer.Faction);
-            if (!ours && !s.rescueOutsiders && AutonomyComponent.LevelOf(rescuer) < 2) return false;
+            CAEffectiveBehaviorProfile profile =
+                CAEffectiveBehaviorProfileCache.Of(rescuer);
+            string behaviorKey = ours ? "welfare.local_rescue"
+                : "welfare.outsider_rescue";
+            if (profile == null || !profile.Includes(behaviorKey)) return false;
             if (!ours && victim.HostileTo(rescuer.Faction) && !victim.Downed) return false;
             return CALifeSafety.InTemperatureDanger(victim);
         }
@@ -84,8 +88,13 @@ namespace ColonistAwareness
         public override bool ShouldSkip(Pawn pawn, bool forced = false)
         {
             var s = AwarenessMod.Settings;
-            if (s == null || !s.lifeSafety) return true;
-            // Colony life safety is part of the survival floor and still runs at Directed.
+            CAEffectiveBehaviorProfile profile =
+                CAEffectiveBehaviorProfileCache.Of(pawn);
+            if (s == null || profile == null
+                || !profile.Includes("welfare.local_rescue")
+                    && !profile.Includes("welfare.outsider_rescue"))
+                return true;
+            // Colony life safety is part of the survival floor and still runs at Standard.
             // The Proactive threshold for automatic outsider rescue remains in eligibility.
             KnowledgeMapComponent knowledge = KnowledgeMapComponent.For(pawn.Map);
             if (knowledge == null) return true;
@@ -139,8 +148,58 @@ namespace ColonistAwareness
             if (!IsEligibleVictim(victim, pawn)) return null;
             Building_Bed bed = FindSaferBed(pawn, victim);
             if (bed == null) return null;
+            KnowledgeMapComponent knowledge =
+                KnowledgeMapComponent.For(pawn.Map);
+            WelfareFactSnapshot fact = default(WelfareFactSnapshot);
+            bool hasFact = knowledge != null && knowledge.TryGetFreshWelfare(
+                pawn, victim.thingIDNumber, out fact);
+            bool ours = victim.IsColonist || victim.IsPrisonerOfColony
+                || victim.IsSlaveOfColony
+                || victim.Faction != null && pawn.Faction != null
+                    && victim.Faction == pawn.Faction;
+            string behaviorKey = ours ? "welfare.local_rescue"
+                : "welfare.outsider_rescue";
             Job job = JobMaker.MakeJob(JobDefOf.Rescue, victim, bed);
             job.count = 1;
+            int now = Find.TickManager.TicksGame;
+            CABehaviorContext context = CABehaviorContext.ForPawn(pawn,
+                forced ? CAAuthorityOrigin.OperatorDirect
+                    : CAAuthorityOrigin.PlayerDelegated,
+                authoritySatisfied: forced || ours
+                    || AwarenessMod.Settings?.rescueOutsiders == true,
+                knowledgeSatisfied: hasFact && fact.Actionable
+                    && fact.ObservedTemperatureDanger,
+                knowledgeFresh: hasFact,
+                liveValidated: victim.Spawned
+                    && CALifeSafety.InTemperatureDanger(victim)
+                    && bed.Spawned,
+                knowledgeRelayed: hasFact && !fact.Evidence.IsDirect,
+                knowledgeAgeTicks: hasFact
+                    ? System.Math.Max(0, now - fact.SourceTick) : int.MaxValue,
+                capabilitySatisfied: pawn.CanReserveAndReach(victim,
+                    PathEndMode.OnCell, Danger.Deadly, 1, -1, null, forced),
+                materialSatisfied: bed.Spawned,
+                currentIntentCompatible: forced
+                    || pawn.CurJob == null || !pawn.CurJob.playerForced,
+                directPlayerOwnership: !forced && pawn.CurJob != null
+                    && pawn.CurJob.playerForced,
+                authorityBasis: forced ? "direct operator rescue"
+                    : ours ? "colony care responsibility"
+                    : "enabled outsider-rescue permission",
+                knowledgeBasis: hasFact
+                    ? (fact.Evidence.IsDirect ? "direct welfare observation"
+                        : "physically relayed welfare observation")
+                    : "no current welfare fact",
+                owner: nameof(WorkGiver_RescueFromTemperature));
+            CABehaviorDecision decision;
+            CAIntentContext intent;
+            if (!CABehaviorJobOrigin.TryAuthorizeAndRegister(pawn, job,
+                behaviorKey, CAIntentController.Welfare, context,
+                out decision, out intent,
+                targetOrDemand: victim.LabelShort,
+                ownershipScope: "bounded life-safety rescue",
+                lifetimeTicks: 7500))
+                return null;
             return job;
         }
     }

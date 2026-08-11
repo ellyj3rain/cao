@@ -28,13 +28,26 @@ namespace ColonistAwareness
         public string reason;
         public CAHomePlanKind kind;
         public CASpaceProgram program;
-        public int minimumAutonomy;
+        public CAInitiativeTier minimumInitiative;
         // Zero is the legacy/no-concrete-target sentinel. Positive values bind
         // an authored Bedroom cause to one exact saved resident across build.
         public int targetResidentId;
         public bool outdoor;
         public bool seatForJoy;
         public string placementEvidence;
+        public string behaviorKey;
+        public int episodeId;
+        public CAIntentOrigin intentOrigin;
+        public CAIntentController intentController;
+        public CAAuthorityOrigin authorityOrigin;
+        public string authorityIdentity;
+        public string ownershipScope;
+        public int issuerId;
+        public int ownerId;
+        public int createdTick;
+        public CAInitiativeTier creationTier;
+        public string targetOrDemand;
+        public string terminationCondition;
     }
 
     internal struct CABedFengShuiEvidence
@@ -144,6 +157,19 @@ namespace ColonistAwareness
         private int pendingSinceTick = -1;
         private int pendingProgramId;
         private int pendingTargetResidentId;
+        private string pendingBehaviorKey;
+        private int pendingEpisodeId;
+        private int pendingIntentOrigin;
+        private int pendingIntentController;
+        private int pendingAuthorityOrigin;
+        private string pendingAuthorityIdentity;
+        private string pendingOwnershipScope;
+        private int pendingIssuerId = -1;
+        private int pendingOwnerId = -1;
+        private int pendingCreatedTick = -1;
+        private int pendingCreationTier;
+        private string pendingTargetOrDemand;
+        private string pendingTerminationCondition;
         private Dictionary<string, int> suppressedKinds =
             new Dictionary<string, int>();
         private List<CAHomeBuiltRecord> completedAutoBuildings =
@@ -196,6 +222,32 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref pendingProgramId, "CA_homePendingProgramId", 0);
             Scribe_Values.Look(ref pendingTargetResidentId,
                 "CA_homePendingTargetResidentId", 0);
+            Scribe_Values.Look(ref pendingBehaviorKey,
+                "CA_homePendingBehaviorKey");
+            Scribe_Values.Look(ref pendingEpisodeId,
+                "CA_homePendingEpisodeId", 0);
+            Scribe_Values.Look(ref pendingIntentOrigin,
+                "CA_homePendingIntentOrigin", 0);
+            Scribe_Values.Look(ref pendingIntentController,
+                "CA_homePendingIntentController", 0);
+            Scribe_Values.Look(ref pendingAuthorityOrigin,
+                "CA_homePendingAuthorityOrigin", 0);
+            Scribe_Values.Look(ref pendingAuthorityIdentity,
+                "CA_homePendingAuthorityIdentity");
+            Scribe_Values.Look(ref pendingOwnershipScope,
+                "CA_homePendingOwnershipScope");
+            Scribe_Values.Look(ref pendingIssuerId,
+                "CA_homePendingIssuerId", -1);
+            Scribe_Values.Look(ref pendingOwnerId,
+                "CA_homePendingOwnerId", -1);
+            Scribe_Values.Look(ref pendingCreatedTick,
+                "CA_homePendingCreatedTick", -1);
+            Scribe_Values.Look(ref pendingCreationTier,
+                "CA_homePendingCreationTier", 0);
+            Scribe_Values.Look(ref pendingTargetOrDemand,
+                "CA_homePendingTargetOrDemand");
+            Scribe_Values.Look(ref pendingTerminationCondition,
+                "CA_homePendingTerminationCondition");
             Scribe_Collections.Look(ref suppressedKinds, "CA_homeSuppressedKinds",
                 LookMode.Value, LookMode.Value);
             Scribe_Collections.Look(ref completedAutoBuildings,
@@ -214,6 +266,8 @@ namespace ColonistAwareness
                 suppressedKinds = new Dictionary<string, int>();
             if (completedAutoBuildings == null)
                 completedAutoBuildings = new List<CAHomeBuiltRecord>();
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+                CACombatIntent.ObserveEpisode(pendingEpisodeId);
         }
 
         public override void MapComponentTick()
@@ -251,6 +305,11 @@ namespace ColonistAwareness
                     + ", target resident "
                     + (pendingTargetResidentId > 0
                         ? pendingTargetResidentId.ToString() : "legacy/none")
+                    + ", behavior "
+                    + (pendingBehaviorKey ?? "legacy/unregistered")
+                    + ", episode " + pendingEpisodeId
+                    + ", controller "
+                    + ((CAIntentController)pendingIntentController)
                     + ", exact construction "
                     + (pendingThingId.NullOrEmpty()
                         ? "legacy/untracked" : pendingThingId);
@@ -367,8 +426,7 @@ namespace ColonistAwareness
                 CAAgentDebugBridge bridge =
                     CAAgentDebugBridge.ForCurrentGame();
                 if (bridge?.HasActiveBedroomCausePlanningScopeForMap(map)
-                        == true
-                    && !bridge.AllowsBedroomCausePlanningLease(map))
+                        == true)
                 {
                     bridge.RetireBedroomCausePlanningScopeForMap(map,
                         "operator-disabled global Home planning ended the tracked cause");
@@ -403,15 +461,12 @@ namespace ColonistAwareness
             CAAgentDebugBridge bridge = CAAgentDebugBridge.ForCurrentGame();
             bool trackedBedroomCause = bridge?
                 .HasActiveBedroomCausePlanningScopeForMap(map) == true;
-            bool scopedBedroomCauseLease = !settings.autonomousHomePlanning
-                && bridge?.AllowsBedroomCausePlanningLease(map) == true;
-            if (!settings.autonomousHomePlanning
-                && !scopedBedroomCauseLease)
+            if (!settings.autonomousHomePlanning)
             {
                 if (trackedBedroomCause)
                 {
                     bridge.RetireBedroomCausePlanningScopeForMap(map,
-                        "global Home planning was disabled outside the exact scoped lease");
+                        "global Home planning was disabled");
                     if (!pendingOriginThingId.NullOrEmpty())
                         bridge.RetireBedroomCauseMaterialAudit(
                             pendingProgramId, pendingTargetResidentId,
@@ -446,7 +501,7 @@ namespace ColonistAwareness
             placementBedsByRoom.Clear();
             placementSleepCirculationByRoom.Clear();
             placementDiningConflictsByRoom.Clear();
-            if (!scopedBedroomCauseLease && HasAutonomousResident())
+            if (HasAutonomousResident())
             {
                 string negotiation;
                 PlannedUseMapComponent programs = PlannedUseMapComponent.For(map);
@@ -504,7 +559,10 @@ namespace ColonistAwareness
                         else
                         {
                             Pawn responsible = ChoosePlanner(
-                                Mathf.Max(2, retainedPlan.minimumAutonomy));
+                                retainedPlan.minimumInitiative
+                                    < CAInitiativeTier.Proactive
+                                    ? CAInitiativeTier.Proactive
+                                    : retainedPlan.minimumInitiative);
                             if (responsible == null)
                             {
                                 prerequisites.RetainObjective(
@@ -526,15 +584,7 @@ namespace ColonistAwareness
                 }
             }
 
-            if (scopedBedroomCauseLease)
-            {
-                bridge.RetireBedroomCausePlanningScopeForMap(map,
-                    "the exact retained Bedroom cause no longer exists");
-                return Finish("the bounded Bedroom-cause lease ended without originating another Home objective",
-                    out outcome);
-            }
-
-            Pawn proactivePlanner = ChoosePlanner(2);
+            Pawn proactivePlanner = ChoosePlanner(CAInitiativeTier.Proactive);
             if (proactivePlanner == null)
             {
                 CAHomePrerequisiteMapComponent.For(map)
@@ -550,7 +600,7 @@ namespace ColonistAwareness
                 proactivePlanner, out plan, out blocker);
             if (essential == CAHomeSelection.Planned)
             {
-                plan.minimumAutonomy = 2;
+                plan.minimumInitiative = CAInitiativeTier.Proactive;
                 return PrepareAndPlace(proactivePlanner, plan, out outcome);
             }
             if (essential == CAHomeSelection.Blocked)
@@ -560,7 +610,8 @@ namespace ColonistAwareness
                 return Finish(blocker, out outcome);
             }
 
-            Pawn autonomousPlanner = ChoosePlanner(3);
+            Pawn autonomousPlanner = ChoosePlanner(
+                CAInitiativeTier.Autonomous);
             if (autonomousPlanner == null)
             {
                 CAHomePrerequisiteMapComponent.For(map)
@@ -572,7 +623,7 @@ namespace ColonistAwareness
 
             if (TrySelectAutonomousPlan(autonomousPlanner, out plan, out blocker))
             {
-                plan.minimumAutonomy = 3;
+                plan.minimumInitiative = CAInitiativeTier.Autonomous;
                 return PrepareAndPlace(autonomousPlanner, plan, out outcome);
             }
 
@@ -594,8 +645,11 @@ namespace ColonistAwareness
             return false;
         }
 
-        private Pawn ChoosePlanner(int minimumAutonomy)
+        private Pawn ChoosePlanner(CAInitiativeTier minimumInitiative)
         {
+            string behaviorKey = minimumInitiative
+                    >= CAInitiativeTier.Autonomous
+                ? "spatial.home_comfort" : "spatial.home_essentials";
             Pawn best = null;
             float bestScore = float.MinValue;
             List<Pawn> pawns = map.mapPawns.FreeColonistsSpawned;
@@ -603,7 +657,9 @@ namespace ColonistAwareness
             {
                 Pawn pawn = pawns[i];
                 if (pawn == null || pawn.Downed || pawn.Drafted || pawn.InMentalState
-                    || !pawn.Awake() || AutonomyComponent.LevelOf(pawn) < minimumAutonomy)
+                    || !pawn.Awake()
+                    || !CABehaviorGate.StableProfileAllows(pawn,
+                        behaviorKey))
                     continue;
                 if (KnowledgeMapComponent.For(map)?.KnowsAnyThreat(pawn) == true)
                     continue;
@@ -637,7 +693,8 @@ namespace ColonistAwareness
             {
                 Pawn pawn = pawns[i];
                 if (pawn != null && !pawn.Downed && !pawn.InMentalState
-                    && AutonomyComponent.LevelOf(pawn) >= 3)
+                    && CABehaviorGate.StableProfileAllows(pawn,
+                        "spatial.resident_roster_negotiation"))
                     return true;
             }
             return false;
@@ -725,15 +782,17 @@ namespace ColonistAwareness
 
             CASpatialInitiativeMapComponent spatial =
                 CASpatialInitiativeMapComponent.For(map);
-            int ceiling = spatial?.LevelFor(program) ?? 1;
-            if (ceiling < 2)
+            CAInitiativeTier ceiling = spatial?.TierFor(program)
+                ?? CAInitiativeTier.Standard;
+            if (ceiling < CAInitiativeTier.Proactive)
             {
                 blocker = "the Bedroom initiative ceiling is "
-                    + AutonomyComponent.LevelNames[Mathf.Clamp(ceiling, 0, 3)]
-                    + "; Directed and Standard cannot select a Bedroom action";
+                    + CAInitiativePresentation.Label(ceiling)
+                    + "; Standard cannot select a discretionary Bedroom action";
                 return false;
             }
-            planner = ChoosePlannerForProgram(program, 2);
+            planner = ChoosePlannerForProgram(program,
+                CAInitiativeTier.Proactive);
             if (planner == null)
             {
                 blocker = "no awake, threat-unaware construction author has Proactive+ effective initiative in this Bedroom";
@@ -756,7 +815,7 @@ namespace ColonistAwareness
                         + program.label + ", while this completed native bed has a compatible free slot",
                     kind = CAHomePlanKind.Bed,
                     program = program,
-                    minimumAutonomy = 2,
+                    minimumInitiative = CAInitiativeTier.Proactive,
                     targetResidentId = targetResident.thingIDNumber,
                     placementEvidence = "native ownership candidate: completed "
                         + assignableBed.def.defName + " #"
@@ -797,7 +856,7 @@ namespace ColonistAwareness
                 return false;
             }
 
-            plan.minimumAutonomy = 2;
+            plan.minimumInitiative = CAInitiativeTier.Proactive;
             plan.targetResidentId = targetResident.thingIDNumber;
             plan.reason += "; concrete unmet resident "
                 + targetResident.LabelShort + " #"
@@ -862,10 +921,12 @@ namespace ColonistAwareness
                 bool selected = TrySelectPlayerBedroomConstructionCause(
                     program, out plan, out planner, out resident, out current,
                     out target, out action, out blocker);
-                int ceiling = spatial?.LevelFor(program) ?? 1;
-                int effective = planner == null ? -1
-                    : spatial?.EffectiveLevel(planner, program)
-                        ?? AutonomyComponent.LevelOf(planner);
+                CAInitiativeTier ceiling = spatial?.TierFor(program)
+                    ?? CAInitiativeTier.Standard;
+                CAInitiativeTier effective = planner == null
+                    ? CAInitiativeTier.Standard
+                    : spatial?.EffectiveTier(planner, program)
+                        ?? AutonomyComponent.TierOf(planner);
                 builder.Append("  program #").Append(program.id).Append(" '")
                     .Append(program.label.NullOrEmpty() ? "Bedroom"
                         : program.label).AppendLine("':")
@@ -877,11 +938,11 @@ namespace ColonistAwareness
                     .Append(", planner ").Append(planner == null ? "none"
                         : planner.LabelShort + " #" + planner.thingIDNumber)
                     .Append(", ceiling ")
-                    .Append(AutonomyComponent.LevelNames[Mathf.Clamp(
-                        ceiling, 0, 3)]).Append(", effective ")
-                    .Append(effective < 0 ? "not selected"
-                        : AutonomyComponent.LevelNames[Mathf.Clamp(
-                            effective, 0, 3)]).AppendLine()
+                    .Append(CAInitiativePresentation.Label(ceiling))
+                    .Append(", effective ")
+                    .Append(planner == null ? "not selected"
+                        : CAInitiativePresentation.Label(effective))
+                    .AppendLine()
                     .AppendLine("    construction stage: blueprint/frame capacity is future capacity and is excluded from present readiness; it is evaluated separately through exact CA commitment and player-construction precedence evidence")
                     .Append("    result: ").Append(selected ? "selected " : "blocked ")
                     .Append(selected ? action : blocker).AppendLine();
@@ -924,7 +985,8 @@ namespace ColonistAwareness
                 return Finish("the selected Bedroom action was " + actionClass
                     + ", not one concrete native Bed construction cause",
                     out outcome);
-            plan.minimumAutonomy = Math.Max(2, plan.minimumAutonomy);
+            if (plan.minimumInitiative < CAInitiativeTier.Proactive)
+                plan.minimumInitiative = CAInitiativeTier.Proactive;
             bool placed = PrepareAndPlace(planner, plan, out outcome);
             if (placed)
                 outcome += "; debug regression crossed only the receipted "
@@ -1010,7 +1072,7 @@ namespace ColonistAwareness
         }
 
         private Pawn ChoosePlannerForProgram(CASpaceProgram program,
-            int minimumEffectiveLevel)
+            CAInitiativeTier minimumEffectiveTier)
         {
             CASpatialInitiativeMapComponent spatial =
                 CASpatialInitiativeMapComponent.For(map);
@@ -1021,11 +1083,11 @@ namespace ColonistAwareness
             {
                 Pawn pawn = pawns[i];
                 if (pawn == null) continue;
-                int effective = spatial?.EffectiveLevel(pawn, program)
-                    ?? Mathf.Min(AutonomyComponent.LevelOf(pawn), 1);
+                CAInitiativeTier effective = spatial?.EffectiveTier(pawn,
+                    program) ?? CAInitiativeTier.Standard;
                 if (pawn.Downed || pawn.Drafted
                     || pawn.InMentalState || !pawn.Awake()
-                    || effective < minimumEffectiveLevel) continue;
+                    || effective < minimumEffectiveTier) continue;
                 if (KnowledgeMapComponent.For(map)?.KnowsAnyThreat(pawn) == true)
                     continue;
                 if (pawn.workSettings == null
@@ -1762,7 +1824,8 @@ namespace ColonistAwareness
                 kind == CAHomePlanKind.Bed
                     && program != null
                     && program.author == CASpaceAuthor.Player
-                    && AutonomyComponent.LevelOf(planner) >= 3
+                    && CABehaviorGate.StableProfileAllows(planner,
+                        "spatial.home_comfort")
                 ? CASettlementPlanningContextMapComponent.For(map) : null;
             settlementContext?.Refresh();
             for (int pass = 0; pass < 2; pass++)
@@ -2875,6 +2938,9 @@ namespace ColonistAwareness
         private bool PrepareAndPlace(Pawn planner, CAHomePlan plan,
             out string outcome)
         {
+            string authorization;
+            if (!TryAuthorizeHomePlan(planner, ref plan, out authorization))
+                return Finish(authorization, out outcome);
             CAHomePrerequisiteMapComponent prerequisites =
                 CAHomePrerequisiteMapComponent.For(map);
             if (prerequisites == null)
@@ -2886,6 +2952,138 @@ namespace ColonistAwareness
             bool placed = PlacePlan(planner, plan, out outcome);
             if (placed) prerequisites.NotifyBlueprintPlaced(plan);
             return placed;
+        }
+
+        private bool TryAuthorizeHomePlan(Pawn planner, ref CAHomePlan plan,
+            out string outcome)
+        {
+            string expectedKey = plan.minimumInitiative
+                    >= CAInitiativeTier.Autonomous
+                ? "spatial.home_comfort" : "spatial.home_essentials";
+            if (!plan.behaviorKey.NullOrEmpty()
+                && plan.behaviorKey != expectedKey)
+            {
+                outcome = "the retained home objective has behavior identity "
+                    + plan.behaviorKey + " but now requires " + expectedKey;
+                return false;
+            }
+
+            CASpatialInitiativeMapComponent spatial =
+                CASpatialInitiativeMapComponent.For(map);
+            CAInitiativeTier ceiling = spatial?.TierFor(plan.program)
+                ?? CAInitiativeTier.Standard;
+            bool authoredProgram = plan.program == null
+                || plan.program.author == CASpaceAuthor.Player;
+            bool retainedAuthority = plan.episodeId <= 0
+                || plan.authorityOrigin == CAAuthorityOrigin.PlayerDelegated
+                || plan.authorityOrigin == CAAuthorityOrigin.Continuation
+                || plan.authorityOrigin == CAAuthorityOrigin.SaveRestore;
+            bool foreignPlayerWork = planner != null
+                && CATactical.HasForeignPlayerForcedJob(planner);
+            bool deficitKnown = TryGetHomeDeficitEvidence(plan,
+                out string deficitBasis);
+            string authorityBasis = plan.program != null
+                ? "player-authored space program #" + plan.program.id
+                    + " and its initiative ceiling"
+                : "player Home designation and the default spatial initiative ceiling";
+            CAAuthorityOrigin evaluationOrigin = plan.episodeId > 0
+                ? CAAuthorityOrigin.Continuation
+                : CAAuthorityOrigin.PlayerDelegated;
+            var context = new CABehaviorContext(planner,
+                CAActorContext.PlayerSpatialAuthority,
+                planner != null ? AutonomyComponent.TierOf(planner)
+                    : CAInitiativeTier.Standard,
+                evaluationOrigin,
+                authoritySatisfied: map.IsPlayerHome && authoredProgram
+                    && retainedAuthority,
+                knowledgeSatisfied: deficitKnown,
+                knowledgeFresh: deficitKnown,
+                liveValidated: planner?.Spawned == true
+                    && planner.Map == map,
+                knowledgeRelayed: false, knowledgeAgeTicks: 0,
+                knowledgeConfidence: deficitKnown ? 1f : 0f,
+                knowledgeUncertainty: deficitKnown ? 0f : 1f,
+                capabilitySatisfied: planner != null && !planner.Downed
+                    && planner.workSettings != null
+                    && !planner.WorkTypeIsDisabled(
+                        WorkTypeDefOf.Construction),
+                materialSatisfied: plan.def?.blueprintDef != null,
+                currentIntentCompatible: !foreignPlayerWork,
+                directPlayerOwnership: foreignPlayerWork,
+                authorityCeiling: ceiling,
+                authorityBasis: plan.episodeId > 0
+                    && !plan.authorityIdentity.NullOrEmpty()
+                        ? plan.authorityIdentity : authorityBasis,
+                knowledgeBasis: deficitBasis,
+                owner: nameof(AutonomousHomeMapComponent));
+            CABehaviorDecision decision = CABehaviorGate.Evaluate(
+                expectedKey, context);
+            CABehaviorIntentMapComponent.For(map)?.ObserveDecision(
+                planner, decision);
+            if (!decision.Allowed)
+            {
+                outcome = expectedKey + " blocked: "
+                    + decision.PrimaryReason;
+                return false;
+            }
+
+            if (plan.episodeId <= 0)
+            {
+                CAIntentContext intent = CACombatIntent.Authorized(planner,
+                    CAIntentController.Logistics, expectedKey,
+                    CAAuthorityOrigin.PlayerDelegated, authorityBasis,
+                    "delegated home objective",
+                    plan.def.defName + " at " + plan.cell);
+                plan.behaviorKey = intent.BehaviorKey;
+                plan.episodeId = intent.EpisodeId;
+                plan.intentOrigin = intent.Origin;
+                plan.intentController = intent.Controller;
+                plan.authorityOrigin = intent.AuthorityOrigin;
+                plan.authorityIdentity = intent.AuthorityIdentity;
+                plan.ownershipScope = intent.OwnershipScope;
+                plan.issuerId = intent.IssuerId;
+                plan.ownerId = intent.OwnerId;
+                plan.createdTick = intent.CreatedTick;
+                plan.creationTier = intent.CreationTier;
+                plan.targetOrDemand = intent.TargetOrDemand;
+                plan.terminationCondition = intent.TerminationCondition;
+            }
+            else
+            {
+                if (plan.intentController != CAIntentController.Logistics)
+                {
+                    outcome = expectedKey + " blocked: retained controller "
+                        + plan.intentController + " is not Logistics";
+                    return false;
+                }
+                plan.behaviorKey = expectedKey;
+                CACombatIntent.ObserveEpisode(plan.episodeId);
+            }
+            outcome = expectedKey + " authorized as episode "
+                + plan.episodeId;
+            return true;
+        }
+
+        private bool TryGetHomeDeficitEvidence(CAHomePlan plan,
+            out string basis)
+        {
+            basis = "no current furnishing deficit was established";
+            if (plan.def == null || !plan.cell.IsValid
+                || !plan.cell.InBounds(map)) return false;
+            if (RetainedProvisionExists(plan))
+            {
+                basis = plan.def.label + " already exists at " + plan.cell;
+                return false;
+            }
+            if (!RetainedNeedStillAuthorized(plan, out string refusal))
+            {
+                basis = refusal ?? "the selected furnishing need is no longer current";
+                return false;
+            }
+            basis = "current missing " + plan.def.defName + " at "
+                + plan.cell + " for " + (plan.reason.NullOrEmpty()
+                    ? plan.kind.ToString() : plan.reason);
+            return true;
         }
 
         private bool RetainedPlanCanResume(Pawn planner, CAHomePlan plan,
@@ -2969,12 +3167,15 @@ namespace ColonistAwareness
                                     plan.program).FirstOrDefault(resident =>
                                         resident.thingIDNumber
                                             == plan.targetResidentId);
-                            int ceiling = CASpatialInitiativeMapComponent
-                                .For(map)?.LevelFor(plan.program) ?? 1;
+                            CAInitiativeTier ceiling =
+                                CASpatialInitiativeMapComponent.For(map)?
+                                    .TierFor(plan.program)
+                                ?? CAInitiativeTier.Standard;
                             if (plan.program.author != CASpaceAuthor.Player
                                 || plan.program.purpose
                                     != CASpacePurpose.Bedroom
-                                || ceiling < 2 || concrete == null
+                                || ceiling < CAInitiativeTier.Proactive
+                                || concrete == null
                                 || ResidentOwnsCompatibleProgramBed(concrete,
                                     plan.program)
                                 || !PlanAddressesResident(plan, plan.program,
@@ -3047,7 +3248,8 @@ namespace ColonistAwareness
                     return false;
                 case CAHomePlanKind.Seat:
                     int targetSeats = Mathf.Min(RestingColonistCount(),
-                        plan.minimumAutonomy >= 3 ? 6 : 2);
+                        plan.minimumInitiative >= CAInitiativeTier.Autonomous
+                            ? 6 : 2);
                     if (plan.seatForJoy)
                     {
                         if (RetainedSeatSupportsCurrentJoyNeed(plan.cell))
@@ -3184,6 +3386,19 @@ namespace ColonistAwareness
             pendingProgramId = plan.program?.id ?? 0;
             pendingTargetResidentId = plan.targetResidentId > 0
                 ? plan.targetResidentId : 0;
+            pendingBehaviorKey = plan.behaviorKey;
+            pendingEpisodeId = plan.episodeId;
+            pendingIntentOrigin = (int)plan.intentOrigin;
+            pendingIntentController = (int)plan.intentController;
+            pendingAuthorityOrigin = (int)plan.authorityOrigin;
+            pendingAuthorityIdentity = plan.authorityIdentity;
+            pendingOwnershipScope = plan.ownershipScope;
+            pendingIssuerId = plan.issuerId;
+            pendingOwnerId = plan.ownerId;
+            pendingCreatedTick = plan.createdTick;
+            pendingCreationTier = (int)plan.creationTier;
+            pendingTargetOrDemand = plan.targetOrDemand;
+            pendingTerminationCondition = plan.terminationCondition;
             lastPlannerId = planner.thingIDNumber;
             lastPlannedDef = plan.def.defName;
             lastPlannedStuff = plan.stuff?.defName;
@@ -3274,7 +3489,9 @@ namespace ColonistAwareness
                                     == CASpacePurpose.Bedroom
                                 && targetProgram.RequiresSleep
                                 && (CASpatialInitiativeMapComponent.For(map)?
-                                    .LevelFor(targetProgram) ?? 1) >= 2
+                                    .TierFor(targetProgram)
+                                    ?? CAInitiativeTier.Standard)
+                                        >= CAInitiativeTier.Proactive
                                 && targetResident != null
                                 && RestUtility.CanUseBedEver(targetResident,
                                     entity)
@@ -3745,6 +3962,19 @@ namespace ColonistAwareness
             pendingSinceTick = -1;
             pendingProgramId = 0;
             pendingTargetResidentId = 0;
+            pendingBehaviorKey = null;
+            pendingEpisodeId = 0;
+            pendingIntentOrigin = 0;
+            pendingIntentController = 0;
+            pendingAuthorityOrigin = 0;
+            pendingAuthorityIdentity = null;
+            pendingOwnershipScope = null;
+            pendingIssuerId = -1;
+            pendingOwnerId = -1;
+            pendingCreatedTick = -1;
+            pendingCreationTier = 0;
+            pendingTargetOrDemand = null;
+            pendingTerminationCondition = null;
         }
 
         private void CompleteBedroomCausePlanningScopeForPending()
@@ -4427,6 +4657,12 @@ namespace ColonistAwareness
                 + ", tables " + tables + ", table seats " + seats + ", lights "
                 + lights + ", usable/in-progress recreation " + joy
                 + "; pending " + pending
+                + (pendingBehaviorKey.NullOrEmpty() ? ""
+                    : "; pending behavior " + pendingBehaviorKey
+                        + " episode " + pendingEpisodeId + " authority "
+                        + (pendingAuthorityIdentity ?? "unknown")
+                        + " controller "
+                        + ((CAIntentController)pendingIntentController))
                 + "; suppressed " + suppressed + "; last " + last
                 + "; placement evidence " + placement
                 + "; outcome " + lastOutcome + "; " + plannedUses

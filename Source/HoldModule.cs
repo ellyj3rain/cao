@@ -11,7 +11,7 @@ namespace ColonistAwareness
     // and the pawn treats the assigned cell as an anchor, reacquiring and repositioning
     // within its duty envelope without turning point defense into pursuit. The autonomy
     // mode governs what happens when holding becomes strategically injudicious:
-    //   Directed/Standard (draft-piloted): hold until told otherwise. No deviation.
+    //   Standard (draft-piloted): hold until told otherwise. No deviation.
     //   Proactive+: deviation triggers - flanked, melee on top, bleeding out, position
     //   collapsing - break the hold, fall back by suppressive retreat, and REPORT UP.
     // Holds ride the tactical lord's duty pipeline: the order joins the pawn to the
@@ -73,11 +73,21 @@ namespace ColonistAwareness
         {
             public readonly IntVec3 RememberedCell;
             public readonly Pawn VisiblePawn;
+            public readonly int SourceTick;
+            public readonly bool Relayed;
+            public readonly float Confidence;
+            public readonly float Uncertainty;
 
-            public PerceivedHoldThreat(IntVec3 rememberedCell, Pawn visiblePawn)
+            public PerceivedHoldThreat(IntVec3 rememberedCell,
+                Pawn visiblePawn, int sourceTick, bool relayed,
+                float confidence, float uncertainty)
             {
                 RememberedCell = rememberedCell;
                 VisiblePawn = visiblePawn;
+                SourceTick = sourceTick;
+                Relayed = relayed;
+                Confidence = confidence;
+                Uncertainty = uncertainty;
             }
         }
 
@@ -178,7 +188,8 @@ namespace ColonistAwareness
                 holds.Remove(p.thingIDNumber);
                 return false;
             }
-            if (AutonomyComponent.LevelOf(p) >= 3
+            if (CABehaviorGate.StableProfileAllows(p,
+                    "combat.hold_deviation")
                 && !CATactical.IsHoldProfilePinned(p))
                 AdviseProfile(p, cell);
 
@@ -439,9 +450,10 @@ namespace ColonistAwareness
 
                 // Environmental hazard displacement - Proactive+ only. A tox
                 // cloud on the anchor is not a reason to abandon the intent;
-                // it is a reason to hold it from clean ground. Directed/
-                // Standard holders stay put exactly as ordered.
-                if (AutonomyComponent.LevelOf(p) >= 2
+                // it is a reason to hold it from clean ground. Standard
+                // holders stay put exactly as ordered.
+                if (CABehaviorGate.StableProfileAllows(p,
+                        "combat.hold_deviation")
                     && (CALineInterpreter.HazardousCell(map, cell)
                         || CALineInterpreter.HazardousCell(map, p.Position)))
                 {
@@ -456,17 +468,59 @@ namespace ColonistAwareness
                         IntVec3 clean = FindCleanAnchor(cell, watchPoint);
                         if (clean.IsValid && clean != cell)
                         {
-                            holds[kv.Key] = clean;
-                            approachCompleted.Remove(kv.Key);
-                            CATactical.Assign(p, LordJob_CATactical.KindHold,
-                                clean, watchPoint,
-                                CACombatIntent.Continuation(p,
-                                    CAIntentController.Hold));
-                            CATrace.Pawn(p, "hold DISPLACED out of harmful "
-                                + "gas: anchor " + cell + " -> " + clean
-                                + "; overwatch intent retained",
-                                destination: clean, anchor: p.Position);
-                            continue;
+                            CAIntentContext parent;
+                            bool ownedHold = CATactical.TryGetContext(p,
+                                    out parent)
+                                && parent.IsValid
+                                && CATactical.MatchesOrder(p,
+                                    parent.EpisodeId,
+                                    LordJob_CATactical.KindHold);
+                            bool foreignOrder =
+                                CATactical.HasForeignPlayerForcedJob(p);
+                            var gateContext = CABehaviorContext.ForPawn(p,
+                                CAAuthorityOrigin.PlayerDelegated,
+                                authoritySatisfied: ownedHold,
+                                knowledgeSatisfied: true,
+                                knowledgeFresh: true,
+                                liveValidated: true,
+                                knowledgeConfidence: 1f,
+                                knowledgeUncertainty: 0f,
+                                capabilitySatisfied: clean.Standable(map)
+                                    && p.CanReach(clean,
+                                        PathEndMode.OnCell, Danger.Deadly),
+                                materialSatisfied: true,
+                                currentIntentCompatible: ownedHold
+                                    && !foreignOrder,
+                                directPlayerOwnership: foreignOrder,
+                                authorityBasis: ownedHold
+                                    ? parent.AuthorityIdentity
+                                        ?? "player-authored hold"
+                                    : null,
+                                knowledgeBasis:
+                                    "direct local hazardous-cell observation",
+                                owner: "hold episode "
+                                    + (ownedHold ? parent.EpisodeId : 0));
+                            CABehaviorDecision decision =
+                                CABehaviorGate.Evaluate(
+                                    "combat.hold_deviation", gateContext);
+                            if (decision.Allowed)
+                            {
+                                holds[kv.Key] = clean;
+                                approachCompleted.Remove(kv.Key);
+                                CATactical.Assign(p,
+                                    LordJob_CATactical.KindHold,
+                                    clean, watchPoint,
+                                    CACombatIntent.Continuation(p,
+                                        CAIntentController.Hold));
+                                CATrace.Pawn(p,
+                                    "hold DISPLACED out of harmful gas: anchor "
+                                    + cell + " -> " + clean
+                                    + "; overwatch intent retained",
+                                    destination: clean,
+                                    anchor: p.Position,
+                                    intent: parent);
+                                continue;
+                            }
                         }
                     }
                 }
@@ -478,7 +532,8 @@ namespace ColonistAwareness
                     && (evasion.Status == CAIncomingEvasionResult.Active
                         || evasion.Status == CAIncomingEvasionResult.Pending);
                 if (!immediateEvasionOwns
-                    && AutonomyComponent.LevelOf(p) >= 2 && Deviate(p, cell))
+                    && CABehaviorGate.StableProfileAllows(p,
+                        "combat.hold_deviation") && Deviate(p, cell))
                 {
                     stale.Add(kv.Key);
                     staleReasons[kv.Key] = "autonomous deviation threshold crossed";
@@ -701,12 +756,75 @@ namespace ColonistAwareness
             }
             if (!dest.IsValid) dest = p.Position;
             var wd = map.GetComponent<WithdrawalMapComponent>();
+            PerceivedHoldThreat evidence = default(PerceivedHoldThreat);
+            bool hasLiveEvidence = false;
+            float nearestEvidence = float.MaxValue;
+            for (int i = 0; i < threats.Count; i++)
+            {
+                if (threats[i].VisiblePawn == null) continue;
+                float distance = p.Position.DistanceTo(
+                    threats[i].VisiblePawn.Position);
+                if (distance >= nearestEvidence) continue;
+                nearestEvidence = distance;
+                evidence = threats[i];
+                hasLiveEvidence = true;
+            }
+            int now = Find.TickManager?.TicksGame ?? 0;
+            int evidenceAge = hasLiveEvidence
+                ? System.Math.Max(0, now - evidence.SourceTick) : 0;
+            bool ownedHold = hasPriorHoldContext
+                && CATactical.MatchesOrder(p,
+                    priorHoldContext.EpisodeId,
+                    LordJob_CATactical.KindHold);
+            bool foreignOrder = CATactical.HasForeignPlayerForcedJob(p);
+            var gateContext = CABehaviorContext.ForPawn(p,
+                CAAuthorityOrigin.PlayerDelegated,
+                authoritySatisfied: ownedHold,
+                knowledgeSatisfied: hasLiveEvidence,
+                knowledgeFresh: hasLiveEvidence && evidenceAge <= 300,
+                liveValidated: hasLiveEvidence,
+                knowledgeRelayed: hasLiveEvidence && evidence.Relayed,
+                knowledgeAgeTicks: evidenceAge,
+                knowledgeConfidence: hasLiveEvidence
+                    ? evidence.Confidence : 0f,
+                knowledgeUncertainty: hasLiveEvidence
+                    ? evidence.Uncertainty : 0f,
+                capabilitySatisfied: wd != null && dest != p.Position
+                    && wd.CanOfferSolo(p, dest),
+                materialSatisfied: dest.IsValid && dest.Standable(map),
+                currentIntentCompatible: ownedHold && !foreignOrder,
+                directPlayerOwnership: foreignOrder,
+                authorityBasis: ownedHold
+                    ? priorHoldContext.AuthorityIdentity
+                        ?? "player-authored hold"
+                    : null,
+                knowledgeBasis: hasLiveEvidence
+                    ? (evidence.Relayed ? "relayed" : "direct")
+                        + " current threat at "
+                        + evidence.VisiblePawn.Position
+                    : "no currently visible actor-held threat fact",
+                owner: "hold episode "
+                    + (ownedHold ? priorHoldContext.EpisodeId : 0));
+            CABehaviorDecision deviationDecision = CABehaviorGate.Evaluate(
+                "combat.hold_deviation", gateContext);
+            if (!deviationDecision.Allowed)
+            {
+                CATrace.Skip(p, "hold deviation",
+                    deviationDecision.PrimaryReason,
+                    destination: dest, anchor: p.Position,
+                    intent: hasPriorHoldContext
+                        ? (CAIntentContext?)priorHoldContext : null);
+                return false;
+            }
+
             if (wd != null && dest != p.Position)
             {
                 if (fallbackRoute) why += "; withdrawing to the fallback line";
-                CAIntentContext context = CACombatIntent.Continuation(p,
-                    CAIntentController.Withdrawal);
                 Pawn buddy = wd.FindBuddyForHoldDeviation(p);
+                CAIntentContext context = CACombatIntent.Continuation(p,
+                    CAIntentController.Withdrawal, buddy != null
+                        ? "combat.withdrawal_coordinated"
+                        : "combat.withdrawal_self_preservation");
                 if (buddy != null)
                     wd.OrderCoveredFromHold(p, buddy, dest, context);
                 else wd.OrderSolo(p, dest, context);
@@ -799,7 +917,10 @@ namespace ColonistAwareness
                 {
                     if (!contact.Cell.IsValid || !contact.Cell.InBounds(map)) continue;
                     result.Add(new PerceivedHoldThreat(contact.Cell,
-                        VisibleHostileById(p, contact.HostileId)));
+                        VisibleHostileById(p, contact.HostileId),
+                        contact.SourceTick, !contact.Evidence.IsDirect,
+                        contact.Evidence.Confidence,
+                        contact.Evidence.Uncertainty));
                 }
                 return result;
             }
@@ -812,7 +933,8 @@ namespace ColonistAwareness
                 var hostile = pawns[i];
                 if (!KnowledgeMapComponent.CanCurrentlySeeHostile(
                     p, hostile, 42f)) continue;
-                result.Add(new PerceivedHoldThreat(hostile.Position, hostile));
+                result.Add(new PerceivedHoldThreat(hostile.Position, hostile,
+                    Find.TickManager?.TicksGame ?? 0, false, 1f, 0f));
             }
             return result;
         }

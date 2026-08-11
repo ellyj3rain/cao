@@ -40,6 +40,8 @@ namespace ColonistAwareness
             new Dictionary<int, IntVec3>();
         private Dictionary<int, int> shelterEpisodes =
             new Dictionary<int, int>();
+        private Dictionary<int, string> shelterBehaviorKeys =
+            new Dictionary<int, string>();
 
         private sealed class ShelterRoute
         {
@@ -152,10 +154,14 @@ namespace ColonistAwareness
                 LookMode.Value, LookMode.Value);
             Scribe_Collections.Look(ref shelterEpisodes, "CA_shelterEpisodes",
                 LookMode.Value, LookMode.Value);
+            Scribe_Collections.Look(ref shelterBehaviorKeys,
+                "CA_shelterBehaviorKeys", LookMode.Value, LookMode.Value);
             if (shelterCells == null)
                 shelterCells = new Dictionary<int, IntVec3>();
             if (shelterEpisodes == null)
                 shelterEpisodes = new Dictionary<int, int>();
+            if (shelterBehaviorKeys == null)
+                shelterBehaviorKeys = new Dictionary<int, string>();
         }
 
         public override void FinalizeInit()
@@ -346,7 +352,9 @@ namespace ColonistAwareness
                     // Convene: Autonomous squadded fighters under a live commanding leader
                     // form up at the rally and hold while the plan is made - unless an
                     // enemy is already on top of them, in which case they fight.
-                    if (convening && fighter && AutonomyComponent.LevelOf(p) >= 3
+                    if (convening && fighter
+                        && CABehaviorGate.StableProfileAllows(p,
+                            "support.objective_defense")
                         && !TryNearestPerceivedThreatCell(p, 6f, out _))
                     {
                         int csq = SquadComponent.SquadOf(p);
@@ -356,7 +364,17 @@ namespace ColonistAwareness
                         {
                             IntVec3 conveneWatch = conveneThreatCentroid.IsValid
                                 ? conveneThreatCentroid : knownContact;
-                            CATactical.AssignAutomaticDefense(p, rallyCell, conveneWatch);
+                            CAIntentContext conveneIntent;
+                            if (TryAuthorizeStandingBehavior(p,
+                                    "support.objective_defense",
+                                    CAIntentController.RaidDefense,
+                                    CAAuthorityOrigin.AutomaticDefense,
+                                    "defense command delivered by "
+                                        + cleader.LabelShort,
+                                    rallyCell, genericAlarm: false,
+                                    out conveneIntent))
+                                CATactical.AssignAutomaticDefense(p, rallyCell,
+                                    conveneWatch, conveneIntent);
                             continue;
                         }
                     }
@@ -423,7 +441,16 @@ namespace ColonistAwareness
                         // when the selected cover is the pawn's current cell, assigning
                         // the duty establishes an armed posture instead of treating
                         // positioning as the whole response.
-                        if (CATactical.AssignAutomaticDefense(p, dest, knownContact))
+                        CAIntentContext defenseIntent;
+                        if (TryAuthorizeStandingBehavior(p,
+                                "support.objective_defense",
+                                CAIntentController.RaidDefense,
+                                CAAuthorityOrigin.AutomaticDefense,
+                                "actor-held contact under colony raid-response policy",
+                                dest, genericAlarm: false,
+                                out defenseIntent)
+                            && CATactical.AssignAutomaticDefense(p, dest,
+                                knownContact, defenseIntent))
                             claimed.Add(dest);
                         continue;
                     }
@@ -440,10 +467,19 @@ namespace ColonistAwareness
                             && SquadComponent.CombatLiability(p)
                             && Rand.Chance(0.2f * (0.4f - courage)))
                         {
-                            HiddenRegistry.FrozeThisRaid.Add(p.thingIDNumber);
                             Job wait = JobMaker.MakeJob(JobDefOf.Wait);
                             wait.expiryInterval = 350;
-                            p.jobs.StartJob(wait, JobCondition.InterruptForced);
+                            CAIntentContext freezeIntent;
+                            if (TryRegisterRaidJob(p, wait, "survival.freeze",
+                                    CAIntentController.Shelter,
+                                    "actor-local civilian threat response",
+                                    p.Position, out freezeIntent))
+                            {
+                                HiddenRegistry.FrozeThisRaid.Add(
+                                    p.thingIDNumber);
+                                p.jobs.StartJob(wait,
+                                    JobCondition.InterruptForced);
+                            }
                             continue;
                         }
 
@@ -468,7 +504,14 @@ namespace ColonistAwareness
                                     Job stand = JobMaker.MakeJob(JobDefOf.Goto, dest);
                                     stand.locomotionUrgency = LocomotionUrgency.Sprint;
                                     stand.expiryInterval = 600;
-                                    p.jobs.StartJob(stand, JobCondition.InterruptForced);
+                                    CAIntentContext standIntent;
+                                    if (TryRegisterRaidJob(p, stand,
+                                            "combat.local_reaction",
+                                            CAIntentController.RaidDefense,
+                                            "actor-local militant defense response",
+                                            dest, out standIntent))
+                                        p.jobs.StartJob(stand,
+                                            JobCondition.InterruptForced);
                                 }
                                 continue;
                             }
@@ -489,14 +532,28 @@ namespace ColonistAwareness
                                 endJob: true);
                             if (p.Position == dest)
                             {
-                                HiddenRegistry.SetHidden(p, dest);
+                                CAIntentContext concealmentIntent;
+                                if (TryAuthorizeStandingBehavior(p,
+                                        "survival.shelter",
+                                        CAIntentController.Shelter,
+                                        CAAuthorityOrigin.PlayerDelegated,
+                                        "actor-local civilian shelter response",
+                                        dest, genericAlarm: false,
+                                        out concealmentIntent))
+                                    HiddenRegistry.SetHidden(p, dest);
                                 continue;
                             }
                             claimed.Add(dest);
                             Job go = JobMaker.MakeJob(JobDefOf.Goto, dest);
                             go.locomotionUrgency = LocomotionUrgency.Sprint;
                             go.expiryInterval = 600;
-                            p.jobs.StartJob(go, JobCondition.InterruptForced);
+                            CAIntentContext concealmentJobIntent;
+                            if (TryRegisterRaidJob(p, go, "survival.shelter",
+                                    CAIntentController.Shelter,
+                                    "actor-local civilian shelter response",
+                                    dest, out concealmentJobIntent))
+                                p.jobs.StartJob(go,
+                                    JobCondition.InterruptForced);
                             continue;
                         }
                         continue;
@@ -613,6 +670,163 @@ namespace ColonistAwareness
             return result;
         }
 
+        private bool TryBehaviorEvidence(Pawn pawn, out bool relayed,
+            out int ageTicks, out float confidence, out float uncertainty,
+            out bool liveValidated, out string basis)
+        {
+            relayed = false;
+            ageTicks = 0;
+            confidence = 0f;
+            uncertainty = 0f;
+            liveValidated = false;
+            basis = null;
+            if (pawn == null || pawn.Map != map) return false;
+            AwarenessSettings settings = AwarenessMod.Settings;
+            if (settings?.knowledgeContacts == true)
+            {
+                ThreatContactSnapshot fact;
+                KnowledgeMapComponent knowledge = KnowledgeMapComponent.For(map);
+                if (knowledge == null
+                    || !knowledge.TryGetFreshestContact(pawn, out fact)
+                    || fact.State != ThreatContactState.Active) return false;
+                int now = Find.TickManager?.TicksGame ?? 0;
+                ageTicks = System.Math.Max(0, now - fact.SourceTick);
+                confidence = fact.Evidence.Confidence;
+                uncertainty = fact.Evidence.Uncertainty;
+                relayed = !fact.Evidence.IsDirect;
+                Pawn hostile = PawnById(fact.HostileId);
+                liveValidated = hostile != null
+                    && KnowledgeMapComponent.CanCurrentlySeeHostile(
+                        pawn, hostile);
+                basis = (relayed ? "relayed" : "direct")
+                    + " actor-held threat fact at " + fact.Cell
+                    + "; source age " + ageTicks + " ticks";
+                return true;
+            }
+
+            IReadOnlyList<Pawn> pawns = map.mapPawns.AllPawnsSpawned;
+            for (int i = 0; i < pawns.Count; i++)
+            {
+                Pawn hostile = pawns[i];
+                if (!KnowledgeMapComponent.CanCurrentlySeeHostile(
+                        pawn, hostile)) continue;
+                confidence = 1f;
+                liveValidated = true;
+                basis = "direct current sight at " + hostile.Position;
+                return true;
+            }
+            return false;
+        }
+
+        private bool TryAuthorizeStandingBehavior(Pawn pawn,
+            string behaviorKey, CAIntentController controller,
+            CAAuthorityOrigin authorityOrigin, string authorityIdentity,
+            IntVec3 target, bool genericAlarm, out CAIntentContext intent)
+        {
+            intent = default(CAIntentContext);
+            bool relayed = false;
+            int age = 0;
+            float confidence = 0f;
+            float uncertainty = 1f;
+            bool live = false;
+            string knowledgeBasis = "no actor-held threat fact";
+            bool hasEvidence = genericAlarm || TryBehaviorEvidence(pawn,
+                out relayed, out age, out confidence, out uncertainty,
+                out live, out knowledgeBasis);
+            if (genericAlarm)
+            {
+                relayed = false;
+                age = 0;
+                confidence = 1f;
+                uncertainty = 0f;
+                live = true;
+                knowledgeBasis =
+                    "native colony raid alarm; no hostile identity or cell";
+            }
+            var context = CABehaviorContext.ForPawn(pawn, authorityOrigin,
+                authoritySatisfied: !string.IsNullOrWhiteSpace(
+                    authorityIdentity), knowledgeSatisfied: hasEvidence,
+                knowledgeFresh: hasEvidence, liveValidated: live,
+                knowledgeRelayed: relayed, knowledgeAgeTicks: age,
+                knowledgeConfidence: confidence,
+                knowledgeUncertainty: uncertainty,
+                capabilitySatisfied: target.IsValid
+                    && target.InBounds(map), materialSatisfied: target.IsValid,
+                currentIntentCompatible: !HasDirectPlayerControl(pawn),
+                directPlayerOwnership: HasDirectPlayerControl(pawn),
+                authorityBasis: authorityIdentity,
+                knowledgeBasis: knowledgeBasis,
+                owner: "raid-response behavior");
+            CABehaviorDecision decision = CABehaviorGate.Evaluate(
+                behaviorKey, context);
+            if (!decision.Allowed) return false;
+            CAIntentContext previous;
+            int episode = CATactical.TryGetContext(pawn, out previous)
+                && previous.IsValid ? previous.EpisodeId : 0;
+            intent = CACombatIntent.Authorized(pawn, controller, behaviorKey,
+                authorityOrigin, authorityIdentity, "raid-response behavior",
+                target.ToString(), episode);
+            return intent.IsValid;
+        }
+
+        private bool TryRegisterRaidJob(Pawn pawn, Job job,
+            string behaviorKey, CAIntentController controller,
+            string authorityIdentity, IntVec3 target,
+            out CAIntentContext intent, int episode = 0,
+            bool genericAlarm = false)
+        {
+            intent = default(CAIntentContext);
+            if (pawn == null || job == null) return false;
+            bool relayed = false;
+            int age = 0;
+            float confidence = 0f;
+            float uncertainty = 1f;
+            bool live = false;
+            string knowledgeBasis = "no actor-held threat fact";
+            bool hasEvidence = genericAlarm || TryBehaviorEvidence(pawn,
+                out relayed, out age, out confidence, out uncertainty,
+                out live, out knowledgeBasis);
+            if (genericAlarm)
+            {
+                relayed = false;
+                age = 0;
+                confidence = 1f;
+                uncertainty = 0f;
+                live = true;
+                knowledgeBasis =
+                    "native colony raid alarm; no hostile identity or cell";
+            }
+            CAAuthorityOrigin origin = episode > 0
+                ? CAAuthorityOrigin.Continuation
+                : pawn.Faction == Faction.OfPlayer
+                    ? CAAuthorityOrigin.PlayerDelegated
+                    : CAAuthorityOrigin.NativeDuty;
+            var context = CABehaviorContext.ForPawn(pawn, origin,
+                authoritySatisfied: !string.IsNullOrWhiteSpace(
+                    authorityIdentity), knowledgeSatisfied: hasEvidence,
+                knowledgeFresh: hasEvidence, liveValidated: live,
+                knowledgeRelayed: relayed, knowledgeAgeTicks: age,
+                knowledgeConfidence: confidence,
+                knowledgeUncertainty: uncertainty,
+                capabilitySatisfied: pawn.CanReach(target,
+                    PathEndMode.OnCell, Danger.Deadly),
+                materialSatisfied: target.IsValid && target.InBounds(map),
+                currentIntentCompatible: !HasDirectPlayerControl(pawn),
+                directPlayerOwnership: HasDirectPlayerControl(pawn),
+                authorityBasis: authorityIdentity,
+                knowledgeBasis: knowledgeBasis,
+                owner: "raid-response behavior");
+            CABehaviorDecision decision;
+            if (episode > 0)
+                return CABehaviorJobOrigin.TryAuthorizeAndRegister(pawn, job,
+                    behaviorKey, controller, context, episode,
+                    out decision, out intent, target.ToString(),
+                    "raid-response behavior", 1800);
+            return CABehaviorJobOrigin.TryAuthorizeAndRegister(pawn, job,
+                behaviorKey, controller, context, out decision, out intent,
+                target.ToString(), "raid-response behavior", 1800);
+        }
+
         private static IntVec3 ThreatCentroidOf(List<IntVec3> threats)
         {
             if (threats == null || threats.Count == 0)
@@ -705,7 +919,8 @@ namespace ColonistAwareness
             for (int i = 0; i < colonists.Count; i++)
             {
                 var p = colonists[i];
-                if (AutonomyComponent.LevelOf(p) < 3) continue;
+                if (!CABehaviorGate.StableProfileAllows(p,
+                        "support.objective_defense")) continue;
                 if (p.equipment == null || p.equipment.Primary == null) continue;
                 if (p.WorkTagIsDisabled(WorkTags.Violent) || SquadComponent.CombatLiability(p)) continue;
                 int sq = SquadComponent.SquadOf(p);
@@ -753,13 +968,15 @@ namespace ColonistAwareness
             if (p == null || p.Dead || p.Downed || !p.Spawned) return false;
             if (p.InMentalState) return false;
             if (p.DevelopmentalStage == DevelopmentalStage.Baby) return false;
-            if (AutonomyComponent.LevelOf(p) < 2) return false;
+            if (!CABehaviorGate.StableProfileAllows(p,
+                    "combat.local_reaction")) return false;
             return !HasDirectPlayerControl(p);
         }
 
         private static bool IsAvailableFighter(Pawn p)
         {
-            return p != null && AutonomyComponent.LevelOf(p) >= 2
+            return p != null && CABehaviorGate.StableProfileAllows(p,
+                    "combat.local_reaction")
                 && p.equipment != null && p.equipment.Primary != null
                 && !p.WorkTagIsDisabled(WorkTags.Violent)
                 && !SquadComponent.CombatLiability(p);
@@ -1349,12 +1566,17 @@ namespace ColonistAwareness
                 if (!hadOwnership) episode = CACombatIntent.NewEpisode();
                 shelterCells[id] = cell;
                 shelterEpisodes[id] = episode;
+                if (!hadOwnership)
+                    shelterBehaviorKeys[id] = genericAlarm
+                        ? "survival.raid_alarm_shelter"
+                        : "survival.shelter";
                 CAIntentContext context = hadOwnership
                     ? new CAIntentContext(episode,
                         CAIntentOrigin.Continuation,
                         CAIntentController.Shelter, id)
-                    : CACombatIntent.Autonomous(pawn,
-                        CAIntentController.Shelter, episode);
+                    : CACombatIntent.ActorInitiated(pawn,
+                        CAIntentController.Shelter,
+                        episodeId: episode);
                 if (genericAlarm)
                     CATrace.Pawn(pawn,
                         "generic colony raid alarm accepted for civilian shelter; no hostile identity or cell granted",
@@ -1375,7 +1597,8 @@ namespace ColonistAwareness
                     intent: context);
             }
             StartShelterJob(pawn, cell, episode,
-                "established; " + route.Metrics);
+                "established; " + route.Metrics,
+                originating: !hadOwnership);
         }
 
         private void MaintainShelters(AwarenessSettings settings)
@@ -1398,10 +1621,15 @@ namespace ColonistAwareness
                 {
                     shelterCells.Remove(id);
                     shelterEpisodes.Remove(id);
+                    shelterBehaviorKeys.Remove(id);
                     continue;
                 }
                 if (pawn.Dead || pawn.Downed || !pawn.Spawned
-                    || pawn.InMentalState || AutonomyComponent.LevelOf(pawn) < 2
+                    || pawn.InMentalState
+                    || !shelterBehaviorKeys.TryGetValue(id,
+                        out string retainedBehaviorKey)
+                    || !CABehaviorGate.StableProfileAllows(pawn,
+                        retainedBehaviorKey)
                     || !shelterCells.TryGetValue(id, out cell)
                     || !shelterEpisodes.TryGetValue(id, out episode))
                 {
@@ -1482,7 +1710,7 @@ namespace ColonistAwareness
         }
 
         private void StartShelterJob(Pawn pawn, IntVec3 cell, int episode,
-            string reason)
+            string reason, bool originating = false)
         {
             CAIntentContext continuation = new CAIntentContext(episode,
                 CAIntentOrigin.Continuation,
@@ -1551,6 +1779,68 @@ namespace ColonistAwareness
             job.locomotionUrgency = LocomotionUrgency.Sprint;
             job.expiryInterval = 900;
             job.checkOverrideOnExpire = true;
+            bool player = pawn.Faction == Faction.OfPlayer;
+            string behaviorKey;
+            if (!shelterBehaviorKeys.TryGetValue(pawn.thingIDNumber,
+                    out behaviorKey))
+                behaviorKey = "survival.shelter";
+            bool genericAlarm = behaviorKey
+                == "survival.raid_alarm_shelter";
+            CAAuthorityOrigin origin = originating
+                ? player ? CAAuthorityOrigin.PlayerDelegated
+                    : CAAuthorityOrigin.NativeDuty
+                : CAAuthorityOrigin.Continuation;
+            bool relayedEvidence = false;
+            int evidenceAge = 0;
+            float evidenceConfidence = 0f;
+            float evidenceUncertainty = 1f;
+            bool evidenceLive = false;
+            string evidenceBasis = "no actor-held threat fact";
+            bool hasEvidence = genericAlarm || TryBehaviorEvidence(pawn,
+                out relayedEvidence, out evidenceAge, out evidenceConfidence,
+                out evidenceUncertainty, out evidenceLive,
+                out evidenceBasis);
+            var gateContext = CABehaviorContext.ForPawn(pawn, origin,
+                authoritySatisfied: true,
+                knowledgeSatisfied: hasEvidence,
+                knowledgeFresh: genericAlarm || evidenceAge <= 2500,
+                liveValidated: genericAlarm || evidenceLive,
+                knowledgeRelayed: !genericAlarm && relayedEvidence,
+                knowledgeAgeTicks: genericAlarm ? 0 : evidenceAge,
+                knowledgeConfidence: genericAlarm ? 1f
+                    : evidenceConfidence,
+                knowledgeUncertainty: genericAlarm ? 0f
+                    : evidenceUncertainty,
+                capabilitySatisfied: pawn.CanReach(cell,
+                    PathEndMode.OnCell, Danger.Deadly),
+                materialSatisfied: cell.Standable(map),
+                currentIntentCompatible: true,
+                directPlayerOwnership: false,
+                authorityBasis: originating
+                    ? player ? "delegated civilian shelter response"
+                        : "current NPC survival duty"
+                    : "retained shelter episode",
+                knowledgeBasis: genericAlarm
+                    ? "native colony raid alarm; no hostile identity or cell"
+                    : evidenceBasis,
+                owner: "owned civilian shelter");
+            CABehaviorDecision decision;
+            if (!CABehaviorJobOrigin.TryAuthorizeAndRegister(pawn, job,
+                behaviorKey, CAIntentController.Shelter,
+                gateContext, episode, out decision, out continuation,
+                cell.ToString(), "owned civilian shelter", 1800))
+            {
+                if (originating)
+                {
+                    shelterCells.Remove(pawn.thingIDNumber);
+                    shelterEpisodes.Remove(pawn.thingIDNumber);
+                    shelterBehaviorKeys.Remove(pawn.thingIDNumber);
+                }
+                CATrace.Skip(pawn, "shelter job decision",
+                    decision.PrimaryReason, destination: cell,
+                    anchor: pawn.Position, intent: continuation);
+                return;
+            }
             pawn.jobs.StartJob(job, JobCondition.InterruptForced);
             if (pawn.CurJob == job)
                 CATrace.Pawn(pawn, "shelter job STARTED - "
@@ -1604,6 +1894,7 @@ namespace ColonistAwareness
             shelterEpisodes.TryGetValue(id, out episode);
             shelterCells.Remove(id);
             shelterEpisodes.Remove(id);
+            shelterBehaviorKeys.Remove(id);
             CATrace.Pawn(pawn, "shelter intent ENDED - " + reason,
                 destination: cell, anchor: pawn.Position,
                 intent: episode > 0 ? (CAIntentContext?)new CAIntentContext(
@@ -1625,6 +1916,7 @@ namespace ColonistAwareness
                 {
                     shelterCells.Remove(ids[i]);
                     shelterEpisodes.Remove(ids[i]);
+                    shelterBehaviorKeys.Remove(ids[i]);
                 }
             }
         }

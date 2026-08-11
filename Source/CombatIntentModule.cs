@@ -18,7 +18,13 @@ namespace ColonistAwareness
         AutomaticDefense = 4,
         Continuation = 5,
         SaveRestore = 6,
-        PeerRelay = 7
+        PeerRelay = 7,
+        PlayerDelegated = 8,
+        NativeDuty = 9,
+        Institutional = 10,
+        Household = 11,
+        Organization = 12,
+        WorldAuthoring = 13
     }
 
     public enum CAIntentController
@@ -39,7 +45,11 @@ namespace ColonistAwareness
         CombatRecovery = 13,
         DraftCoordination = 14,
         AcousticInvestigation = 15,
-        Welfare = 16
+        Welfare = 16,
+        Logistics = 17,
+        SettlementDevelopment = 18,
+        Frontier = 19,
+        AssaultApproach = 20
     }
 
     internal enum CAIncomingEvasionResult
@@ -118,25 +128,125 @@ namespace ColonistAwareness
         }
     }
 
-    // One causal identity carried by an order or decision. The actor remains the
-    // pawn doing the work; issuerId identifies the direct hand or in-fiction relayer.
+    // One causal identity carried by an order or decision. The original four
+    // fields retain their numeric save identities; B6 adds catalog identity and
+    // authority/ownership facts so UI, trace, persistence and tests name the same
+    // commitment.
     public readonly struct CAIntentContext
     {
         public readonly int EpisodeId;
         public readonly CAIntentOrigin Origin;
         public readonly CAIntentController Controller;
         public readonly int IssuerId;
+        public readonly string BehaviorKey;
+        public readonly CAAuthorityOrigin AuthorityOrigin;
+        public readonly string AuthorityIdentity;
+        public readonly string OwnershipScope;
+        public readonly int OwnerId;
+        public readonly int CreatedTick;
+        public readonly CAInitiativeTier CreationTier;
+        public readonly string TargetOrDemand;
+        public readonly string TerminationCondition;
 
         public CAIntentContext(int episodeId, CAIntentOrigin origin,
-            CAIntentController controller, int issuerId)
+            CAIntentController controller, int issuerId,
+            string behaviorKey = null,
+            CAAuthorityOrigin authorityOrigin = CAAuthorityOrigin.None,
+            string authorityIdentity = null,
+            string ownershipScope = null, int ownerId = -1,
+            CAInitiativeTier creationTier = CAInitiativeTier.Standard,
+            string targetOrDemand = null, string terminationCondition = null,
+            int createdTick = -1)
         {
             EpisodeId = episodeId;
             Origin = origin;
             Controller = controller;
             IssuerId = issuerId;
+            BehaviorKey = string.IsNullOrEmpty(behaviorKey)
+                ? CABehaviorCatalog.KeyForController(controller, origin)
+                : behaviorKey;
+            AuthorityOrigin = authorityOrigin == CAAuthorityOrigin.None
+                ? CAIntentAuthority.FromIntentOrigin(origin) : authorityOrigin;
+            AuthorityIdentity = authorityIdentity ?? AuthorityOrigin.ToString();
+            OwnershipScope = ownershipScope ?? "actor";
+            OwnerId = ownerId >= 0 ? ownerId : issuerId;
+            CreatedTick = createdTick >= 0 ? createdTick
+                : Find.TickManager != null ? Find.TickManager.TicksGame : 0;
+            CreationTier = creationTier;
+            TargetOrDemand = targetOrDemand;
+            CABehaviorDefinition definition = CABehaviorCatalog.Get(BehaviorKey);
+            TerminationCondition = terminationCondition
+                ?? definition?.CompletionCondition
+                ?? "the owning intent completes or stands down";
         }
 
         public bool IsValid => EpisodeId > 0;
+    }
+
+    public static class CAIntentAuthority
+    {
+        public static CAAuthorityOrigin FromIntentOrigin(CAIntentOrigin origin)
+        {
+            switch (origin)
+            {
+                case CAIntentOrigin.OperatorDirect:
+                    return CAAuthorityOrigin.OperatorDirect;
+                case CAIntentOrigin.OperatorRelay:
+                    return CAAuthorityOrigin.OperatorRelay;
+                case CAIntentOrigin.Autonomous:
+                case CAIntentOrigin.PlayerDelegated:
+                    return CAAuthorityOrigin.PlayerDelegated;
+                case CAIntentOrigin.AutomaticDefense:
+                    return CAAuthorityOrigin.AutomaticDefense;
+                case CAIntentOrigin.Continuation:
+                    return CAAuthorityOrigin.Continuation;
+                case CAIntentOrigin.SaveRestore:
+                    return CAAuthorityOrigin.SaveRestore;
+                case CAIntentOrigin.PeerRelay:
+                    return CAAuthorityOrigin.PeerRequest;
+                case CAIntentOrigin.NativeDuty:
+                    return CAAuthorityOrigin.NativeDuty;
+                case CAIntentOrigin.Institutional:
+                    return CAAuthorityOrigin.Institutional;
+                case CAIntentOrigin.Household:
+                    return CAAuthorityOrigin.Household;
+                case CAIntentOrigin.Organization:
+                    return CAAuthorityOrigin.Organization;
+                case CAIntentOrigin.WorldAuthoring:
+                    return CAAuthorityOrigin.WorldAuthoring;
+                default:
+                    return CAAuthorityOrigin.None;
+            }
+        }
+
+        public static CAIntentOrigin ToIntentOrigin(CAAuthorityOrigin origin)
+        {
+            if ((origin & CAAuthorityOrigin.OperatorDirect) != 0)
+                return CAIntentOrigin.OperatorDirect;
+            if ((origin & CAAuthorityOrigin.OperatorRelay) != 0)
+                return CAIntentOrigin.OperatorRelay;
+            if ((origin & CAAuthorityOrigin.PlayerDelegated) != 0)
+                return CAIntentOrigin.PlayerDelegated;
+            if ((origin & CAAuthorityOrigin.NativeDuty) != 0)
+                return CAIntentOrigin.NativeDuty;
+            if ((origin & CAAuthorityOrigin.PeerRequest) != 0)
+                return CAIntentOrigin.PeerRelay;
+            if ((origin & CAAuthorityOrigin.AutomaticDefense) != 0)
+                return CAIntentOrigin.AutomaticDefense;
+            if ((origin & CAAuthorityOrigin.Institutional) != 0)
+                return CAIntentOrigin.Institutional;
+            if ((origin & CAAuthorityOrigin.Household) != 0)
+                return CAIntentOrigin.Household;
+            if ((origin & CAAuthorityOrigin.Organization) != 0)
+                return CAIntentOrigin.Organization;
+            if ((origin & CAAuthorityOrigin.Continuation) != 0)
+                return CAIntentOrigin.Continuation;
+            if ((origin & CAAuthorityOrigin.SaveRestore) != 0)
+                return CAIntentOrigin.SaveRestore;
+            if ((origin & CAAuthorityOrigin.WorldAuthoring) != 0)
+                return CAIntentOrigin.WorldAuthoring;
+            return CAIntentOrigin.Unknown;
+        }
     }
 
     // The combat-power axes the operator asked to distinguish. This is captured only
@@ -468,40 +578,111 @@ namespace ColonistAwareness
         }
 
         public static CAIntentContext Operator(Pawn issuer, Pawn actor,
-            CAIntentController controller, int episodeId = 0)
+            CAIntentController controller, int episodeId = 0,
+            string behaviorKey = null, string targetOrDemand = null)
         {
             if (episodeId <= 0) episodeId = NewEpisode();
             return new CAIntentContext(episodeId,
                 issuer == actor ? CAIntentOrigin.OperatorDirect
                     : CAIntentOrigin.OperatorRelay,
-                controller, issuer != null ? issuer.thingIDNumber : -1);
+                controller, issuer != null ? issuer.thingIDNumber : -1,
+                behaviorKey: behaviorKey,
+                authorityOrigin: issuer == actor
+                    ? CAAuthorityOrigin.OperatorDirect
+                    : CAAuthorityOrigin.OperatorRelay,
+                authorityIdentity: "operator",
+                ownershipScope: "operator order",
+                ownerId: actor != null ? actor.thingIDNumber : -1,
+                creationTier: actor != null
+                    ? AutonomyComponent.TierOf(actor)
+                    : CAInitiativeTier.Standard,
+                targetOrDemand: targetOrDemand);
         }
 
         public static CAIntentContext Autonomous(Pawn actor,
-            CAIntentController controller, int episodeId = 0)
+            CAIntentController controller, int episodeId = 0,
+            string behaviorKey = null, string authorityIdentity = null,
+            string targetOrDemand = null)
         {
-            if (episodeId <= 0) episodeId = NewEpisode();
-            return new CAIntentContext(episodeId, CAIntentOrigin.Autonomous,
-                controller, actor != null ? actor.thingIDNumber : -1);
+            return Authorized(actor, controller, behaviorKey,
+                CAAuthorityOrigin.PlayerDelegated,
+                authorityIdentity ?? "player delegation", "pawn behavior",
+                targetOrDemand, episodeId,
+                CAIntentOrigin.PlayerDelegated);
         }
 
-        public static CAIntentContext AutomaticDefense(Pawn actor, int episodeId = 0)
+        public static CAIntentContext Authorized(Pawn actor,
+            CAIntentController controller, string behaviorKey,
+            CAAuthorityOrigin authorityOrigin, string authorityIdentity,
+            string ownershipScope, string targetOrDemand = null,
+            int episodeId = 0,
+            CAIntentOrigin intentOrigin = CAIntentOrigin.Unknown,
+            int issuerId = -1, int ownerId = -1)
         {
             if (episodeId <= 0) episodeId = NewEpisode();
-            return new CAIntentContext(episodeId, CAIntentOrigin.AutomaticDefense,
-                CAIntentController.RaidDefense,
-                actor != null ? actor.thingIDNumber : -1);
+            if (intentOrigin == CAIntentOrigin.Unknown)
+                intentOrigin = CAIntentAuthority.ToIntentOrigin(
+                    authorityOrigin);
+            bool playerActor = actor != null
+                && actor.Faction == Faction.OfPlayer;
+            int actorId = actor != null ? actor.thingIDNumber : -1;
+            return new CAIntentContext(episodeId, intentOrigin, controller,
+                issuerId >= 0 ? issuerId : actorId,
+                behaviorKey: behaviorKey,
+                authorityOrigin: authorityOrigin,
+                authorityIdentity: authorityIdentity,
+                ownershipScope: ownershipScope ?? "pawn behavior",
+                ownerId: ownerId >= 0 ? ownerId : actorId,
+                creationTier: playerActor
+                    ? AutonomyComponent.TierOf(actor)
+                    : CAInitiativeTier.Standard,
+                targetOrDemand: targetOrDemand);
+        }
+
+        public static CAIntentContext ActorInitiated(Pawn actor,
+            CAIntentController controller, string behaviorKey = null,
+            string targetOrDemand = null, int episodeId = 0)
+        {
+            bool playerActor = actor != null
+                && actor.Faction == Faction.OfPlayer;
+            return Authorized(actor, controller, behaviorKey,
+                playerActor ? CAAuthorityOrigin.PlayerDelegated
+                    : CAAuthorityOrigin.NativeDuty,
+                playerActor ? "player delegation" : "native faction duty",
+                playerActor ? "pawn behavior" : "NPC doctrine",
+                targetOrDemand, episodeId);
+        }
+
+        public static CAIntentContext AutomaticDefense(Pawn actor,
+            int episodeId = 0, string behaviorKey = null,
+            string authorityIdentity = null, string targetOrDemand = null)
+        {
+            return Authorized(actor, CAIntentController.RaidDefense,
+                behaviorKey, CAAuthorityOrigin.AutomaticDefense,
+                authorityIdentity ?? "automatic defense",
+                "defensive tasking", targetOrDemand, episodeId,
+                CAIntentOrigin.AutomaticDefense);
         }
 
         public static CAIntentContext Continuation(Pawn actor,
-            CAIntentController controller)
+            CAIntentController controller, string behaviorKey = null)
         {
             CAIntentContext parent;
             if (actor != null && CATactical.TryGetContext(actor, out parent)
                 && parent.IsValid)
                 return new CAIntentContext(parent.EpisodeId,
-                    CAIntentOrigin.Continuation, controller, parent.IssuerId);
-            return Autonomous(actor, controller);
+                    CAIntentOrigin.Continuation, controller, parent.IssuerId,
+                    behaviorKey: behaviorKey ?? parent.BehaviorKey,
+                    authorityOrigin: CAAuthorityOrigin.Continuation,
+                    authorityIdentity: parent.AuthorityIdentity,
+                    ownershipScope: parent.OwnershipScope,
+                    ownerId: parent.OwnerId,
+                    creationTier: parent.CreationTier,
+                    targetOrDemand: parent.TargetOrDemand,
+                    terminationCondition: parent.TerminationCondition,
+                    createdTick: parent.CreatedTick);
+            return ActorInitiated(actor, controller,
+                behaviorKey: behaviorKey);
         }
 
         public static CAIntentContext CombatContinuation(Pawn actor,
@@ -511,7 +692,16 @@ namespace ColonistAwareness
             if (actor != null && CATactical.TryGetContext(actor, out parent)
                 && parent.IsValid)
                 return new CAIntentContext(parent.EpisodeId,
-                    CAIntentOrigin.Continuation, controller, parent.IssuerId);
+                    CAIntentOrigin.Continuation, controller, parent.IssuerId,
+                    behaviorKey: parent.BehaviorKey,
+                    authorityOrigin: CAAuthorityOrigin.Continuation,
+                    authorityIdentity: parent.AuthorityIdentity,
+                    ownershipScope: parent.OwnershipScope,
+                    ownerId: parent.OwnerId,
+                    creationTier: parent.CreationTier,
+                    targetOrDemand: parent.TargetOrDemand,
+                    terminationCondition: parent.TerminationCondition,
+                    createdTick: parent.CreatedTick);
 
             MovementRecord movement;
             int now = Find.TickManager != null ? Find.TickManager.TicksGame : 0;
@@ -522,17 +712,37 @@ namespace ColonistAwareness
                     || movement.TargetId == target.thingIDNumber))
                 return new CAIntentContext(movement.Context.EpisodeId,
                     CAIntentOrigin.Continuation, controller,
-                    movement.Context.IssuerId);
-            return Autonomous(actor, controller);
+                    movement.Context.IssuerId,
+                    behaviorKey: movement.Context.BehaviorKey,
+                    authorityOrigin: CAAuthorityOrigin.Continuation,
+                    authorityIdentity: movement.Context.AuthorityIdentity,
+                    ownershipScope: movement.Context.OwnershipScope,
+                    ownerId: movement.Context.OwnerId,
+                    creationTier: movement.Context.CreationTier,
+                    targetOrDemand: movement.Context.TargetOrDemand,
+                    terminationCondition: movement.Context.TerminationCondition,
+                    createdTick: movement.Context.CreatedTick);
+            return ActorInitiated(actor, controller);
         }
 
         public static CAIntentContext Restored(Pawn actor,
-            CAIntentController controller, int episodeId)
+            CAIntentController controller, int episodeId,
+            string behaviorKey = null, string authorityIdentity = null,
+            string targetOrDemand = null)
         {
             if (episodeId <= 0) episodeId = NewEpisode();
             ObserveEpisode(episodeId);
             return new CAIntentContext(episodeId, CAIntentOrigin.SaveRestore,
-                controller, actor != null ? actor.thingIDNumber : -1);
+                controller, actor != null ? actor.thingIDNumber : -1,
+                behaviorKey: behaviorKey,
+                authorityOrigin: CAAuthorityOrigin.SaveRestore,
+                authorityIdentity: authorityIdentity ?? "restored intent",
+                ownershipScope: "restored behavior",
+                ownerId: actor != null ? actor.thingIDNumber : -1,
+                creationTier: actor != null
+                    ? AutonomyComponent.TierOf(actor)
+                    : CAInitiativeTier.Standard,
+                targetOrDemand: targetOrDemand);
         }
 
         public static void RecordMovement(Pawn pawn, CAIntentContext context,
@@ -584,6 +794,13 @@ namespace ColonistAwareness
             context = default(CAIntentContext);
             if (pawn == null || job == null || !job.targetA.IsValid)
                 return false;
+            if (CABehaviorIntentMapComponent.For(pawn.Map)?.TryGet(pawn, job,
+                    out context) == true && context.IsValid)
+            {
+                RecordMovement(pawn, context, pawn.Position,
+                    job.targetA.Cell);
+                return true;
+            }
             MovementRecord movement;
             int now = Find.TickManager != null ? Find.TickManager.TicksGame : 0;
             if (!movements.TryGetValue(pawn.thingIDNumber, out movement)
@@ -1100,6 +1317,38 @@ namespace ColonistAwareness
                     intent: context);
                 return CAIncomingEvasionResult.None;
             }
+            bool player = pawn.Faction == Faction.OfPlayer;
+            var gateContext = CABehaviorContext.ForPawn(pawn,
+                player ? CAAuthorityOrigin.PlayerDelegated
+                    : CAAuthorityOrigin.NativeDuty,
+                authoritySatisfied: true, knowledgeSatisfied: true,
+                knowledgeFresh: true, liveValidated: true,
+                knowledgeRelayed: false, knowledgeAgeTicks: 0,
+                knowledgeConfidence: 1f, knowledgeUncertainty: 0f,
+                authorityBasis: player
+                    ? "player immediate-survival permission"
+                    : "native immediate-survival duty",
+                knowledgeBasis: "direct incoming explosive trajectory",
+                owner: player ? "pawn immediate survival"
+                    : "NPC immediate survival");
+            CABehaviorDecision gateDecision;
+            CAIntentContext authorizedContext;
+            if (!CABehaviorJobOrigin.TryAuthorizeAndRegister(pawn, job,
+                    "survival.immediate_evasion",
+                    CAIntentController.ExplosiveEvasion, gateContext,
+                    context.EpisodeId, out gateDecision,
+                    out authorizedContext,
+                    "clear simultaneous explosive envelopes at "
+                        + earliestHazard.Center,
+                    player ? "pawn immediate survival"
+                        : "NPC immediate survival",
+                    lifetimeTicks: Math.Max(600,
+                        earliestImpact - now + 600)))
+            {
+                job = null;
+                return CAIncomingEvasionResult.None;
+            }
+            context = authorizedContext;
             for (int i = 0; i < active.Count; i++)
             {
                 active[i].OrderedDestination = selected.Cell;
@@ -1460,8 +1709,9 @@ namespace ColonistAwareness
                     pawn.thingIDNumber);
             episode = NewEpisode();
             if (pawn != null) evasionEpisodes[pawn.thingIDNumber] = episode;
-            return Autonomous(pawn, CAIntentController.ExplosiveEvasion,
-                episode);
+            return ActorInitiated(pawn,
+                CAIntentController.ExplosiveEvasion,
+                "survival.immediate_evasion", episodeId: episode);
         }
     }
 

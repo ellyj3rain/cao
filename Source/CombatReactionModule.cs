@@ -59,9 +59,12 @@ namespace ColonistAwareness
             bool playerMayFight = !player || PlayerMaySelfReact(pawn, settings);
             bool actorMayFight = player ? playerMayFight
                 : assault && AssaulterMayFight(pawn);
+            bool playerMayEvade = player
+                && PlayerMayImmediateEvasion(pawn, settings);
             bool playerMayPreserve = player
                 && PlayerMaySelfPreserve(pawn, settings);
-            if (player && !playerMayFight && !playerMayPreserve) return null;
+            if (player && !playerMayFight && !playerMayEvade
+                && !playerMayPreserve) return null;
 
             ThreatContactSnapshot contact;
             bool hasContact = TryContact(pawn, settings, out contact);
@@ -84,43 +87,50 @@ namespace ColonistAwareness
             // paired native-seam patch records that stimulus early enough for this
             // same pass. Survival pressure bypasses recognition delay; being hit is
             // not an ambiguous report that needs further interpretation.
-            if (settings.survivalResponses && (assault || playerMayPreserve))
+            if (settings.survivalResponses
+                && (assault || playerMayEvade || playerMayPreserve))
             {
                 // A visible grenade or other explosive already in flight is a more
                 // immediate fact than target selection. It may interrupt an automatic
                 // weapon commitment, but CanThink above still protects direct or
                 // queued player-forced work.
-                Job evasion;
-                CAIncomingEvasionResult evasionState = CACombatIntent
-                    .ResolveIncomingHazardEvasion(pawn, out evasion);
-                if (evasionState == CAIncomingEvasionResult.Active)
+                if (assault || playerMayEvade)
                 {
-                    if (evasion != null && evasion != pawn.CurJob)
+                    Job evasion;
+                    CAIncomingEvasionResult evasionState = CACombatIntent
+                        .ResolveIncomingHazardEvasion(pawn, out evasion);
+                    if (evasionState == CAIncomingEvasionResult.Active)
                     {
-                        CAImmediateCombat
-                            .PrepareStandingCombatForImmediateEvasion(pawn);
-                        return evasion;
+                        if (evasion != null && evasion != pawn.CurJob)
+                        {
+                            CAImmediateCombat
+                                .PrepareStandingCombatForImmediateEvasion(pawn);
+                            return evasion;
+                        }
+                        // Returning the already-running route is the native think-tree
+                        // ownership token; lower nodes cannot replace it while the
+                        // physical deadline remains active.
+                        return evasion ?? pawn.CurJob;
                     }
-                    // Returning the already-running route is the native think-tree
-                    // ownership token; lower nodes cannot replace it while the
-                    // physical deadline remains active.
-                    return evasion ?? pawn.CurJob;
+                    if (evasionState == CAIncomingEvasionResult.Pending)
+                        return pawn.CurJob ?? PendingEvasionSearchJob();
                 }
-                if (evasionState == CAIncomingEvasionResult.Pending)
-                    return pawn.CurJob ?? PendingEvasionSearchJob();
 
-                Job survival;
-                CASelfPreservationAssessment assessment;
-                if (CAImmediateCombat.TrySelfPreservationJob(pawn,
-                    visible ? target : null,
-                    hasContact ? contact.Cell : IntVec3.Invalid,
-                    actorMayFight, out survival, out assessment))
+                if (assault || playerMayPreserve)
                 {
-                    // Retire any standing Hold, automatic station, concealment, or
-                    // stack membership so it cannot pull the pawn straight back into
-                    // the position they just judged untenable.
-                    CAImmediateCombat.ReleaseStandingCombatForSurvival(pawn);
-                    return survival;
+                    Job survival;
+                    CASelfPreservationAssessment assessment;
+                    if (CAImmediateCombat.TrySelfPreservationJob(pawn,
+                        visible ? target : null,
+                        hasContact ? contact.Cell : IntVec3.Invalid,
+                        actorMayFight, out survival, out assessment))
+                    {
+                        // Retire any standing Hold, automatic station, concealment, or
+                        // stack membership so it cannot pull the pawn straight back into
+                        // the position they just judged untenable.
+                        CAImmediateCombat.ReleaseStandingCombatForSurvival(pawn);
+                        return survival;
+                    }
                 }
             }
 
@@ -243,7 +253,8 @@ namespace ColonistAwareness
             if (CATactical.HasPendingOwnedPlayerForcedJob(pawn)) return false;
             if (pawn.CurJob != null && pawn.CurJob.playerForced
                 && (!CATactical.IsHold(pawn)
-                    || AutonomyComponent.LevelOf(pawn) < 2
+                    || !CABehaviorGate.StableProfileAllows(pawn,
+                        "combat.hold_deviation")
                     || !CAImmediateCombat.HarmedRecently(pawn))) return false;
             if (pawn.CurJob != null && IsFleeJob(pawn.CurJob)) return false;
             if (pawn.jobs == null) return false;
@@ -262,7 +273,8 @@ namespace ColonistAwareness
                 // remains the standing owner. Actual harm may still trigger the
                 // existing explicit break-contact path above.
                 if (!CATactical.IsHold(pawn)
-                    || AutonomyComponent.LevelOf(pawn) < 2) return false;
+                    || !CABehaviorGate.StableProfileAllows(pawn,
+                        "combat.hold_deviation")) return false;
             }
             return true;
         }
@@ -318,7 +330,8 @@ namespace ColonistAwareness
         internal static bool PlayerMaySelfReact(Pawn pawn, AwarenessSettings settings)
         {
             if (settings == null || !settings.raidResponse
-                || !PlayerMayUseReactionLane(pawn)) return false;
+                || !PlayerMayUseReactionLane(pawn,
+                    "combat.local_reaction")) return false;
             if (pawn.WorkTagIsDisabled(WorkTags.Violent)) return false;
             if (pawn.equipment == null || pawn.equipment.Primary == null) return false;
             if (SquadComponent.CombatLiability(pawn)) return false;
@@ -332,13 +345,24 @@ namespace ColonistAwareness
             AwarenessSettings settings)
         {
             return settings != null && settings.survivalResponses
-                && PlayerMayUseReactionLane(pawn);
+                && PlayerMayUseReactionLane(pawn,
+                    "combat.withdrawal_self_preservation");
         }
 
-        private static bool PlayerMayUseReactionLane(Pawn pawn)
+        internal static bool PlayerMayImmediateEvasion(Pawn pawn,
+            AwarenessSettings settings)
+        {
+            return settings != null && settings.survivalResponses
+                && PlayerMayUseReactionLane(pawn,
+                    "survival.immediate_evasion");
+        }
+
+        private static bool PlayerMayUseReactionLane(Pawn pawn,
+            string behaviorKey)
         {
             if (pawn == null) return false;
-            if (AutonomyComponent.LevelOf(pawn) < 2) return false;
+            if (!CABehaviorGate.StableProfileAllows(pawn, behaviorKey))
+                return false;
             Job cur = pawn.CurJob;
             if (cur == null) return true;
             return !IsEmergencyJob(pawn, cur) && !IsFleeJob(cur);
@@ -528,15 +552,49 @@ namespace ColonistAwareness
             AudibleCueMapComponent cues = AudibleCueMapComponent.For(pawn.Map);
             AudibleCueSnapshot cue;
             if (cues == null || !cues.TryGetPendingCue(pawn, out cue)) return null;
-            if (Find.TickManager.TicksGame - cue.AcquiredTick < ReactionDelay(pawn))
+            int now = Find.TickManager.TicksGame;
+            if (now - cue.AcquiredTick < ReactionDelay(pawn))
                 return null;
+
+            bool player = pawn.Faction == Faction.OfPlayer;
+            CAAuthorityOrigin origin = player
+                ? CAAuthorityOrigin.PlayerDelegated
+                : CAAuthorityOrigin.NativeDuty;
+            bool relayed = cue.Provenance != CueProvenance.DirectHearing;
+            var gateContext = CABehaviorContext.ForPawn(pawn, origin,
+                authoritySatisfied: true, knowledgeSatisfied: true,
+                knowledgeFresh: now - cue.SourceTick <= 2500,
+                liveValidated: true, knowledgeRelayed: relayed,
+                knowledgeAgeTicks: now - cue.SourceTick,
+                knowledgeConfidence: cue.Confidence,
+                knowledgeUncertainty: cue.UncertaintyRadius,
+                capabilitySatisfied: cue.ApproximateCell.IsValid
+                    && cue.ApproximateCell.InBounds(pawn.Map),
+                materialSatisfied: true,
+                directPlayerOwnership: pawn.CurJob != null
+                    && pawn.CurJob.playerForced,
+                authorityBasis: player ? "personal verification initiative"
+                    : "current NPC duty",
+                knowledgeBasis: relayed
+                    ? "relayed acoustic report with preserved source age"
+                    : "directly heard acoustic event",
+                owner: "one acoustic investigation");
+            CABehaviorDecision gate = CABehaviorGate.Evaluate(
+                "knowledge.acoustic_investigation", gateContext);
+            if (!gate.Allowed)
+            {
+                cues.MarkConsidered(pawn, cue.EventId);
+                CATrace.Skip(pawn, "gunfire investigation",
+                    gate.PrimaryReason, contact: cue.ApproximateCell);
+                return null;
+            }
 
             float score;
             bool investigate = AudibleCueResponse.ShouldInvestigate(
                 pawn, cue, out score);
             if (!investigate)
             {
-                CAIntentContext cueIntent = CACombatIntent.Autonomous(pawn,
+                CAIntentContext cueIntent = CACombatIntent.ActorInitiated(pawn,
                     CAIntentController.AcousticInvestigation);
                 cues.MarkConsidered(pawn, cue.EventId);
                 CATrace.Skip(pawn, "gunfire response",
@@ -546,9 +604,17 @@ namespace ColonistAwareness
                 return null;
             }
 
-            CAIntentContext investigationIntent = CACombatIntent.Autonomous(
-                pawn, CAIntentController.AcousticInvestigation);
             Job job = AudibleCueResponse.InvestigationJob(pawn, cue,
+                default(CAIntentContext));
+            CABehaviorDecision decision;
+            CAIntentContext investigationIntent;
+            if (!CABehaviorJobOrigin.TryAuthorizeAndRegister(pawn, job,
+                "knowledge.acoustic_investigation",
+                CAIntentController.AcousticInvestigation, gateContext,
+                out decision, out investigationIntent,
+                "acoustic event " + cue.EventId,
+                "one acoustic investigation", 1200)) return null;
+            AudibleCueResponse.StampInvestigationIntent(job,
                 investigationIntent);
             CATrace.Pawn(pawn,
                 "gunfire investigation ADOPTED for acoustic event "
@@ -635,8 +701,6 @@ namespace ColonistAwareness
         {
             Verb verb = pawn.TryGetAttackVerb(target, allowManualCastWeapons: false);
             if (verb == null) return null;
-            CAIntentContext intent = CACombatIntent.CombatContinuation(
-                pawn, target, CAIntentController.FirePosition);
             if (verb.verbProps.IsMeleeAttack)
             {
                 int commitRadius;
@@ -653,6 +717,17 @@ namespace ColonistAwareness
                 melee.maxNumMeleeAttacks = 1;
                 melee.expiryInterval = 600;
                 melee.checkOverrideOnExpire = false;
+                CABehaviorDecision decision;
+                CAIntentContext intent;
+                if (!CAImmediateCombat.TryRegisterCombatJob(pawn, melee,
+                        "combat.local_reaction", CAIntentController.RaidDefense,
+                        liveValidated: true, knowledgeAgeTicks: 0,
+                        knowledgeConfidence: 1f, knowledgeUncertainty: 0f,
+                        knowledgeRelayed: false,
+                        knowledgeBasis: "direct current sight",
+                        targetOrDemand: target.LabelShort + " at "
+                            + target.Position, out decision, out intent))
+                    return null;
                 CATrace.Pawn(pawn, "commits to melee contact " + target.LabelShort
                     + " within " + commitRadius + " cells (Melee "
                     + pawn.skills.GetSkill(SkillDefOf.Melee).Level + ", local support "
@@ -669,10 +744,22 @@ namespace ColonistAwareness
             fire.checkOverrideOnExpire = false;
             fire.endIfCantShootTargetFromCurPos = true;
             fire.preventFriendlyFire = true;
+            CABehaviorDecision rangedDecision;
+            CAIntentContext rangedIntent;
+            if (!CAImmediateCombat.TryRegisterCombatJob(pawn, fire,
+                    "combat.local_reaction", CAIntentController.RaidDefense,
+                    liveValidated: true, knowledgeAgeTicks: 0,
+                    knowledgeConfidence: 1f, knowledgeUncertainty: 0f,
+                    knowledgeRelayed: false,
+                    knowledgeBasis: "direct current sight",
+                    targetOrDemand: target.LabelShort + " at "
+                        + target.Position, out rangedDecision,
+                    out rangedIntent))
+                return null;
             CATrace.Pawn(pawn, "commits to ranged contact " + target.LabelShort
                 + " for two native attack cycles",
                 target: target, contact: contact.Cell, anchor: pawn.Position,
-                intent: intent);
+                intent: rangedIntent);
             return fire;
         }
 

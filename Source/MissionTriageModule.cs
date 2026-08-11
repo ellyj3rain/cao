@@ -308,12 +308,13 @@ namespace ColonistAwareness
                 return ownedRelease;
             }
 
-            if (settings == null || !settings.fieldMedicine
+            if (settings == null
                 || pawn.Drafted && !allowDraftedIdle
                 || pawn.WorkTagIsDisabled(WorkTags.Caring)
                 || pawn.health == null || pawn.health.capacities == null
                 || !pawn.health.capacities.CapableOf(PawnCapacityDefOf.Manipulation)
-                || AutonomyComponent.LevelOf(pawn) < 2)
+                || CAEffectiveBehaviorProfileCache.Of(pawn)?
+                    .Includes("welfare.mission_triage") != true)
                 return null;
             WithdrawalMapComponent withdrawal =
                 pawn.Map.GetComponent<WithdrawalMapComponent>();
@@ -521,9 +522,13 @@ namespace ColonistAwareness
         private static Job CandidateJob(Pawn rescuer,
             CATriageCandidate candidate)
         {
-            return candidate.IsSelf
+            Job job = candidate.IsSelf
                 ? TrySelfTendJob(rescuer, candidate)
                 : TryBeneficiaryJob(rescuer, candidate);
+            return AuthorizeMissionJob(rescuer, job, candidate.Fact,
+                candidate.Patient, candidate.IsSelf
+                    ? "stabilize the mission rescuer"
+                    : "care for a mission casualty");
         }
 
         private static Job ReportCandidateJob(Pawn rescuer,
@@ -584,7 +589,40 @@ namespace ColonistAwareness
             Job job = JobMaker.MakeJob(CA_Defs.AssessCasualty,
                 fact.lastKnownCell, fact.beneficiary);
             job.locomotionUrgency = LocomotionUrgency.Jog;
-            return job;
+            return AuthorizeMissionJob(rescuer, job, fact,
+                fact.beneficiary, "locate and assess a mission casualty");
+        }
+
+        private static Job AuthorizeMissionJob(Pawn rescuer, Job job,
+            MissionCasualtyFact fact, Pawn beneficiary, string demand)
+        {
+            if (rescuer == null || job == null) return null;
+            int now = Find.TickManager?.TicksGame ?? 0;
+            int sourceTick = fact?.eventSourceTick ?? now;
+            var context = CABehaviorContext.ForPawn(rescuer,
+                CAAuthorityOrigin.NativeDuty, authoritySatisfied: true,
+                knowledgeSatisfied: fact != null || beneficiary == rescuer,
+                knowledgeFresh: fact == null || fact.Actionable,
+                liveValidated: beneficiary != null && beneficiary.Spawned
+                    && !beneficiary.Dead,
+                knowledgeRelayed: false,
+                knowledgeAgeTicks: System.Math.Max(0, now - sourceTick),
+                capabilitySatisfied: !rescuer.WorkTagIsDisabled(
+                    WorkTags.Caring), materialSatisfied: true,
+                directPlayerOwnership: rescuer.CurJob != null
+                    && rescuer.CurJob.playerForced,
+                authorityBasis: "finite incident rescue responsibility",
+                knowledgeBasis: fact == null
+                    ? "current self-assessment"
+                    : "saved mission manifest and assessed evidence",
+                owner: "mission rescue responsibility");
+            CABehaviorDecision decision;
+            CAIntentContext intent;
+            return CABehaviorJobOrigin.TryAuthorizeAndRegister(rescuer, job,
+                "welfare.mission_triage", CAIntentController.Welfare,
+                context, out decision, out intent,
+                beneficiary?.LabelShort ?? demand,
+                "mission rescue responsibility", 10000) ? job : null;
         }
 
         internal static int AssessmentDuration(Pawn rescuer)
@@ -751,11 +789,12 @@ namespace ColonistAwareness
         internal static Job TryEmergencySelfTendJob(Pawn rescuer)
         {
             AwarenessSettings settings = AwarenessMod.Settings;
-            if (settings == null || !settings.fieldMedicine
+            if (settings == null
                 || rescuer == null || rescuer.Map == null || rescuer.health == null
                 || rescuer.Dead || rescuer.Downed || !rescuer.Awake()
                 || rescuer.InMentalState
-                || AutonomyComponent.LevelOf(rescuer) < 2
+                || CAEffectiveBehaviorProfileCache.Of(rescuer)?
+                    .Includes("welfare.mission_triage") != true
                 || rescuer.WorkTagIsDisabled(WorkTags.Caring)
                 || rescuer.health.capacities == null
                 || !rescuer.health.capacities.CapableOf(

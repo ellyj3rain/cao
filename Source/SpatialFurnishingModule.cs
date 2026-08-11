@@ -249,15 +249,11 @@ namespace ColonistAwareness
             if (map == null)
                 return "[CA] spatial furnishing opportunities: no current map";
 
-            List<ThingDef> storageCandidates = DefDatabase<ThingDef>
-                .AllDefsListForReading.Where(def => def != null
-                    && def.category == ThingCategory.Building
-                    && def.thingClass != null
-                    && typeof(Building_Storage).IsAssignableFrom(def.thingClass)
-                    && def.BuildableByPlayer && def.blueprintDef != null
-                    && def.building != null
-                    && def.building.maxItemsInCell > 1)
-                .OrderBy(def => def.defName).ToList();
+            CASettlementDevelopmentProposal storageFact =
+                CASettlementAssetRegistry.BuildDemandFact(
+                    CASettlementDemandKind.Storage);
+            List<ThingDef> storageCandidates = storageFact
+                .Candidates(CASettlementDemandKind.Storage).ToList();
             List<ThingDef> ambientContributors = DefDatabase<ThingDef>
                 .AllDefsListForReading.Where(IsAmbientContributor)
                 .OrderBy(def => def.defName).ToList();
@@ -297,7 +293,7 @@ namespace ColonistAwareness
                     + "continues to hold bulk output; neither form invalidates "
                     + "the other.")
                 .AppendLine("  initiative boundary: native stockpiles and "
-                    + "player-authored room programs share one saved four-level "
+                    + "player-authored room programs share one saved three-tier "
                     + "ceiling, default Standard, which may restrict but never "
                     + "raise pawn autonomy. Native stockpiles and authored "
                     + "Barracks expose their controls only with their operative "
@@ -940,9 +936,9 @@ namespace ColonistAwareness
                             continue;
                         }
 
-                        AcceptanceReport native = GenConstruct
-                            .CanPlaceBlueprintAt(def, center, rotation, map,
-                                godMode: false, null, null, stuff);
+                        AcceptanceReport native = CASettlementSitingConstraints
+                            .CanPlaceNativeBlueprint(map, def, center,
+                                rotation, stuff);
                         if (!native.Accepted) continue;
                         nativeAccepted++;
 
@@ -1019,7 +1015,8 @@ namespace ColonistAwareness
         }
 
         internal static bool TrySelectRoomFacilityPlan(Map map,
-            CASpaceProgram program, Pawn planner, int effectiveLevel,
+            CASpaceProgram program, Pawn planner,
+            CAInitiativeTier effectiveTier,
             out CARoomFacilityPlan selected, out string blocker)
         {
             selected = null;
@@ -1229,16 +1226,17 @@ namespace ColonistAwareness
                             // Autonomous may additionally address one exact
                             // missing relationship.
                             int proactiveMinimum = Math.Min(2, missing.Count);
-                            if (effectiveLevel == 2
+                            if (effectiveTier == CAInitiativeTier.Proactive
                                 && served.Count < proactiveMinimum)
                             {
                                 sharedRelationshipRejected++;
                                 continue;
                             }
 
-                            AcceptanceReport native = GenConstruct
-                                .CanPlaceBlueprintAt(def, center, rotation, map,
-                                    godMode: false, null, null, stuff);
+                            AcceptanceReport native =
+                                CASettlementSitingConstraints
+                                    .CanPlaceNativeBlueprint(map, def, center,
+                                        rotation, stuff);
                             if (!native.Accepted) continue;
                             nativeAccepted++;
                             if (occupied.Any(field.trafficLanes.Contains))
@@ -1457,21 +1455,9 @@ namespace ColonistAwareness
 
         internal static List<ThingDef> OperativeStorageDefinitions()
         {
-            ThingCategoryDef furniture = DefDatabase<ThingCategoryDef>
-                .GetNamedSilentFail("BuildingsFurniture");
-            if (furniture == null) return new List<ThingDef>();
-            return DefDatabase<ThingDef>.AllDefsListForReading.Where(def =>
-                    def != null && def.category == ThingCategory.Building
-                    && def.thingClass != null
-                    && typeof(Building_Storage).IsAssignableFrom(def.thingClass)
-                    && def.BuildableByPlayer && def.blueprintDef != null
-                    && def.blueprintDef.thingClass != null
-                    && typeof(Blueprint_Storage).IsAssignableFrom(
-                        def.blueprintDef.thingClass)
-                    && def.building != null
-                    && def.building.maxItemsInCell > 1
-                    && def.IsWithinCategory(furniture))
-                .OrderBy(def => def.defName, StringComparer.Ordinal).ToList();
+            CASettlementDevelopmentProposal fact = CASettlementAssetRegistry
+                .BuildDemandFact(CASettlementDemandKind.Storage);
+            return fact.Candidates(CASettlementDemandKind.Storage).ToList();
         }
 
         private static bool Prefer(CAStoragePlan candidate,
@@ -1901,9 +1887,9 @@ namespace ColonistAwareness
                         probe.noStuff++;
                         continue;
                     }
-                    AcceptanceReport native = GenConstruct.CanPlaceBlueprintAt(
-                        def, center, rotation, map, godMode: false, null, null,
-                        stuff);
+                    AcceptanceReport native = CASettlementSitingConstraints
+                        .CanPlaceNativeBlueprint(map, def, center, rotation,
+                            stuff);
                     if (!native.Accepted)
                     {
                         string reason = NativeReason(native.Reason);

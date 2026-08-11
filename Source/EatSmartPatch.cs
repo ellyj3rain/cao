@@ -24,7 +24,7 @@ namespace ColonistAwareness
                 if (s == null || !s.eatSmart) return true;
                 if (pawn == null || pawn.Map == null || pawn.Downed) return true;
                 if (!pawn.IsColonist || pawn.IsPrisoner) return true;
-                // Eat smart is part of the survival floor and still runs at Directed.
+                // Eat smart is part of the survival floor and still runs at Standard.
                 var food = pawn.needs == null ? null : pawn.needs.food;
                 if (food == null) return true;
 
@@ -270,7 +270,7 @@ namespace ColonistAwareness
                 .GetComponent<RaidResponseMapComponent>();
             bool shelterOwned = raid != null && raid.HasShelter(pawn)
                 && CACombatThreat.MapHasActiveThreat(pawn.Map);
-            CAIntentContext intent = CACombatIntent.Autonomous(pawn,
+            CAIntentContext intent = CACombatIntent.ActorInitiated(pawn,
                 CAIntentController.FoodSafety);
             CATrace.Skip(pawn, "routine meal pickup",
                 shelterOwned

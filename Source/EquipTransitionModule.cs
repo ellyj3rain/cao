@@ -61,12 +61,15 @@ namespace ColonistAwareness
             public readonly bool Known;
             public readonly Pawn VisiblePawn;
             public readonly IntVec3 Cell;
+            public readonly ThreatContactSnapshot Fact;
 
-            public PerceivedThreat(bool known, Pawn visiblePawn, IntVec3 cell)
+            public PerceivedThreat(bool known, Pawn visiblePawn, IntVec3 cell,
+                ThreatContactSnapshot fact)
             {
                 Known = known;
                 VisiblePawn = visiblePawn;
                 Cell = cell;
+                Fact = fact;
             }
         }
 
@@ -77,9 +80,17 @@ namespace ColonistAwareness
         // ownership token prevents a later auto-return from undoing a different
         // weapon the player equipped by hand.
         private Dictionary<int, int> transitionWeapon = new Dictionary<int, int>();
+        private Dictionary<int, int> transitionEpisodes =
+            new Dictionary<int, int>();
+        private Dictionary<int, int> transitionAuthorityOrigins =
+            new Dictionary<int, int>();
         // pawnId -> offhand thingIDNumber selected by this component. Manual
         // offhands are never auto-stowed or touched by kill-switch cleanup.
         private Dictionary<int, int> automaticOffhand = new Dictionary<int, int>();
+        // The exact weapon-transition episode that authorized the automatic
+        // offhand. A missing or changed episode releases the claim.
+        private Dictionary<int, int> automaticOffhandEpisodes =
+            new Dictionary<int, int>();
         private Dictionary<int, int> calmScans = new Dictionary<int, int>();
 
         public EquipTransitionMapComponent(Map map) : base(map) { }
@@ -91,14 +102,31 @@ namespace ColonistAwareness
             base.ExposeData();
             Scribe_Collections.Look(ref stowedPrimary, "CA_stowedPrimary", LookMode.Value, LookMode.Value);
             Scribe_Collections.Look(ref transitionWeapon, "CA_transitionWeapon", LookMode.Value, LookMode.Value);
+            Scribe_Collections.Look(ref transitionEpisodes,
+                "CA_transitionEpisodes", LookMode.Value, LookMode.Value);
+            Scribe_Collections.Look(ref transitionAuthorityOrigins,
+                "CA_transitionAuthorityOrigins", LookMode.Value,
+                LookMode.Value);
             Scribe_Collections.Look(ref automaticOffhand, "CA_automaticOffhand", LookMode.Value, LookMode.Value);
+            Scribe_Collections.Look(ref automaticOffhandEpisodes,
+                "CA_automaticOffhandEpisodes", LookMode.Value,
+                LookMode.Value);
             Scribe_Collections.Look(ref calmScans, "CA_calmScans", LookMode.Value, LookMode.Value);
             Scribe_Collections.Look(ref offhandCalm, "CA_offhandCalm", LookMode.Value, LookMode.Value);
             if (stowedPrimary == null) stowedPrimary = new Dictionary<int, int>();
             if (transitionWeapon == null) transitionWeapon = new Dictionary<int, int>();
+            if (transitionEpisodes == null)
+                transitionEpisodes = new Dictionary<int, int>();
+            if (transitionAuthorityOrigins == null)
+                transitionAuthorityOrigins = new Dictionary<int, int>();
             if (automaticOffhand == null) automaticOffhand = new Dictionary<int, int>();
+            if (automaticOffhandEpisodes == null)
+                automaticOffhandEpisodes = new Dictionary<int, int>();
             if (calmScans == null) calmScans = new Dictionary<int, int>();
             if (offhandCalm == null) offhandCalm = new Dictionary<int, int>();
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+                foreach (int episode in transitionEpisodes.Values)
+                    CACombatIntent.ObserveEpisode(episode);
         }
 
         public override void FinalizeInit()
@@ -146,10 +174,10 @@ namespace ColonistAwareness
                 }
 
                 PerceivedThreat threat = NearestThreat(p, 12f);
-                ManageOffhand(p, threat.Known);
+                bool actionableThreat = threat.VisiblePawn != null;
+                ManageOffhand(p, threat.VisiblePawn);
                 var primary = p.equipment.Primary;
 
-                bool actionableThreat = threat.VisiblePawn != null;
                 if (actionableThreat && primary != null
                     && primary.def.IsRangedWeapon)
                 {
@@ -226,6 +254,31 @@ namespace ColonistAwareness
 
         private void TryTransition(Pawn p, Pawn threat, ThingWithComps primary, float dist)
         {
+            bool player = p.Faction == Faction.OfPlayer;
+            bool directOwnership = player && HasDirectPlayerControl(p);
+            CAAuthorityOrigin authorityOrigin = player
+                ? CAAuthorityOrigin.PlayerDelegated
+                : CAAuthorityOrigin.NativeDuty;
+            bool hasCandidate = BestInventoryMelee(p) != null
+                || BestInventoryShortRanged(p, primary) != null
+                || SidearmsBridge.Present;
+            var gateContext = CABehaviorContext.ForPawn(p, authorityOrigin,
+                authoritySatisfied: true, knowledgeSatisfied: threat != null,
+                knowledgeFresh: true, liveValidated: threat != null
+                    && KnowledgeMapComponent.CanCurrentlySeeHostile(p, threat),
+                knowledgeRelayed: false, knowledgeAgeTicks: 0,
+                capabilitySatisfied: hasCandidate,
+                materialSatisfied: hasCandidate,
+                currentIntentCompatible: !directOwnership,
+                directPlayerOwnership: directOwnership,
+                authorityBasis: player ? "personal close-threat response"
+                    : "current NPC combat duty",
+                knowledgeBasis: "current direct sight of a close hostile",
+                owner: "one weapon transition");
+            CABehaviorDecision decision = CABehaviorGate.Evaluate(
+                "operations.weapon_transition", gateContext);
+            if (!decision.Allowed) return;
+
             int primaryId = primary.thingIDNumber;
             bool swapped = false;
 
@@ -266,13 +319,22 @@ namespace ColonistAwareness
                 ThingWithComps replacement = p.equipment.Primary;
                 if (replacement != null)
                 {
+                    int episode = CACombatIntent.NewEpisode();
+                    transitionEpisodes[p.thingIDNumber] = episode;
+                    transitionAuthorityOrigins[p.thingIDNumber] =
+                        (int)authorityOrigin;
+                    CAIntentContext transitionIntent = CACombatIntent.Authorized(
+                        p, CAIntentController.RaidDefense,
+                        "operations.weapon_transition", authorityOrigin,
+                        gateContext.AuthorityBasis, "one weapon transition",
+                        threat.LabelShort, episode);
                     transitionWeapon[p.thingIDNumber] = replacement.thingIDNumber;
                     CATrace.Pawn(p, "weapon transition ADOPTED - "
                         + primary.LabelShort + " -> " + replacement.LabelShort
                         + " for visible " + threat.LabelShort + " at "
                         + dist.ToString("F1") + " cells",
                         target: threat, contact: threat.Position,
-                        anchor: p.Position);
+                        anchor: p.Position, intent: transitionIntent);
                 }
             }
         }
@@ -293,12 +355,22 @@ namespace ColonistAwareness
                 if (w == null || w.thingIDNumber != id) continue;
                 ThingWithComps replacement = p.equipment.Primary;
                 if (!SidearmsBridge.Equip(p, w) && !EquipFromInventory(p, w)) return false;
+                int transitionEpisode;
+                transitionEpisodes.TryGetValue(p.thingIDNumber,
+                    out transitionEpisode);
                 ForgetTransition(p.thingIDNumber);
                 CATrace.Pawn(p, "weapon transition ENDED - "
                     + (replacement != null ? replacement.LabelShort : "replacement")
                     + " -> " + w.LabelShort
                     + " after direct close contact ended",
-                    anchor: p.Position);
+                    anchor: p.Position,
+                    intent: transitionEpisode > 0
+                        ? new CAIntentContext(transitionEpisode,
+                        CAIntentOrigin.Continuation,
+                        CAIntentController.RaidDefense,
+                        p.thingIDNumber,
+                        behaviorKey: "operations.weapon_transition")
+                        : default(CAIntentContext));
                 return true;
             }
             // primary lost or dropped somewhere along the way - nothing to return to
@@ -319,6 +391,8 @@ namespace ColonistAwareness
         {
             stowedPrimary.Remove(pawnId);
             transitionWeapon.Remove(pawnId);
+            transitionEpisodes.Remove(pawnId);
+            transitionAuthorityOrigins.Remove(pawnId);
             calmScans.Remove(pawnId);
         }
 
@@ -420,18 +494,24 @@ namespace ColonistAwareness
             return null;
         }
 
-        // Autonomous pawns run their own hands: a threat appears and the main hand is
-        // one-handed - draw a second weapon from inventory; the fight ends - stow it.
+        // A registered weapon-transition intent may use the off hand when the
+        // execution capability is enabled; the capability never originates action.
         private Dictionary<int, int> offhandCalm = new Dictionary<int, int>();
 
-        private void ManageOffhand(Pawn p, bool threatKnown)
+        private void ManageOffhand(Pawn p, Pawn visibleThreat)
         {
             var s = AwarenessMod.Settings;
             if (automaticOffhand.ContainsKey(p.thingIDNumber)
                 && !OwnsCurrentOffhand(p))
                 ForgetAutomaticOffhand(p.thingIDNumber);
-            if (s == null || !s.dualWield
-                || p.IsColonistPlayerControlled && AutonomyComponent.LevelOf(p) < 3)
+            int episode = 0;
+            int authorityValue = 0;
+            bool ownsTransition = StillOwnsTransition(p)
+                && transitionEpisodes.TryGetValue(p.thingIDNumber,
+                    out episode) && episode > 0
+                && transitionAuthorityOrigins.TryGetValue(
+                    p.thingIDNumber, out authorityValue);
+            if (s == null || !s.dualWield || !ownsTransition)
             {
                 ClearOwnedOffhand(p);
                 return;
@@ -439,15 +519,45 @@ namespace ColonistAwareness
 
             ThingWithComps currentOffhand = OffhandComponent.GetOffhand(p);
             bool hasOff = currentOffhand != null;
-            if (threatKnown)
+            if (visibleThreat != null)
             {
                 offhandCalm.Remove(p.thingIDNumber);
                 if (hasOff) return;
                 var primary = p.equipment.Primary;
                 if (primary != null && !OffhandComponent.CanBeOffhand(primary.def)) return; // two-handed main
                 var cand = BestOffhandCandidate(p);
-                if (cand != null && OffhandComponent.SetOffhand(p, cand))
+                bool current = visibleThreat.Spawned
+                    && visibleThreat.Map == map && !visibleThreat.Dead
+                    && GenHostility.HostileTo(visibleThreat, p)
+                    && KnowledgeMapComponent.CanCurrentlySeeHostile(
+                        p, visibleThreat);
+                bool directOwnership = p.Faction == Faction.OfPlayer
+                    && HasDirectPlayerControl(p);
+                var context = CABehaviorContext.ForPawn(p,
+                    (CAAuthorityOrigin)authorityValue,
+                    authoritySatisfied: ownsTransition,
+                    knowledgeSatisfied: current,
+                    knowledgeFresh: current,
+                    liveValidated: current,
+                    knowledgeConfidence: 1f,
+                    knowledgeUncertainty: 0f,
+                    capabilitySatisfied: cand != null
+                        && OffhandComponent.CanBeOffhand(cand.def),
+                    materialSatisfied: cand != null,
+                    currentIntentCompatible: !directOwnership,
+                    directPlayerOwnership: directOwnership,
+                    authorityBasis: "weapon-transition episode " + episode,
+                    knowledgeBasis: "current direct sight of "
+                        + visibleThreat.LabelShort,
+                    owner: "weapon-transition episode " + episode);
+                CABehaviorDecision decision = CABehaviorGate.Evaluate(
+                    "operations.weapon_transition", context);
+                if (decision.Allowed && cand != null
+                    && OffhandComponent.SetOffhand(p, cand))
+                {
                     automaticOffhand[p.thingIDNumber] = cand.thingIDNumber;
+                    automaticOffhandEpisodes[p.thingIDNumber] = episode;
+                }
             }
             else if (hasOff && OwnsCurrentOffhand(p))
             {
@@ -463,10 +573,17 @@ namespace ColonistAwareness
         private bool OwnsCurrentOffhand(Pawn pawn)
         {
             int weaponId;
+            int offhandEpisode;
+            int transitionEpisode;
             ThingWithComps offhand = OffhandComponent.GetOffhand(pawn);
             return offhand != null
                 && automaticOffhand.TryGetValue(pawn.thingIDNumber, out weaponId)
-                && offhand.thingIDNumber == weaponId;
+                && offhand.thingIDNumber == weaponId
+                && automaticOffhandEpisodes.TryGetValue(
+                    pawn.thingIDNumber, out offhandEpisode)
+                && transitionEpisodes.TryGetValue(
+                    pawn.thingIDNumber, out transitionEpisode)
+                && offhandEpisode == transitionEpisode;
         }
 
         private void ClearOwnedOffhand(Pawn pawn)
@@ -481,6 +598,7 @@ namespace ColonistAwareness
         private void ForgetAutomaticOffhand(int pawnId)
         {
             automaticOffhand.Remove(pawnId);
+            automaticOffhandEpisodes.Remove(pawnId);
             offhandCalm.Remove(pawnId);
         }
 
@@ -597,7 +715,7 @@ namespace ColonistAwareness
 
                 Pawn visible = VisiblePawnById(p, best.HostileId, radius);
                 return new PerceivedThreat(true, visible,
-                    visible != null ? visible.Position : best.Cell);
+                    visible != null ? visible.Position : best.Cell, best);
             }
 
             Pawn nearest = null;
@@ -612,8 +730,13 @@ namespace ColonistAwareness
                 bestDist = distance;
                 nearest = hostile;
             }
-            return nearest != null
-                ? new PerceivedThreat(true, nearest, nearest.Position) : default;
+            if (nearest == null) return default;
+            int tick = Find.TickManager.TicksGame;
+            var direct = new ThreatContactSnapshot(nearest.thingIDNumber,
+                nearest.Position, tick, tick, true,
+                ContactWeaponCategory.Unknown);
+            return new PerceivedThreat(true, nearest, nearest.Position,
+                direct);
         }
 
         private Pawn VisiblePawnById(Pawn observer, int id, float radius)
@@ -632,7 +755,9 @@ namespace ColonistAwareness
 
         private static bool MayTransition(Pawn p)
         {
-            if (p.IsColonistPlayerControlled) return AutonomyComponent.LevelOf(p) >= 2;
+            if (p.IsColonistPlayerControlled)
+                return CABehaviorGate.StableProfileAllows(p,
+                    "operations.weapon_transition");
             var lord = p.GetLord();
             return lord != null && lord.LordJob != null
                 && lord.LordJob.GetType() == typeof(LordJob_AssaultColony)

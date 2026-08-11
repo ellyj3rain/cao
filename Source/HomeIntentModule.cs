@@ -270,11 +270,66 @@ namespace ColonistAwareness
         }
     }
 
+    internal sealed class CAResidentRosterIntent : IExposable
+    {
+        public int residentId = -1;
+        public int programId;
+        public string behaviorKey;
+        public int episodeId;
+        public CAIntentOrigin intentOrigin;
+        public CAIntentController intentController;
+        public int issuerId = -1;
+        public CAAuthorityOrigin authorityOrigin;
+        public string authorityIdentity;
+        public string ownershipScope;
+        public int ownerId = -1;
+        public int createdTick;
+        public CAInitiativeTier creationTier;
+        public string targetOrDemand;
+        public string terminationCondition;
+
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref residentId, "residentId", -1);
+            Scribe_Values.Look(ref programId, "programId");
+            Scribe_Values.Look(ref behaviorKey, "behaviorKey");
+            Scribe_Values.Look(ref episodeId, "episodeId");
+            Scribe_Values.Look(ref intentOrigin, "intentOrigin",
+                CAIntentOrigin.Unknown);
+            Scribe_Values.Look(ref intentController, "intentController",
+                CAIntentController.Unknown);
+            Scribe_Values.Look(ref issuerId, "issuerId", -1);
+            Scribe_Values.Look(ref authorityOrigin, "authorityOrigin",
+                CAAuthorityOrigin.None);
+            Scribe_Values.Look(ref authorityIdentity, "authorityIdentity");
+            Scribe_Values.Look(ref ownershipScope, "ownershipScope");
+            Scribe_Values.Look(ref ownerId, "ownerId", -1);
+            Scribe_Values.Look(ref createdTick, "createdTick");
+            Scribe_Values.Look(ref creationTier, "creationTier",
+                CAInitiativeTier.Standard);
+            Scribe_Values.Look(ref targetOrDemand, "targetOrDemand");
+            Scribe_Values.Look(ref terminationCondition,
+                "terminationCondition");
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+                CACombatIntent.ObserveEpisode(episodeId);
+        }
+
+        public CAIntentContext Context()
+        {
+            return new CAIntentContext(episodeId, intentOrigin,
+                intentController, issuerId, behaviorKey, authorityOrigin,
+                authorityIdentity, ownershipScope, ownerId, creationTier,
+                targetOrDemand, terminationCondition, createdTick);
+        }
+    }
+
     // Space programs remain independent of RimWorld ZoneManager because its
     // one-zone-per-cell grid would collide with stockpiles and growing zones.
     public class PlannedUseMapComponent : MapComponent
     {
         private List<CASpaceProgram> programs = new List<CASpaceProgram>();
+        private List<CAResidentRosterIntent> residentRosterIntents =
+            new List<CAResidentRosterIntent>();
         private int nextProgramId = 1;
         private byte[] legacyPlannedUses;
         private CASpaceProgram[] programGrid;
@@ -307,12 +362,16 @@ namespace ColonistAwareness
         {
             base.ExposeData();
             Scribe_Collections.Look(ref programs, "CA_spacePrograms", LookMode.Deep);
+            Scribe_Collections.Look(ref residentRosterIntents,
+                "CA_residentRosterIntents", LookMode.Deep);
             Scribe_Values.Look(ref nextProgramId, "CA_spaceProgramNextId", 1);
             DataExposeUtility.LookByteArray(ref legacyPlannedUses,
                 "CA_plannedUseGrid");
             if (Scribe.mode == LoadSaveMode.LoadingVars)
             {
                 EnsurePrograms();
+                if (residentRosterIntents == null)
+                    residentRosterIntents = new List<CAResidentRosterIntent>();
                 programGrid = null;
                 drawer = null;
             }
@@ -323,6 +382,7 @@ namespace ColonistAwareness
             base.FinalizeInit();
             EnsurePrograms();
             NormalizeResidentAssignments();
+            PruneResidentRosterIntents();
             MigrateLegacyGrid();
             RebuildGrid();
         }
@@ -494,6 +554,7 @@ namespace ColonistAwareness
             {
                 program.residents.Remove(pawn);
                 program.residentAuthor = CAResidentRosterAuthor.Player;
+                RemoveResidentRosterIntents(program);
                 MarkDirty();
                 return true;
             }
@@ -513,10 +574,14 @@ namespace ColonistAwareness
             {
                 CASpaceProgram other = programs[i];
                 if (other != null && other != program && other.residents != null)
+                {
                     other.residents.Remove(pawn);
+                    RemoveResidentRosterIntent(pawn, other);
+                }
             }
             program.residents.Add(pawn);
             program.residentAuthor = CAResidentRosterAuthor.Player;
+            RemoveResidentRosterIntents(program);
             if (!TryClaimExistingSharedBed(program))
                 TryClaimExistingSingleBed(program, pawn);
             MarkDirty();
@@ -545,6 +610,8 @@ namespace ColonistAwareness
                 return false;
             }
             program.residentAuthor = author;
+            if (author == CAResidentRosterAuthor.Player)
+                RemoveResidentRosterIntents(program);
             MarkDirty();
             return true;
         }
@@ -552,7 +619,7 @@ namespace ColonistAwareness
         public bool TryNegotiateResidents(out string outcome)
         {
             EnsurePrograms();
-            NormalizeResidentAssignments();
+            PruneResidentRosterIntents();
             outcome = "resident rosters are stable";
             var sleepPrograms = programs.Where(program => program != null
                 && program.cells != null && program.cells.Count > 0
@@ -569,13 +636,6 @@ namespace ColonistAwareness
             }
 
             bool changed = false;
-            for (int i = 0; i < negotiable.Count; i++)
-            {
-                CASpaceProgram program = negotiable[i];
-                if (program.residentAuthor == CAResidentRosterAuthor.Pawn
-                    && program.residents.RemoveAll(pawn => !ValidResident(pawn)) > 0)
-                    changed = true;
-            }
 
             var playerResidents = new HashSet<Pawn>();
             for (int i = 0; i < sleepPrograms.Count; i++)
@@ -615,7 +675,11 @@ namespace ColonistAwareness
                     ThingInsideProgram(owned, program));
                 if (negotiable.Contains(target)
                     && CanJoinNegotiatedProgram(target, pawn)
-                    && AddNegotiatedResident(target, pawn))
+                    && TryAuthorizeResidentChoice(pawn, target,
+                        "their owned " + owned.def.defName + " at "
+                        + owned.Position + " is inside the authored sleeping program",
+                        out CAIntentContext residentIntent)
+                    && AddNegotiatedResident(target, pawn, residentIntent))
                 {
                     assigned.Add(pawn);
                     additions.Add(pawn.LabelShort + " kept their owned bed in "
@@ -638,7 +702,11 @@ namespace ColonistAwareness
                 if (partner == null || !assigned.Contains(partner)) continue;
                 CASpaceProgram target = ResidentProgramFor(partner);
                 if (!CanJoinNegotiatedProgram(target, pawn)) continue;
-                if (AddNegotiatedResident(target, pawn))
+                if (TryAuthorizeResidentChoice(pawn, target,
+                        "their current native love relationship with "
+                        + partner.LabelShort + " supports joining that resident's authored sleeping program",
+                        out CAIntentContext residentIntent)
+                    && AddNegotiatedResident(target, pawn, residentIntent))
                 {
                     assigned.Add(pawn);
                     additions.Add(pawn.LabelShort + " joined " + partner.LabelShort
@@ -681,8 +749,28 @@ namespace ColonistAwareness
                     }
                 }
                 if (bestFirst == null) continue;
-                AddNegotiatedResident(bedrooms[b], bestFirst);
-                AddNegotiatedResident(bedrooms[b], bestSecond);
+                string pairBasis = "their current mutual native love relationship supports choosing the same empty authored Bedroom";
+                if (!TryAuthorizeResidentChoice(bestFirst, bedrooms[b],
+                        pairBasis, out CAIntentContext firstIntent)
+                    || !TryAuthorizeResidentChoice(bestSecond, bedrooms[b],
+                        pairBasis, out CAIntentContext secondIntent))
+                    continue;
+                if (!AddNegotiatedResident(bedrooms[b], bestFirst,
+                        firstIntent, claimBed: false)
+                    || !AddNegotiatedResident(bedrooms[b], bestSecond,
+                        secondIntent, claimBed: false))
+                {
+                    bedrooms[b].residents?.Remove(bestFirst);
+                    bedrooms[b].residents?.Remove(bestSecond);
+                    RemoveResidentRosterIntent(bestFirst, bedrooms[b]);
+                    RemoveResidentRosterIntent(bestSecond, bedrooms[b]);
+                    continue;
+                }
+                if (!TryClaimExistingSharedBed(bedrooms[b]))
+                {
+                    TryClaimExistingSingleBed(bedrooms[b], bestFirst);
+                    TryClaimExistingSingleBed(bedrooms[b], bestSecond);
+                }
                 assigned.Add(bestFirst);
                 assigned.Add(bestSecond);
                 additions.Add(bestFirst.LabelShort + " and "
@@ -715,7 +803,11 @@ namespace ColonistAwareness
                     }
                 }
                 if (best == null) continue;
-                if (AddNegotiatedResident(best, pawn))
+                if (TryAuthorizeResidentChoice(pawn, best,
+                        "the authored Barracks has current capacity and a native social fit of "
+                        + bestScore.ToString("F1"),
+                        out CAIntentContext residentIntent)
+                    && AddNegotiatedResident(best, pawn, residentIntent))
                 {
                     assigned.Add(pawn);
                     additions.Add(pawn.LabelShort + " chose " + best.label
@@ -777,6 +869,7 @@ namespace ColonistAwareness
             for (int i = programs.Count - 1; i >= 0; i--)
                 if (programs[i] == null || programs[i].cells.Count == 0)
                     programs.RemoveAt(i);
+            PruneResidentRosterIntents();
             MarkDirty();
         }
 
@@ -796,6 +889,7 @@ namespace ColonistAwareness
             for (int i = programs.Count - 1; i >= 0; i--)
                 if (programs[i] == null || programs[i].cells.Count == 0)
                     programs.RemoveAt(i);
+            PruneResidentRosterIntents();
             MarkDirty();
         }
 
@@ -836,7 +930,9 @@ namespace ColonistAwareness
         public string Census()
         {
             EnsurePrograms();
-            if (programs.Count == 0) return "[CA] space programs: none";
+            PruneResidentRosterIntents();
+            if (programs.Count == 0)
+                return "[CA] space programs: none; resident choice episodes 0";
             var entries = new List<string>();
             for (int i = 0; i < programs.Count; i++)
             {
@@ -853,7 +949,10 @@ namespace ColonistAwareness
                     + ", " + program.author.ToString().ToLowerInvariant()
                     + ", cells " + program.cells.Count + "]");
             }
-            return "[CA] space programs: " + string.Join("; ", entries.ToArray());
+            return "[CA] space programs: "
+                + string.Join("; ", entries.ToArray())
+                + "; resident choice episodes "
+                + residentRosterIntents.Count;
         }
 
         private void ApplyDraft(CASpaceProgram program,
@@ -871,6 +970,7 @@ namespace ColonistAwareness
             {
                 program.residents?.Clear();
                 program.residentAuthor = CAResidentRosterAuthor.None;
+                RemoveResidentRosterIntents(program);
             }
             program.author = CASpaceAuthor.Player;
         }
@@ -952,16 +1052,159 @@ namespace ColonistAwareness
             return adult.GetLoveCluster().Contains(pawn);
         }
 
-        private bool AddNegotiatedResident(CASpaceProgram program, Pawn pawn)
+        private bool TryAuthorizeResidentChoice(Pawn resident,
+            CASpaceProgram program, string knowledgeBasis,
+            out CAIntentContext intent)
         {
-            if (!CanJoinNegotiatedProgram(program, pawn)) return false;
+            const string behaviorKey = "spatial.resident_roster_negotiation";
+            intent = default(CAIntentContext);
+            if (resident == null || program == null
+                || !CABehaviorGate.StableProfileAllows(resident,
+                    behaviorKey)) return false;
+
+            CASpatialInitiativeMapComponent spatial =
+                CASpatialInitiativeMapComponent.For(map);
+            CAInitiativeTier ceiling = spatial?.TierFor(program)
+                ?? CAInitiativeTier.Standard;
+            bool foreignPlayerWork = CATactical
+                .HasForeignPlayerForcedJob(resident);
+            bool live = resident.Spawned && resident.Map == map
+                && !resident.Downed && !resident.InMentalState
+                && resident.Awake();
+            bool authority = map.IsPlayerHome
+                && program.author == CASpaceAuthor.Player
+                && program.residentAuthor != CAResidentRosterAuthor.Player;
+            bool compatible = CanJoinNegotiatedProgram(program, resident);
+            bool material = program.cells != null
+                && program.cells.Count > 0 && program.RequiresSleep
+                && ResidentCount(program) < program.maxOccupants;
+            string authorityBasis = "resident choice inside player-authored "
+                + "sleeping program #" + program.id;
+            var context = new CABehaviorContext(resident,
+                CAActorContext.PlayerPawn
+                    | CAActorContext.PlayerSpatialAuthority,
+                AutonomyComponent.TierOf(resident),
+                CAAuthorityOrigin.PlayerDelegated,
+                authoritySatisfied: authority,
+                knowledgeSatisfied: !knowledgeBasis.NullOrEmpty(),
+                knowledgeFresh: !knowledgeBasis.NullOrEmpty(),
+                liveValidated: live,
+                knowledgeRelayed: false, knowledgeAgeTicks: 0,
+                knowledgeConfidence: knowledgeBasis.NullOrEmpty() ? 0f : 1f,
+                knowledgeUncertainty: knowledgeBasis.NullOrEmpty() ? 1f : 0f,
+                capabilitySatisfied: compatible,
+                materialSatisfied: material,
+                currentIntentCompatible: !foreignPlayerWork,
+                directPlayerOwnership: foreignPlayerWork,
+                authorityCeiling: ceiling,
+                authorityBasis: authorityBasis,
+                knowledgeBasis: knowledgeBasis,
+                owner: nameof(PlannedUseMapComponent));
+            CABehaviorDecision decision = CABehaviorGate.Evaluate(
+                behaviorKey, context);
+            if (!decision.Allowed) return false;
+
+            intent = CACombatIntent.Authorized(resident,
+                CAIntentController.Logistics, behaviorKey,
+                context.AuthorityOrigin, authorityBasis,
+                "resident roster", program.label + " #" + program.id);
+            return intent.IsValid;
+        }
+
+        private bool AddNegotiatedResident(CASpaceProgram program, Pawn pawn,
+            CAIntentContext intent, bool claimBed = true)
+        {
+            if (!intent.IsValid || intent.OwnerId != pawn?.thingIDNumber
+                || intent.BehaviorKey
+                    != "spatial.resident_roster_negotiation"
+                || intent.Controller != CAIntentController.Logistics
+                || !CanJoinNegotiatedProgram(program, pawn)) return false;
             if (program.residents == null) program.residents = new List<Pawn>();
             if (program.residents.Contains(pawn)) return false;
             program.residents.Add(pawn);
             program.residentAuthor = CAResidentRosterAuthor.Pawn;
-            if (!TryClaimExistingSharedBed(program))
+            RecordResidentRosterIntent(program, pawn, intent);
+            if (claimBed && !TryClaimExistingSharedBed(program))
                 TryClaimExistingSingleBed(program, pawn);
             return true;
+        }
+
+        private void RecordResidentRosterIntent(CASpaceProgram program,
+            Pawn resident, CAIntentContext intent)
+        {
+            if (program == null || resident == null || !intent.IsValid)
+                return;
+            if (residentRosterIntents == null)
+                residentRosterIntents = new List<CAResidentRosterIntent>();
+            RemoveResidentRosterIntent(resident, program);
+            residentRosterIntents.Add(new CAResidentRosterIntent
+            {
+                residentId = resident.thingIDNumber,
+                programId = program.id,
+                behaviorKey = intent.BehaviorKey,
+                episodeId = intent.EpisodeId,
+                intentOrigin = intent.Origin,
+                intentController = intent.Controller,
+                issuerId = intent.IssuerId,
+                authorityOrigin = intent.AuthorityOrigin,
+                authorityIdentity = intent.AuthorityIdentity,
+                ownershipScope = intent.OwnershipScope,
+                ownerId = intent.OwnerId,
+                createdTick = intent.CreatedTick,
+                creationTier = intent.CreationTier,
+                targetOrDemand = intent.TargetOrDemand,
+                terminationCondition = intent.TerminationCondition
+            });
+        }
+
+        private void RemoveResidentRosterIntent(Pawn resident,
+            CASpaceProgram program)
+        {
+            if (residentRosterIntents == null || resident == null
+                || program == null) return;
+            int residentId = resident.thingIDNumber;
+            int programId = program.id;
+            residentRosterIntents.RemoveAll(record => record == null
+                || (record.residentId == residentId
+                    && record.programId == programId));
+        }
+
+        private void RemoveResidentRosterIntents(CASpaceProgram program)
+        {
+            if (residentRosterIntents == null || program == null) return;
+            int programId = program.id;
+            residentRosterIntents.RemoveAll(record => record == null
+                || record.programId == programId);
+        }
+
+        private void PruneResidentRosterIntents()
+        {
+            if (residentRosterIntents == null)
+            {
+                residentRosterIntents = new List<CAResidentRosterIntent>();
+                return;
+            }
+            if (programs == null)
+            {
+                residentRosterIntents.Clear();
+                return;
+            }
+            residentRosterIntents.RemoveAll(record =>
+            {
+                if (record == null || record.episodeId <= 0
+                    || record.behaviorKey
+                        != "spatial.resident_roster_negotiation"
+                    || record.intentController
+                        != CAIntentController.Logistics)
+                    return true;
+                CASpaceProgram program = programs.FirstOrDefault(candidate =>
+                    candidate != null && candidate.id == record.programId);
+                if (program == null
+                    || program.residentAuthor != CAResidentRosterAuthor.Pawn
+                    || program.residents == null) return true;
+                return !program.residents.Any(resident => resident != null
+                    && resident.thingIDNumber == record.residentId);
+            });
         }
 
         private float BarracksFit(CASpaceProgram program, Pawn pawn)
@@ -1403,28 +1646,30 @@ namespace ColonistAwareness
                 listing.GapLine();
                 CASpatialInitiativeMapComponent spatial =
                     CASpatialInitiativeMapComponent.For(Find.CurrentMap);
-                int level = spatial?.LevelFor(selected) ?? 1;
+                CAInitiativeTier tier = spatial?.TierFor(selected)
+                    ?? CAInitiativeTier.Standard;
                 if (listing.ButtonTextLabeled("CA initiative",
-                    AutonomyComponent.LevelNames[level], tooltip:
+                    CAInitiativePresentation.Label(tier), tooltip:
                     "The shared initiative ceiling for this authored room. "
                     + "Effective initiative is the lower of this value and "
                     + "the acting colonist's autonomy."))
                 {
                     var options = new List<FloatMenuOption>();
                     for (int i = 0;
-                        i < AutonomyComponent.LevelNames.Length; i++)
+                        i < CAInitiativePresentation.ActiveTiers.Length; i++)
                     {
-                        int captured = i;
-                        string option = (level == captured ? "* " : "")
-                            + AutonomyComponent.LevelNames[captured];
+                        CAInitiativeTier captured =
+                            CAInitiativePresentation.ActiveTiers[i];
+                        string option = (tier == captured ? "* " : "")
+                            + CAInitiativePresentation.Label(captured);
                         options.Add(new FloatMenuOption(option, delegate
                         {
-                            spatial?.SetLevel(selected, captured);
+                            spatial?.SetTier(selected, captured);
                         }));
                     }
                     Find.WindowStack.Add(new FloatMenu(options));
                 }
-                listing.Label("Directed and Standard originate no room "
+                listing.Label("Standard originates no discretionary room "
                     + "construction. Proactive may add one loaded, positive "
                     + "native bed facility for a coherent shared group. It does "
                     + "not force one object to cover the whole bed bank. "

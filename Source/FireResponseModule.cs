@@ -65,7 +65,8 @@ namespace ColonistAwareness
             {
                 var p = colonists[i];
                 if (p.Downed || p.Drafted || p.InMentalState || !p.Awake()) continue;
-                if (AutonomyComponent.LevelOf(p) < 2) continue;
+                if (CAEffectiveBehaviorProfileCache.Of(p)?
+                    .Includes("hazard.fire_response") != true) continue;
                 if (p.WorkTagIsDisabled(WorkTags.Firefighting)) continue;
                 // The player's work priorities stand: Firefighter set to 0 means never.
                 if (p.workSettings == null
@@ -109,7 +110,14 @@ namespace ColonistAwareness
                 }
                 if (nativeHomeResponse)
                 {
-                    p.jobs.EndCurrentJob(JobCondition.InterruptForced);
+                    Fire observed = homeFires.Find(f => f != null
+                        && f.Spawned && !f.IsForbidden(p)
+                        && fireWorker.HasJobOnThing(p, f, false));
+                    CABehaviorDecision decision = CABehaviorGate.Evaluate(
+                        "hazard.fire_response", FireContext(p, observed,
+                            capabilitySatisfied: observed != null));
+                    if (decision.Allowed)
+                        p.jobs.EndCurrentJob(JobCondition.InterruptForced);
                     continue;
                 }
 
@@ -132,9 +140,50 @@ namespace ColonistAwareness
                 if (best == null) continue;
                 var job = JobMaker.MakeJob(JobDefOf.BeatFire, best);
                 job.workGiverDef = WorkGiverDefOf.FightFires;
+                CABehaviorDecision fireDecision;
+                CAIntentContext fireIntent;
+                if (!CABehaviorJobOrigin.TryAuthorizeAndRegister(p, job,
+                    "hazard.fire_response", CAIntentController.Welfare,
+                    FireContext(p, best, capabilitySatisfied: true),
+                    out fireDecision, out fireIntent,
+                    targetOrDemand: "fire at " + best.Position,
+                    ownershipScope: "delegated fire response",
+                    lifetimeTicks: 2500))
+                {
+                    CATrace.Pawn(p, "fire response BLOCKED - "
+                        + fireDecision.PrimaryReason,
+                        contact: best.Position, anchor: p.Position);
+                    continue;
+                }
                 p.jobs.StartJob(job, JobCondition.InterruptForced,
                     tag: WorkGiverDefOf.FightFires.tagToGive);
             }
+        }
+
+        private static CABehaviorContext FireContext(Pawn pawn, Fire fire,
+            bool capabilitySatisfied)
+        {
+            Job current = pawn?.CurJob;
+            return CABehaviorContext.ForPawn(pawn,
+                CAAuthorityOrigin.PlayerDelegated,
+                authoritySatisfied: pawn != null
+                    && pawn.workSettings != null
+                    && pawn.workSettings.GetPriority(
+                        WorkTypeDefOf.Firefighter) > 0,
+                knowledgeSatisfied: fire != null && fire.Spawned,
+                knowledgeFresh: fire != null && fire.Spawned,
+                liveValidated: fire != null && fire.Spawned
+                    && pawn != null && pawn.Map == fire.Map,
+                knowledgeRelayed: false, knowledgeAgeTicks: 0,
+                capabilitySatisfied: capabilitySatisfied,
+                materialSatisfied: true,
+                currentIntentCompatible: current == null
+                    || !current.playerForced,
+                directPlayerOwnership: current != null
+                    && current.playerForced,
+                authorityBasis: "enabled firefighting work and local home responsibility",
+                knowledgeBasis: "current local fire",
+                owner: nameof(FireResponseMapComponent));
         }
 
         // WorkGiver_FightFires is internal. Keep this byte-for-byte behavioral mirror of

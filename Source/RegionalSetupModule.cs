@@ -2882,6 +2882,33 @@ namespace ColonistAwareness
             }
             if (commit)
             {
+                CABehaviorDecision authoringDecision =
+                    CABehaviorGate.Evaluate("spatial.creation_authoring",
+                        new CABehaviorContext(actor: null,
+                            actorContext: CAActorContext.CreationAuthor,
+                            initiative: CAInitiativeTier.Standard,
+                            authorityOrigin:
+                                CAAuthorityOrigin.WorldAuthoring,
+                            authoritySatisfied: true,
+                            knowledgeSatisfied: true,
+                            knowledgeFresh: true, liveValidated: true,
+                            capabilitySatisfied: world != null,
+                            materialSatisfied: compatibility.IsValid
+                                || developerExercise,
+                            currentIntentCompatible: true,
+                            directPlayerOwnership: false,
+                            authorityBasis:
+                                "explicit starting-region confirmation",
+                            knowledgeBasis:
+                                "validated current authored candidate",
+                            owner: "creation author"));
+                if (!authoringDecision.Allowed)
+                {
+                    Messages.Message("The starting region cannot be confirmed: "
+                        + authoringDecision.PrimaryReason + ".",
+                        MessageTypeDefOf.RejectInput, false);
+                    return false;
+                }
                 committing = true;
                 // The candidate becomes authoritative here and nowhere else.
                 // Its candidateId is carried through unchanged, which

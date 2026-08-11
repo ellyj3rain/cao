@@ -614,8 +614,8 @@ namespace ColonistAwareness
                 Apparel apparel = JobGiver_CAOperationalEquipment
                     .BestPermittedApparel(pawn, out apparelReason);
                 Thing medicine = BestPermittedMedicine(pawn);
-                Log.Message("[CA] " + pawn.LabelShort + " equipment readiness: autonomy "
-                    + AutonomyComponent.LevelNames[AutonomyComponent.LevelOf(pawn)]
+                Log.Message("[CA] " + pawn.LabelShort + " equipment readiness: initiative "
+                    + CAInitiativePresentation.Label(AutonomyComponent.TierOf(pawn))
                     + ", operational access "
                     + (AwarenessMod.Settings != null
                         && AwarenessMod.Settings.operationalAccess ? "on" : "off")
@@ -685,7 +685,7 @@ namespace ColonistAwareness
                     || !pawn.IsColonistPlayerControlled) continue;
                 any = true;
 
-                int autonomy = AutonomyComponent.LevelOf(pawn);
+                CAInitiativeTier initiative = AutonomyComponent.TierOf(pawn);
                 Job current = pawn.CurJob;
                 bool currentForced = current != null && current.playerForced;
                 bool queuedForced = pawn.jobs != null
@@ -719,11 +719,8 @@ namespace ColonistAwareness
                     .Append(YesNo(settings != null && settings.fireResponse))
                     .Append(", map component ").Append(YesNo(component != null))
                     .AppendLine()
-                    .Append("  autonomy ").Append(autonomy).Append(" (")
-                    .Append(autonomy >= 0
-                        && autonomy < AutonomyComponent.LevelNames.Length
-                            ? AutonomyComponent.LevelNames[autonomy]
-                            : "unknown")
+                    .Append("  initiative ").Append((int)initiative).Append(" (")
+                    .Append(CAInitiativePresentation.Label(initiative))
                     .Append("), downed ").Append(YesNo(pawn.Downed))
                     .Append(", drafted ").Append(YesNo(pawn.Drafted))
                     .Append(", mental state ").Append(YesNo(pawn.InMentalState))
@@ -2080,14 +2077,16 @@ namespace ColonistAwareness
                 return "[CA] agent receipt: " + command
                     + "\nrefused; causal components are unavailable";
 
-            int priorLevel = spatial.LevelFor(program);
+            CAInitiativeTier priorLevel = spatial.TierFor(program);
             var outcomes = new List<string>();
             bool pass = true;
             try
             {
-                for (int level = 0; level < 4; level++)
+                for (int level = 0; level <= (int)CAInitiativeTier.Autonomous;
+                    level++)
                 {
-                    spatial.SetLevel(program, level);
+                    CAInitiativeTier tier = (CAInitiativeTier)level;
+                    spatial.SetTier(program, tier);
                     bool selected = home
                         .TrySelectPlayerBedroomConstructionCause(program,
                             out CAHomePlan plan, out Pawn planner,
@@ -2099,14 +2098,14 @@ namespace ColonistAwareness
                         && blocker.Contains("already owns compatible sleeping "
                             + "capacity");
                     pass &= levelPass;
-                    outcomes.Add(AutonomyComponent.LevelNames[level] + "="
+                    outcomes.Add(CAInitiativePresentation.Label(tier) + "="
                         + (levelPass ? "zero-work" : "FAIL") + " ["
                         + blocker + "]");
                 }
             }
             finally
             {
-                spatial.SetLevel(program, priorLevel);
+                spatial.SetTier(program, priorLevel);
             }
             bool ownershipPreserved = bed.Spawned
                 && bed.OwnersForReading.Count == 2
@@ -2129,7 +2128,7 @@ namespace ColonistAwareness
                 + ownershipPreserved + "; optional Dresser, EndTable, "
                 + "SleepAccelerator, other facility capacity, and Beauty "
                 + "supplied no cause; prior ceiling restored to "
-                + AutonomyComponent.LevelNames[priorLevel]
+                + CAInitiativePresentation.Label(priorLevel)
                 + "; no save written";
         }
 
@@ -2149,11 +2148,12 @@ namespace ColonistAwareness
                 CASpatialInitiativeMapComponent.For(map);
             if (home == null || spatial == null
                 || !TryPrepareBedroomCauseBuilder(map, out Pawn prepared,
-                    out int priorAutonomy, out bool woke, out failure))
+                    out CAInitiativeTier priorAutonomy, out bool woke,
+                    out failure))
                 return "[CA] agent receipt: " + command + "\nrefused; "
                     + (failure ?? "causal components are unavailable");
 
-            int priorLevel = spatial.LevelFor(program);
+            CAInitiativeTier priorLevel = spatial.TierFor(program);
             TimeSpeed priorSpeed = Find.TickManager.CurTimeSpeed;
             var outcomes = new List<string>();
             bool pass = true;
@@ -2163,16 +2163,18 @@ namespace ColonistAwareness
             try
             {
                 Find.TickManager.CurTimeSpeed = TimeSpeed.Paused;
-                for (int level = 0; level < 4; level++)
+                for (int level = 0; level <= (int)CAInitiativeTier.Autonomous;
+                    level++)
                 {
-                    spatial.SetLevel(program, level);
+                    CAInitiativeTier tier = (CAInitiativeTier)level;
+                    spatial.SetTier(program, tier);
                     bool selected = home
                         .TrySelectPlayerBedroomConstructionCause(program,
                             out CAHomePlan plan, out Pawn planner,
                             out Pawn resident, out int current,
                             out int target, out string action,
                             out string blocker);
-                    bool shouldSelect = level >= 2;
+                    bool shouldSelect = tier >= CAInitiativeTier.Proactive;
                     bool levelPass = selected == shouldSelect
                         && current == 1 && target == 2
                         && resident == targetResident
@@ -2202,7 +2204,7 @@ namespace ColonistAwareness
                             pass &= selectedCell == plan.cell
                                 && selectedRotation == plan.rotation;
                     }
-                    outcomes.Add(AutonomyComponent.LevelNames[level] + "="
+                    outcomes.Add(CAInitiativePresentation.Label(tier) + "="
                         + (levelPass ? selected ? "selected Bed"
                             : "no action" : "FAIL") + " ["
                         + (selected ? action + " at " + plan.cell + " facing "
@@ -2211,8 +2213,8 @@ namespace ColonistAwareness
             }
             finally
             {
-                spatial.SetLevel(program, priorLevel);
-                AutonomyComponent.SetLevel(prepared, priorAutonomy);
+                spatial.SetTier(program, priorLevel);
+                AutonomyComponent.SetTier(prepared, priorAutonomy);
                 Find.TickManager.CurTimeSpeed = priorSpeed;
             }
             bool statePreserved = bed.Spawned
@@ -2254,11 +2256,12 @@ namespace ColonistAwareness
                 CASpatialInitiativeMapComponent.For(map);
             if (home == null || spatial == null
                 || !TryPrepareBedroomCauseBuilder(map, out Pawn author,
-                    out int priorAutonomy, out bool woke, out failure))
+                    out CAInitiativeTier priorAutonomy, out bool woke,
+                    out failure))
                 return "[CA] agent receipt: " + command + "\nrefused; "
                     + (failure ?? "causal components are unavailable");
 
-            int priorLevel = spatial.LevelFor(program);
+            CAInitiativeTier priorLevel = spatial.TierFor(program);
             TimeSpeed priorSpeed = Find.TickManager.CurTimeSpeed;
             Thing construction = null;
             Blueprint_Build blueprint = null;
@@ -2269,7 +2272,7 @@ namespace ColonistAwareness
             try
             {
                 Find.TickManager.CurTimeSpeed = TimeSpeed.Paused;
-                spatial.SetLevel(program, 2);
+                spatial.SetTier(program, CAInitiativeTier.Proactive);
                 if (!home.TrySelectPlayerBedroomConstructionCause(program,
                         out CAHomePlan plan, out Pawn planner,
                         out Pawn resident, out int current, out int target,
@@ -2369,8 +2372,8 @@ namespace ColonistAwareness
                     construction.Destroy(DestroyMode.Cancel);
                 if (blueprint != null && !blueprint.Destroyed)
                     blueprint.Destroy(DestroyMode.Cancel);
-                spatial.SetLevel(program, priorLevel);
-                AutonomyComponent.SetLevel(author, priorAutonomy);
+                spatial.SetTier(program, priorLevel);
+                AutonomyComponent.SetTier(author, priorAutonomy);
                 Find.TickManager.CurTimeSpeed = priorSpeed;
             }
         }
@@ -2401,11 +2404,12 @@ namespace ColonistAwareness
                     + "\nrefused; another exact Bedroom-cause scope is already active: "
                     + bridge.BedroomCausePlanningScopeEvidence;
             if (!TryPrepareBedroomCauseBuilder(map, out Pawn prepared,
-                    out int priorAutonomy, out bool woke, out failure))
+                    out CAInitiativeTier priorAutonomy, out bool woke,
+                    out failure))
                 return "[CA] agent receipt: " + command + "\nrefused; "
                     + (failure ?? "no exact Bedroom-cause builder is available");
 
-            int priorLevel = spatial.LevelFor(program);
+            CAInitiativeTier priorLevel = spatial.TierFor(program);
             TimeSpeed priorSpeed = Find.TickManager.CurTimeSpeed;
             Thing createdConstruction = null;
             bool committed = false;
@@ -2415,7 +2419,7 @@ namespace ColonistAwareness
             try
             {
                 Find.TickManager.CurTimeSpeed = TimeSpeed.Paused;
-                spatial.SetLevel(program, 2);
+                spatial.SetTier(program, CAInitiativeTier.Proactive);
                 if (!home.TrySelectPlayerBedroomConstructionCause(program,
                         out CAHomePlan candidate, out Pawn planner,
                         out Pawn resident, out int current, out int target,
@@ -2476,9 +2480,7 @@ namespace ColonistAwareness
                     planningScopeRecorded = bridge
                         .RecordBedroomCausePlanningScope(map, program.id,
                             targetResident.thingIDNumber,
-                            exactBlueprint ? createdConstruction.ThingID : null,
-                            requiresScopedLease:
-                                !settings.autonomousHomePlanning);
+                            exactBlueprint ? createdConstruction.ThingID : null);
                 committed = causeCommitted && planningScopeRecorded;
                 futureSupplyPhase = committed && retainedMaterialCause;
                 return "[CA] agent receipt: " + command + "\n"
@@ -2498,7 +2500,7 @@ namespace ColonistAwareness
                     + causeBlocked + ": " + commitmentBlocker
                     + "\nresident roster and existing ownership preserved "
                     + authorityPreserved + "; initiative ceiling now "
-                    + AutonomyComponent.LevelNames[spatial.LevelFor(program)]
+                    + CAInitiativePresentation.Label(spatial.TierFor(program))
                     + "; home planning "
                     + (committed
                         ? bridge.BedroomCausePlanningScopeEvidence
@@ -2512,7 +2514,7 @@ namespace ColonistAwareness
             }
             finally
             {
-                AutonomyComponent.SetLevel(prepared, priorAutonomy);
+                AutonomyComponent.SetTier(prepared, priorAutonomy);
                 Find.TickManager.CurTimeSpeed = futureSupplyPhase
                     ? TimeSpeed.Normal : priorSpeed;
                 if (!committed)
@@ -2523,7 +2525,7 @@ namespace ColonistAwareness
                     if (createdConstruction != null
                         && !createdConstruction.Destroyed)
                         createdConstruction.Destroy(DestroyMode.Cancel);
-                    spatial.SetLevel(program, priorLevel);
+                    spatial.SetTier(program, priorLevel);
                 }
             }
         }
@@ -2557,7 +2559,8 @@ namespace ColonistAwareness
                     == ThingDefOf.Bed
                 && home?.PendingPlanMatchesForVerification(program.id,
                     targetResident.thingIDNumber, constructions[0]) == true
-                && spatial?.LevelFor(program) >= 2
+                && (spatial?.TierFor(program) ?? CAInitiativeTier.Standard)
+                    >= CAInitiativeTier.Proactive
                 && spatial.HasPendingPlanForObservation == false
                 && planningScope;
             if (!active)
@@ -2647,7 +2650,8 @@ namespace ColonistAwareness
             bool statePreserved = bed.Spawned
                 && bed.OwnersForReading.Count == 1
                 && program.residents.Count == 2
-                && spatial?.LevelFor(program) >= 2
+                && (spatial?.TierFor(program) ?? CAInitiativeTier.Standard)
+                    >= CAInitiativeTier.Proactive
                 && spatial.HasPendingPlanForObservation == false;
             bool activeSaveReloaded = bridge?
                 .LoadedSaveMatchesForVerification(
@@ -3067,7 +3071,7 @@ namespace ColonistAwareness
         }
 
         private static bool TryPrepareBedroomCauseBuilder(Map map,
-            out Pawn author, out int priorAutonomy, out bool woke,
+            out Pawn author, out CAInitiativeTier priorAutonomy, out bool woke,
             out string failure)
         {
             author = map?.mapPawns.FreeColonistsSpawned
@@ -3084,8 +3088,8 @@ namespace ColonistAwareness
                 .OrderByDescending(pawn => pawn.skills?
                     .GetSkill(SkillDefOf.Construction)?.Level ?? 0)
                 .ThenBy(pawn => pawn.thingIDNumber).FirstOrDefault();
-            priorAutonomy = author == null ? 1
-                : AutonomyComponent.LevelOf(author);
+            priorAutonomy = author == null ? CAInitiativeTier.Standard
+                : AutonomyComponent.TierOf(author);
             woke = author != null && !author.Awake();
             if (author == null)
             {
@@ -3101,7 +3105,7 @@ namespace ColonistAwareness
                     + "awakened for the bounded regression";
                 return false;
             }
-            AutonomyComponent.SetLevel(author, 3);
+            AutonomyComponent.SetTier(author, CAInitiativeTier.Autonomous);
             failure = null;
             return true;
         }
@@ -4925,7 +4929,8 @@ namespace ColonistAwareness
             }
             List<Pawn> colonists = Find.CurrentMap.mapPawns.FreeColonistsSpawned;
             for (int i = 0; i < colonists.Count; i++)
-                AutonomyComponent.SetLevel(colonists[i], 3);
+                AutonomyComponent.SetTier(colonists[i],
+                    CAInitiativeTier.Autonomous);
             Messages.Message("Colonist Awareness: Home planning enabled; "
                 + colonists.Count + " colonists set to Autonomous.",
                 MessageTypeDefOf.SilentInput,
@@ -5001,7 +5006,6 @@ namespace ColonistAwareness
         private int bedroomCausePlanningScopeProgramId;
         private int bedroomCausePlanningScopeTargetResidentId;
         private string bedroomCausePlanningScopeOriginId;
-        private bool bedroomCausePlanningScopeRequiresLease;
         private bool bedroomCausePlanningScopeActive;
         private bool bedroomCausePlanningScopeCompleted;
         private int bedroomCausePlanningScopeAuthorityGeneration = -1;
@@ -5069,8 +5073,6 @@ namespace ColonistAwareness
                 "CA_agentBedroomCausePlanningScopeTargetResidentId", 0);
             Scribe_Values.Look(ref bedroomCausePlanningScopeOriginId,
                 "CA_agentBedroomCausePlanningScopeOriginId");
-            Scribe_Values.Look(ref bedroomCausePlanningScopeRequiresLease,
-                "CA_agentBedroomCausePlanningScopeRequiresLease", false);
             Scribe_Values.Look(ref bedroomCausePlanningScopeActive,
                 "CA_agentBedroomCausePlanningScopeActive", false);
             Scribe_Values.Look(ref bedroomCausePlanningScopeCompleted,
@@ -5194,8 +5196,7 @@ namespace ColonistAwareness
             bedroomCausePlanningScopeActive;
 
         internal bool RecordBedroomCausePlanningScope(Map map,
-            int programId, int targetResidentId, string originThingId,
-            bool requiresScopedLease)
+            int programId, int targetResidentId, string originThingId)
         {
             if (bedroomCausePlanningScopeActive)
                 return false;
@@ -5203,28 +5204,18 @@ namespace ColonistAwareness
             bedroomCausePlanningScopeProgramId = programId;
             bedroomCausePlanningScopeTargetResidentId = targetResidentId;
             bedroomCausePlanningScopeOriginId = originThingId;
-            bedroomCausePlanningScopeRequiresLease = requiresScopedLease;
             bedroomCausePlanningScopeActive = map != null && programId > 0
-                && targetResidentId > 0;
+                && targetResidentId > 0
+                && AwarenessMod.Settings?.autonomousHomePlanning == true;
             bedroomCausePlanningScopeCompleted = false;
             bedroomCausePlanningScopeAuthorityGeneration =
                 AwarenessMod.Settings?
                     .autonomousHomePlanningResetGeneration ?? -1;
-            bedroomCausePlanningScopeEvidence = requiresScopedLease
-                ? "exact map/Bedroom-cause lease active; global Home planning remained disabled"
-                : "exact Bedroom cause tracked; already-enabled global Home planning was not changed";
+            bedroomCausePlanningScopeEvidence =
+                "exact Bedroom cause tracked under enabled Home planning";
             bedroomCausePlanningScopeEvidence += "; authority generation "
                 + bedroomCausePlanningScopeAuthorityGeneration;
             return bedroomCausePlanningScopeActive;
-        }
-
-        internal bool AllowsBedroomCausePlanningLease(Map map)
-        {
-            return bedroomCausePlanningScopeActive
-                && bedroomCausePlanningScopeRequiresLease
-                && map != null
-                && bedroomCausePlanningScopeMapId == map.uniqueID
-                && BedroomCausePlanningAuthorityMatches;
         }
 
         internal bool HasActiveBedroomCausePlanningScopeForMap(Map map)
@@ -5275,8 +5266,7 @@ namespace ColonistAwareness
             && bedroomCausePlanningScopeAuthorityGeneration
                 == AwarenessMod.Settings
                     .autonomousHomePlanningResetGeneration
-            && AwarenessMod.Settings.autonomousHomePlanning
-                == !bedroomCausePlanningScopeRequiresLease;
+            && AwarenessMod.Settings.autonomousHomePlanning;
 
         internal void TransferBedroomCausePlanningScopeToConstruction(
             Map map, int programId, int targetResidentId,
