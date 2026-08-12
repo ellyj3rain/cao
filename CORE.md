@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Core |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.3.0.2-alpha` · closed batch tip `B8` · next `B9` |
+| Version | `1.3.0.3-alpha` · closed batch tip `B9` · next `B10` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `CORE.md` |
@@ -139,6 +139,28 @@ because the founders hold them.
 - Stitching controls geographic continuity only, never population or political
   intensity. Vanilla `OverallPopulation` stays authoritative for major-settlement
   abundance.
+
+## Starting Region and Settlement Composition
+
+Starting Region is an object-led authoring surface. Objects and Map own
+selection and spatial inspection; Details owns concise object-specific decisions
+and essential inspection. A field becomes a control only when more than one
+valid choice exists. Generated-source labels, schema facts, receipts, and
+architectural explanation remain outside ordinary player copy.
+
+An established settlement owns an open causal settlement program. The program
+derives from its people, land, access, services, civic state, economy, trade,
+specialization, role, technology ceiling, and history, then resolves loaded
+functional assets through native contracts. It is not a development slider,
+facility bundle, or fixed enum. Provisions require a real household, communal,
+or authority operator with material support and a behavior consumer. Faction
+technology stays faction state; settlement research exists only where an actual
+research program and asset support it.
+
+Culture authoring begins with semantic social meanings and practices. Exact
+continuous values remain available as contextual fine tuning, not the default
+description of a population. Faction Relations remains the visual reference for
+relational authoring. These constraints are ratified in DR-120 through DR-132.
 
 ## Ownership
 

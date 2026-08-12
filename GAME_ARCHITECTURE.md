@@ -555,3 +555,28 @@ pending facility because it tests adding a link against `maxSimultaneous`;
 completed records validate the reciprocal `CompFacility.LinkedBuildings` graph.
 Revoking authority cancels only the tracked pending blueprint; completed
 buildings remain player property while stale CA associations retire.
+
+## 15. Settlement Programs Over Loaded Functional Contracts
+
+Established-settlement composition uses the loaded definition graph rather than
+a CA facility enum. `Building_WorkTable` plus recipes establishes production;
+`Building_Storage` and storage settings establish storage; research benches,
+medical and prison beds, gathering and ritual targets, recreation buildings,
+communication buildings, animal-pen contracts, room roles,
+`CompProperties_Facility`, and reciprocal affected-by-facility links establish
+their respective functions. Native placement acceptance remains the final
+physical authority.
+
+This evidence can come from Core, an expansion, or a ported content pack without
+changing the settlement-program ontology. B9's loaded-definition audit admits
+`Anon2CushionedChair` and `DankPyon_Bust` through the same functional evidence as
+native candidates. A name, texture, or decorative plant spot alone is not a
+functional contract. The saved program entry records the selected defs and the
+placed identities so reload and generation consume one realized fact.
+
+Faction era is a ceiling, never proof of a settlement facility. A research
+readout is valid only after the settlement owns a research program and an actual
+loaded bench candidate. Likewise, a provision arrangement is valid only after
+its operator, stock, access, funding, and spatial supports exist. The generator
+does not fabricate vendor, religious, dues, or abstract operator institutions to
+make a supply record possible.

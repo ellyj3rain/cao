@@ -15,5 +15,5 @@
 The records in this directory establish the append-only baseline and carry their own historical substance and provenance. Local Git may retain finer-grained engineering history, but neither these records nor their validity depend on a local commit graph or a forge retaining old objects. The immediately preceding generated history tree was a regulatory projection, not a second set of closed batch files.
 
 The A sequence closes at `A102`. The chronology continues through closed batch
-`B8`; `B9` is the next development batch. No per-letter history hierarchy is
+`B9`; `B10` is the next development batch. No per-letter history hierarchy is
 created.

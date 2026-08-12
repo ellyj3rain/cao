@@ -41,6 +41,8 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
 ### <a id="t-030"></a>T-030 - Validation and evidence discipline
 
 - [A1 - Repository establishment and governance surface](A001-2026-07-22-repository-establishment-and-governance-surface.md) - 2026-07-22
@@ -129,6 +131,8 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
+
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 ## TF-02 - Pawn cognition and authority
 
@@ -259,6 +263,8 @@ Home planning, space programs, residents, furnishing, and facility siting.
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
 ### <a id="t-014"></a>T-014 - Space programs and residents
 
 - [A26 - Planned room-use layer and placement receipt](A026-2026-07-27-planned-room-use-layer-and-placement-receipt.md) - 2026-07-27 19:52–20:37 UTC / 12:52–13:37 PST
@@ -273,6 +279,8 @@ Home planning, space programs, residents, furnishing, and facility siting.
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 ### <a id="t-015"></a>T-015 - Facility siting and furnishing
 
@@ -297,6 +305,8 @@ Home planning, space programs, residents, furnishing, and facility siting.
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
 ## TF-07 - Logistics, waste, and economy
 
 Materials, storage, inventory, toxic waste, transactions, and obligations.
@@ -320,6 +330,8 @@ Materials, storage, inventory, toxic waste, transactions, and obligations.
 - [A97 - Transactions, stock plans, tiers, and threat muster](A097-2026-08-08-transactions-stock-plans-tiers-and-threat-muster.md) - 2026-08-08 22:09 UTC / 15:09 PST
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 ### <a id="t-017"></a>T-017 - Toxic-waste lifecycle
 
@@ -358,6 +370,8 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
+
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 ### <a id="t-020"></a>T-020 - Regional geometry, projection, and scatter
 
@@ -403,6 +417,8 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
 ### <a id="t-026"></a>T-026 - World tendencies and geography
 
 - [A72 - Carrier-owned mountain mutation](A072-2026-08-06-carrier-owned-mountain-mutation.md) - 2026-08-06 08:47 UTC / 01:47 PST
@@ -445,6 +461,8 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
 ### <a id="t-023"></a>T-023 - Culture, beliefs, and Ideoligion
 
 - [A28 - Space-program residents and negotiation](A028-2026-07-27-space-program-residents-and-negotiation.md) - 2026-07-27 21:55–22:50 UTC / 14:55–15:50 PST
@@ -471,6 +489,8 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
+
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 ## TF-10 - Onboarding and authoring
 
@@ -500,6 +520,8 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
+
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 ### <a id="t-025"></a>T-025 - Authoring surfaces and UI grammar
 
@@ -535,6 +557,8 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
+
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 ## TF-11 - Runtime tooling and controls
 
@@ -596,3 +620,4 @@ Canonical vocabulary, model convergence, copy register, and product truthfulness
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT

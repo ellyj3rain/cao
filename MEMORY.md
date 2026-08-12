@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Memory |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.3.0.2-alpha` · closed batch tip `B8` · next `B9` |
+| Version | `1.3.0.3-alpha` · closed batch tip `B9` · next `B10` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `MEMORY.md` |
@@ -44,20 +44,20 @@ junction for the operator, not a defect in the index.
 | `VERSION_MAP.md` | REGULATORY, GENERATED | Chronological version-unit replay derived from `tools/version-model.mjs`. |
 | `ROADMAP.md` | CANONICAL | Thread map, backlog, live gates. |
 | `SESSION_STATE.md` | CANONICAL | Current operational reality. Read before claiming where anything stands. |
-| `VERSION` | CANONICAL, GENERATED | `1.3.0.1-alpha`, derived from the version replay. |
+| `VERSION` | CANONICAL, GENERATED | `1.3.0.3-alpha`, derived from the version replay. |
 
 ## Batch record system
 
 | Surface | Status | Role |
 |---|---|---|
 | `Batches/README.md` | REGULATORY | Portable-history contract for one alphanumeric batch namespace. |
-| `Batches/[A-Z]*.md` | APPEND-ONLY | The 102 closed A-sequence records and closed `B1-B8` records in one namespace. |
+| `Batches/[A-Z]*.md` | APPEND-ONLY | The 102 closed A-sequence records and closed `B1-B9` records in one namespace. |
 | `Batches/THREADS.md` | REGULATORY | Permanent series-neutral families and many-to-many threads over nonadjacent batches. |
 | `Batches/THREAD_ID_CROSSWALK.md` | REGULATORY | Complete map from temporary `ATF-*` / `AT-*` identifiers to `TF-*` / `T-*`. |
 | `Batches/FORMER_LABELS.md` | REGULATORY | Complete map from all 93 former ledger boundaries to current batches. |
 
-The A sequence closes at `A102`; the chronology continues through closed `B8`,
-and `B9` is next. The governed batch records, chronological catalog, thematic
+The A sequence closes at `A102`; the chronology continues through closed `B9`,
+and `B10` is next after operator runtime validation. The governed batch records, chronological catalog, thematic
 crosswalks, version map, decisions, findings, receipts, and source provenance are
 the portable project history.
 
@@ -68,7 +68,7 @@ the portable project history.
 | Published forge history | Host-specific distribution record beginning at the canonical snapshot selected for publication. |
 
 The three development layers are separate. Batches record atomic chronological
-work. Threads classify related work across any letter sequence. The 34 version
+work. Threads classify related work across any letter sequence. The 36 version
 units in `VERSION_MAP.md` partition A1-B8 into contiguous capability runs and
 derive the current root version through the Neo four-coordinate odometer.
 

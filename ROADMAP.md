@@ -1,7 +1,7 @@
 # Colonist Awareness - roadmap
 
-The A sequence is closed at `A102`; the chronology is complete through `B8`,
-and `B9` is the next development batch.
+The A sequence is closed at `A102`; the chronology is complete through `B9`,
+and `B10` is the next development batch after operator runtime validation.
 Historical batch identifiers below use the current sequence. Thematic `T-*`
 identifiers link continuing work across nonadjacent batches. The chronological
 catalog is [`BATCH_LOG.md`](BATCH_LOG.md); thematic links are in
@@ -1545,5 +1545,20 @@ knowledge, authority, or material capability.
 Authoring epoch 8 discards incompatible pre-release state rather than migrating
 the invalid B4-B7 objects. Exact B8 receipts, retained creation and behavior
 suites, five review lenses, a clean Release build, and byte-verified deployment
-close the static gate. `B9` is the next development batch; operator runtime is
-the immediate next action.
+close that static gate.
+
+## Starting Region Information Architecture and Settlement Program Closure - B9 / T-002, T-013-T-016, T-019, T-021-T-025, T-028, T-030
+
+B9 preserves Objects and Map while making Details a legible comparison surface.
+It removes one-option controls, backend provenance, and permanent architectural
+exposition; aligns faction, settlement, region, and Culture information with the
+scope that owns it; and replaces fixed row heights with measured layout.
+
+The seven-bit Starting Facilities model is retired. An open 22-program registry
+derives robust established-settlement composition from actual population, land,
+access, institutions, economy, role, history, and loaded functional asset
+contracts. Household, communal, and authority provisions require real operators
+and supports. Culture onboarding is semantic by default with exact-value fine
+tuning retained contextually. The regenerated schema-8 fixture and verified B9
+assembly are deployed. `B10` remains next, but no B10 feature work begins before
+the operator runtime test.

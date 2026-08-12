@@ -1,168 +1,128 @@
 | Document | Colonist Awareness Overhaul Session State |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.3.0.2-alpha` · closed batch tip `B8` · next `B9` |
+| Version | `1.3.0.3-alpha` · closed batch tip `B9` · next `B10` |
 <!-- cao:generated:version END -->
 | Repository | `SESSION_STATE.md` |
 | Status | ACTIVE - current operational state. |
 
-# Session state
+# Session State
 
-Updated 2026-08-12 UTC / 2026-08-11 PST.
+Updated 2026-08-12 UTC / 2026-08-12 PDT.
 
 Read this before claiming where creation or gameplay testing stands. Compile,
 receipts, review, deployment, and operator runtime evidence remain separate.
 
-## Version control and governed history
+## Version Control and Governed History
 
 | Surface | State |
 |---|---|
 | Branch | `mallowfluff/b3-creation-flow-interaction` |
-| Exact B8 baseline | `0f520946927b2ab754fa8bdd367a909ec3781538` |
-| B8 source closure | `1560c2ed16f27eb3d258fd57962ea2c0fdb3e68a` |
-| B8 governance closure | The following governance commit carries this state, the B8 append-only record, version projections, and README twin. |
-| Publication | Normal fast-forward publication to the current branch is part of B8 closure. |
+| Exact B9 baseline | `a30677744f966aec0416695bd3c6413c3a75acdd` |
+| B9 source closure | `20b181413a13a2b168c9c5d8dc23fb20241909c4` |
+| B9 governance closure | The following governance commit carries this state, the B9 append-only record, generated version projections, and README twin. |
+| Publication | Normal fast-forward publication to the current branch is part of B9 closure. |
 
-The portable chronology contains 110 closed batches: `A1-A102` and `B1-B8`.
-Thirty-five contiguous version units cover that chronology exactly once; B8 is
-patch unit `VU-035`, deriving `1.3.0.2-alpha`. Twelve `TF-*` families and thirty
-series-neutral `T-*` threads classify work without changing chronology. `B9` is
-the next ordinary batch.
+The portable chronology contains 111 closed batches: `A1-A102` and `B1-B9`.
+Thirty-six contiguous version units cover that chronology exactly once. B9 is
+`VU-036`, a patch unit deriving `1.3.0.3-alpha`. Series-neutral `T-*` threads
+classify work without changing chronology. `B10` remains next and cannot begin
+before operator runtime validation.
 
-## Current authoring contract
+## Current Creation Contract
 
-Creation exposes direct facts and inspects derived consequences. Starting Region
-retains the selected region and arrival area, map, factions, settlements,
-locations, population groups and sources, ownership, relations, provisions, and
-sparse exact starting exceptions. Material scale, infrastructure, access,
-services, facilities, research capability, and spatial form are realized from
-actual population, land, geography, technology, knowledge, institutions,
-economy, trade, material state, relationships, and history.
-
-The founding flow coordinates four distinct concepts:
-
-| Concept | Current meaning |
+| Surface | Current state |
 |---|---|
-| Culture | Inherited and local social history with substantive meanings and practices |
-| Ideoligion | RimWorld's native religious, ritual, moral, and spiritual system |
-| Political Beliefs | Thirteen normative answers about proper authority and social order |
-| Rules at landing | The authority, work, voice, and supply arrangement actually adopted at founding |
+| World | RimWorld world settings plus CA causal World Tendencies |
+| Landing | Native landing tile plus confirmed regional footprint and arrival area |
+| Starting Region navigation | Objects and Map are canonical; Details owns object-specific decisions and inspection; compact settlement Details supports previous/next comparison without regeneration |
+| Established factions | Culture, native Ideoligion, complete Political Beliefs, realized structure, Settlement Authority, relations, and faction technology |
+| Established settlements | Identity, population, local Culture, placement, 22-program open settlement composition, and causal provision arrangements |
+| Player founding | Inherited Culture, native Ideoligion, complete Political Beliefs, and exact rules adopted at landing |
+| Culture authoring | Semantic meanings and practices by default; exact continuous values through contextual fine tuning |
+| Confirmation | Validates and consumes confirmed state; it does not reroll tendencies, programs, provisions, Culture, or relations |
 
-Culture at T0 is not a name or style. It saves constituent populations,
-inherited and current meanings, inherited and lived practices, observations,
-transitions, maturity, temporal basis, and provenance. Each meaning concerns one
-namespaced registered subject and records approval, normality, prestige, and
-salience. The initial registry contains twelve subjects; later CA modules may add
-source-and-consumer contracts without changing the Culture schema. Native
-`CultureDef` remains a separately labeled optional visual tradition.
+One-option setup fields are facts rather than controls. Ordinary player UI does
+not expose generation provenance, schema language, receipts, or architectural
+exposition. Faction Relations is the visual reference for relation authoring.
 
-The Culture composer presents overview, social meanings, inherited practices,
-visual tradition, and causal preview. Saved Culture profiles copy inherited
-state without locality, observations, transitions, or a live profile identity.
-Established factions and settlements use the same model at their established
-temporal boundary. New founders carry inherited Culture and form local history
-through play unless the scenario explicitly supplies an established start.
+## Settlement Programs and Provisions
 
-Political authoring is question-first. Five built-in profiles each answer all
-thirteen questions, contain no parent or missing field, copy answers as authored
-state, and leave every answer editable. World state stores only the vector, not
-the profile identity. NPC derivation resolves an axis from same-axis realized
-structure, an explicit observed fact, or scored cultural meaning, records stable
-causal evidence, and leaves unsupported axes unset.
+The active registry contains 22 programs across 16 functional domains:
+housing, food, storage, medicine, production, trade, governance, security,
+defense, research, religion, social life, culture, agriculture, communications,
+and transport. Candidate resolution uses loaded functional contracts independent
+of content pack. Ported `Anon2CushionedChair` and `DankPyon_Bust` qualify through
+the same functional evidence; visual-only props do not establish a program.
 
-Informed pawn responses preserve contributions from Culture, Political Beliefs,
-Ideoligion where relevant, personal state, institutions, and relationships.
-Actual reactions aggregate by subject into participation, mean response,
-dispersion, polarization, influential minorities, alignment, and cross-group
-dissonance. Qualified evidence across historical periods may change later
-Culture. One event, unchanged evidence, or opening an editor cannot.
+The seven-bit Starting Facilities mask, exception mask, exception values, and
+facility-resolution persistence are absent. Provision operators are limited to
+household, communal, and authority arrangements backed by real operator, access,
+stock, funding, program, and behavior evidence. Vendor, religious, dues, and
+abstract-distribution branches are absent.
 
-Culture consumers use the generic meaning resolver. They may rank or interpret
-otherwise valid spatial, social, institutional, political, and development
-choices, but Culture grants no knowledge, permission, authority, office,
-technology, labor, land, material, treasury, or execution capability. Abstract
-stock symbols do not represent Culture, Political Beliefs, their profiles,
-founding rules, or cultural expression. Native Ideoligion retains its actual
-symbol; concrete object and action icons remain.
+## Governed Runtime Fixture
 
-## Persistence boundary
-
-The current authoring epoch is 8. Regional plan schema is 6; Culture and
-Political Beliefs schema is 8; player founding schema is 3. An epoch mismatch
-clears incompatible CA-owned Culture, Political Beliefs, profile,
-founding-draft, social-interpretation, and regional-authoring state and emits one
-diagnostic. No field conversion, alias, partial preset inheritance, or abandoned
-profile identity remains. This is an intentional pre-release reset.
-
-## Build, receipts, and review
-
-| Evidence | Result |
+| Fact | Value |
 |---|---|
-| B8 acceptance | PASS - exact 57/57 receipts |
-| World tendencies | PASS - 185 assertions |
+| Active plan | `%USERPROFILE%\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlan.xml` |
+| Keyed mirror | `%USERPROFILE%\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlans\regional-plan-9bcbba2fdcd1e7f334711a69635242a2.xml` |
+| Fixture SHA-256 | `1DDAA4CD9ADC2CD557471B01D754BA37AE191A3588155645B1A872680D8ED4D2` on both files |
+| File size | 72,169 bytes on both files |
+| Schema | authoring epoch 8; regional plan 8; settlement program 1; Culture and Political Beliefs 8; player founding 3 |
+| Identity | world `alysaliu|1|Algorab Markab`; region `CA-RG-EB596A12`; candidate `613b1fe44104`; arrival tile `389638`; map scale 350 |
+| Composition | 3 factions; 4 settlements; 9 population groups |
+| Megaeth | 15 programs; 3 provision arrangements |
+| Red Cervexa | 17 programs; 3 provision arrangements |
+| Tascan Bramble | 13 programs; 2 provision arrangements |
+| Black Delta | 13 programs; 1 provision arrangement |
+
+Serialization/readback preserves ownership, settlement/faction relationships,
+population assignments, programs, provision counts, and signatures. The active
+and keyed surfaces are byte-identical.
+
+## Verification and Deployment
+
+| Gate | Result |
+|---|---|
+| B9 acceptance | 84 cases: 79 statically verified; 5 operator-runtime observations |
+| B8 retained acceptance | PASS - 57/57 |
+| World Tendencies | PASS - 185 assertions |
 | Player founding | PASS - 48 assertions |
-| Creation-flow interaction | PASS - 58 assertions |
-| Behavior convergence | PASS - 107 numbered cases: 98 statically verified; 9 operator-runtime observations pending |
-| Frozen-tree reviews | Ontology, causality, UI, structural, and playability: no unresolved Critical or High finding |
-| Release build | Clean Release rebuild: 0 errors; the same 12 inherited warnings |
-| Built assembly | 3,321,344 bytes; SHA-256 `995C8123DA81EB083C311C2C792223077B0A13B11FA7FB583531F704F563A6BF` |
-| Deployment | RimWorld was closed. The active project DLL is byte-identical to the verified build at the same SHA-256. |
+| Creation interaction | PASS - 54 assertions |
+| Behavior convergence | 107 cases: 98 statically verified; 9 operator-runtime observations |
+| Review lenses | Information architecture, settlement ontology, causality, UI, and playability: no unresolved Critical or High finding |
+| Release build | PASS - 0 errors; 12 inherited warnings |
+| Assembly | 3,404,288 bytes; SHA-256 `9AD4EE62359CF1961FFCB55A7C45C946914F99E264FD7C819F74342E51D0EE19` |
+| Deployment | RimWorld was closed; active project DLL is byte-identical to the verified build at the same SHA-256 |
 
-The twelve warnings are the existing member-hiding and DefOf assignment
-warnings. `git diff --check` passes with only line-ending notices.
+Static layout receipts cover 1280×720, 1366×768, 1600×900, 1920×1080, the
+operator window dimensions represented by the fixture evidence, and supported UI
+scale inputs. These receipts establish measured bounds, not visual acceptance.
 
-## Authored runtime fixture
+## Operator Runtime Boundary
 
-| Field | Current authority |
+B9 is deployed and ready. The next action is the operator test; Codex must not
+advance the creation flow, choose authoring values, start the game, alter saves,
+or claim visual acceptance on the operator's behalf.
+
+| Observation | Operator check |
 |---|---|
-| World | `alysaliu|1|Algorab Markab` |
-| Region | `CA-RG-EB596A12` |
-| Candidate | `613b1fe44104`, confirmed |
-| Arrival/root tile | `389638` |
-| Map scale | 350 |
-| Composition | 3 factions, 4 settlements, 9 population groups |
-| Schema | Authoring epoch 8; regional plan 6; Culture and Political Beliefs 8; player founding 3 |
-| Temporal basis | Existing settlements carry direct established baselines with no fabricated transition history |
-| Compatibility | `developerExercise=true`; transient runtime materialization only; durable saving disabled |
-
-Active and keyed plan:
-
-- `C:\Users\jleyv\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlan.xml`
-- `C:\Users\jleyv\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlans\regional-plan-9bcbba2fdcd1e7f334711a69635242a2.xml`
-- 45,518 bytes each
-- SHA-256 `4BEF806DADF9A40F83E4E8684B55BBC6335C8BC078119132D66BCA3769BC9093`
-
-Both files are byte-identical and parse the same current-schema composition,
-relations, population assignments, founding state, substantive faction and
-settlement Cultures, and complete political vectors. The selected region's
-unsupported world mutators remain an explicitly stamped transient developer
-exercise. It can materialize for this disposable run but is not scribed.
-
-## Operator runtime boundary
-
-The B8 build is deployed and the static gate is complete. Test the following in
-RimWorld:
-
-| Case | Runtime observation |
-|---|---|
-| Authoring | Compose a substantive founding Culture; edit meanings and inherited practices; keep visual tradition separate. |
-| Politics | Answer all thirteen political questions, apply a complete profile, then independently edit an answer and inspect belief-versus-rule tensions. |
-| Native Ideoligion | Enter, edit, return, and navigate Back/forward without losing Culture, Political Beliefs, or rules at landing. |
-| Starting Region | Inspect faction and settlement Culture, constituents, local disagreement, political state, institutions, and the retained map. |
-| 97 | Complete creation and reach map generation. |
-| 98 | Confirm player map generation completes and behavior components initialize. |
-| 99 | Confirm missing optional assets remain nonfatal and expose their fallback receipt. |
-| 100 | Observe ordinary native work at Standard. |
-| 101 | Observe one bounded Proactive response. |
-| 102 | Observe one persistent Autonomous objective. |
-| 103 | Issue direct work around every initiative tier and confirm player authority. |
-| 104 | Not runnable on this transient fixture. Use a compatible-region save/reload run to compare registered intent identity and ownership. |
-| 105 | Run through the first in-game hour and inspect `Player.log` for repeating exceptions. |
+| B9-33 | Inspect compact Starting Region layout and confirm no clipping or overlap. |
+| B9-34 | Inspect wide layout and confirm the object rail, map, and Details hierarchy remain coherent. |
+| B9-35 | Select factions and settlements from Objects and Map; confirm shared selection and `View Details`. |
+| B9-36 | Compare settlements with previous/next controls and confirm natural ordering and scroll reset. |
+| B9-75 | Fine-tune a Culture meaning, close and reopen it, and confirm exact values persist without replacing semantic copy. |
+| Faction Relations | Confirm it remains the visual and interaction quality reference and shows relation state without provenance copy. |
+| Settlement Composition | Inspect all four saved programs, provision operators, candidate assets, and any explicit fallback. |
+| Generation | Confirm the selected region reaches map generation and materializes confirmed state without rerolling it. |
+| Behavior 97-103, 105 | Complete creation, verify initialization and optional-asset fallback, observe Standard/Proactive/Autonomous boundaries, direct orders, and first-hour log health. |
+| Behavior 104 | Run separately on a compatible-region save/reload fixture; the selected developer region is not its authority. |
 
 Static evidence does not select options, advance the game, change saves, or
 substitute for how the creation flow and generated colony look and play.
 
-## Environment and preserved evidence
+## Environment and Preserved Evidence
 
 - RimWorld target: 1.6.4871 rev590.
 - Odyssey is installed; active runtime state is not asserted without a launch.

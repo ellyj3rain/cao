@@ -8,9 +8,9 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | Form | `major.minor.kohai.patch-maturity` |
 | Hard caps | minor 12; kohai 16; patch 24 |
 | Replay start | `0.1.0.0-pre-alpha` |
-| Current version | `1.3.0.2-alpha` |
-| Closed chronology | `A1-B8` |
-| Next batch | `B9` |
+| Current version | `1.3.0.3-alpha` |
+| Closed chronology | `A1-B9` |
+| Next batch | `B10` |
 | Executable source | [`tools/version-model.mjs`](tools/version-model.mjs) |
 
 ## Tier meanings
@@ -63,6 +63,7 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | VU-033 | B6 | 2026-08-11 | minor | `1.3.0.0-alpha` | Behavior contract, authority, playability, and test convergence | `T-002`, `T-003`, `T-004`, `T-005`, `T-006`, `T-007`, `T-008`, `T-009`, `T-010`, `T-012`, `T-013`, `T-014`, `T-015`, `T-016`, `T-017`, `T-019`, `T-021`, `T-022`, `T-023`, `T-025`, `T-028`, `T-029`, `T-030` | B6 replaces distributed four-tier and raw-integer behavior interpretation with one typed three-tier initiative contract, an 87-entry behavior catalog, structured authority, knowledge, capability, and material gating, saved intent provenance, separate player and NPC authorization, and native RimWorld execution. Its 107-case behavior suite joins the retained authoring and generation receipts at the gameplay boundary. This is a new runtime and authoring contract rather than an in-place correction, so the unit carries the minor tier. |
 | VU-034 | B7 | 2026-08-11 | patch | `1.3.0.1-alpha` | Creation ontology and authoring reconstruction | `T-002`, `T-013`, `T-014`, `T-015`, `T-019`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B7 repairs acceptance failures in the B5/B6 creation capability without opening a new capability boundary. It removes universal information-detail and settlement-intensity controls, restores an integrated Culture, native Ideoligion, Political Beliefs, and founding-order flow, establishes persistent longitudinal local Culture with provenance and substantive spatial, social, institutional, political, and settlement-development consumers, migrates the authored fixture, and replaces receipts that had accepted derived prose or categorical shims as Culture. The unit is therefore an in-place corrective patch. |
 | VU-035 | B8 | 2026-08-11 to 2026-08-12 | patch | `1.3.0.2-alpha` | Substantive inherited Culture, political composer, and open social-meaning substrate | `T-002`, `T-004`, `T-006`, `T-019`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B8 completes the corrective B7 creation boundary by replacing name-and-style Culture with substantive inherited meanings and practices, replacing partial political presets and arbitrary completion with question-first complete vectors and causal NPC derivation, and connecting registered social facts through pawn response, group pattern, and longitudinal Culture transition. It deliberately resets unsupported pre-release authoring data rather than migrating invalid objects. This repairs the existing capability in place and therefore carries the patch tier. |
+| VU-036 | B9 | 2026-08-12 | patch | `1.3.0.3-alpha` | Starting Region information architecture and settlement program closure | `T-002`, `T-013`, `T-014`, `T-015`, `T-016`, `T-019`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B9 closes the remaining pre-runtime faults in the B6-B8 creation capability. It makes Starting Region selection and comparison coherent, removes non-decisions and implementation provenance from ordinary Details, replaces the fixed starting-facility mask with an open causal settlement-program registry and exact materialization contract, makes provision operators socially and materially real, and presents Culture through semantic meanings with contextual exact values. This is an in-place correction of the existing authoring and generation boundary, so the unit carries the patch tier. |
 
 ## Historical version evidence
 
@@ -72,11 +73,11 @@ A22 is the maturity boundary: reproducible assembly followed an end-to-end runti
 
 ## Next movement
 
-`B9` is the next ordinary batch. Its content determines its tier after it exists:
+`B10` is the next ordinary batch. Its content determines its tier after it exists:
 
-| If B9 is | Result |
+| If B10 is | Result |
 |---|---|
-| patch or hotfix | `1.3.0.3-alpha` |
+| patch or hotfix | `1.3.0.4-alpha` |
 | kohai | `1.3.1.0-alpha` |
 | minor | `1.4.0.0-alpha` (the minor tier advances capability; maturity remains unchanged) |
 

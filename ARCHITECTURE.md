@@ -572,6 +572,46 @@ policy, program, job, or construction authority. Region-affecting definitions an
 live buildings remain outside this path; minifiable buildings continue through
 RimWorld's native Reinstall contract.
 
+## Starting Region Information Architecture
+
+`Page_CAStartingRegion` keeps one shared object selection across Objects, Map,
+and Details. Object-rail selection may enter Details; map selection stays on the
+map and exposes an explicit details action. Compact settlement Details traverses
+the object-rail order and resets only its scroll position. Drawing and navigation
+do not regenerate saved state.
+
+The Details contract distinguishes choice, essential fact, blocking warning,
+and secondary inspection. `CAContextualChoicePresentation` renders a control for
+multiple valid choices, a readout for one essential choice, no surface for one
+inessential choice, and a warning only when absence blocks confirmation. Default
+settlement Details owns identity, Population, Culture, Settlement Composition,
+and the separated destructive action. Faction and region Details expose the
+same facts at their actual owning scope.
+
+## Settlement Program Architecture
+
+`CASettlementProgramRegistry` is open and namespaced. Each definition records
+domain, owner, causal sources, applicability, loaded-candidate contract,
+materialization contract, inspection summary, maintenance or runtime consumer,
+fallback, and functional evidence. Each settlement entry records selected
+candidates, required extent, materialization state, placed identities, blockers,
+and a stable signature. `CASettlementProgramMaterializer` consumes the confirmed
+entry and records native results; it does not reroll authoring.
+
+The initial 22 programs span housing, food, storage, medicine, production,
+trade, governance, security, defense, research, religion, social life, culture,
+agriculture, communications, and transport. Candidate discovery prefers native
+class, component, room-role, recipe, linking, and placement contracts. Explicit
+adapters are permitted only when no stronger native contract exists and the
+owning module records a real consumer. A decorative object alone establishes no
+program.
+
+Provision arrangements share the same causal boundary. Household, communal,
+and authority are the only current operator types. Each requires a real social
+operator, physical program support, access, funding, stock, and a behavior
+consumer. Confirmation freezes the derived program and provision records; map
+generation materializes those records rather than reinterpreting tendencies.
+
 ## Non-goals / boundaries
 
 - No copying from other mods (reference reading only); no shipping decompiled

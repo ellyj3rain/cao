@@ -1,6 +1,6 @@
 # Colony-creation surface map
 
-Updated 2026-08-11. This is the current onboarding contract.
+Updated 2026-08-12. This is the current onboarding contract.
 
 ## Current flow
 
@@ -10,7 +10,7 @@ Updated 2026-08-11. This is the current onboarding contract.
 | Storyteller | RimWorld | storyteller, difficulty, permadeath |
 | World | RimWorld + CA | seed, coverage, climate, population, faction roster, and CA world tendencies |
 | Landing | RimWorld + CA | landing tile, selected regional land, visual geography, and arrival area |
-| Starting region | CA | factions, settlements, relations, carried cultural backgrounds, contextual cultural expression, Ideoligion, political beliefs, faction structure, settlement authority, population groups, development, facilities, and provisions |
+| Starting Region | CA | existing factions, settlements, relations, substantive Culture, Ideoligion, Political Beliefs, current order, population groups, placement, settlement programs, and provision arrangements |
 | Founding society | CA + RimWorld | founders' cultural background, native Ideoligion, Political Beliefs, and the Founding Arrangement adopted at landing |
 | Starting pawns | RimWorld | founders, skills, traits, relationships, xenotypes, and backstories |
 | Game start | RimWorld + CA | map generation, scenario arrival, materialization of the saved Founding Arrangement, and the beginning of the colony's institutional history |
@@ -35,15 +35,21 @@ rivers, caves, and selected geographic features use the same projection. A valid
 footprint is enough to proceed to the Starting region page; incomplete faction or
 settlement work is repaired there.
 
-### Starting region
+### Starting Region
 
-The Starting region page authors who already lives on the selected land. It uses
-the current faction and settlement model directly. Factions own carried cultural background,
-Ideoligion, political beliefs, faction structure, settlement authority, and era.
-Settlements own form, role, a relative development profile, facilities and exact
-overrides, access, services, civic development, population groups, and starting
-provisions. Their cultural expression is derived from those realized facts,
-population, beliefs, institutions, geography, relations, and history.
+The Starting Region page authors who already lives on the selected land. Objects
+and Map remain its primary navigation. Object selection opens Details; map
+selection remains spatial and offers `View Details`. Compact settlement Details
+keeps the selected settlement visible and supports previous/next comparison in
+the same order as the object rail without regenerating state.
+
+Factions own Culture, Ideoligion, Political Beliefs, realized structure,
+Settlement Authority, relations, and technology. Settlements own identity,
+population, local Culture, location, realized material state, one open derived
+settlement program, and causal provision arrangements. Ordinary Details shows
+only meaningful authoring choices, essential inspection, blocking warnings, and
+object-specific secondary inspection. One valid choice is a fact, not a button;
+generation and schema provenance remain diagnostic state.
 
 The page does not add another political identity tier. Organization details are
 generated from these saved facts and continue in play as offices, groups, customs,
@@ -81,11 +87,11 @@ appropriate to societies with prior histories.
 ## Persistence and validation
 
 One keyed pending file per world identity stores the current regional candidate;
-the active mirror carries the same plan. Schema 4 writes factions, settlements,
-relations, population groups, relative development profiles, facilities and
-overrides, infrastructure, provisions, cultural-expression provenance, and the regional copy of
-`playerFounding`. Culture schema 3 stores carried background without the retired
-furniture recipes. A world component owns the same confirmed founding state for
+the active mirror carries the same plan. Regional schema 8 writes factions,
+settlements, relations, population groups, settlement-program schema 1 entries,
+provision arrangements, substantive local Culture, and the regional copy of
+`playerFounding`. Culture and Political Beliefs schema 8 stores substantive
+inherited and current state. A world component owns the same confirmed founding state for
 regional, ordinary, and forced-map starts. It records Culture, Political
 Beliefs, the exact Founding Arrangement and its provenance, the native player
 Ideoligion content-and-revision receipt, and the tick at which the arrangement
@@ -104,9 +110,10 @@ does not reroll the player's chosen arrangement.
 
 The next operator test must confirm that both active plan surfaces restore the
 same three-faction/four-settlement composition without losing the arrival area
-or options, preserve edits across native Ideoligion configuration and Back/Next
-navigation, show cultural expression at settlement scope, preserve exact
-development and facility provenance, pass every page gate, and generate the same
-selected map. Visual hierarchy, copy fit, belief-versus-order clarity,
-geography, feature placement, settlement identifiers, cultural readings,
-facilities, residents, and provisions remain runtime judgments.
+or options; that Objects, Map, Details, selection, and settlement comparison feel
+natural; that Culture semantic editing and contextual exact-value fine tuning
+reopen without loss; that every settlement's saved program and provision
+arrangements remain present; and that the selected map generates. Visual
+hierarchy, copy fit, Faction Relations, geography, feature placement, settlement
+identifiers, cultural readings, program composition, residents, and provisions
+remain runtime judgments.

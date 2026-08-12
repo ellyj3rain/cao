@@ -6,7 +6,7 @@ institutions, beliefs, and authority. Factions make decisions and carry their
 consequences forward instead of resetting to isolated game events.
 
 <!-- cao:generated:version BEGIN -->
-Current version: `1.3.0.2-alpha`. Implementation is complete through batch `B8`; `B9` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.
+Current version: `1.3.0.3-alpha`. Implementation is complete through batch `B9`; `B10` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.
 <!-- cao:generated:version END -->
 
 ## Framework
@@ -33,12 +33,20 @@ remain authoritative at every tier.
 
 Starting Region authors direct world facts: the selected region and arrival
 area, factions, settlements, population composition, ownership and relations,
-and explicit exceptional starting conditions. Its map remains the primary
-spatial surface. Settlement scale, access, services, civic capacity, facilities,
-and other material outcomes are realized from population, land, geography,
-technology, institutions, economy, trade, history, and the objects that actually
-exist. They are inspected as consequences rather than exposed as one universal
-intensity menu.
+and explicit exceptional starting conditions. Objects and Map remain its primary
+navigation; Details provides concise object-specific inspection and settlement
+comparison. One valid option is shown as a fact only when it matters, not as a
+button, and generation provenance remains diagnostic rather than player copy.
+
+Settlement scale, access, services, civic capacity, and material composition are
+realized from population, land, geography, technology, institutions, economy,
+trade, history, and loaded functional objects. An open 22-program registry
+records housing, food, storage, medicine, production, trade, governance,
+security, defense, research, religion, social life, culture, agriculture,
+communications, and transport requirements. Programs can require several rooms,
+assets, operators, stocks, and access paths; they are not a facility checklist or
+development slider. Household, communal, and authority provisions appear only
+when their actual social and material operators exist.
 
 Culture is persistent social history with substantive inherited state. Each
 Culture records constituent populations; inherited and current meanings about
@@ -50,9 +58,11 @@ settlement-development consumers, and later modules can register more without a
 Culture schema change. RimWorld's native `CultureDef` remains a separately
 labeled optional visual tradition, not the cultural model.
 
-The Culture composer edits overview, social meanings, inherited practices,
-visual tradition, and a factual causal preview. Name plus visual tradition is not
-a valid Culture. Saved profiles copy inherited meanings and practices without
+The Culture composer edits overview, semantic social meanings, inherited
+practices, visual tradition, and a factual causal preview. Guided meaning cards
+are the normal authoring surface; exact continuous values remain available as
+contextual fine tuning and round-trip without loss. Name plus visual tradition is
+not a valid Culture. Saved profiles copy inherited meanings and practices without
 world identity or historical state. In play, informed pawn responses aggregate
 into subject-specific social patterns; qualified repeated evidence can produce
 `Culture(T+1)` from `Culture(T)`. One event, unchanged evidence, or opening an

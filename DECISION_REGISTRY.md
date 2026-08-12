@@ -2228,3 +2228,54 @@
   cleared with one diagnostic. The current runtime contains one schema and does
   not retain abandoned fields, aliases, partial preset inheritance, profile
   identity, or migration machinery for unsupported development objects.
+
+- **DR-120** (2026-08-12) - **Objects and Map remain the canonical Starting
+  Region navigation surfaces.** Details is reached from object selection or an
+  explicit map action and shares the same selected object.
+
+- **DR-121** (2026-08-12) - **Details exposes meaningful decisions and essential
+  inspection.** Secondary facts move to object-specific inspectors; persistence
+  alone does not justify permanent UI.
+
+- **DR-122** (2026-08-12) - **One valid option is not an ordinary control.** It
+  becomes a concise readout only when essential; absence becomes visible only
+  when it blocks confirmation.
+
+- **DR-123** (2026-08-12) - **Implementation provenance belongs to
+  diagnostics.** Generated-source labels, schema facts, and receipt language do
+  not appear in ordinary player copy.
+
+- **DR-124** (2026-08-12) - **Setup titles use conventional title
+  composition.** Explicit domain copy owns capitalization; dynamic names are not
+  mechanically title-cased.
+
+- **DR-125** (2026-08-12) - **Established settlement composition is an open
+  derived program.** The seven-bit facility mask and its persistence are retired
+  without alias or migration.
+
+- **DR-126** (2026-08-12) - **Functional loaded assets participate through
+  actual contracts.** Core, expansion, and ported content use the same native
+  evidence; visual appearance or suggestive names alone do not qualify.
+
+- **DR-127** (2026-08-12) - **Provision operators must exist socially,
+  materially, and behaviorally.** A generated arrangement requires a real
+  operator, access, stock, funding, program support, and consumer.
+
+- **DR-128** (2026-08-12) - **Faction technology is faction state.** It is a
+  factual faction readout rather than a settlement setting.
+
+- **DR-129** (2026-08-12) - **Settlement research requires a real research
+  institution.** It appears only when a research program and loaded functional
+  asset support it.
+
+- **DR-130** (2026-08-12) - **Culture is not linear.** Normal authoring uses
+  semantic social interpretation; exact continuous values remain contextual
+  advanced controls and round-trip without loss.
+
+- **DR-131** (2026-08-12) - **Faction Relations is the relational-authoring
+  visual reference.** Relation state is shown directly without generated-source
+  provenance.
+
+- **DR-132** (2026-08-12) - **B9 is the final pre-runtime correction batch.**
+  B10 remains next and cannot begin before the operator validates the deployed
+  creation flow and generated game.

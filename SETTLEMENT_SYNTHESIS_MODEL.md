@@ -10,7 +10,7 @@ and setup UI use the same terms.
 |---|---|
 | Region | selected world areas, arrival area, world tendencies, settlement pattern, principal settlement scale, regional relation pattern, frontier holdings |
 | Faction | source faction, substantive inherited Culture, optional visual tradition, native Ideoligion receipt, complete Political Beliefs, faction structure, settlement authority, faction era |
-| Settlement | owning faction, world area, population origin, resident population, land capacity, role, form, sparse facility exceptions, realized access, services, civic state, economy, trade, specialization, historical development, scale, population groups, provisions, local Culture |
+| Settlement | owning faction, world area, population origin, resident population, land capacity, role, form, realized access, services, civic state, economy, trade, specialization, historical development, scale, population groups, settlement program, provision arrangements, local Culture |
 | Faction relation | left faction, right faction, realized relation, authored/generated provenance |
 | Frontier holding | world area, household size, land capacity, material level, form, faction status |
 
@@ -55,16 +55,18 @@ Generation consumes one confirmed candidate in this order:
    the native Ideoligion receipt, and materialize only the exact rules adopted at
    landing. Broader player structure remains unset until play establishes it.
 4. Resolve each settlement's population, land, role, form, access, services,
-   civic state, economy, trade, specialization, history, facilities, and sparse
-   exact facility exceptions. Resolve frontier sites and forms separately.
+   civic state, economy, trade, specialization, and history. Derive one open
+   settlement program from those facts and loaded functional asset contracts.
+   Resolve frontier sites and forms separately.
 5. Derive and save settlement scale, regional relation pattern, and settlement
    pattern from those facts.
-6. Generate or retain population groups and causal starting provisions.
+6. Generate or retain population groups and causal provision arrangements with
+   real household, communal, or authority operators.
 7. Derive material capability from faction era and local supports.
 8. Establish each existing settlement's directly authored local Culture
    baseline: constituents, current meanings, current practices, plurality, and
    disagreement. Do not fabricate transition history.
-9. Materialize settlements, holdings, residents, organizations, facilities,
+9. Materialize settlements, holdings, residents, organizations, program assets,
    provisions, faction relations, and map geography from saved results.
 
 Opening, drawing, previewing, or inspecting a screen does not regenerate state or
@@ -170,17 +172,30 @@ Population groups record share, affiliation, Ideoligion source and certainty,
 political-belief source, and separate-quarter status. Materialization assigns
 real pawns to those saved groups.
 
-Facilities are derived from current settlement facts. Sparse exact exception
-bits may preserve or forbid a named starting facility; there is no general
-development profile or per-facility Generated/Include/Omit authoring matrix.
-Access, services, civic state, economic capacity, trade connectivity,
-specialization, role, history, and urban support remain independent realized
-facts. Urban-growth tendency changes only the threshold, not city status itself.
+Established settlement composition is an open derived program, never a fixed
+facility mask or intensity profile. Each namespaced program definition owns its
+source facts, applicability, candidate-resolution and materialization contracts,
+inspection summary, runtime or maintenance consumer, and fallback. Each saved
+entry owns selected functional candidates, required extent, materialization
+state, placed identities, blockers, and a stable signature. One program may
+require rooms, worktables, storage, operators, stock, access, and several linked
+assets.
 
-Starting provisions are causal arrangements rather than arbitrary stacks. Their
-operator, access, funding, and cause derive from population, faction structure,
-facilities, infrastructure, settlement scale, and role. A player override changes
-distribution only.
+The initial registry contains 22 programs across housing, food, storage,
+medicine, production, trade, governance, security, defense, research, religion,
+social life, culture, agriculture, communications, and transport. Loaded native,
+expansion, and ported assets participate through actual functional contracts;
+visual-only props do not establish a program. Access, services, civic state,
+economic capacity, trade connectivity, specialization, role, history, and urban
+support remain independent realized facts. Urban-growth tendency changes only
+the threshold, not city status itself.
+
+Provision arrangements are causal records rather than arbitrary stacks. A
+household, communal, or authority operator must exist socially, materially, and
+behaviorally before its arrangement can be generated. Operator, access, funding,
+stock, program support, cause, and exact counts are saved once and consumed
+without rerolling. Unsupported vendor, religious, dues, and abstract-distribution
+branches are absent.
 
 Capability is a derived assessment. Faction era is the upper bound; actual
 facilities, infrastructure, knowledge, pawns, buildings, stocks, roads, water,
@@ -189,16 +204,17 @@ never overrides those supports.
 
 ## Persistence
 
-The current authoring data epoch is `8`. The pending-plan schema is `6`; Culture
-and Political Beliefs schema is `8`; player founding schema is `3`. The plan
-writes factions, settlements, population groups, provisions, local Culture,
-Political Beliefs, faction structure, settlement authority, relations, holdings,
-patterns, scales, realization state, and the player-founding object directly.
+The current authoring data epoch is `8`. The pending-plan schema is `8`; the
+settlement-program schema is `1`; Culture and Political Beliefs schema is `8`;
+player founding schema is `3`. The plan writes factions, settlements, population
+groups, programs, provision arrangements, local Culture, Political Beliefs,
+faction structure, settlement authority, relations, holdings, patterns, scales,
+realization state, and the player-founding object directly.
 
 This project is pre-release. An epoch mismatch clears incompatible CA-owned
 Culture, Political Beliefs, profile, founding-draft, social-interpretation, and
 regional-authoring state with one diagnostic. The current implementation does
 not preserve abandoned fields, aliases, partial profiles, old preset identities,
-or field-by-field migration machinery. The governed B8 fixture is generated
+or field-by-field migration machinery. The governed B9 fixture is generated
 directly from its intentional world, region, candidate, arrival, scale, faction,
 settlement, and population inputs.

@@ -19,8 +19,8 @@ export const KOHAI_HARD_CAP = 16;
 export const PATCH_HARD_CAP = 24;
 export const MATURITY_LADDER = Object.freeze(["pre-alpha", "alpha", "beta", "rc"]);
 export const ROOT_REPLAY_START_VERSION = "0.1.0.0-pre-alpha";
-export const CLOSED_BATCH_TIP = "B8";
-export const NEXT_BATCH = "B9";
+export const CLOSED_BATCH_TIP = "B9";
+export const NEXT_BATCH = "B10";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_REPO_ROOT = resolve(here, "..");
@@ -384,6 +384,17 @@ export const VERSION_UNITS = Object.freeze([
     threads: ["T-002", "T-004", "T-006", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
     rationale: "B8 completes the corrective B7 creation boundary by replacing name-and-style Culture with substantive inherited meanings and practices, replacing partial political presets and arbitrary completion with question-first complete vectors and causal NPC derivation, and connecting registered social facts through pawn response, group pattern, and longitudinal Culture transition. It deliberately resets unsupported pre-release authoring data rather than migrating invalid objects. This repairs the existing capability in place and therefore carries the patch tier.",
   },
+  {
+    id: "VU-036",
+    series: "B",
+    first: 9,
+    last: 9,
+    dates: "2026-08-12",
+    tier: "patch",
+    name: "Starting Region information architecture and settlement program closure",
+    threads: ["T-002", "T-013", "T-014", "T-015", "T-016", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
+    rationale: "B9 closes the remaining pre-runtime faults in the B6-B8 creation capability. It makes Starting Region selection and comparison coherent, removes non-decisions and implementation provenance from ordinary Details, replaces the fixed starting-facility mask with an open causal settlement-program registry and exact materialization contract, makes provision operators socially and materially real, and presents Culture through semantic meanings with contextual exact values. This is an in-place correction of the existing authoring and generation boundary, so the unit carries the patch tier.",
+  },
 ]);
 
 function parseVersion(version) {
@@ -531,7 +542,7 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | Hard caps | minor ${MINOR_HARD_CAP}; kohai ${KOHAI_HARD_CAP}; patch ${PATCH_HARD_CAP} |
 | Replay start | \`${ROOT_REPLAY_START_VERSION}\` |
 | Current version | \`${replay.currentVersion}\` |
-| Closed chronology | \`A1-B8\` |
+| Closed chronology | \`A1-B9\` |
 | Next batch | \`${NEXT_BATCH}\` |
 | Executable source | [\`tools/version-model.mjs\`](tools/version-model.mjs) |
 
@@ -626,9 +637,10 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     "B6",
     "B7",
     "B8",
+    "B9",
   ];
   if (JSON.stringify(covered) !== JSON.stringify(expected)) {
-    errors.push("version units must cover A1-B8 exactly once, contiguously, and in order");
+    errors.push("version units must cover A1-B9 exactly once, contiguously, and in order");
   }
   VERSION_UNITS.forEach((unit, index) => {
     const expectedId = `VU-${String(index + 1).padStart(3, "0")}`;
@@ -643,19 +655,19 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     .sort((left, right) => left[0].localeCompare(right[0])
       || Number(left.slice(1)) - Number(right.slice(1)));
   if (JSON.stringify(closedIds) !== JSON.stringify(expected)) {
-    errors.push("Batches/ must contain exactly the closed A001-A102 and B001-B008 record set");
+    errors.push("Batches/ must contain exactly the closed A001-A102 and B001-B009 record set");
   }
-  if (batchFiles.some((name) => /^B0*9-.*\.md$/.test(name))) {
-    errors.push("B9 must remain unconsumed until the next development batch");
+  if (batchFiles.some((name) => /^B0*10-.*\.md$/.test(name))) {
+    errors.push("B10 must remain unconsumed until the next development batch");
   }
 
   const batchLog = readFileSync(join(repoRoot, "BATCH_LOG.md"), "utf8");
   const logIds = [...batchLog.matchAll(/^\| \[([A-Z])(\d+)\]/gm)]
     .map((match) => `${match[1]}${Number(match[2])}`);
   if (JSON.stringify(logIds) !== JSON.stringify(closedIds)) {
-    errors.push("BATCH_LOG.md must index A1-B8 exactly once and in order");
+    errors.push("BATCH_LOG.md must index A1-B9 exactly once and in order");
   }
-  if (/^\| \[B9\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B9 record yet");
+  if (/^\| \[B10\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B10 record yet");
 
   const threads = readFileSync(join(repoRoot, "Batches", "THREADS.md"), "utf8");
   const declaredThreads = new Set([...threads.matchAll(/<a id="t-(\d{3})"><\/a>T-(\d{3})/g)].map((match) => `T-${match[1]}`));
@@ -740,7 +752,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (args.has("--write")) writeGenerated(DEFAULT_REPO_ROOT);
   const result = validateRepository(DEFAULT_REPO_ROOT);
   if (args.has("--json")) console.log(JSON.stringify(result, null, 2));
-  else if (result.ok) console.log(`version-model: OK — ${result.currentVersion}; ${result.unitCount} units cover A1-B8; ${result.nextBatch} remains next`);
+  else if (result.ok) console.log(`version-model: OK — ${result.currentVersion}; ${result.unitCount} units cover A1-B9; ${result.nextBatch} remains next`);
   else result.errors.forEach((error) => console.error(`version-model: ${error}`));
   process.exit(result.ok ? 0 : 1);
 }

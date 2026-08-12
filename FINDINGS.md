@@ -3230,3 +3230,37 @@
   regional plan schema 6, Culture and Political Beliefs schema 8, and player
   founding schema 3. The transient developer-exercise boundary and the separate
   compatible-region requirement for behavior case 104 remain explicit.
+
+- **F-159** (2026-08-12 UTC / 2026-08-12 PDT) - **B9 closes Starting Region
+  information architecture and settlement programs at the static boundary.**
+  Source commit `20b181413a13a2b168c9c5d8dc23fb20241909c4` preserves Objects and
+  Map, adds shared selection and compact settlement comparison, reconstructs
+  region/faction/settlement Details around object-owned facts, removes
+  one-option controls and backend exposition, and measures wrap-sensitive rows.
+  Culture onboarding uses semantic meaning cards and guided editing while exact
+  continuous values remain contextual and lossless.
+
+  The seven persisted facility bits and exception masks are gone. A 22-program
+  namespaced registry spans 16 functional domains and resolves native,
+  expansion, and ported candidates from loaded contracts. Provision generation
+  now admits only household, communal, and authority operators backed by actual
+  social, material, funding, access, stock, and consumer evidence. Confirmed
+  plans materialize saved programs and counts rather than rerolling tendencies.
+
+  Exact B9 acceptance records 79 statically verified cases and five named
+  operator-runtime observations. Retained suites pass 57/57 B8 receipts, 185
+  World-tendency assertions, 48 player-founding assertions, 54 creation-flow
+  assertions, and 98/107 behavior cases with nine operator observations. Five
+  review lenses leave no unresolved Critical or High finding. The clean Release
+  build succeeds with zero errors and twelve inherited warnings. Its
+  3,404,288-byte assembly, SHA-256
+  `9AD4EE62359CF1961FFCB55A7C45C946914F99E264FD7C819F74342E51D0EE19`,
+  is byte-identical at the active project target after closed-process deployment.
+
+  Both fixture surfaces are byte-identical at SHA-256
+  `1DDAA4CD9ADC2CD557471B01D754BA37AE191A3588155645B1A872680D8ED4D2`.
+  Regional schema 8 and settlement-program schema 1 retain three factions, four
+  settlements, nine population groups, the current world/region/candidate/
+  arrival/scale identity, and per-settlement program/provision counts. Visual
+  layout, selection feel, Faction Relations, fine-tune reopening, and the
+  generated game remain operator judgments.

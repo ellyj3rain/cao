@@ -30,6 +30,31 @@ def keep_row_together(row):
         properties.append(OxmlElement("w:cantSplit"))
 
 
+def mark_header_row(row):
+    properties = row._tr.get_or_add_trPr()
+    header = properties.find(qn("w:tblHeader"))
+    if header is None:
+        properties.append(OxmlElement("w:tblHeader"))
+
+
+def set_table_geometry(table, width_twips):
+    properties = table._tbl.tblPr
+    width = properties.find(qn("w:tblW"))
+    if width is None:
+        width = OxmlElement("w:tblW")
+        properties.append(width)
+    width.set(qn("w:type"), "dxa")
+    width.set(qn("w:w"), str(width_twips))
+
+    indent = properties.find(qn("w:tblInd"))
+    if indent is None:
+        indent = OxmlElement("w:tblInd")
+        properties.append(indent)
+    indent.set(qn("w:type"), "dxa")
+    indent.set(qn("w:w"), "120")
+    table.autofit = False
+
+
 def plain(text):
     text = re.sub(r"\[([^]]+)\]\([^)]+\)", r"\1", text)
     text = text.replace("`", "").replace("**", "")
@@ -43,13 +68,26 @@ def add_text(doc, text, style=None):
 
 
 def main():
-    lines = SOURCE.read_text(encoding="utf-8").splitlines()
+    source_text = SOURCE.read_text(encoding="utf-8")
+    lines = source_text.splitlines()
+    version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    batch_match = re.search(r"complete through batch `([^`]+)`", source_text)
+    closed_batch = batch_match.group(1) if batch_match else "current"
+
     doc = Document()
     section = doc.sections[0]
     section.top_margin = Inches(0.65)
     section.bottom_margin = Inches(0.65)
     section.left_margin = Inches(0.72)
     section.right_margin = Inches(0.72)
+    content_width_twips = round(
+        (
+            section.page_width
+            - section.left_margin
+            - section.right_margin
+        )
+        / 635
+    )
 
     styles = doc.styles
     styles["Normal"].font.name = "Aptos"
@@ -110,8 +148,11 @@ def main():
             table = doc.add_table(rows=len(rows), cols=max(len(row) for row in rows))
             table.alignment = WD_TABLE_ALIGNMENT.CENTER
             table.style = "Table Grid"
+            set_table_geometry(table, content_width_twips)
             for r_index, row in enumerate(rows):
                 keep_row_together(table.rows[r_index])
+                if r_index == 0:
+                    mark_header_row(table.rows[r_index])
                 for c_index, value in enumerate(row):
                     cell = table.cell(r_index, c_index)
                     cell.text = value
@@ -147,11 +188,15 @@ def main():
 
     footer = section.footer.paragraphs[0]
     footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    footer.add_run("Colonist Awareness Overhaul · 1.3.0.2-alpha · B8").font.size = Pt(8)
+    footer.add_run(
+        f"Colonist Awareness Overhaul · {version} · {closed_batch}"
+    ).font.size = Pt(8)
     doc.core_properties.title = "Colonist Awareness Overhaul"
     doc.core_properties.subject = "Current project README"
     doc.core_properties.author = "ellyj3rain"
-    doc.core_properties.keywords = "RimWorld, Colonist Awareness, B8, Culture"
+    doc.core_properties.keywords = (
+        f"RimWorld, Colonist Awareness, {closed_batch}, Culture"
+    )
     doc.save(TARGET)
 
 
