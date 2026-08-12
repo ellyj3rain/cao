@@ -423,7 +423,7 @@ namespace ColonistAwareness
                 identity.Add(record.faction?.Name);
                 identity.Add(record.factionEra);
                 identity.Add(record.settlementForm);
-                identity.Add(record.startingFacilityMask);
+                identity.Add(record.settlementProgram?.sourceSignature);
                 identity.Add(record.populationBaseline);
 
                 layout.Add(record.slot);

@@ -762,7 +762,7 @@ namespace ColonistAwareness
                 .ThenBy(item => item.subjectKey)
                 .Take(3)
                 .Select(item => CASocialSubjectRegistry.Find(item.subjectKey)
-                    ?.Label ?? item.subjectKey).ToArray());
+                    ?.Label ?? "recorded social meaning").ToArray());
             string top = salient.NullOrEmpty() ? ""
                 : " · most salient: " + salient;
             return identity + " · " + continuity + plurality + change
@@ -2198,6 +2198,23 @@ namespace ColonistAwareness
         private int section;
         private Vector2 scroll;
         private float viewHeight;
+        private CACulturalMeaning editingMeaning;
+        private CACulturePractice editingPractice;
+
+        private static readonly string[] ApprovalAnchors =
+            { "Condemned", "Disfavored", "Tolerated", "Approved", "Celebrated" };
+        private static readonly string[] NormalityAnchors =
+            { "Rare", "Unusual", "Ordinary", "Expected", "Pervasive" };
+        private static readonly string[] PrestigeAnchors =
+            { "Stigmatized", "Low status", "Neutral", "Respected", "Prestigious" };
+        private static readonly string[] SalienceAnchors =
+            { "Peripheral", "Noticeable", "Important", "Central", "Identity-defining" };
+        private static readonly string[] PracticeAnchors =
+            { "Occasional", "Repeated", "Established", "Strong", "Defining" };
+        private static readonly int[] SignedAnchorValues =
+            { -100, -50, 0, 50, 100 };
+        private static readonly int[] UnsignedAnchorValues =
+            { 0, 25, 50, 75, 100 };
 
         public override Vector2 InitialSize => new Vector2(
             Mathf.Min(980f, UI.screenWidth - 48f),
@@ -2252,7 +2269,7 @@ namespace ColonistAwareness
             string[] tabs = { "Overview", "Social meanings",
                 boundary == CACultureAuthoringBoundary.EstablishedLocal
                     ? "Local practices" : "Inherited practices",
-                "Visual tradition", "Causal preview" };
+                "Visual tradition" };
             float tabHeight = CACreationUI.DrawSegmentRows(new Rect(0f, y,
                 inRect.width, 30f), tabs, section, value =>
                 {
@@ -2270,8 +2287,7 @@ namespace ColonistAwareness
             if (section == 0) DrawOverview(ref rowY, view.width);
             else if (section == 1) DrawMeanings(ref rowY, view.width);
             else if (section == 2) DrawPractices(ref rowY, view.width);
-            else if (section == 3) DrawVisual(ref rowY, view.width);
-            else DrawCausalPreview(ref rowY, view.width);
+            else DrawVisual(ref rowY, view.width);
             viewHeight = rowY + 12f;
             Widgets.EndScrollView();
         }
@@ -2304,9 +2320,8 @@ namespace ColonistAwareness
                 culture.name ?? "Inherited Culture",
                 () => Find.WindowStack.Add(new Dialog_CARenameCulture(
                     culture, changed)), FieldState(CACulture.NameField));
-            CACultureModel.Normalize(culture);
             DrawFact(ref y, width, "Inherited source",
-                culture.parentId ?? "No earlier Culture recorded");
+                InheritedCultureName(culture));
             DrawFact(ref y, width, "Constituent cultures",
                 culture.constituents.Count == 0 ? "Not recorded"
                     : string.Join(", ", culture.constituents.Select(item =>
@@ -2325,7 +2340,9 @@ namespace ColonistAwareness
             DrawFact(ref y, width, "Most salient",
                 salient.Length == 0 ? "None composed" : string.Join(", ",
                     salient.Select(item => SubjectLabel(item.subjectKey)
-                        + " " + item.salience)));
+                        + " - " + SalienceAnchors[NearestAnchor(
+                            item.salience, UnsignedAnchorValues)]
+                            .ToLowerInvariant())));
             int disputed = culture.inheritedMeanings.Concat(
                 culture.localMeanings).GroupBy(item =>
                     item.subjectKey).Count(group => group.Min(item =>
@@ -2336,6 +2353,12 @@ namespace ColonistAwareness
             CultureDef native = CACultureModel.NativeDef(culture);
             DrawFact(ref y, width, "Visual tradition",
                 native?.LabelCap.ToString() ?? "None");
+            y += 6f;
+            if (Widgets.ButtonText(new Rect(0f, y,
+                    Mathf.Min(260f, width), 32f), "Inspect causal effects..."))
+                Find.WindowStack.Add(new Dialog_CACultureCausalInspector(
+                    culture));
+            y += 42f;
         }
 
         private void DrawMeanings(ref float y, float width)
@@ -2348,7 +2371,7 @@ namespace ColonistAwareness
                 DrawExplanation(ref y, width,
                     boundary == CACultureAuthoringBoundary.EstablishedLocal
                         ? "No direct local meaning is authored yet. Inherited "
-                            + "meanings remain visible in Overview and Causal preview."
+                            + "meanings remain visible in Overview and the causal inspector."
                         : "Add a concrete registered subject. A name and visual "
                             + "tradition alone are not substantive Culture.");
                 return;
@@ -2362,68 +2385,85 @@ namespace ColonistAwareness
         {
             CASocialSubjectDef subject = CASocialSubjectRegistry.Find(
                 meaning.subjectKey);
-            string source = subject == null
-                ? "The owning module is not loaded; this namespaced meaning is preserved."
-                : subject.Description + " Evidence: "
-                    + subject.AuthoritativeSource + ". Consumers: "
-                    + string.Join(", ", subject.Consumers) + ". It cannot "
-                    + "grant authority, create an institution, or supply material.";
-            GameFont priorFont = Text.Font;
-            Text.Font = GameFont.Tiny;
-            float sourceHeight = Text.CalcHeight(source, width - 24f);
-            Text.Font = priorFont;
-            float boxHeight = 212f + sourceHeight;
+            bool editing = editingMeaning == meaning;
+            string scopeLabel = MeaningScopeLabel(meaning);
+            string title = (subject?.Label ?? "Recorded social meaning") + " - "
+                + scopeLabel;
+            string interpretation = MeaningInterpretation(meaning);
+            float textWidth = Mathf.Max(120f, width - 24f);
+            float interpretationHeight = Text.CalcHeight(interpretation,
+                textWidth);
+            float boxHeight = 52f + interpretationHeight;
+            if (editing)
+            {
+                float segmentWidth = Mathf.Max(120f, width - 150f);
+                boxHeight += 42f;
+                boxHeight += AnchorRowHeight(segmentWidth, ApprovalAnchors) + 8f;
+                boxHeight += AnchorRowHeight(segmentWidth, NormalityAnchors) + 8f;
+                boxHeight += AnchorRowHeight(segmentWidth, PrestigeAnchors) + 8f;
+                boxHeight += AnchorRowHeight(segmentWidth, SalienceAnchors) + 8f;
+                boxHeight += 46f;
+            }
             Rect box = new Rect(0f, y, width, boxHeight);
             Widgets.DrawMenuSection(box);
             float innerWidth = width - 24f;
             float at = y + 10f;
             Text.Font = GameFont.Small;
-            Widgets.Label(new Rect(12f, at, innerWidth - 100f, 26f),
-                subject?.Label ?? meaning.subjectKey);
-            if (Widgets.ButtonText(new Rect(width - 92f, at, 80f, 26f),
+            Widgets.Label(new Rect(12f, at, innerWidth - 178f, 28f), title);
+            if (Widgets.ButtonText(new Rect(width - 170f, at, 76f, 28f),
+                    editing ? "Done" : "Edit"))
+                editingMeaning = editing ? null : meaning;
+            if (Widgets.ButtonText(new Rect(width - 88f, at, 76f, 28f),
                     "Remove"))
             {
                 EditableMeanings.Remove(meaning);
+                if (editingMeaning == meaning) editingMeaning = null;
                 changed?.Invoke();
                 y += boxHeight + 10f;
                 return;
             }
-            at += 30f;
-            Text.Font = GameFont.Tiny;
-            GUI.color = ColoredText.SubtleGrayColor;
-            Widgets.Label(new Rect(12f, at, innerWidth, sourceHeight), source);
-            GUI.color = Color.white;
-            Text.Font = GameFont.Small;
-            at += sourceHeight + 6f;
-            string scopeLabel = (meaning.populationScope ?? "*") == "*"
-                ? "All constituent populations"
-                : culture.constituents.FirstOrDefault(item => item != null
-                    && item.cultureId == meaning.populationScope)?.label
-                    ?? meaning.populationScope;
-            Widgets.Label(new Rect(12f, at, 120f, 26f), "Population");
-            if (Widgets.ButtonText(new Rect(136f, at, innerWidth - 124f, 26f),
-                    scopeLabel)) OpenMeaningScope(meaning);
             at += 34f;
-            int approval = MeaningSlider(new Rect(12f, at, innerWidth, 28f),
-                "Approval", meaning.approval, -100, 100);
-            at += 31f;
-            int normality = MeaningSlider(new Rect(12f, at, innerWidth, 28f),
-                "Normality", meaning.normality, 0, 100);
-            at += 31f;
-            int prestige = MeaningSlider(new Rect(12f, at, innerWidth, 28f),
-                "Prestige", meaning.prestige, -100, 100);
-            at += 31f;
-            int salience = MeaningSlider(new Rect(12f, at, innerWidth, 28f),
-                "Salience", meaning.salience, 0, 100);
-            if (approval != meaning.approval || normality != meaning.normality
-                || prestige != meaning.prestige || salience != meaning.salience)
+            GUI.color = ColoredText.SubtleGrayColor;
+            Widgets.Label(new Rect(12f, at, innerWidth,
+                interpretationHeight), interpretation);
+            GUI.color = Color.white;
+            at += interpretationHeight + 8f;
+            if (editing)
             {
-                meaning.approval = approval;
-                meaning.normality = normality;
-                meaning.prestige = prestige;
-                meaning.salience = salience;
-                meaning.lastChangedTick = -1;
-                changed?.Invoke();
+                Widgets.Label(new Rect(12f, at, 126f, 28f), "Population");
+                if (Widgets.ButtonText(new Rect(142f, at,
+                        innerWidth - 130f, 28f), scopeLabel))
+                    OpenMeaningScope(meaning);
+                at += 40f;
+                DrawMeaningAnchor(ref at, width, "Approval", ApprovalAnchors,
+                    meaning.approval, SignedAnchorValues, value =>
+                    {
+                        meaning.approval = value;
+                        MeaningChanged(meaning);
+                    });
+                DrawMeaningAnchor(ref at, width, "Normality", NormalityAnchors,
+                    meaning.normality, UnsignedAnchorValues, value =>
+                    {
+                        meaning.normality = value;
+                        MeaningChanged(meaning);
+                    });
+                DrawMeaningAnchor(ref at, width, "Prestige", PrestigeAnchors,
+                    meaning.prestige, SignedAnchorValues, value =>
+                    {
+                        meaning.prestige = value;
+                        MeaningChanged(meaning);
+                    });
+                DrawMeaningAnchor(ref at, width, "Salience", SalienceAnchors,
+                    meaning.salience, UnsignedAnchorValues, value =>
+                    {
+                        meaning.salience = value;
+                        MeaningChanged(meaning);
+                    });
+                if (Widgets.ButtonText(new Rect(12f, at,
+                        Mathf.Min(230f, innerWidth), 30f),
+                        "Fine-tune values..."))
+                    Find.WindowStack.Add(new Dialog_CACultureValueFineTune(
+                        meaning, changed));
             }
             y += boxHeight + 10f;
         }
@@ -2477,6 +2517,78 @@ namespace ColonistAwareness
                 options);
         }
 
+        private void DrawMeaningAnchor(ref float y, float width, string label,
+            string[] labels, int value, int[] values, Action<int> choose)
+        {
+            const float labelWidth = 130f;
+            Widgets.Label(new Rect(12f, y + 4f, labelWidth - 8f, 28f), label);
+            float segmentWidth = Mathf.Max(120f, width - labelWidth - 24f);
+            float height = CACreationUI.DrawSegmentRows(new Rect(
+                labelWidth + 12f, y, segmentWidth, 28f), labels,
+                ExactAnchor(value, values), index => choose(values[index]), 92f);
+            y += height + 8f;
+        }
+
+        private static float AnchorRowHeight(float width, string[] labels)
+        {
+            const float gap = 4f;
+            int columns = Mathf.Clamp(Mathf.FloorToInt((width + gap)
+                / 96f), 1, labels.Length);
+            int rows = (labels.Length + columns - 1) / columns;
+            return rows * 28f + (rows - 1) * gap;
+        }
+
+        private static int ExactAnchor(int value, int[] values)
+        {
+            for (int i = 0; i < values.Length; i++)
+                if (value == values[i]) return i;
+            return -1;
+        }
+
+        private static int NearestAnchor(int value, int[] values)
+        {
+            int best = 0;
+            int distance = int.MaxValue;
+            for (int i = 0; i < values.Length; i++)
+            {
+                int candidate = Math.Abs(value - values[i]);
+                if (candidate >= distance) continue;
+                best = i;
+                distance = candidate;
+            }
+            return best;
+        }
+
+        private string MeaningScopeLabel(CACulturalMeaning meaning)
+        {
+            return (meaning.populationScope ?? "*") == "*"
+                ? "All constituent populations"
+                : culture.constituents.FirstOrDefault(item => item != null
+                    && item.cultureId == meaning.populationScope)?.label
+                    ?? meaning.populationScope;
+        }
+
+        private static string MeaningInterpretation(CACulturalMeaning meaning)
+        {
+            string normality = NormalityAnchors[NearestAnchor(
+                meaning.normality, UnsignedAnchorValues)];
+            string approval = ApprovalAnchors[NearestAnchor(
+                meaning.approval, SignedAnchorValues)].ToLowerInvariant();
+            string prestige = PrestigeAnchors[NearestAnchor(
+                meaning.prestige, SignedAnchorValues)].ToLowerInvariant();
+            string salience = SalienceAnchors[NearestAnchor(
+                meaning.salience, UnsignedAnchorValues)].ToLowerInvariant();
+            return normality + " and " + approval + ". It carries "
+                + prestige + " standing and is " + salience
+                + " in daily life.";
+        }
+
+        private void MeaningChanged(CACulturalMeaning meaning)
+        {
+            meaning.lastChangedTick = -1;
+            changed?.Invoke();
+        }
+
         private void DrawPractices(ref float y, float width)
         {
             if (Widgets.ButtonText(new Rect(0f, y, 230f, 32f),
@@ -2494,82 +2606,54 @@ namespace ColonistAwareness
             {
                 CASocialSubjectDef subject = CASocialSubjectRegistry.Find(
                     practice.subjectKey);
-                string provenance = (boundary
-                        == CACultureAuthoringBoundary.EstablishedLocal
-                            ? "Initial local source: " : "Inherited source: ")
-                    + (practice.sourcePeriod ?? "starting Culture")
-                    + "; consumers: " + string.Join(", ",
-                        subject?.Consumers ?? new List<string>());
-                GameFont priorFont = Text.Font;
-                Text.Font = GameFont.Tiny;
-                float provenanceHeight = Text.CalcHeight(provenance,
-                    width - 24f);
-                Text.Font = priorFont;
-                float boxHeight = 82f + provenanceHeight;
+                bool editing = editingPractice == practice;
+                string summary = PracticeAnchors[NearestAnchor(
+                    practice.strength, UnsignedAnchorValues)]
+                    + " practice.";
+                float summaryHeight = Text.CalcHeight(summary, width - 24f);
+                float boxHeight = 52f + summaryHeight;
+                if (editing)
+                    boxHeight += AnchorRowHeight(width - 154f,
+                        PracticeAnchors) + 50f;
                 Rect box = new Rect(0f, y, width, boxHeight);
                 Widgets.DrawMenuSection(box);
-                Widgets.Label(new Rect(12f, y + 8f, width - 110f, 26f),
-                    subject?.Label ?? practice.subjectKey);
-                if (Widgets.ButtonText(new Rect(width - 92f, y + 8f, 80f,
-                        26f), "Remove"))
+                Widgets.Label(new Rect(12f, y + 8f, width - 192f, 28f),
+                    subject?.Label ?? "Recorded practice");
+                if (Widgets.ButtonText(new Rect(width - 170f, y + 8f, 76f,
+                        28f), editing ? "Done" : "Edit"))
+                    editingPractice = editing ? null : practice;
+                if (Widgets.ButtonText(new Rect(width - 88f, y + 8f, 76f,
+                        28f), "Remove"))
                 {
                     EditablePractices.Remove(practice);
+                    if (editingPractice == practice) editingPractice = null;
                     changed?.Invoke();
                     y += boxHeight + 10f;
                     continue;
                 }
-                int strength = MeaningSlider(new Rect(12f, y + 40f,
-                    width - 24f, 28f), "Strength", practice.strength, 0, 100);
-                Text.Font = GameFont.Tiny;
                 GUI.color = ColoredText.SubtleGrayColor;
-                Widgets.Label(new Rect(12f, y + 73f, width - 24f,
-                    provenanceHeight), provenance);
+                Widgets.Label(new Rect(12f, y + 40f, width - 24f,
+                    summaryHeight), summary);
                 GUI.color = Color.white;
-                Text.Font = GameFont.Small;
-                if (strength != practice.strength)
+                if (editing)
                 {
-                    practice.strength = strength;
-                    changed?.Invoke();
+                    float at = y + 48f + summaryHeight;
+                    DrawMeaningAnchor(ref at, width, "Strength",
+                        PracticeAnchors, practice.strength,
+                        UnsignedAnchorValues, value =>
+                        {
+                            practice.strength = value;
+                            changed?.Invoke();
+                        });
+                    if (Widgets.ButtonText(new Rect(12f, at,
+                            Mathf.Min(230f, width - 24f), 30f),
+                            "Fine-tune value..."))
+                        Find.WindowStack.Add(
+                            new Dialog_CACultureValueFineTune(
+                                practice, changed));
                 }
                 y += boxHeight + 10f;
             }
-        }
-
-        private void DrawCausalPreview(ref float y, float width)
-        {
-            DrawExplanation(ref y, width,
-                "Read-only causal preview. These are persisted meanings and "
-                + "practices, not a generated Culture description.");
-            foreach (CACulturalMeaning meaning in culture.inheritedMeanings
-                .Concat(culture.localMeanings)
-                .OrderByDescending(item => item.salience))
-            {
-                CASocialSubjectDef subject = CASocialSubjectRegistry.Find(
-                    meaning.subjectKey);
-                DrawFact(ref y, width, subject?.Label ?? meaning.subjectKey,
-                    "approval " + meaning.approval + "; normality "
-                    + meaning.normality + "; prestige " + meaning.prestige
-                    + "; salience " + meaning.salience + ". Evidence: "
-                    + (subject?.AuthoritativeSource ?? "owner unavailable")
-                    + ". Consumers: " + string.Join(", ",
-                        subject?.Consumers ?? new List<string>()));
-            }
-            string[] overlaps = culture.inheritedMeanings.Concat(
-                    culture.localMeanings).Where(item =>
-                    item.subjectKey == CASocialSubjectRegistry.PublicVoice
-                    || item.subjectKey == CASocialSubjectRegistry.CompelledService
-                    || item.subjectKey == CASocialSubjectRegistry.SharedProvision
-                    || item.subjectKey == CASocialSubjectRegistry.InheritedRank
-                    || item.subjectKey == CASocialSubjectRegistry.QuarterGiven)
-                .Select(item => SubjectLabel(item.subjectKey)).Distinct().ToArray();
-            DrawFact(ref y, width, "Political overlaps",
-                overlaps.Length == 0 ? "None recorded" : string.Join(", ", overlaps));
-            string[] ritual = culture.inheritedMeanings.Concat(
-                    culture.localMeanings).Where(item =>
-                    item.subjectKey == CASocialSubjectRegistry.QuarterGiven)
-                .Select(item => SubjectLabel(item.subjectKey)).ToArray();
-            DrawFact(ref y, width, "Ideoligion overlaps",
-                ritual.Length == 0 ? "None recorded" : string.Join(", ", ritual));
         }
 
         private void DrawVisual(ref float y, float width)
@@ -2578,9 +2662,8 @@ namespace ColonistAwareness
             string value = native?.LabelCap.ToString()
                 ?? (culture.sourceCultureDefName.NullOrEmpty()
                     ? "Neutral fallback"
-                    : culture.sourceCultureDefName
-                        + " unavailable - neutral fallback");
-            Row(ref y, width, "Native visual source", value,
+                    : "Saved visual tradition unavailable - neutral fallback");
+            Row(ref y, width, "Visual tradition", value,
                 OpenSourceCulture, FieldState(CACulture.SourceCultureField));
             DrawExplanation(ref y, width,
                 "This optional tradition supplies native RimWorld styles. "
@@ -2602,12 +2685,12 @@ namespace ColonistAwareness
                     Key = local.Key,
                     Name = local.Label,
                     Summary = local.Description,
-                    Traits = "Evidence: " + local.AuthoritativeSource
-                        + "\nConsumers: " + string.Join(", ", local.Consumers),
-                    Details = local.CulturalEffect + "\n\nApplicability: "
-                        + local.Applicability + ".\n\nThis meaning cannot "
-                        + "grant authority, create an institution, or supply material.",
-                    Badge = active ? "Already active" : "Registered subject",
+                    CompactSummary = local.Applicability,
+                    Group = local.SourceDomain.CapitalizeFirst(),
+                    Details = local.CulturalEffect + "\n\nObserved through: "
+                        + local.AuthoritativeSource + ".\n\nUsed by: "
+                        + string.Join(", ", local.Consumers) + ".",
+                    Badge = active ? "Already present" : null,
                     Disabled = active,
                     DisabledReason = active ? "This population-wide meaning is already active." : null,
                     Accent = CACreationUI.Authored,
@@ -2637,8 +2720,8 @@ namespace ColonistAwareness
                 });
             }
             CACreationUI.OpenChoices("Add social meaning",
-                "Choose the exact social fact this Culture interprets. Only "
-                + "subjects with a factual source and real consumer appear.", options);
+                "Choose something this Culture regards as ordinary, proper, "
+                + "honorable, or important.", options);
         }
 
         private void OpenPracticeSubject()
@@ -2655,16 +2738,19 @@ namespace ColonistAwareness
                     Key = local.Key,
                     Name = local.Label,
                     Summary = local.Description,
-                    Traits = "Consumers: " + string.Join(", ", local.Consumers),
-                    Details = boundary
+                    CompactSummary = local.Applicability,
+                    Group = local.SourceDomain.CapitalizeFirst(),
+                    Details = (boundary
                         == CACultureAuthoringBoundary.EstablishedLocal
                             ? "Record this as the established settlement's "
                                 + "current local practice at scenario start. "
                                 + "No transition event is created."
                             : "Record this as a repeated practice inherited "
                                 + "before the scenario boundary. Meaning and "
-                                + "practice remain separate records.",
-                    Badge = active ? "Already active" : "Registered subject",
+                                + "practice remain separate records.")
+                        + "\n\nUsed by: "
+                        + string.Join(", ", local.Consumers) + ".",
+                    Badge = active ? "Already present" : null,
                     Disabled = active,
                     DisabledReason = active ? "This inherited practice is already active." : null,
                     Accent = boundary
@@ -2710,18 +2796,6 @@ namespace ColonistAwareness
             == CACultureAuthoringBoundary.EstablishedLocal
                 ? culture.practices : culture.inheritedPractices;
 
-        private static int MeaningSlider(Rect rect, string label, int value,
-            int minimum, int maximum)
-        {
-            const float labelWidth = 130f;
-            Widgets.Label(new Rect(rect.x, rect.y + 4f, labelWidth,
-                rect.height), label + " " + value);
-            float changed = Widgets.HorizontalSlider(new Rect(rect.x
-                    + labelWidth, rect.y, rect.width - labelWidth, rect.height),
-                value, minimum, maximum, false);
-            return Mathf.RoundToInt(changed);
-        }
-
         private static void DrawFact(ref float y, float width, string label,
             string value)
         {
@@ -2738,7 +2812,20 @@ namespace ColonistAwareness
 
         private static string SubjectLabel(string key)
         {
-            return CASocialSubjectRegistry.Find(key)?.Label ?? key;
+            return CASocialSubjectRegistry.Find(key)?.Label
+                ?? "Recorded social meaning";
+        }
+
+        private string InheritedCultureName(CACulture value)
+        {
+            if (value == null || value.parentId.NullOrEmpty())
+                return "No earlier Culture recorded";
+            CACultureConstituent parent = value.constituents
+                ?.FirstOrDefault(item => item != null
+                    && item.cultureId == value.parentId);
+            if (parent != null && !parent.label.NullOrEmpty())
+                return parent.label;
+            return "An earlier Culture recorded in this history";
         }
 
         private static int CurrentTick()
@@ -2766,9 +2853,8 @@ namespace ColonistAwareness
                 Mathf.Max(80f, labelWidth - 90f)));
             Widgets.Label(new Rect(0f, y + 4f, labelWidth - 90f,
                 labelHeight), label);
-            CACreationUI.DrawChip(new Rect(labelWidth - 84f, y + 5f,
-                84f, 20f), CACreationUI.SourceWords(source),
-                CACreationUI.SourceColor(source));
+            // Provenance remains inspectable in causal details. It is not a
+            // default-view status chip because it does not change the action.
             Rect valueRect = stacked
                 ? new Rect(0f, y + labelHeight + 4f, width, 32f)
                 : new Rect(labelWidth + 8f, y, width - labelWidth - 8f,
@@ -2780,7 +2866,7 @@ namespace ColonistAwareness
         private void OpenCultureProfiles()
         {
             CACreationUI.OpenChoices("Saved Cultures",
-                "Use a saved Culture. Native RimWorld style sources are "
+                "Use a saved Culture. RimWorld style sources are "
                     + "chosen separately under Visual tradition.",
                 CAAuthoringChoices.CultureProfiles(culture,
                     culture.id ?? factionLabel ?? "ca-culture", changed));
@@ -2811,7 +2897,7 @@ namespace ColonistAwareness
             {
                 Key = "neutral",
                 Name = "Neutral fallback",
-                Summary = "Use base object styles when no native source applies.",
+                Summary = "Use base object styles when no visual tradition applies.",
                 Badge = "Fallback",
                 Accent = CACreationUI.Generated,
                 Selected = culture.sourceCultureDefName.NullOrEmpty(),
@@ -2833,7 +2919,7 @@ namespace ColonistAwareness
                     Key = local.defName,
                     Name = local.LabelCap.ToString(),
                     Summary = local.description.NullOrEmpty()
-                        ? "Native style categories and visual tradition."
+                        ? "RimWorld style categories and visual tradition."
                         : local.description,
                     Badge = "Style source",
                     Icon = local.Icon,
@@ -2860,6 +2946,177 @@ namespace ColonistAwareness
             if (!culture.Value(field).NullOrEmpty())
                 return CAAxisSource.Generated;
             return CAAxisSource.Unset;
+        }
+    }
+
+    internal sealed class Dialog_CACultureValueFineTune : Window
+    {
+        private readonly CACulturalMeaning meaning;
+        private readonly CACulturePractice practice;
+        private readonly Action changed;
+
+        public override Vector2 InitialSize => new Vector2(620f,
+            meaning == null ? 210f : 350f);
+
+        internal Dialog_CACultureValueFineTune(CACulturalMeaning meaning,
+            Action changed)
+        {
+            this.meaning = meaning;
+            this.changed = changed;
+            doCloseX = true;
+            doCloseButton = true;
+            absorbInputAroundWindow = true;
+        }
+
+        internal Dialog_CACultureValueFineTune(CACulturePractice practice,
+            Action changed)
+        {
+            this.practice = practice;
+            this.changed = changed;
+            doCloseX = true;
+            doCloseButton = true;
+            absorbInputAroundWindow = true;
+        }
+
+        public override void DoWindowContents(Rect inRect)
+        {
+            GameFont prior = Text.Font;
+            Text.Font = GameFont.Medium;
+            Widgets.Label(new Rect(0f, 0f, inRect.width, 34f),
+                "Fine-tune values");
+            Text.Font = GameFont.Small;
+            float y = 46f;
+            if (meaning != null)
+            {
+                int approval = Slider(ref y, inRect.width, "Approval",
+                    meaning.approval, -100, 100);
+                int normality = Slider(ref y, inRect.width, "Normality",
+                    meaning.normality, 0, 100);
+                int prestige = Slider(ref y, inRect.width, "Prestige",
+                    meaning.prestige, -100, 100);
+                int salience = Slider(ref y, inRect.width, "Salience",
+                    meaning.salience, 0, 100);
+                if (approval != meaning.approval
+                    || normality != meaning.normality
+                    || prestige != meaning.prestige
+                    || salience != meaning.salience)
+                {
+                    meaning.approval = approval;
+                    meaning.normality = normality;
+                    meaning.prestige = prestige;
+                    meaning.salience = salience;
+                    meaning.lastChangedTick = -1;
+                    changed?.Invoke();
+                }
+            }
+            else if (practice != null)
+            {
+                int strength = Slider(ref y, inRect.width, "Strength",
+                    practice.strength, 0, 100);
+                if (strength != practice.strength)
+                {
+                    practice.strength = strength;
+                    changed?.Invoke();
+                }
+            }
+            Text.Font = prior;
+        }
+
+        private static int Slider(ref float y, float width, string label,
+            int value, int minimum, int maximum)
+        {
+            const float labelWidth = 150f;
+            Widgets.Label(new Rect(0f, y + 4f, labelWidth, 28f),
+                label + " " + value);
+            float result = Widgets.HorizontalSlider(new Rect(labelWidth, y,
+                width - labelWidth, 28f), value, minimum, maximum, false);
+            y += 42f;
+            return Mathf.RoundToInt(result);
+        }
+    }
+
+    internal sealed class Dialog_CACultureCausalInspector : Window
+    {
+        private readonly CACulture culture;
+        private Vector2 scroll;
+        private float viewHeight;
+
+        public override Vector2 InitialSize => new Vector2(
+            Mathf.Min(860f, UI.screenWidth - 48f),
+            Mathf.Min(620f, UI.screenHeight - 48f));
+
+        internal Dialog_CACultureCausalInspector(CACulture culture)
+        {
+            this.culture = culture ?? new CACulture();
+            doCloseX = true;
+            doCloseButton = true;
+            absorbInputAroundWindow = true;
+        }
+
+        public override void DoWindowContents(Rect inRect)
+        {
+            GameFont prior = Text.Font;
+            Text.Font = GameFont.Medium;
+            Widgets.Label(new Rect(0f, 0f, inRect.width, 34f),
+                "Causal effects");
+            Text.Font = GameFont.Small;
+            const string introduction = "These saved meanings and practices "
+                + "shape interpretation where the listed facts occur.";
+            float introHeight = Text.CalcHeight(introduction, inRect.width);
+            Widgets.Label(new Rect(0f, 40f, inRect.width, introHeight),
+                introduction);
+            float top = 50f + introHeight;
+            Rect outRect = new Rect(0f, top, inRect.width,
+                inRect.height - top - 34f);
+            Rect view = new Rect(0f, 0f, outRect.width - 18f,
+                Mathf.Max(outRect.height, viewHeight));
+            Widgets.BeginScrollView(outRect, ref scroll, view);
+            float y = 0f;
+            foreach (CACulturalMeaning meaning in culture.inheritedMeanings
+                .Concat(culture.localMeanings)
+                .OrderByDescending(item => item.salience))
+            {
+                CASocialSubjectDef subject = CASocialSubjectRegistry.Find(
+                    meaning.subjectKey);
+                string detail = "Approval " + meaning.approval
+                    + "; normality " + meaning.normality + "; prestige "
+                    + meaning.prestige + "; salience " + meaning.salience
+                    + ".\nObserved through: "
+                    + (subject?.AuthoritativeSource ?? "source unavailable")
+                    + ". Used by: " + string.Join(", ",
+                        subject?.Consumers ?? new List<string>()) + ".";
+                DrawFact(ref y, view.width,
+                    subject?.Label ?? "Recorded social meaning", detail);
+            }
+            foreach (CACulturePractice practice in culture.inheritedPractices
+                .Concat(culture.practices)
+                .OrderByDescending(item => item.strength))
+            {
+                CASocialSubjectDef subject = CASocialSubjectRegistry.Find(
+                    practice.subjectKey);
+                DrawFact(ref y, view.width,
+                    (subject?.Label ?? "Recorded") + " practice",
+                    "Strength " + practice.strength + ". Used by: "
+                    + string.Join(", ", subject?.Consumers
+                        ?? new List<string>()) + ".");
+            }
+            viewHeight = y + 12f;
+            Widgets.EndScrollView();
+            Text.Font = prior;
+        }
+
+        private static void DrawFact(ref float y, float width, string label,
+            string detail)
+        {
+            float labelHeight = Text.CalcHeight(label, width);
+            GUI.color = Color.white;
+            Widgets.Label(new Rect(0f, y, width, labelHeight), label);
+            y += labelHeight + 3f;
+            GUI.color = ColoredText.SubtleGrayColor;
+            float detailHeight = Text.CalcHeight(detail, width);
+            Widgets.Label(new Rect(0f, y, width, detailHeight), detail);
+            GUI.color = Color.white;
+            y += detailHeight + 14f;
         }
     }
 

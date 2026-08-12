@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 using RimWorld;
+using UnityEngine;
 using Verse;
 using Verse.AI;
 
@@ -115,18 +116,10 @@ namespace ColonistAwareness
         }
     }
 
-    // Builds the settlement's selected facilities and registers them for
-    // repair, rebuilding, and research improvements.
-    internal static class CAStartingFacilities
+    // Materializes the saved open settlement program and registers its placed
+    // assets for repair, rebuilding, and supported research work.
+    internal static class CASettlementProgramMaterializer
     {
-        internal const int MaskHearth = 1;
-        internal const int MaskStores = 2;
-        internal const int MaskInfirmary = 4;
-        internal const int MaskWorkshop = 8;
-        internal const int MaskJail = 16;
-        internal const int MaskDining = 32;
-        internal const int MaskLab = 64;
-
         internal static int TechTier(Faction faction)
         {
             return CASettlementAxes.Tier(
@@ -142,19 +135,7 @@ namespace ColonistAwareness
             return 0;
         }
 
-        internal static int DerivedMask(CARegionalSettlementRecord record)
-        {
-            int tier = TechTier(record);
-            int mask = MaskHearth | MaskDining;
-            if (record.logistics >= 1) mask |= MaskStores;
-            if (record.medicine >= 1) mask |= MaskInfirmary;
-            if (record.production >= 1 && tier >= 1) mask |= MaskWorkshop;
-            if (record.organization >= 2 && tier >= 1) mask |= MaskJail;
-            if (record.production >= 2 && tier >= 1) mask |= MaskLab;
-            return mask;
-        }
-
-        internal static void Furnish(CAOrganization org,
+        internal static void Materialize(CAOrganization org,
             CARegionalSettlementRecord record, Map map)
         {
             try
@@ -167,10 +148,7 @@ namespace ColonistAwareness
                     || !record.creationSitingFeasible) return;
                 if (record.seededAssets == null)
                     record.seededAssets = new List<string>();
-                if (record.seededAssets.Count > 0) return;
 
-                int mask = record.startingFacilityMask >= 0
-                    ? record.startingFacilityMask : DerivedMask(record);
                 int tier = TechTier(record);
 
                 var rooms = new List<Room>();
@@ -184,9 +162,9 @@ namespace ColonistAwareness
                     rooms.Add(room);
                 }
                 // Retained Culture changes which otherwise valid rooms are
-                // preferred. Shared public life pulls common facilities
+                // preferred. Shared public life pulls common programs
                 // toward the settlement core. It never creates a room or
-                // bypasses facility feasibility.
+                // bypasses program feasibility.
                 CACulturalMeaningResolution shared = CACultureModel.Resolve(
                     record.culture, CASocialSubjectRegistry.PublicGathering);
                 IntVec3 culturalCore = record.layout?.core
@@ -204,7 +182,7 @@ namespace ColonistAwareness
                 }
                 // Rooms from the FAR end of the list - spatially distinct
                 // from the front-cursor rooms - so a quartered population
-                // group has separate facilities.
+                // group has separate program rooms.
                 int farCursor = 0;
                 Room NextFar()
                 {
@@ -213,130 +191,161 @@ namespace ColonistAwareness
                         - (farCursor++ % rooms.Count)];
                 }
 
-                if ((mask & MaskStores) != 0)
+                foreach (CASettlementProgramEntry entry in record
+                    .settlementProgram?.entries
+                    ?? new List<CASettlementProgramEntry>())
                 {
-                    Room r = Next();
+                    if (entry == null || !entry.blocker.NullOrEmpty()) continue;
+                    if (entry.materializationState == "materialized") continue;
+                    CASettlementProgramDef definition =
+                        CASettlementProgramRegistry.Find(entry.programKey);
+                    if (definition == null)
+                    {
+                        entry.materializationState = "blocked";
+                        entry.blocker = "the saved program is not registered";
+                        continue;
+                    }
+                    if (definition.MaterializeSpatialContract)
+                    {
+                        bool materialized = definition.SpatialMaterializer
+                            ?.Invoke(record, map, entry) == true;
+                        if (!materialized && entry.blocker.NullOrEmpty())
+                            entry.blocker = "the native spatial contract could "
+                                + "not be materialized on settlement ground";
+                        continue;
+                    }
+                    if (entry.materializationState
+                        == "present in saved geography")
+                    {
+                        continue;
+                    }
+                    List<CAProvisionArrangement> provisionArrangements =
+                        ProvisionArrangements(record, entry);
+                    if (provisionArrangements.Count > 0)
+                    {
+                        int provisionAssets = 0;
+                        int provisionRoles = 0;
+                        bool complete = true;
+                        foreach (CAProvisionArrangement arrangement in
+                            provisionArrangements)
+                        {
+                            int nodes = Math.Max(1, arrangement.nodes);
+                            for (int node = 0; node < nodes; node++)
+                            {
+                                string nodeKey = CAProvisionArrangements
+                                    .NodeKey(record, arrangement, node);
+                                Room nodeRoom = arrangement.populationGroupKey
+                                        >= 0 ? NextFar() : Next();
+                                foreach (string candidate in entry
+                                    .selectedCandidates)
+                                {
+                                    provisionRoles++;
+                                    int placed = Place(org, record, map,
+                                        nodeRoom, candidate, null,
+                                        providerKey: nodeKey,
+                                        scope: entry.scope,
+                                        programEntry: entry,
+                                        reportFailure: false);
+                                    provisionAssets += placed;
+                                    if (placed != 1) complete = false;
+                                }
+                            }
+                        }
+                        complete = complete && provisionRoles > 0
+                            && provisionAssets == provisionRoles;
+                        entry.materializationState = complete
+                            ? "assets placed" : "blocked";
+                        if (!complete && entry.blocker.NullOrEmpty())
+                            entry.blocker = "only " + provisionAssets + " of "
+                                + provisionRoles + " required provision assets "
+                                + "could be placed inside the settlement's "
+                                + "realized ground";
+                        if (complete)
+                            org?.Record("settlement program",
+                                definition.Label + " materialized - "
+                                + provisionAssets + " placed asset"
+                                + (provisionAssets == 1 ? "" : "s"));
+                        continue;
+                    }
+                    Room room = entry.scope == "saved provision nodes"
+                        && entry.programKey.Contains("provision")
+                        ? NextFar() : Next();
                     int laid = 0;
-                    laid += Place(org, record, map, r, "Shelf", "WoodLog");
-                    laid += Place(org, record, map, r, "Shelf", "WoodLog");
-                    if (tier >= 2 && DefDatabase<ThingDef>
-                            .GetNamedSilentFail("Anon2FileCabinet") != null)
-                        laid += Place(org, record, map, r,
-                            "Anon2FileCabinet", "WoodLog");
-                    laid += Stock(org, record, map, r, "Pemmican", 75,
-                        org?.organizationKey);
-                    if (laid > 0)
-                        org.Record("provisions", "starting stores"
-                            + " - shelving and preserved food");
-                }
-                // Each organized provision may receive its own kitchen,
-                // table, operator organization, water access, and funding.
-                // Household provisioning uses the settlement hearth.
-                bool arranged = record.startingProvisions != null
-                    && record.startingProvisions.Any(item => item != null
-                        && item.operatorKind
-                            != CAProvisionOperator.Household);
-                bool householdProvision = record.startingProvisions != null
-                    && record.startingProvisions.Any(item => item != null
-                        && item.operatorKind
-                            == CAProvisionOperator.Household);
-                if (arranged)
-                    CAStartingProvisions.Furnish(record, map, tier, Next,
-                        NextFar,
-                        (rm, def, stuff, providerKey) => Place(org, record,
-                            map, rm, def, stuff, providerKey: providerKey),
-                        (rm, def, count, providerKey) => Stock(org, record,
-                            map, rm, def, count, providerKey));
-                if ((!arranged || householdProvision)
-                    && (mask & MaskHearth) != 0)
-                {
-                    Room r = Next();
-                    int laid = tier == 0
-                        ? Place(org, record, map, r, "Campfire", null)
-                        : Place(org, record, map, r, "FueledStove", null)
-                          + Place(org, record, map, r, "TableButcher",
-                              "WoodLog");
-                    if (laid > 0)
-                        org.Record("provisions", tier == 0
-                            ? "starting hearth built"
-                            : "starting kitchen built - stove and butcher table");
-                }
-                if ((mask & MaskInfirmary) != 0)
-                {
-                    Room r = Next();
-                    string bedDef = tier == 0 ? "Bedroll"
-                        : tier == 1 ? "Bed" : "HospitalBed";
-                    string medDef = tier >= 2 ? "MedicineIndustrial"
-                        : "MedicineHerbal";
-                    int laid = Place(org, record, map, r, bedDef, "WoodLog")
-                        + Place(org, record, map, r, bedDef, "WoodLog")
-                        + Stock(org, record, map, r, medDef,
+                    int required = 0;
+                    IntVec3 powerAnchor = IntVec3.Invalid;
+                    int repetitions = Math.Max(1,
+                        Math.Max(entry.count, entry.extent));
+                    for (int repetition = 0; repetition < repetitions;
+                        repetition++)
+                    {
+                        // Multi-role contracts belong together. Count repeats
+                        // that whole contract at another site; extent repeats
+                        // assets within the same site so powered programs can
+                        // form one native network.
+                        Room target = entry.count > 1 && repetition > 0
+                            ? Next() : room;
+                        for (int i = 0; i < entry.selectedCandidates.Count;
+                            i++)
+                        {
+                            string candidate = entry.selectedCandidates[i];
+                            required++;
+                            int placed = Place(org, record, map, target,
+                                candidate, null,
+                                forPrisoners: entry.programKey
+                                    == CASettlementProgramRegistry.Custody,
+                                providerKey: ProviderKey(record, entry),
+                                scope: entry.scope,
+                                programEntry: entry, reportFailure: false,
+                                medical: entry.programKey
+                                    == CASettlementProgramRegistry.Medicine,
+                                near: ProgramRequiresPower(entry)
+                                    ? powerAnchor : IntVec3.Invalid,
+                                placedAt: cell =>
+                                {
+                                    ThingDef placedDef = DefDatabase<ThingDef>
+                                        .GetNamedSilentFail(candidate);
+                                    if (placedDef?.EverTransmitsPower == true)
+                                        powerAnchor = cell;
+                                });
+                            laid += placed;
+                        }
+                    }
+                    if (entry.programKey == CASettlementProgramRegistry.Storage)
+                        Stock(org, record, map, room, "Pemmican", 75,
+                            ProviderKey(record, entry));
+                    if (entry.programKey == CASettlementProgramRegistry.Medicine)
+                        Stock(org, record, map, room, tier >= 2
+                            ? "MedicineIndustrial" : "MedicineHerbal",
                             tier >= 2 ? 10 : 12, org?.organizationKey);
-                    if (tier >= 2 && DefDatabase<ThingDef>
-                            .GetNamedSilentFail("Anon2EndTable") != null)
-                        laid += Place(org, record, map, r,
-                            "Anon2EndTable", "WoodLog");
-                    if (laid > 0)
-                        org.Record("care", "starting infirmary - sickbeds"
-                            + " and medicine by their own craft");
+                    bool completeProgram = required > 0 && laid == required;
+                    if (completeProgram && ProgramRequiresPower(entry))
+                        completeProgram = HasWorkingPowerContract(map, entry);
+                    entry.materializationState = completeProgram
+                        ? "materialized" : "blocked";
+                    if (!completeProgram && entry.blocker.NullOrEmpty())
+                        entry.blocker = laid != required
+                            ? "only " + laid + " of " + required
+                                + " required assets could be placed inside the "
+                                + "settlement's realized ground"
+                            : "the required powered assets do not share an "
+                                + "active power source";
+                    if (completeProgram)
+                        org?.Record("settlement program", definition.Label
+                            + " materialized - " + laid + " placed asset"
+                            + (laid == 1 ? "" : "s"));
                 }
-                if ((!arranged || householdProvision)
-                    && (mask & MaskDining) != 0)
-                {
-                    Room r = Next();
-                    // [furniture port] industrial tiers seat the ported
-                    // cushioned chairs when present; def-guarded so the
-                    // fallback is always vanilla.
-                    string seatDef = tier >= 2
-                        && DefDatabase<ThingDef>.GetNamedSilentFail(
-                            "Anon2CushionedChair") != null
-                        ? "Anon2CushionedChair"
-                        : tier >= 2 ? "DiningChair" : "Stool";
-                    int laid = Place(org, record, map, r, "Table2x2c",
-                            "WoodLog")
-                        + Place(org, record, map, r, seatDef, "WoodLog")
-                        + Place(org, record, map, r, seatDef, "WoodLog");
-                    if (laid > 0)
-                        org.Record("provisions",
-                            "a common table where the people eat");
-                }
-                if ((mask & MaskWorkshop) != 0)
-                {
-                    Room r = Next();
-                    int laid = tier == 0
-                        ? Place(org, record, map, r, "CraftingSpot", null)
-                        : Place(org, record, map, r, "FueledSmithy", null);
-                    if (laid > 0)
-                        org.Record("industry", tier == 0
-                            ? "a crafting ground worked by hand"
-                            : "smithy stands hot - their own steel");
-                }
-                if ((mask & MaskJail) != 0 && rooms.Count > 0)
-                {
-                    Room r = rooms[rooms.Count - 1]; // smallest
-                    int laid = Place(org, record, map, r,
-                        tier == 0 ? "Bedroll" : "Bed", "WoodLog",
-                        forPrisoners: true);
-                    if (laid > 0)
-                        org.Record("security",
-                            "a holding cell kept under law");
-                }
-                if ((mask & MaskLab) != 0)
-                {
-                    Room r = Next();
-                    int laid = Place(org, record, map, r,
-                        "SimpleResearchBench", "WoodLog");
-                    if (laid > 0)
-                        org.Record("research", "a study bench raised - "
-                            + "this settlement develops its own arts");
-                }
+                CAProvisionArrangements.RealizeOperatorsAndStock(record, map,
+                    (rm, def, count, providerKey) =>
+                        Stock(org, record, map, rm, def, count, providerKey));
                 Log.Message("[CA] " + (record.name ?? "settlement")
-                    + " starting facilities: mask " + mask + ", tier "
-                    + tier + ", " + record.seededAssets.Count + " assets");
+                    + " settlement program: "
+                    + (record.settlementProgram?.entries?.Count ?? 0)
+                    + " entries, " + record.seededAssets.Count
+                    + " placed assets");
             }
             catch (Exception e)
             {
-                Log.Warning("[CA] starting facilities failed for "
+                Log.Warning("[CA] settlement program materialization failed for "
                     + (record?.name ?? "?") + ": " + e.Message);
             }
         }
@@ -344,14 +353,20 @@ namespace ColonistAwareness
         private static int Place(CAOrganization org,
             CARegionalSettlementRecord record, Map map, Room room,
             string defName, string stuffName, bool forPrisoners = false,
-            string providerKey = null, bool reportFailure = false)
+            string providerKey = null,
+            CASettlementProgramEntry programEntry = null,
+            bool reportFailure = false, bool medical = false,
+            string scope = "settlement", IntVec3? near = null,
+            Action<IntVec3> placedAt = null)
         {
             try
             {
-                CASettlementDemandKind demand =
-                    CASettlementAssetRegistry.DemandFor(defName);
-                ThingDef def = CASettlementAssetRegistry.Resolve(demand,
-                    defName);
+                ThingDef def = CASettlementAssetRegistry.Resolve(
+                    CASettlementAssetRegistry.DemandForProgram(
+                        programEntry?.programKey), defName);
+                if (def != null && (def.category != ThingCategory.Building
+                    || !def.BuildableByPlayer || def.blueprintDef == null))
+                    def = null;
                 if (def == null)
                 {
                     string blocker = "explicit starting asset " + defName
@@ -367,7 +382,8 @@ namespace ColonistAwareness
                     : null;
                 if (def.MadeFromStuff && stuff == null)
                     stuff = GenStuff.DefaultStuffFor(def);
-                IntVec3 cell = FreeCell(map, room, record, def, stuff);
+                IntVec3 cell = FreeCell(map, room, record, def, stuff,
+                    scope, near);
                 if (!cell.IsValid)
                 {
                     string blocker = "explicit starting asset " + defName
@@ -400,7 +416,14 @@ namespace ColonistAwareness
                     t.SetStyleDef(culturalStyle);
                 GenSpawn.Spawn(t, cell, map, Rot4.South);
                 if (record.faction != null) t.SetFaction(record.faction);
+                CompRefuelable fuel = t.TryGetComp<CompRefuelable>();
+                if (fuel != null && !fuel.HasFuel)
+                    fuel.Refuel(fuel.Props.fuelCapacity);
                 var bed = t as Building_Bed;
+                if (bed != null && medical)
+                {
+                    try { bed.Medical = true; } catch { }
+                }
                 if (bed != null && forPrisoners)
                 {
                     try { bed.ForPrisoners = true; } catch { }
@@ -408,6 +431,8 @@ namespace ColonistAwareness
                 record.seededAssets.Add(defName + "|" + cell.x + "|"
                     + cell.z + "|" + (stuff?.defName ?? "") + "|"
                     + (providerKey ?? ""));
+                programEntry?.placedThingIds.Add(t.ThingID);
+                placedAt?.Invoke(cell);
                 return 1;
             }
             catch (Exception exception)
@@ -419,6 +444,32 @@ namespace ColonistAwareness
             }
         }
 
+        private static bool ProgramRequiresPower(
+            CASettlementProgramEntry entry)
+        {
+            return entry?.programKey == CASettlementProgramRegistry.Trade
+                || entry?.programKey
+                    == CASettlementProgramRegistry.Communications;
+        }
+
+        private static bool HasWorkingPowerContract(Map map,
+            CASettlementProgramEntry entry)
+        {
+            if (map == null || entry?.placedThingIds == null) return false;
+            map.powerNetManager.UpdatePowerNetsAndConnections_First();
+            List<Thing> placed = entry.placedThingIds
+                .Select(id => map.listerThings.AllThings.FirstOrDefault(
+                    thing => thing != null && thing.ThingID == id))
+                .Where(thing => thing != null).ToList();
+            List<CompPowerTrader> consumers = placed
+                .Select(thing => thing.TryGetComp<CompPowerTrader>())
+                .Where(power => power != null
+                    && power.Props.PowerConsumption > 0f).ToList();
+            return consumers.Count > 0 && consumers.All(power =>
+                power.PowerNet != null
+                && power.PowerNet.HasActivePowerSource);
+        }
+
         private static float RoomDistance(Room room, IntVec3 anchor)
         {
             if (room == null || !anchor.IsValid) return float.MaxValue;
@@ -426,6 +477,53 @@ namespace ColonistAwareness
                 cell.DistanceToSquared(anchor)).FirstOrDefault();
             return nearest.IsValid ? nearest.DistanceTo(anchor)
                 : float.MaxValue;
+        }
+
+        private static string ProviderKey(CARegionalSettlementRecord record,
+            CASettlementProgramEntry entry)
+        {
+            if (record == null || entry == null
+                || !entry.programKey.Contains(".provision.")) return null;
+            CAProvisionOperator? kind = entry.programKey
+                == CASettlementProgramRegistry.HouseholdProvision
+                    ? CAProvisionOperator.Household
+                : entry.programKey == CASettlementProgramRegistry.CommunalProvision
+                    ? CAProvisionOperator.Communal
+                : entry.programKey
+                    == CASettlementProgramRegistry.AuthorityProvision
+                    ? CAProvisionOperator.Authority
+                    : (CAProvisionOperator?)null;
+            if (!kind.HasValue) return null;
+            CAProvisionArrangement arrangement = (record
+                    .provisionArrangements
+                    ?? new List<CAProvisionArrangement>())
+                .FirstOrDefault(item => item != null && item.active
+                    && item.operatorKind == kind.Value);
+            return CAProvisionArrangements.ProviderKey(record, arrangement);
+        }
+
+        private static List<CAProvisionArrangement> ProvisionArrangements(
+            CARegionalSettlementRecord record,
+            CASettlementProgramEntry entry)
+        {
+            if (record == null || entry == null) return
+                new List<CAProvisionArrangement>();
+            CAProvisionOperator? kind = entry.programKey
+                == CASettlementProgramRegistry.HouseholdProvision
+                    ? CAProvisionOperator.Household
+                : entry.programKey == CASettlementProgramRegistry.CommunalProvision
+                    ? CAProvisionOperator.Communal
+                : entry.programKey
+                    == CASettlementProgramRegistry.AuthorityProvision
+                        ? CAProvisionOperator.Authority
+                        : (CAProvisionOperator?)null;
+            return !kind.HasValue
+                ? new List<CAProvisionArrangement>()
+                : (record.provisionArrangements
+                        ?? new List<CAProvisionArrangement>())
+                    .Where(item => item != null && item.active
+                        && item.operatorKind == kind.Value)
+                    .OrderBy(item => item.key).ToList();
         }
 
         private static int Stock(CAOrganization org,
@@ -457,12 +555,68 @@ namespace ColonistAwareness
             catch { return 0; }
         }
 
-        private static IntVec3 FreeCell(Map map, Room room,
-            CARegionalSettlementRecord record, ThingDef def, ThingDef stuff)
+        // Cultivation is a native spatial contract rather than a decorative
+        // grower object. The saved program's extent becomes one real growing
+        // zone, and later sowing/harvesting uses RimWorld's normal work.
+        internal static bool MaterializeCultivation(
+            CARegionalSettlementRecord record, Map map,
+            CASettlementProgramEntry entry)
         {
-            IEnumerable<IntVec3> source = room != null
-                ? room.Cells : record.localRect.Cells
-                    .Where(c => c.InBounds(map));
+            if (record == null || map == null || entry == null) return false;
+            int wanted = Mathf.Clamp(Math.Max(entry.count, entry.extent)
+                * 6, 6, 30);
+            List<IntVec3> cells = record.localRect.Cells
+                .Where(cell => cell.InBounds(map)
+                    && cell.Standable(map) && !cell.Roofed(map)
+                    && map.zoneManager.ZoneAt(cell) == null
+                    && cell.GetFertility(map) >= 0.7f
+                    && !cell.GetThingList(map).Any(thing =>
+                        thing.def.category == ThingCategory.Building))
+                .OrderBy(cell => cell.DistanceToSquared(
+                    record.layout?.core ?? record.localRect.CenterCell))
+                .Take(wanted).ToList();
+            if (cells.Count < 6)
+            {
+                entry.materializationState = "blocked";
+                entry.blocker = "no suitable unroofed growing ground exists "
+                    + "inside the settlement's realized area";
+                return false;
+            }
+            var zone = new Zone_Growing(map.zoneManager)
+            {
+                label = "Settlement cultivation"
+            };
+            map.zoneManager.RegisterZone(zone);
+            foreach (IntVec3 cell in cells) zone.AddCell(cell);
+            entry.placedThingIds.Add("zone:" + zone.ID);
+            entry.materializationState = "materialized";
+            record.seededAssets.Add("zone:growing|" + zone.ID + "|"
+                + cells.Count + "||");
+            return true;
+        }
+
+        private static IntVec3 FreeCell(Map map, Room room,
+            CARegionalSettlementRecord record, ThingDef def, ThingDef stuff,
+            string scope = "settlement", IntVec3? near = null)
+        {
+            IEnumerable<IntVec3> source;
+            if (scope == "settlement perimeter")
+                source = record.localRect.Cells.Where(c => c.InBounds(map)
+                    && (c.x <= record.localRect.minX + 2
+                        || c.x >= record.localRect.maxX - 2
+                        || c.z <= record.localRect.minZ + 2
+                        || c.z >= record.localRect.maxZ - 2));
+            else if (scope == "usable settlement ground"
+                || scope == "workable settlement ground")
+                source = record.localRect.Cells.Where(c => c.InBounds(map)
+                    && !c.Roofed(map));
+            else
+                source = room != null ? room.Cells
+                    : record.localRect.Cells.Where(c => c.InBounds(map));
+            if (near.HasValue && near.Value.IsValid)
+                source = source.Where(cell =>
+                        cell.DistanceToSquared(near.Value) <= 36)
+                    .OrderBy(cell => cell.DistanceToSquared(near.Value));
             foreach (IntVec3 c in source)
             {
                 if (def.category == ThingCategory.Building)
@@ -490,9 +644,9 @@ namespace ColonistAwareness
     }
 
     // Settlement workers repair
-    // their own damage, rebuild their destroyed facilities through
+    // their own damage, rebuild their destroyed program assets through
     // real blueprints and the vanilla Build duty (the siege-builder
-    // machinery), and staff their lab - research accrues only while a
+    // machinery), and staff a saved research program - research accrues only while a
     // pawn actually stands at the bench, and lands only as material
     // things.
     public class CASettlementWorksMapComponent : MapComponent
@@ -560,7 +714,8 @@ namespace ColonistAwareness
                 if (org == null) continue;
                 // Each pulse re-derives later development from the institution,
                 // residents, structures, and ground that exist now. Starting
-                // facility creation is historical evidence, not this gate.
+                // initial program materialization is historical evidence,
+                // not this gate.
                 CAOrganizationInheritance.RefreshDevelopmentAuthority(org,
                     record, map);
                 if (!record.developmentExecutable) continue;
@@ -572,6 +727,7 @@ namespace ColonistAwareness
                 if (research.Approval + research.Prestige
                         + research.Salience >= 80
                     && TryResearch(record, worker, org)) continue;
+                if (TryCultivation(record, worker, org)) continue;
                 if (TryRepair(record, worker, org)) continue;
                 if (TryRebuild(record, worker, org)) continue;
                 TryResearch(record, worker, org);
@@ -602,6 +758,37 @@ namespace ColonistAwareness
                 return p;
             }
             return null;
+        }
+
+        private bool TryCultivation(CARegionalSettlementRecord record,
+            Pawn worker, CAOrganization org)
+        {
+            WorkGiverDef harvestDef = DefDatabase<WorkGiverDef>
+                .GetNamedSilentFail("GrowerHarvest");
+            WorkGiverDef sowDef = DefDatabase<WorkGiverDef>
+                .GetNamedSilentFail("GrowerSow");
+            foreach (WorkGiverDef work in new[] { harvestDef, sowDef })
+            {
+                var scanner = work?.Worker as WorkGiver_Scanner;
+                if (scanner == null || scanner.ShouldSkip(worker)) continue;
+                foreach (IntVec3 cell in record.localRect)
+                {
+                    if (!cell.InBounds(map)
+                        || !(map.zoneManager.ZoneAt(cell) is Zone_Growing)
+                        || !scanner.HasJobOnCell(worker, cell)) continue;
+                    Job job = scanner.JobOnCell(worker, cell);
+                    if (job == null) continue;
+                    if (!CASettlementInstitutionalAuthorization.TryAuthorizeJob(
+                            record, worker, job,
+                            "cultivation at " + cell,
+                            out CABehaviorDecision _,
+                            out CAIntentContext _)) continue;
+                    worker.jobs.StartJob(job,
+                        JobCondition.InterruptForced);
+                    return worker.CurJob == job;
+                }
+            }
+            return false;
         }
 
         private bool TryRepair(CARegionalSettlementRecord record,
@@ -1161,7 +1348,7 @@ namespace ColonistAwareness
         private void MaterializeMilestone(CARegionalSettlementRecord record,
             CAOrganization org)
         {
-            int tier = CAStartingFacilities.TechTier(record);
+            int tier = CASettlementProgramMaterializer.TechTier(record);
             string thing;
             string story;
             switch (record.researchMilestones)

@@ -225,7 +225,7 @@ namespace ColonistAwareness
             string social = "groups=" + (settlement.populationGroups?.Count
                     ?? 0) + ";agreements=" + agreements + ";policies="
                 + StablePolicies(organization) + ";provision="
-                + StableProvisions(settlement.startingProvisions);
+                + StableProvisions(settlement.provisionArrangements);
             CAFactionState factionState = CAFactionStateWorldComponent.Current
                 ?.Find(settlement.faction);
             string institutional = "offices=" + StableOffices(organization)
@@ -245,7 +245,8 @@ namespace ColonistAwareness
                 + ";infrastructure=" + Bucket(
                     settlement.infrastructureCount, 3)
                 + ";wealth=" + Bucket(settlement.wealth, 1000)
-                + ";facilities=" + settlement.startingFacilityMask;
+                + ";programs=" + (settlement.settlementProgram?.sourceSignature
+                    ?? "none");
             return Snapshot(now, population, spatial, social,
                 institutional, political, material);
         }
@@ -453,10 +454,10 @@ namespace ColonistAwareness
         }
 
         private static string StableProvisions(
-            IEnumerable<CAStartingProvision> provisions)
+            IEnumerable<CAProvisionArrangement> provisions)
         {
             return string.Join(",", (provisions
-                    ?? Enumerable.Empty<CAStartingProvision>())
+                    ?? Enumerable.Empty<CAProvisionArrangement>())
                 .Where(item => item != null && item.active)
                 .OrderBy(item => item.key)
                 .Select(item => item.operatorKind + ":" + item.access + ":"

@@ -57,7 +57,10 @@ internal static class Program
             string siting = Source("FacilitySitingModule.cs");
             string planning = Source("SettlementPlanningContextModule.cs");
             string regional = Source("RegionalWorldModule.cs");
-            string startingFacilities = Source("StartingFacilitiesModule.cs");
+            string settlementModel = Source(
+                "RegionalSettlementModelModule.cs");
+            string settlementPrograms = Source(
+                "SettlementProgramMaterializerModule.cs");
             string roads = Source("RoadExpansionModule.cs");
             string toxicWaste = Source("ToxicWasteLifecycleModule.cs");
             string survival = Source("SurvivalModule.cs");
@@ -211,9 +214,9 @@ internal static class Program
                 ActiveTierCount(catalog) + " active tier entries", "executable");
             C(22, "Saved fixtures round-trip with the new schema",
                 RoundTrips(mirror) && RoundTrips(keyed)
-                    && Value(mirrorPlan, "schemaVersion") == "6"
+                    && Value(mirrorPlan, "schemaVersion") == "8"
                     && autonomy.Contains("CA_initiativeSchema"),
-                "regional schema 6 round-trip plus initiative schema marker",
+                "regional schema 8 round-trip plus initiative schema marker",
                 "executable");
 
             // Authority: 23-32.
@@ -288,7 +291,7 @@ internal static class Program
                         "survival.shelter")
                     && immediate.Contains("TryRegisterCombatJob")
                     && intent.Contains("survival.immediate_evasion")
-                    && HasAll(startingFacilities, "TryAuthorizeJob",
+                    && HasAll(settlementPrograms, "TryAuthorizeJob",
                         "developmentExecutable")
                     && HasAll(roads, "TryAuthorizeJob",
                         "CABehaviorGate.Evaluate")
@@ -312,12 +315,12 @@ internal static class Program
                         "condition == JobCondition.Succeeded",
                         "TryReauthorizeCompletion",
                         "map.terrainGrid.SetTerrain", "org.treasury -=")
-                    && Ordered(startingFacilities,
+                    && Ordered(settlementPrograms,
                         "CompleteNativeLabor(Pawn worker",
                         "condition == JobCondition.Succeeded",
                         "TryReauthorizeCompletion",
                         "researchRecord.researchStock++")
-                    && HasAll(startingFacilities,
+                    && HasAll(settlementPrograms,
                         "nameof(Pawn_JobTracker.EndCurrentJob)",
                         "CA_settlementRepairWork",
                         "CA_settlementRebuildWork",
@@ -335,7 +338,7 @@ internal static class Program
                         "exact saved institutional commitment")
                     && HasAll(roads, "RevalidateRestoredProjects",
                         "ProjectAuthorityValid", "TryReauthorizeCompletion")
-                    && HasAll(startingFacilities,
+                    && HasAll(settlementPrograms,
                         "RevalidateRestoredWork",
                         "AuthorizeNativeRebuildCompletion",
                         "TryReauthorizeCompletion",
@@ -345,10 +348,10 @@ internal static class Program
                         "Patch_CASettlementNativeRebuildFrame",
                         "typeof(Blueprint), \"TryReplaceWithSolidThing\"",
                         "createdThing is not Frame frame")
-                    && !startingFacilities.Contains(
+                    && !settlementPrograms.Contains(
                         "typeof(Blueprint_Build), \"MakeSolidThing\"")
-                    && !startingFacilities.Contains("repairs under way - ")
-                    && !startingFacilities.Contains("rebuilding what was lost - "),
+                    && !settlementPrograms.Contains("repairs under way - ")
+                    && !settlementPrograms.Contains("rebuilding what was lost - "),
                 "production origins cross the saved gate; restored withdrawal and settlement work reauthorize exact ownership; road, repair, rebuild, and research results land only after native job success",
                 "source-contract");
 
@@ -608,7 +611,7 @@ internal static class Program
                         "creationBeneficiaries", "creationCulturalBasis",
                         "creationPoliticalBasis")
                     && Ordered(organization, "record.creationExecutable",
-                        "SeedRepresentativeAssets", "CAStartingFacilities.Furnish",
+                        "CASettlementProgramMaterializer.Materialize",
                         "TryAuthorizeLaterDevelopment"),
                 "confirmed creation history materializes under world-authoring authority before later institutional development is considered",
                 "source-contract");
@@ -619,14 +622,19 @@ internal static class Program
                     && HasAll(furnishing, "BuildDemandFact(",
                         "CASettlementDemandKind.Storage",
                         ".Candidates(CASettlementDemandKind.Storage)")
+                    && HasAll(planning, "BuildCreationProposal(",
+                        "CASettlementProgram", "DemandForProgram")
                     && HasAll(planning, "BuildInstitutionalProposal",
                         "CASettlementDemandKind.Access",
                         "CASettlementDemandKind.Maintenance")
                     && CatalogEntryHas(catalog,
                         "spatial.npc_settlement_development", "B5 demand")
-                    && Ordered(regional, "CASettlementStartingState.Sync",
+                    && Ordered(settlementModel,
+                        "EnsureSettlementPattern(CARegionalPlan plan)",
                         "CASettlementComposition.EnsureDerived",
-                        "BuildCreationProposal",
+                        "CASettlementProgramRegistry.EnsureDerived")
+                    && Ordered(regional, "TryValidateRealization",
+                        "TryValidateSaved", "BuildCreationProposal",
                         "TryAuthorizeCreationHistory"),
                 "player storage planning and NPC creation/development consume one typed authority-neutral demand fact",
                 "source-contract");
@@ -635,7 +643,7 @@ internal static class Program
                         "internal static List<ThingDef> Candidates",
                         "AssetCandidates", "BuildDemandFact")
                     && furnishing.Contains("BuildDemandFact")
-                    && startingFacilities.Contains(
+                    && settlementPrograms.Contains(
                         "CASettlementAssetRegistry.Resolve")
                     && HasAll(planning,
                         "An explicit loaded def is evidence",
@@ -648,7 +656,7 @@ internal static class Program
                 siting.Contains("CAFacilitySitingModule")
                     && HasAll(planning, "CASettlementSitingConstraints",
                         "HasMaterialFootprint", "CanPlaceNativeBlueprint")
-                    && startingFacilities.Contains(
+                    && settlementPrograms.Contains(
                         "CASettlementSitingConstraints")
                     && furnishing.Contains(
                         "CASettlementSitingConstraints")
@@ -688,7 +696,7 @@ internal static class Program
                     && HasAll(organization, "creationExecutable",
                         "developmentExecutable",
                         "confirmed creation history blocked")
-                    && HasAll(startingFacilities,
+                    && HasAll(settlementPrograms,
                         "!record.creationExecutable",
                         "!record.developmentExecutable",
                         "CanPlaceNativeBlueprint"),

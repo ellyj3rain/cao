@@ -134,7 +134,7 @@ public static class Program
             && page.Contains("Starting supplies")
             && page.Contains("Whether provisions are pooled and rationed."),
             "the four founding-term causes are incomplete");
-        Require(setup.Contains("CurrentSchemaVersion = 6")
+        Require(setup.Contains("CurrentSchemaVersion = 8")
             && setup.Contains("Scribe_Deep.Look(ref playerFounding, "
                 + "\"playerFounding\")"),
             "regional plan does not own schema-5 founding state");
@@ -163,7 +163,7 @@ public static class Program
         Require(fixtureContracts.Contains(
                 "internal static int RealizationSourceHash")
             && fixtureContracts.Contains("politicalBeliefs")
-            && fixtureContracts.Contains("facilityExceptionMask")
+            && fixtureContracts.Contains("authoredForm")
             && !fixtureContracts.Contains("developmentProfile"),
             "current fixture causes are absent from realization hashing");
         report.AppendLine("PASS source path -> authoring, persistence, native "
@@ -175,8 +175,8 @@ public static class Program
         StringBuilder report)
     {
         XElement plan = Plan(document);
-        Require(Value(plan, "schemaVersion") == "6",
-            label + " fixture is not schema 6");
+        Require(Value(plan, "schemaVersion") == "8",
+            label + " fixture is not schema 8");
         Require(int.TryParse(Value(plan,
                     "settlementRealizationSourceHash"), out int savedHash)
                 && savedHash
@@ -269,7 +269,7 @@ public static class Program
             && plan.Element("foundingArrangementAuthored") == null,
             label + " fixture retains obsolete root founding fields");
         report.AppendLine("PASS " + label
-            + " -> schema 6; 3 factions; 4 settlements; 9 population groups; "
+            + " -> schema 8; 3 factions; 4 settlements; 9 population groups; "
             + (confirmed ? "confirmed founding state"
                 : arrangementNull ? "unconfirmed founding authoring state"
                 : "unconfirmed authored founding draft"));

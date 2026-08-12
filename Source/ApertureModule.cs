@@ -194,7 +194,7 @@ namespace ColonistAwareness
                     || record.localRect == CellRect.Empty
                     || record.faction == null) return;
                 ThingDef wall = ThingDefOf.Wall;
-                int tier = CAStartingFacilities.TechTier(record);
+                int tier = CASettlementProgramMaterializer.TechTier(record);
                 CAMorphForm form = CAMorphologyAdapter.FormFor(record);
                 bool defensive = form == CAMorphForm.Outpost;
 

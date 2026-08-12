@@ -584,7 +584,7 @@ namespace ColonistAwareness
 
     public sealed class CARegionalSettlementRecord : IExposable
     {
-        public const int CurrentSchemaVersion = 3;
+        public const int CurrentSchemaVersion = 4;
         public int schemaVersion = CurrentSchemaVersion;
         public string regionalId;
         public string name;
@@ -625,19 +625,19 @@ namespace ColonistAwareness
         public int infrastructureCount;
         public int cultivatedPlantCount;
         public List<string> residentIds = new List<string>();
-        // Starting facilities, infrastructure, and research are separate
-        // settlement state.
-        public int startingFacilityMask = -1;
+        // Infrastructure and the realized open settlement program are
+        // separate from faction knowledge.
         public int accessInfrastructure;
         public int serviceInfrastructure;
         public int civicInfrastructure;
-        public int facilityExceptionMask;
-        // Population groups and starting provisions are copied from the plan
+        // Population groups and provision arrangements are copied from the plan
         // and resolved into pawns, ideoligions, and organizations.
         public List<CASettlementPopulationGroup> populationGroups =
             new List<CASettlementPopulationGroup>();
-        public List<CAStartingProvision> startingProvisions =
-            new List<CAStartingProvision>();
+        public List<CAProvisionArrangement> provisionArrangements =
+            new List<CAProvisionArrangement>();
+        public CASettlementProgram settlementProgram =
+            new CASettlementProgram();
         public CACulture culture;
         public List<string> populationAssignments = new List<string>();
         // Material wealth and the era represented by the original buildings.
@@ -767,19 +767,17 @@ namespace ColonistAwareness
                 "cultivatedPlantCount", 0);
             Scribe_Collections.Look(ref residentIds, "residentIds",
                 LookMode.Value);
-            Scribe_Values.Look(ref startingFacilityMask,
-                "startingFacilityMask", -1);
             Scribe_Values.Look(ref accessInfrastructure,
                 "accessInfrastructure", 0);
             Scribe_Values.Look(ref serviceInfrastructure,
                 "serviceInfrastructure", 0);
             Scribe_Values.Look(ref civicInfrastructure,
                 "civicInfrastructure", 0);
-            Scribe_Values.Look(ref facilityExceptionMask,
-                "facilityExceptionMask", 0);
             Scribe_Collections.Look(ref populationGroups, "populationGroups", LookMode.Deep);
-            Scribe_Collections.Look(ref startingProvisions, "startingProvisions",
+            Scribe_Collections.Look(ref provisionArrangements,
+                "provisionArrangements",
                 LookMode.Deep);
+            Scribe_Deep.Look(ref settlementProgram, "settlementProgram");
             Scribe_Deep.Look(ref culture, "culture");
             Scribe_Collections.Look(ref populationAssignments,
                 "populationAssignments", LookMode.Value);
@@ -788,8 +786,10 @@ namespace ColonistAwareness
             Scribe_Collections.Look(ref statusAssignments,
                 "statusAssignments", LookMode.Value);
             if (populationGroups == null) populationGroups = new List<CASettlementPopulationGroup>();
-            if (startingProvisions == null)
-                startingProvisions = new List<CAStartingProvision>();
+            if (provisionArrangements == null)
+                provisionArrangements = new List<CAProvisionArrangement>();
+            if (settlementProgram == null)
+                settlementProgram = new CASettlementProgram();
             if (populationAssignments == null)
                 populationAssignments = new List<string>();
             if (statusAssignments == null)
@@ -1456,15 +1456,19 @@ namespace ColonistAwareness
             int localMapSize = localRegion?.mapSize ?? map.Size.x;
             if (localRegion != null && settlement != null)
             {
-                CARegionalSettlements.EnsureSettlementPattern(localRegion);
-                CASettlementStartingState.Sync(localRegion, settlement,
-                    faction?.def);
-                CASettlementComposition.EnsureDerived(localRegion,
-                    settlement);
+                string realizationFailure;
+                string programFailure = null;
+                bool realizationValid = CARegionalSettlements
+                    .TryValidateRealization(localRegion,
+                        out realizationFailure);
+                bool programValid = realizationValid
+                    && CASettlementProgramRegistry.TryValidateSaved(
+                        localRegion, settlement, out programFailure);
+                if (!realizationValid || !programValid)
+                    throw new InvalidOperationException(
+                        "confirmed settlement state is invalid: "
+                        + (realizationFailure ?? programFailure));
             }
-            int resolvedFacilities = settlement == null ? -1
-                : CASettlementStartingState.ResolveFacilityMask(localRegion,
-                    settlement, faction?.def);
             int resolvedAccess = settlement == null ? 0
                 : CASettlementStartingState.Access(localRegion, settlement);
             int resolvedServices = settlement == null ? 0
@@ -1473,15 +1477,14 @@ namespace ColonistAwareness
                 : CASettlementStartingState.Civic(localRegion, settlement);
             CARegionalFactionPlan factionGroup = localRegion?.FactionPlan(
                 settlement?.factionKey ?? -1);
-            if (factionGroup != null)
-                factionGroup.EnsureCultureAndPolitics(localRegion);
             CABehaviorDecision creationDecision;
             CAIntentContext creationIntent;
             CASettlementDevelopmentProposal creationProposal =
                 CASettlementAssetRegistry.BuildCreationProposal(
-                    resolvedFacilities,
+                    settlement?.settlementProgram,
                     settlement?.economicCapacity ?? -1,
-                    settlement?.landCapacity ?? -1);
+                    settlement?.landCapacity ?? -1,
+                    settlement?.provisionArrangements);
             bool creationAuthorized =
                 CASettlementInstitutionalAuthorization
                     .TryAuthorizeCreationHistory(localRegion, settlement,
@@ -1525,12 +1528,11 @@ namespace ColonistAwareness
                 urbanSupport = settlement?.urbanSupport ?? -1,
                 realizedRole = settlement?.realizedRole ?? (byte)0,
                 realizedScale = settlement?.realizedScale ?? (byte)0,
-                startingFacilityMask = resolvedFacilities,
                 accessInfrastructure = resolvedAccess,
                 serviceInfrastructure = resolvedServices,
                 civicInfrastructure = resolvedCivic,
-                facilityExceptionMask = settlement
-                    ?.facilityExceptionMask ?? 0,
+                settlementProgram = settlement?.settlementProgram?.Copy()
+                    ?? new CASettlementProgram(),
                 culture = settlement?.localCulture?.Copy(),
                 persistent = settlement?.persistent ?? true,
                 faction = faction,
@@ -1617,11 +1619,12 @@ namespace ColonistAwareness
                             quarter = populationGroup.quarter,
                             authored = populationGroup.authored
                         });
-            if (settlement?.startingProvisions != null)
-                foreach (CAStartingProvision arrangement in
-                    settlement.startingProvisions)
+            if (settlement?.provisionArrangements != null)
+                foreach (CAProvisionArrangement arrangement in
+                    settlement.provisionArrangements)
                     if (arrangement != null && arrangement.active)
-                        record.startingProvisions.Add(new CAStartingProvision
+                        record.provisionArrangements.Add(
+                            new CAProvisionArrangement
                         {
                             key = arrangement.key,
                             operatorKind = arrangement.operatorKind,
@@ -1658,7 +1661,7 @@ namespace ColonistAwareness
                 bool coastal = CARegionalPlanUtility.ConstituentIsCoastal(
                     settlement?.memberTileId ?? -1);
                 int ceiling = CASettlementAxes.LocalPracticeCeiling(
-                    record.startingFacilityMask, record.accessInfrastructure,
+                    record.settlementProgram, record.accessInfrastructure,
                     record.serviceInfrastructure,
                     record.civicInfrastructure, knowledge);
                 record.factionEra = (int)knowledge;
@@ -1667,8 +1670,9 @@ namespace ColonistAwareness
                     knowledge);
                 record.generationSummary = CASettlementAxes.Provenance(
                     settlement?.authoredForm ?? CASettlementAxes.Derive,
-                    record.facilityExceptionMask)
-                    + "; facilities " + record.startingFacilityMask
+                    record.settlementProgram)
+                    + "; settlement program "
+                    + record.settlementProgram?.sourceSignature
                     + "; practice ceiling " + ceiling
                     + (roadLinked ? "; road present" : "; no road")
                     + (coastal ? "; coast present" : "; inland");
@@ -1696,7 +1700,7 @@ namespace ColonistAwareness
                 // the regional identity.
                 CASettlementWealth.Derive(
                     localRegion?.candidateId ?? record.regionalId,
-                    record.slot, record.startingFacilityMask,
+                    record.slot, record.settlementProgram,
                     record.accessInfrastructure,
                     record.serviceInfrastructure,
                     record.civicInfrastructure, knowledge,
@@ -1725,7 +1729,6 @@ namespace ColonistAwareness
                 : populationGroup?.factionKey ?? -1;
             CARegionalFactionPlan source = plan?.FactionPlan(key);
             if (source == null) return null;
-            source.EnsureCultureAndPolitics(plan);
             return source.politicalBeliefs?.id;
         }
 
@@ -2097,14 +2100,23 @@ namespace ColonistAwareness
                         + record.regionalId + " will not rematerialize");
                     continue;
                 }
-                // A settlement whose panel was never opened still gets a
-                // real composition and a real settlement position:
-                // derivation is completion, and it completes here at the
-                // latest. The realized profile persists on the plan, so
-                // this is a read for a confirmed candidate, never a
-                // re-roll.
-                CARegionalSettlements.EnsureSettlementPattern(region);
-                CASettlementComposition.EnsureDerived(region, settlement);
+                // Confirmed generation consumes the saved program exactly.
+                // It cannot regenerate an authoring omission or accommodate
+                // post-confirmation source drift.
+                string realizationFailure;
+                string programFailure = null;
+                bool realizationValid = CARegionalSettlements
+                    .TryValidateRealization(region, out realizationFailure);
+                bool programValid = realizationValid
+                    && CASettlementProgramRegistry.TryValidateSaved(region,
+                        settlement, out programFailure);
+                if (!realizationValid || !programValid)
+                {
+                    Log.Error("[CA][Regional] refused invalid confirmed "
+                        + "settlement " + slot + ": "
+                        + (realizationFailure ?? programFailure));
+                    continue;
+                }
                 if (record == null)
                     record = world.Create(map, slot, faction, settlement);
                 else if (record.faction != faction)

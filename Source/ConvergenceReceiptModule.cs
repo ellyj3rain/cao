@@ -37,14 +37,14 @@ namespace ColonistAwareness
 
             CARegionalSettlementPlan settlementPlan = plan.settlements.First(b => b != null);
             var firstPopulationGroups = new List<CASettlementPopulationGroup>();
-            var firstProv = new List<CAStartingProvision>();
+            var firstProv = new List<CAProvisionArrangement>();
             var probe = new CARegionalSettlementPlan
             {
                 slot = settlementPlan.slot,
                 factionKey = settlementPlan.factionKey,
                 memberTileId = settlementPlan.memberTileId,
                 populationGroups = firstPopulationGroups,
-                startingProvisions = firstProv
+                provisionArrangements = firstProv
             };
             CASettlementComposition.EnsureDerived(plan, probe);
             var again = new CARegionalSettlementPlan
@@ -65,17 +65,17 @@ namespace ColonistAwareness
                 + (CASettlementComposition.DescribePopulationGroups(probe.populationGroups)
                     == CASettlementComposition.DescribePopulationGroups(
                         again.populationGroups)) + "   EXPECT True");
-            text.AppendLine("      arrangements: " + probe.startingProvisions
-                .Count + " vs " + again.startingProvisions.Count
+            text.AppendLine("      arrangements: " + probe.provisionArrangements
+                .Count + " vs " + again.provisionArrangements.Count
                 + "   EXPECT equal");
 
             text.AppendLine("  [2] THE ACTUAL DRAFT of "
                 + CARegionalPlanUtility.SettlementName(plan, settlementPlan) + ":");
             text.AppendLine("      people: " + CASettlementComposition
                 .DescribePopulationGroups(settlementPlan.populationGroups));
-            foreach (CAStartingProvision arrangement in
-                settlementPlan.startingProvisions.Where(a => a != null && a.active))
-                text.AppendLine("      starting provisions: "
+            foreach (CAProvisionArrangement arrangement in
+                settlementPlan.provisionArrangements.Where(a => a != null && a.active))
+                text.AppendLine("      provision arrangement: "
                     + arrangement.Summary);
 
             CARegionalFactionPlan owner = plan.FactionPlan(
@@ -238,19 +238,19 @@ namespace ColonistAwareness
                         + certainty.Max().ToString("F2")
                         + "   EXPECT spread when cohesion differs");
 
-                // [C] starting provisions: operators, assets, funding, water
+                // [C] provision arrangements: operators, assets, funding, water
                 text.AppendLine("  [C] PROVISIONING:");
-                if (record.startingProvisions == null
-                    || record.startingProvisions.Count == 0)
+                if (record.provisionArrangements == null
+                    || record.provisionArrangements.Count == 0)
                     text.AppendLine("      none recorded");
-                foreach (CAStartingProvision arrangement in
-                    record.startingProvisions ?? new List<CAStartingProvision>())
+                foreach (CAProvisionArrangement arrangement in
+                    record.provisionArrangements ?? new List<CAProvisionArrangement>())
                 {
                     if (arrangement == null
                         || arrangement.operatorKind
                             == CAProvisionOperator.Household) continue;
-                    string orgKey = record.regionalId + "#" + record.slot
-                        + ":prov" + arrangement.key;
+                    string orgKey = CAProvisionArrangements.ProviderKey(record,
+                        arrangement);
                     CAOrganization op = orgs?.ByKey(orgKey);
                     text.AppendLine("      " + arrangement.Summary);
                     text.AppendLine("        operator org: "

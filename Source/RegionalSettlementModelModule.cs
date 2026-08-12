@@ -242,19 +242,6 @@ namespace ColonistAwareness
             plan.settlementRealizationSourceHash = 0;
         }
 
-        // B5/B6 stored profile and ordinal authoring beside the realized
-        // settlement facts. B7 keeps the facts and concrete facility
-        // exceptions, retires the competing authoring authority, and renews
-        // the causal hash against the current contract.
-        internal static void MigrateB6SettlementAuthority(
-            CARegionalPlan plan)
-        {
-            if (plan == null) return;
-            if (plan.settlementRealizationComplete)
-                plan.settlementRealizationSourceHash =
-                    RealizationSourceHash(plan);
-        }
-
         // A completion flag is not evidence by itself. Confirmed plans are
         // read-only inputs, so malformed or partial realized state is rejected
         // instead of being silently regenerated during map generation.
@@ -346,14 +333,20 @@ namespace ColonistAwareness
                         + "saved facts";
                     return false;
                 }
-                int expectedFacilities = CASettlementStartingState
-                    .ResolveFacilityMask(plan, settlement,
-                        plan.FactionPlan(settlement.factionKey)
-                            ?.ResolvedFactionDef);
-                if (settlement.startingFacilityMask != expectedFacilities)
+                string savedProgramSignature = settlement
+                    .settlementProgram?.sourceSignature;
+                if (savedProgramSignature.NullOrEmpty())
                 {
                     failure = "settlement " + settlement.slot
-                        + " has facilities inconsistent with its saved causes";
+                        + " has no realized settlement program";
+                    return false;
+                }
+                if (!CASettlementProgramRegistry.TryValidateSaved(plan,
+                        settlement, out string programFailure))
+                {
+                    failure = "settlement " + settlement.slot
+                        + " has a program inconsistent with its saved facts: "
+                        + programFailure;
                     return false;
                 }
             }
@@ -567,16 +560,21 @@ namespace ColonistAwareness
 
             foreach (CARegionalSettlementPlan settlement in settlements)
             {
+                settlement.hasRoadAccess =
+                    CARegionalPlanUtility.ConstituentHasRoad(
+                        settlement.memberTileId);
+                settlement.hasRiverAccess =
+                    CARegionalPlanUtility.ConstituentHasRiver(
+                        settlement.memberTileId);
+                settlement.hasCoastalAccess =
+                    CARegionalPlanUtility.ConstituentIsCoastal(
+                        settlement.memberTileId);
                 settlement.realizedAccessInfrastructure =
                     CASettlementStartingState.Access(plan, settlement);
                 settlement.realizedServiceInfrastructure =
                     CASettlementStartingState.Services(plan, settlement);
                 settlement.realizedCivicInfrastructure =
                     CASettlementStartingState.Civic(plan, settlement);
-                settlement.startingFacilityMask =
-                    CASettlementStartingState.ResolveFacilityMask(plan,
-                        settlement, plan.FactionPlan(settlement.factionKey)
-                            ?.ResolvedFactionDef);
                 settlement.specialization = Mathf.Clamp(
                     CountBits(settlement.operationalRoleMask), 0, 3);
                 settlement.economicCapacity = EconomicCapacity(plan,
@@ -627,6 +625,15 @@ namespace ColonistAwareness
                     routeEdges, averageDistance, dominant,
                     settlementFactionCount, plan.regionalRelationPattern,
                     plan.frontierHoldings?.Count ?? 0);
+            // Provision operators derive from the realized social order;
+            // settlement programs then derive from those arrangements and the
+            // complete saved settlement facts.
+            foreach (CARegionalSettlementPlan settlement in settlements)
+            {
+                CASettlementComposition.EnsureDerived(plan, settlement);
+                CASettlementProgramRegistry.EnsureDerived(plan, settlement,
+                    force: true);
+            }
             plan.settlementRealizationSourceHash = RealizationSourceHash(plan);
             plan.settlementRealizationComplete = true;
         }
@@ -767,9 +774,11 @@ namespace ColonistAwareness
                     settlement.reallocatedFromTileId,
                     settlement.operationalRoleMask);
                 hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                    settlement.facilityExceptionMask,
-                    settlement.facilityExceptionValues,
-                    settlement.authoredForm);
+                    settlement.authoredForm, 0, 0);
+                hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
+                    settlement.hasRoadAccess ? 1 : 0,
+                    settlement.hasRiverAccess ? 1 : 0,
+                    settlement.hasCoastalAccess ? 1 : 0);
             }
             return hash;
         }
@@ -868,14 +877,13 @@ namespace ColonistAwareness
         private static int EconomicCapacity(CARegionalPlan plan,
             CARegionalSettlementPlan settlement)
         {
-            int facilities = CASettlementStartingState.ResolveFacilityMask(
-                plan, settlement,
-                plan?.FactionPlan(settlement.factionKey)?.ResolvedFactionDef);
             return CAWorldTendencyCausalKernel.EconomicCapacity(
                 settlement.residentPopulation,
                 settlement.realizedCivicInfrastructure,
-                (facilities & CAStartingFacilities.MaskWorkshop) != 0,
-                (facilities & CAStartingFacilities.MaskStores) != 0);
+                settlement.realizedCivicInfrastructure >= 1
+                    && settlement.historicalDevelopment >= 1,
+                settlement.realizedAccessInfrastructure >= 1
+                    || settlement.realizedServiceInfrastructure >= 1);
         }
 
         private static int RouteEdges(IEnumerable<int> tileIds)

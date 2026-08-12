@@ -7,42 +7,6 @@ using Verse;
 
 namespace ColonistAwareness
 {
-    internal static class CAStartingFacilityCatalog
-    {
-        internal sealed class Program
-        {
-            internal int Bit;
-            internal string Label;
-            internal string Description;
-            internal string IconPath;
-        }
-
-        internal static readonly Program[] All =
-        {
-            new Program { Bit = CAStartingFacilities.MaskHearth,
-                Label = "Hearth", Description = "A working kitchen or communal hearth.",
-                IconPath = "Rimshare/WorldMapIcons/flowers" },
-            new Program { Bit = CAStartingFacilities.MaskStores,
-                Label = "Stores", Description = "Shelving and preserved reserves; enables emergency provisions.",
-                IconPath = "Rimshare/WorldMapIcons/divided-square" },
-            new Program { Bit = CAStartingFacilities.MaskInfirmary,
-                Label = "Infirmary", Description = "A dedicated room for local medical care.",
-                IconPath = "Rimshare/WorldMapIcons/american-shield" },
-            new Program { Bit = CAStartingFacilities.MaskWorkshop,
-                Label = "Workshop", Description = "Supports local production.",
-                IconPath = "Rimshare/WorldMapIcons/factory" },
-            new Program { Bit = CAStartingFacilities.MaskJail,
-                Label = "Jail", Description = "A secure holding room.",
-                IconPath = "Rimshare/WorldMapIcons/caged-ball" },
-            new Program { Bit = CAStartingFacilities.MaskDining,
-                Label = "Dining hall", Description = "Tables for shared meals.",
-                IconPath = "Rimshare/WorldMapIcons/carnival-mask" },
-            new Program { Bit = CAStartingFacilities.MaskLab,
-                Label = "Laboratory", Description = "Supports local research.",
-                IconPath = "Rimshare/WorldMapIcons/atom" }
-        };
-    }
-
     // One population group, one editor, one independent control per fact.
     // Affiliation, Ideoligion, and political belief intentionally do not
     // infer or overwrite one another.
@@ -188,7 +152,7 @@ namespace ColonistAwareness
                 {
                     Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
                         "Remove " + (population.label ?? "this population group")
-                        + " and its starting provisions?", delegate
+                        + " and its provision arrangements?", delegate
                         {
                             remove();
                             Close();

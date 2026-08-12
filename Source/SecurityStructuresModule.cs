@@ -10,7 +10,7 @@ namespace ColonistAwareness
     // cells are skipped.
     public static class CASecurityStructures
     {
-        // techTier follows CAStartingFacilities.TechTier - 0 tribal,
+        // techTier follows the settlement program technology tier - 0 tribal,
         // 1 medieval, 2+ industrial: the same boundaries the
         // adapter's material palette cuts on.
         public static void MaterializeVariantExtras(Map map,

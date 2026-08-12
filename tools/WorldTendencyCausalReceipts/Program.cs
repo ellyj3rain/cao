@@ -291,8 +291,8 @@ public static class Program
             Require(setup.Contains(field), field + " is not persisted");
             Require(dialog.Contains(field), field + " has no visible control");
         }
-        Require(setup.Contains("CurrentSchemaVersion = 6"),
-            "current plan schema is not 6");
+        Require(setup.Contains("CurrentSchemaVersion = 8"),
+            "current plan schema is not 7");
         Require(setup.Contains("localFactionChance = 0.45f")
             && setup.Contains("regionalConflictChance = 0.4f"),
             "the neutral profile does not begin on the middle faction bands");
@@ -408,7 +408,7 @@ public static class Program
         Require((string)document.Root?.Element("worldIdentity")
                 == "alysaliu|1|Algorab Markab",
             "fixture world identity changed");
-        Require((string)plan.Element("schemaVersion") == "6",
+        Require((string)plan.Element("schemaVersion") == "8",
             "fixture schema is not current");
         XElement savedPolicy = plan.Element("worldPolicy");
         Require(savedPolicy != null
@@ -483,13 +483,13 @@ public static class Program
             foreach (string fact in facts)
                 Require(settlement.Element(fact) != null,
                     "fixture settlement lacks " + fact);
-            int realizedFacilities = IntValue(settlement,
-                "startingFacilityMask", 0);
             int expectedEconomy = CAWorldTendencyCausalKernel.EconomicCapacity(
                 IntValue(settlement, "residentPopulation", -1),
                 IntValue(settlement, "realizedCivicInfrastructure", -1),
-                (realizedFacilities & 8) != 0,
-                (realizedFacilities & 2) != 0);
+                IntValue(settlement, "realizedCivicInfrastructure", -1) >= 1
+                    && IntValue(settlement, "historicalDevelopment", -1) >= 1,
+                IntValue(settlement, "realizedAccessInfrastructure", -1) >= 1
+                    || IntValue(settlement, "realizedServiceInfrastructure", -1) >= 1);
             Require(IntValue(settlement, "economicCapacity", -1)
                     == expectedEconomy,
                 "fixture economic capacity does not match saved causes");
@@ -586,7 +586,7 @@ public static class Program
         Require(!fixtureText.Contains("realizedFrontierHoldings")
             && !fixtureText.Contains("frontierSettlement"),
             "fixture retains obsolete schema fields");
-        report.AppendLine("PASS current fixture -> schema 6, causal hash, derived settlement state, 3 factions, 4 settlements, 9 population groups, mirrored XML readback");
+        report.AppendLine("PASS current fixture -> schema 8, causal hash, derived settlement state, 3 factions, 4 settlements, 9 population groups, mirrored XML readback");
     }
 
     private static int IntValue(XElement parent, string name, int fallback)

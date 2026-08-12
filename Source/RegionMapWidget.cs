@@ -656,7 +656,7 @@ namespace ColonistAwareness
         }
 
         internal static void Draw(Rect rect, CARegionalPlan plan,
-            Action changed)
+            Action changed, Action viewDetails = null)
         {
             Widgets.DrawMenuSection(rect);
             Rect inner = rect.ContractedBy(6f);
@@ -674,8 +674,16 @@ namespace ColonistAwareness
             string contextText = ContextStripText(plan, facts);
             GameFont priorFont = Text.Font;
             Text.Font = GameFont.Tiny;
+            bool selectedObject = selectedKind != CARegionSelectionKind.Region;
+            float stripButton = selectedObject && viewDetails != null
+                ? 104f : 0f;
+            float stripMarker = selectedKind == CARegionSelectionKind.Settlement
+                    || selectedKind == CARegionSelectionKind.Faction
+                ? 10f : 0f;
+            float stripTextWidth = Mathf.Max(80f, inner.width - stripMarker
+                - stripButton - (stripButton > 0f ? 6f : 0f));
             float stripHeight = Mathf.Clamp(Text.CalcHeight(contextText,
-                inner.width), 22f, 44f);
+                stripTextWidth), 22f, 66f);
             Text.Font = priorFont;
             Rect strip = new Rect(inner.x, inner.yMax - stripHeight,
                 inner.width, stripHeight);
@@ -735,7 +743,7 @@ namespace ColonistAwareness
             // dense region, and "whatever GUI saw first" is not an order
             // anyone can predict from looking at the screen.
             HandleClicks(map, kernel, plan, facts, changed);
-            DrawContextStrip(strip, contextText);
+            DrawContextStrip(strip, plan, contextText, viewDetails);
         }
 
         private static void DrawLayerButtons(ref Rect area)
@@ -983,8 +991,8 @@ namespace ColonistAwareness
                     Widgets.DrawLine(hub, at, new Color(1f, 0.95f, 0.6f,
                         0.55f * alpha), 2f);
                 }
-                bool regionReach = settlementPlan.startingProvisions != null
-                    && settlementPlan.startingProvisions.Any(a => a != null
+                bool regionReach = settlementPlan.provisionArrangements != null
+                    && settlementPlan.provisionArrangements.Any(a => a != null
                         && a.active
                         && a.reach == CAProvisionReach.Region);
                 if (regionReach)
@@ -1250,12 +1258,20 @@ namespace ColonistAwareness
 
                 Vector2 point = ToGui(map, kernel,
                     AreaCentroid(kernel, group.Key));
-                const float lineHeight = 24f;
                 int arrivalOffset = group.Key == plan.startTileId ? 1 : 0;
-                float blockHeight = (settlements.Count + arrivalOffset)
-                    * lineHeight;
+                Text.Font = GameFont.Tiny;
+                float maxBadgeWidth = Mathf.Max(82f,
+                    Mathf.Min(320f, map.width * 0.62f));
+                var badgeHeights = settlements.Select(settlement =>
+                    Mathf.Max(22f, Text.CalcHeight(
+                        CARegionalPlanUtility.SettlementName(plan, settlement),
+                        maxBadgeWidth - 12f) + 6f)).ToList();
+                float arrivalHeight = arrivalOffset > 0 ? 24f : 0f;
+                float blockHeight = arrivalHeight + badgeHeights.Sum()
+                    + Mathf.Max(0, badgeHeights.Count - 1) * 2f;
                 float blockY = Mathf.Clamp(point.y - blockHeight * 0.5f,
                     map.y + 36f, map.yMax - blockHeight - 4f);
+                float badgeY = blockY + arrivalHeight;
                 for (int i = 0; i < settlements.Count; i++)
                 {
                     CARegionalSettlementPlan settlement = settlements[i];
@@ -1267,10 +1283,9 @@ namespace ColonistAwareness
                     bool hovered = hoveredSlot == settlement.slot;
                     Text.Font = GameFont.Tiny;
                     float width = Mathf.Clamp(Text.CalcSize(label).x + 16f,
-                        82f, Mathf.Min(250f, map.width * 0.62f));
+                        82f, maxBadgeWidth);
                     Rect badge = new Rect(point.x - width * 0.5f,
-                        blockY + (i + arrivalOffset) * lineHeight,
-                        width, 22f);
+                        badgeY, width, badgeHeights[i]);
                     badge.x = Mathf.Clamp(badge.x, map.x + 4f,
                         map.xMax - badge.width - 4f);
                     Widgets.DrawBoxSolid(badge, selected || hovered
@@ -1286,6 +1301,7 @@ namespace ColonistAwareness
                         "Assigned area: " + CARegionalPlanUtility.TileWords(
                             settlement.memberTileId)
                         + ". Exact site is chosen from generated terrain.");
+                    badgeY += badge.height + 2f;
                 }
                 Text.Font = GameFont.Small;
             }
@@ -1464,11 +1480,35 @@ namespace ColonistAwareness
 
         // ---- the strip under the map ---------------------------------------
 
-        private static void DrawContextStrip(Rect strip, string text)
+        private static void DrawContextStrip(Rect strip, CARegionalPlan plan,
+            string text, Action viewDetails)
         {
             Text.Font = GameFont.Tiny;
             GUI.color = new Color(0.78f, 0.81f, 0.85f);
-            Widgets.Label(strip, text);
+            bool hasObject = selectedKind != CARegionSelectionKind.Region;
+            bool hasFactionMarker = selectedKind
+                    == CARegionSelectionKind.Settlement
+                || selectedKind == CARegionSelectionKind.Faction;
+            float markerWidth = hasFactionMarker ? 10f : 0f;
+            if (hasFactionMarker)
+            {
+                int factionKey = selectedKind == CARegionSelectionKind.Faction
+                    ? selectedFactionKey : plan?.settlements?.FirstOrDefault(
+                            item => item != null && item.slot == selectedSlot)
+                        ?.factionKey ?? -1;
+                Widgets.DrawBoxSolid(new Rect(strip.x, strip.y + 3f, 4f,
+                    Mathf.Max(4f, strip.height - 6f)),
+                    CARegionalWorldOverlay.FactionColor(factionKey));
+            }
+            float buttonWidth = hasObject && viewDetails != null ? 104f : 0f;
+            Widgets.Label(new Rect(strip.x + markerWidth, strip.y,
+                strip.width - markerWidth - buttonWidth
+                    - (buttonWidth > 0f ? 6f : 0f),
+                strip.height), text);
+            if (buttonWidth > 0f && Widgets.ButtonText(new Rect(
+                    strip.xMax - buttonWidth, strip.y, buttonWidth,
+                    strip.height), "View Details"))
+                viewDetails();
             TooltipHandler.TipRegion(strip, text);
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
@@ -1486,10 +1526,44 @@ namespace ColonistAwareness
                     .FirstOrDefault(item => item != null
                         && item.slot == selectedSlot);
                 text = settlement == null ? "Settlement"
-                    : CARegionalPlanUtility.SettlementName(plan, settlement)
+                    : "Settlement: "
+                        + CARegionalPlanUtility.SettlementName(plan, settlement)
                         + " - assigned to "
                         + CARegionalPlanUtility.TileWords(settlement.memberTileId)
                         + "; its exact site is chosen from generated terrain.";
+            }
+            else if (selectedKind == CARegionSelectionKind.Faction)
+            {
+                CARegionalFactionPlan faction = plan.FactionPlan(
+                    selectedFactionKey);
+                int held = plan.settlements.Count(item => item != null
+                    && item.factionKey == selectedFactionKey);
+                text = faction == null ? "Faction"
+                    : "Faction - " + CARegionalPlanUtility.FactionName(faction)
+                        + " - " + held + " settlement"
+                        + (held == 1 ? "" : "s");
+            }
+            else if (selectedKind == CARegionSelectionKind.Feature)
+            {
+                CARegionalCandidateFacts.Feature feature = facts?.Features
+                    .FirstOrDefault(item => item != null
+                        && item.Tile.tileId == selectedTileId
+                        && (selectedFeatureDefName.NullOrEmpty()
+                            || item.Def?.defName == selectedFeatureDefName));
+                text = feature == null ? "Selected feature"
+                    : feature.Name + " - "
+                        + CARegionalPlanUtility.TileWords(
+                            feature.Tile.tileId);
+            }
+            else if (selectedKind == CARegionSelectionKind.Neighbor)
+            {
+                CARegionalCandidateFacts.Neighbor neighbor = facts?.Neighbors
+                    .FirstOrDefault(item => item != null
+                        && item.Tile.tileId == selectedTileId);
+                text = neighbor?.Object == null ? "Selected neighboring site"
+                    : neighbor.Object.LabelCap + " - "
+                        + neighbor.WorldDistanceTiles.ToString("F0")
+                        + " tiles from the region";
             }
             else if (overlayMode == 2)
                 text = "Connections are schematic links between assigned "

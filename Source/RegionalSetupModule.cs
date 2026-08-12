@@ -379,8 +379,8 @@ namespace ColonistAwareness
             }
 
             CARegionalPlanUtility.EnsureRelationRows(plan);
-            // Faction structure is an input to starting facilities and local
-            // services. Resolve it before settlement state so automatic
+            // Faction structure is an input to local services and settlement
+            // programs. Resolve it before settlement state so automatic
             // regions follow the same dependency order as Starting Region.
             foreach (CARegionalFactionPlan group in plan.factions
                 .Where(item => item != null))
@@ -678,13 +678,6 @@ namespace ColonistAwareness
         public int reallocatedFromTileId = -1;
         public int siteClusterKey = -1;
         public int operationalRoleMask;
-        // Facilities resolved from the settlement's concrete causes.
-        public int startingFacilityMask = -1;
-        // Exact facility exceptions are sparse and secondary. A set bit says
-        // the named facility is exceptional; its value bit says present or
-        // absent. Everything else follows the settlement's concrete state.
-        public int facilityExceptionMask;
-        public int facilityExceptionValues;
         // Realized settlement facts. These are generated once from the
         // settlement's population source, ground, links, facilities, faction,
         // regional role, and history. Runtime generation consumes these saved
@@ -692,6 +685,11 @@ namespace ColonistAwareness
         public int residentPopulation = -1;
         public int landCapacity = -1;
         public int realizedAccessInfrastructure = -1;
+        // Saved route facts. Programs and confirmed generation consume these
+        // values instead of consulting mutable world tiles again.
+        public bool hasRoadAccess;
+        public bool hasRiverAccess;
+        public bool hasCoastalAccess;
         public int realizedServiceInfrastructure = -1;
         public int realizedCivicInfrastructure = -1;
         public int economicCapacity = -1;
@@ -700,12 +698,14 @@ namespace ColonistAwareness
         public int historicalDevelopment = -1;
         public int urbanSupport = -1;
         public byte realizedScale; // CASettlementScale
-        // Settlement populations and starting provisions. Entries are derived
-        // on demand, editable individually, and copied to the settlement record.
+        // Settlement populations, provision arrangements, and the realized
+        // open settlement program are copied to the runtime record.
         public List<CASettlementPopulationGroup> populationGroups =
             new List<CASettlementPopulationGroup>();
-        public List<CAStartingProvision> startingProvisions =
-            new List<CAStartingProvision>();
+        public List<CAProvisionArrangement> provisionArrangements =
+            new List<CAProvisionArrangement>();
+        public CASettlementProgram settlementProgram =
+            new CASettlementProgram();
         // The settlement's own persistent culture. It begins from its
         // populations' inherited cultures and changes only through recorded
         // historical transitions.
@@ -732,16 +732,15 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref siteClusterKey, "siteClusterKey", -1);
             Scribe_Values.Look(ref operationalRoleMask,
                 "operationalRoleMask", 0);
-            Scribe_Values.Look(ref startingFacilityMask, "startingFacilityMask", -1);
-            Scribe_Values.Look(ref facilityExceptionMask,
-                "facilityExceptionMask", 0);
-            Scribe_Values.Look(ref facilityExceptionValues,
-                "facilityExceptionValues", 0);
             Scribe_Values.Look(ref residentPopulation,
                 "residentPopulation", -1);
             Scribe_Values.Look(ref landCapacity, "landCapacity", -1);
             Scribe_Values.Look(ref realizedAccessInfrastructure,
                 "realizedAccessInfrastructure", -1);
+            Scribe_Values.Look(ref hasRoadAccess, "hasRoadAccess", false);
+            Scribe_Values.Look(ref hasRiverAccess, "hasRiverAccess", false);
+            Scribe_Values.Look(ref hasCoastalAccess,
+                "hasCoastalAccess", false);
             Scribe_Values.Look(ref realizedServiceInfrastructure,
                 "realizedServiceInfrastructure", -1);
             Scribe_Values.Look(ref realizedCivicInfrastructure,
@@ -757,12 +756,16 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref realizedScale,
                 "realizedScale", (byte)0);
             Scribe_Collections.Look(ref populationGroups, "populationGroups", LookMode.Deep);
-            Scribe_Collections.Look(ref startingProvisions, "startingProvisions",
+            Scribe_Collections.Look(ref provisionArrangements,
+                "provisionArrangements",
                 LookMode.Deep);
+            Scribe_Deep.Look(ref settlementProgram, "settlementProgram");
             Scribe_Deep.Look(ref localCulture, "localCulture");
             if (populationGroups == null) populationGroups = new List<CASettlementPopulationGroup>();
-            if (startingProvisions == null)
-                startingProvisions = new List<CAStartingProvision>();
+            if (provisionArrangements == null)
+                provisionArrangements = new List<CAProvisionArrangement>();
+            if (settlementProgram == null)
+                settlementProgram = new CASettlementProgram();
             Scribe_Values.Look(ref realizedRole, "realizedRole", (byte)0);
             Scribe_Values.Look(ref persistent, "persistent", true);
             Scribe_Values.Look(ref customName, "customName");
@@ -818,11 +821,13 @@ namespace ColonistAwareness
 
     public sealed class CARegionalPlan : IExposable
     {
-        internal const int CurrentSchemaVersion = 6;
+        internal const int CurrentSchemaVersion = 8;
 
-        // Schema 6 is the B8 authoring epoch: substantive Culture and complete
-        // Political Beliefs are written directly. Earlier development schemas
-        // are deliberately unsupported rather than migrated.
+        // Schema 8 is the B9 authoring epoch: substantive B8 Culture and
+        // Political Beliefs remain direct, while settlement composition uses
+        // saved route facts, provision arrangements, and the open
+        // settlement-program schema.
+        // Earlier development schemas are deliberately unsupported.
         public int schemaVersion = CurrentSchemaVersion;
         public string regionalId;
         // The player's geographic name for this realized region. This lives on
@@ -1392,8 +1397,9 @@ namespace ColonistAwareness
                     return false;
                 }
             }
-            foreach (CAStartingProvision provision in
-                settlement.startingProvisions ?? new List<CAStartingProvision>())
+            foreach (CAProvisionArrangement provision in
+                settlement.provisionArrangements
+                    ?? new List<CAProvisionArrangement>())
                 if (provision != null && provision.populationGroupKey >= 0
                     && !populationGroups.Any(item => item.key
                         == provision.populationGroupKey))
@@ -1547,6 +1553,22 @@ namespace ColonistAwareness
                 if (!TryValidatePopulationGroups(plan, settlement,
                         out failure))
                     return false;
+                if (!CASettlementComposition.TryValidateProvisionArrangements(
+                        plan, settlement, out string provisionFailure))
+                {
+                    failure = "Settlement " + displaySlot
+                        + " has invalid provision arrangements: "
+                        + provisionFailure + ".";
+                    return false;
+                }
+                if (!CASettlementProgramRegistry.TryValidateSaved(plan,
+                        settlement, out string programFailure))
+                {
+                    failure = "Settlement " + displaySlot
+                        + " has an invalid settlement composition: "
+                        + programFailure + ".";
+                    return false;
+                }
                 if (!plan.memberTileIds.Contains(settlement.memberTileId))
                 {
                     failure = "Settlement " + displaySlot
@@ -2165,7 +2187,7 @@ namespace ColonistAwareness
             previewDerived = null;
             pendingIdentity = null;
             TryRestoreFromDisk(identity);
-            // A restored footprint IS this world's authoritative choice, so
+            // A restored footprint is this world's authoritative choice, so
             // adopt its values: the sticky pair must never disagree with the
             // plan the session starts from.
             if (Pending != null)
@@ -2484,7 +2506,7 @@ namespace ColonistAwareness
 
         // Every persisted draft and every confirmation preview uses the same
         // deterministic realization path. Cause edits therefore cannot leave
-        // stale routes, facilities, provisions, or settlement axes on screen.
+            // stale routes, programs, provisions, or settlement axes on screen.
         internal static void RefreshDraftRealization(CARegionalPlan plan)
         {
             if (plan == null || plan.confirmed) return;
@@ -2492,7 +2514,10 @@ namespace ColonistAwareness
             CARegionalSettlements.RealizeForConfirmation(plan);
             foreach (CARegionalSettlementPlan settlement in plan.settlements
                 .Where(item => item != null))
+            {
                 CASettlementComposition.EnsureDerived(plan, settlement);
+                CASettlementProgramRegistry.EnsureDerived(plan, settlement);
+            }
         }
 
         private static bool TryValidateRestoredPlan(CARegionalPlan plan,
@@ -2949,7 +2974,11 @@ namespace ColonistAwareness
                 CARegionalSettlements.RealizeForConfirmation(plan);
                 foreach (CARegionalSettlementPlan settlement in
                     plan.settlements.Where(item => item != null))
+                {
                     CASettlementComposition.EnsureDerived(plan, settlement);
+                    CASettlementProgramRegistry.EnsureDerived(plan,
+                        settlement);
+                }
                 plan.confirmed = true;
                 plan.developerExercise = developerExercise;
                 // Confirmation changes only canonical authored state. External

@@ -327,7 +327,7 @@ namespace ColonistAwareness
                         quarter = true,
                         authored = true
                     });
-                    first.startingProvisions.Clear();
+                    first.provisionArrangements.Clear();
                     CASettlementComposition.EnsureDerived(plan, first);
                 }
                 CARegionalSettlements.EnsureSettlementPattern(plan);

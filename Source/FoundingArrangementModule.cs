@@ -292,8 +292,8 @@ namespace ColonistAwareness
             return false;
         }
 
-        // Apply the selected arrangement to every founder. Starting provisions
-        // and facilities are materialized by their own saved parameters.
+        // Apply the selected arrangement to every founder. Provision and
+        // settlement programs materialize from their own saved facts.
         private static void ApplyArrangement(
             CAOrganizationRelationsWorldComponent ledger,
             CAOrganization colony, List<Pawn> founders,

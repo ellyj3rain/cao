@@ -71,9 +71,11 @@ internal static class CARegionalFixtureContracts
                 IntValue(settlement, "reallocatedFromTileId", -1),
                 IntValue(settlement, "operationalRoleMask", 0));
             hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                IntValue(settlement, "facilityExceptionMask", 0),
-                IntValue(settlement, "facilityExceptionValues", 0),
-                IntValue(settlement, "authoredForm", -1));
+                IntValue(settlement, "authoredForm", -1), 0, 0);
+            hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
+                BoolValue(settlement, "hasRoadAccess", false) ? 1 : 0,
+                BoolValue(settlement, "hasRiverAccess", false) ? 1 : 0,
+                BoolValue(settlement, "hasCoastalAccess", false) ? 1 : 0);
         }
         return hash;
     }

@@ -77,11 +77,11 @@ internal static class Program
             epoch.Contains("Current = 8")
                 && Count(allSource, "RecordDiscard(") >= 6
                 && Read("RegionalWorldModule.cs").Contains("worldPolicy = new CARegionalWorldPolicy()"));
-        C(8, "fixture is direct B8 output",
+        C(8, "fixture retains B8 authoring state in the current regional schema",
             Value(active.Root, "authoringDataEpoch") == "8"
-                && Value(Plan(active), "schemaVersion") == "6"
+                && Value(Plan(active), "schemaVersion") == "8"
                 && !active.ToString().Contains("migrationEvidence")
-                && File.Exists(Path.Combine(repo, "tools", "B8FixtureGenerator", "Program.cs")));
+                && File.Exists(Path.Combine(repo, "tools", "B9FixtureGenerator", "Program.cs")));
         C(9, "governed history remains while compatibility runtime is gone",
             Directory.Exists(Path.Combine(repo, "Batches"))
                 && File.Exists(Path.Combine(repo, "BATCH_LOG.md"))
@@ -133,7 +133,7 @@ internal static class Program
                 && founding.Contains("Dialog_CACultureEditor")
                 && culture.Contains("\"Social meanings\"")
                 && culture.Contains("\"Inherited practices\"")
-                && culture.Contains("\"Causal preview\""));
+                && culture.Contains("\"Inspect causal effects...\""));
         C(18, "established factions use the same Culture composer",
             region.Contains("Compose Culture...")
                 && region.Contains("Compose local Culture...")
@@ -379,8 +379,8 @@ internal static class Program
         C(47, "native Ideoligion contributes on overlap",
             effects.Contains("Ideoligion")
                 && runtime.Contains("CASocialSubjectRegistry.QuarterGiven")
-                && Read("FactionCultureBeliefsModule.cs")
-                    .Contains("CASocialSubjectRegistry.QuarterGiven"));
+                && Read("B8SocialMeaningKernel.cs")
+                    .Contains("RegisterBuiltIn(QuarterGiven"));
         C(48, "non-Ideoligion subjects remain available",
             CASocialSubjectRegistry.Find(CASocialSubjectRegistry.PublicGathering) != null
                 && CASocialSubjectRegistry.Find(CASocialSubjectRegistry.CompelledService) != null);
@@ -413,7 +413,7 @@ internal static class Program
             Slice(founding, "private void DrawIdeoCard", "private void DrawPoliticalCard")
                 .Contains("ideo?.Icon"));
         C(54, "concrete icons remain available",
-            Read("RegionalPopulationEditorsModule.cs").Contains("IconPath")
+            Read("RegionalPopulationEditorsModule.cs").Contains("LivingIdeo?.Icon")
                 && region.Contains("RelationIcon")
                 && Read("CreationFlowUiModule.cs").Contains("Icon"));
         C(55, "founding confirmation validates visible objects",

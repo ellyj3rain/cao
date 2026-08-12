@@ -3127,7 +3127,7 @@ namespace ColonistAwareness
                     if (map != null)
                         RefreshSettlementOrg(org, record, map);
                 }
-                CAStartingProvisions.ReconcileTaxFunding(record);
+                CAProvisionArrangements.ReconcileTaxFunding(record);
             }
             ReconcileHostileAgreements(comp.EnsureColony(), records);
         }
@@ -3322,8 +3322,7 @@ namespace ColonistAwareness
                     ?? "confirmed creation history is not materializable";
             if (record.creationExecutable)
             {
-                SeedRepresentativeAssets(org, record, map);
-                CAStartingFacilities.Furnish(org, record, map);
+                CASettlementProgramMaterializer.Materialize(org, record, map);
             }
             else
                 org.Record("works", "confirmed creation history blocked - "
@@ -3332,6 +3331,9 @@ namespace ColonistAwareness
             // offices, facility holdings, staffed posts, membership, and
             // security practices.
             CAAxisMaterialization.Apply(org, record, map);
+            // Provision programs become complete only after the axis pass has
+            // created their holdings, access, staffing, and funding behavior.
+            CAProvisionArrangements.CompleteMaterialization(record, map);
             // Future work now reads the realized institution and current
             // material settlement. It does not inherit creation feasibility.
             RefreshDevelopmentAuthority(org, record, map);
@@ -3437,280 +3439,7 @@ namespace ColonistAwareness
             catch { }
         }
 
-        // Place functional organization assets from existing game defs.
-        // Industrial settlements may receive a comms console, fortified
-        // settlements a signal fire, and armed settlements an armory.
-        private static void SeedRepresentativeAssets(CAOrganization org,
-            CARegionalSettlementRecord record, Map map)
-        {
-            try
-            {
-                var interior = new List<IntVec3>();
-                for (int x = record.localRect.minX;
-                    x <= record.localRect.maxX && interior.Count < 12;
-                    x += 2)
-                    for (int z = record.localRect.minZ;
-                        z <= record.localRect.maxZ && interior.Count < 12;
-                        z += 2)
-                    {
-                        IntVec3 c = new IntVec3(x, 0, z);
-                        if (!c.InBounds(map) || !c.Standable(map)
-                            || !c.Roofed(map)) continue;
-                        Room room = c.GetRoom(map);
-                        if (room == null || room.PsychologicallyOutdoors
-                            || room.IsDoorway) continue;
-                        interior.Add(c);
-                    }
 
-                bool industrial = false;
-                try
-                {
-                    industrial = record.faction != null
-                        && (int)record.faction.def.techLevel >= 4;
-                }
-                catch { }
-
-                // Command post: powered comms for the organized industrial;
-                // a council fire for everyone else.
-                if (record.organization >= 2)
-                {
-                    if (industrial && interior.Count >= 2)
-                    {
-                        if (SpawnAsset(map, "CommsConsole", interior[0],
-                                record.faction, null)
-                            && SpawnAsset(map, "WoodFiredGenerator",
-                                Nearby(interior, interior[0], 4f),
-                                record.faction, null))
-                            org.Record("security", "command post raised -"
-                                + " comms console under settlement power");
-                    }
-                    else if (!industrial)
-                    {
-                        IntVec3 fireCell = OutdoorCoreCell(record, map);
-                        if (fireCell.IsValid && SpawnAsset(map, "Campfire",
-                            fireCell, record.faction, null))
-                            org.Record("security",
-                                "council fire lit at the core");
-                    }
-                }
-
-                // Place a signal fire near a defended line.
-                if (record.fortification >= 2)
-                {
-                    IntVec3 lineCell = IntVec3.Invalid;
-                    var arr = CAArrangementMapComponent.For(map);
-                    if (arr != null)
-                        for (int i = 0; i < arr.All.Count
-                            && !lineCell.IsValid; i++)
-                            if (arr.All[i].ownerOrgKey == org.organizationKey)
-                                for (int cc = 0;
-                                    cc < arr.All[i].cells.Count; cc++)
-                                {
-                                    IntVec3 lc = arr.All[i].cells[cc];
-                                    if (lc.InBounds(map) && lc.Standable(map)
-                                        && !lc.Roofed(map))
-                                    { lineCell = lc; break; }
-                                }
-                    if (lineCell.IsValid && SpawnAsset(map, "Campfire",
-                        lineCell, record.faction, null))
-                        org.Record("security",
-                            "signal fire laid by the line");
-                }
-
-                // Armory: a shelf and real weapons; the room reads
-                // "armory" through the native role at four or more.
-                if (record.weapons >= 2 && interior.Count >= 4)
-                {
-                    IntVec3 shelfCell = interior[interior.Count - 1];
-                    ThingDef stuffWood = ThingDef.Named("WoodLog");
-                    SpawnAsset(map, "Shelf", shelfCell, record.faction,
-                        stuffWood);
-                    string weaponDef = industrial
-                        ? "Gun_Revolver" : "MeleeWeapon_Club";
-                    int placed = 0;
-                    for (int i = 0; i < 4; i++)
-                    {
-                        IntVec3 wc = Nearby(interior, shelfCell, 3f);
-                        if (!wc.IsValid) break;
-                        ThingDef wd = DefDatabase<ThingDef>
-                            .GetNamedSilentFail(weaponDef);
-                        if (wd == null) break;
-                        Thing w = wd.MadeFromStuff
-                            ? ThingMaker.MakeThing(wd,
-                                ThingDef.Named("WoodLog"))
-                            : ThingMaker.MakeThing(wd);
-                        GenSpawn.Spawn(w, wc, map);
-                        w.SetForbidden(true, false);
-                        placed++;
-                    }
-                    if (placed >= 4)
-                        org.Record("security", "armory stocked - " + placed
-                            + " weapons warehoused");
-                }
-
-                // Trained settlements warehouse tent
-                // parts (the ported Camping Stuff catalog - pole, cover,
-                // floor). Their patrols have shelter to carry; raiding
-                // their stores yields it. Parts, not assembled bags - an
-                // empty bag without its inner spec is not a real thing.
-                // Settlements with training 3 or higher receive
-                // a real packed tent bag, built through the ported
-                // machinery's own API - parts packed with PackPart, Ready
-                // verified, wrapped in its MinifiedThing. Never a fake:
-                // if assembly does not reach Ready, nothing spawns and the
-                // parts path below covers the stores instead.
-                bool assembledSeeded = false;
-                if (record.training >= 3 && interior.Count >= 1)
-                    assembledSeeded = TrySeedPackedTent(map,
-                        interior[interior.Count >= 3
-                            ? interior.Count - 2 : 0], org);
-                if (record.training >= 2 && interior.Count >= 2
-                    && !assembledSeeded)
-                {
-                    string[] partDefs =
-                    {
-                        "NCS_TentPart_Pole", "NCS_TentPart_Cover_Small",
-                        "NCS_TentPart_Floor"
-                    };
-                    int stocked = 0;
-                    for (int i = 0; i < partDefs.Length; i++)
-                    {
-                        ThingDef pd = DefDatabase<ThingDef>
-                            .GetNamedSilentFail(partDefs[i]);
-                        if (pd == null) continue;
-                        IntVec3 pc = interior[
-                            (i + 1) % interior.Count];
-                        try
-                        {
-                            Thing part = pd.MadeFromStuff
-                                ? ThingMaker.MakeThing(pd,
-                                    GenStuff.DefaultStuffFor(pd))
-                                : ThingMaker.MakeThing(pd);
-                            GenSpawn.Spawn(part, pc, map);
-                            part.SetForbidden(true, false);
-                            stocked++;
-                        }
-                        catch { }
-                    }
-                    if (stocked > 0)
-                        org.Record("security", "expedition stores laid in"
-                            + " - " + stocked + " tent parts warehoused");
-                }
-            }
-            catch (Exception) { }
-        }
-
-        private static bool TrySeedPackedTent(Map map, IntVec3 cell,
-            CAOrganization org)
-        {
-            try
-            {
-                ThingDef bagDef = DefDatabase<ThingDef>
-                    .GetNamedSilentFail("NCS_TentBag");
-                ThingDef miniDef = DefDatabase<ThingDef>
-                    .GetNamedSilentFail("NCS_MiniTentBag");
-                ThingDef coverDef = DefDatabase<ThingDef>
-                    .GetNamedSilentFail("NCS_TentPart_Cover_Small");
-                ThingDef poleDef = DefDatabase<ThingDef>
-                    .GetNamedSilentFail("NCS_TentPart_Pole");
-                ThingDef floorDef = DefDatabase<ThingDef>
-                    .GetNamedSilentFail("NCS_TentPart_Floor");
-                if (bagDef == null || miniDef == null || coverDef == null
-                    || poleDef == null) return false;
-
-                Camping_Stuff.NCS_Tent tent = ThingMaker.MakeThing(bagDef)
-                    as Camping_Stuff.NCS_Tent;
-                if (tent == null) return false;
-                Thing cover = coverDef.MadeFromStuff
-                    ? ThingMaker.MakeThing(coverDef,
-                        GenStuff.DefaultStuffFor(coverDef))
-                    : ThingMaker.MakeThing(coverDef);
-                tent.PackPart(cover);
-                int needPoles = 2;
-                try
-                {
-                    var props = cover.TryGetComp
-                        <Camping_Stuff.TentCoverComp>()?.Props;
-                    if (props != null) needPoles = props.numPoles;
-                }
-                catch { }
-                Thing poles = poleDef.MadeFromStuff
-                    ? ThingMaker.MakeThing(poleDef,
-                        GenStuff.DefaultStuffFor(poleDef))
-                    : ThingMaker.MakeThing(poleDef);
-                poles.stackCount = needPoles;
-                tent.PackPart(poles);
-                if (floorDef != null)
-                {
-                    Thing floor = floorDef.MadeFromStuff
-                        ? ThingMaker.MakeThing(floorDef,
-                            GenStuff.DefaultStuffFor(floorDef))
-                        : ThingMaker.MakeThing(floorDef);
-                    tent.PackPart(floor);
-                }
-                if (!tent.Ready) return false;
-
-                Camping_Stuff.NCS_MiniTent mini =
-                    ThingMaker.MakeThing(miniDef)
-                    as Camping_Stuff.NCS_MiniTent;
-                if (mini == null) return false;
-                mini.Bag = tent;
-                GenSpawn.Spawn(mini, cell, map);
-                mini.SetForbidden(true, false);
-                org.Record("security", "expedition stores laid in - a"
-                    + " packed tent stands ready in the storehouse");
-                return true;
-            }
-            catch (Exception) { return false; }
-        }
-
-        private static bool SpawnAsset(Map map, string defName,
-            IntVec3 cell, Faction faction, ThingDef stuff)
-        {
-            if (!cell.IsValid) return false;
-            ThingDef def = DefDatabase<ThingDef>
-                .GetNamedSilentFail(defName);
-            if (def == null) return false;
-            try
-            {
-                if (cell.GetEdifice(map) != null) return false;
-                Thing t = def.MadeFromStuff
-                    ? ThingMaker.MakeThing(def, stuff
-                        ?? GenStuff.DefaultStuffFor(def))
-                    : ThingMaker.MakeThing(def);
-                if (faction != null && def.CanHaveFaction)
-                    t.SetFaction(faction);
-                GenSpawn.Spawn(t, cell, map);
-                var fuel = t.TryGetComp<CompRefuelable>();
-                if (fuel != null) fuel.Refuel(20f);
-                return true;
-            }
-            catch { return false; }
-        }
-
-        private static IntVec3 Nearby(List<IntVec3> pool, IntVec3 anchor,
-            float maxDist)
-        {
-            for (int i = 0; i < pool.Count; i++)
-                if (pool[i] != anchor
-                    && pool[i].InHorDistOf(anchor, maxDist))
-                    return pool[i];
-            return IntVec3.Invalid;
-        }
-
-        private static IntVec3 OutdoorCoreCell(
-            CARegionalSettlementRecord record, Map map)
-        {
-            IntVec3 center = record.localRect.CenterCell;
-            for (int r = 0; r < 8; r++)
-            {
-                IntVec3 c = center + GenRadial.RadialPattern[r];
-                if (c.InBounds(map) && c.Standable(map) && !c.Roofed(map)
-                    && c.GetEdifice(map) == null)
-                    return c;
-            }
-            return IntVec3.Invalid;
-        }
 
         private static void RefreshSettlementOrg(CAOrganization org,
             CARegionalSettlementRecord record, Map map)
@@ -5521,19 +5250,17 @@ namespace ColonistAwareness
                 + "the site, buildings fill usable blocks, and walls follow "
                 + "the resulting boundary. Materials, paving, and defenses "
                 + "depend on local resources and development." },
-            new[] { "Starting facilities",
-                "Starting facilities are generated from population, local "
-                + "services, infrastructure, faction knowledge, settlement "
-                + "role, and faction structure. Each facility can be "
-                + "overridden during regional setup." },
-            new[] { "Starting provisions",
-                "Food, medicine, beds, tools, and other starting supplies "
-                + "follow the selected facilities and population. Provision "
-                + "arrangements can be edited separately for each settlement." },
+            new[] { "Settlement composition",
+                "Population, ground, access, services, current order, economy, "
+                + "regional role, and history determine which settlement "
+                + "programs are present when play begins." },
+            new[] { "Provision arrangements",
+                "Food, medicine, shelter, and supplies follow the population, "
+                + "current order, and settlement program." },
             new[] { "Repairs and research",
                 "Residents repair damaged settlement buildings and replace "
-                + "destroyed starting facilities through normal work. Active "
-                + "research facilities can produce equipment and medicine." },
+                + "destroyed program assets through normal work. Active "
+                + "research programs can produce equipment and medicine." },
             new[] { "Guards and patrols",
                 "Fortified settlements can maintain outposts and scheduled "
                 + "patrol routes. Patrol policy determines whether guards "

@@ -903,8 +903,8 @@ namespace ColonistAwareness
 
                 // Entrances and paths are derived from the built area below.
 
-                // FACILITIES: the starting-facility registry is the source of
-                // truth for where each program physically stands.
+                // PROGRAM ASSETS: the saved settlement program is the source
+                // of truth for where each materialized requirement stands.
                 if (record.seededAssets != null)
                     foreach (string entry in record.seededAssets)
                     {

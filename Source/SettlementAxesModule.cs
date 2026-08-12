@@ -46,8 +46,7 @@ namespace ColonistAwareness
 
         // The three tiers everything physical keys off. Kept here so
         // there is exactly one definition of the boundary; it used to
-        // live in CAStartingFacilities and be re-read by the
-        // morphology adapter.
+        // be re-read independently by the morphology adapter.
         internal static int Tier(TechLevel tech)
         {
             int level = (int)tech;
@@ -90,32 +89,32 @@ namespace ColonistAwareness
             return Mathf.Clamp((int)eraPrior - 1, 0, 5);
         }
 
-        // Local facilities and infrastructure can lower what a settlement
+        // Local programs and infrastructure can lower what a settlement
         // can practice without changing what its faction knows.
-        internal const int FacilityWorkshop = 8;
-        internal const int FacilityLaboratory = 64;
-
-        internal static int LocalPracticeCeiling(int startingFacilityMask,
+        internal static int LocalPracticeCeiling(CASettlementProgram program,
             bool roadLinked, bool coastal, TechLevel knowledge)
         {
             int access = roadLinked && coastal ? 2
                 : roadLinked || coastal ? 1 : 0;
-            int services = startingFacilityMask < 0 ? 2
-                : (startingFacilityMask & FacilityLaboratory) != 0 ? 3
-                : (startingFacilityMask & FacilityWorkshop) != 0 ? 2 : 0;
-            int civic = startingFacilityMask < 0 ? 2
-                : (startingFacilityMask & FacilityWorkshop) != 0 ? 2 : 0;
-            return LocalPracticeCeiling(startingFacilityMask, access, services,
+            int services = program?.Has(CASettlementProgramRegistry.Research)
+                == true ? 3
+                : program?.Has(CASettlementProgramRegistry.Medicine) == true
+                    ? 2 : 0;
+            int civic = program?.Has(CASettlementProgramRegistry.Governance)
+                == true ? 2 : 0;
+            return LocalPracticeCeiling(program, access, services,
                 civic, knowledge);
         }
 
-        internal static int LocalPracticeCeiling(int startingFacilityMask,
+        internal static int LocalPracticeCeiling(CASettlementProgram program,
             int accessInfrastructure, int serviceInfrastructure,
             int civicInfrastructure, TechLevel knowledge)
         {
             int basis = CapabilityBasis(knowledge);
-            bool laboratory = (startingFacilityMask & FacilityLaboratory) != 0;
-            bool workshop = (startingFacilityMask & FacilityWorkshop) != 0;
+            bool laboratory = program?.Has(
+                CASettlementProgramRegistry.Research) == true;
+            bool workshop = program?.Has(
+                CASettlementProgramRegistry.Production) == true;
             int drop = laboratory ? 0 : workshop ? 1 : 2;
             if (accessInfrastructure <= 0) drop++;
             if (serviceInfrastructure <= 0) drop++;
@@ -153,32 +152,18 @@ namespace ColonistAwareness
         // Developer-facing receipt of the concrete material causes used for
         // this settlement. Player UI names the resulting facts directly.
         internal static string Provenance(int authoredForm,
-            int facilityExceptionMask)
+            CASettlementProgram program)
         {
-            int facilityCount = 0;
-            for (int bit = 1; bit <= CAStartingFacilities.MaskLab; bit <<= 1)
-                if ((facilityExceptionMask & bit) != 0) facilityCount++;
             return "form=" + (authoredForm >= 0 ? "specified" : "faction")
-                + "; facilities=population+role+institutions+knowledge+ground"
-                + (facilityCount == 0 ? ""
-                    : "; facility exceptions=" + facilityCount)
-                + "; capacities=population+land+links+history+facilities";
+                + "; program=population+role+institutions+knowledge+ground"
+                + "; programs=" + (program?.entries?.Count ?? 0)
+                + "; capacities=population+land+links+history+programs";
         }
     }
 
-    // Starting facilities and infrastructure are separate settlement state.
-    // Each facility and infrastructure dimension can be overridden separately.
+    // Infrastructure is derived independently of the open settlement program.
     internal static class CASettlementStartingState
     {
-        internal const int AllFacilityMask =
-            CAStartingFacilities.MaskHearth
-            | CAStartingFacilities.MaskStores
-            | CAStartingFacilities.MaskInfirmary
-            | CAStartingFacilities.MaskWorkshop
-            | CAStartingFacilities.MaskJail
-            | CAStartingFacilities.MaskDining
-            | CAStartingFacilities.MaskLab;
-
         internal static int Access(CARegionalPlan plan,
             CARegionalSettlementPlan place)
         {
@@ -201,51 +186,6 @@ namespace ColonistAwareness
             if (place != null && place.realizedCivicInfrastructure >= 0)
                 return Mathf.Clamp(place.realizedCivicInfrastructure, 0, 3);
             return DerivedCivic(plan, place);
-        }
-
-        internal static int ResolveFacilityMask(CARegionalPlan plan,
-            CARegionalSettlementPlan place, FactionDef ownerDef = null)
-        {
-            if (place == null) return 0;
-            if (ownerDef == null)
-                ownerDef = plan?.FactionPlan(place.factionKey)
-                    ?.ResolvedFactionDef;
-            int derived = DerivedFacilityMask(plan, place, ownerDef);
-            return CACulturalExpressionCausalKernel.ResolveFacilityMask(
-                derived, place.facilityExceptionMask,
-                place.facilityExceptionValues, AllFacilityMask);
-        }
-
-        internal static int Sync(CARegionalPlan plan,
-            CARegionalSettlementPlan place, FactionDef ownerDef = null)
-        {
-            if (place == null) return 0;
-            place.startingFacilityMask = ResolveFacilityMask(plan, place, ownerDef);
-            return place.startingFacilityMask;
-        }
-
-        internal static void ClearFacilityExceptions(CARegionalPlan plan,
-            CARegionalSettlementPlan place)
-        {
-            if (place == null) return;
-            place.facilityExceptionMask = 0;
-            place.facilityExceptionValues = 0;
-            Sync(plan, place);
-        }
-
-        internal static void SetFacilityException(CARegionalPlan plan,
-            CARegionalSettlementPlan place, int bit, bool? included)
-        {
-            if (place == null || (bit & AllFacilityMask) == 0) return;
-            if (!included.HasValue)
-                place.facilityExceptionMask &= ~bit;
-            else
-            {
-                place.facilityExceptionMask |= bit;
-                if (included.Value) place.facilityExceptionValues |= bit;
-                else place.facilityExceptionValues &= ~bit;
-            }
-            Sync(plan, place);
         }
 
         private static int DerivedAccess(CARegionalPlan plan,
@@ -278,12 +218,6 @@ namespace ColonistAwareness
                 CASettlementAxes.TemplateEraPrior(owner));
             int value = place.residentPopulation >= 500 ? 2
                 : place.residentPopulation >= 140 ? 1 : 0;
-            int explicitFacilities = place.facilityExceptionValues
-                & place.facilityExceptionMask;
-            if ((explicitFacilities & (CAStartingFacilities.MaskInfirmary
-                    | CAStartingFacilities.MaskDining
-                    | CAStartingFacilities.MaskStores)) != 0)
-                value++;
             if (tier >= 2 && place.residentPopulation >= 280) value++;
             if ((CASettlementRole)place.realizedRole
                     == CASettlementRole.Center
@@ -305,44 +239,5 @@ namespace ColonistAwareness
             return Mathf.Clamp(value, 0, 3);
         }
 
-        private static int DerivedFacilityMask(CARegionalPlan plan,
-            CARegionalSettlementPlan place, FactionDef ownerDef)
-        {
-            TechLevel knowledge = CASettlementAxes.TemplateEraPrior(ownerDef);
-            int tier = CASettlementAxes.Tier(knowledge);
-            int access = Access(plan, place);
-            int services = Services(plan, place);
-            int civic = Civic(plan, place);
-            CARegionalFactionPlan faction = plan?.FactionPlan(
-                place?.factionKey ?? -1);
-            string Current(string axis)
-            {
-                return CAFactionAxes.KeyOf(faction?.factionStructure, axis)
-                    ?? CAFactionAxes.KeyOf(
-                        faction?.politicalBeliefs?.positions, axis);
-            }
-            string support = Current(CAFactionAxes.Support);
-            string economy = Current(CAFactionAxes.Economy);
-            string security = Current(CAFactionAxes.LocalOrder);
-
-            int mask = CAStartingFacilities.MaskHearth;
-            bool organizedMeals = services >= 1 || support == "public"
-                || support == "communal" || support == "mixed"
-                || economy == "planned" || economy == "communal";
-            if (organizedMeals) mask |= CAStartingFacilities.MaskDining;
-            if (access >= 1 || services >= 1 || support == "public"
-                || support == "communal" || support == "mixed")
-                mask |= CAStartingFacilities.MaskStores;
-            if (services >= 1)
-                mask |= CAStartingFacilities.MaskInfirmary;
-            if (tier >= 1 && civic >= 1)
-                mask |= CAStartingFacilities.MaskWorkshop;
-            if (tier >= 1 && civic >= 2
-                && (security == "constabulary" || security == "rulers"))
-                mask |= CAStartingFacilities.MaskJail;
-            if (tier >= 2 && services >= 2 && civic >= 2)
-                mask |= CAStartingFacilities.MaskLab;
-            return mask;
-        }
     }
 }

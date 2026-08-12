@@ -101,8 +101,9 @@ internal static class Program
             Require(!region.Contains("new FloatMenu")
                 && region.Contains("\"Replace composition...\"")
                 && region.Contains("Dialog_CAPopulationGroupEditor")
-                && !region.Contains("Dialog_CAStartingFacilities")
-                && region.Contains("These facilities and routes follow"),
+                && region.Contains("Dialog_CASettlementProgram")
+                && region.Contains("Settlement Composition")
+                && region.Contains("Inspect settlement composition..."),
                 "Starting Region still exposes an unbounded authoring menu");
             Require(regionEditors.Contains("Faction affiliation")
                 && regionEditors.Contains("Ideoligion")

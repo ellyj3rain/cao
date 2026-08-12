@@ -347,7 +347,7 @@ namespace ColonistAwareness
                 return;
             }
 
-            int tier = CAStartingFacilities.TechTier(record);
+            int tier = CASettlementProgramMaterializer.TechTier(record);
             string terrainName = tier >= 2 ? "PavedTile"
                 : tier == 1 ? "PackedDirt" : "PackedDirt";
             TerrainDef road = DefDatabase<TerrainDef>

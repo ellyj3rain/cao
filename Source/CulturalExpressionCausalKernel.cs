@@ -59,7 +59,7 @@ namespace ColonistAwareness
         public int Trade;
         public int Specialization;
         public int History;
-        public int Facilities;
+        public string SettlementPrograms;
         public int Role = -1;
         public int Scale = -1;
         public int Form = -1;
@@ -496,7 +496,8 @@ namespace ColonistAwareness
                     + input.Form,
                 "fortification/organization=" + input.Fortification + "/"
                     + input.Organization,
-                "facilities=" + input.Facilities,
+                "settlement programs=" + (input.SettlementPrograms
+                    ?? "none"),
                 "provisions=" + (input.ProvisionFingerprint ?? "none"),
                 "geography=" + input.Road + "/" + input.River + "/"
                     + input.Coast,
@@ -596,14 +597,6 @@ namespace ColonistAwareness
                     + (item.PredecessorCultureSignature ?? "unrecorded")
                     + ":" + (item.EvidenceSignature ?? "unrecorded") + ":"
                     + (item.ChangedDomains ?? "unrecorded")));
-        }
-
-        public static int ResolveFacilityMask(int generated, int exceptionMask,
-            int exceptionValues, int allowedMask)
-        {
-            int exceptions = exceptionMask & allowedMask;
-            return ((generated & allowedMask) & ~exceptions)
-                | (exceptionValues & exceptions);
         }
 
         private static int AverageKnown(params int[] values)

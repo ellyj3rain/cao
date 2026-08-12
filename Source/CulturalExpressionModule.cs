@@ -95,8 +95,8 @@ namespace ColonistAwareness
                 new List<WeightedIdeoligionSource>();
             internal List<CASettlementPopulationGroup> Populations =
                 new List<CASettlementPopulationGroup>();
-            internal List<CAStartingProvision> Provisions =
-                new List<CAStartingProvision>();
+            internal List<CAProvisionArrangement> Provisions =
+                new List<CAProvisionArrangement>();
             internal int Residents;
             internal int Land;
             internal int Access;
@@ -106,7 +106,7 @@ namespace ColonistAwareness
             internal int Trade;
             internal int Specialization;
             internal int History;
-            internal int Facilities;
+            internal string SettlementPrograms;
             internal int Role = -1;
             internal int Scale = -1;
             internal int Form = -1;
@@ -133,13 +133,12 @@ namespace ColonistAwareness
                 settlement.factionKey);
             TechLevel knowledge = CASettlementAxes.TemplateEraPrior(
                 faction?.ResolvedFactionDef);
-            int facilities = CASettlementStartingState.ResolveFacilityMask(
-                plan, settlement, faction?.ResolvedFactionDef);
             int access = CASettlementStartingState.Access(plan, settlement);
             int services = CASettlementStartingState.Services(plan, settlement);
             int civic = CASettlementStartingState.Civic(plan, settlement);
             int practiceCeiling = CASettlementAxes.LocalPracticeCeiling(
-                facilities, access, services, civic, knowledge);
+                settlement.settlementProgram, access, services, civic,
+                knowledge);
             int hostile = 0;
             int neutral = 0;
             foreach (CARegionalRelationPlan relation in plan?.relations
@@ -172,7 +171,7 @@ namespace ColonistAwareness
                     faction?.politicalBeliefs?.positions, false),
                 PopulationIdeoligions = PopulationIdeoligions(plan,
                     settlement.populationGroups, faction?.LivingIdeo),
-                Provisions = CopyProvisions(settlement.startingProvisions),
+                Provisions = CopyProvisions(settlement.provisionArrangements),
                 Residents = settlement.residentPopulation,
                 Land = settlement.landCapacity,
                 Access = access,
@@ -182,7 +181,8 @@ namespace ColonistAwareness
                 Trade = settlement.tradeConnectivity,
                 Specialization = settlement.specialization,
                 History = settlement.historicalDevelopment,
-                Facilities = facilities,
+                SettlementPrograms = ProgramWords(
+                    settlement.settlementProgram),
                 Role = settlement.realizedRole,
                 Scale = settlement.realizedScale,
                 Form = (int)CASettlementAxes.Form(settlement.authoredForm,
@@ -253,7 +253,7 @@ namespace ColonistAwareness
                     map) ?? PopulationIdeoligions(plan,
                         settlement.populationGroups,
                         settlement.faction?.ideos?.PrimaryIdeo),
-                Provisions = CopyProvisions(settlement.startingProvisions),
+                Provisions = CopyProvisions(settlement.provisionArrangements),
                 Residents = settlement.populationCurrent > 0
                     ? settlement.populationCurrent
                     : settlement.residentPopulation,
@@ -265,7 +265,8 @@ namespace ColonistAwareness
                 Trade = settlement.tradeConnectivity,
                 Specialization = settlement.specialization,
                 History = settlement.historicalDevelopment,
-                Facilities = settlement.startingFacilityMask,
+                SettlementPrograms = ProgramWords(
+                    settlement.settlementProgram),
                 Role = settlement.realizedRole,
                 Scale = settlement.realizedScale,
                 Form = settlement.settlementForm,
@@ -316,7 +317,7 @@ namespace ColonistAwareness
                 Trade = -1,
                 Specialization = -1,
                 History = 0,
-                Facilities = 0
+                SettlementPrograms = "none"
             };
             return Read(input);
         }
@@ -432,7 +433,7 @@ namespace ColonistAwareness
                         Trade = input.Trade,
                         Specialization = input.Specialization,
                         History = input.History,
-                        Facilities = input.Facilities,
+                        SettlementPrograms = input.SettlementPrograms,
                         Role = input.Role,
                         Scale = input.Scale,
                         Form = input.Form,
@@ -556,12 +557,12 @@ namespace ColonistAwareness
         {
             if (input.Founding)
                 return "No local buildings or routes have yet become history";
-            string facilities = FacilityWords(input.Facilities);
             string counts = input.Buildings > 0 || input.InfrastructureObjects > 0
                 ? "; " + input.Buildings + " buildings and "
                     + input.InfrastructureObjects + " route or utility objects"
                 : "";
-            return "facilities: " + facilities + "; routes: "
+            return "settlement programs: "
+                + (input.SettlementPrograms ?? "none") + "; routes: "
                 + GeographyWords(input) + counts;
         }
 
@@ -739,9 +740,9 @@ namespace ColonistAwareness
         }
 
         private static string ProvisionWords(
-            List<CAStartingProvision> provisions)
+            List<CAProvisionArrangement> provisions)
         {
-            string[] words = (provisions ?? new List<CAStartingProvision>())
+            string[] words = (provisions ?? new List<CAProvisionArrangement>())
                 .Where(item => item != null)
                 .OrderBy(item => item.basisKey)
                 .Select(item => (item.basisLabel.NullOrEmpty()
@@ -761,14 +762,15 @@ namespace ColonistAwareness
                 : string.Join("; ", words);
         }
 
-        private static string FacilityWords(int mask)
+        private static string ProgramWords(CASettlementProgram program)
         {
-            if (mask < 0) return "not yet realized";
-            string[] labels = CAStartingFacilityCatalog.All
-                .Where(item => (mask & item.Bit) != 0)
-                .Select(item => item.Label).ToArray();
-            return labels.Length == 0 ? "none"
-                : string.Join(", ", labels);
+            string[] labels = (program?.entries
+                    ?? new List<CASettlementProgramEntry>())
+                .Where(item => item != null && item.blocker.NullOrEmpty())
+                .Select(item => CASettlementProgramRegistry
+                    .Find(item.programKey)?.Label ?? item.programKey)
+                .Where(item => !item.NullOrEmpty()).Distinct().ToArray();
+            return labels.Length == 0 ? "none" : string.Join(", ", labels);
         }
 
         private static string GeographyWords(Inputs input)
@@ -846,9 +848,9 @@ namespace ColonistAwareness
         }
 
         private static string ProvisionFingerprint(
-            List<CAStartingProvision> provisions)
+            List<CAProvisionArrangement> provisions)
         {
-            return string.Join(",", (provisions ?? new List<CAStartingProvision>())
+            return string.Join(",", (provisions ?? new List<CAProvisionArrangement>())
                 .Where(item => item != null)
                 .OrderBy(item => item.basisKey)
                 .Select(item => item.key + ":" + item.basisKey + "="
@@ -1063,11 +1065,11 @@ namespace ColonistAwareness
                     }).ToList();
         }
 
-        private static List<CAStartingProvision> CopyProvisions(
-            List<CAStartingProvision> source)
+        private static List<CAProvisionArrangement> CopyProvisions(
+            List<CAProvisionArrangement> source)
         {
-            return (source ?? new List<CAStartingProvision>())
-                .Where(item => item != null).Select(item => new CAStartingProvision
+            return (source ?? new List<CAProvisionArrangement>())
+                .Where(item => item != null).Select(item => new CAProvisionArrangement
                 {
                     key = item.key,
                     basisKey = item.basisKey,

@@ -205,29 +205,30 @@ namespace ColonistAwareness
                         : "noble houses") + " - " + statusSet.Elite.Count
                     + " of " + residents.Count + " residents");
 
-            // Tax-funded starting provisions create a tax rate for each
+            // Tax-funded provision arrangements create a tax rate for each
             // provider. The settlement makes one opening decision for those
             // policies.
             CAOrganizationWorldComponent orgs =
                 CAOrganizationWorldComponent.Current;
             var taxProviders = new List<CAOrganization>();
-            foreach (CAStartingProvision arrangement in
-                record.startingProvisions ?? new List<CAStartingProvision>())
+            foreach (CAProvisionArrangement arrangement in
+                record.provisionArrangements ?? new List<CAProvisionArrangement>())
             {
                 if (arrangement == null || arrangement.funding
                     != CAProvisionFunding.Taxation) continue;
-                CAOrganization provider = orgs?.ByKey(record.regionalId
-                    + "#" + record.slot + ":prov" + arrangement.key);
+                CAOrganization provider = orgs?.ByKey(
+                    CAProvisionArrangements.ProviderKey(record,
+                        arrangement));
                 if (provider != null && provider.policies.Any(policy =>
                     policy != null && policy.key == "tax rate"
                     && policy.generatedBy
-                        == CAStartingProvisions.TaxRateSource))
+                        == CAProvisionArrangements.TaxRateSource))
                     taxProviders.Add(provider);
             }
             if (taxProviders.Count == 0) return;
             CADecisionOutcome outcome = CAOrganizationDecisions.Decide(
                 org, factionState,
-                record, residents, "tax-funded starting provisions");
+                record, residents, "tax-funded provision arrangements");
             if (!outcome.adopted)
             {
                 foreach (CAOrganization provider in taxProviders)
@@ -235,23 +236,20 @@ namespace ColonistAwareness
                     provider.policies.RemoveAll(policy => policy != null
                         && policy.key == "tax rate"
                         && policy.generatedBy
-                            == CAStartingProvisions.TaxRateSource);
-                    CAStartingProvisions.RefuseTaxFunding(
+                            == CAProvisionArrangements.TaxRateSource);
+                    CAProvisionArrangements.RefuseTaxFunding(
                         provider.organizationKey);
                     provider.Record("decision", "starting tax rate "
                         + "refused by the settlement - " + outcome.words);
                 }
-                foreach (CAStartingProvision arrangement in
-                    record.startingProvisions)
+                foreach (CAProvisionArrangement arrangement in
+                    record.provisionArrangements)
                     if (arrangement != null && arrangement.funding
                         == CAProvisionFunding.Taxation)
-                        arrangement.funding = arrangement.operatorKind
-                            == CAProvisionOperator.Communal
-                                ? CAProvisionFunding.SharedWork
-                                : CAProvisionFunding.Dues;
+                        arrangement.funding = CAProvisionFunding.SharedWork;
                 org.Record("decision", "tax rate refused - "
-                    + outcome.words + "; starting provisions now use dues "
-                    + "or shared work");
+                    + outcome.words + "; provision arrangements now use "
+                    + "shared work");
             }
             else
             {
@@ -344,20 +342,26 @@ namespace ColonistAwareness
                     t.def.defName == parts[0]);
                 if (thing == null) continue;
                 string providerKey = parts.Length >= 5 ? parts[4] : null;
-                CAStartingProvision provision = providerKey.NullOrEmpty()
-                    ? null : (record.startingProvisions
-                        ?? new List<CAStartingProvision>()).FirstOrDefault(item =>
-                            item != null && providerKey == record.regionalId
-                                + "#" + record.slot + ":prov" + item.key);
+                CAProvisionArrangement provision = providerKey.NullOrEmpty()
+                    ? null : CAProvisionArrangements.ArrangementForProvider(
+                        record, providerKey);
+                // The saved asset key identifies its physical node. Holdings,
+                // stock access, and work bind to the arrangement's operator
+                // identity, never to that node identity.
+                string providerIdentity = provision == null ? providerKey
+                    : CAProvisionArrangements.ProviderKey(record, provision);
                 string assetAllocation = AllocationForProvision(provision,
                     hostAllocation);
                 string assetOwnership = OwnershipForProvision(record, map,
                     provision, ownership);
                 List<Pawn> assetResidents = provision != null
                         && provision.populationGroupKey >= 0
-                    ? CAPopulationProjection.ResidentsInPopulationGroup(record,
+                        ? CAPopulationProjection.ResidentsInPopulationGroup(record,
                         map, provision.populationGroupKey)
-                    : residents;
+                    : provision?.operatorKind
+                            == CAProvisionOperator.Household
+                        ? HouseholdConsumers(providerIdentity, residents)
+                        : residents;
 
                 var holding = new CAFacilityHolding
                 {
@@ -369,8 +373,8 @@ namespace ColonistAwareness
                             || parts[0] == "CraftingSpot" ? "workshop"
                         : "kitchen",
                     allocationRule = assetAllocation,
-                    operatorOrgKey = providerKey.NullOrEmpty()
-                        ? org.organizationKey : providerKey,
+                    operatorOrgKey = providerIdentity.NullOrEmpty()
+                        ? org.organizationKey : providerIdentity,
                     origin = CAOrigin.Derived(holdingOrigin)
                 };
                 switch (assetOwnership)
@@ -378,14 +382,14 @@ namespace ColonistAwareness
                     case "common":
                         holding.ownerOrgKey = provision != null
                                 && provision.populationGroupKey >= 0
-                            ? providerKey : org.organizationKey;
+                            ? providerIdentity : org.organizationKey;
                         holding.capitalSource =
                             CACapitalSources.SharedWork;
                         break;
                     case "cooperative":
-                        holding.ownerOrgKey = providerKey.NullOrEmpty()
-                            ? org.organizationKey : providerKey;
-                        holding.capitalSource = CACapitalSources.Dues;
+                        holding.ownerOrgKey = providerIdentity.NullOrEmpty()
+                            ? org.organizationKey : providerIdentity;
+                        holding.capitalSource = CACapitalSources.SharedWork;
                         holding.oversight = CAOversightKinds.GuildRule;
                         break;
                     case "state":
@@ -420,7 +424,7 @@ namespace ColonistAwareness
 
         private static string OwnershipForProvision(
             CARegionalSettlementRecord record, Map map,
-            CAStartingProvision provision, string fallback)
+            CAProvisionArrangement provision, string fallback)
         {
             if (provision == null || provision.populationGroupKey < 0)
                 return fallback;
@@ -442,18 +446,13 @@ namespace ColonistAwareness
         }
 
         private static string AllocationForProvision(
-            CAStartingProvision provision, string fallback)
+            CAProvisionArrangement provision, string fallback)
         {
             if (provision == null) return fallback;
-            if (provision.operatorKind == CAProvisionOperator.Vendor
-                || provision.access == CAProvisionAccess.Fee
-                || provision.funding == CAProvisionFunding.Fees)
-                return CAAllocationRules.Sale;
             if (provision.operatorKind == CAProvisionOperator.Communal)
                 return provision.access == CAProvisionAccess.Universal
                     ? CAAllocationRules.OpenAccess : CAAllocationRules.Ration;
             if (provision.operatorKind == CAProvisionOperator.Authority
-                || provision.operatorKind == CAProvisionOperator.Religious
                 || provision.operatorKind == CAProvisionOperator.Household)
                 return CAAllocationRules.Ration;
             return fallback;
@@ -489,13 +488,15 @@ namespace ColonistAwareness
                         ? settlement.organizationKey : item.providerOrgKey))
             {
                 string providerKey = group.Key;
-                CAOrganization provider = organizations?.ByKey(providerKey)
-                    ?? settlement;
-                CAStartingProvision provision = (record.startingProvisions
-                        ?? new List<CAStartingProvision>())
+                CAOrganization provider = CAProvisionArrangements
+                        .IsHouseholdIdentity(providerKey)
+                    ? settlement
+                    : organizations?.ByKey(providerKey) ?? settlement;
+                CAProvisionArrangement provision = (record.provisionArrangements
+                        ?? new List<CAProvisionArrangement>())
                     .FirstOrDefault(item => item != null
-                        && providerKey == record.regionalId + "#"
-                            + record.slot + ":prov" + item.key);
+                        && providerKey == CAProvisionArrangements.ProviderKey(
+                            record, item));
                 List<Pawn> providerResidents = ProvisionConsumers(settlement,
                     record, map, provision, residents);
                 List<Thing> providerStores = group
@@ -516,11 +517,15 @@ namespace ColonistAwareness
 
         private static List<Pawn> ProvisionConsumers(
             CAOrganization settlement, CARegionalSettlementRecord record,
-            Map map, CAStartingProvision provision, List<Pawn> residents)
+            Map map, CAProvisionArrangement provision, List<Pawn> residents)
         {
             if (provision != null && provision.populationGroupKey >= 0)
                 return CAPopulationProjection.ResidentsInPopulationGroup(record,
                     map, provision.populationGroupKey);
+            if (provision?.operatorKind == CAProvisionOperator.Household)
+                return HouseholdConsumers(
+                    CAProvisionArrangements.ProviderKey(record, provision),
+                    residents);
             if (provision == null
                 || provision.access == CAProvisionAccess.Members)
                 return residents.Where(resident =>
@@ -528,6 +533,22 @@ namespace ColonistAwareness
                     || settlement.memberPawnIds.Contains(
                         resident.thingIDNumber)).ToList();
             return residents;
+        }
+
+        private static List<Pawn> HouseholdConsumers(string identity,
+            List<Pawn> residents)
+        {
+            List<Pawn> ordered = (residents ?? new List<Pawn>())
+                .Where(pawn => pawn != null).OrderBy(pawn =>
+                    pawn.thingIDNumber).ToList();
+            if (ordered.Count <= 3) return ordered;
+            int householdSize = Math.Min(4, ordered.Count);
+            int start = (CASettlementProgramCausalKernel.StableStringHash(
+                identity ?? "household") & int.MaxValue) % ordered.Count;
+            var result = new List<Pawn>();
+            for (int i = 0; i < householdSize; i++)
+                result.Add(ordered[(start + i) % ordered.Count]);
+            return result;
         }
 
         private static void AllocateStores(CAOrganization org,
@@ -700,13 +721,14 @@ namespace ColonistAwareness
             int staffed = 0;
             int related = 0;
             var assigned = new HashSet<int>();
-            foreach (CAStartingProvision arrangement in
-                record.startingProvisions ?? new List<CAStartingProvision>())
+            foreach (CAProvisionArrangement arrangement in
+                record.provisionArrangements ?? new List<CAProvisionArrangement>())
             {
                 if (arrangement == null || arrangement.operatorKind
                     == CAProvisionOperator.Household) continue;
-                CAOrganization op = orgs.ByKey(record.regionalId + "#"
-                    + record.slot + ":prov" + arrangement.key);
+                CAOrganization op = orgs.ByKey(
+                    CAProvisionArrangements.ProviderKey(record,
+                        arrangement));
                 if (op == null) continue;
                 CARegionalFactionPlan providerFaction = FactionForProvision(
                     record, map, arrangement);
@@ -783,12 +805,13 @@ namespace ColonistAwareness
                     "Workers of " + (record.name ?? "the town"),
                     "organized work of the settlement",
                     CAOrganizationKind.Group);
-                foreach (CAStartingProvision arrangement in
-                    record.startingProvisions)
+                foreach (CAProvisionArrangement arrangement in
+                    record.provisionArrangements)
                 {
                     if (arrangement == null) continue;
-                    CAOrganization op = orgs.ByKey(record.regionalId + "#"
-                        + record.slot + ":prov" + arrangement.key);
+                    CAOrganization op = orgs.ByKey(
+                        CAProvisionArrangements.ProviderKey(record,
+                            arrangement));
                     if (op == null) continue;
                     foreach (int id in op.memberPawnIds)
                         if (!union.memberPawnIds.Contains(id))
@@ -804,7 +827,7 @@ namespace ColonistAwareness
 
         private static CARegionalFactionPlan FactionForProvision(
             CARegionalSettlementRecord record, Map map,
-            CAStartingProvision provision)
+            CAProvisionArrangement provision)
         {
             if (provision == null || provision.populationGroupKey < 0)
                 return null;
@@ -1020,13 +1043,13 @@ namespace ColonistAwareness
     internal static class CASettlementWealth
     {
         internal static void Derive(string regionalId, int slot,
-            int startingFacilityMask,
+            CASettlementProgram settlementProgram,
             int accessInfrastructure, int serviceInfrastructure,
             int civicInfrastructure, TechLevel knowledge,
             out int wealth, out int constructionEra)
         {
             int ceiling = CASettlementAxes.LocalPracticeCeiling(
-                startingFacilityMask, accessInfrastructure,
+                settlementProgram, accessInfrastructure,
                 serviceInfrastructure, civicInfrastructure, knowledge);
             int production = CASettlementAxes.PracticedCapabilityBasis(
                 CASettlementAxes.CapProduction, knowledge, ceiling);

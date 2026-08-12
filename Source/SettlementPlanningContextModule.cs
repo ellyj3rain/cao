@@ -34,6 +34,14 @@ namespace ColonistAwareness
             new List<CASettlementDemandKind>();
         internal readonly List<string> AssetCandidates =
             new List<string>();
+        // Creation is governed by the open settlement-program keyspace.
+        // These receipts are not collapsed into the later-development demand
+        // enum, which remains a separate runtime work vocabulary.
+        internal readonly List<string> ProgramKeys = new List<string>();
+        internal readonly List<string> ProgramAssetRoles = new List<string>();
+        internal readonly List<string> ProgramSpatialRequirements =
+            new List<string>();
+        internal bool RequiresSeparateProvisionQuarter;
         internal string FundingBasis;
         internal string MaterialBasis;
         internal bool FundingFeasible;
@@ -62,7 +70,15 @@ namespace ColonistAwareness
 
         internal string StableSignature()
         {
-            return string.Join(",", Demands.OrderBy(demand => (int)demand)
+            return string.Join(",", ProgramKeys.OrderBy(key => key,
+                    StringComparer.Ordinal).ToArray())
+                + ":roles=" + string.Join(",", ProgramAssetRoles
+                    .OrderBy(role => role, StringComparer.Ordinal).ToArray())
+                + ":spatial=" + string.Join(",", ProgramSpatialRequirements
+                    .OrderBy(item => item, StringComparer.Ordinal).ToArray())
+                + ":separateProvisionQuarter="
+                + RequiresSeparateProvisionQuarter
+                + ":demands=" + string.Join(",", Demands.OrderBy(demand => (int)demand)
                     .Select(demand => ((int)demand).ToString()).ToArray())
                 + ":" + string.Join(",", AssetCandidates
                     .OrderBy(candidate => candidate, StringComparer.Ordinal)
@@ -147,6 +163,45 @@ namespace ColonistAwareness
             return CASettlementDemandKind.Unknown;
         }
 
+        // The open settlement-program key remains the creation authority.
+        // This projection exposes only the narrower semantic demands that the
+        // later development and player-planning paths genuinely share. An
+        // unmapped program stays explicit instead of being coerced into a
+        // convenient demand kind.
+        internal static CASettlementDemandKind DemandForProgram(
+            string programKey)
+        {
+            if (programKey == CASettlementProgramRegistry.FoodPreparation
+                || programKey
+                    == CASettlementProgramRegistry.HouseholdProvision)
+                return CASettlementDemandKind.FoodPreparation;
+            if (programKey == CASettlementProgramRegistry.Storage
+                || programKey
+                    == CASettlementProgramRegistry.AuthorityProvision)
+                return CASettlementDemandKind.Storage;
+            if (programKey == CASettlementProgramRegistry.Medicine)
+                return CASettlementDemandKind.Medicine;
+            if (programKey == CASettlementProgramRegistry.Production
+                || programKey
+                    == CASettlementProgramRegistry.SpecializedIndustry)
+                return CASettlementDemandKind.Production;
+            if (programKey == CASettlementProgramRegistry.Custody)
+                return CASettlementDemandKind.Custody;
+            if (programKey == CASettlementProgramRegistry.Gathering
+                || programKey
+                    == CASettlementProgramRegistry.CommunalProvision)
+                return CASettlementDemandKind.Dining;
+            if (programKey == CASettlementProgramRegistry.Research)
+                return CASettlementDemandKind.Research;
+            if (programKey == CASettlementProgramRegistry.Defense)
+                return CASettlementDemandKind.Defense;
+            if (programKey == CASettlementProgramRegistry.Trade
+                || programKey == CASettlementProgramRegistry.Communications
+                || programKey == CASettlementProgramRegistry.Transport)
+                return CASettlementDemandKind.Access;
+            return CASettlementDemandKind.Unknown;
+        }
+
         internal static ThingDef Resolve(CASettlementDemandKind demand,
             string preferredDefName)
         {
@@ -191,7 +246,8 @@ namespace ColonistAwareness
         }
 
         internal static CASettlementDevelopmentProposal BuildCreationProposal(
-            int facilityMask, int economicCapacity, int landCapacity)
+            CASettlementProgram program, int economicCapacity, int landCapacity,
+            IEnumerable<CAProvisionArrangement> provisions = null)
         {
             var proposal = new CASettlementDevelopmentProposal
             {
@@ -205,32 +261,64 @@ namespace ColonistAwareness
                         + landCapacity
                     : "no authored land capacity"
             };
-            AddDemand(proposal, facilityMask, CAStartingFacilities.MaskHearth,
-                CASettlementDemandKind.FoodPreparation);
-            AddDemand(proposal, facilityMask, CAStartingFacilities.MaskStores,
-                CASettlementDemandKind.Storage);
-            AddDemand(proposal, facilityMask,
-                CAStartingFacilities.MaskInfirmary,
-                CASettlementDemandKind.Medicine);
-            AddDemand(proposal, facilityMask,
-                CAStartingFacilities.MaskWorkshop,
-                CASettlementDemandKind.Production);
-            AddDemand(proposal, facilityMask, CAStartingFacilities.MaskJail,
-                CASettlementDemandKind.Custody);
-            AddDemand(proposal, facilityMask, CAStartingFacilities.MaskDining,
-                CASettlementDemandKind.Dining);
-            AddDemand(proposal, facilityMask, CAStartingFacilities.MaskLab,
-                CASettlementDemandKind.Research);
+            proposal.RequiresSeparateProvisionQuarter = (provisions
+                    ?? Enumerable.Empty<CAProvisionArrangement>()).Any(item =>
+                        item != null && item.active
+                        && item.populationGroupKey >= 0);
+            foreach (CASettlementProgramEntry entry in program?.entries
+                ?? new List<CASettlementProgramEntry>())
+            {
+                if (entry == null || !entry.blocker.NullOrEmpty()) continue;
+                proposal.ProgramKeys.Add(entry.programKey);
+                CASettlementProgramDef definition =
+                    CASettlementProgramRegistry.Find(entry.programKey);
+                CASettlementDemandKind demand = DemandForProgram(
+                    entry.programKey);
+                if (demand != CASettlementDemandKind.Unknown
+                    && !proposal.Demands.Contains(demand))
+                    proposal.Demands.Add(demand);
+                if (definition?.MaterializeSpatialContract == true)
+                    proposal.ProgramSpatialRequirements.Add(entry.programKey
+                        + "|" + Math.Max(entry.count, entry.extent));
+                int repetitions = Math.Max(1,
+                    Math.Max(entry.count, entry.extent));
+                for (int repetition = 0; repetition < repetitions;
+                    repetition++)
+                {
+                    int role = 0;
+                    foreach (string candidate in entry.selectedCandidates
+                        ?? new List<string>())
+                    {
+                        proposal.ProgramAssetRoles.Add(entry.programKey + "|"
+                            + repetition + "|" + role++ + "|" + candidate
+                            + "|" + (entry.scope ?? "settlement"));
+                        ThingDef resolved = Resolve(demand, candidate);
+                        string demandCandidate = ((int)demand) + "|"
+                            + resolved?.defName;
+                        if (demand != CASettlementDemandKind.Unknown
+                            && resolved != null
+                            && !proposal.AssetCandidates.Contains(
+                                demandCandidate))
+                            proposal.AssetCandidates.Add(demandCandidate);
+                    }
+                }
+            }
 
-            // An explicit empty starting-facility selection is a complete
-            // creation fact. There is nothing to place, so candidate and stuff
-            // feasibility are vacuously satisfied; valid authored ground is the
-            // only material condition that remains.
             proposal.MaterialFeasible = landCapacity >= 0
-                && proposal.Demands.All(proposal.HasCandidate)
-                && proposal.Demands.All(demand => proposal.Candidates(demand)
-                    .Any(def => !def.MadeFromStuff
-                        || GenStuff.DefaultStuffFor(def) != null));
+                && proposal.ProgramKeys.Count > 0
+                && proposal.ProgramKeys.All(key =>
+                    CASettlementProgramRegistry.Find(key) != null)
+                && proposal.ProgramAssetRoles.All(role =>
+                {
+                    string[] parts = role.Split('|');
+                    string defName = parts.Length > 3 ? parts[3] : null;
+                    ThingDef def = Resolve(DemandForProgram(parts[0]),
+                        defName);
+                    return def != null && def.category == ThingCategory.Building
+                        && def.BuildableByPlayer && def.blueprintDef != null
+                        && (!def.MadeFromStuff
+                            || GenStuff.DefaultStuffFor(def) != null);
+                });
             return proposal;
         }
 
@@ -242,35 +330,30 @@ namespace ColonistAwareness
                 FundingBasis = "no creation record",
                 MaterialBasis = "no creation record"
             };
-            int mask = record.startingFacilityMask >= 0
-                ? record.startingFacilityMask : CAStartingFacilities
-                    .DerivedMask(record);
-            return BuildCreationProposal(mask, record.economicCapacity,
-                record.landCapacity);
+            return BuildCreationProposal(record.settlementProgram,
+                record.economicCapacity,
+                record.landCapacity, record.provisionArrangements);
         }
 
-        // Creation history is deterministically derived from the authored
-        // starting-facility selection. It never rewrites the independent facts
+        // Creation history is deterministically derived from the confirmed
+        // settlement program. It never rewrites the independent facts
         // recorded for later institutional development.
         internal static bool ReconcileRecord(CARegionalSettlementRecord record,
             out string correction)
         {
             correction = null;
             if (record == null) return false;
-            int mask = record.startingFacilityMask >= 0
-                ? record.startingFacilityMask
-                : CAStartingFacilities.DerivedMask(record);
-            CASettlementDevelopmentProposal expected = BuildCreationProposal(mask,
-                record.economicCapacity, record.landCapacity);
+            CASettlementDevelopmentProposal expected = BuildCreationProposal(
+                record.settlementProgram,
+                record.economicCapacity, record.landCapacity,
+                record.provisionArrangements);
             string signature = expected.StableSignature();
-            bool mismatch = record.startingFacilityMask != mask
-                || record.creationProposalSignature != signature
+            bool mismatch = record.creationProposalSignature != signature
                 || record.creationMaterialFeasible
                     != expected.MaterialFeasible;
             if (mismatch)
             {
-                correction = "starting-facility mask, loaded candidates, and creation signature were re-derived";
-                record.startingFacilityMask = mask;
+                correction = "settlement-program candidates and creation signature were reconciled";
             }
             record.creationProposalSignature = signature;
             record.creationMaterialFeasible = expected.MaterialFeasible;
@@ -287,35 +370,139 @@ namespace ColonistAwareness
                 blocker = "no materialized settlement ground";
                 return false;
             }
-            foreach (CASettlementDemandKind demand in proposal.Demands)
+            var reserved = new HashSet<IntVec3>();
+            List<Room> insideRooms = rect.Cells
+                .Where(cell => cell.InBounds(map) && cell.Roofed(map))
+                .Select(cell => cell.GetRoom(map)).Where(room => room != null
+                    && !room.PsychologicallyOutdoors && !room.IsDoorway
+                    && room.CellCount >= 6).Distinct().ToList();
+            if (proposal.RequiresSeparateProvisionQuarter
+                && insideRooms.Count < 2)
             {
-                bool found = false;
-                foreach (ThingDef def in proposal.Candidates(demand))
+                blocker = "the separate provision quarter requires a second "
+                    + "realized indoor room";
+                return false;
+            }
+            foreach (IGrouping<string, string> contract in proposal
+                .ProgramAssetRoles.GroupBy(role =>
                 {
-                    ThingDef stuff = def.MadeFromStuff
-                        ? GenStuff.DefaultStuffFor(def) : null;
-                    foreach (IntVec3 cell in rect)
+                    string[] parts = role.Split('|');
+                    return (parts.Length > 0 ? parts[0] : "program") + "|"
+                        + (parts.Length > 1 ? parts[1] : "0");
+                }).OrderBy(group => group.Key, StringComparer.Ordinal))
+            {
+                string firstRole = contract.First();
+                string[] firstParts = firstRole.Split('|');
+                string programKey = firstParts[0];
+                string scope = firstParts.Length > 4 ? firstParts[4]
+                    : "settlement";
+                bool indoor = scope != "settlement perimeter"
+                    && scope != "usable settlement ground"
+                    && scope != "workable settlement ground";
+                IEnumerable<Room> candidateRooms = indoor
+                    ? insideRooms : new Room[] { null };
+                bool contractFound = false;
+                foreach (Room contractRoom in candidateRooms)
+                {
+                    var trial = new HashSet<IntVec3>(reserved);
+                    IntVec3 powerAnchor = IntVec3.Invalid;
+                    bool rolesFit = true;
+                    foreach (string role in contract.OrderBy(item =>
                     {
-                        if (CASettlementSitingConstraints.CanPlaceNativeBlueprint(
-                                map, def, cell, Rot4.South, stuff).Accepted)
+                        string[] parts = item.Split('|');
+                        ThingDef d = DefDatabase<ThingDef>.GetNamedSilentFail(
+                            parts.Length > 3 ? parts[3] : null);
+                        return d?.EverTransmitsPower == true ? 0 : 1;
+                    }).ThenByDescending(item =>
+                    {
+                        string[] parts = item.Split('|');
+                        return DefDatabase<ThingDef>.GetNamedSilentFail(
+                            parts.Length > 3 ? parts[3] : null)?.size.Area ?? 0;
+                    }))
+                    {
+                        string[] parts = role.Split('|');
+                        string defName = parts.Length > 3 ? parts[3] : null;
+                        ThingDef def = DefDatabase<ThingDef>
+                            .GetNamedSilentFail(defName);
+                        if (def == null) { rolesFit = false; break; }
+                        ThingDef stuff = def.MadeFromStuff
+                            ? GenStuff.DefaultStuffFor(def) : null;
+                        IEnumerable<IntVec3> cells = scope
+                                == "settlement perimeter"
+                            ? rect.Cells.Where(cell =>
+                                cell.x <= rect.minX + 2
+                                || cell.x >= rect.maxX - 2
+                                || cell.z <= rect.minZ + 2
+                                || cell.z >= rect.maxZ - 2)
+                            : scope == "usable settlement ground"
+                                || scope == "workable settlement ground"
+                                ? rect.Cells.Where(cell => cell.InBounds(map)
+                                    && !cell.Roofed(map))
+                                : contractRoom?.Cells
+                                    ?? Enumerable.Empty<IntVec3>();
+                        if (powerAnchor.IsValid)
+                            cells = cells.Where(cell =>
+                                cell.DistanceToSquared(powerAnchor) <= 36)
+                                .OrderBy(cell => cell.DistanceToSquared(
+                                    powerAnchor));
+                        IntVec3 selected = IntVec3.Invalid;
+                        foreach (IntVec3 cell in cells)
                         {
-                            found = true;
+                            CellRect footprint = GenAdj.OccupiedRect(cell,
+                                Rot4.South, def.size);
+                            if (footprint.Cells.Any(trial.Contains)) continue;
+                            if (!CASettlementSitingConstraints
+                                .CanPlaceNativeBlueprint(map, def, cell,
+                                    Rot4.South, stuff).Accepted) continue;
+                            selected = cell;
+                            foreach (IntVec3 occupied in footprint)
+                                trial.Add(occupied);
                             break;
                         }
+                        if (!selected.IsValid) { rolesFit = false; break; }
+                        if (def.EverTransmitsPower) powerAnchor = selected;
                     }
-                    if (found) break;
+                    if (!rolesFit) continue;
+                    reserved = trial;
+                    contractFound = true;
+                    break;
                 }
-                if (!found)
+                if (!contractFound)
                 {
-                    blocker = "no native placement for " + demand;
+                    blocker = "no same-site native placement for "
+                        + programKey + " contract";
                     return false;
+                }
+            }
+            foreach (string requirement in proposal
+                .ProgramSpatialRequirements)
+            {
+                string[] parts = requirement.Split('|');
+                string key = parts[0];
+                int extent = parts.Length > 1
+                    && int.TryParse(parts[1], out int parsed) ? parsed : 1;
+                if (key == CASettlementProgramRegistry.Agriculture)
+                {
+                    int wanted = Mathf.Clamp(extent * 6, 6, 30);
+                    int suitable = rect.Cells.Count(cell => cell.InBounds(map)
+                        && cell.Standable(map) && !cell.Roofed(map)
+                        && map.zoneManager.ZoneAt(cell) == null
+                        && cell.GetFertility(map) >= 0.7f
+                        && !reserved.Contains(cell)
+                        && !cell.GetThingList(map).Any(thing => thing.def
+                            .category == ThingCategory.Building));
+                    if (suitable < wanted)
+                    {
+                        blocker = "no native cultivation ground for " + key;
+                        return false;
+                    }
                 }
             }
             return true;
         }
 
         // Later development is a fact about the settlement that exists now,
-        // not a replay of its starting-facility selection. Maintenance is
+        // not a replay of its initial settlement program. Maintenance is
         // available over current faction structures, access over current
         // settlement ground, and research only where a real bench exists.
         internal static CASettlementDevelopmentProposal
@@ -442,15 +629,6 @@ namespace ColonistAwareness
             if (!sitingFeasible) record.developmentBlocker = sitingBlocker;
         }
 
-        private static void AddDemand(CASettlementDevelopmentProposal proposal,
-            int mask, int bit, CASettlementDemandKind demand)
-        {
-            if ((mask & bit) == 0) return;
-            proposal.Demands.Add(demand);
-            foreach (ThingDef def in Candidates(demand))
-                proposal.AssetCandidates.Add(((int)demand) + "|"
-                    + def.defName);
-        }
     }
 
     // Confirmed creation history and later NPC development are separate causal
