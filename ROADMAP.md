@@ -1,7 +1,7 @@
 # Colonist Awareness - roadmap
 
-The A sequence is closed at `A102`; the chronology is complete through `B7`,
-and `B8` is the next development batch.
+The A sequence is closed at `A102`; the chronology is complete through `B8`,
+and `B9` is the next development batch.
 Historical batch identifiers below use the current sequence. Thematic `T-*`
 identifiers link continuing work across nonadjacent batches. The chronological
 catalog is [`BATCH_LOG.md`](BATCH_LOG.md); thematic links are in
@@ -804,12 +804,12 @@ judgment is the eventual built composition after native work supplies the Bed.
 ## Regional living-world program — T-019–T-026
 
 The current regional implementation uses one direct model: regions contain
-factions and settlements. Factions own carried cultural background, Ideoligion,
-political beliefs, faction structure, settlement authority, and faction era.
-Settlements own population groups, form, role, relative development, starting
-facilities and exact overrides, infrastructure, economic and trade conditions,
-history, provisions, and derived capability. Contextual cultural expression,
-settlement pattern, and urban scale are realized results, not independent
+factions and settlements. Factions own substantive inherited Culture, optional
+visual tradition, native Ideoligion, Political Beliefs, faction structure,
+settlement authority, and faction era. Settlements own population groups, form,
+role, sparse exact facility exceptions, realized infrastructure, economic and
+trade conditions, history, provisions, local Culture, and derived capability.
+Settlement pattern and urban scale are realized results, not independent
 authoring categories.
 
 Built and statically verified:
@@ -819,21 +819,22 @@ Built and statically verified:
    Settlement positions resolve on valid visual land.
 2. **Current pending-plan persistence.** One keyed file per world identity and
    its active mirror store the same confirmed candidate directly as `factions`,
-   `settlements`, relations, population groups, development profiles,
-   facilities, infrastructure, provisions, and founding state. The current
-   authored composition is converted to schema 4.
-3. **Faction and settlement authoring.** Carried cultural background,
-   Ideoligion, political beliefs, faction structure, settlement authority,
-   settlement form, relative development, facilities,
-   infrastructure, population groups, and provision distribution are independently
-   readable and editable where they affect generation. Settlement placement,
+   `settlements`, relations, population groups, Culture, Political Beliefs,
+   sparse facility exceptions, infrastructure, provisions, and founding state.
+   The current authored composition is generated directly under schema 6 and
+   authoring epoch 8.
+3. **Faction and settlement authoring.** Substantive Culture, native
+   Ideoligion, Political Beliefs, faction structure, settlement authority,
+   settlement form, population groups, provisions, and sparse exact starting
+   exceptions are independently readable and editable where they own real facts.
+   Settlement placement,
    relations, population, land, access, services, civic development, economic and
    trade conditions, specialization, regional role, and history produce the saved
    settlement pattern and scale.
-4. **Cultural expression and materialization.** One typed causal kernel derives
-   each settlement's cultural expression from its actual people, beliefs,
-   institutions, material state, geography, relations, and history. The
-   confirmed candidate creates native factions,
+4. **Culture and materialization.** Open registered social subjects connect
+   factual sources to substantive meanings, informed pawn response, group
+   patterns, longitudinal Culture, and generic consumers. The confirmed
+   candidate creates native factions,
    settlements, residents, Ideoligions, organizations, buildings, provisions,
    geography, and faction relations. Derived capability reads faction era and
    local supports.
@@ -853,11 +854,11 @@ Immediate runtime gates, in operator order:
    incomplete” or “select an arrival area” failures.
 3. Confirm that the generated map matches the preview's visual land shape and
    that selected geographic features resolve inside it.
-4. Confirm that settlement identifiers, buildings, residents, contextual
-   cultural expression, facilities, and provisions appear on the intended land
+4. Confirm that settlement identifiers, buildings, residents, Culture,
+   facilities, and provisions appear on the intended land
    and reflect the authored settings.
-5. Compare Minimal, Contextual, and Extensive development; confirm explicit
-   infrastructure and exact per-facility overrides retain their ownership.
+5. Inspect derived infrastructure and confirm sparse exact facility exceptions
+   retain their ownership without restoring a general development profile.
 6. Record performance and generation receipts for the selected 350-cell local
    scale and multi-area backing map.
 
@@ -1442,7 +1443,7 @@ The next evidence is the operator's runtime test of hierarchy, copy fit,
 Back/Next stability, native Ideoligion editing, preset/custom continuity,
 belief-versus-arrangement clarity, and materialization in the real colony flow.
 
-## Contextual cultural expression and settlement development - B5 / T-015, T-019, T-021, T-023, T-025
+## Historical B5 boundary, superseded by B7-B8 - T-015, T-019, T-021, T-023, T-025
 
 B5 corrects the B4 Culture model at its ownership boundary. A population carries
 background identity and an optional native visual tradition; it does not carry a
@@ -1452,17 +1453,14 @@ material conditions, geography, relations, and history. Starting Region,
 established-faction summaries, materialized records, loaded maps, and world
 markers consume that same deterministic reading.
 
-Settlement development is now relative. Minimal, Contextual, and Extensive
-shift only generated access, services, and civic development within bounded
-limits. Explicit infrastructure wins, and every starting facility independently
-remains Generated or receives an Include or Omit override. Plan schema 4 and
-Culture schema 3 preserve the authored composition across both active fixture
-surfaces.
+At B5, settlement development used Minimal, Contextual, and Extensive profiles
+and per-facility Generated, Include, and Omit overrides under plan schema 4 and
+Culture schema 3. B7 removed those invalid authoring abstractions; B8 replaced
+the Culture and persistence boundary. This paragraph is historical context, not
+the current settlement contract.
 
-The verified assembly is deployed. The current gate is the operator's runtime
-test of the preserved three-faction/four-settlement plan, settlement-scoped
-cultural readings, relative development, exact facility provenance, generation,
-and materialized readback.
+B5's verified assembly was deployed at that historical boundary. The current
+runtime gate is recorded under B8 below.
 
 ## Behavior contract, authority, and playable runtime convergence - B6 / T-003–T-010, T-012, T-013, T-015, T-019, T-021, T-022, T-025
 
@@ -1527,4 +1525,25 @@ later compatible-region run.
 
 B7's deterministic receipts and frozen-tree reviews close the static gate. The
 verified assembly is deployed for operator cases 97-103 and 105 on the selected
-fixture. `B8` is the next development batch.
+fixture.
+
+## Substantive inherited Culture and political composer - B8 / T-002, T-004, T-006, T-019, T-021-T-025, T-028, T-030
+
+B8 completes the authoring correction before runtime. Culture at T0 now contains
+substantive inherited meanings and practices over open namespaced social
+subjects. Its composer separates social meaning, lived practice, and optional
+visual tradition, and the same model serves founder, faction, and settlement
+authoring at their proper temporal boundaries.
+
+Political authoring is question-first across all thirteen positions. Five
+complete profiles copy transparent vectors without owning political identity;
+NPC derivation records axis-specific evidence and leaves unsupported positions
+unset. Informed pawn responses aggregate into subject-specific social patterns,
+which can contribute to qualified later Culture transitions without creating
+knowledge, authority, or material capability.
+
+Authoring epoch 8 discards incompatible pre-release state rather than migrating
+the invalid B4-B7 objects. Exact B8 receipts, retained creation and behavior
+suites, five review lenses, a clean Release build, and byte-verified deployment
+close the static gate. `B9` is the next development batch; operator runtime is
+the immediate next action.

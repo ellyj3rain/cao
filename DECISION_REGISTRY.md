@@ -2205,3 +2205,32 @@
   societies. Sparse exact exceptions may preserve or forbid a concrete starting
   object when that fact matters, but they remain secondary to realization and
   never become a universal settlement recipe.
+
+- **DR-116** (2026-08-11) - **Culture at T0 contains substantive inherited
+  meanings and practices.** Culture persists identity, constituents, inherited
+  and current social meanings, inherited and lived practices, observations,
+  transitions, maturity, temporal basis, and provenance. Approval, normality,
+  prestige, and salience describe one named social subject; they are not
+  universal Culture axes. Name and native visual tradition alone are invalid.
+
+- **DR-117** (2026-08-11) - **Cultural subjects form an open registered causal
+  contract.** A namespaced subject identifies its owning module, factual source,
+  applicability, player account, and real consumers. Valid unknown keys survive
+  persistence, but editors expose only registered source-and-consumer contracts.
+  Informed pawn reactions and subject-specific group patterns mediate later
+  cultural evidence; no closed topic enum or map-global response owns Culture.
+
+- **DR-118** (2026-08-11) - **Political Beliefs are complete answer vectors,
+  not profile identities.** Player authoring is question-first across the
+  thirteen canonical normative questions. A built-in or saved profile copies a
+  complete transparent vector and leaves every answer editable; the world stores
+  only the answers. NPC derivation uses same-axis realized structure, explicit
+  observed facts, or scored cultural meaning, records stable evidence, and
+  leaves unsupported axes unset rather than filling them arbitrarily.
+
+- **DR-119** (2026-08-11) - **The B8 authoring-data epoch is a destructive
+  pre-release boundary.** Incompatible CA-owned Culture, Political Beliefs,
+  profile, founding-draft, social-interpretation, and regional-authoring state is
+  cleared with one diagnostic. The current runtime contains one schema and does
+  not retain abandoned fields, aliases, partial preset inheritance, profile
+  identity, or migration machinery for unsupported development objects.

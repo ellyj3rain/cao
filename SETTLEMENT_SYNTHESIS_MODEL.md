@@ -1,212 +1,204 @@
 # Settlement generation model
 
-This document defines the current regional authoring and settlement-generation
-model. The code, saved plan, generated settlement records, and setup UI use the
-same terms.
+This document defines the current regional authoring and
+settlement-generation model. The code, saved plan, generated settlement records,
+and setup UI use the same terms.
 
-## Current state
-
-A regional plan contains:
+## Current saved facts
 
 | Level | Saved facts |
 |---|---|
 | Region | selected world areas, arrival area, world tendencies, settlement pattern, principal settlement scale, regional relation pattern, frontier holdings |
-| Faction | source faction, carried cultural background and visual tradition, Ideoligion, political beliefs, faction structure, settlement authority, faction era |
-| Settlement | owning faction, world area, population origin, resident population, land capacity, regional role, form, relative development profile, starting facilities and exact overrides, access, services, civic development, economic capacity, trade connectivity, specialization, historical development, urban support, realized scale, population groups, starting provisions, realized cultural expression |
-| Faction relation | left faction, right faction, relation, whether the player set it |
+| Faction | source faction, substantive inherited Culture, optional visual tradition, native Ideoligion receipt, complete Political Beliefs, faction structure, settlement authority, faction era |
+| Settlement | owning faction, world area, population origin, resident population, land capacity, role, form, sparse facility exceptions, realized access, services, civic state, economy, trade, specialization, historical development, scale, population groups, provisions, local Culture |
+| Faction relation | left faction, right faction, realized relation, authored/generated provenance |
 | Frontier holding | world area, household size, land capacity, material level, form, faction status |
 
-Regions contain factions and settlements directly.
+Regions contain factions and settlements directly. Outcomes are saved once after
+their causes are resolved; runtime consumers do not reroll authoring tendencies.
 
 ## World tendencies causal contract
 
-World tendencies are defaults for generated state. Each control owns one direct
-cause. The result is saved before downstream generation reads it. A
-starting-region choice replaces the corresponding default at the surface that
-owns the fact.
+World tendencies are defaults for generated state. A starting-region choice
+replaces the corresponding default at the surface that owns the fact.
 
-| UI control | Saved policy field | Direct effect | Constraints | Saved result and consumers | Starting-region override |
-|---|---|---|---|---|---|
-| Generated land | `stitchedRegionFrequencyMin`, `stitchedRegionFrequencyMax`, `realizedStitchedRegionFrequency` | Resolves the world frequency used to choose single-area or stitched generated regions. | World seed; connected eligible land. | The world policy stores the realized frequency; each region stores its requested and realized extent. The automatic region builder consumes both. | The selected starting-region footprint owns its member areas. |
-| Stitched region size | `stitchedRegionSizeMin`, `stitchedRegionSizeMax` | Sets the requested member-area count after a generated region is selected as stitched. | Connected land, impassable terrain, and occupied neighbors cap the result. | `requestedRegionTileCount`, `memberTileIds`, and backing dimensions are saved and consumed by projection and map generation. | The starting-region extent selector owns the request. |
-| Settlement concentration | `settlementConcentration` | Changes the placement score for pool-authorized generated settlements before classification: low rewards distance, high rewards proximity. | Land capacity, access, route links, available member areas, and the settlement pool. | Each settlement's `memberTileId` and physical grouping are saved; `settlementPattern` is then classified from the realized placement, distance, routes, hierarchy, frontier, faction mixture, and relations. | Authored settlement positions own `memberTileId`; the tendency never moves them. |
-| Urban growth propensity | `urbanGrowthPropensity` | Raises or lowers the urban-support threshold. | Resident population and the saved land, access, services, civic development, economic capacity, trade connectivity, specialization, regional role, and history remain required. | Each settlement stores `urbanSupport` and `realizedScale`; the region stores the maximum as `settlementScale`. Layout, pawn-group strength, provisions, and UI read the saved scale. | Authored infrastructure, facilities, roles, and other settlement facts replace their generated inputs before confirmation. |
-| Frontier holding frequency | `frontierHoldingFrequency` | Determines how many suitable, unoccupied non-arrival areas receive holdings. | Suitable land, major-settlement occupancy, and arrival land. | One `frontierHoldings` row is saved per realized site. Frontier materialization and settlement-pattern classification consume those rows. | A starting-region footprint constrains the available holding sites; it does not alter major-settlement count. |
-| Frontier holding size | `frontierHoldingSize` | Determines household size and material form after a holding site exists. | The holding's land capacity caps household and material levels. | `householdSize`, `materialLevel`, and `form` are saved on each holding and consumed directly by pawn and site generation. | A saved holding row owns its realized size and form. |
-| Unaffiliated residents | `unaffiliatedPopulationShare` | Changes the generated share of residents without faction membership. | Settlement-specific deterministic variation and the remaining 100-percent population share. | `populationGroups` stores the realized shares. Pawn assignment, political identity, quarters, and provisions consume them. | Authored population groups own their shares and affiliations. |
-| Reallocation source variety | `reallocationSourceVariety` | Changes whether source settlements selected from RimWorld's authorized pool repeat an owner or introduce another eligible owner. | Available pool settlements and eligible factions; it cannot add settlements or set final ownership. | Population-origin receipts and source faction keys are saved before local-faction formation and settlement materialization. | Local faction formation independently decides whether a generated owner retains its source faction. Authored settlement ownership replaces generation. |
-| Local faction formation | `localFactionChance` | Changes whether a generated settlement owner becomes a new local faction or retains the source settlement's world faction. | Eligible settlement-capable faction definitions. | Faction `source`, faction definition or load ID, and settlement `factionKey` are saved; all faction consumers use that identity. | Authored factions own their source and type. |
-| Regional conflict | `regionalConflictChance` | Changes the hostile chance only for newly generated faction pairs. | Existing RimWorld faction relations remain factual inputs. | Every pair stores one `relation`; `regionalRelationPattern` and `settlementPattern` derive from those rows. Defense, population mixing, trade, organizations, and map generation consume the saved relation. | A relation set in Starting Region has `authorRelation` and is never rerolled. |
-| Off-map activity rate | `offMapActivityRate` | Sets the share of unloaded organizations processed per world pulse. | Current unloaded organization count; loaded and player-facing organizations remain active. | The saved rate and persistent activity cursor produce the per-pulse budget. Organization updates consume that budget; settlement facts remain resident regardless of the rate. | No starting-region field changes this world processing budget. |
+| Control | Direct cause and realized result |
+|---|---|
+| Generated land | resolves single-area or stitched generated regions; the confirmed footprint then owns its member areas |
+| Stitched region size | requests a connected member-area count; actual land, impassability, and occupied neighbors constrain it |
+| Settlement concentration | changes placement scoring before the saved settlement pattern is classified from actual distance, routes, hierarchy, mixture, and relations |
+| Urban growth propensity | changes the threshold applied to actual population, land, access, services, civic state, economy, trade, specialization, regional role, and history |
+| Frontier holding frequency | determines how many suitable unoccupied sites receive holdings |
+| Frontier holding size | determines household and material form after a site exists |
+| Unaffiliated residents | changes the generated population share without faction membership |
+| Reallocation source variety | changes generated source selection without authoring final ownership or settlement count |
+| Local faction formation | changes whether an eligible generated owner becomes a new local faction |
+| Regional conflict | changes generated relations for new faction pairs; authored relations remain fixed |
+| Off-map activity rate | changes the saved world-processing budget, not settlement facts |
 
-RimWorld's world-population setting controls the major-settlement pool. CA may
-reallocate a nearby authorized settlement into a generated region and records
-the consumed source. Only an explicit `ScenarioOverride` may add a starting
-settlement beyond that pool. Frontier holdings never consume or enlarge the
-major-settlement pool.
-
-Standard maps use the same frontier kernel. Their world component saves one
-`CAFrontierMapPlan` per map with the map identity, causal hash, and realized
-holding rows. Runtime materialization reads those rows; map area constrains the
-number of suitable sites but does not act as a second frequency policy.
+RimWorld's world-population setting controls the major-settlement pool. Only an
+explicit scenario override may add a starting settlement beyond that pool.
+Frontier holdings never consume or enlarge it.
 
 ## Generation order
 
-Generation resolves one confirmed candidate in this order:
+Generation consumes one confirmed candidate in this order:
 
-1. Project the selected world areas into one visual land shape. Coasts, water
-   depth, roads, rivers, caves, and selected geographic features use that same
-   projection.
-2. Select major settlements from RimWorld's settlement pool, assign generated
-   owners, place them, and persist faction relations. Starting-region rows
-   retain their authored settlement count, positions, owners, and relation
-   overrides.
-3. Apply the cultural background and Political Beliefs carried by the founders, then
-   materialize the exact Founding Arrangement once as duration-aware relations.
-   Leave broader player faction-structure questions unset until play establishes
-   them. Resolve
-   each existing faction's carried background, Ideoligion, Political Beliefs, realized
-   social order, and settlement authority. Existing societies may begin with
-   mature institutions; the player's remaining institutional state develops
-   through play.
-4. Resolve and save each settlement's population and land capacity. Apply its
-   relative development profile to generated access, services, and civic
-   development while retaining any explicit values. Resolve facilities from
-   that current settlement state and then apply exact Include or Omit overrides.
-   Resolve economic capacity, trade connectivity,
-   specialization, regional role, and
-   historical development. Resolve frontier sites, households, and material
-   forms separately.
-5. Derive and save each settlement's scale, the regional relation pattern, and
-   the realized settlement pattern from those facts.
-6. Generate or retain settlement population groups.
-7. Generate starting provisions from population, faction structure, facilities,
-   infrastructure, settlement scale, and role. A player override changes one
-   provision's distribution without replacing its generated cause or operator.
-8. Derive material capability from faction era and local supports.
-9. Derive and persist contextual cultural expression from the realized
-   population, beliefs, institutions, material state, geography, relations, and
-   history. Materialize settlements, frontier holdings, residents, organizations,
-   facilities, provisions,
-   faction relations, and map geography from those saved results.
+1. Project selected world areas into one visual land shape. Coasts, water depth,
+   roads, rivers, caves, and selected features use that projection.
+2. Select major settlements from RimWorld's pool, assign generated owners, place
+   them, and persist faction relations. Starting-region rows retain authored
+   count, positions, owners, and relation overrides.
+3. Resolve each established faction's substantive Culture, native Ideoligion,
+   Political Beliefs, faction structure, settlement authority, and temporal
+   basis. Resolve the player's inherited Culture and Political Beliefs, retain
+   the native Ideoligion receipt, and materialize only the exact rules adopted at
+   landing. Broader player structure remains unset until play establishes it.
+4. Resolve each settlement's population, land, role, form, access, services,
+   civic state, economy, trade, specialization, history, facilities, and sparse
+   exact facility exceptions. Resolve frontier sites and forms separately.
+5. Derive and save settlement scale, regional relation pattern, and settlement
+   pattern from those facts.
+6. Generate or retain population groups and causal starting provisions.
+7. Derive material capability from faction era and local supports.
+8. Establish each existing settlement's directly authored local Culture
+   baseline: constituents, current meanings, current practices, plurality, and
+   disagreement. Do not fabricate transition history.
+9. Materialize settlements, holdings, residents, organizations, facilities,
+   provisions, faction relations, and map geography from saved results.
 
-Generation consumes only a confirmed plan with a candidate identity. Opening a
-screen, previewing, or drawing the UI does not regenerate saved choices.
+Opening, drawing, previewing, or inspecting a screen does not regenerate state or
+advance Culture.
 
-## Faction state
+## Culture
 
-Culture, Ideoligion, Political Beliefs, and social order are distinct.
+Culture is durable social meaning and practice, not a native `CultureDef`, visual
+style, political profile, or prose summary of settlement variables.
 
-- Cultural background supplies stable identity, an optional name, and an
-  optional native visual tradition. It does not prescribe ordinary customs or
-  physical objects.
-- Ideoligion uses RimWorld's native `Ideo` state.
-- Political Beliefs describe what a population believes about leadership,
-  decisions, participation, dissent, ownership, economy, work, support,
-  membership, status, local order, defense, and war conduct.
-- Faction structure stores the same concrete questions for the social order now
-  in force. Beliefs and structure may disagree.
-- Settlement authority records what several settlements of the same faction
-  decide and provide together.
+Every Culture saves:
 
-Each Political Belief and faction-structure answer records its source as unset,
-generated, authored, or preset. Presets fill answers; they are not additional
-political entities.
+- stable inherited and local identity;
+- constituent Cultures and population shares;
+- inherited and current cultural meanings;
+- inherited and lived practices;
+- observations and transition history;
+- predecessor and evidence signatures;
+- maturity and temporal basis;
+- optional native visual tradition, labeled separately.
 
-Local cultural expression is a contextual read rather than another authored
-profile. It combines carried background, actual Ideoligion commitments,
-political beliefs, population composition, current institutions or founding
-arrangement, provisions, settlement role and form, infrastructure, facilities,
-economy, trade, geography, relations, buildings, and history. The realized
-status, summary, and signature are persisted once and consumed by Starting
-Region, faction summaries, materialized maps, and world markers. Reconciliation
-uses actual resident Ideoligions and current material facts; it does not reroll
-an authoring tendency.
+A cultural meaning concerns one namespaced registered social subject. It stores
+approval, normality, prestige, salience, population scope, provenance, source
+identity, evidence signature, and historical ticks. A cultural practice records
+durable repeated conduct. Selecting a meaning does not create a practice.
 
-The player founding plan is temporally narrower. Cultural background, native Ideoligion,
-and Political Beliefs arrive with the founders. The Founding Arrangement stores
-the authority, work, voice, supplies, and duration rules adopted at landing.
-Those exact rules materialize once as founding relations. They do not imply a
-decision method, productive-property regime, or other mature institution that
-the player did not choose. The general faction pass does not fill a mature
-player structure before the colony has lived its history.
+The initial open registry contains twelve subjects spanning shared space,
+exchange, defense, knowledge, public voice, compelled service, enforced order,
+compulsory transfer, shared provision, inherited rank, custody, and conduct in
+war. Each registered subject identifies its factual source and real consumers.
+Later CA modules and explicit adapters may register more. Unknown valid keys
+survive persistence; inert unregistered strings do not enter ordinary editors.
 
-## Settlement state
+The same Culture composer serves player founding, established factions, and
+settlements. It exposes overview, social meanings, inherited practices, optional
+visual tradition, and causal preview. A founding Culture must contain at least
+one substantive meaning or inherited practice. Saved profiles copy inherited
+meanings, practices, and optional visual tradition without locality,
+observations, transitions, evidence, or a live profile pointer.
 
-Settlement form, starting facilities, infrastructure, provisions, and capability
-are separate facts.
+## Political Beliefs and realized order
 
-Each settlement carries one relative development profile. `Minimal` shifts
-generated infrastructure down one bounded step, `Contextual` leaves it at the
-derived value, and `Extensive` shifts it up one bounded step. Population, land,
-access conditions, economy, trade, specialization, regional role, history, and
-faction knowledge remain independent causes. An explicitly authored access,
-services, or civic value always replaces the profile-adjusted result.
+Political Beliefs and faction structure answer the same thirteen concrete
+questions about leadership, decisions, participation, dissent, ownership,
+economy, work, support, membership, status, local order, defense, and conduct in
+war. Beliefs record what a population considers proper. Structure records what
+is in force. Agreement and contradiction are both valid state.
 
-Starting facilities are derived from the resulting settlement, then individually
-left Generated or set to Include or Omit. The current facility set is hearth,
-stores, infirmary, workshop, jail, dining hall, and laboratory. Returning all
-facilities to generated clears only those exact overrides.
+Player authoring is question-first. Each answer is independently authored. Five
+complete built-in profiles provide transparent accelerators; each answers all
+thirteen questions, has no parent or missing value, and copies the vector as
+authored state. The profile key and name do not enter world identity. Missing
+player positions are never filled randomly.
 
-Infrastructure has three independent dimensions:
+NPC generation derives one axis only from:
 
-| Dimension | Meaning |
-|---|---|
-| Access | roads, coast, and regional reach |
-| Services | local capacity to support residents |
-| Civic development | shared works and administration |
+- the same axis in realized faction structure;
+- an explicit axis-specific observed fact; or
+- a non-neutral cultural meaning that scores that axis.
 
-Population is stored as population groups. Each group records its share, faction
-affiliation, Ideoligion source and certainty, political-belief source, and whether
-it lives in a separate quarter. Materialization assigns real pawns to those saved
-groups.
+Every resolved axis records the causal evidence and stable tie-break. Unsupported
+axes remain unset. Technology, hostility, raids, trade reach, leader presence,
+and permanent-enemy status do not stand in for political beliefs.
 
-Economic capacity is a saved settlement fact derived from resident population,
-civic development, and explicitly authored workshop and stores facilities.
-Urban support then combines that capacity with saved land, access, services,
-trade connectivity, specialization, regional role, and historical development.
-The urban-growth tendency changes only the threshold applied to that support;
-it does not author city status directly.
+Native Ideoligion remains first-class and separate. Its religious, ritual,
+moral, and spiritual semantics may contribute when they overlap a known social
+fact, but Ideoligion does not bound Culture. Founding rules remain the actual
+authority, work, voice, and supply arrangement adopted at landing.
 
-Starting provisions are generated causal arrangements, not stacks of starting
-items. Their causes include everyday food, reserves, and a population group with
-different needs. Distribution may be household, neighborhood, or centralized.
-Facility and infrastructure changes reconcile the same saved causes instead of
-adding duplicates.
+## Social interpretation and cultural change
 
-## Capability
+Social facts do not create map-global knowledge. A pawn responds only when a
+real observation or communication route supplies the fact. Interpretation may
+retain separate contributions from Culture, Political Beliefs, native
+Ideoligion where relevant, personal state, institutions, and relationships.
+Contradictions remain visible.
 
-Capability is a derived assessment, never an authored cause. Faction era is the
-upper bound. Facilities and infrastructure determine what the settlement can
-practice locally. Medicine, communications, production, logistics,
-fortification, weapons, training, and organization remain separate derived
-results.
+Recorded pawn reactions aggregate per subject into weighted response,
+dispersion, polarization, participation, influential minority presence, group
+alignment, and cross-group dissonance. Actual social structure determines
+influence. Culture transition considers prior meaning and practice, pawn and
+group response, institutional response, population composition, material and
+spatial conditions, and elapsed historical time.
 
-The current implementation takes faction era from the selected RimWorld
-`FactionDef`. `researchStock` and `researchMilestones` describe work at a staffed
-laboratory and its material rewards; they do not define faction knowledge or
-unlock technology.
+Qualified evidence across at least two historical periods may change meaning or
+practice and records predecessor, evidence, changed subjects and dimensions,
+population scope, successor signature, tick, and cause. One isolated event,
+unchanged evidence, or a broken evidence run does not rewrite Culture. Plural
+constituent meanings and unresolved conflict may persist.
 
-When the map is loaded, real pawns, buildings, stocks, roads, water, and
-organizations remain authoritative. Derived capability summarizes those supports;
-it does not override them.
+## Generic consumption
+
+The generic meaning resolver returns aggregate meaning, constituent
+contributions, dissonance, provenance, and confidence for one subject and scope.
+Spatial, social, institutional, political, and settlement-development consumers
+use that result to rank or interpret otherwise available possibilities. Culture
+does not create permission, authority, knowledge, technology, labor, material,
+land, treasury, office, or execution capability.
+
+## Settlement state and capability
+
+Population groups record share, affiliation, Ideoligion source and certainty,
+political-belief source, and separate-quarter status. Materialization assigns
+real pawns to those saved groups.
+
+Facilities are derived from current settlement facts. Sparse exact exception
+bits may preserve or forbid a named starting facility; there is no general
+development profile or per-facility Generated/Include/Omit authoring matrix.
+Access, services, civic state, economic capacity, trade connectivity,
+specialization, role, history, and urban support remain independent realized
+facts. Urban-growth tendency changes only the threshold, not city status itself.
+
+Starting provisions are causal arrangements rather than arbitrary stacks. Their
+operator, access, funding, and cause derive from population, faction structure,
+facilities, infrastructure, settlement scale, and role. A player override changes
+distribution only.
+
+Capability is a derived assessment. Faction era is the upper bound; actual
+facilities, infrastructure, knowledge, pawns, buildings, stocks, roads, water,
+and organizations determine what a settlement can practice. A capability cache
+never overrides those supports.
 
 ## Persistence
 
-The current pending-plan schema is `4`. It writes `factions`, `settlements`,
-`populationGroups`, `startingProvisions`, `factionStructure`, `politicalBeliefs`,
-`settlementAuthority`, `relations`, `frontierHoldings`, `settlementPattern`,
-`settlementScale`, `regionalRelationPattern`, and
-`settlementRealizationComplete` directly. It also writes one `playerFounding`
-object containing Culture, Political Beliefs, the Founding Arrangement and its
-provenance, confirmation state, and a receipt for RimWorld's native player
-Ideoligion. Each settlement row carries its relative development profile,
-infrastructure provenance, generated and overridden facility state, and the
-realized facts used to derive its scale and contextual cultural expression.
-Materialized settlement records retain the expression summary, status, and
-signature. A confirmed plan consumes those facts;
-generation does not consult its tendencies again.
+The current authoring data epoch is `8`. The pending-plan schema is `6`; Culture
+and Political Beliefs schema is `8`; player founding schema is `3`. The plan
+writes factions, settlements, population groups, provisions, local Culture,
+Political Beliefs, faction structure, settlement authority, relations, holdings,
+patterns, scales, realization state, and the player-founding object directly.
 
-This project is pre-1.0. Superseded experimental plan and save schemas are not a
-runtime compatibility target. The authored regional fixture is converted to the
-current schema rather than supported through permanent aliases or migrations.
+This project is pre-release. An epoch mismatch clears incompatible CA-owned
+Culture, Political Beliefs, profile, founding-draft, social-interpretation, and
+regional-authoring state with one diagnostic. The current implementation does
+not preserve abandoned fields, aliases, partial profiles, old preset identities,
+or field-by-field migration machinery. The governed B8 fixture is generated
+directly from its intentional world, region, candidate, arrival, scale, faction,
+settlement, and population inputs.

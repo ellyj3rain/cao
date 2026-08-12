@@ -356,13 +356,23 @@ derived from those facts; it is not a separately authored source of truth.
 
 Local Culture is longitudinal social-historical state, not a profile reconstructed
 from the current settlement summary. It records inherited origin, local identity,
-constituent populations, typed observations of lived events, recognized practices,
-successive transitions, and predecessor/evidence/domain provenance. A bounded
-world-simulation behavior evaluates elapsed historical cycles. Stable evidence
-refreshes observed practice without manufacturing change; meaningful accumulated
-evidence deterministically produces a successor state. Two settlements with the
-same inherited origin may therefore diverge through different histories, while
-plural constituents remain represented rather than collapsing arbitrarily.
+constituent populations, inherited and current meanings, inherited and lived
+practices, typed observations, successive transitions, and complete provenance.
+Each meaning concerns one registered namespaced social subject and separately
+records approval, normality, prestige, and salience. The registry is open to CA
+modules and explicit adapters, while ordinary editors admit only subjects with a
+real factual source and consumer. Unknown valid keys survive persistence.
+
+Pawn-held knowledge gates individual interpretation. Culture, Political Beliefs,
+native Ideoligion where it overlaps, personal state, institutions, and relations
+contribute without being forced to agree. Actual reactions aggregate by subject
+into participation, mean response, dispersion, polarization, influential
+minorities, group alignment, and cross-group dissonance. A bounded
+world-simulation behavior evaluates qualified evidence across historical periods.
+One isolated event or unchanged evidence cannot rewrite Culture; repeated
+qualified evidence may deterministically produce a successor state. Two
+settlements with the same inherited origin may therefore diverge, while plural
+constituents remain represented rather than collapsing arbitrarily.
 
 Cultural expression is a read-only contextual interpretation of current Culture
 in relation to Ideoligion, Political Beliefs, population, institutions, founding
@@ -405,7 +415,12 @@ Faction structure answers concrete questions about leadership, decisions,
 participation, dissent, ownership, economy, work, support, membership, status,
 local order, defense, and war conduct. Political beliefs answer the same
 questions for what a population believes; they may differ from the structure now
-in force. Settlement authority records what a faction's settlements decide and
+in force. Player authoring asks all thirteen questions directly. Complete
+profiles copy explicit vectors but create no political identity, and missing
+positions are not randomly completed. NPC generation derives a position only
+from same-axis realized structure, an explicit observed fact, or a scored
+cultural meaning and records the causal evidence used; unsupported axes remain
+unset. Settlement authority records what a faction's settlements decide and
 provide together. Offices, votes, delegation, emergency powers, succession,
 trade, mobilization, negotiation, surrender, and agreements use those saved facts.
 

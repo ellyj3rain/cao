@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Core |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.3.0.1-alpha` · closed batch tip `B7` · next `B8` |
+| Version | `1.3.0.2-alpha` · closed batch tip `B8` · next `B9` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `CORE.md` |
@@ -89,15 +89,16 @@ contract → native world/incident/quest/map/Lord projection → reconciled outc
 Native RimWorld physical execution remains authoritative while materialized; this
 mod owns the persistent organizational reason and continuity.
 
-Culture is persistent longitudinal social-historical state. A local Culture
-retains inherited origin, local identity, constituent populations, lived
-observations, recognized practices, transitions, and provenance. Bounded
-historical evaluations derive `Culture(T+1)` from `Culture(T)` and intervening
-evidence. Spatial, social, institutional, political, and settlement-development
-consumers may rank otherwise valid choices from that state, but Culture creates
-neither permission nor material capability. Cultural expression is a read-only
-interpretation of the relationship between Culture and current society; native
-`CultureDef` is one optional visual inheritance.
+Culture is persistent longitudinal social-historical state with a substantive
+inherited baseline. A local Culture retains identity, constituent populations,
+inherited and current meanings about namespaced social subjects, inherited and
+lived practices, observations, transitions, and provenance. Meanings distinguish
+approval, normality, prestige, and salience for the named subject. Actual informed
+pawn responses aggregate into subject-specific social patterns; qualified
+historical evidence derives `Culture(T+1)` from `Culture(T)`. Spatial, social,
+institutional, political, and settlement-development consumers may rank
+otherwise valid choices, but Culture creates neither permission nor material
+capability. Native `CultureDef` is an optional visual tradition only.
 
 Existing societies and player founding use the same Culture, native Ideoligion,
 Political Beliefs, and social-order concepts at different points in time.
@@ -130,6 +131,11 @@ because the founders hold them.
   founders retain their different temporal boundaries. Contextual explanation
   belongs to the owning decision, and Starting Region preserves its spatial map
   without universal detail, development-intensity, or facility-bundle controls.
+- **DR-116 through DR-119.** Culture at T0 contains substantive social meanings
+  and practices; the subject registry stays open while editors expose only real
+  source-and-consumer contracts; Political Beliefs are question-first complete
+  vectors with causal NPC evidence; and epoch 8 discards incompatible pre-release
+  authoring state rather than embedding migration machinery.
 - Stitching controls geographic continuity only, never population or political
   intensity. Vanilla `OverallPopulation` stays authoritative for major-settlement
   abundance.

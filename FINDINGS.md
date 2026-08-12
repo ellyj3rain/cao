@@ -3205,3 +3205,32 @@
   mutators remain an explicitly stamped transient developer exercise. It may
   exercise cases 97-103 and 105 without inventing durable compatibility. Case
   104 requires a separate compatible-region save/reload run.
+
+- **F-158** (2026-08-11–2026-08-12 UTC / 2026-08-11 PST) - **B8 makes the
+  inherited cultural and political authoring boundary substantive before
+  runtime.** The frozen source at
+  `1560c2ed16f27eb3d258fd57962ea2c0fdb3e68a` introduces authoring epoch 8,
+  twelve open registered social subjects, persistent meaning dimensions and
+  practices, the full Culture composer, five complete thirteen-answer political
+  profiles, question-first authoring, causal NPC derivation, pawn-local social
+  interpretation, subject-specific group aggregation, and generic longitudinal
+  and consumer paths. Invalid pre-B8 authoring objects are discarded rather
+  than migrated.
+
+  The exact B8 runner passes 57/57 receipts. Retained suites pass 185 World
+  tendencies, 48 player-founding, and 58 creation-flow assertions; behavior
+  convergence passes 98 static assertions with nine named operator-runtime cases
+  pending. Ontology, causality, UI, structural, and playability reviews leave no
+  unresolved Critical or High finding. A clean Release rebuild succeeds with
+  zero errors and twelve inherited warnings. Its 3,321,344-byte assembly,
+  SHA-256
+  `995C8123DA81EB083C311C2C792223077B0A13B11FA7FB583531F704F563A6BF`,
+  is byte-identical at the active project target after closed-process deployment.
+
+  Both active fixture surfaces are byte-identical at SHA-256
+  `4BEF806DADF9A40F83E4E8684B55BBC6335C8BC078119132D66BCA3769BC9093`.
+  They retain the intentional world, region, confirmed candidate, arrival tile,
+  map scale, three factions, four settlements, and nine population groups under
+  regional plan schema 6, Culture and Political Beliefs schema 8, and player
+  founding schema 3. The transient developer-exercise boundary and the separate
+  compatible-region requirement for behavior case 104 remain explicit.

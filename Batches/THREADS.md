@@ -39,6 +39,7 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
 ### <a id="t-030"></a>T-030 - Validation and evidence discipline
 
@@ -127,6 +128,7 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
 ## TF-02 - Pawn cognition and authority
 
@@ -155,6 +157,7 @@ Disposition, knowledge, communication, command, and accountability.
 - [A51 - Stable welfare-observation correction](A051-2026-07-29-stable-welfare-observation-correction.md) - 2026-07-29 01:36 UTC / 18:36 PST
 - [A60 - Pawn-proximal combat topology and retention](A060-2026-07-30-pawn-proximal-combat-topology-and-retention.md) - 2026-07-30 19:18–20:27 UTC / 12:18–13:27 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
 ### <a id="t-005"></a>T-005 - Communications and command authority
 
@@ -227,6 +230,7 @@ Animal cognition and infrastructure plus pawn welfare and clinical evidence.
 - [A51 - Stable welfare-observation correction](A051-2026-07-29-stable-welfare-observation-correction.md) - 2026-07-29 01:36 UTC / 18:36 PST
 - [A63 - Conviction memory and per-issue judgment](A063-2026-08-05-conviction-memory-and-per-issue-judgment.md) - 2026-08-05
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
 ### <a id="t-012"></a>T-012 - Animal cognition and infrastructure
 
@@ -353,6 +357,7 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
 ### <a id="t-020"></a>T-020 - Regional geometry, projection, and scatter
 
@@ -396,6 +401,7 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
 ### <a id="t-026"></a>T-026 - World tendencies and geography
 
@@ -437,6 +443,7 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
 ### <a id="t-023"></a>T-023 - Culture, beliefs, and Ideoligion
 
@@ -463,6 +470,7 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
 ## TF-10 - Onboarding and authoring
 
@@ -491,6 +499,7 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
 ### <a id="t-025"></a>T-025 - Authoring surfaces and UI grammar
 
@@ -525,6 +534,7 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
 ## TF-11 - Runtime tooling and controls
 
@@ -585,3 +595,4 @@ Canonical vocabulary, model convergence, copy register, and product truthfulness
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST

@@ -6,7 +6,7 @@ institutions, beliefs, and authority. Factions make decisions and carry their
 consequences forward instead of resetting to isolated game events.
 
 <!-- cao:generated:version BEGIN -->
-Current version: `1.3.0.1-alpha`. Implementation is complete through batch `B7`; `B8` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.
+Current version: `1.3.0.2-alpha`. Implementation is complete through batch `B8`; `B9` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.
 <!-- cao:generated:version END -->
 
 ## Framework
@@ -40,22 +40,37 @@ technology, institutions, economy, trade, history, and the objects that actually
 exist. They are inspected as consequences rather than exposed as one universal
 intensity menu.
 
-Culture is persistent local social history. Each local Culture retains inherited
-origin, local identity, constituent populations, observed lived practice,
-recognized practices, transitions, and provenance. Bounded historical evaluation
-produces `Culture(T+1)` from `Culture(T)` plus intervening evidence. Spatial,
-social, institutional, political, and settlement-development consumers use that
-state only to rank otherwise valid possibilities; Culture does not grant
-authority, resources, technology, or land. RimWorld's native `CultureDef` remains
-an optional visual inheritance, not the cultural model. Cultural expression is a
-read-only interpretation of Culture in relation to current beliefs, institutions,
-conditions, and practice.
+Culture is persistent social history with substantive inherited state. Each
+Culture records constituent populations; inherited and current meanings about
+concrete social subjects; inherited and lived practices; observations;
+transitions; and provenance. A meaning records approval, normality, prestige, and
+salience for one namespaced subject. Twelve initial subjects connect factual
+sources to real spatial, social, institutional, political, and
+settlement-development consumers, and later modules can register more without a
+Culture schema change. RimWorld's native `CultureDef` remains a separately
+labeled optional visual tradition, not the cultural model.
+
+The Culture composer edits overview, social meanings, inherited practices,
+visual tradition, and a factual causal preview. Name plus visual tradition is not
+a valid Culture. Saved profiles copy inherited meanings and practices without
+world identity or historical state. In play, informed pawn responses aggregate
+into subject-specific social patterns; qualified repeated evidence can produce
+`Culture(T+1)` from `Culture(T)`. One event, unchanged evidence, or opening an
+editor cannot. Culture ranks otherwise valid possibilities and creates no
+knowledge, authority, resources, technology, office, or land.
 
 The same concepts have different temporal meanings on the two creation sides:
 
 | Existing society | Player founding |
 |---|---|
 | Culture, Ideoligion, Political Beliefs, realized social order, institutions, material state, and established historical basis are facts about a society already present. | Founders bring inherited Culture, native Ideoligion, and Political Beliefs, then choose the rules instituted at landing. Local institutions and historical Culture develop through play. |
+
+Political Beliefs are authored question-first across thirteen normative
+questions. Complete profiles are transparent copy accelerators rather than
+political identities, all answers remain independently editable, and missing
+player positions are never filled randomly. NPC positions are derived from
+same-axis realized structure, explicit observed facts, or scored cultural
+meaning with a stable causal receipt; unsupported positions remain unset.
 
 RimWorld's native Ideoligion chooser remains first-class inside this coordinated
 flow. Native presets, saved Ideoligions, fixed and fluid creation, memes,
