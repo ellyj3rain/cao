@@ -114,8 +114,8 @@ judged as taxation or requisition.
 
 ### Hospitality / Storefront / Gastronomy
 Orion (OrionFive); Storefront continued by tomvd. Hospitality is GPLv3 code with
-CC BY-SA 4.0 art. *Evidence basis: first-pass function audit; author permission
-recorded in CREDITS.* Traced for the demand side CA has no model of (visitors
+CC BY-SA 4.0 art. *Evidence basis: first-pass function audit.* Traced for the
+demand side CA has no model of (visitors
 and spending), the point-of-sale surface (staffed shop, sale area, register,
 item transfer, silver payment), and restaurant operation (menus, prices, hours,
 waiters, paid meals). Division of labour designed: they run the business, CA

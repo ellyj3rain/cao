@@ -2,7 +2,7 @@
 <Defs>
   <!-- [CA port] Architect dropdown groups: variants collapse
        under one button instead of crowding the tab. Assets by
-       SirLalaPyon (Medieval Overhaul), used with permission. -->
+       SirLalaPyon (Medieval Overhaul). -->
   <DesignatorDropdownGroupDef>
     <defName>DankPyon_Beverages</defName>
     <label>beverages</label>

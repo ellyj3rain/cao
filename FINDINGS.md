@@ -2651,13 +2651,9 @@
   user19990313, continued by emipa606 / Bar0th). Vanilla Trading Expanded
   remains CC BY-NC-ND: reference and compatibility target only.
 
-  CONSEQUENCE: the operator's secured verbal permissions are LOAD-BEARING, not
-  a formality - for Storefront, Empire and Gastronomy they are the only basis
-  for use, and the CREDITS obligation is therefore the legal condition rather
-  than a courtesy. Also material: Hospitality's GPLv3 is COPYLEFT, so
-  incorporating its code carries obligations for the combined work, while
-  RimBank's MIT does not. That difference should decide what is copied versus
-  what is depended upon.
+  CONSEQUENCE: Hospitality's GPLv3 is COPYLEFT, so incorporating its code
+  carries obligations for the combined work, while RimBank's MIT does not.
+  That difference should decide what is copied versus what is depended upon.
 
   THE NATIVE FINDING: **RimWorld already has a contract system CA is ignoring.**
   `Quest`, `QuestPart`, `QuestManager`, `QuestGen`, `QuestScriptDef` model

@@ -108,8 +108,6 @@ treasury becomes physical notes when its map loads.
 ## 9. Permission scope
 
 MIT, verified. Freely reusable, including incorporation, with attribution.
-Operator additionally holds verbal permission across the stack with the credit
-conditions recorded in `CREDITS.md`. *This field does not affect fields 1–8.*
 
 ## 10. Recommended verdict — **split by layer**
 
