@@ -1733,12 +1733,6 @@
   institutional order beneath them. Together they likely cover most of the
   mechanical work.
 
-  **CREDITS OBLIGATION, operator-secured.** Verbal permission has been obtained
-  from each creator where licensing was ambiguous. Each requires credit plus an
-  EXPLANATION in CREDITS covering: what was used, how it functions in relation
-  to the holistic mod framework, and links. This is a condition of use, not a
-  courtesy, and must land before any such code ships.
-
   BLOCKER, stated at time of ruling: none of these mods is installed. The
   workshop directory holds 21 items and none matches Hospitality, Storefront,
   Gastronomy, Cash Register, RimBank, Empire or Vanilla Trading Expanded. The

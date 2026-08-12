@@ -39,20 +39,16 @@ in full. Reuse strategy and model gaps are my recommendations.
 | Mod | Repository | Licence — VERIFIED | Reuse position |
 |---|---|---|---|
 | Hospitality | `github.com/OrionFive/Hospitality` | **GPLv3** for code, **CC BY-SA 4.0** for original artwork (dual, in LICENSE) | Freely reusable under GPLv3 copyleft |
-| Gastronomy | `github.com/OrionFive/Gastronomy` | **CC BY-NC-ND 4.0** in README vs a **GPL-3.0** repo marker — **CONFLICT CONFIRMED** | README appears operative → no derivatives. Operator permission required, and secured |
-| Storefront | `github.com/tomvd/Storefront` | **NO LICENCE FILE AT ALL** (API `license: null`) | **Corrects a prior assumption:** published source is not a licence grant. All rights reserved by default. Operator permission required, and secured |
+| Gastronomy | `github.com/OrionFive/Gastronomy` | **CC BY-NC-ND 4.0** in README vs a **GPL-3.0** repo marker — **CONFLICT CONFIRMED** | README appears operative → no derivatives under the published terms |
+| Storefront | `github.com/tomvd/Storefront` | **NO LICENCE FILE AT ALL** (API `license: null`) | **Corrects a prior assumption:** published source is not a licence grant. All rights reserved by default |
 | RimBank | `github.com/emipa606/RimBank` | **MIT** (LICENSE.md) | Freely reusable. Original author user19990313; continued by emipa606 / Bar0th |
 | Empire | `github.com/RadsuitRandy/Empire-Mod` (origin; `BigBadE/Empire-Mod` is a fork of it) | **NO LICENCE** on either (API `license: null`) | All rights reserved by default. Study only without permission |
 | Vanilla Trading Expanded | Vanilla Expanded team | **CC BY-NC-ND** (operator-stated; consistent with the VE team's standard terms) | Reference / compatibility target only |
 
-**What the published licences say, and why it does not change the plan.**
+**What the published licences say.**
 Three of six — Storefront, Empire, and effectively Gastronomy — carry no usable
 *public* licence: absent a LICENSE file the default is all rights reserved.
-**This is already resolved.** The operator holds verbal permission from each
-author, on the stated condition that credit names what was used, explains how
-it functions within this mod's wider framework, and links to the source. That
-condition is now met in `CREDITS.md`, with each entry filled as work lands.
-The licence column below is recorded for accuracy, not as an open question.
+The licence column below is recorded for accuracy.
 
 The one thing that still shapes engineering: Hospitality's GPLv3 is
 **copyleft**, so incorporating its code carries obligations for the combined
@@ -62,11 +58,6 @@ depended upon.
 Note on Hospitality's GPLv3: it is **copyleft**. Incorporating its code into CA
 carries licence obligations for the combined work. RimBank's MIT does not.
 That difference should decide which is copied and which is depended upon.
-
-**Standing obligation (DR-87):** creator permission is secured where licensing
-was ambiguous, conditional on CREDITS carrying, per mod, what was used, how it
-functions within the holistic framework, and links. That lands before any such
-code ships.
 
 ---
 

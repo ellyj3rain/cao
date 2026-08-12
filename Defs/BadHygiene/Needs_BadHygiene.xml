@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Defs>
-<!-- Ported from Dubs Bad Hygiene by Dubwise56, used by permission.
-     See CREDITS.md.
+<!-- Ported from Dubs Bad Hygiene by Dubwise56. See CREDITS.md.
 
      DBH declared these through its own NeedDef subclass, whose only
      addition was a list of body/race/hediff exemptions for other mods'
