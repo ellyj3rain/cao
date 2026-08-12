@@ -14,6 +14,7 @@ namespace ColonistAwareness
     // work on behalf of either the player or an NPC institution.
     public sealed class CACultureLongitudinalMapComponent : MapComponent
     {
+        private int authoringDataEpoch = CAAuthoringDataEpoch.Current;
         private const int EvaluationCadence = 60000;
         private const int RecentPracticeTicks = 10 * 60000;
         private int nextEvaluationTick = 5000;
@@ -24,10 +25,21 @@ namespace ColonistAwareness
         public override void ExposeData()
         {
             base.ExposeData();
+            Scribe_Values.Look(ref authoringDataEpoch,
+                "CA_authoringDataEpoch", 0);
             Scribe_Values.Look(ref nextEvaluationTick,
                 "CA_cultureNextEvaluationTick", 5000);
-            Scribe_Deep.Look(ref playerLocalCulture,
-                "CA_playerLocalCulture");
+            bool current = Scribe.mode == LoadSaveMode.Saving
+                || CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch);
+            if (current)
+                Scribe_Deep.Look(ref playerLocalCulture,
+                    "CA_playerLocalCulture");
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && !current)
+            {
+                playerLocalCulture = null;
+                authoringDataEpoch = CAAuthoringDataEpoch.Current;
+                CAAuthoringDataEpoch.RecordDiscard("local Culture");
+            }
         }
 
         internal static CACultureLongitudinalMapComponent For(Map map)
@@ -89,8 +101,17 @@ namespace ColonistAwareness
                 List<CACulturalPracticeEvidence> practices =
                     SettlementPractices(settlement, organization,
                         organizations, evidence);
-                if (!CACultureHistory.EvaluateTransition(culture, evidence,
-                        practices, "settlement " + settlement.name, now))
+                bool practiceChanged = CACultureHistory.EvaluateTransition(
+                    culture, evidence, practices,
+                    "settlement " + settlement.name, now);
+                int eligible = CAPopulationProjection.Residents(settlement,
+                    map).Count;
+                bool meaningChanged = CACultureHistory
+                    .EvaluateMeaningTransition(culture,
+                        CASocialReactionWorldComponent.Current?.PatternsFor(
+                            organizationKey, eligible, now),
+                        "settlement " + settlement.name, now);
+                if (!practiceChanged && !meaningChanged)
                     continue;
                 settlement.culturalExpressionSourceSignature =
                     CACultureHistory.StateSignature(culture);
@@ -122,8 +143,15 @@ namespace ColonistAwareness
                 colony, organizations, now);
             List<CACulturalPracticeEvidence> practices = PlayerPractices(
                 state, colony, organizations, evidence);
-            if (!CACultureHistory.EvaluateTransition(culture, evidence,
-                    practices, "player settlement " + map.uniqueID, now))
+            bool practiceChanged = CACultureHistory.EvaluateTransition(culture,
+                evidence, practices, "player settlement " + map.uniqueID,
+                now);
+            bool meaningChanged = CACultureHistory.EvaluateMeaningTransition(
+                culture, CASocialReactionWorldComponent.Current?.PatternsFor(
+                    culture.localityKey,
+                    map.mapPawns.FreeColonistsSpawned.Count, now),
+                "player settlement " + map.uniqueID, now);
+            if (!practiceChanged && !meaningChanged)
                 return;
             colony?.Record("culture", "local culture revision "
                 + culture.revision + " recorded from changed lived history: "
@@ -237,7 +265,7 @@ namespace ColonistAwareness
                 ?? 0;
             string owner = "player-settlement:" + map.uniqueID;
             if (gatherings >= 2)
-                Add(result, "shared-public-life",
+                Add(result, CASocialSubjectRegistry.PublicGathering,
                     "Public gatherings remain a common part of settlement "
                         + "life.",
                     Mathf.Clamp(25 + tables * 8 + gatherings * 10, 0, 100),
@@ -247,14 +275,14 @@ namespace ColonistAwareness
             int agreements = organizations?.ActiveAgreementsInvolving(
                 "player").Count ?? 0;
             if (agreements > 0)
-                Add(result, "outsider-exchange",
+                Add(result, CASocialSubjectRegistry.OutsiderContact,
                     "Agreements with outsiders remain part of local life.",
                     Mathf.Clamp(30 + agreements * 15, 0, 100),
                     "agreements=" + agreements, owner, "social", -1,
                     evidence.tick);
             int defenses = organization?.securityPractices?.Count ?? 0;
             if (defenses > 0)
-                Add(result, "defensive-boundary",
+                Add(result, CASocialSubjectRegistry.DefendedBoundary,
                     "Defended boundaries remain a repeated settlement "
                         + "practice.", Mathf.Clamp(25 + defenses * 6, 0, 100),
                     "defenses=" + defenses, owner, "spatial", -1,
@@ -275,7 +303,7 @@ namespace ColonistAwareness
             int gatherings = organization?.CountKind("policy", recentStart)
                 ?? 0;
             if (gatherings >= 2)
-                Add(result, "shared-public-life",
+                Add(result, CASocialSubjectRegistry.PublicGathering,
                     "Public gatherings remain a common part of settlement "
                         + "life.", Mathf.Clamp(25 + gatherings * 10, 0, 100),
                     "gatherings=" + gatherings, owner, "social",
@@ -284,14 +312,14 @@ namespace ColonistAwareness
             int agreements = organizations?.ActiveAgreementsInvolving(owner)
                 .Count ?? 0;
             if (agreements > 0)
-                Add(result, "outsider-exchange",
+                Add(result, CASocialSubjectRegistry.OutsiderContact,
                     "Exchange with other settlements remains part of local "
                         + "life.", Mathf.Clamp(25 + agreements * 15, 0, 100),
                     "agreements=" + agreements, owner, "social", -1,
                     evidence.tick);
             int defenses = organization?.securityPractices?.Count ?? 0;
             if (defenses > 0)
-                Add(result, "defensive-boundary",
+                Add(result, CASocialSubjectRegistry.DefendedBoundary,
                     "Watch posts and defended approaches remain part of "
                         + "settlement life.",
                     Mathf.Clamp(20 + defenses * 12, 0, 100),
@@ -299,7 +327,7 @@ namespace ColonistAwareness
                     evidence.tick);
             if (settlement.researchMilestones > 0
                 && settlement.lastResearchActivityTick >= recentStart)
-                Add(result, "research-tradition",
+                Add(result, CASocialSubjectRegistry.ResearchWork,
                     "Repeated study has become part of the settlement's "
                         + "institutional life.",
                     Mathf.Clamp(20 + settlement.researchMilestones * 20,

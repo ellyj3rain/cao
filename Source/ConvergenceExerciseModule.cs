@@ -266,15 +266,14 @@ namespace ColonistAwareness
                 plan.factions.Add(tradeFaction);
                 councilFaction.EnsureCultureAndPolitics(plan);
                 tradeFaction.EnsureCultureAndPolitics(plan);
-                CAPoliticalBeliefsModel.ApplyPreset(
+                CAPoliticalBeliefsModel.ApplyProfile(
                     councilFaction.politicalBeliefs,
-                    CAFactionAxes.Presets.First(profileItem =>
-                        profileItem.Name == "Worker councils"));
-                CAPoliticalBeliefsModel.ApplyPreset(
+                    CAFactionAxes.PoliticalProfiles.First(profileItem =>
+                        profileItem.Key == "worker_federation"));
+                CAPoliticalBeliefsModel.ApplyProfile(
                     tradeFaction.politicalBeliefs,
-                    CAFactionAxes.Presets.First(profileItem =>
-                        profileItem.Name
-                            == "Elected council and private trade"));
+                    CAFactionAxes.PoliticalProfiles.First(profileItem =>
+                        profileItem.Key == "civic_council"));
                 CAFactionAxes.Derive(plan, councilFaction);
                 CAFactionAxes.Derive(plan, tradeFaction);
 

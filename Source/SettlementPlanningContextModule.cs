@@ -952,13 +952,14 @@ namespace ColonistAwareness
             // program, supplies material, or bypasses a native constraint.
             CACulture culture = CACultureLongitudinalMapComponent.For(map)
                 ?.PlayerLocalCulture;
-            int shared = CACultureHistory.PracticeStrength(culture,
-                "shared-public-life");
-            int defense = CACultureHistory.PracticeStrength(culture,
-                "defensive-boundary");
-            result.culturalExpression = CACultureConsumerKernel
-                .SpatialPreference(result.semanticLegibility,
-                    result.strategicTopology, shared, defense);
+            CACulturalMeaningResolution shared = CACultureModel.Resolve(culture,
+                CASocialSubjectRegistry.PublicGathering);
+            CACulturalMeaningResolution defense = CACultureModel.Resolve(culture,
+                CASocialSubjectRegistry.DefendedBoundary);
+            result.culturalExpression = Mathf.Clamp01(shared.Salience / 100f)
+                    * Mathf.Max(0f, result.semanticLegibility) * 0.28f
+                + Mathf.Clamp01(defense.Salience / 100f)
+                    * Mathf.Max(0f, result.strategicTopology) * 0.18f;
             return result;
         }
 

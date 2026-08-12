@@ -669,15 +669,6 @@ namespace ColonistAwareness
         ScenarioOverride
     }
 
-    // Serialized only while reading B5/B6 regional plans. The profile and
-    // ordinal authoring it represented are not current settlement authority.
-    internal enum CALegacySettlementDevelopmentProfile : sbyte
-    {
-        Minimal = -1,
-        Contextual = 0,
-        Extensive = 1
-    }
-
     public sealed class CARegionalSettlementPlan : IExposable
     {
         public int slot;
@@ -694,15 +685,6 @@ namespace ColonistAwareness
         // absent. Everything else follows the settlement's concrete state.
         public int facilityExceptionMask;
         public int facilityExceptionValues;
-        public string migrationEvidence;
-        private int legacyFacilityAuthoredMask;
-        private int legacyFacilityValues;
-        private CALegacySettlementDevelopmentProfile
-            legacyDevelopmentProfile =
-                CALegacySettlementDevelopmentProfile.Contextual;
-        private int legacyAccessInfrastructure = -1;
-        private int legacyServiceInfrastructure = -1;
-        private int legacyCivicInfrastructure = -1;
         // Realized settlement facts. These are generated once from the
         // settlement's population source, ground, links, facilities, faction,
         // regional role, and history. Runtime generation consumes these saved
@@ -755,24 +737,6 @@ namespace ColonistAwareness
                 "facilityExceptionMask", 0);
             Scribe_Values.Look(ref facilityExceptionValues,
                 "facilityExceptionValues", 0);
-            Scribe_Values.Look(ref migrationEvidence,
-                "migrationEvidence");
-            if (Scribe.mode == LoadSaveMode.LoadingVars)
-            {
-                Scribe_Values.Look(ref legacyFacilityAuthoredMask,
-                    "startingFacilityAuthoredMask", 0);
-                Scribe_Values.Look(ref legacyFacilityValues,
-                    "startingFacilityValues", 0);
-                Scribe_Values.Look(ref legacyDevelopmentProfile,
-                    "developmentProfile",
-                    CALegacySettlementDevelopmentProfile.Contextual);
-                Scribe_Values.Look(ref legacyAccessInfrastructure,
-                    "accessInfrastructure", -1);
-                Scribe_Values.Look(ref legacyServiceInfrastructure,
-                    "serviceInfrastructure", -1);
-                Scribe_Values.Look(ref legacyCivicInfrastructure,
-                    "civicInfrastructure", -1);
-            }
             Scribe_Values.Look(ref residentPopulation,
                 "residentPopulation", -1);
             Scribe_Values.Look(ref landCapacity, "landCapacity", -1);
@@ -799,25 +763,6 @@ namespace ColonistAwareness
             if (populationGroups == null) populationGroups = new List<CASettlementPopulationGroup>();
             if (startingProvisions == null)
                 startingProvisions = new List<CAStartingProvision>();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-            {
-                if (facilityExceptionMask == 0
-                    && legacyFacilityAuthoredMask != 0)
-                {
-                    facilityExceptionMask = legacyFacilityAuthoredMask;
-                    facilityExceptionValues = legacyFacilityValues;
-                }
-                bool retiredOrdinals = legacyDevelopmentProfile
-                        != CALegacySettlementDevelopmentProfile.Contextual
-                    || legacyAccessInfrastructure >= 0
-                    || legacyServiceInfrastructure >= 0
-                    || legacyCivicInfrastructure >= 0;
-                if (legacyFacilityAuthoredMask != 0 || retiredOrdinals)
-                    migrationEvidence = "B5/B6 facility exceptions were "
-                        + "preserved; the retired development profile and "
-                        + "ordinal infrastructure choices no longer govern "
-                        + "realized settlement state.";
-            }
             Scribe_Values.Look(ref realizedRole, "realizedRole", (byte)0);
             Scribe_Values.Look(ref persistent, "persistent", true);
             Scribe_Values.Look(ref customName, "customName");
@@ -873,11 +818,11 @@ namespace ColonistAwareness
 
     public sealed class CARegionalPlan : IExposable
     {
-        internal const int CurrentSchemaVersion = 5;
+        internal const int CurrentSchemaVersion = 6;
 
-        // Schema 5 preserves B5/B6 composition while retiring their generic
-        // detail and settlement-authoring authorities. Older abandoned
-        // schemas remain unsupported.
+        // Schema 6 is the B8 authoring epoch: substantive Culture and complete
+        // Political Beliefs are written directly. Earlier development schemas
+        // are deliberately unsupported rather than migrated.
         public int schemaVersion = CurrentSchemaVersion;
         public string regionalId;
         // The player's geographic name for this realized region. This lives on
@@ -1034,11 +979,6 @@ namespace ColonistAwareness
                         ? CARegionalPlanUtility.MintCandidateId()
                         : "auto" + unchecked((uint)GenText.StableStringHash(
                             regionalId ?? "regional-plan")).ToString("X8");
-                if (schemaVersion == 4)
-                {
-                    CARegionalSettlements.MigrateB6SettlementAuthority(this);
-                    schemaVersion = CurrentSchemaVersion;
-                }
                 foreach (CARegionalFactionPlan faction in factions.Where(
                     item => item != null))
                     faction.EnsureCultureAndPolitics(this);
@@ -1569,7 +1509,7 @@ namespace ColonistAwareness
             foreach (CARegionalFactionPlan group in plan.factions)
             {
                 if (group == null) continue;
-                string cultureFailure = CACultureModel.CompatibilityFailure(
+                string cultureFailure = CACultureModel.SubstantiveFailure(
                     group.culture);
                 if (cultureFailure.NullOrEmpty()) continue;
                 failure = "Culture for " + FactionName(group)
@@ -2417,6 +2357,9 @@ namespace ColonistAwareness
                 try
                 {
                     CARegionalPlan plan = Pending;
+                    int authoringDataEpoch = CAAuthoringDataEpoch.Current;
+                    Scribe_Values.Look(ref authoringDataEpoch,
+                        "authoringDataEpoch", 0);
                     Scribe_Values.Look(ref identity, "worldIdentity");
                     Scribe_Deep.Look(ref plan, "plan");
                 }
@@ -2442,18 +2385,41 @@ namespace ColonistAwareness
             if (!System.IO.File.Exists(path)) return;
             try
             {
+                int authoringDataEpoch = 0;
                 string fileIdentity = null;
                 CARegionalPlan plan = null;
                 Scribe.loader.InitLoading(path);
                 try
                 {
-                    Scribe_Values.Look(ref fileIdentity, "worldIdentity");
-                    if (IdentityMatchesWorld(fileIdentity, identity))
+                    Scribe_Values.Look(ref authoringDataEpoch,
+                        "authoringDataEpoch", 0);
+                    if (CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch))
+                        Scribe_Values.Look(ref fileIdentity, "worldIdentity");
+                    if (CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch)
+                        && IdentityMatchesWorld(fileIdentity, identity))
                         Scribe_Deep.Look(ref plan, "plan");
                 }
                 finally
                 {
                     Scribe.loader.FinalizeLoading();
+                }
+                if (!CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch))
+                {
+                    CAAuthoringDataEpoch.RecordDiscard(
+                        "pending starting region");
+                    try
+                    {
+                        // The exact identity-keyed pre-release draft is owned
+                        // by CA and cannot become current. Remove it once so it
+                        // is not retried on every session.
+                        System.IO.File.Delete(path);
+                    }
+                    catch (Exception deleteFailure)
+                    {
+                        Log.Warning("[CA][Regional] could not remove discarded "
+                            + "pending plan " + path + ": " + deleteFailure);
+                    }
+                    return;
                 }
                 if (plan == null) return;
                 if (plan.schemaVersion != CARegionalPlan.CurrentSchemaVersion)
@@ -3845,7 +3811,9 @@ namespace ColonistAwareness
                 group.EnsureCultureAndPolitics(plan);
                 CAFactionAxes.Derive(plan, group);
                 CAFactionStartingState.ApplyPlan(group.resolvedFaction,
-                    group.culture, group.politicalBeliefs, group.factionStructure);
+                    group.culture, group.politicalBeliefs,
+                    group.factionStructure,
+                    group.institutionalStateIncomplete);
             }
 
             // Fill missing state for established humanlike factions. Native

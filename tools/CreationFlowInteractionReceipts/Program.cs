@@ -82,9 +82,9 @@ internal static class Program
                 && !culture.Contains("new FloatMenu"),
                 "founding culture, Ideoligion, or political choices still use text-wall menus");
             Require(culture.Contains("CACreationUI.SourceWords")
-                && culture.Contains("PresetDetails")
-                && culture.Contains("ChoosePreset")
-                && authoring.Contains("CAPoliticalBeliefsModel.ChoosePreset")
+                && culture.Contains("ProfileDetails")
+                && culture.Contains("ApplyProfile")
+                && authoring.Contains("CAPoliticalBeliefsModel.ApplyProfile")
                 && culture.Contains("Dialog_CAAxisEditor")
                 && authoring.Contains("CultureProfiles(")
                 && authoring.Contains("PoliticalProfiles("),

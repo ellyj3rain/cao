@@ -267,17 +267,17 @@ namespace ColonistAwareness
         {
             float y = BeginCard(rect, "Culture",
                 CultureDescription());
-            DrawSummary(rect, ref y, CACultureModel.Icon(draft?.culture),
+            DrawSummary(rect, ref y, null,
                 draft?.culture?.name ?? "Culture not set",
                 CACultureModel.Summary(draft?.culture), CultureStateWords());
             DrawButtons(rect, ref y,
-                new CAFoundingAction("Saved Cultures...",
-                    OpenCulturePresets),
-                new CAFoundingAction("Edit", delegate
+                new CAFoundingAction("Compose Culture", delegate
                 {
                     Find.WindowStack.Add(new Dialog_CACultureEditor(
                         draft.culture, "Founders", Changed));
-                }));
+                }),
+                new CAFoundingAction("Load saved...", OpenCulturePresets),
+                new CAFoundingAction("Save Culture...", SaveCultureProfile));
         }
 
         private void DrawIdeoCard(Rect rect)
@@ -300,34 +300,25 @@ namespace ColonistAwareness
         {
             float y = BeginCard(rect, "Political beliefs",
                 PoliticalDescription());
-            DrawSummary(rect, ref y,
-                CAPoliticalBeliefsModel.Icon(draft?.politicalBeliefs),
+            DrawSummary(rect, ref y, null,
                 CAAuthoringChoices.PoliticalIdentity(
                     draft?.politicalBeliefs),
                 CAPoliticalBeliefsModel.Summary(draft?.politicalBeliefs),
                 PoliticalStateWords());
             DrawButtons(rect, ref y,
-                new CAFoundingAction("Profiles...",
-                    OpenPoliticalPresets),
-                new CAFoundingAction("Generate missing", delegate
-                {
-                    CAPoliticalBeliefsModel.GenerateUnset(
-                        draft.politicalBeliefs,
-                        CAPlayerFoundingModel.Seed + ":politics-fill");
-                    RefreshSuggestedArrangement();
-                    Changed();
-                }),
-                new CAFoundingAction("Edit", delegate
+                new CAFoundingAction("Set beliefs", delegate
                 {
                     Find.WindowStack.Add(Dialog_CAAxisEditor.ForBeliefs(
                         draft.politicalBeliefs,
                         CAPlayerFoundingModel.Seed + ":politics-edit",
+                        draft.arrangement,
                         delegate
                         {
                             RefreshSuggestedArrangement();
                             Changed();
                         }));
-                }));
+                }),
+                new CAFoundingAction("Profiles...", OpenPoliticalPresets));
         }
 
         private void DrawArrangementCard(Rect rect)
@@ -340,9 +331,7 @@ namespace ColonistAwareness
             string detail = arrangement?.premise
                 ?? "Choose or generate an arrangement.";
             DrawSummary(rect, ref y,
-                ContentFinder<Texture2D>.Get(
-                    "Rimshare/WorldMapIcons/divided-square"),
-                title, detail, CAPlayerFoundingModel
+                null, title, detail, CAPlayerFoundingModel
                     .ArrangementSourceWords(draft));
             List<CAPoliticalBeliefPractice.CAFoundingBeliefReading> readings =
                 CAPoliticalBeliefPractice.ReadAgainstPoliticalBeliefs(
@@ -610,24 +599,18 @@ namespace ColonistAwareness
 
         private string CultureStateWords()
         {
-            if (draft?.culture != null
-                && !draft.culture.profileKey.NullOrEmpty())
-                return "Saved Culture";
             if ((draft?.culture?.authoredMask ?? 0) != 0) return "Edited";
             return "Inherited";
         }
 
         private string PoliticalStateWords()
         {
-            if (draft?.politicalBeliefs != null
-                && !draft.politicalBeliefs.profileKey.NullOrEmpty())
-                return "Saved profile";
             List<CAAxisEntry> positions = draft?.politicalBeliefs?.positions;
             if (positions?.Any(item => item != null && item.source
                     == (byte)CAAxisSource.Authored) == true) return "Edited";
-            if (positions?.Any(item => item != null && item.source
-                    == (byte)CAAxisSource.Preset) == true) return "Preset";
-            return "Generated";
+            return positions?.Count == CAFactionAxes.Axes.Length
+                && CAFactionAxes.CountByState(positions,
+                    CAAxisSource.Unset) == 0 ? "Set" : "Incomplete";
         }
 
         private static Color StateColor(string words)
@@ -662,6 +645,24 @@ namespace ColonistAwareness
                     CAPlayerFoundingModel.Seed, Changed));
         }
 
+        private void SaveCultureProfile()
+        {
+            string failure = CACultureModel.SubstantiveFailure(
+                draft?.culture);
+            if (!failure.NullOrEmpty())
+            {
+                Messages.Message(failure, MessageTypeDefOf.RejectInput,
+                    false);
+                return;
+            }
+            Find.WindowStack.Add(new Dialog_CAProfileName(
+                "Save Culture", draft?.culture?.name ?? "Saved Culture", value =>
+                {
+                    CAAuthoringProfileLibrary.SaveCulture(value, draft?.culture);
+                    Changed();
+                }));
+        }
+
         private void OpenPoliticalPresets()
         {
             List<CACreationChoice> options =
@@ -694,7 +695,6 @@ namespace ColonistAwareness
                     Details = local.Consequence(
                         CAPlayerFoundingModel.StartingPawnCount()),
                     Badge = "Starting rules",
-                    Icon = FoundingTermsIcon(local),
                     Accent = CACreationUI.Preset,
                     Selected = draft?.arrangement?.id == local.id,
                     ConfirmLabel = "Use these terms",
@@ -720,19 +720,6 @@ namespace ColonistAwareness
                 + (terms.workRequired ? "Required work" : "Voluntary work")
                 + " · " + (terms.sharedSupplies
                     ? "Shared supplies" : "Separate supplies");
-        }
-
-        private static Texture2D FoundingTermsIcon(
-            CAFoundingArrangement terms)
-        {
-            string path = terms?.id == "emergency-command"
-                ? "Rimshare/WorldMapIcons/crenulated-shield"
-                : terms?.id == "single-founder"
-                    ? "Rimshare/WorldMapIcons/corporal"
-                    : terms?.id == "ancestral-commons"
-                        ? "Rimshare/WorldMapIcons/castle"
-                        : "Rimshare/WorldMapIcons/divided-square";
-            return CACreationUI.Icon(path);
         }
 
         private void LoadIdeo()

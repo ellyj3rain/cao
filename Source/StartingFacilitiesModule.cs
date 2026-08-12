@@ -187,11 +187,11 @@ namespace ColonistAwareness
                 // preferred. Shared public life pulls common facilities
                 // toward the settlement core. It never creates a room or
                 // bypasses facility feasibility.
-                int sharedPractice = CACultureHistory.PracticeStrength(
-                    record.culture, "shared-public-life");
+                CACulturalMeaningResolution shared = CACultureModel.Resolve(
+                    record.culture, CASocialSubjectRegistry.PublicGathering);
                 IntVec3 culturalCore = record.layout?.core
                     ?? record.localRect.CenterCell;
-                rooms = sharedPractice > 0
+                rooms = shared.Approval + shared.Salience > 0
                     ? rooms.OrderBy(room => RoomDistance(room, culturalCore))
                         .ThenByDescending(room => room.CellCount).ToList()
                     : rooms.OrderByDescending(room => room.CellCount)
@@ -567,10 +567,10 @@ namespace ColonistAwareness
                 Pawn worker = FindWorker(record);
                 if (worker == null) continue;
 
-                int researchTradition = CACultureHistory.PracticeStrength(
-                    record.culture, "research-tradition");
-                if (CACultureConsumerKernel.PrioritizeResearch(
-                        researchTradition)
+                CACulturalMeaningResolution research = CACultureModel.Resolve(
+                    record.culture, CASocialSubjectRegistry.ResearchWork);
+                if (research.Approval + research.Prestige
+                        + research.Salience >= 80
                     && TryResearch(record, worker, org)) continue;
                 if (TryRepair(record, worker, org)) continue;
                 if (TryRebuild(record, worker, org)) continue;

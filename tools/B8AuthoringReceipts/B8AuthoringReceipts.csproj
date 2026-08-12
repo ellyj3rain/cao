@@ -7,7 +7,9 @@
     <Nullable>disable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\..\Source\CulturalExpressionCausalKernel.cs"
-             Link="CulturalExpressionCausalKernel.cs" />
+    <Compile Include="..\..\Source\B8SocialMeaningKernel.cs"
+             Link="B8SocialMeaningKernel.cs" />
+    <Compile Include="..\..\Source\B8PoliticalDerivationKernel.cs"
+             Link="B8PoliticalDerivationKernel.cs" />
   </ItemGroup>
 </Project>

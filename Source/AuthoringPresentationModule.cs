@@ -8,7 +8,7 @@ namespace ColonistAwareness
 {
     public sealed class CAUserCultureProfile : IExposable
     {
-        public const int CurrentSchemaVersion = 3;
+        public const int CurrentSchemaVersion = 8;
         public int schemaVersion = CurrentSchemaVersion;
         public string key;
         public string displayName;
@@ -21,12 +21,6 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref displayName, "displayName");
             Scribe_Deep.Look(ref values, "values");
             if (values == null) values = new CACulture();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-            {
-                CACultureModel.Migrate(values);
-                values = values.CopyAsInheritedTemplate();
-                schemaVersion = CurrentSchemaVersion;
-            }
         }
 
         internal CAUserCultureProfile CopyAs(string newKey,
@@ -44,7 +38,7 @@ namespace ColonistAwareness
 
     public sealed class CAUserPoliticalProfile : IExposable
     {
-        public const int CurrentSchemaVersion = 1;
+        public const int CurrentSchemaVersion = 8;
         public int schemaVersion = CurrentSchemaVersion;
         public string key;
         public string displayName;
@@ -57,8 +51,6 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref displayName, "displayName");
             Scribe_Deep.Look(ref values, "values");
             if (values == null) values = new CAPoliticalBeliefs();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-                schemaVersion = CurrentSchemaVersion;
         }
 
         internal CAUserPoliticalProfile CopyAs(string newKey,
@@ -95,14 +87,19 @@ namespace ColonistAwareness
                 settings.cultureProfiles = new List<CAUserCultureProfile>();
             if (settings.politicalProfiles == null)
                 settings.politicalProfiles = new List<CAUserPoliticalProfile>();
-            settings.cultureProfiles.RemoveAll(item => item == null);
-            settings.politicalProfiles.RemoveAll(item => item == null);
+            settings.cultureProfiles.RemoveAll(item => item == null
+                || item.schemaVersion != CAUserCultureProfile.CurrentSchemaVersion
+                || item.values?.schemaVersion != CACulture.CurrentSchemaVersion);
+            settings.politicalProfiles.RemoveAll(item => item == null
+                || item.schemaVersion != CAUserPoliticalProfile.CurrentSchemaVersion
+                || item.values?.schemaVersion
+                    != CAPoliticalBeliefs.CurrentSchemaVersion);
             foreach (CAUserCultureProfile item in settings.cultureProfiles)
             {
                 if (item.key.NullOrEmpty()) item.key = NewKey(CulturePrefix);
                 if (item.displayName.NullOrEmpty()) item.displayName = "Saved background";
                 if (item.values == null) item.values = new CACulture();
-                CACultureModel.Migrate(item.values);
+                CACultureModel.Normalize(item.values);
                 item.values = item.values.CopyAsInheritedTemplate();
                 item.schemaVersion = CAUserCultureProfile.CurrentSchemaVersion;
             }
@@ -111,7 +108,7 @@ namespace ColonistAwareness
                 if (item.key.NullOrEmpty()) item.key = NewKey(PoliticsPrefix);
                 if (item.displayName.NullOrEmpty()) item.displayName = "Saved political profile";
                 if (item.values == null) item.values = new CAPoliticalBeliefs();
-                CAPoliticalBeliefsModel.Migrate(item.values);
+                CAPoliticalBeliefsModel.Normalize(item.values);
             }
         }
 
@@ -119,7 +116,9 @@ namespace ColonistAwareness
             CACulture culture)
         {
             AwarenessSettings settings = AwarenessMod.Settings;
-            if (settings == null || culture == null) return null;
+            if (settings == null || culture == null
+                || CACultureModel.SubstantiveFailure(culture) != null)
+                return null;
             Normalize(settings);
             var profile = new CAUserCultureProfile
             {
@@ -137,7 +136,9 @@ namespace ColonistAwareness
             CAPoliticalBeliefs beliefs)
         {
             AwarenessSettings settings = AwarenessMod.Settings;
-            if (settings == null || beliefs == null) return null;
+            if (settings == null || beliefs == null
+                || CAFactionAxes.CountByState(beliefs.positions,
+                    CAAxisSource.Unset) != 0) return null;
             Normalize(settings);
             var profile = new CAUserPoliticalProfile
             {
@@ -147,8 +148,6 @@ namespace ColonistAwareness
                 values = beliefs.Copy()
             };
             profile.values.id = null;
-            profile.values.presetName = null;
-            profile.values.profileKey = null;
             settings.politicalProfiles.Add(profile);
             AwarenessMod.SaveSettings();
             return profile;
@@ -159,7 +158,6 @@ namespace ColonistAwareness
         {
             if (profile?.values == null || target == null) return;
             target.ApplyInheritedTemplate(profile.values);
-            target.profileKey = profile.key;
         }
 
         internal static void Apply(CAUserPoliticalProfile profile,
@@ -169,7 +167,6 @@ namespace ColonistAwareness
             string worldIdentity = target.id;
             target.CopyFrom(profile.values);
             target.id = worldIdentity;
-            target.profileKey = profile.key;
         }
 
         internal static void Delete(CAUserCultureProfile profile)

@@ -55,7 +55,6 @@ namespace ColonistAwareness
             switch (source)
             {
                 case CAAxisSource.Authored: return "Chosen";
-                case CAAxisSource.Preset: return "Preset";
                 case CAAxisSource.Generated: return "Generated";
                 default: return "Unset";
             }
@@ -66,7 +65,6 @@ namespace ColonistAwareness
             switch (source)
             {
                 case CAAxisSource.Authored: return Authored;
-                case CAAxisSource.Preset: return Preset;
                 case CAAxisSource.Generated: return Generated;
                 default: return Unset;
             }

@@ -466,10 +466,11 @@ namespace ColonistAwareness
                     float heldDays = held / 60000f;
                     float drain = timing.drain
                         * (1f + timing.escalatePerDayHeld * heldDays);
-                    int culturalStrength = CulturalStrength(org, key);
-                    int habituation = CACultureConsumerKernel
-                        .PoliticalHabituationTicks(
-                            timing.habituateAfterTicks, culturalStrength);
+                    CACulturalMeaningResolution cultural = CulturalMeaning(
+                        org, key);
+                    int habituation = Mathf.RoundToInt(
+                        timing.habituateAfterTicks * (1f
+                            + Mathf.Clamp01(cultural.Salience / 100f) * 0.5f));
                     // Political beliefs remain unchanged. A persisted culture
                     // of public gathering makes voice and shared-leadership
                     // contradictions remain politically salient for longer.
@@ -516,38 +517,47 @@ namespace ColonistAwareness
             org.unrecoveredSupportLoss += before - org.publicSupport;
         }
 
-        private static int CulturalStrength(CAOrganization org,
+        private static CACulturalMeaningResolution CulturalMeaning(
+            CAOrganization org,
             string beliefKey)
         {
-            string practice = beliefKey == "every voice counts"
+            string subject = beliefKey == "every voice counts"
                     || beliefKey == "shared leadership"
-                ? "shared-public-life" : null;
-            return PracticeForOrganization(org, practice);
+                ? CASocialSubjectRegistry.PublicVoice : null;
+            return ResolveForOrganization(org, subject);
         }
 
-        private static int PracticeForOrganization(CAOrganization org,
-            string practice)
+        private static CACulturalMeaningResolution ResolveForOrganization(
+            CAOrganization org, string subject)
         {
-            if (practice == null || org == null) return 0;
+            if (subject == null || org == null)
+                return CACulturalMeaningResolver.Resolve(null, subject);
             if (org.organizationKey == "player")
             {
-                List<int> strengths = (Find.Maps
+                List<CACulturalMeaningResolution> values = (Find.Maps
                         ?? new List<Map>())
                     .Where(map => map != null && map.IsPlayerHome)
-                    .Select(map => CACultureHistory.PracticeStrength(
+                    .Select(map => CACultureModel.Resolve(
                         CACultureLongitudinalMapComponent.For(map)
-                            ?.PlayerLocalCulture, practice))
+                            ?.PlayerLocalCulture, subject))
                     .ToList();
-                return strengths.Count == 0 ? 0
-                    : Mathf.Clamp(Mathf.RoundToInt(
-                        (float)strengths.Average()), 0, 100);
+                return values.Count == 0
+                    ? CACulturalMeaningResolver.Resolve(null, subject)
+                    : new CACulturalMeaningResolution
+                    {
+                        SubjectKey = subject,
+                        Approval = Mathf.RoundToInt((float)values.Average(
+                            value => value.Approval)),
+                        Salience = Mathf.RoundToInt((float)values.Average(
+                            value => value.Salience))
+                    };
             }
             CACulture culture = (CARegionalWorldComponent.Current?.Records
                     ?? new List<CARegionalSettlementRecord>())
                 .FirstOrDefault(record => record != null
                     && record.regionalId + "#" + record.slot
                         == org.organizationKey)?.culture;
-            return CACultureHistory.PracticeStrength(culture, practice);
+            return CACultureModel.Resolve(culture, subject);
         }
 
         // ---- observed acts ---------------------------------------------
@@ -636,6 +646,7 @@ namespace ColonistAwareness
                     continue;
                 e.pawnsAnswered.Add(pawnId);
 
+                var contributions = new List<CASocialContribution>();
                 foreach (string key in
                     CAPoliticalBeliefPractice.StandardsHeldBy(pawn))
                 {
@@ -645,6 +656,15 @@ namespace ColonistAwareness
                         || row.judge == null) continue;
                     CAVerdict verdict = row.judge(e, out meaning);
                     if (verdict == CAVerdict.Silent) continue;
+                    contributions.Add(new CASocialContribution
+                    {
+                        Source = "Political Beliefs",
+                        Approval = verdict == CAVerdict.Offends ? -80 : 65,
+                        Prestige = verdict == CAVerdict.Offends ? -50 : 35,
+                        Normality = verdict == CAVerdict.Offends ? 20 : 70,
+                        Salience = 75,
+                        Reason = key + ": " + meaning
+                    });
                     // Judge every applicable belief. The saved faction model
                     // supplies one answer per political-belief axis, so this
                     // loop cannot judge the same axis twice.
@@ -652,7 +672,150 @@ namespace ColonistAwareness
                         verdict == CAVerdict.Offends, meaning, key,
                         EventIdentity(key, e));
                 }
+                AddIdeoligionContribution(e, pawn, contributions);
+                AddDispositionContribution(e, pawn, contributions);
+                AddRelationshipContribution(e, pawn, contributions);
+                AddGroupAndOfficeContributions(pawn, contributions);
+                AddMemoryContribution(pawn, contributions);
+                string populationIdentity;
+                string organizationIdentity;
+                CACulture culture = CASocialReactionWorldComponent.CultureFor(
+                    pawn, out populationIdentity, out organizationIdentity);
+                CASocialReactionWorldComponent.Current?.RecordAct(e, pawn,
+                    culture, populationIdentity, organizationIdentity,
+                    contributions);
             }
+        }
+
+        private static void AddIdeoligionContribution(CAActRecord e, Pawn pawn,
+            List<CASocialContribution> contributions)
+        {
+            if (pawn?.Ideo == null || e == null) return;
+            bool relevant = e.act == "violence"
+                && (e.circumstance == CAViolenceSite.Downed
+                    || e.circumstance == CAViolenceSite.Unresisting);
+            if (!relevant) return;
+            try
+            {
+                bool permits = pawn.Ideo.MemberWillingToDo(new HistoryEvent(
+                    HistoryEventDefOf.ExecutedPrisonerGuilty,
+                    pawn.Named(HistoryEventArgsNames.Doer)));
+                contributions.Add(new CASocialContribution
+                {
+                    Source = "Ideoligion",
+                    Approval = permits ? 45 : -65,
+                    Prestige = permits ? 20 : -35,
+                    Normality = permits ? 65 : 20,
+                    Salience = 70,
+                    Reason = permits
+                        ? "native beliefs permit execution in the applicable case"
+                        : "native beliefs reject execution in the applicable case"
+                });
+            }
+            catch { }
+        }
+
+        private static void AddDispositionContribution(CAActRecord e,
+            Pawn pawn, List<CASocialContribution> contributions)
+        {
+            if (pawn == null || e == null) return;
+            DispositionProfile disposition = Disposition.Of(pawn);
+            bool interpersonal = e.subjectPawnId >= 0;
+            if (!interpersonal) return;
+            int approval = Mathf.RoundToInt((disposition.aggression
+                    - disposition.empathy) * 55f);
+            if (e.act != "violence" && e.act != "coercion"
+                && e.act != "compelled-work") approval /= 2;
+            contributions.Add(new CASocialContribution
+            {
+                Source = "Disposition",
+                Approval = Mathf.Clamp(approval, -100, 100),
+                Prestige = Mathf.RoundToInt((disposition.courage - 0.5f) * 40f),
+                Normality = Mathf.RoundToInt(disposition.conformity * 100f),
+                Salience = Mathf.RoundToInt((0.5f
+                    + Mathf.Abs(disposition.empathy - 0.5f)) * 65f),
+                Reason = "the pawn's empathy, aggression, courage, and conformity"
+            });
+        }
+
+        private static void AddRelationshipContribution(CAActRecord e,
+            Pawn pawn, List<CASocialContribution> contributions)
+        {
+            if (pawn?.relations == null || e == null) return;
+            Pawn actor = FindPawn(e.actorPawnId);
+            Pawn target = FindPawn(e.subjectPawnId);
+            int actorOpinion = actor == null ? 0 : pawn.relations.OpinionOf(actor);
+            int targetOpinion = target == null ? 0 : pawn.relations.OpinionOf(target);
+            if (actorOpinion == 0 && targetOpinion == 0) return;
+            contributions.Add(new CASocialContribution
+            {
+                Source = "Relationships",
+                Approval = Mathf.Clamp((actorOpinion - targetOpinion) / 2,
+                    -100, 100),
+                Prestige = Mathf.Clamp(actorOpinion / 3, -100, 100),
+                Normality = 50,
+                Salience = Mathf.Clamp(Mathf.Max(Mathf.Abs(actorOpinion),
+                    Mathf.Abs(targetOpinion)), 0, 100),
+                Reason = "opinion of the actor " + actorOpinion
+                    + "; opinion of the target " + targetOpinion
+            });
+        }
+
+        private static void AddGroupAndOfficeContributions(Pawn pawn,
+            List<CASocialContribution> contributions)
+        {
+            CAOrganizationWorldComponent world =
+                CAOrganizationWorldComponent.Current;
+            if (world == null || pawn == null) return;
+            foreach (CAOrganization organization in world.Organizations)
+            {
+                if (organization == null) continue;
+                if (organization.memberPawnIds?.Contains(pawn.thingIDNumber)
+                    == true)
+                    contributions.Add(new CASocialContribution
+                    {
+                        Source = "Group membership",
+                        Approval = 0,
+                        Prestige = 5,
+                        Normality = 60,
+                        Salience = 35,
+                        Reason = "member of "
+                            + (organization.name ?? organization.organizationKey)
+                    });
+                CAOffice office = organization.offices?.FirstOrDefault(value =>
+                    value != null && value.holderId == pawn.thingIDNumber);
+                if (office == null) continue;
+                contributions.Add(new CASocialContribution
+                {
+                    Source = "Status and office",
+                    Approval = 0,
+                    Prestige = Mathf.Clamp(20 + office.seniority / 10, 0, 100),
+                    Normality = 55,
+                    Salience = Mathf.Clamp(35 + office.seniority / 10, 0, 100),
+                    Reason = office.name ?? office.sourceKey ?? "recorded office"
+                });
+            }
+        }
+
+        private static void AddMemoryContribution(Pawn pawn,
+            List<CASocialContribution> contributions)
+        {
+            if (pawn?.needs?.mood?.thoughts?.memories == null) return;
+            int count = 0;
+            try
+            {
+                count = pawn.needs.mood.thoughts.memories.Memories.Count;
+            }
+            catch { return; }
+            contributions.Add(new CASocialContribution
+            {
+                Source = "Existing memories",
+                Approval = 0,
+                Prestige = 0,
+                Normality = 50,
+                Salience = Mathf.Clamp(15 + count, 15, 55),
+                Reason = count + " current memory record(s) inform attention"
+            });
         }
 
         // Group repeated instances of the same act against the same subject.

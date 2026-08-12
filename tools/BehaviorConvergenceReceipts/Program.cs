@@ -211,9 +211,9 @@ internal static class Program
                 ActiveTierCount(catalog) + " active tier entries", "executable");
             C(22, "Saved fixtures round-trip with the new schema",
                 RoundTrips(mirror) && RoundTrips(keyed)
-                    && Value(mirrorPlan, "schemaVersion") == "5"
+                    && Value(mirrorPlan, "schemaVersion") == "6"
                     && autonomy.Contains("CA_initiativeSchema"),
-                "regional schema 5 round-trip plus initiative schema marker",
+                "regional schema 6 round-trip plus initiative schema marker",
                 "executable");
 
             // Authority: 23-32.
@@ -559,8 +559,9 @@ internal static class Program
             C(70, "Culture changes ranking, never permission",
                 CatalogEntryHas(catalog, "culture.longitudinal_update",
                     "SocialAndPolitical", "WorldSimulation")
-                    && HasAll(planning, "CACultureHistory.PracticeStrength",
-                        "shared-public-life", "defensive-boundary")
+                    && HasAll(planning, "CACultureModel.Resolve",
+                        "CASocialSubjectRegistry.PublicGathering",
+                        "CASocialSubjectRegistry.DefendedBoundary")
                     && HasAll(planning, "Culture never grants permission",
                         "result.culturalExpression"),
                 "persistent Culture has an executor and ranks only otherwise-valid candidates",

@@ -484,8 +484,8 @@ namespace ColonistAwareness
             foreach (CACulturePractice practice in (culture.practices
                     ?? new List<CACulturePractice>()).Where(item => item != null)
                 .OrderByDescending(item => item.strength)
-                .ThenBy(item => item.key))
-                result.Add("culture practice " + (practice.key ?? "unrecorded")
+                .ThenBy(item => item.subjectKey))
+                result.Add("culture practice " + (practice.subjectKey ?? "unrecorded")
                     + ": " + practice.strength + "/100 - "
                     + (practice.sourceSignature ?? "unrecorded source"));
             return result;
@@ -514,7 +514,7 @@ namespace ColonistAwareness
                 .Where(item => item != null && item.strength > 0)
                 .Select(item => new CACulturalPracticeState
                 {
-                    Key = item.key,
+                    Key = item.subjectKey,
                     Summary = item.summary,
                     Strength = item.strength,
                     SourceSignature = item.sourceSignature

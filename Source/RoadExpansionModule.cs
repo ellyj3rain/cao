@@ -242,22 +242,26 @@ namespace ColonistAwareness
                 }
             }
 
-            int defense = CACultureHistory.PracticeStrength(record.culture,
-                "defensive-boundary");
-            int exchange = CACultureHistory.PracticeStrength(record.culture,
-                "outsider-exchange");
-            if (CACultureConsumerKernel.PreferExchangeRoad(
-                    agreementTarget.IsValid, post.IsValid, exchange, defense))
+            CACulturalMeaningResolution defense = CACultureModel.Resolve(
+                record.culture, CASocialSubjectRegistry.DefendedBoundary);
+            CACulturalMeaningResolution exchange = CACultureModel.Resolve(
+                record.culture, CASocialSubjectRegistry.OutsiderContact);
+            int exchangeRank = exchange.Approval + exchange.Prestige
+                + exchange.Salience;
+            int defenseRank = defense.Approval + defense.Prestige
+                + defense.Salience;
+            if (agreementTarget.IsValid && (!post.IsValid
+                    || exchangeRank > defenseRank))
             {
                 target = agreementTarget;
                 why = agreementWhy + "; retained exchange practice "
-                    + exchange + "/100";
+                    + exchangeRank;
             }
             else if (post.IsValid)
             {
                 target = post;
                 why = "a way out to their own watch post; retained defensive "
-                    + "practice " + defense + "/100";
+                    + "meaning " + defenseRank;
             }
             if (!target.IsValid) return null;
 

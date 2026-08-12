@@ -225,8 +225,7 @@ namespace ColonistAwareness
             {
                 preset = founding.arrangement;
                 arrangementAuthored = founding.ArrangementSource
-                    == CAAxisSource.Authored
-                    || founding.ArrangementSource == CAAxisSource.Preset;
+                    == CAAxisSource.Authored;
             }
             if (preset == null)
                 preset = CAPoliticalBeliefPractice.ShapeDefault(

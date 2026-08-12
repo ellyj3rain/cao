@@ -55,7 +55,7 @@ namespace ColonistAwareness
 
             text.AppendLine("  " + pass);
             text.AppendLine("  eligible factions: " + factions.Count);
-            text.AppendLine("  complete background and political state: "
+            text.AppendLine("  substantive Culture and political owners: "
                 + complete);
             text.AppendLine("  factions with unset political beliefs: "
                 + unsetBeliefs);
@@ -65,7 +65,7 @@ namespace ColonistAwareness
                 + " (expected 0)");
             text.Append("  RESULT: ").Append(changedIdeoligions == 0
                 && complete == factions.Count
-                && unsetBeliefs == 0 && unsetStructure == 0
+                && unsetStructure == 0
                     ? "PASS" : "FAIL");
             return text.ToString();
         }

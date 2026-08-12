@@ -380,7 +380,6 @@ namespace ColonistAwareness
                 Details = "Belief sources set to Use faction affiliation "
                     + "become individual until another affiliation is chosen.",
                 Badge = "Faction affiliation",
-                Icon = CACreationUI.Icon("Rimshare/WorldMapIcons/anarchy"),
                 Accent = CACreationUI.Unset,
                 Selected = population.factionKey < 0,
                 ConfirmLabel = "Leave unaffiliated",
@@ -449,7 +448,6 @@ namespace ColonistAwareness
                 Name = "Independent Ideoligion",
                 Summary = "Generate a separate Ideoligion for this group.",
                 Badge = "Ideoligion source",
-                Icon = CACreationUI.Icon("Rimshare/WorldMapIcons/forward-sun"),
                 Accent = CACreationUI.Authored,
                 Selected = population.independentIdeoligionKey >= 0,
                 ConfirmLabel = "Use an independent Ideoligion",
@@ -497,11 +495,9 @@ namespace ColonistAwareness
                         local.politicalBeliefs),
                     Summary = "Political beliefs of "
                         + CARegionalPlanUtility.FactionName(local) + ".",
-                    Traits = CAPoliticalBeliefsModel.PresetTraits(
-                        CAFactionAxes.Preset(
-                            local.politicalBeliefs?.presetName), 3),
+                    Traits = CAPoliticalBeliefsModel.Summary(
+                        local.politicalBeliefs),
                     Badge = "Political-belief source",
-                    Icon = CAPoliticalBeliefsModel.Icon(local.politicalBeliefs),
                     Accent = CARegionalWorldOverlay.FactionColor(local.key),
                     Selected = population.politicalBeliefsFactionKey
                         == local.key,

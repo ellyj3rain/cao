@@ -46,9 +46,105 @@ namespace ColonistAwareness
         }
     }
 
+    // One durable interpretation of one concrete social subject. Culture may
+    // carry several records for the same subject when constituent populations
+    // disagree; scope is therefore part of the record's identity.
+    public sealed class CACulturalMeaning : IExposable
+    {
+        public string subjectKey;
+        public string populationScope;
+        public int approval;
+        public int normality;
+        public int prestige;
+        public int salience;
+        public string provenance;
+        public string sourceIdentity;
+        public string evidenceSignature;
+        public int firstRecordedTick = -1;
+        public int lastChangedTick = -1;
+        public int weight = 100;
+
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref subjectKey, "subjectKey");
+            Scribe_Values.Look(ref populationScope, "populationScope");
+            Scribe_Values.Look(ref approval, "approval", 0);
+            Scribe_Values.Look(ref normality, "normality", 0);
+            Scribe_Values.Look(ref prestige, "prestige", 0);
+            Scribe_Values.Look(ref salience, "salience", 0);
+            Scribe_Values.Look(ref provenance, "provenance");
+            Scribe_Values.Look(ref sourceIdentity, "sourceIdentity");
+            Scribe_Values.Look(ref evidenceSignature,
+                "evidenceSignature");
+            Scribe_Values.Look(ref firstRecordedTick,
+                "firstRecordedTick", -1);
+            Scribe_Values.Look(ref lastChangedTick,
+                "lastChangedTick", -1);
+            Scribe_Values.Look(ref weight, "weight", 100);
+        }
+
+        internal CACulturalMeaning Copy()
+        {
+            return new CACulturalMeaning
+            {
+                subjectKey = subjectKey,
+                populationScope = populationScope,
+                approval = approval,
+                normality = normality,
+                prestige = prestige,
+                salience = salience,
+                provenance = provenance,
+                sourceIdentity = sourceIdentity,
+                evidenceSignature = evidenceSignature,
+                firstRecordedTick = firstRecordedTick,
+                lastChangedTick = lastChangedTick,
+                weight = weight
+            };
+        }
+
+        internal CACulturalMeaningState ToState()
+        {
+            return new CACulturalMeaningState
+            {
+                SubjectKey = subjectKey,
+                PopulationScope = populationScope,
+                Approval = approval,
+                Normality = normality,
+                Prestige = prestige,
+                Salience = salience,
+                Provenance = provenance,
+                SourceIdentity = sourceIdentity,
+                EvidenceSignature = evidenceSignature,
+                FirstRecordedTick = firstRecordedTick,
+                LastChangedTick = lastChangedTick,
+                Weight = weight
+            };
+        }
+
+        internal static CACulturalMeaning FromState(
+            CACulturalMeaningState value)
+        {
+            return value == null ? null : new CACulturalMeaning
+            {
+                subjectKey = value.SubjectKey,
+                populationScope = value.PopulationScope,
+                approval = value.Approval,
+                normality = value.Normality,
+                prestige = value.Prestige,
+                salience = value.Salience,
+                provenance = value.Provenance,
+                sourceIdentity = value.SourceIdentity,
+                evidenceSignature = value.EvidenceSignature,
+                firstRecordedTick = value.FirstRecordedTick,
+                lastChangedTick = value.LastChangedTick,
+                weight = value.Weight
+            };
+        }
+    }
+
     public sealed class CACulturePractice : IExposable
     {
-        public string key;
+        public string subjectKey;
         public string summary;
         public int strength;
         public int firstRecordedTick = -1;
@@ -58,7 +154,7 @@ namespace ColonistAwareness
 
         public void ExposeData()
         {
-            Scribe_Values.Look(ref key, "key");
+            Scribe_Values.Look(ref subjectKey, "subjectKey");
             Scribe_Values.Look(ref summary, "summary");
             Scribe_Values.Look(ref strength, "strength", 0);
             Scribe_Values.Look(ref firstRecordedTick,
@@ -74,7 +170,7 @@ namespace ColonistAwareness
         {
             return new CACulturePractice
             {
-                key = key,
+                subjectKey = subjectKey,
                 summary = summary,
                 strength = strength,
                 firstRecordedTick = firstRecordedTick,
@@ -185,7 +281,10 @@ namespace ColonistAwareness
         public string sourceSignature;
         public string predecessorCultureSignature;
         public string evidenceSignature;
-        public string changedDomains;
+        public string changedSubjectKeys;
+        public string changedDimensions;
+        public string populationScope;
+        public string successorCultureSignature;
 
         public void ExposeData()
         {
@@ -198,7 +297,13 @@ namespace ColonistAwareness
                 "predecessorCultureSignature");
             Scribe_Values.Look(ref evidenceSignature,
                 "evidenceSignature");
-            Scribe_Values.Look(ref changedDomains, "changedDomains");
+            Scribe_Values.Look(ref changedSubjectKeys,
+                "changedSubjectKeys");
+            Scribe_Values.Look(ref changedDimensions,
+                "changedDimensions");
+            Scribe_Values.Look(ref populationScope, "populationScope");
+            Scribe_Values.Look(ref successorCultureSignature,
+                "successorCultureSignature");
         }
 
         internal CACultureTransition Copy()
@@ -213,7 +318,10 @@ namespace ColonistAwareness
                 predecessorCultureSignature =
                     predecessorCultureSignature,
                 evidenceSignature = evidenceSignature,
-                changedDomains = changedDomains
+                changedSubjectKeys = changedSubjectKeys,
+                changedDimensions = changedDimensions,
+                populationScope = populationScope,
+                successorCultureSignature = successorCultureSignature
             };
         }
     }
@@ -225,12 +333,9 @@ namespace ColonistAwareness
     // historical transition boundaries.
     public sealed class CACulture : IExposable
     {
-        public const int CurrentSchemaVersion = 5;
+        public const int CurrentSchemaVersion = 8;
         public const int NameField = 1;
         public const int SourceCultureField = 2;
-        // Schema-2 recipe bits remain constants only so migration can discard
-        // them without confusing their old authorship with active fields.
-        private const int LegacyPracticeFields = 8 | 16 | 32 | 64;
         public int schemaVersion = CurrentSchemaVersion;
         public string id;
         public string name;
@@ -249,27 +354,20 @@ namespace ColonistAwareness
         public string lastTransitionCause;
         public List<CACultureConstituent> constituents =
             new List<CACultureConstituent>();
+        public List<CACulturalMeaning> inheritedMeanings =
+            new List<CACulturalMeaning>();
+        public List<CACulturalMeaning> localMeanings =
+            new List<CACulturalMeaning>();
         public List<CACultureTransition> transitions =
             new List<CACultureTransition>();
+        public List<CACulturePractice> inheritedPractices =
+            new List<CACulturePractice>();
         public List<CACulturePractice> practices =
             new List<CACulturePractice>();
         public List<CACultureObservation> observations =
             new List<CACultureObservation>();
         public CACultureEvidenceSnapshot lastEvidence;
-        public string migrationEvidence;
-        // Schema-2 migration inputs. They are read, cleared in Migrate, and
-        // never consulted by generation, validation, presentation, or runtime.
-        private string gatheringKey;
-        private string hospitalityKey;
-        private string mealsKey;
-        private string remembranceKey;
-        // Pre-B7 visual-source profiles were serialized as Culture presets.
-        // Load that key only so migration can retain the identity/visual source
-        // and discard the obsolete category boundary.
-        internal string legacyPresetName;
-        public string profileKey;
         public int authoredMask;
-        public int presetMask;
 
         public void ExposeData()
         {
@@ -293,25 +391,22 @@ namespace ColonistAwareness
                 "lastTransitionCause");
             Scribe_Collections.Look(ref constituents, "constituents",
                 LookMode.Deep);
+            Scribe_Collections.Look(ref inheritedMeanings,
+                "inheritedMeanings", LookMode.Deep);
+            Scribe_Collections.Look(ref localMeanings,
+                "localMeanings", LookMode.Deep);
             Scribe_Collections.Look(ref transitions, "transitions",
                 LookMode.Deep);
+            Scribe_Collections.Look(ref inheritedPractices,
+                "inheritedPractices", LookMode.Deep);
             Scribe_Collections.Look(ref practices, "practices",
                 LookMode.Deep);
             Scribe_Collections.Look(ref observations, "observations",
                 LookMode.Deep);
             Scribe_Deep.Look(ref lastEvidence, "lastEvidence");
-            Scribe_Values.Look(ref migrationEvidence,
-                "migrationEvidence");
-            Scribe_Values.Look(ref gatheringKey, "gatheringKey");
-            Scribe_Values.Look(ref hospitalityKey, "hospitalityKey");
-            Scribe_Values.Look(ref mealsKey, "mealsKey");
-            Scribe_Values.Look(ref remembranceKey, "remembranceKey");
-            Scribe_Values.Look(ref legacyPresetName, "presetName");
-            Scribe_Values.Look(ref profileKey, "profileKey");
             Scribe_Values.Look(ref authoredMask, "authoredMask", 0);
-            Scribe_Values.Look(ref presetMask, "presetMask", 0);
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-                CACultureModel.Migrate(this);
+            // A top-level B8 epoch owns whether this object is loadable. The
+            // nested object never upgrades an earlier development schema.
         }
 
         internal CACulture Copy()
@@ -335,8 +430,14 @@ namespace ColonistAwareness
                         ?? new List<CACultureConstituent>())
                     .Where(item => item != null).Select(item => item.Copy())
                     .ToList(),
+                inheritedMeanings = CopyMeanings(inheritedMeanings),
+                localMeanings = CopyMeanings(localMeanings),
                 transitions = (transitions
                         ?? new List<CACultureTransition>())
+                    .Where(item => item != null).Select(item => item.Copy())
+                    .ToList(),
+                inheritedPractices = (inheritedPractices
+                        ?? new List<CACulturePractice>())
                     .Where(item => item != null).Select(item => item.Copy())
                     .ToList(),
                 practices = (practices ?? new List<CACulturePractice>())
@@ -347,10 +448,7 @@ namespace ColonistAwareness
                     .Where(item => item != null).Select(item => item.Copy())
                     .ToList(),
                 lastEvidence = lastEvidence?.Copy(),
-                migrationEvidence = migrationEvidence,
-                profileKey = profileKey,
-                authoredMask = authoredMask & (NameField | SourceCultureField),
-                presetMask = 0
+                authoredMask = authoredMask & (NameField | SourceCultureField)
             };
         }
 
@@ -374,8 +472,14 @@ namespace ColonistAwareness
                     ?? new List<CACultureConstituent>())
                 .Where(item => item != null).Select(item => item.Copy())
                 .ToList();
+            inheritedMeanings = CopyMeanings(source.inheritedMeanings);
+            localMeanings = CopyMeanings(source.localMeanings);
             transitions = (source.transitions
                     ?? new List<CACultureTransition>())
+                .Where(item => item != null).Select(item => item.Copy())
+                .ToList();
+            inheritedPractices = (source.inheritedPractices
+                    ?? new List<CACulturePractice>())
                 .Where(item => item != null).Select(item => item.Copy())
                 .ToList();
             practices = (source.practices
@@ -387,16 +491,12 @@ namespace ColonistAwareness
                 .Where(item => item != null).Select(item => item.Copy())
                 .ToList();
             lastEvidence = source.lastEvidence?.Copy();
-            migrationEvidence = source.migrationEvidence;
-            legacyPresetName = null;
-            profileKey = source.profileKey;
             authoredMask = source.authoredMask & (NameField | SourceCultureField);
-            presetMask = 0;
         }
 
-        // Reusable profiles carry inherited authorship only. World identity,
-        // locality, constituents, evidence, practices, and history belong to
-        // the target world and are deliberately excluded.
+        // Reusable profiles carry inherited meaning and practice only. World
+        // identity, locality, constituents, observations, and transitions
+        // belong to the target world and are deliberately excluded.
         internal CACulture CopyAsInheritedTemplate()
         {
             return new CACulture
@@ -405,9 +505,13 @@ namespace ColonistAwareness
                 name = name,
                 sourceCultureDefName = sourceCultureDefName,
                 maturity = CACultureMaturity.Inherited,
+                inheritedMeanings = CopyMeanings(inheritedMeanings),
+                inheritedPractices = (inheritedPractices
+                        ?? new List<CACulturePractice>())
+                    .Where(item => item != null).Select(item => item.Copy())
+                    .ToList(),
                 authoredMask = authoredMask & (NameField
-                    | SourceCultureField),
-                presetMask = 0
+                    | SourceCultureField)
             };
         }
 
@@ -416,10 +520,13 @@ namespace ColonistAwareness
             if (template == null) return;
             name = template.name;
             sourceCultureDefName = template.sourceCultureDefName;
+            inheritedMeanings = CopyMeanings(template.inheritedMeanings);
+            inheritedPractices = (template.inheritedPractices
+                    ?? new List<CACulturePractice>())
+                .Where(item => item != null).Select(item => item.Copy())
+                .ToList();
             authoredMask = template.authoredMask & (NameField
                 | SourceCultureField);
-            presetMask = 0;
-            legacyPresetName = null;
         }
 
         internal bool Authored(int field)
@@ -431,9 +538,6 @@ namespace ColonistAwareness
         {
             Set(field, value);
             authoredMask |= field;
-            presetMask &= ~field;
-            profileKey = null;
-            legacyPresetName = null;
         }
 
         internal void Set(int field, string value)
@@ -450,9 +554,6 @@ namespace ColonistAwareness
         {
             Set(field, null);
             authoredMask &= ~field;
-            presetMask &= ~field;
-            legacyPresetName = null;
-            profileKey = null;
         }
 
         internal string Value(int field)
@@ -465,14 +566,35 @@ namespace ColonistAwareness
             }
         }
 
-        internal void ClearLegacyPractices()
+        private static List<CACulturalMeaning> CopyMeanings(
+            IEnumerable<CACulturalMeaning> source)
         {
-            gatheringKey = null;
-            hospitalityKey = null;
-            mealsKey = null;
-            remembranceKey = null;
-            authoredMask &= ~LegacyPracticeFields;
-            presetMask = 0;
+            return (source ?? Enumerable.Empty<CACulturalMeaning>())
+                .Where(item => item != null).Select(item => item.Copy())
+                .ToList();
+        }
+    }
+
+    public sealed class CAPoliticalDerivationReceipt : IExposable
+    {
+        public string axisKey;
+        public string selectedOptionKey;
+        public string scores;
+        public string evidence;
+        public bool tieBroken;
+
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref axisKey, "axisKey");
+            Scribe_Values.Look(ref selectedOptionKey, "selectedOptionKey");
+            Scribe_Values.Look(ref scores, "scores");
+            Scribe_Values.Look(ref evidence, "evidence");
+            Scribe_Values.Look(ref tieBroken, "tieBroken", false);
+        }
+
+        internal CAPoliticalDerivationReceipt Copy()
+        {
+            return (CAPoliticalDerivationReceipt)MemberwiseClone();
         }
     }
 
@@ -480,22 +602,24 @@ namespace ColonistAwareness
     // disagreement is readable without collapsing the two persisted states.
     public sealed class CAPoliticalBeliefs : IExposable
     {
-        public const int CurrentSchemaVersion = 2;
+        public const int CurrentSchemaVersion = 8;
         public int schemaVersion = CurrentSchemaVersion;
         public string id;
-        public string presetName;
-        public string profileKey;
         public List<CAAxisEntry> positions = new List<CAAxisEntry>();
+        public List<CAPoliticalDerivationReceipt> derivationReceipts =
+            new List<CAPoliticalDerivationReceipt>();
         public void ExposeData()
         {
             Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
             Scribe_Values.Look(ref id, "id");
-            Scribe_Values.Look(ref presetName, "presetName");
-            Scribe_Values.Look(ref profileKey, "profileKey");
             Scribe_Collections.Look(ref positions, "positions", LookMode.Deep);
+            Scribe_Collections.Look(ref derivationReceipts,
+                "derivationReceipts", LookMode.Deep);
             if (positions == null) positions = new List<CAAxisEntry>();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-                CAPoliticalBeliefsModel.Migrate(this);
+            if (derivationReceipts == null)
+                derivationReceipts = new List<CAPoliticalDerivationReceipt>();
+            // A top-level B8 epoch owns whether this object is loadable. The
+            // nested object never upgrades an earlier development schema.
         }
 
         internal CAPoliticalBeliefs Copy()
@@ -504,9 +628,9 @@ namespace ColonistAwareness
             {
                 schemaVersion = schemaVersion,
                 id = id,
-                presetName = presetName,
-                profileKey = profileKey,
-                positions = CAFactionStartingState.CopyAxes(positions)
+                positions = CAFactionStartingState.CopyAxes(positions),
+                derivationReceipts = derivationReceipts.Where(item =>
+                    item != null).Select(item => item.Copy()).ToList()
             };
         }
 
@@ -515,53 +639,54 @@ namespace ColonistAwareness
             if (source == null) return;
             schemaVersion = CurrentSchemaVersion;
             id = source.id;
-            presetName = source.presetName;
-            profileKey = source.profileKey;
             positions = CAFactionStartingState.CopyAxes(source.positions);
+            derivationReceipts = (source.derivationReceipts
+                    ?? new List<CAPoliticalDerivationReceipt>())
+                .Where(item => item != null).Select(item => item.Copy())
+                .ToList();
         }
     }
 
     internal static class CACultureModel
     {
-        internal static string CompatibilityFailure(CACulture culture)
+        internal static string SubstantiveFailure(CACulture culture)
         {
             if (culture == null) return "No culture is recorded.";
-            // Missing visual assets only disable optional styling.
+            Normalize(culture);
+            if (culture.inheritedMeanings.Count == 0
+                && culture.localMeanings.Count == 0
+                && culture.inheritedPractices.Count == 0
+                && culture.practices.Count == 0)
+                return "Compose Culture with at least one social meaning or "
+                    + "inherited practice.";
             return null;
         }
 
-        internal static void Migrate(CACulture culture)
+        internal static void Normalize(CACulture culture)
         {
             if (culture == null) return;
-            int priorSchema = culture.schemaVersion;
-            CACultureLegacyMigrationResult migrated =
-                CACultureLegacyMigrationKernel.Migrate(
-                    new CACultureLegacyMigrationInput
-                    {
-                        SchemaVersion = culture.schemaVersion,
-                        PresetName = culture.legacyPresetName,
-                        Name = culture.name,
-                        SourceCultureDefName = culture.sourceCultureDefName,
-                        NameAuthored = culture.Authored(CACulture.NameField)
-                    });
-            culture.schemaVersion = migrated.SchemaVersion;
-            culture.legacyPresetName = migrated.PresetName;
-            culture.name = migrated.Name;
-            culture.sourceCultureDefName = migrated.SourceCultureDefName;
-            if (migrated.ClearLegacyPractices)
-                culture.ClearLegacyPractices();
             if (culture.constituents == null)
                 culture.constituents = new List<CACultureConstituent>();
+            if (culture.inheritedMeanings == null)
+                culture.inheritedMeanings = new List<CACulturalMeaning>();
+            if (culture.localMeanings == null)
+                culture.localMeanings = new List<CACulturalMeaning>();
             if (culture.transitions == null)
                 culture.transitions = new List<CACultureTransition>();
+            if (culture.inheritedPractices == null)
+                culture.inheritedPractices = new List<CACulturePractice>();
             if (culture.practices == null)
                 culture.practices = new List<CACulturePractice>();
             if (culture.observations == null)
                 culture.observations = new List<CACultureObservation>();
             culture.constituents.RemoveAll(item => item == null);
+            NormalizeMeanings(culture.inheritedMeanings);
+            NormalizeMeanings(culture.localMeanings);
             culture.transitions.RemoveAll(item => item == null);
+            culture.inheritedPractices.RemoveAll(item => item == null
+                || !CASocialSubjectRegistry.ValidKey(item.subjectKey));
             culture.practices.RemoveAll(item => item == null
-                || item.key.NullOrEmpty());
+                || !CASocialSubjectRegistry.ValidKey(item.subjectKey));
             culture.observations.RemoveAll(item => item == null
                 || item.key.NullOrEmpty() || item.sourceOwner.NullOrEmpty()
                 || item.sourceDomain.NullOrEmpty());
@@ -569,35 +694,35 @@ namespace ColonistAwareness
                 culture.transitions.Count == 0 ? 0
                     : culture.transitions.Max(item => item.sequence));
             culture.schemaVersion = CACulture.CurrentSchemaVersion;
-            if (priorSchema > 0 && priorSchema < 5
-                && culture.migrationEvidence.NullOrEmpty())
-                culture.migrationEvidence = "B5/B6 cultural identity and "
-                    + "visual inheritance preserved. No longitudinal "
-                    + "practice or local history was invented during B7 "
-                    + "migration.";
+        }
+
+        private static void NormalizeMeanings(List<CACulturalMeaning> values)
+        {
+            values.RemoveAll(item => item == null
+                || !CASocialSubjectRegistry.ValidKey(item.subjectKey));
+            foreach (CACulturalMeaning item in values)
+            {
+                item.approval = Mathf.Clamp(item.approval, -100, 100);
+                item.normality = Mathf.Clamp(item.normality, 0, 100);
+                item.prestige = Mathf.Clamp(item.prestige, -100, 100);
+                item.salience = Mathf.Clamp(item.salience, 0, 100);
+                item.weight = Mathf.Clamp(item.weight, 1, 100);
+            }
         }
 
         internal static void EnsureGenerated(CACulture culture,
             string seed, CultureDef fallback)
         {
             if (culture == null) return;
-            Migrate(culture);
+            Normalize(culture);
             int hash = GenText.StableStringHash(seed ?? "ca-culture");
             if (culture.id.NullOrEmpty())
                 culture.id = "culture:" + Math.Abs((long)hash);
-            if (culture.sourceCultureDefName.NullOrEmpty()
-                && !culture.Authored(CACulture.SourceCultureField)
-                && fallback != null)
-                culture.sourceCultureDefName = fallback.defName;
-            if (culture.name.NullOrEmpty())
-                culture.name = fallback != null
-                    ? fallback.LabelCap + " culture"
-                    : "Inherited culture";
             if (culture.constituents.Count == 0)
                 culture.constituents.Add(new CACultureConstituent
                 {
                     cultureId = culture.id,
-                    label = culture.name,
+                    label = culture.name ?? "Unnamed culture",
                     share = 100,
                     inherited = true
                 });
@@ -623,22 +748,81 @@ namespace ColonistAwareness
             string change = culture.transitions.Count == 0 ? ""
                 : " · " + culture.transitions.Count + " recorded change"
                     + (culture.transitions.Count == 1 ? "" : "s");
-            string practice = culture.practices.Count == 0 ? ""
-                : " · " + culture.practices.Count + " retained practice"
-                    + (culture.practices.Count == 1 ? "" : "s");
+            int meaningCount = culture.inheritedMeanings.Count
+                + culture.localMeanings.Count;
+            int practiceCount = culture.inheritedPractices.Count
+                + culture.practices.Count;
+            string practice = practiceCount == 0 ? ""
+                : " · " + practiceCount + " practice"
+                    + (practiceCount == 1 ? "" : "s");
+            string salient = string.Join(", ", culture.inheritedMeanings
+                .Concat(culture.localMeanings)
+                .Where(item => item != null)
+                .OrderByDescending(item => item.salience)
+                .ThenBy(item => item.subjectKey)
+                .Take(3)
+                .Select(item => CASocialSubjectRegistry.Find(item.subjectKey)
+                    ?.Label ?? item.subjectKey).ToArray());
+            string top = salient.NullOrEmpty() ? ""
+                : " · most salient: " + salient;
             return identity + " · " + continuity + plurality + change
-                + practice
-                + " · visual tradition: " + visual;
+                + " · " + meaningCount + " social meaning"
+                    + (meaningCount == 1 ? "" : "s") + practice
+                + top + " · visual tradition: " + visual;
         }
 
-        internal static Texture2D Icon(CACulture culture)
+        internal static CACulturalMeaningResolution Resolve(CACulture culture,
+            string subjectKey, string populationScope = null)
         {
-            CultureDef native = NativeDef(culture);
-            if (native != null && !native.iconPath.NullOrEmpty())
-                return native.Icon;
-            return ContentFinder<Texture2D>.Get(
-                    "Rimshare/WorldMapIcons/feather", false)
-                ?? BaseContent.BadTex;
+            if (culture == null)
+                return CACulturalMeaningResolver.Resolve(null, subjectKey,
+                    populationScope);
+            Normalize(culture);
+            IEnumerable<CACulturalMeaningState> states = culture.inheritedMeanings
+                .Concat(culture.localMeanings).Select(item => item.ToState());
+            // A named constituent's own interpretation applies directly to
+            // that constituent. An unscoped settlement summary instead
+            // weights constituent records by their realized population share.
+            if (string.IsNullOrWhiteSpace(populationScope))
+            {
+                Dictionary<string, int> shares = culture.constituents
+                    .Where(item => item != null
+                        && !item.cultureId.NullOrEmpty())
+                    .GroupBy(item => item.cultureId, StringComparer.Ordinal)
+                    .ToDictionary(group => group.Key,
+                        group => Mathf.Clamp(group.Sum(item => item.share),
+                            0, 100), StringComparer.Ordinal);
+                states = CACulturalMeaningResolver.ApplyConstituentShares(
+                    states, shares);
+            }
+            return CACulturalMeaningResolver.Resolve(states, subjectKey,
+                populationScope);
+        }
+
+        // A sociological signature deliberately excludes the optional visual
+        // tradition. Visual selection has its own signature so changing art
+        // inheritance cannot masquerade as social change.
+        internal static string SociologicalSignature(CACulture culture)
+        {
+            if (culture == null) return "unrecorded";
+            Normalize(culture);
+            string meanings = CACulturalMeaningResolver.Fingerprint(
+                culture.inheritedMeanings.Concat(culture.localMeanings)
+                    .Select(item => item.ToState()));
+            string practices = string.Join("|", culture.inheritedPractices
+                .Concat(culture.practices).Where(item => item != null)
+                .OrderBy(item => item.subjectKey)
+                .Select(item => item.subjectKey + ":" + item.strength + ":"
+                    + (item.sourceSignature ?? "authored")));
+            return CASocialPatternKernel.StableHash((culture.id ?? "") + "|"
+                + (culture.parentId ?? "") + "|" + (culture.localityKey ?? "")
+                + "|" + meanings + "|" + practices);
+        }
+
+        internal static string VisualSignature(CACulture culture)
+        {
+            return CASocialPatternKernel.StableHash(
+                culture?.sourceCultureDefName ?? "none");
         }
 
         internal static CultureDef NativeDef(CACulture culture)
@@ -756,7 +940,7 @@ namespace ColonistAwareness
                 return;
             }
 
-            CACultureModel.Migrate(settlement.localCulture);
+            CACultureModel.Normalize(settlement.localCulture);
             CACulture existing = settlement.localCulture;
             if (existing.temporalBasis.NullOrEmpty())
                 existing.temporalBasis = IsEstablished(settlement)
@@ -792,7 +976,7 @@ namespace ColonistAwareness
             string evidence = null)
         {
             if (culture == null) return;
-            CACultureModel.Migrate(culture);
+            CACultureModel.Normalize(culture);
             if (culture.maturity == CACultureMaturity.Established) return;
             string predecessor = StateSignature(culture);
             culture.maturity = CACultureMaturity.Established;
@@ -807,8 +991,10 @@ namespace ColonistAwareness
         internal static int PracticeStrength(CACulture culture, string key)
         {
             if (culture?.practices == null || key.NullOrEmpty()) return 0;
-            return culture.practices.Where(item => item != null
-                    && item.key == key)
+            return culture.practices.Concat(culture.inheritedPractices
+                    ?? new List<CACulturePractice>())
+                .Where(item => item != null
+                    && item.subjectKey == key)
                 .Select(item => Mathf.Clamp(item.strength, 0, 100))
                 .DefaultIfEmpty(0).Max();
         }
@@ -817,8 +1003,10 @@ namespace ColonistAwareness
             string prefix)
         {
             if (culture?.practices == null || prefix.NullOrEmpty()) return 0;
-            return culture.practices.Where(item => item != null
-                    && item.key?.StartsWith(prefix,
+            return culture.practices.Concat(culture.inheritedPractices
+                    ?? new List<CACulturePractice>())
+                .Where(item => item != null
+                    && item.subjectKey?.StartsWith(prefix,
                         StringComparison.Ordinal) == true)
                 .Select(item => Mathf.Clamp(item.strength, 0, 100))
                 .DefaultIfEmpty(0).Max();
@@ -830,7 +1018,7 @@ namespace ColonistAwareness
             string scope, int tick)
         {
             if (culture == null || current == null) return false;
-            CACultureModel.Migrate(culture);
+            CACultureModel.Normalize(culture);
             CACulturalHistoryEvidence previous = Evidence(
                 culture.lastEvidence, null);
             List<CACulturalPracticeEvidence> raw =
@@ -848,7 +1036,7 @@ namespace ColonistAwareness
                 .Where(item => item != null).Select(item =>
                     new CACulturalPracticeState
                     {
-                        Key = item.key,
+                        Key = item.subjectKey,
                         Summary = item.summary,
                         Strength = item.strength,
                         SourceSignature = item.sourceSignature
@@ -861,7 +1049,7 @@ namespace ColonistAwareness
                 item.Key), StringComparer.Ordinal);
             foreach (CACulturePractice practice in culture.practices
                 .Where(item => item != null
-                    && qualifiedKeys.Contains(item.key)))
+                    && qualifiedKeys.Contains(item.subjectKey)))
                 practice.lastObservedTick = tick;
             if (culture.lastEvidence == null)
             {
@@ -874,7 +1062,7 @@ namespace ColonistAwareness
             {
                 var priorByKey = culture.practices
                     .Where(item => item != null)
-                    .ToDictionary(item => item.key, item => item,
+                    .ToDictionary(item => item.subjectKey, item => item,
                         StringComparer.Ordinal);
                 culture.practices = evaluated.Practices.Select(item =>
                 {
@@ -882,7 +1070,7 @@ namespace ColonistAwareness
                     priorByKey.TryGetValue(item.Key, out old);
                     return new CACulturePractice
                     {
-                        key = item.Key,
+                        subjectKey = item.Key,
                         summary = item.Summary,
                         strength = item.Strength,
                         firstRecordedTick = old?.firstRecordedTick ?? tick,
@@ -910,6 +1098,40 @@ namespace ColonistAwareness
             return evaluated.Changed || established;
         }
 
+        internal static bool EvaluateMeaningTransition(CACulture culture,
+            IEnumerable<CASocialGroupPattern> patterns, string scope, int tick)
+        {
+            if (culture == null) return false;
+            CACultureModel.Normalize(culture);
+            List<CACulturalMeaningState> prior = (culture.localMeanings
+                    ?? new List<CACulturalMeaning>())
+                .Where(item => item != null).Select(item => item.ToState())
+                .ToList();
+            string predecessor = CACultureModel.SociologicalSignature(culture);
+            CACulturalMeaningTransitionResult evaluated =
+                CACulturalMeaningTransitionKernel.Evaluate(prior, patterns,
+                    tick);
+            if (!evaluated.Changed) return false;
+            culture.localMeanings = evaluated.Meanings
+                .Where(item => item != null)
+                .Select(CACulturalMeaning.FromState).ToList();
+            string successor = CACultureModel.SociologicalSignature(culture);
+            string subjects = string.Join(", ", evaluated.ChangedSubjectKeys);
+            string dimensions = string.Join(", ",
+                evaluated.ChangedDimensions);
+            string populationScopes = string.Join(", ", evaluated.Meanings
+                .Where(item => item != null
+                    && evaluated.ChangedSubjectKeys.Contains(item.SubjectKey))
+                .Select(item => item.PopulationScope ?? "all")
+                .Distinct().OrderBy(value => value));
+            Record(culture, evaluated.Cause
+                    ?? "sustained social interpretation",
+                "Recorded change in " + subjects + ": " + dimensions + ".",
+                successor, tick, predecessor, evaluated.EvidenceSignature,
+                dimensions, subjects, populationScopes);
+            return true;
+        }
+
         private static bool TryEstablishLocalContinuity(CACulture culture,
             int tick, string evidenceSignature)
         {
@@ -921,7 +1143,7 @@ namespace ColonistAwareness
             var practiceKeys = new HashSet<string>((culture.practices
                     ?? new List<CACulturePractice>())
                 .Where(item => item != null && item.strength > 0)
-                .Select(item => item.key), StringComparer.Ordinal);
+                .Select(item => item.subjectKey), StringComparer.Ordinal);
             bool sustained = (culture.observations
                     ?? new List<CACultureObservation>())
                 .Where(item => item != null
@@ -979,7 +1201,7 @@ namespace ColonistAwareness
                 {
                     observation = new CACultureObservation
                     {
-                        key = evidence.Key,
+                            key = evidence.Key,
                         summary = evidence.Summary,
                         sourceOwner = evidence.SourceOwner,
                         sourceDomain = evidence.SourceDomain,
@@ -1055,41 +1277,11 @@ namespace ColonistAwareness
         internal static string StateSignature(CACulture culture)
         {
             if (culture == null) return "unrecorded";
-            return new CACulturalPersistedStateInput
-            {
-                Identity = culture.id,
-                ParentIdentity = culture.parentId,
-                Locality = culture.localityKey,
-                Maturity = culture.maturity.ToString(),
-                Revision = culture.revision,
-                CompositionSignature = culture.compositionSignature,
-                VisualTradition = culture.sourceCultureDefName,
-                Practices = (culture.practices
-                        ?? new List<CACulturePractice>())
-                    .Where(item => item != null)
-                    .Select(item => new CACulturalPracticeState
-                    {
-                        Key = item.key,
-                        Summary = item.summary,
-                        Strength = item.strength,
-                        SourceSignature = item.sourceSignature
-                    }).ToList(),
-                Transitions = (culture.transitions
-                        ?? new List<CACultureTransition>())
-                    .Where(item => item != null)
-                    .Select(item => new CACulturalTransitionState
-                    {
-                        Sequence = item.sequence,
-                        Tick = item.tick,
-                        Cause = item.cause,
-                        Summary = item.summary,
-                        SuccessorSignature = item.sourceSignature,
-                        PredecessorCultureSignature =
-                            item.predecessorCultureSignature,
-                        EvidenceSignature = item.evidenceSignature,
-                        ChangedDomains = item.changedDomains
-                    }).ToList()
-            }.HistoricalSignature();
+            return CASocialPatternKernel.StableHash(
+                CACultureModel.SociologicalSignature(culture)
+                + "|visual:" + CACultureModel.VisualSignature(culture)
+                + "|maturity:" + culture.maturity
+                + "|revision:" + culture.revision);
         }
 
         internal static string PracticeSummary(CACulture culture)
@@ -1098,7 +1290,7 @@ namespace ColonistAwareness
                     ?? new List<CACulturePractice>())
                 .Where(item => item != null && item.strength > 0)
                 .OrderByDescending(item => item.strength)
-                .ThenBy(item => item.key).ToArray();
+                .ThenBy(item => item.subjectKey).ToArray();
             return practices.Length == 0
                 ? "No lived practice has crossed a historical transition."
                 : string.Join("\n", practices.Select(item =>
@@ -1134,7 +1326,9 @@ namespace ColonistAwareness
         private static void Record(CACulture culture, string cause,
             string summary, string signature, int tick,
             string predecessor = null, string evidence = null,
-            string changedDomains = null)
+            string changedDimensions = null,
+            string changedSubjectKeys = null,
+            string populationScope = null)
         {
             if (culture.transitions == null)
                 culture.transitions = new List<CACultureTransition>();
@@ -1149,7 +1343,10 @@ namespace ColonistAwareness
                 sourceSignature = signature,
                 predecessorCultureSignature = predecessor,
                 evidenceSignature = evidence,
-                changedDomains = changedDomains
+                changedDimensions = changedDimensions,
+                changedSubjectKeys = changedSubjectKeys,
+                populationScope = populationScope,
+                successorCultureSignature = signature
             });
             culture.revision = sequence;
             culture.lastTransitionTick = tick;
@@ -1280,229 +1477,143 @@ namespace ColonistAwareness
 
     internal static class CAPoliticalBeliefsModel
     {
-        internal static void Migrate(CAPoliticalBeliefs beliefs)
+        internal static void Normalize(CAPoliticalBeliefs beliefs)
         {
             if (beliefs == null) return;
-            CAFactionAxes.PoliticalPreset preset =
-                CAFactionAxes.Preset(beliefs.presetName);
-            if (preset != null) beliefs.presetName = preset.Key;
+            if (beliefs.positions == null)
+                beliefs.positions = new List<CAAxisEntry>();
+            if (beliefs.derivationReceipts == null)
+                beliefs.derivationReceipts =
+                    new List<CAPoliticalDerivationReceipt>();
+            beliefs.positions.RemoveAll(entry => entry == null
+                || CAFactionAxes.AxisDef(entry.axisKey) == null
+                || CAFactionAxes.AxisDef(entry.axisKey).Options.All(option =>
+                    option.Key != entry.optionKey));
             beliefs.schemaVersion = CAPoliticalBeliefs.CurrentSchemaVersion;
         }
 
-        internal static void Ensure(CAPoliticalBeliefs beliefs,
-            string seed)
+        internal static void Ensure(CAPoliticalBeliefs beliefs, string seed)
         {
             if (beliefs == null) return;
-            Migrate(beliefs);
+            Normalize(beliefs);
             if (beliefs.id.NullOrEmpty())
                 beliefs.id = "politics:" + Math.Abs((long)
                     GenText.StableStringHash(seed ?? "ca-politics"));
         }
 
-        internal static int GenerateUnset(CAPoliticalBeliefs beliefs,
-            string seed)
+        internal static int DeriveUnset(CAPoliticalBeliefs beliefs,
+            string seed, CAPoliticalDerivationContext context = null)
         {
             if (beliefs == null) return 0;
-            int hash = GenText.StableStringHash(seed ?? beliefs.id
-                ?? "ca-politics");
+            CAPoliticalDerivationResult result =
+                CAPoliticalDerivationKernel.Derive(
+                    seed ?? beliefs.id ?? "ca-politics", context,
+                    CAFactionAxes.Axes.Select(def =>
+                        new CAPoliticalAxisContract
+                        {
+                            AxisKey = def.Key,
+                            OptionKeys = def.Options.Select(option =>
+                                option.Key).ToList()
+                        }));
             int filled = 0;
-            for (int i = 0; i < CAFactionAxes.Axes.Length; i++)
+            foreach (CAPoliticalAxisDerivation axis in result.Axes)
             {
-                CAAxisDef def = CAFactionAxes.Axes[i];
-                if (CAFactionAxes.StateOf(beliefs.positions, def.Key)
+                if (CAFactionAxes.StateOf(beliefs.positions, axis.AxisKey)
                     != CAAxisSource.Unset) continue;
-                int index = (int)(Math.Abs((long)Gen.HashCombineInt(hash,
-                    101 + i * 37)) % def.Options.Length);
-                CAFactionAxes.Set(beliefs.positions, def.Key,
-                    def.Options[index].Key, CAAxisSource.Generated);
+                if (axis.SelectedOptionKey.NullOrEmpty()
+                    || axis.Evidence.Count == 0) continue;
+                CAFactionAxes.Set(beliefs.positions, axis.AxisKey,
+                    axis.SelectedOptionKey, CAAxisSource.Generated);
+                beliefs.derivationReceipts.RemoveAll(item => item != null
+                    && item.axisKey == axis.AxisKey);
+                beliefs.derivationReceipts.Add(
+                    new CAPoliticalDerivationReceipt
+                    {
+                        axisKey = axis.AxisKey,
+                        selectedOptionKey = axis.SelectedOptionKey,
+                        scores = string.Join(",", axis.Scores.OrderBy(pair =>
+                            pair.Key).Select(pair => pair.Key + "="
+                                + pair.Value)),
+                        evidence = string.Join(" | ", axis.Evidence),
+                        tieBroken = axis.TieBroken
+                    });
                 filled++;
             }
             return filled;
         }
 
-        internal static void ApplyPreset(CAPoliticalBeliefs beliefs,
-            CAFactionAxes.PoliticalPreset preset)
+        internal static void ApplyProfile(CAPoliticalBeliefs beliefs,
+            CAFactionAxes.PoliticalProfile profile)
         {
-            if (beliefs == null || preset == null) return;
-            foreach (CAAxisEntry entry in beliefs.positions)
-                if (entry != null && entry.source
-                    == (byte)CAAxisSource.Preset)
-                    entry.source = (byte)CAAxisSource.Unset;
-            ApplyPresetLayer(beliefs, preset);
-            beliefs.presetName = preset.Key;
-            beliefs.profileKey = null;
-        }
-
-        // Choosing a preset is one explicit authoring transition. It replaces
-        // the prior set, applies the preset hierarchy, and deterministically
-        // fills axes the preset does not name. Both player and established-
-        // faction editors use this contract.
-        internal static void ChoosePreset(CAPoliticalBeliefs beliefs,
-            CAFactionAxes.PoliticalPreset preset, string seed)
-        {
-            if (beliefs == null || preset == null) return;
-            Ensure(beliefs, seed);
+            if (beliefs == null || profile == null) return;
             beliefs.positions.Clear();
-            ApplyPresetLayer(beliefs, preset);
-            beliefs.presetName = preset.Key;
-            beliefs.profileKey = null;
-            GenerateUnset(beliefs, seed + ":preset-fill");
-        }
-
-        internal static bool UsesPreset(CAPoliticalBeliefs beliefs,
-            CAFactionAxes.PoliticalPreset preset)
-        {
-            return beliefs != null && preset != null
-                && CAFactionAxes.Preset(beliefs.presetName)?.Key == preset.Key
-                && PresetStillDescribes(beliefs);
-        }
-
-        private static void ApplyPresetLayer(
-            CAPoliticalBeliefs beliefs,
-            CAFactionAxes.PoliticalPreset preset)
-        {
-            if (preset.Parent != null)
-            {
-                CAFactionAxes.PoliticalPreset parent =
-                    CAFactionAxes.Preset(preset.Parent);
-                if (parent != null) ApplyPresetLayer(beliefs, parent);
-            }
+            beliefs.derivationReceipts.Clear();
             foreach (KeyValuePair<string, string> position in
-                preset.Positions)
-            {
-                if (CAFactionAxes.StateOf(beliefs.positions, position.Key)
-                    == CAAxisSource.Authored) continue;
+                profile.Positions)
                 CAFactionAxes.Set(beliefs.positions, position.Key,
-                    position.Value, CAAxisSource.Preset);
-            }
+                    position.Value, CAAxisSource.Authored);
+        }
+
+        internal static bool UsesProfile(CAPoliticalBeliefs beliefs,
+            CAFactionAxes.PoliticalProfile profile)
+        {
+            return beliefs != null && profile != null
+                && profile.Positions.All(pair => CAFactionAxes.KeyOf(
+                    beliefs.positions, pair.Key) == pair.Value);
         }
 
         internal static void Author(CAPoliticalBeliefs beliefs,
             string axisKey, string optionKey)
         {
+            if (beliefs == null) return;
             CAFactionAxes.Set(beliefs.positions, axisKey, optionKey,
                 CAAxisSource.Authored);
-            beliefs.profileKey = null;
-            beliefs.presetName = null;
         }
 
         internal static void Release(CAPoliticalBeliefs beliefs,
             string axisKey)
         {
-            if (beliefs == null) return;
-            CAFactionAxes.Release(beliefs.positions, axisKey);
-            beliefs.profileKey = null;
-            beliefs.presetName = null;
-        }
-
-        private static bool PresetStillDescribes(
-            CAPoliticalBeliefs beliefs)
-        {
-            if (beliefs == null
-                || beliefs.presetName.NullOrEmpty()) return true;
-            CAFactionAxes.PoliticalPreset preset =
-                CAFactionAxes.Preset(beliefs.presetName);
-            if (preset == null) return false;
-            var expected = new Dictionary<string, string>();
-            CollectPreset(preset, expected);
-            if (!expected.All(pair =>
-                    CAFactionAxes.KeyOf(beliefs.positions, pair.Key)
-                        == pair.Value)) return false;
-            return true;
-        }
-
-        private static void CollectPreset(
-            CAFactionAxes.PoliticalPreset preset,
-            Dictionary<string, string> expected)
-        {
-            if (preset.Parent != null)
-            {
-                CAFactionAxes.PoliticalPreset parent =
-                    CAFactionAxes.Preset(preset.Parent);
-                if (parent != null) CollectPreset(parent, expected);
-            }
-            foreach (KeyValuePair<string, string> pair in preset.Positions)
-                expected[pair.Key] = pair.Value;
+            if (beliefs != null)
+                CAFactionAxes.Release(beliefs.positions, axisKey);
         }
 
         internal static string Summary(CAPoliticalBeliefs beliefs)
         {
             if (beliefs == null) return "Political beliefs not set";
-            string preset = CAAuthoringChoices.PoliticalIdentity(beliefs);
-            string leadership = CAFactionAxes.OptionOf(beliefs.positions,
-                CAFactionAxes.Leadership)?.Label;
-            string ownership = CAFactionAxes.OptionOf(beliefs.positions,
-                CAFactionAxes.Ownership)?.Label;
-            return preset + (leadership == null ? "" : " · " + leadership)
-                + (ownership == null ? "" : " · " + ownership);
-        }
-
-        internal static string DescribePreset(
-            CAFactionAxes.PoliticalPreset preset)
-        {
-            return PresetTraits(preset, 5);
-        }
-
-        internal static string PresetTraits(
-            CAFactionAxes.PoliticalPreset preset, int count)
-        {
-            if (preset == null) return "No preset";
-            var expected = new Dictionary<string, string>();
-            CollectPreset(preset, expected);
-            return string.Join(" · ", CAFactionAxes.Axes
-                .Where(axis => expected.ContainsKey(axis.Key))
-                .Take(Math.Max(1, count))
-                .Select(axis => axis.Options.FirstOrDefault(option =>
-                    option.Key == expected[axis.Key])?.Label
-                    ?? expected[axis.Key])
+            return string.Join(" · ", CAAuthoringChoices.PoliticalGroups
+                .Select(group => group.Label + ": " + string.Join(", ",
+                    group.Axes.Select(axis => CAFactionAxes.OptionOf(
+                        beliefs.positions, axis)?.Label ?? "unset")))
                 .ToArray());
         }
 
-        internal static string PresetDetails(
-            CAFactionAxes.PoliticalPreset preset)
+        internal static string ProfileTraits(
+            CAFactionAxes.PoliticalProfile profile, int count)
         {
-            if (preset == null) return "No political positions recorded.";
-            var expected = new Dictionary<string, string>();
-            CollectPreset(preset, expected);
-            return string.Join("\n", CAFactionAxes.Axes
-                .Where(axis => expected.ContainsKey(axis.Key))
-                .Select(axis =>
-                {
-                    CAAxisOption option = axis.Options.FirstOrDefault(item =>
-                        item.Key == expected[axis.Key]);
-                    return axis.Label + ": " + (option?.Label
-                        ?? expected[axis.Key]) + ". " + (option?.Words ?? "");
-                }).ToArray());
+            if (profile == null) return "No profile";
+            return string.Join(" · ", CAFactionAxes.Axes
+                .Take(Math.Max(1, count))
+                .Select(axis => axis.Options.First(option => option.Key
+                    == profile.Positions[axis.Key]).Label).ToArray());
         }
 
-        internal static Texture2D Icon(
-            CAFactionAxes.PoliticalPreset preset)
+        internal static string ProfileDetails(
+            CAFactionAxes.PoliticalProfile profile)
         {
-            var temporary = new CAPoliticalBeliefs();
-            ApplyPreset(temporary, preset);
-            return Icon(temporary);
-        }
-
-        internal static Texture2D Icon(CAPoliticalBeliefs beliefs)
-        {
-            string leadership = CAFactionAxes.KeyOf(beliefs?.positions,
-                CAFactionAxes.Leadership);
-            string ownership = CAFactionAxes.KeyOf(beliefs?.positions,
-                CAFactionAxes.Ownership);
-            string path = leadership == "none"
-                ? "Rimshare/WorldMapIcons/anarchy"
-                : leadership == "single"
-                    ? "Rimshare/WorldMapIcons/castle"
-                    : ownership == "common" || ownership == "cooperative"
-                        ? "Rimshare/WorldMapIcons/hammer-sickle"
-                        : "Rimshare/WorldMapIcons/cog";
-            return ContentFinder<Texture2D>.Get(path);
+            if (profile == null) return "No political positions recorded.";
+            return string.Join("\n", CAFactionAxes.Axes.Select(axis =>
+            {
+                CAAxisOption option = axis.Options.First(item => item.Key
+                    == profile.Positions[axis.Key]);
+                return axis.Label + ": " + option.Label + ". "
+                    + option.Words;
+            }).ToArray());
         }
     }
 
     internal static class CAFactionStructureModel
     {
-        internal static int GenerateUnset(List<CAAxisEntry> structure,
+        internal static int GenerateEstablishedUnset(List<CAAxisEntry> structure,
             CAPoliticalBeliefs beliefs, string seed)
         {
             if (structure == null) return 0;
@@ -1635,23 +1746,25 @@ namespace ColonistAwareness
                 DefaultCulture(group.resolvedFaction, group.LivingIdeo)
                     ?? group.ResolvedFactionDef?.allowedCultures?
                         .FirstOrDefault());
+            CACultureInitialState.EnsureForRegional(group.culture, plan,
+                group);
             CAPoliticalBeliefsModel.Ensure(group.politicalBeliefs, seed);
-            if (!group.institutionalStateIncomplete)
-            {
-                CAPoliticalBeliefsModel.GenerateUnset(group.politicalBeliefs,
-                    seed + ":beliefs");
-                CAFactionStructureModel.GenerateUnset(group.factionStructure,
-                    group.politicalBeliefs, seed + ":structure");
-            }
+            CAPoliticalDerivationContext context =
+                CAPoliticalContext.ForFaction(plan, group);
+            CAPoliticalBeliefsModel.DeriveUnset(group.politicalBeliefs,
+                seed + ":beliefs", context);
         }
 
         internal static void ApplyPlan(Faction faction,
             CACulture culture,
-            CAPoliticalBeliefs beliefs, List<CAAxisEntry> structure)
+            CAPoliticalBeliefs beliefs, List<CAAxisEntry> structure,
+            bool institutionalStateIncomplete = false)
         {
             CAFactionState record = CAFactionStateWorldComponent.Current
                 ?.EnsureFor(faction);
             if (record == null) return;
+            record.institutionalStateIncomplete =
+                institutionalStateIncomplete;
             if (culture != null) record.culture = culture.Copy();
             if (beliefs != null)
                 record.politicalBeliefs = beliefs.Copy();
@@ -1679,6 +1792,7 @@ namespace ColonistAwareness
     {
         private readonly CAPoliticalBeliefs beliefs;
         private readonly List<CAAxisEntry> structure;
+        private readonly CAFoundingArrangement foundingArrangement;
         private readonly string seed;
         private readonly Action changed;
         private Vector2 scroll;
@@ -1690,11 +1804,13 @@ namespace ColonistAwareness
             Mathf.Min(790f, UI.screenHeight - 48f));
 
         private Dialog_CAAxisEditor(CAPoliticalBeliefs beliefs,
-            List<CAAxisEntry> structure, string seed, Action changed)
+            List<CAAxisEntry> structure, string seed,
+            CAFoundingArrangement foundingArrangement, Action changed)
         {
             this.beliefs = beliefs;
             this.structure = structure;
             this.seed = seed;
+            this.foundingArrangement = foundingArrangement;
             this.changed = changed;
             doCloseX = true;
             doCloseButton = true;
@@ -1703,16 +1819,34 @@ namespace ColonistAwareness
         }
 
         internal static Dialog_CAAxisEditor ForBeliefs(
-            CAPoliticalBeliefs beliefs, string seed, Action changed)
+            CAPoliticalBeliefs beliefs, string seed,
+            CAFoundingArrangement foundingArrangement, Action changed)
         {
-            return new Dialog_CAAxisEditor(beliefs, null, seed, changed);
+            var editor = new Dialog_CAAxisEditor(beliefs, null, seed,
+                foundingArrangement, changed);
+            editor.groupIndex = FirstQuestionGroup(beliefs);
+            return editor;
         }
 
         internal static Dialog_CAAxisEditor ForStructure(
             List<CAAxisEntry> structure, CAPoliticalBeliefs beliefs,
             string seed, Action changed)
         {
-            return new Dialog_CAAxisEditor(beliefs, structure, seed, changed);
+            var editor = new Dialog_CAAxisEditor(beliefs, structure, seed,
+                null, changed);
+            editor.groupIndex = FirstQuestionGroup(beliefs);
+            return editor;
+        }
+
+        private static int FirstQuestionGroup(CAPoliticalBeliefs beliefs)
+        {
+            for (int index = 0; index <
+                    CAAuthoringChoices.PoliticalGroups.Length; index++)
+                if (CAAuthoringChoices.PoliticalGroups[index].Axes.Any(axis =>
+                    CAFactionAxes.StateOf(beliefs?.positions, axis)
+                        == CAAxisSource.Unset))
+                    return index + 1;
+            return 1;
         }
 
         public override void DoWindowContents(Rect inRect)
@@ -1736,7 +1870,6 @@ namespace ColonistAwareness
             Widgets.Label(new Rect(0f, 38f, inRect.width,
                 descriptionHeight), description);
             float y = 38f + descriptionHeight + 12f;
-            y = DrawPoliticalActions(inRect, y, editingBeliefs);
             string[] tabs = new[] { "Overview" }.Concat(
                 CAAuthoringChoices.PoliticalGroups.Select(item => item.Label))
                 .ToArray();
@@ -1767,21 +1900,12 @@ namespace ColonistAwareness
             bool editingBeliefs)
         {
             var labels = new List<string> { "Profiles...", "Save profile...",
-                "Manage saved...", "Generate missing" };
+                "Manage saved..." };
             var actions = new List<Action>
             {
                 OpenPoliticalPresets, SavePoliticalProfile,
                 () => Find.WindowStack.Add(new Dialog_CAProfileManager(
-                    null, beliefs, changed)),
-                () =>
-                {
-                    CAPoliticalBeliefsModel.GenerateUnset(beliefs,
-                        seed + ":beliefs-fill");
-                    if (!editingBeliefs)
-                        CAFactionStructureModel.GenerateUnset(structure,
-                            beliefs, seed + ":structure-fill");
-                    changed?.Invoke();
-                }
+                    null, beliefs, changed))
             };
             int columns = inRect.width >= 720f ? 4 : 2;
             float gap = 6f;
@@ -1801,11 +1925,11 @@ namespace ColonistAwareness
         private void DrawPoliticalOverview(ref float y, float width,
             bool beliefsOnly)
         {
-            string fingerprint = CAAuthoringChoices.PoliticalFingerprint(
-                beliefs);
             string profile = CAAuthoringChoices.PoliticalIdentity(beliefs);
-            DrawText(ref y, width, profile + "\n" + fingerprint,
+            DrawText(ref y, width, profile,
                 GameFont.Medium, Color.white);
+            y = DrawPoliticalActions(new Rect(0f, 0f, width, 1f), y,
+                beliefsOnly);
             if (beliefsOnly)
             {
                 string set = CAFactionAxes.CountByState(beliefs.positions,
@@ -1815,6 +1939,29 @@ namespace ColonistAwareness
                         CAAxisSource.Unset) + " positions remain unset.";
                 DrawText(ref y, width, set, GameFont.Small,
                     new Color(0.72f, 0.76f, 0.81f));
+                List<CAPoliticalBeliefPractice.CAFoundingBeliefReading> readings =
+                    CAPoliticalBeliefPractice.ReadAgainstPoliticalBeliefs(
+                        beliefs, foundingArrangement);
+                if (readings.Count > 0)
+                {
+                    int tensions = readings.Count(item => !item.Silent
+                        && !item.conforms);
+                    DrawText(ref y, width, tensions == 0
+                            ? "Political beliefs and current rules at landing are aligned where they overlap."
+                            : tensions + " belief-rule tension"
+                                + (tensions == 1 ? "" : "s")
+                                + " at landing.",
+                        GameFont.Small, tensions == 0
+                            ? CACreationUI.Authored : ColorLibrary.Yellow);
+                    foreach (CAPoliticalBeliefPractice.CAFoundingBeliefReading
+                        reading in readings.Where(item => !item.Silent
+                            && !item.conforms))
+                        DrawText(ref y, width, "In tension on "
+                                + reading.title.ToLowerInvariant() + ": "
+                                + reading.belief + "; current rule: "
+                                + reading.adopted + ".", GameFont.Tiny,
+                            new Color(0.86f, 0.78f, 0.52f));
+                }
             }
             else
             {
@@ -1929,6 +2076,15 @@ namespace ColonistAwareness
                 GUI.color = Color.white;
                 y += words + 4f;
             }
+            Text.Font = GameFont.Tiny;
+            GUI.color = ColoredText.SubtleGrayColor;
+            float consumerHeight = Text.CalcHeight("Used by: "
+                + def.Consumers, width);
+            Widgets.Label(new Rect(x, y, width, consumerHeight),
+                "Used by: " + def.Consumers);
+            GUI.color = Color.white;
+            Text.Font = GameFont.Small;
+            y += consumerHeight + 4f;
         }
 
         private static void DrawText(ref float y, float width, string value,
@@ -1979,8 +2135,8 @@ namespace ColonistAwareness
             {
                 Key = "__unset__",
                 Name = "Leave unset",
-                Summary = "No position is chosen. Generation may fill it "
-                    + "later.",
+                Summary = "No position is chosen. The authoring flow cannot "
+                    + "be confirmed until every political question is answered.",
                 Details = def.Question,
                 Badge = current == null ? "Current" : "Unset",
                 Accent = CACreationUI.Unset,
@@ -2008,21 +2164,29 @@ namespace ColonistAwareness
 
         private void SavePoliticalProfile()
         {
-            string initial = CAFactionAxes.Preset(beliefs?.presetName)?.Name
-                ?? "Saved political profile";
+            int unset = CAFactionAxes.CountByState(beliefs.positions,
+                CAAxisSource.Unset);
+            if (unset > 0)
+            {
+                Messages.Message("Answer all thirteen political questions "
+                    + "before saving a profile.",
+                    MessageTypeDefOf.RejectInput, false);
+                return;
+            }
+            string initial = "Saved political profile";
             Find.WindowStack.Add(new Dialog_CAProfileName(
                 "Save political profile", initial, value =>
                 {
-                    CAUserPoliticalProfile saved =
-                        CAAuthoringProfileLibrary.SavePolitics(value, beliefs);
-                    if (saved != null)
-                    {
-                        beliefs.presetName = null;
-                        beliefs.profileKey = saved.key;
-                    }
+                    CAAuthoringProfileLibrary.SavePolitics(value, beliefs);
                     changed?.Invoke();
                 }));
         }
+    }
+
+    internal enum CACultureAuthoringBoundary
+    {
+        Inherited,
+        EstablishedLocal
     }
 
     internal sealed class Dialog_CACultureEditor : Window
@@ -2030,6 +2194,7 @@ namespace ColonistAwareness
         private readonly CACulture culture;
         private readonly string factionLabel;
         private readonly Action changed;
+        private readonly CACultureAuthoringBoundary boundary;
         private int section;
         private Vector2 scroll;
         private float viewHeight;
@@ -2039,11 +2204,14 @@ namespace ColonistAwareness
             Mathf.Min(580f, UI.screenHeight - 48f));
 
         internal Dialog_CACultureEditor(CACulture culture,
-            string factionLabel, Action changed)
+            string factionLabel, Action changed,
+            CACultureAuthoringBoundary boundary =
+                CACultureAuthoringBoundary.Inherited)
         {
             this.culture = culture ?? new CACulture();
             this.factionLabel = factionLabel;
             this.changed = changed;
+            this.boundary = boundary;
             doCloseX = true;
             doCloseButton = true;
             absorbInputAroundWindow = true;
@@ -2066,22 +2234,31 @@ namespace ColonistAwareness
                 GUI.color = Color.white;
                 y += 28f;
             }
-            string description = "Set the Culture this population inherits. "
-                + "Settlements retain that history and develop lived "
-                + "practices through play. Visual tradition is optional.";
+            string description = boundary
+                == CACultureAuthoringBoundary.EstablishedLocal
+                ? "Set this established settlement's current local Culture "
+                    + "at scenario start. Inherited Culture remains separate. "
+                    + "These are direct initial facts; no transition is created."
+                : "Set the Culture this population inherits. Settlements "
+                    + "retain that history and develop lived practices through "
+                    + "play. Visual tradition is optional.";
             float descriptionHeight = Text.CalcHeight(description, inRect.width);
             Widgets.Label(new Rect(0f, y, inRect.width, descriptionHeight),
                 description);
             y += descriptionHeight + 12f;
 
-            y = DrawActions(inRect, y);
-            string[] tabs = { "Culture", "Visual tradition" };
+            if (boundary == CACultureAuthoringBoundary.Inherited)
+                y = DrawActions(inRect, y);
+            string[] tabs = { "Overview", "Social meanings",
+                boundary == CACultureAuthoringBoundary.EstablishedLocal
+                    ? "Local practices" : "Inherited practices",
+                "Visual tradition", "Causal preview" };
             float tabHeight = CACreationUI.DrawSegmentRows(new Rect(0f, y,
                 inRect.width, 30f), tabs, section, value =>
                 {
                     section = value;
                     scroll = Vector2.zero;
-                }, 180f);
+                }, 165f);
             y += tabHeight + 10f;
 
             Rect outRect = new Rect(0f, y, inRect.width,
@@ -2090,8 +2267,11 @@ namespace ColonistAwareness
                 Mathf.Max(outRect.height, viewHeight));
             Widgets.BeginScrollView(outRect, ref scroll, view);
             float rowY = 0f;
-            if (section == 0) DrawCulture(ref rowY, view.width);
-            else DrawVisual(ref rowY, view.width);
+            if (section == 0) DrawOverview(ref rowY, view.width);
+            else if (section == 1) DrawMeanings(ref rowY, view.width);
+            else if (section == 2) DrawPractices(ref rowY, view.width);
+            else if (section == 3) DrawVisual(ref rowY, view.width);
+            else DrawCausalPreview(ref rowY, view.width);
             viewHeight = rowY + 12f;
             Widgets.EndScrollView();
         }
@@ -2118,23 +2298,278 @@ namespace ColonistAwareness
             return y + rows * 36f + 4f;
         }
 
-        private void DrawCulture(ref float y, float width)
+        private void DrawOverview(ref float y, float width)
         {
             Row(ref y, width, "Name",
                 culture.name ?? "Inherited Culture",
                 () => Find.WindowStack.Add(new Dialog_CARenameCulture(
                     culture, changed)), FieldState(CACulture.NameField));
-            if (!culture.profileKey.NullOrEmpty())
+            CACultureModel.Normalize(culture);
+            DrawFact(ref y, width, "Inherited source",
+                culture.parentId ?? "No earlier Culture recorded");
+            DrawFact(ref y, width, "Constituent cultures",
+                culture.constituents.Count == 0 ? "Not recorded"
+                    : string.Join(", ", culture.constituents.Select(item =>
+                        item.share + "% " + (item.label ?? "unnamed"))));
+            DrawFact(ref y, width, "Inherited social meanings",
+                culture.inheritedMeanings.Count.ToString());
+            DrawFact(ref y, width, "Inherited practices",
+                culture.inheritedPractices.Count.ToString());
+            DrawFact(ref y, width, "Current local meanings",
+                culture.localMeanings.Count.ToString());
+            DrawFact(ref y, width, "Current local practices",
+                culture.practices.Count.ToString());
+            CACulturalMeaning[] salient = culture.inheritedMeanings
+                .Concat(culture.localMeanings)
+                .OrderByDescending(item => item.salience).Take(3).ToArray();
+            DrawFact(ref y, width, "Most salient",
+                salient.Length == 0 ? "None composed" : string.Join(", ",
+                    salient.Select(item => SubjectLabel(item.subjectKey)
+                        + " " + item.salience)));
+            int disputed = culture.inheritedMeanings.Concat(
+                culture.localMeanings).GroupBy(item =>
+                    item.subjectKey).Count(group => group.Min(item =>
+                        item.approval) < 0 && group.Max(item =>
+                            item.approval) > 0);
+            DrawFact(ref y, width, "Internal disputes",
+                disputed == 0 ? "None recorded" : disputed.ToString());
+            CultureDef native = CACultureModel.NativeDef(culture);
+            DrawFact(ref y, width, "Visual tradition",
+                native?.LabelCap.ToString() ?? "None");
+        }
+
+        private void DrawMeanings(ref float y, float width)
+        {
+            if (Widgets.ButtonText(new Rect(0f, y, 220f, 32f),
+                    "Add social meaning...")) OpenMeaningSubject();
+            y += 44f;
+            if (EditableMeanings.Count == 0)
             {
-                CACreationUI.DrawChip(new Rect(0f, y + 3f,
-                    Mathf.Min(width, 250f), 20f), "Saved Culture",
-                    CACreationUI.Preset);
-                y += 30f;
+                DrawExplanation(ref y, width,
+                    boundary == CACultureAuthoringBoundary.EstablishedLocal
+                        ? "No direct local meaning is authored yet. Inherited "
+                            + "meanings remain visible in Overview and Causal preview."
+                        : "Add a concrete registered subject. A name and visual "
+                            + "tradition alone are not substantive Culture.");
+                return;
             }
+            foreach (CACulturalMeaning meaning in EditableMeanings
+                .ToList()) DrawMeaning(ref y, width, meaning);
+        }
+
+        private void DrawMeaning(ref float y, float width,
+            CACulturalMeaning meaning)
+        {
+            CASocialSubjectDef subject = CASocialSubjectRegistry.Find(
+                meaning.subjectKey);
+            string source = subject == null
+                ? "The owning module is not loaded; this namespaced meaning is preserved."
+                : subject.Description + " Evidence: "
+                    + subject.AuthoritativeSource + ". Consumers: "
+                    + string.Join(", ", subject.Consumers) + ". It cannot "
+                    + "grant authority, create an institution, or supply material.";
+            GameFont priorFont = Text.Font;
+            Text.Font = GameFont.Tiny;
+            float sourceHeight = Text.CalcHeight(source, width - 24f);
+            Text.Font = priorFont;
+            float boxHeight = 212f + sourceHeight;
+            Rect box = new Rect(0f, y, width, boxHeight);
+            Widgets.DrawMenuSection(box);
+            float innerWidth = width - 24f;
+            float at = y + 10f;
+            Text.Font = GameFont.Small;
+            Widgets.Label(new Rect(12f, at, innerWidth - 100f, 26f),
+                subject?.Label ?? meaning.subjectKey);
+            if (Widgets.ButtonText(new Rect(width - 92f, at, 80f, 26f),
+                    "Remove"))
+            {
+                EditableMeanings.Remove(meaning);
+                changed?.Invoke();
+                y += boxHeight + 10f;
+                return;
+            }
+            at += 30f;
+            Text.Font = GameFont.Tiny;
+            GUI.color = ColoredText.SubtleGrayColor;
+            Widgets.Label(new Rect(12f, at, innerWidth, sourceHeight), source);
+            GUI.color = Color.white;
+            Text.Font = GameFont.Small;
+            at += sourceHeight + 6f;
+            string scopeLabel = (meaning.populationScope ?? "*") == "*"
+                ? "All constituent populations"
+                : culture.constituents.FirstOrDefault(item => item != null
+                    && item.cultureId == meaning.populationScope)?.label
+                    ?? meaning.populationScope;
+            Widgets.Label(new Rect(12f, at, 120f, 26f), "Population");
+            if (Widgets.ButtonText(new Rect(136f, at, innerWidth - 124f, 26f),
+                    scopeLabel)) OpenMeaningScope(meaning);
+            at += 34f;
+            int approval = MeaningSlider(new Rect(12f, at, innerWidth, 28f),
+                "Approval", meaning.approval, -100, 100);
+            at += 31f;
+            int normality = MeaningSlider(new Rect(12f, at, innerWidth, 28f),
+                "Normality", meaning.normality, 0, 100);
+            at += 31f;
+            int prestige = MeaningSlider(new Rect(12f, at, innerWidth, 28f),
+                "Prestige", meaning.prestige, -100, 100);
+            at += 31f;
+            int salience = MeaningSlider(new Rect(12f, at, innerWidth, 28f),
+                "Salience", meaning.salience, 0, 100);
+            if (approval != meaning.approval || normality != meaning.normality
+                || prestige != meaning.prestige || salience != meaning.salience)
+            {
+                meaning.approval = approval;
+                meaning.normality = normality;
+                meaning.prestige = prestige;
+                meaning.salience = salience;
+                meaning.lastChangedTick = -1;
+                changed?.Invoke();
+            }
+            y += boxHeight + 10f;
+        }
+
+        private void OpenMeaningScope(CACulturalMeaning meaning)
+        {
+            var options = new List<CACreationChoice>
+            {
+                new CACreationChoice
+                {
+                    Key = "*", Name = "All constituent populations",
+                    Summary = "This meaning applies across the composed Culture.",
+                    Badge = (meaning.populationScope ?? "*") == "*"
+                        ? "Current scope" : null,
+                    Selected = (meaning.populationScope ?? "*") == "*",
+                    ConfirmLabel = "Use this population scope",
+                    Choose = delegate
+                    {
+                        meaning.populationScope = "*";
+                        meaning.lastChangedTick = -1;
+                        changed?.Invoke();
+                    }
+                }
+            };
+            foreach (CACultureConstituent constituent in culture.constituents
+                .Where(item => item != null && !item.cultureId.NullOrEmpty())
+                .OrderByDescending(item => item.share)
+                .ThenBy(item => item.label))
+            {
+                CACultureConstituent local = constituent;
+                options.Add(new CACreationChoice
+                {
+                    Key = local.cultureId,
+                    Name = local.label ?? local.cultureId,
+                    Summary = local.share + "% of the recorded population.",
+                    Badge = meaning.populationScope == local.cultureId
+                        ? "Current scope" : "Constituent Culture",
+                    Selected = meaning.populationScope == local.cultureId,
+                    ConfirmLabel = "Use this population scope",
+                    Choose = delegate
+                    {
+                        meaning.populationScope = local.cultureId;
+                        meaning.lastChangedTick = -1;
+                        changed?.Invoke();
+                    }
+                });
+            }
+            CACreationUI.OpenChoices("Meaning population",
+                "Choose exactly which constituent population carries this "
+                + "interpretation. This changes scope, not population share.",
+                options);
+        }
+
+        private void DrawPractices(ref float y, float width)
+        {
+            if (Widgets.ButtonText(new Rect(0f, y, 230f, 32f),
+                    boundary == CACultureAuthoringBoundary.EstablishedLocal
+                        ? "Add local practice..." : "Add inherited practice..."))
+                OpenPracticeSubject();
+            y += 44f;
+            if (EditablePractices.Count == 0)
+                DrawExplanation(ref y, width,
+                    boundary == CACultureAuthoringBoundary.EstablishedLocal
+                        ? "No current local practice is declared at the scenario boundary."
+                        : "No repeated practice is claimed at the starting boundary.");
+            foreach (CACulturePractice practice in EditablePractices
+                .ToList())
+            {
+                CASocialSubjectDef subject = CASocialSubjectRegistry.Find(
+                    practice.subjectKey);
+                string provenance = (boundary
+                        == CACultureAuthoringBoundary.EstablishedLocal
+                            ? "Initial local source: " : "Inherited source: ")
+                    + (practice.sourcePeriod ?? "starting Culture")
+                    + "; consumers: " + string.Join(", ",
+                        subject?.Consumers ?? new List<string>());
+                GameFont priorFont = Text.Font;
+                Text.Font = GameFont.Tiny;
+                float provenanceHeight = Text.CalcHeight(provenance,
+                    width - 24f);
+                Text.Font = priorFont;
+                float boxHeight = 82f + provenanceHeight;
+                Rect box = new Rect(0f, y, width, boxHeight);
+                Widgets.DrawMenuSection(box);
+                Widgets.Label(new Rect(12f, y + 8f, width - 110f, 26f),
+                    subject?.Label ?? practice.subjectKey);
+                if (Widgets.ButtonText(new Rect(width - 92f, y + 8f, 80f,
+                        26f), "Remove"))
+                {
+                    EditablePractices.Remove(practice);
+                    changed?.Invoke();
+                    y += boxHeight + 10f;
+                    continue;
+                }
+                int strength = MeaningSlider(new Rect(12f, y + 40f,
+                    width - 24f, 28f), "Strength", practice.strength, 0, 100);
+                Text.Font = GameFont.Tiny;
+                GUI.color = ColoredText.SubtleGrayColor;
+                Widgets.Label(new Rect(12f, y + 73f, width - 24f,
+                    provenanceHeight), provenance);
+                GUI.color = Color.white;
+                Text.Font = GameFont.Small;
+                if (strength != practice.strength)
+                {
+                    practice.strength = strength;
+                    changed?.Invoke();
+                }
+                y += boxHeight + 10f;
+            }
+        }
+
+        private void DrawCausalPreview(ref float y, float width)
+        {
             DrawExplanation(ref y, width,
-                "This is the inherited historical identity. Lived practices "
-                + "are recorded as settlements change; the visual tradition "
-                + "is edited separately.");
+                "Read-only causal preview. These are persisted meanings and "
+                + "practices, not a generated Culture description.");
+            foreach (CACulturalMeaning meaning in culture.inheritedMeanings
+                .Concat(culture.localMeanings)
+                .OrderByDescending(item => item.salience))
+            {
+                CASocialSubjectDef subject = CASocialSubjectRegistry.Find(
+                    meaning.subjectKey);
+                DrawFact(ref y, width, subject?.Label ?? meaning.subjectKey,
+                    "approval " + meaning.approval + "; normality "
+                    + meaning.normality + "; prestige " + meaning.prestige
+                    + "; salience " + meaning.salience + ". Evidence: "
+                    + (subject?.AuthoritativeSource ?? "owner unavailable")
+                    + ". Consumers: " + string.Join(", ",
+                        subject?.Consumers ?? new List<string>()));
+            }
+            string[] overlaps = culture.inheritedMeanings.Concat(
+                    culture.localMeanings).Where(item =>
+                    item.subjectKey == CASocialSubjectRegistry.PublicVoice
+                    || item.subjectKey == CASocialSubjectRegistry.CompelledService
+                    || item.subjectKey == CASocialSubjectRegistry.SharedProvision
+                    || item.subjectKey == CASocialSubjectRegistry.InheritedRank
+                    || item.subjectKey == CASocialSubjectRegistry.QuarterGiven)
+                .Select(item => SubjectLabel(item.subjectKey)).Distinct().ToArray();
+            DrawFact(ref y, width, "Political overlaps",
+                overlaps.Length == 0 ? "None recorded" : string.Join(", ", overlaps));
+            string[] ritual = culture.inheritedMeanings.Concat(
+                    culture.localMeanings).Where(item =>
+                    item.subjectKey == CASocialSubjectRegistry.QuarterGiven)
+                .Select(item => SubjectLabel(item.subjectKey)).ToArray();
+            DrawFact(ref y, width, "Ideoligion overlaps",
+                ritual.Length == 0 ? "None recorded" : string.Join(", ", ritual));
         }
 
         private void DrawVisual(ref float y, float width)
@@ -2150,6 +2585,166 @@ namespace ColonistAwareness
             DrawExplanation(ref y, width,
                 "This optional tradition supplies native RimWorld styles. "
                 + "Neutral fallback uses the ordinary object style.");
+        }
+
+        private void OpenMeaningSubject()
+        {
+            var options = new List<CACreationChoice>();
+            foreach (CASocialSubjectDef subject in
+                CASocialSubjectRegistry.Authorable())
+            {
+                CASocialSubjectDef local = subject;
+                bool active = EditableMeanings.Any(item =>
+                    item.subjectKey == local.Key
+                    && (item.populationScope ?? "*") == "*");
+                options.Add(new CACreationChoice
+                {
+                    Key = local.Key,
+                    Name = local.Label,
+                    Summary = local.Description,
+                    Traits = "Evidence: " + local.AuthoritativeSource
+                        + "\nConsumers: " + string.Join(", ", local.Consumers),
+                    Details = local.CulturalEffect + "\n\nApplicability: "
+                        + local.Applicability + ".\n\nThis meaning cannot "
+                        + "grant authority, create an institution, or supply material.",
+                    Badge = active ? "Already active" : "Registered subject",
+                    Disabled = active,
+                    DisabledReason = active ? "This population-wide meaning is already active." : null,
+                    Accent = CACreationUI.Authored,
+                    ConfirmLabel = "Add this social meaning",
+                    Choose = delegate
+                    {
+                        EditableMeanings.Add(new CACulturalMeaning
+                        {
+                            subjectKey = local.Key,
+                            populationScope = "*",
+                            provenance = boundary
+                                == CACultureAuthoringBoundary.EstablishedLocal
+                                    ? "authored initial local state" : "inherited",
+                            sourceIdentity = boundary
+                                == CACultureAuthoringBoundary.EstablishedLocal
+                                    ? culture.localityKey
+                                        ?? "authored settlement baseline"
+                                    : culture.parentId ?? "authored before scenario",
+                            firstRecordedTick = -1,
+                            lastChangedTick = -1,
+                            weight = 100,
+                            normality = 50,
+                            salience = 50
+                        });
+                        changed?.Invoke();
+                    }
+                });
+            }
+            CACreationUI.OpenChoices("Add social meaning",
+                "Choose the exact social fact this Culture interprets. Only "
+                + "subjects with a factual source and real consumer appear.", options);
+        }
+
+        private void OpenPracticeSubject()
+        {
+            var options = new List<CACreationChoice>();
+            foreach (CASocialSubjectDef subject in
+                CASocialSubjectRegistry.Authorable())
+            {
+                CASocialSubjectDef local = subject;
+                bool active = EditablePractices.Any(item =>
+                    item.subjectKey == local.Key);
+                options.Add(new CACreationChoice
+                {
+                    Key = local.Key,
+                    Name = local.Label,
+                    Summary = local.Description,
+                    Traits = "Consumers: " + string.Join(", ", local.Consumers),
+                    Details = boundary
+                        == CACultureAuthoringBoundary.EstablishedLocal
+                            ? "Record this as the established settlement's "
+                                + "current local practice at scenario start. "
+                                + "No transition event is created."
+                            : "Record this as a repeated practice inherited "
+                                + "before the scenario boundary. Meaning and "
+                                + "practice remain separate records.",
+                    Badge = active ? "Already active" : "Registered subject",
+                    Disabled = active,
+                    DisabledReason = active ? "This inherited practice is already active." : null,
+                    Accent = boundary
+                        == CACultureAuthoringBoundary.EstablishedLocal
+                            ? CACreationUI.Authored : CACreationUI.Inherited,
+                    ConfirmLabel = boundary
+                        == CACultureAuthoringBoundary.EstablishedLocal
+                            ? "Add local practice" : "Add inherited practice",
+                    Choose = delegate
+                    {
+                        EditablePractices.Add(new CACulturePractice
+                        {
+                            subjectKey = local.Key,
+                            summary = local.Description,
+                            strength = 50,
+                            firstRecordedTick = -1,
+                            lastObservedTick = -1,
+                            sourceSignature = (boundary
+                                == CACultureAuthoringBoundary.EstablishedLocal
+                                    ? "authored-initial-local:"
+                                    : "authored-inherited:") + local.Key,
+                            sourcePeriod = boundary
+                                == CACultureAuthoringBoundary.EstablishedLocal
+                                    ? "established before scenario start"
+                                    : "before scenario start"
+                        });
+                        changed?.Invoke();
+                    }
+                });
+            }
+            CACreationUI.OpenChoices(boundary
+                    == CACultureAuthoringBoundary.EstablishedLocal
+                        ? "Add local practice" : "Add inherited practice",
+                "Choose a concrete repeated practice known at the starting boundary.",
+                options);
+        }
+
+        private List<CACulturalMeaning> EditableMeanings => boundary
+            == CACultureAuthoringBoundary.EstablishedLocal
+                ? culture.localMeanings : culture.inheritedMeanings;
+
+        private List<CACulturePractice> EditablePractices => boundary
+            == CACultureAuthoringBoundary.EstablishedLocal
+                ? culture.practices : culture.inheritedPractices;
+
+        private static int MeaningSlider(Rect rect, string label, int value,
+            int minimum, int maximum)
+        {
+            const float labelWidth = 130f;
+            Widgets.Label(new Rect(rect.x, rect.y + 4f, labelWidth,
+                rect.height), label + " " + value);
+            float changed = Widgets.HorizontalSlider(new Rect(rect.x
+                    + labelWidth, rect.y, rect.width - labelWidth, rect.height),
+                value, minimum, maximum, false);
+            return Mathf.RoundToInt(changed);
+        }
+
+        private static void DrawFact(ref float y, float width, string label,
+            string value)
+        {
+            float labelWidth = Mathf.Min(220f, width * 0.30f);
+            float height = Mathf.Max(26f, Text.CalcHeight(value ?? "Not recorded",
+                width - labelWidth - 12f));
+            Widgets.Label(new Rect(0f, y, labelWidth, height), label);
+            GUI.color = new Color(0.76f, 0.79f, 0.83f);
+            Widgets.Label(new Rect(labelWidth + 12f, y,
+                width - labelWidth - 12f, height), value ?? "Not recorded");
+            GUI.color = Color.white;
+            y += height + 9f;
+        }
+
+        private static string SubjectLabel(string key)
+        {
+            return CASocialSubjectRegistry.Find(key)?.Label ?? key;
+        }
+
+        private static int CurrentTick()
+        {
+            try { return Find.TickManager?.TicksGame ?? -1; }
+            catch { return -1; }
         }
 
         private static void DrawExplanation(ref float y, float width,
@@ -2193,14 +2788,18 @@ namespace ColonistAwareness
 
         private void SaveProfile()
         {
+            string failure = CACultureModel.SubstantiveFailure(culture);
+            if (!failure.NullOrEmpty())
+            {
+                Messages.Message(failure, MessageTypeDefOf.RejectInput,
+                    false);
+                return;
+            }
             Find.WindowStack.Add(new Dialog_CAProfileName(
                 "Save Culture",
                 culture.name ?? "Saved Culture", value =>
                 {
-                    CAUserCultureProfile saved =
-                        CAAuthoringProfileLibrary.SaveCulture(value, culture);
-                    if (saved != null)
-                        culture.profileKey = saved.key;
+                    CAAuthoringProfileLibrary.SaveCulture(value, culture);
                     changed?.Invoke();
                 }));
         }

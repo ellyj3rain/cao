@@ -9,21 +9,10 @@ public static class Program
     {
         try
         {
-            if ((args.Length == 4 || args.Length == 5)
-                && args[0] == "--convert")
-            {
-                ConvertFixture(Path.GetFullPath(args[1]),
-                    args.Length == 5 ? Path.GetFullPath(args[2]) : null,
-                    Path.GetFullPath(args[args.Length - 2]),
-                    Path.GetFullPath(args[args.Length - 1]));
-                return 0;
-            }
             if (args.Length != 2 && args.Length != 3)
                 throw new ArgumentException(
                     "usage: PlayerFoundingReceipts <repo> <keyed> "
-                    + "or <repo> <mirror> <keyed> "
-                    + "or --convert <source> [policy-evidence] <mirror> "
-                    + "<keyed>");
+                    + "or <repo> <mirror> <keyed>");
             string repository = Path.GetFullPath(args[0]);
             string mirrorPath = args.Length == 3
                 ? Path.GetFullPath(args[1]) : null;
@@ -59,113 +48,6 @@ public static class Program
         }
     }
 
-    private static void ConvertFixture(string sourcePath,
-        string policyEvidencePath, string mirrorPath, string keyedPath)
-    {
-        XDocument document = XDocument.Load(sourcePath,
-            LoadOptions.PreserveWhitespace);
-        XElement plan = Plan(document);
-        if (policyEvidencePath != null)
-        {
-            XDocument evidence = XDocument.Load(policyEvidencePath,
-                LoadOptions.PreserveWhitespace);
-            MergeMissingPolicy(plan, Plan(evidence));
-        }
-        SetValue(plan, "schemaVersion", "5");
-        plan.Element("foundingArrangement")?.Remove();
-        plan.Element("foundingArrangementAuthored")?.Remove();
-        foreach (XElement settlement in Items(plan, "settlements"))
-        {
-            settlement.Element("developmentProfile")?.Remove();
-            settlement.Element("accessInfrastructure")?.Remove();
-            settlement.Element("serviceInfrastructure")?.Remove();
-            settlement.Element("civicInfrastructure")?.Remove();
-            XElement oldMask = settlement.Element(
-                "startingFacilityAuthoredMask");
-            XElement oldValues = settlement.Element("startingFacilityValues");
-            if (oldMask != null && settlement.Element(
-                    "facilityExceptionMask") == null)
-                settlement.Add(new XElement("facilityExceptionMask",
-                    oldMask.Value));
-            if (oldValues != null && settlement.Element(
-                    "facilityExceptionValues") == null)
-                settlement.Add(new XElement("facilityExceptionValues",
-                    oldValues.Value));
-            oldMask?.Remove();
-            oldValues?.Remove();
-        }
-        if (plan.Element("playerFounding") == null)
-        {
-            var player = new XElement("playerFounding",
-                new XElement("schemaVersion", "2"),
-                new XElement("culture"),
-                new XElement("politicalBeliefs",
-                    new XElement("positions")),
-                new XElement("arrangement",
-                    new XAttribute("IsNull", "True")),
-                new XElement("arrangementSource", "0"),
-                new XElement("nativeIdeoId", "-1"),
-                new XElement("nativeIdeoName"),
-                new XElement("nativeIdeoSignature"),
-                new XElement("nativeIdeoNotified", "False"),
-                new XElement("confirmed", "False"));
-            XElement anchor = plan.Element("operatorAuthored");
-            if (anchor == null) plan.Add(player);
-            else anchor.AddBeforeSelf(player);
-        }
-        IEnumerable<XElement> cultures = Items(plan, "factions")
-            .Select(item => item.Element("culture"))
-            .Concat(Items(plan, "settlements")
-                .Select(item => item.Element("localCulture")))
-            .Concat(new[] { plan.Element("playerFounding")
-                ?.Element("culture") }).Where(item => item != null);
-        foreach (XElement culture in cultures)
-        {
-            SetValue(culture, "schemaVersion", "5");
-            culture.Element("gatheringKey")?.Remove();
-            culture.Element("hospitalityKey")?.Remove();
-            culture.Element("mealsKey")?.Remove();
-            culture.Element("remembranceKey")?.Remove();
-        }
-        CARegionalFixtureContracts.StampRealizationSourceHash(plan);
-
-        string rendered = (document.Declaration == null ? ""
-                : document.Declaration + Environment.NewLine)
-            + document.ToString();
-        WriteExact(mirrorPath, rendered);
-        WriteExact(keyedPath, rendered);
-        Console.WriteLine("converted fixture -> schema 5 player founding; "
-            + "active surfaces written identically");
-    }
-
-    private static void MergeMissingPolicy(XElement targetPlan,
-        XElement evidencePlan)
-    {
-        XElement target = targetPlan.Element("worldPolicy");
-        XElement evidence = evidencePlan.Element("worldPolicy");
-        if (target == null || evidence == null) return;
-        foreach (XElement field in evidence.Elements())
-            if (target.Element(field.Name) == null)
-                target.Add(new XElement(field));
-    }
-
-    private static void SetValue(XElement parent, string name,
-        string value)
-    {
-        XElement element = parent.Element(name);
-        if (element == null) parent.AddFirst(new XElement(name, value));
-        else element.Value = value;
-    }
-
-    private static void WriteExact(string path, string content)
-    {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)
-            ?? throw new InvalidDataException("fixture path has no directory"));
-        string temporary = path + ".b2.tmp";
-        File.WriteAllText(temporary, content, new UTF8Encoding(false));
-        File.Move(temporary, path, true);
-    }
-
     private static void CheckSourceContracts(string repository,
         StringBuilder report)
     {
@@ -181,8 +63,6 @@ public static class Program
             "PoliticalBeliefPracticeModule.cs");
         string organizations = Read(repository, "Source",
             "OrganizationModule.cs");
-        string converter = Read(repository, "tools",
-            "PlayerFoundingReceipts", "Program.cs");
         string fixtureContracts = Read(repository, "tools",
             "RegionalFixtureContracts.cs");
 
@@ -254,15 +134,16 @@ public static class Program
             && page.Contains("Starting supplies")
             && page.Contains("Whether provisions are pooled and rationed."),
             "the four founding-term causes are incomplete");
-        Require(setup.Contains("CurrentSchemaVersion = 5")
+        Require(setup.Contains("CurrentSchemaVersion = 6")
             && setup.Contains("Scribe_Deep.Look(ref playerFounding, "
                 + "\"playerFounding\")"),
             "regional plan does not own schema-5 founding state");
         Require(!setup.Contains("CAPlayerFoundingModel.ApplyCarriedState")
             && !setup.Contains("CAPlayerFoundingModel.ApplyToPlayer"),
             "regional resolution still owns or replays player founding");
-        Require(faction.Contains("if (!faction.IsPlayer)")
-            && faction.Contains("CAFactionStructureModel.GenerateUnset"),
+        Require(faction.Contains("if (!faction.IsPlayer &&")
+            && faction.Contains("CAFactionStructureModel")
+            && faction.Contains(".GenerateEstablishedUnset"),
             "player faction is not protected from mature structure generation");
         Require(founding.Contains("foundingOwner?.Applied == true")
             && founding.Contains("ConfirmedForRuntime()")
@@ -279,15 +160,12 @@ public static class Program
             && !organizations.Contains("ReconcileCustoms"),
             "belief standards and adopted organizational practice remain "
                 + "conflated");
-        Require(converter.Contains(
-                "CARegionalFixtureContracts.StampRealizationSourceHash(plan)")
-            && fixtureContracts.Contains(
+        Require(fixtureContracts.Contains(
                 "internal static int RealizationSourceHash")
             && fixtureContracts.Contains("politicalBeliefs")
             && fixtureContracts.Contains("facilityExceptionMask")
             && !fixtureContracts.Contains("developmentProfile"),
-            "fixture conversion can stamp current schema around a stale "
-                + "settlement realization receipt");
+            "current fixture causes are absent from realization hashing");
         report.AppendLine("PASS source path -> authoring, persistence, native "
             + "Ideoligion, one-shot materialization, belief/practice "
             + "separation, runtime consumption");
@@ -297,8 +175,8 @@ public static class Program
         StringBuilder report)
     {
         XElement plan = Plan(document);
-        Require(Value(plan, "schemaVersion") == "5",
-            label + " fixture is not schema 5");
+        Require(Value(plan, "schemaVersion") == "6",
+            label + " fixture is not schema 6");
         Require(int.TryParse(Value(plan,
                     "settlementRealizationSourceHash"), out int savedHash)
                 && savedHash
@@ -334,7 +212,7 @@ public static class Program
         {
             Require(!string.IsNullOrEmpty(Value(player.Element("culture"),
                     "id"))
-                && Value(player.Element("culture"), "schemaVersion") == "5"
+                && Value(player.Element("culture"), "schemaVersion") == "8"
                 && player.Element("culture")?.Element("gatheringKey") == null
                 && player.Element("culture")?.Element("hospitalityKey") == null
                 && player.Element("culture")?.Element("mealsKey") == null
@@ -391,7 +269,7 @@ public static class Program
             && plan.Element("foundingArrangementAuthored") == null,
             label + " fixture retains obsolete root founding fields");
         report.AppendLine("PASS " + label
-            + " -> schema 5; 3 factions; 4 settlements; 9 population groups; "
+            + " -> schema 6; 3 factions; 4 settlements; 9 population groups; "
             + (confirmed ? "confirmed founding state"
                 : arrangementNull ? "unconfirmed founding authoring state"
                 : "unconfirmed authored founding draft"));

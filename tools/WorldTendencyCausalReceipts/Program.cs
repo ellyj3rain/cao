@@ -291,8 +291,8 @@ public static class Program
             Require(setup.Contains(field), field + " is not persisted");
             Require(dialog.Contains(field), field + " has no visible control");
         }
-        Require(setup.Contains("CurrentSchemaVersion = 5"),
-            "current plan schema is not 5");
+        Require(setup.Contains("CurrentSchemaVersion = 6"),
+            "current plan schema is not 6");
         Require(setup.Contains("localFactionChance = 0.45f")
             && setup.Contains("regionalConflictChance = 0.4f"),
             "the neutral profile does not begin on the middle faction bands");
@@ -335,9 +335,10 @@ public static class Program
         Require(model.Contains("!item.authorRelation")
             && model.Contains("regionalConflictChance"),
             "starting-region relation overrides do not replace the default");
-        Require(faction.Contains("FactionRelationKind.Hostile")
+        Require(setup.Contains("pair.relation")
+            && setup.Contains("ApplyRelation(")
             && !faction.Contains("regionalConflictChance"),
-            "faction structure reads a tendency instead of saved relations");
+            "runtime relation state does not consume the saved relation row");
         Require(composition.Contains("UnaffiliatedPercent")
             && !composition.Contains("reallocationSourceVariety"),
             "population composition crosses ownership controls");
@@ -407,7 +408,7 @@ public static class Program
         Require((string)document.Root?.Element("worldIdentity")
                 == "alysaliu|1|Algorab Markab",
             "fixture world identity changed");
-        Require((string)plan.Element("schemaVersion") == "5",
+        Require((string)plan.Element("schemaVersion") == "6",
             "fixture schema is not current");
         XElement savedPolicy = plan.Element("worldPolicy");
         Require(savedPolicy != null
@@ -585,7 +586,7 @@ public static class Program
         Require(!fixtureText.Contains("realizedFrontierHoldings")
             && !fixtureText.Contains("frontierSettlement"),
             "fixture retains obsolete schema fields");
-        report.AppendLine("PASS current fixture -> schema 5, causal hash, derived settlement state, 3 factions, 4 settlements, 9 population groups, mirrored XML readback");
+        report.AppendLine("PASS current fixture -> schema 6, causal hash, derived settlement state, 3 factions, 4 settlements, 9 population groups, mirrored XML readback");
     }
 
     private static int IntValue(XElement parent, string name, int fallback)

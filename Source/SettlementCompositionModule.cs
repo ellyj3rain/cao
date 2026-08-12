@@ -157,9 +157,6 @@ namespace ColonistAwareness
         public CAProvisionAccess access;
         public CAProvisionFunding funding;
         public CAProvisionDistribution distribution;
-        private bool legacyDistributionAuthored;
-        private int legacyAuthoredDistribution = -1;
-        public string migrationEvidence;
         public bool active = true;
         public string inactiveReason;
         // Stamped when the settlement materializes: whether this
@@ -190,31 +187,12 @@ namespace ColonistAwareness
                 CAProvisionFunding.Household);
             Scribe_Values.Look(ref distribution, "distribution",
                 CAProvisionDistribution.Centralized);
-            if (Scribe.mode == LoadSaveMode.LoadingVars)
-            {
-                Scribe_Values.Look(ref legacyDistributionAuthored,
-                    "distributionAuthored", false);
-                Scribe_Values.Look(ref legacyAuthoredDistribution,
-                    "authoredDistribution", -1);
-            }
-            Scribe_Values.Look(ref migrationEvidence,
-                "migrationEvidence");
             Scribe_Values.Look(ref active, "active", true);
             Scribe_Values.Look(ref inactiveReason, "inactiveReason");
             Scribe_Values.Look(ref waterSecured, "waterSecured", true);
             Scribe_Values.Look(ref nodes, "nodes", 1);
             Scribe_Values.Look(ref reach, "reach",
                 CAProvisionReach.Settlement);
-            if (Scribe.mode == LoadSaveMode.PostLoadInit
-                && schemaVersion < CurrentSchemaVersion)
-            {
-                if (legacyDistributionAuthored)
-                    migrationEvidence = "B5/B6 distribution preference "
-                        + legacyAuthoredDistribution + " was retired; the "
-                        + "current arrangement follows its operator, access, "
-                        + "funding, facilities, population, and reach.";
-                schemaVersion = CurrentSchemaVersion;
-            }
         }
 
         internal string OperatorWords

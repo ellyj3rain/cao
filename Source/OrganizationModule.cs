@@ -4489,12 +4489,14 @@ namespace ColonistAwareness
         {
             int near = colonists.Count(pawn => pawn != null
                 && pawn.Position.InHorDistOf(cell, 12f));
-            int shared = CACultureHistory.PracticeStrength(culture,
-                "shared-public-life");
+            CACulturalMeaningResolution meaning = CACultureModel.Resolve(
+                culture, CASocialSubjectRegistry.PublicGathering);
             // Culture ranks real gathering places only. Standing, attendance,
             // reachability, and the player-authored policy remain unchanged.
-            return CACultureConsumerKernel.GatheringScore(near,
-                cell.DistanceTo(speaker.Position), shared);
+            float affinity = Mathf.Clamp01((meaning.Approval + 100f) / 200f)
+                * Mathf.Clamp01(meaning.Salience / 100f);
+            return near * (1f + affinity * 0.8f)
+                - cell.DistanceTo(speaker.Position) * 0.05f;
         }
 
         public static void Convene(Pawn speaker, IntVec3 spot, Map map,

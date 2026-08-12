@@ -709,6 +709,22 @@ namespace ColonistAwareness
             Note(ref y, width, CACultureModel.Summary(place.localCulture));
             Note(ref y, width, CACultureHistory.ContinuitySummary(
                 place.localCulture));
+            if (Widgets.ButtonText(new Rect(0f, y, width, 28f),
+                    "Compose local Culture..."))
+                Verse.Find.WindowStack.Add(new Dialog_CACultureEditor(
+                    place.localCulture,
+                    CARegionalPlanUtility.SettlementName(plan, place),
+                    delegate
+                    {
+                        place.localCulture.temporalBasis = "Authored as the "
+                            + "established settlement's initial state; no "
+                            + "transition event was created.";
+                        place.localCulture.maturity =
+                            CACultureMaturity.Established;
+                        place.localCulture.transitions.Clear();
+                        CARegionalSetupSession.SavePending();
+                    }, CACultureAuthoringBoundary.EstablishedLocal));
+            y += Row + Gap;
             int culturalSources = place.localCulture?.constituents?
                 .Count(item => item != null && item.share > 0) ?? 0;
             List<string> politicalTensions = CAFactionStructureModel.Tensions(
@@ -1102,10 +1118,9 @@ namespace ColonistAwareness
             Title(ref y, width, "Population");
             Readout(ref y, width, "Culture",
                 group.culture?.name ?? "Culture not recorded");
+            Note(ref y, width, CACultureModel.Summary(group.culture));
             Rect cultureEdit = new Rect(0f, y, width, 28f);
-            if (Widgets.ButtonText(cultureEdit,
-                    "Edit Culture: "
-                    + CACultureModel.Summary(group.culture)))
+            if (Widgets.ButtonText(cultureEdit, "Compose Culture..."))
                 Verse.Find.WindowStack.Add(new Dialog_CACultureEditor(
                     group.culture, group.Summary,
                     CARegionalSetupSession.SavePending));
@@ -1433,7 +1448,6 @@ namespace ColonistAwareness
                 Details = "Ideoligion and political beliefs remain separate "
                     + "choices after the group is added.",
                 Badge = "Population group",
-                Icon = CACreationUI.Icon("Rimshare/WorldMapIcons/anarchy"),
                 Accent = CACreationUI.Unset,
                 ConfirmLabel = "Add unaffiliated residents",
                 Choose = delegate
@@ -1517,10 +1531,6 @@ namespace ColonistAwareness
                             + string.Join(", ", sharedResponsibilities),
                     Traits = "Faction-wide settlement authority",
                     Badge = "Explicit structure",
-                    Icon = CACreationUI.Icon(authority
-                        == CASettlementAuthority.Independent
-                            ? "Rimshare/WorldMapIcons/anarchy"
-                            : "Rimshare/WorldMapIcons/castle"),
                     Accent = CACreationUI.Authored,
                     Selected = group.settlementAuthorityExplicit
                         && current == authority,
@@ -1542,7 +1552,6 @@ namespace ColonistAwareness
                 Traits = "Current result: "
                     + CARegionalSettlements.SettlementAuthorityWords(current),
                 Badge = "Faction structure",
-                Icon = CACreationUI.Icon("Rimshare/WorldMapIcons/cog"),
                 Accent = CACreationUI.Generated,
                 Selected = !group.settlementAuthorityExplicit,
                 ConfirmLabel = "Follow faction structure",
@@ -1573,7 +1582,6 @@ namespace ColonistAwareness
                     Traits = "Relations and alliances remain separate facts",
                     Group = "Membership",
                     Badge = group.federationKey < 0 ? "Current" : "Membership",
-                    Icon = CACreationUI.Icon("Rimshare/WorldMapIcons/anarchy"),
                     Accent = CACreationUI.Unset,
                     Selected = group.federationKey < 0,
                     ConfirmLabel = "Leave federation",
@@ -1645,11 +1653,6 @@ namespace ColonistAwareness
                         Group = "Responsibilities",
                         Badge = currentKind == localKind
                             ? "Current" : "Shared terms",
-                        Icon = CACreationUI.Icon(localKind.Contains("defense")
-                            ? "Rimshare/WorldMapIcons/crenulated-shield"
-                            : localKind == "diplomacy"
-                                ? "Rimshare/WorldMapIcons/compass"
-                                : "Rimshare/WorldMapIcons/cog"),
                         Accent = CACreationUI.Authored,
                         Selected = currentKind == localKind,
                         ConfirmLabel = "Use these shared terms",
@@ -1928,8 +1931,9 @@ namespace ColonistAwareness
                 group.EnsureCultureAndPolitics(plan);
                 string seed = (plan.candidateId ?? "ca") + ":faction:"
                     + group.key;
-                politicalBeliefsFilled += CAPoliticalBeliefsModel.GenerateUnset(
-                    group.politicalBeliefs, seed + ":politics");
+                politicalBeliefsFilled += CAPoliticalBeliefsModel.DeriveUnset(
+                    group.politicalBeliefs, seed + ":politics",
+                    CAPoliticalContext.ForFaction(plan, group));
                 structureFilled += CAFactionAxes.Derive(plan, group);
             }
 
@@ -2485,8 +2489,6 @@ namespace ColonistAwareness
                 Details = "This authoring choice adds population instead of "
                     + "moving it from an existing world settlement.",
                 Badge = "Population source",
-                Icon = CACreationUI.Icon(
-                    "Rimshare/WorldMapIcons/forward-sun"),
                 Accent = CACreationUI.Preset,
                 Selected = place.populationOrigin
                     == CASettlementOrigin.ScenarioOverride,
@@ -2550,8 +2552,6 @@ namespace ColonistAwareness
                     Details = common + " Each settlement absorbs one nearby "
                         + "world settlement as its population source.",
                     Badge = "Region template",
-                    Icon = CACreationUI.Icon(
-                        "Rimshare/WorldMapIcons/castle"),
                     Accent = CACreationUI.Preset,
                     Disabled = sources == 0 || existingFactions < 1,
                     DisabledReason = sources == 0
@@ -2598,8 +2598,6 @@ namespace ColonistAwareness
                     Details = common + " Faction types, beliefs, and structure "
                         + "remain editable after generation.",
                     Badge = "Region template",
-                    Icon = CACreationUI.Icon(
-                        "Rimshare/WorldMapIcons/forward-sun"),
                     Accent = CACreationUI.Preset,
                     Disabled = sources == 0 || newFactionTypes == 0,
                     DisabledReason = sources == 0
@@ -2771,8 +2769,6 @@ namespace ColonistAwareness
                 Details = "The faction remains in the region even if this "
                     + "settlement is later reassigned or removed.",
                 Badge = "New owner",
-                Icon = CACreationUI.Icon(
-                    "Rimshare/WorldMapIcons/forward-sun"),
                 Accent = CACreationUI.Authored,
                 ConfirmLabel = "Create and assign faction",
                 Choose = delegate
@@ -3238,8 +3234,6 @@ namespace ColonistAwareness
                     Traits = "Keeps Ideoligion · knowledge · world relations",
                     Details = "Choose the exact faction after selecting this source.",
                     Badge = existing ? "Current" : "Faction source",
-                    Icon = CACreationUI.Icon(
-                        "Rimshare/WorldMapIcons/castle"),
                     Accent = CACreationUI.Accent,
                     Selected = existing,
                     ConfirmLabel = "Use an existing faction",
@@ -3263,8 +3257,6 @@ namespace ColonistAwareness
                         + "RimWorld generates its Ideoligion from the faction "
                         + "type when the world starts.",
                     Badge = !existing ? "Current" : "Faction source",
-                    Icon = CACreationUI.Icon(
-                        "Rimshare/WorldMapIcons/forward-sun"),
                     Accent = CACreationUI.Authored,
                     Selected = !existing,
                     ConfirmLabel = "Create a local faction",

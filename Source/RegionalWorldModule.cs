@@ -632,14 +632,6 @@ namespace ColonistAwareness
         public int serviceInfrastructure;
         public int civicInfrastructure;
         public int facilityExceptionMask;
-        public string migrationEvidence;
-        private int legacyFacilityAuthoredMask;
-        private CALegacySettlementDevelopmentProfile
-            legacyDevelopmentProfile =
-                CALegacySettlementDevelopmentProfile.Contextual;
-        private int legacyAuthoredAccess = -1;
-        private int legacyAuthoredServices = -1;
-        private int legacyAuthoredCivic = -1;
         // Population groups and starting provisions are copied from the plan
         // and resolved into pawns, ideoligions, and organizations.
         public List<CASettlementPopulationGroup> populationGroups =
@@ -785,22 +777,6 @@ namespace ColonistAwareness
                 "civicInfrastructure", 0);
             Scribe_Values.Look(ref facilityExceptionMask,
                 "facilityExceptionMask", 0);
-            Scribe_Values.Look(ref migrationEvidence,
-                "migrationEvidence");
-            if (Scribe.mode == LoadSaveMode.LoadingVars)
-            {
-                Scribe_Values.Look(ref legacyFacilityAuthoredMask,
-                    "startingFacilityAuthoredMask", 0);
-                Scribe_Values.Look(ref legacyDevelopmentProfile,
-                    "developmentProfile",
-                    CALegacySettlementDevelopmentProfile.Contextual);
-                Scribe_Values.Look(ref legacyAuthoredAccess,
-                    "authoredAccessInfrastructure", -1);
-                Scribe_Values.Look(ref legacyAuthoredServices,
-                    "authoredServiceInfrastructure", -1);
-                Scribe_Values.Look(ref legacyAuthoredCivic,
-                    "authoredCivicInfrastructure", -1);
-            }
             Scribe_Collections.Look(ref populationGroups, "populationGroups", LookMode.Deep);
             Scribe_Collections.Look(ref startingProvisions, "startingProvisions",
                 LookMode.Deep);
@@ -818,18 +794,6 @@ namespace ColonistAwareness
                 populationAssignments = new List<string>();
             if (statusAssignments == null)
                 statusAssignments = new List<string>();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-            {
-                if (facilityExceptionMask == 0)
-                    facilityExceptionMask = legacyFacilityAuthoredMask;
-                if (schemaVersion < CurrentSchemaVersion)
-                {
-                    migrationEvidence = "B5/B6 realized material state and "
-                        + "facility exceptions preserved; retired profile and "
-                        + "ordinal authoring no longer govern this record.";
-                    schemaVersion = CurrentSchemaVersion;
-                }
-            }
             Scribe_Values.Look(ref factionEra, "factionEra", -1);
             Scribe_Values.Look(ref settlementForm, "settlementForm", -1);
             Scribe_Values.Look(ref generationSummary, "generationSummary");
@@ -997,6 +961,7 @@ namespace ColonistAwareness
 
     public sealed class CARegionalWorldComponent : WorldComponent
     {
+        private int authoringDataEpoch = CAAuthoringDataEpoch.Current;
         private List<CARegionalSettlementRecord> records =
             new List<CARegionalSettlementRecord>();
         private List<CARegionalPlan> regions = new List<CARegionalPlan>();
@@ -1060,12 +1025,30 @@ namespace ColonistAwareness
 
         public override void ExposeData()
         {
-            Scribe_Collections.Look(ref records, "CA_regionalSettlements",
-                LookMode.Deep);
-            Scribe_Collections.Look(ref regions, "CA_regionalPlans",
-                LookMode.Deep);
-            Scribe_Deep.Look(ref worldPolicy, "CA_regionalWorldPolicy");
-            Scribe_Deep.Look(ref groundwater, "CA_groundwaterTuning");
+            Scribe_Values.Look(ref authoringDataEpoch,
+                "CA_authoringDataEpoch", 0);
+            bool current = Scribe.mode == LoadSaveMode.Saving
+                || CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch);
+            if (current)
+            {
+                Scribe_Collections.Look(ref records,
+                    "CA_regionalSettlements", LookMode.Deep);
+                Scribe_Collections.Look(ref regions,
+                    "CA_regionalPlans", LookMode.Deep);
+                Scribe_Deep.Look(ref worldPolicy, "CA_regionalWorldPolicy");
+                Scribe_Deep.Look(ref groundwater, "CA_groundwaterTuning");
+            }
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && !current)
+            {
+                records = new List<CARegionalSettlementRecord>();
+                regions = new List<CARegionalPlan>();
+                worldPolicy = new CARegionalWorldPolicy();
+                groundwater = new CAGroundwaterTuning();
+                transientDeveloperExerciseRegion = null;
+                authoringDataEpoch = CAAuthoringDataEpoch.Current;
+                CAAuthoringDataEpoch.RecordDiscard(
+                    "regional authoring state");
+            }
             if (records == null) records = new List<CARegionalSettlementRecord>();
             if (regions == null) regions = new List<CARegionalPlan>();
             if (worldPolicy == null) worldPolicy = new CARegionalWorldPolicy();
@@ -1873,12 +1856,6 @@ namespace ColonistAwareness
                     CACultureHistory.EnsureSettlementCulture(region,
                         settlement);
                     record.culture = settlement.localCulture?.Copy();
-                    if (record.culture != null)
-                        record.migrationEvidence =
-                            (record.migrationEvidence.NullOrEmpty() ? ""
-                                : record.migrationEvidence + " ")
-                            + "B7 settlement Culture recovered from the "
-                            + "authoritative regional plan.";
                 }
             }
             CACulturalExpression expression =

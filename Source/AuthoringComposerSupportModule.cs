@@ -68,14 +68,13 @@ namespace ColonistAwareness
                     CompactSummary = "Saved Culture",
                     Traits = CultureDetails(local.values),
                     Details = "Applying this Culture copies its inherited "
-                        + "name and optional visual tradition. The target "
-                        + "settlement develops its own local history and lived "
-                        + "practices.",
+                        + "meanings, inherited practices, name, and optional "
+                        + "visual tradition. Locality and history remain with "
+                        + "the target population.",
                     Group = "Saved Cultures",
                     Badge = "Saved Culture",
-                    Icon = CACultureModel.Icon(local.values),
                     Accent = CACreationUI.Authored,
-                    Selected = culture?.profileKey == local.key,
+                    Selected = false,
                     ConfirmLabel = "Use saved Culture",
                     Choose = delegate
                     {
@@ -98,30 +97,28 @@ namespace ColonistAwareness
             CAPoliticalBeliefs beliefs, string seed, Action changed)
         {
             var choices = new List<CACreationChoice>();
-            foreach (CAFactionAxes.PoliticalPreset preset in
-                CAFactionAxes.Presets)
+            foreach (CAFactionAxes.PoliticalProfile preset in
+                CAFactionAxes.PoliticalProfiles)
             {
-                CAFactionAxes.PoliticalPreset local = preset;
+                CAFactionAxes.PoliticalProfile local = preset;
                 choices.Add(new CACreationChoice
                 {
                     Key = local.Key,
                     Name = local.Name,
                     Summary = local.Description,
-                    CompactSummary = CAPoliticalBeliefsModel.PresetTraits(
+                    CompactSummary = CAPoliticalBeliefsModel.ProfileTraits(
                         local, 2),
-                    Traits = PoliticalFingerprint(local),
-                    Details = CAPoliticalBeliefsModel.PresetDetails(local),
+                    Traits = CAPoliticalBeliefsModel.ProfileTraits(local, 4),
+                    Details = CAPoliticalBeliefsModel.ProfileDetails(local),
                     Group = PoliticalFamily(local),
                     Badge = "Built-in profile",
-                    Icon = CAPoliticalBeliefsModel.Icon(local),
-                    Accent = CACreationUI.Preset,
-                    Selected = CAPoliticalBeliefsModel.UsesPreset(
+                    Accent = CACreationUI.Authored,
+                    Selected = CAPoliticalBeliefsModel.UsesProfile(
                         beliefs, local),
                     ConfirmLabel = "Apply these beliefs",
                     Choose = delegate
                     {
-                        CAPoliticalBeliefsModel.ChoosePreset(beliefs, local,
-                            seed + ":political-profile:" + local.Key);
+                        CAPoliticalBeliefsModel.ApplyProfile(beliefs, local);
                         changed?.Invoke();
                     }
                 });
@@ -137,16 +134,15 @@ namespace ColonistAwareness
                     Name = local.displayName,
                     Summary = CAPoliticalBeliefsModel.Summary(local.values),
                     CompactSummary = "Saved political profile",
-                    Traits = PoliticalFingerprint(local.values),
+                    Traits = CAPoliticalBeliefsModel.Summary(local.values),
                     Details = PoliticalDetails(local.values)
                         + "\n\nApplying this profile copies its values into "
                         + "the current world draft. Later edits do not change "
                         + "the saved library copy.",
                     Group = "Saved",
                     Badge = "Saved profile",
-                    Icon = CAPoliticalBeliefsModel.Icon(local.values),
                     Accent = CACreationUI.Authored,
-                    Selected = beliefs?.profileKey == local.key,
+                    Selected = false,
                     ConfirmLabel = "Apply saved profile",
                     Choose = delegate
                     {
@@ -162,11 +158,9 @@ namespace ColonistAwareness
             CAPoliticalBeliefs beliefs)
         {
             if (beliefs == null) return "Political beliefs not set";
-            CAUserPoliticalProfile saved = CAAuthoringProfileLibrary.Politics
-                .FirstOrDefault(item => item.key == beliefs.profileKey);
-            return saved?.displayName
-                ?? CAFactionAxes.Preset(beliefs.presetName)?.Name
-                ?? "Custom political beliefs";
+            return CAFactionAxes.CountByState(beliefs.positions,
+                    CAAxisSource.Unset) == 0
+                ? "Political positions set" : "Political positions incomplete";
         }
 
         internal static string CultureDetails(CACulture culture)
@@ -178,33 +172,26 @@ namespace ColonistAwareness
                     ? "neutral fallback"
                     : culture.sourceCultureDefName
                         + " unavailable; neutral fallback");
+            int meanings = culture.inheritedMeanings.Count
+                + culture.localMeanings.Count;
+            int practices = culture.inheritedPractices.Count
+                + culture.practices.Count;
+            string salient = string.Join(", ", culture.inheritedMeanings
+                .Concat(culture.localMeanings)
+                .Where(item => item != null)
+                .OrderByDescending(item => item.salience)
+                .ThenBy(item => item.subjectKey)
+                .Take(3).Select(item => CASocialSubjectRegistry
+                    .Find(item.subjectKey)?.Label ?? item.subjectKey).ToArray());
             return "Culture: " + (culture.name ?? "inherited Culture")
+                + ". Social meanings: " + meanings + (salient.NullOrEmpty()
+                    ? "." : " (" + salient + ").")
+                + " Inherited and lived practices: " + practices
+                + ". Constituent sources: " + culture.constituents.Count
                 + ". Visual tradition: " + source + ". Continuity: "
                 + CACultureHistory.ContinuitySummary(culture) + ".";
         }
 
-
-        internal static string PoliticalFingerprint(
-            CAFactionAxes.PoliticalPreset preset)
-        {
-            if (preset == null) return "No positions recorded";
-            var temporary = new CAPoliticalBeliefs();
-            CAPoliticalBeliefsModel.ApplyPreset(temporary, preset);
-            return PoliticalFingerprint(temporary);
-        }
-
-        internal static string PoliticalFingerprint(
-            CAPoliticalBeliefs beliefs)
-        {
-            return string.Join(" | ", PoliticalGroups.Select(group =>
-            {
-                int set = group.Axes.Count(axis => !CAFactionAxes.KeyOf(
-                    beliefs?.positions, axis).NullOrEmpty());
-                string initial = new string(group.Label.Where(char.IsLetter)
-                    .Take(1).ToArray()).ToUpperInvariant();
-                return initial + set;
-            }).ToArray());
-        }
 
         internal static string PoliticalDetails(CAPoliticalBeliefs beliefs)
         {
@@ -220,16 +207,15 @@ namespace ColonistAwareness
         }
 
         private static string PoliticalFamily(
-            CAFactionAxes.PoliticalPreset preset)
+            CAFactionAxes.PoliticalProfile preset)
         {
             string leader = preset?.Positions.ContainsKey(
                 CAFactionAxes.Leadership) == true
                     ? preset.Positions[CAFactionAxes.Leadership] : null;
             if (leader == "single") return "Central rule";
             if (leader == "none") return "No central rule";
-            if (preset?.Key == "common_ownership"
-                || preset?.Key == "independent_communes"
-                || preset?.Key == "worker_federation")
+            if (preset?.Key == "worker_federation"
+                || preset?.Key == "free_commons")
                 return "Common and cooperative";
             return "Councils and federations";
         }

@@ -9,6 +9,7 @@ namespace ColonistAwareness
 {
     public class AwarenessSettings : ModSettings
     {
+        private int authoringDataEpoch = CAAuthoringDataEpoch.Current;
         public bool eatSmart = true;
         public bool criticalHauling = true;
         public bool lifeSafety = true;
@@ -59,6 +60,8 @@ namespace ColonistAwareness
         public override void ExposeData()
         {
             base.ExposeData();
+            Scribe_Values.Look(ref authoringDataEpoch,
+                "authoringDataEpoch", 0);
             Scribe_Values.Look(ref eatSmart, "eatSmart", true);
             Scribe_Values.Look(ref criticalHauling, "criticalHauling", true);
             Scribe_Values.Look(ref lifeSafety, "lifeSafety", true);
@@ -105,13 +108,25 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref autonomousHomePlanning, "autonomousHomePlanning", false);
             Scribe_Values.Look(ref autonomousHomePlanningResetGeneration,
                 "autonomousHomePlanningResetGeneration", 0);
-            Scribe_Collections.Look(ref cultureProfiles, "cultureProfiles",
-                LookMode.Deep);
-            Scribe_Collections.Look(ref politicalProfiles,
-                "politicalProfiles", LookMode.Deep);
+            bool currentAuthoringData = Scribe.mode == LoadSaveMode.Saving
+                || CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch);
+            if (currentAuthoringData)
+            {
+                Scribe_Collections.Look(ref cultureProfiles,
+                    "cultureProfiles", LookMode.Deep);
+                Scribe_Collections.Look(ref politicalProfiles,
+                    "politicalProfiles", LookMode.Deep);
+            }
             Scribe_Values.Look(ref traceBehavior, "traceBehavior", true);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
+                if (!CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch))
+                {
+                    cultureProfiles = new List<CAUserCultureProfile>();
+                    politicalProfiles = new List<CAUserPoliticalProfile>();
+                    authoringDataEpoch = CAAuthoringDataEpoch.Current;
+                    CAAuthoringDataEpoch.RecordDiscard("saved profiles");
+                }
                 if (initiativeSchema
                     < AutonomyComponent.CurrentInitiativeSchema)
                 {

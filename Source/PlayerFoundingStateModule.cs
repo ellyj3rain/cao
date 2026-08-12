@@ -41,7 +41,7 @@ namespace ColonistAwareness
     // the founders. The arrangement is what they establish at landing.
     public sealed class CAPlayerFoundingPlan : IExposable
     {
-        public const int CurrentSchemaVersion = 2;
+        public const int CurrentSchemaVersion = 3;
         public int schemaVersion = CurrentSchemaVersion;
         public CACulture culture = new CACulture();
         public CAPoliticalBeliefs politicalBeliefs =
@@ -82,19 +82,7 @@ namespace ColonistAwareness
             if (politicalBeliefs == null)
                 politicalBeliefs = new CAPoliticalBeliefs();
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
-            {
                 schemaVersion = CurrentSchemaVersion;
-                if (arrangement?.id == "established-settlement")
-                {
-                    arrangement.id = "ancestral-commons";
-                    arrangement.label = "ancestral commons";
-                    arrangement.premise = "The group carries inherited "
-                        + "customs into the rules adopted at landing.";
-                }
-                if (temporalBasis.NullOrEmpty())
-                    temporalBasis = "Pre-B7 founding state: no evidence of "
-                        + "a pre-existing player settlement was recorded.";
-            }
         }
 
         internal CAAxisSource ArrangementSource
@@ -140,6 +128,7 @@ namespace ColonistAwareness
     // institutions that subsequently develop through play.
     public sealed class CAPlayerFoundingWorldComponent : WorldComponent
     {
+        private int authoringDataEpoch = CAAuthoringDataEpoch.Current;
         private CAPlayerFoundingPlan founding =
             new CAPlayerFoundingPlan();
         private int appliedAtTick = -1;
@@ -179,9 +168,23 @@ namespace ColonistAwareness
 
         public override void ExposeData()
         {
-            Scribe_Deep.Look(ref founding, "CA_playerFounding");
-            Scribe_Values.Look(ref appliedAtTick,
-                "CA_playerFoundingAppliedAtTick", -1);
+            Scribe_Values.Look(ref authoringDataEpoch,
+                "CA_authoringDataEpoch", 0);
+            bool current = Scribe.mode == LoadSaveMode.Saving
+                || CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch);
+            if (current)
+            {
+                Scribe_Deep.Look(ref founding, "CA_playerFounding");
+                Scribe_Values.Look(ref appliedAtTick,
+                    "CA_playerFoundingAppliedAtTick", -1);
+            }
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && !current)
+            {
+                founding = new CAPlayerFoundingPlan();
+                appliedAtTick = -1;
+                authoringDataEpoch = CAAuthoringDataEpoch.Current;
+                CAAuthoringDataEpoch.RecordDiscard("founding draft");
+            }
             if (founding == null) founding = new CAPlayerFoundingPlan();
             base.ExposeData();
         }
@@ -314,8 +317,6 @@ namespace ColonistAwareness
             CACultureModel.EnsureGenerated(draft.culture,
                 seed + ":culture", PlayerCultureDef());
             CAPoliticalBeliefsModel.Ensure(draft.politicalBeliefs,
-                seed + ":politics");
-            CAPoliticalBeliefsModel.GenerateUnset(draft.politicalBeliefs,
                 seed + ":politics");
             if (draft.arrangement == null
                 || draft.ArrangementSource == CAAxisSource.Unset
@@ -451,7 +452,7 @@ namespace ColonistAwareness
         {
             if (draft == null || arrangement == null) return;
             draft.arrangement = arrangement.Copy();
-            draft.arrangementSource = (byte)CAAxisSource.Preset;
+            draft.arrangementSource = (byte)CAAxisSource.Authored;
             draft.confirmed = false;
         }
 
@@ -575,7 +576,7 @@ namespace ColonistAwareness
                 failure = "Set the founders' culture.";
                 return false;
             }
-            string cultureFailure = CACultureModel.CompatibilityFailure(
+            string cultureFailure = CACultureModel.SubstantiveFailure(
                 draft.culture);
             if (!cultureFailure.NullOrEmpty())
             {
@@ -588,8 +589,8 @@ namespace ColonistAwareness
                     draft.politicalBeliefs.positions,
                     CAAxisSource.Unset) > 0)
             {
-                failure = "Set the founders' political beliefs or generate "
-                    + "the remaining choices.";
+                failure = "Answer every political-belief question or apply a "
+                    + "complete profile.";
                 return false;
             }
             CAFoundingArrangement arrangement = draft.arrangement;
@@ -716,7 +717,6 @@ namespace ColonistAwareness
             switch (draft?.ArrangementSource ?? CAAxisSource.Unset)
             {
                 case CAAxisSource.Authored: return "Custom";
-                case CAAxisSource.Preset: return "Starting arrangement";
                 case CAAxisSource.Generated: return "Suggested";
                 default: return "Not set";
             }
