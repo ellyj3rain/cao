@@ -23,13 +23,11 @@ Public redistribution of this mod must be GPL-2.0-compatible with
 source available.
 
 ## Medieval Overhaul
-SirLalaPyon. Used by permission granted verbally to the project owner,
-2026-08-04. Removed immediately on request from the author.
+SirLalaPyon. Removed immediately on request from the author.
 
 ## Dubs Bad Hygiene
 Dubwise56 (Dubwise). https://github.com/Dubwise56/Dubs-Bad-Hygiene -
-no license stated; used by permission granted verbally to the project
-owner, 2026-08-04. Removed immediately on request from the author.
+no license stated. Removed immediately on request from the author.
 
 How and why: the mod's compiled assembly is not published, so none of
 its code could be ported. What was taken is its art, its sounds, and
@@ -43,10 +41,7 @@ fixtures should be and what they should look like.
 
 ## Processor Framework
 Syrchalis. https://github.com/Syrchalis/ProcessorFramework - no
-license stated; used by permission granted verbally to the project
-owner, 2026-08-04, on the stated condition of attribution and an
-explanation of how and why it was integrated. Removed immediately on
-request from the author.
+license stated. Removed immediately on request from the author.
 
 *Status:* **not yet integrated. Nothing is ported.** No ProcessDef,
 CompProcessor or ProcessorFramework symbol exists in this mod.
@@ -83,13 +78,7 @@ SmashPhil. https://github.com/SmashPhil/Vehicle-Framework - MIT,
 (c) 2019-2026. Bundled with its SmashTools, CoreLib, DevTools and
 UpdateLogTool submodules, each separately MIT.
 
-## Economic stack - used with the authors' permission
-
-The authors below each gave verbal permission for use, on the
-condition that the credit names what was used, explains how it
-functions within this mod's wider framework, and links to the source.
-That condition is met here, and each entry is filled as the work
-lands rather than in advance.
+## Economic stack
 
 ### Hospitality
 Orion (OrionFive). https://github.com/OrionFive/Hospitality

@@ -2,7 +2,7 @@
 <Defs>
   <!-- [CA port] One tab for the whole medieval category, rather than
        the source mod's several. Assets by SirLalaPyon (Medieval
-       Overhaul), used with permission. -->
+       Overhaul). -->
   <DesignationCategoryDef>
     <defName>CA_Medieval</defName>
     <label>medieval</label>
