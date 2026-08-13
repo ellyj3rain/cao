@@ -151,21 +151,24 @@ namespace ColonistAwareness
 
     public sealed class CAPawnCulturalAttitude : IExposable
     {
-        public const int CurrentSchemaVersion = 1;
+        public const int CurrentSchemaVersion = 2;
         public int schemaVersion = CurrentSchemaVersion;
         public int pawnId = -1;
         public string cultureId;
         public string subgroupId;
         public string questionKey;
         public float privateAttitude;
+        public float attention;
         public float moralConviction;
         public float identityCentrality;
+        public float inheritedPriorStrength;
         public float knowledgeConfidence;
         public float perceivedDescriptiveNorm;
         public float perceivedInjunctiveNorm;
+        public float perceivedSocialPressure;
         public float expectedEnforcement;
         public float publicExpression;
-        public float publicVisibility = 0.65f;
+        public float observationLikelihood = 0.65f;
         // Status/prestige attached to the represented cultural position. It
         // modifies social referent weight, never the private position itself.
         public float prestigeSignal;
@@ -178,29 +181,40 @@ namespace ColonistAwareness
 
         public void ExposeData()
         {
-            Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
+            Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0,
+                forceSave: true);
             Scribe_Values.Look(ref pawnId, "pawnId", -1);
             Scribe_Values.Look(ref cultureId, "cultureId");
             Scribe_Values.Look(ref subgroupId, "subgroupId");
             Scribe_Values.Look(ref questionKey, "questionKey");
-            Scribe_Values.Look(ref privateAttitude, "privateAttitude", 0f);
-            Scribe_Values.Look(ref moralConviction, "moralConviction", 0f);
+            Scribe_Values.Look(ref privateAttitude, "privateAttitude", 0f,
+                forceSave: true);
+            Scribe_Values.Look(ref attention, "attention", 0f,
+                forceSave: true);
+            Scribe_Values.Look(ref moralConviction, "moralConviction", 0f,
+                forceSave: true);
             Scribe_Values.Look(ref identityCentrality,
-                "identityCentrality", 0f);
+                "identityCentrality", 0f, forceSave: true);
+            Scribe_Values.Look(ref inheritedPriorStrength,
+                "inheritedPriorStrength", 0f, forceSave: true);
             Scribe_Values.Look(ref knowledgeConfidence,
-                "knowledgeConfidence", 0f);
+                "knowledgeConfidence", 0f, forceSave: true);
             Scribe_Values.Look(ref perceivedDescriptiveNorm,
-                "perceivedDescriptiveNorm", 0f);
+                "perceivedDescriptiveNorm", 0f, forceSave: true);
             Scribe_Values.Look(ref perceivedInjunctiveNorm,
-                "perceivedInjunctiveNorm", 0f);
+                "perceivedInjunctiveNorm", 0f, forceSave: true);
+            Scribe_Values.Look(ref perceivedSocialPressure,
+                "perceivedSocialPressure", 0f, forceSave: true);
             Scribe_Values.Look(ref expectedEnforcement,
-                "expectedEnforcement", 0f);
+                "expectedEnforcement", 0f, forceSave: true);
             Scribe_Values.Look(ref publicExpression,
-                "publicExpression", 0f);
-            Scribe_Values.Look(ref publicVisibility,
-                "publicVisibility", 0.65f);
-            Scribe_Values.Look(ref prestigeSignal, "prestigeSignal", 0f);
-            Scribe_Values.Look(ref uncertainty, "uncertainty", 0f);
+                "publicExpression", 0f, forceSave: true);
+            Scribe_Values.Look(ref observationLikelihood,
+                "observationLikelihood", 0.65f, forceSave: true);
+            Scribe_Values.Look(ref prestigeSignal, "prestigeSignal", 0f,
+                forceSave: true);
+            Scribe_Values.Look(ref uncertainty, "uncertainty", 0f,
+                forceSave: true);
             Scribe_Values.Look(ref provenance, "provenance");
             Scribe_Values.Look(ref sourceDistributionSignature,
                 "sourceDistributionSignature");
@@ -301,7 +315,15 @@ namespace ColonistAwareness
                         psychology.reactance,
                         psychology.epistemicVigilance,
                         CAPsychologyRuntime.UncertaintyForQuestion(
-                            psychology, distribution.questionKey)));
+                            psychology, distribution.questionKey),
+                        CAPsychologyRuntime.PositionShiftForQuestion(
+                            psychology, distribution.questionKey),
+                        EvidenceConfidenceFor(pawnId,
+                            distribution.questionKey, culture),
+                        RepresentedEnforcementFor(pawnId,
+                            distribution.questionKey),
+                        MoralExperienceFor(pawnId,
+                            distribution.questionKey, culture)));
             return new CAPawnCulturalAttitude
             {
                 pawnId = pawnId,
@@ -309,14 +331,17 @@ namespace ColonistAwareness
                 subgroupId = subgroupId,
                 questionKey = distribution.questionKey,
                 privateAttitude = result.PrivatePosition,
+                attention = result.Attention,
                 moralConviction = result.MoralConviction,
                 identityCentrality = result.IdentityCentrality,
+                inheritedPriorStrength = result.InheritedPriorStrength,
                 knowledgeConfidence = result.KnowledgeConfidence,
                 perceivedDescriptiveNorm = result.DescriptiveNorm,
                 perceivedInjunctiveNorm = result.InjunctiveNorm,
+                perceivedSocialPressure = result.PerceivedSocialPressure,
                 expectedEnforcement = result.ExpectedEnforcement,
                 publicExpression = result.PublicExpression,
-                publicVisibility = distribution.visibility,
+                observationLikelihood = result.ObservationLikelihood,
                 prestigeSignal = distribution.prestigeSignal,
                 uncertainty = result.Uncertainty,
                 provenance = distribution.provenance
@@ -342,6 +367,8 @@ namespace ColonistAwareness
                 (neighbors ?? Enumerable.Empty<(
                     CAPawnCulturalAttitude, CASocialInfluenceEdge)>())
                 .Where(value => value.attitude != null && value.edge != null)
+                .Where(value => Observed(value.attitude, target,
+                    value.edge, tick))
                 .Select(value => new CACulturalInfluenceSample(
                     value.attitude.publicExpression, value.edge.weight,
                     value.edge.trust, Mathf.Clamp01(
@@ -355,7 +382,8 @@ namespace ColonistAwareness
                     target.privateAttitude,
                     target.perceivedDescriptiveNorm,
                     target.perceivedInjunctiveNorm,
-                    target.expectedEnforcement, target.publicVisibility,
+                    target.expectedEnforcement,
+                    target.observationLikelihood,
                     openness, samples);
             target.privateAttitude = result.PrivatePosition;
             target.perceivedDescriptiveNorm = result.DescriptiveNorm;
@@ -363,14 +391,148 @@ namespace ColonistAwareness
             target.publicExpression = result.PublicExpression;
             target.lastUpdatedTick = tick;
         }
+
+        private static bool Observed(CAPawnCulturalAttitude source,
+            CAPawnCulturalAttitude target, CASocialInfluenceEdge edge,
+            int tick)
+        {
+            float likelihood = Mathf.Clamp01(source.observationLikelihood);
+            if (likelihood <= 0f) return false;
+            if (likelihood >= 1f) return true;
+            string hash = CASocialPatternKernel.StableHash(
+                source.pawnId + "|" + target.pawnId + "|"
+                    + source.questionKey + "|" + edge.edgeType + "|"
+                    + tick / 2500);
+            uint sample = Convert.ToUInt32(hash, 16);
+            return (sample & 0x00FFFFFFu) / 16777215f <= likelihood;
+        }
+
+        internal static float EvidenceConfidenceFor(int pawnId,
+            string questionKey, CACulture culture = null)
+        {
+            IEnumerable<CARepresentedSourceAppraisal> direct =
+                DirectQuestionEvidenceFor(pawnId, questionKey, culture)
+                .Select(observation => CACulturalCognitionPureKernel
+                    .RepresentedQuestionSourceAppraisal(
+                        observation.questionDispersion,
+                        QuestionParticipation(observation),
+                        observation.observationCount));
+            IEnumerable<CARepresentedSourceAppraisal> social =
+                (CACulturalCognitionWorldComponent.Current
+                    ?.InfluenceEdgesForTarget(pawnId)
+                    ?? Array.Empty<CASocialInfluenceEdge>())
+                .Where(edge => edge?.exposures?.Any(value => value != null
+                    && value.subjectKey == questionKey) == true)
+                .OrderByDescending(edge => edge.lastContactTick)
+                .Select(edge => new CARepresentedSourceAppraisal(
+                    edge.weight, edge.trust, edge.prestige,
+                    edge.payoffVisibility));
+            return CACulturalCognitionPureKernel
+                .RepresentedEvidenceConfidence(direct.Concat(social));
+        }
+
+        internal static float MoralExperienceFor(int pawnId,
+            string questionKey, CACulture culture = null)
+        {
+            CACultureQuestionDef definition =
+                CACultureQuestionRegistry.Find(questionKey);
+            var subjects = new HashSet<string>(
+                definition?.SocialSubjectAdapters ?? Array.Empty<string>(),
+                StringComparer.Ordinal);
+            IEnumerable<CARepresentedMoralExperience> direct =
+                DirectQuestionEvidenceFor(pawnId, questionKey, culture)
+                .Select(observation => CACulturalCognitionPureKernel
+                    .RepresentedQuestionMoralExperience(
+                        observation.questionPosition,
+                        observation.questionDispersion,
+                        QuestionParticipation(observation),
+                        observation.observationCount));
+            IEnumerable<CARepresentedMoralExperience> social =
+                (CASocialReactionWorldComponent.Current
+                    ?.ReactionsForPawn(pawnId)
+                    ?? Array.Empty<CASocialReactionRecord>())
+                .Where(value => value != null
+                    && subjects.Contains(value.subjectKey))
+                .OrderByDescending(value => value.tick).Take(12)
+                .Select(value => new CARepresentedMoralExperience(
+                    Mathf.Clamp01(value.salience / 100f),
+                    Mathf.Clamp01(Math.Abs(value.approval) / 100f),
+                    KnowledgeSourceConfidence(value.knowledgeSource)));
+            return CACulturalCognitionPureKernel
+                .RepresentedMoralExperience(direct.Concat(social));
+        }
+
+        private static IEnumerable<CACultureObservation>
+            DirectQuestionEvidenceFor(int pawnId, string questionKey,
+                CACulture culture)
+        {
+            string key = "question:" + (questionKey ?? "");
+            return (culture?.observations
+                    ?? new List<CACultureObservation>())
+                .Where(value => value != null
+                    && value.sourceDomain == "Culture question evidence"
+                    && value.key == key && value.hasQuestionEvidence
+                    && value.observationCount > 0
+                    && CACulturalCognitionPureKernel
+                        .ReceivesRepresentedQuestionEvidence(pawnId,
+                            value.sourceSignature,
+                            QuestionParticipation(value)));
+        }
+
+        private static float QuestionParticipation(
+            CACultureObservation observation)
+        {
+            if (observation == null || observation.eligiblePopulation < 1)
+                return 0f;
+            return Mathf.Clamp01(observation.observedPawnCount
+                / (float)observation.eligiblePopulation);
+        }
+
+        private static float KnowledgeSourceConfidence(string source)
+        {
+            if (source.NullOrEmpty()) return 0.35f;
+            if (source.IndexOf("direct", StringComparison.OrdinalIgnoreCase)
+                    >= 0
+                || source.Equals("Firsthand",
+                    StringComparison.OrdinalIgnoreCase)
+                || source.Equals("Witnessed",
+                    StringComparison.OrdinalIgnoreCase))
+                return 0.90f;
+            return 0.55f;
+        }
+
+        internal static float RepresentedEnforcementFor(int pawnId,
+            string questionKey)
+        {
+            CACultureQuestionDef definition =
+                CACultureQuestionRegistry.Find(questionKey);
+            if (definition?.SocialSubjectAdapters == null
+                || definition.SocialSubjectAdapters.Length == 0)
+                return 0f;
+            var subjects = new HashSet<string>(
+                definition.SocialSubjectAdapters, StringComparer.Ordinal);
+            CAOrganization organization = CAOrganizationWorldComponent.Current
+                ?.Organizations.FirstOrDefault(value => value != null
+                    && value.memberPawnIds?.Contains(pawnId) == true);
+            List<CAInstitutionSanctionAppraisal> evidence = organization
+                ?.sanctionAppraisals?.Where(value => value != null
+                    && subjects.Contains(value.subjectKey))
+                .OrderByDescending(value => value.tick).Take(12).ToList();
+            if (evidence == null || evidence.Count == 0) return 0f;
+            return Mathf.Clamp01(evidence.Average(value =>
+                value.visibility * 0.45f + value.consistency * 0.35f
+                    + value.deterrence * 0.20f));
+        }
     }
 
     public sealed class CACulturalCognitionWorldComponent : WorldComponent
     {
-        public const int CurrentSchemaVersion = 1;
+        public const int CurrentSchemaVersion = 2;
         private const int InfluenceLifetimeTicks = 10 * 60000;
-        private int campaignSchemaVersion =
-            CACampaignCompatibilityKernel.CurrentBoundaryVersion;
+        // The manifest stores this owner's schema version, not the campaign
+        // boundary version. They happened to share value 1 in B12; B13's
+        // schema-2 owner must emit 2 or its own manifest fails preflight.
+        private int campaignSchemaVersion = CurrentSchemaVersion;
         private int schemaVersion = CurrentSchemaVersion;
         private int nextSocialTick = 2500;
         private int nextInfluenceCleanupTick = 60000;
@@ -582,8 +744,11 @@ namespace ColonistAwareness
                 && new[]
                 {
                     value.moralConviction, value.identityCentrality,
-                    value.knowledgeConfidence, value.expectedEnforcement,
-                    value.publicVisibility, value.uncertainty
+                    value.attention, value.inheritedPriorStrength,
+                    value.knowledgeConfidence,
+                    value.perceivedSocialPressure,
+                    value.expectedEnforcement,
+                    value.observationLikelihood, value.uncertainty
                 }.All(Unit);
         }
 
@@ -690,8 +855,9 @@ namespace ColonistAwareness
                 return existing;
             if (existing != null)
             {
-                RefreshAttitude(existing, distribution, ProfileFor(pawn),
-                    doctrine, doctrineSource, distributionSignature,
+                RefreshAttitude(existing, culture, distribution,
+                    ProfileFor(pawn), doctrine, doctrineSource,
+                    distributionSignature,
                     doctrineSignature, Find.TickManager?.TicksGame ?? 0);
                 return existing;
             }
@@ -805,7 +971,7 @@ namespace ColonistAwareness
         }
 
         private static void RefreshAttitude(CAPawnCulturalAttitude target,
-            CACultureQuestionDistribution distribution,
+            CACulture culture, CACultureQuestionDistribution distribution,
             CAPsychologicalProfile psychology, float doctrine,
             string doctrineSource, string distributionSignature,
             string doctrineSignature, int tick)
@@ -828,15 +994,26 @@ namespace ColonistAwareness
                         psychology.reactance,
                         psychology.epistemicVigilance,
                         CAPsychologyRuntime.UncertaintyForQuestion(
-                            psychology, distribution.questionKey)));
+                            psychology, distribution.questionKey), 0f,
+                        CACulturalAttitudeKernel.EvidenceConfidenceFor(
+                            target.pawnId, distribution.questionKey,
+                            culture),
+                        CACulturalAttitudeKernel.RepresentedEnforcementFor(
+                            target.pawnId, distribution.questionKey),
+                        CACulturalAttitudeKernel.MoralExperienceFor(
+                            target.pawnId, distribution.questionKey,
+                            culture)));
+            target.attention = result.Attention;
             target.moralConviction = result.MoralConviction;
             target.identityCentrality = result.IdentityCentrality;
+            target.inheritedPriorStrength = result.InheritedPriorStrength;
             target.knowledgeConfidence = result.KnowledgeConfidence;
             target.perceivedDescriptiveNorm = result.DescriptiveNorm;
             target.perceivedInjunctiveNorm = result.InjunctiveNorm;
+            target.perceivedSocialPressure = result.PerceivedSocialPressure;
             target.expectedEnforcement = result.ExpectedEnforcement;
             target.publicExpression = result.PublicExpression;
-            target.publicVisibility = distribution.visibility;
+            target.observationLikelihood = result.ObservationLikelihood;
             target.prestigeSignal = distribution.prestigeSignal;
             target.uncertainty = result.Uncertainty;
             target.provenance = distribution.provenance
@@ -1162,6 +1339,54 @@ namespace ColonistAwareness
         {
             if (CACultureQuestionRegistry.Find(questionKey) == null) return;
             RecordExposure(observer, sourcePawnId, questionKey, tick);
+        }
+
+        // A represented event updates only the causal fields owned by that
+        // evidence. It does not resample the pawn or reset socially learned
+        // descriptive and injunctive norms.
+        internal void RefreshRepresentedEvidence(Pawn pawn,
+            string questionKey, int tick, CACulture culture = null)
+        {
+            if (pawn == null
+                || CACultureQuestionRegistry.Find(questionKey) == null)
+                return;
+            CACulture resolved = CASocialReactionWorldComponent.CultureFor(
+                pawn, out string subgroup, out _);
+            culture = culture ?? resolved;
+            CAPawnCulturalAttitude attitude = AttitudeFor(pawn, questionKey,
+                culture, subgroup);
+            if (attitude == null) return;
+            CAPsychologicalProfile psychology = ProfileFor(pawn)
+                ?? new CAPsychologicalProfile();
+            float evidence = CACulturalAttitudeKernel.EvidenceConfidenceFor(
+                pawn.thingIDNumber, questionKey, culture);
+            float moralExperience = CACulturalAttitudeKernel
+                .MoralExperienceFor(pawn.thingIDNumber, questionKey,
+                    culture);
+            float enforcement = CACulturalAttitudeKernel
+                .RepresentedEnforcementFor(pawn.thingIDNumber, questionKey);
+            float doctrine = CACultureIdeoligionAdapter.Pressure(pawn.Ideo,
+                questionKey, out _);
+            float psychologicalUncertainty = CAPsychologyRuntime
+                .UncertaintyForQuestion(psychology, questionKey);
+            attitude.knowledgeConfidence = CACulturalCognitionPureKernel
+                .KnowledgeConfidence(evidence, psychologicalUncertainty,
+                    psychology.epistemicVigilance);
+            attitude.uncertainty = CACulturalCognitionPureKernel
+                .KnowledgeUncertainty(evidence, psychologicalUncertainty,
+                    psychology.epistemicVigilance);
+            attitude.moralConviction = CACulturalCognitionPureKernel
+                .MoralConviction(attitude.privateAttitude, doctrine,
+                    attitude.identityCentrality, moralExperience);
+            attitude.expectedEnforcement = enforcement;
+            attitude.publicExpression = CACulturalCognitionPureKernel
+                .PublicExpression(attitude.privateAttitude,
+                    attitude.perceivedInjunctiveNorm,
+                    attitude.perceivedSocialPressure, enforcement,
+                    psychology.agreeableness,
+                    psychology.groupIdentification, psychology.reactance);
+            attitude.lastUpdatedTick = tick >= 0 ? tick
+                : Find.TickManager?.TicksGame ?? 0;
         }
 
         internal void RecordPoliticalExposure(Pawn observer,
@@ -1620,31 +1845,139 @@ namespace ColonistAwareness
                     new[] { "openness", "agreeableness" },
                 "relationships.pluralityAcceptance" =>
                     new[] { "openness", "agreeableness" },
+                "relationships.kinObligation" =>
+                    new[] { "group identification", "empathic concern" },
                 "authority.genderDistribution" =>
                     new[] { "status seeking", "agreeableness" },
+                "authority.genderedWork" =>
+                    new[] { "need for closure", "openness" },
+                "authority.officeAccess" =>
+                    new[] { "openness", "agreeableness" },
                 "status.hereditaryLegitimacy" => new[]
                     { "status seeking", "need for closure" },
                 "status.rankDifferentiation" => new[]
                     { "status seeking", "competitive-world belief" },
+                "status.mobility" => new[]
+                    { "openness", "need for closure" },
                 "groups.outsiderInclusion" => new[]
                     { "openness", "dangerous-world belief" },
                 "groups.integrationPreference" => new[]
                     { "openness", "group identification" },
+                "groups.membershipAccess" => new[]
+                    { "openness", "dangerous-world belief" },
                 "labor.coercionLegitimacy" => new[]
                     { "psychological reactance", "need for closure" },
                 "voice.inclusionExpectation" => new[]
                     { "extraversion", "psychological reactance" },
+                "voice.dissentTolerance" => new[]
+                    { "openness", "psychological reactance" },
+                "authority.enforcementLegitimacy" => new[]
+                    { "need for closure", "dangerous-world belief" },
                 "war.captiveProtection" => new[]
                     { "empathic concern", "honesty-humility" },
+                "war.punishmentSeverity" => new[]
+                    { "dangerous-world belief", "empathic concern" },
+                "war.retaliatoryViolence" => new[]
+                    { "competitive-world belief", "empathic concern" },
                 "provision.mutualObligation" => new[]
                     { "empathic concern", "agreeableness" },
+                "property.control" => new[]
+                    { "competitive-world belief", "empathic concern" },
                 "knowledge.access" => new[]
                     { "source trust", "group identification" },
                 "knowledge.noveltyAcceptance" => new[]
                     { "openness", "epistemic vigilance" },
+                "knowledge.expertiseDeference" => new[]
+                    { "epistemic vigilance", "conscientiousness" },
                 _ => Array.Empty<string>()
             };
             return UncertaintyFor(profile, constructs);
+        }
+
+        // Versioned, conservative question loadings. Culture supplies the
+        // population distribution; these broad factors create bounded
+        // individual deviation rather than cloning the population center.
+        internal static float PositionShiftForQuestion(
+            CAPsychologicalProfile profile, string questionKey)
+        {
+            if (profile == null) return 0f;
+            float openness = Center(profile.openness);
+            float agree = Center(profile.agreeableness);
+            float empathy = Center(profile.empathicConcern);
+            float honesty = Center(profile.honestyHumility);
+            float group = Center(profile.groupIdentification);
+            float closure = Center(profile.needForClosure);
+            float reactance = Center(profile.reactance);
+            float status = Center(profile.statusSeeking);
+            float danger = Center(profile.dangerousWorldBelief);
+            float competition = Center(profile.competitiveWorldBelief);
+            float vigilance = Center(profile.epistemicVigilance);
+            float conscientious = Center(profile.conscientiousness);
+            float shift = questionKey switch
+            {
+                "relationships.sameSexAcceptance" =>
+                    openness * 0.16f + agree * 0.08f,
+                "relationships.pluralityAcceptance" =>
+                    openness * 0.14f + reactance * 0.06f,
+                "relationships.kinObligation" =>
+                    group * 0.12f + empathy * 0.10f,
+                "authority.genderDistribution" => 0f,
+                "authority.genderedWork" =>
+                    closure * 0.12f - openness * 0.12f,
+                "authority.officeAccess" =>
+                    openness * 0.12f + agree * 0.08f,
+                "status.hereditaryLegitimacy" =>
+                    closure * 0.10f + status * 0.08f,
+                "status.rankDifferentiation" =>
+                    status * 0.12f + competition * 0.08f,
+                "status.mobility" =>
+                    openness * 0.12f - closure * 0.08f,
+                "groups.outsiderInclusion" =>
+                    openness * 0.12f + agree * 0.08f - danger * 0.10f,
+                "groups.integrationPreference" =>
+                    openness * 0.12f + agree * 0.06f - danger * 0.08f,
+                "groups.membershipAccess" =>
+                    openness * 0.10f - danger * 0.10f
+                        - group * 0.04f,
+                "voice.inclusionExpectation" =>
+                    openness * 0.10f + reactance * 0.08f,
+                "voice.dissentTolerance" =>
+                    openness * 0.12f + reactance * 0.10f
+                        - closure * 0.08f,
+                "authority.enforcementLegitimacy" =>
+                    closure * 0.12f + danger * 0.08f
+                        - reactance * 0.10f,
+                "labor.coercionLegitimacy" =>
+                    closure * 0.10f - reactance * 0.12f
+                        - empathy * 0.06f,
+                "provision.mutualObligation" =>
+                    empathy * 0.14f + agree * 0.08f,
+                "property.control" => empathy * 0.08f
+                    - competition * 0.10f,
+                "war.captiveProtection" =>
+                    empathy * 0.14f + honesty * 0.08f
+                        - competition * 0.08f,
+                "war.punishmentSeverity" =>
+                    danger * 0.10f + closure * 0.08f
+                        - empathy * 0.12f,
+                "war.retaliatoryViolence" =>
+                    competition * 0.12f - empathy * 0.10f
+                        - honesty * 0.06f,
+                "knowledge.access" =>
+                    openness * 0.10f + agree * 0.05f,
+                "knowledge.noveltyAcceptance" =>
+                    openness * 0.16f - closure * 0.10f,
+                "knowledge.expertiseDeference" =>
+                    vigilance * 0.08f + conscientious * 0.08f
+                        - reactance * 0.05f,
+                _ => 0f
+            };
+            return Mathf.Clamp(shift, -0.20f, 0.20f);
+        }
+
+        private static float Center(float value)
+        {
+            return Mathf.Clamp01(value) - 0.5f;
         }
 
         internal static float UncertaintyForPoliticalAxis(

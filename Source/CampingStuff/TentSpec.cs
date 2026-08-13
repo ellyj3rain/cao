@@ -47,7 +47,9 @@ public class TentSpec : IExposable
 			return;
 		}
 
-		layout = tentLayout.Select(row => row.Split(',').Select(val => (TentLayout)Enum.Parse(typeof(TentLayout), val)).ToList()).ToList();
+			layout = tentLayout.Select(row => row.Split(new[] { ',' },
+				StringSplitOptions.None).Select(val => (TentLayout)Enum.Parse(
+					typeof(TentLayout), val)).ToList()).ToList();
 		rotation = orientation;
 
 		CalculateDimensions();

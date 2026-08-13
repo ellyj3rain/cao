@@ -177,17 +177,28 @@ namespace ColonistAwareness
             {
                 "relationships.sameSexAcceptance",
                 "relationships.pluralityAcceptance",
+                "relationships.kinObligation",
                 "authority.genderDistribution",
+                "authority.genderedWork",
+                "authority.officeAccess",
                 "status.hereditaryLegitimacy",
                 "status.rankDifferentiation",
+                "status.mobility",
                 "groups.outsiderInclusion",
                 "groups.integrationPreference",
+                "groups.membershipAccess",
                 "labor.coercionLegitimacy",
+                "property.control",
                 "voice.inclusionExpectation",
+                "voice.dissentTolerance",
+                "authority.enforcementLegitimacy",
                 "war.captiveProtection",
+                "war.punishmentSeverity",
+                "war.retaliatoryViolence",
                 "provision.mutualObligation",
                 "knowledge.access",
-                "knowledge.noveltyAcceptance"
+                "knowledge.noveltyAcceptance",
+                "knowledge.expertiseDeference"
             }, StringComparer.Ordinal);
         private static readonly HashSet<string> PoliticalAxisKeys =
             new HashSet<string>(new[]
@@ -1700,7 +1711,7 @@ namespace ColonistAwareness
         private static void ValidateCultureQuestionPayload(
             PayloadElementFrame culture, List<string> failures)
         {
-            RequireInteger(culture, "questionRegistryVersion", 1, 1,
+            RequireInteger(culture, "questionRegistryVersion", 2, 2,
                 failures);
             foreach (string collectionName in new[]
                 { "inheritedQuestions", "localQuestions" })
@@ -1878,8 +1889,15 @@ namespace ColonistAwareness
             {
                 ValidateRequiredChildren(attitude,
                     K("schemaVersion", "pawnId", "cultureId", "subgroupId",
-                        "questionKey"), K(), K(), failures);
-                RequireInteger(attitude, "schemaVersion", 1, 1, failures);
+                        "questionKey", "privateAttitude", "attention",
+                        "moralConviction", "identityCentrality",
+                        "inheritedPriorStrength", "knowledgeConfidence",
+                        "perceivedDescriptiveNorm",
+                        "perceivedInjunctiveNorm",
+                        "perceivedSocialPressure", "expectedEnforcement",
+                        "publicExpression", "observationLikelihood",
+                        "prestigeSignal", "uncertainty"), K(), K(), failures);
+                RequireInteger(attitude, "schemaVersion", 2, 2, failures);
                 int pawnId = RequireInteger(attitude, "pawnId", 1,
                     int.MaxValue, failures);
                 string culture = RequireText(attitude, "cultureId", failures);
@@ -1904,9 +1922,11 @@ namespace ColonistAwareness
                     RequireFloat(attitude, field, -1f, 1f, 0f, failures);
                 foreach (string field in new[]
                     {
-                        "moralConviction", "identityCentrality",
-                        "knowledgeConfidence", "expectedEnforcement",
-                        "publicVisibility", "uncertainty"
+                        "attention", "moralConviction",
+                        "identityCentrality", "inheritedPriorStrength",
+                        "knowledgeConfidence", "perceivedSocialPressure",
+                        "expectedEnforcement", "observationLikelihood",
+                        "uncertainty"
                     })
                     RequireFloat(attitude, field, 0f, 1f, 0f, failures);
             }

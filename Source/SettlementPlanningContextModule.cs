@@ -326,7 +326,8 @@ namespace ColonistAwareness
                     CASettlementProgramRegistry.Find(key) != null)
                 && proposal.ProgramAssetRoles.All(role =>
                 {
-                    string[] parts = role.Split('|');
+                    string[] parts = role.Split(new[] { '|' },
+                        StringSplitOptions.None);
                     string defName = parts.Length > 3 ? parts[3] : null;
                     ThingDef def = Resolve(DemandForProgram(parts[0]),
                         defName);
@@ -401,13 +402,15 @@ namespace ColonistAwareness
             foreach (IGrouping<string, string> contract in proposal
                 .ProgramAssetRoles.GroupBy(role =>
                 {
-                    string[] parts = role.Split('|');
+                    string[] parts = role.Split(new[] { '|' },
+                        StringSplitOptions.None);
                     return (parts.Length > 0 ? parts[0] : "program") + "|"
                         + (parts.Length > 1 ? parts[1] : "0");
                 }).OrderBy(group => group.Key, StringComparer.Ordinal))
             {
                 string firstRole = contract.First();
-                string[] firstParts = firstRole.Split('|');
+                string[] firstParts = firstRole.Split(new[] { '|' },
+                    StringSplitOptions.None);
                 string programKey = firstParts[0];
                 string scope = firstParts.Length > 4 ? firstParts[4]
                     : "settlement";
@@ -424,18 +427,21 @@ namespace ColonistAwareness
                     bool rolesFit = true;
                     foreach (string role in contract.OrderBy(item =>
                     {
-                        string[] parts = item.Split('|');
+                        string[] parts = item.Split(new[] { '|' },
+                            StringSplitOptions.None);
                         ThingDef d = DefDatabase<ThingDef>.GetNamedSilentFail(
                             parts.Length > 3 ? parts[3] : null);
                         return d?.EverTransmitsPower == true ? 0 : 1;
                     }).ThenByDescending(item =>
                     {
-                        string[] parts = item.Split('|');
+                        string[] parts = item.Split(new[] { '|' },
+                            StringSplitOptions.None);
                         return DefDatabase<ThingDef>.GetNamedSilentFail(
                             parts.Length > 3 ? parts[3] : null)?.size.Area ?? 0;
                     }))
                     {
-                        string[] parts = role.Split('|');
+                        string[] parts = role.Split(new[] { '|' },
+                            StringSplitOptions.None);
                         string defName = parts.Length > 3 ? parts[3] : null;
                         ThingDef def = DefDatabase<ThingDef>
                             .GetNamedSilentFail(defName);
@@ -492,7 +498,8 @@ namespace ColonistAwareness
             foreach (string requirement in proposal
                 .ProgramSpatialRequirements)
             {
-                string[] parts = requirement.Split('|');
+                string[] parts = requirement.Split(new[] { '|' },
+                    StringSplitOptions.None);
                 string key = parts[0];
                 int extent = parts.Length > 1
                     && int.TryParse(parts[1], out int parsed) ? parsed : 1;

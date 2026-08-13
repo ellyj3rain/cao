@@ -1035,12 +1035,26 @@ namespace ColonistAwareness
                 .IntegrationPreference;
             string novelty = CACultureQuestionRegistry.NoveltyAcceptance;
             string captive = CACultureQuestionRegistry.CaptiveProtection;
+            string kin = CACultureQuestionRegistry.KinObligation;
+            string genderWork = CACultureQuestionRegistry.GenderedWork;
+            string officeAccess = CACultureQuestionRegistry
+                .GenderOfficeAccess;
+            string mobility = CACultureQuestionRegistry.StatusMobility;
+            string membership = CACultureQuestionRegistry.MembershipAccess;
+            string dissent = CACultureQuestionRegistry.DissentTolerance;
+            string enforcement = CACultureQuestionRegistry
+                .EnforcementLegitimacy;
+            string property = CACultureQuestionRegistry.PropertyControl;
+            string punishment = CACultureQuestionRegistry.PunishmentSeverity;
+            string retaliation = CACultureQuestionRegistry
+                .RetaliatoryViolence;
+            string expertise = CACultureQuestionRegistry.ExpertiseDeference;
             if (axis == CAFactionAxes.Leadership)
             {
                 if (option == "single") return W((rank, 0.55f),
                     (hereditary, 0.25f), (voice, -0.35f));
                 if (option == "council") return W((voice, 0.55f),
-                    (rank, 0.10f));
+                    (rank, 0.10f), (officeAccess, 0.20f));
                 if (option == "whole") return W((voice, 0.85f),
                     (rank, -0.35f));
                 if (option == "federated") return W((voice, 0.45f),
@@ -1055,14 +1069,15 @@ namespace ColonistAwareness
                 if (option == "majority") return W((voice, 0.70f),
                     (integration, 0.15f));
                 if (option == "consensus") return W((voice, 0.85f),
-                    (integration, 0.30f), (coercion, -0.20f));
+                    (integration, 0.30f), (coercion, -0.20f),
+                    (expertise, -0.10f));
                 return W((hereditary, 0.35f), (rank, 0.35f),
                     (novelty, -0.30f));
             }
             if (axis == CAFactionAxes.Participation)
             {
                 if (option == "universal") return W((voice, 0.90f),
-                    (outsider, 0.25f));
+                    (outsider, 0.25f), (officeAccess, 0.25f));
                 if (option == "members") return W((voice, 0.45f),
                     (outsider, -0.15f));
                 if (option == "standing") return W((rank, 0.45f),
@@ -1072,23 +1087,26 @@ namespace ColonistAwareness
             if (axis == CAFactionAxes.Dissent)
             {
                 if (option == "plural") return W((voice, 0.65f),
-                    (novelty, 0.40f), (outsider, 0.25f));
+                    (novelty, 0.40f), (outsider, 0.25f),
+                    (dissent, 0.75f));
                 if (option == "majoritarian") return W((voice, 0.25f),
                     (integration, 0.15f));
                 if (option == "orthodoxy") return W((novelty, -0.60f),
-                    (outsider, -0.30f), (coercion, 0.25f));
-                return W((rank, 0.40f), (hereditary, 0.25f));
+                    (outsider, -0.30f), (coercion, 0.25f),
+                    (dissent, -0.70f));
+                return W((rank, 0.40f), (hereditary, 0.25f),
+                    (dissent, -0.45f));
             }
             if (axis == CAFactionAxes.Ownership)
             {
-                if (option == "private") return W((provision, -0.65f),
-                    (rank, 0.20f));
+                if (option == "private") return W((property, -0.85f),
+                    (provision, -0.25f), (rank, 0.20f));
                 if (option == "cooperative") return W((provision, 0.55f),
-                    (voice, 0.35f));
+                    (voice, 0.35f), (property, 0.55f));
                 if (option == "common") return W((provision, 0.85f),
-                    (rank, -0.20f));
+                    (rank, -0.20f), (property, 0.90f));
                 return W((provision, 0.45f), (coercion, 0.35f),
-                    (rank, 0.30f));
+                    (rank, 0.30f), (property, 0.20f));
             }
             if (axis == CAFactionAxes.Economy)
             {
@@ -1101,50 +1119,52 @@ namespace ColonistAwareness
             if (axis == CAFactionAxes.Work)
             {
                 if (option == "contract") return W((coercion, -0.75f),
-                    (provision, -0.15f));
+                    (provision, -0.15f), (genderWork, -0.20f));
                 if (option == "organized") return W((voice, 0.45f),
                     (coercion, -0.30f), (provision, 0.30f));
                 if (option == "duty") return W((coercion, 0.75f),
-                    (provision, 0.30f));
+                    (provision, 0.30f), (genderWork, 0.15f));
                 return W((hereditary, 0.20f), (provision, 0.25f));
             }
             if (axis == CAFactionAxes.Support)
             {
-                if (option == "private") return W((provision, -0.90f));
+                if (option == "private") return W((provision, -0.90f),
+                    (kin, 0.20f));
                 if (option == "public") return W((provision, 0.65f),
                     (coercion, 0.15f));
                 if (option == "communal") return W((provision, 0.90f),
-                    (voice, 0.15f));
+                    (voice, 0.15f), (kin, 0.20f));
                 return W((provision, 0.45f));
             }
             if (axis == CAFactionAxes.Membership)
             {
                 if (option == "open") return W((outsider, 0.90f),
-                    (integration, 0.35f));
+                    (integration, 0.35f), (membership, 0.85f));
                 if (option == "vetted") return W((outsider, 0.10f),
                     (integration, -0.10f));
                 if (option == "hereditary") return W((hereditary, 0.55f),
-                    (outsider, -0.45f));
-                return W((outsider, -0.90f), (integration, -0.40f));
+                    (outsider, -0.45f), (membership, -0.70f));
+                return W((outsider, -0.90f), (integration, -0.40f),
+                    (membership, -0.90f));
             }
             if (axis == CAFactionAxes.Status)
             {
                 if (option == "equal") return W((rank, -0.90f),
-                    (hereditary, -0.35f));
+                    (hereditary, -0.35f), (mobility, 0.70f));
                 if (option == "earned") return W((rank, 0.25f),
-                    (hereditary, -0.20f));
+                    (hereditary, -0.20f), (mobility, 0.85f));
                 if (option == "hereditary") return W((rank, 0.65f),
-                    (hereditary, 0.85f));
+                    (hereditary, 0.85f), (mobility, -0.85f));
                 return W((rank, 0.90f), (hereditary, 0.55f));
             }
             if (axis == CAFactionAxes.LocalOrder)
             {
                 if (option == "none") return W((coercion, -0.75f),
-                    (rank, -0.20f));
+                    (rank, -0.20f), (enforcement, -0.85f));
                 if (option == "watch") return W((voice, 0.40f),
                     (coercion, -0.20f));
                 if (option == "constabulary") return W((coercion, 0.25f),
-                    (captive, 0.15f));
+                    (captive, 0.15f), (enforcement, 0.60f));
                 return W((rank, 0.50f), (hereditary, 0.25f),
                     (coercion, 0.50f));
             }
@@ -1161,9 +1181,12 @@ namespace ColonistAwareness
                 return W((hereditary, 0.55f), (rank, 0.65f));
             }
             if (option == "strength") return W((captive, -0.90f),
-                (coercion, 0.25f));
-            if (option == "combatants") return W((captive, 0.65f));
-            return W((captive, 0.90f));
+                (coercion, 0.25f), (punishment, 0.45f),
+                (retaliation, 0.55f));
+            if (option == "combatants") return W((captive, 0.65f),
+                (punishment, -0.15f), (retaliation, 0.10f));
+            return W((captive, 0.90f), (punishment, -0.45f),
+                (retaliation, -0.35f));
         }
 
         private static (string Question, float Weight)[] W(

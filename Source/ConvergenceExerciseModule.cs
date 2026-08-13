@@ -72,7 +72,8 @@ namespace ColonistAwareness
                 if (string.IsNullOrEmpty(armed)) return;
                 if (armed != "1" && armed.Contains("x"))
                 {
-                    string[] parts = armed.Split('x');
+                    string[] parts = armed.Split(new[] { 'x' },
+                        StringSplitOptions.None);
                     int size, count;
                     if (parts.Length == 2
                         && int.TryParse(parts[0], out size)

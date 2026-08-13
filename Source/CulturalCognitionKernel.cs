@@ -7,15 +7,14 @@ namespace ColonistAwareness
 {
     public enum CACultureQuestionLayer : byte
     {
-        Relationship,
-        Authority,
-        Status,
-        Intergroup,
-        Labor,
-        Voice,
-        War,
-        Provision,
-        Knowledge
+        RelationshipsFamilySexuality,
+        GenderSocialAuthority,
+        StatusHierarchy,
+        MembershipOutsiders,
+        PublicAuthoritySocialOrder,
+        PropertyLaborProvision,
+        ViolenceCaptivityPunishment,
+        KnowledgeTradition
     }
 
     public sealed class CACultureQuestionDef
@@ -40,6 +39,10 @@ namespace ColonistAwareness
         public string[] PoliticalConsumers;
         public string[] InstitutionConsumers;
         public string[] KnowledgeConsumers;
+        // Named represented facts or events capable of changing this
+        // distribution over lived history. These are evidence routes, not
+        // claims that the fact already exists.
+        public string[] HistoricalSources;
         public string[] ResearchProvenance;
 
         public string ValidationFailure()
@@ -69,6 +72,9 @@ namespace ColonistAwareness
                 + (InstitutionConsumers?.Length ?? 0)
                 + (KnowledgeConsumers?.Length ?? 0);
             if (consumers == 0) return "no represented consumer is registered";
+            if (HistoricalSources == null || HistoricalSources.Length == 0
+                || HistoricalSources.Any(string.IsNullOrWhiteSpace))
+                return "historical evidence route is missing";
             if (ResearchProvenance == null || ResearchProvenance.Length == 0)
                 return "research provenance is missing";
             return null;
@@ -80,32 +86,55 @@ namespace ColonistAwareness
     // separate owners and appear here only through named evidence adapters.
     public static class CACultureQuestionRegistry
     {
-        public const int CurrentVersion = 1;
+        public const int CurrentVersion = 2;
+        public const int FixedQuestionCount = 24;
         public const string SameSexAcceptance =
             "relationships.sameSexAcceptance";
         public const string PluralityAcceptance =
             "relationships.pluralityAcceptance";
+        public const string KinObligation =
+            "relationships.kinObligation";
         public const string GenderDistribution =
             "authority.genderDistribution";
+        public const string GenderedWork =
+            "authority.genderedWork";
+        public const string GenderOfficeAccess =
+            "authority.officeAccess";
         public const string HereditaryLegitimacy =
             "status.hereditaryLegitimacy";
         public const string RankDifferentiation =
             "status.rankDifferentiation";
+        public const string StatusMobility =
+            "status.mobility";
         public const string OutsiderInclusion =
             "groups.outsiderInclusion";
         public const string IntegrationPreference =
             "groups.integrationPreference";
+        public const string MembershipAccess =
+            "groups.membershipAccess";
         public const string CoercionLegitimacy =
             "labor.coercionLegitimacy";
+        public const string PropertyControl =
+            "property.control";
         public const string VoiceInclusion =
             "voice.inclusionExpectation";
+        public const string DissentTolerance =
+            "voice.dissentTolerance";
+        public const string EnforcementLegitimacy =
+            "authority.enforcementLegitimacy";
         public const string CaptiveProtection =
             "war.captiveProtection";
+        public const string PunishmentSeverity =
+            "war.punishmentSeverity";
+        public const string RetaliatoryViolence =
+            "war.retaliatoryViolence";
         public const string MutualProvision =
             "provision.mutualObligation";
         public const string KnowledgeAccess = "knowledge.access";
         public const string NoveltyAcceptance =
             "knowledge.noveltyAcceptance";
+        public const string ExpertiseDeference =
+            "knowledge.expertiseDeference";
 
         private static readonly double[] Centers =
             { -0.90d, -0.45d, 0d, 0.45d, 0.90d };
@@ -125,8 +154,14 @@ namespace ColonistAwareness
 
         public static string ValidationFailure()
         {
-            if (Definitions.Length != 13)
-                return "the initial Culture question registry is incomplete";
+            if (Definitions.Length != FixedQuestionCount)
+                return "the Culture question registry is incomplete";
+            if (Definitions.Select(value => value.Layer).Distinct().Count()
+                != 8)
+                return "the eight Culture categories are incomplete";
+            if (Definitions.GroupBy(value => value.Layer)
+                .Any(group => group.Count() != 3))
+                return "each Culture category must contain three questions";
             if (Definitions.Select(value => value.Key).Distinct(
                     StringComparer.Ordinal).Count() != Definitions.Length)
                 return "Culture question keys are duplicated";
@@ -146,12 +181,12 @@ namespace ColonistAwareness
                     StringComparer.Ordinal) == true)?.Key;
         }
 
-        // Adapter polarity belongs beside the adapter itself. Most legacy
-        // subjects point in the same direction as their current question;
-        // approval of punishment points away from protection owed to captives.
+        // Adapter polarity belongs beside the adapter itself. Private
+        // ownership points away from common control; every other registered
+        // subject points in the ordered direction of its question.
         public static int DirectionForSocialSubject(string subjectKey)
         {
-            return subjectKey == CASocialSubjectRegistry.CustodyPunishment
+            return subjectKey == CASocialSubjectRegistry.PrivateOwnership
                 ? -1 : 1;
         }
 
@@ -161,146 +196,271 @@ namespace ColonistAwareness
             const string Norms = "descriptive and injunctive norm distinction";
             const string Ideology = "RimWorld Ideoligion precept adapter evidence";
             const string Institutions = "institutional legitimacy and represented-practice evidence";
+            const string Wvs = "World Values Survey wave 7 questionnaire";
+            const string Issp = "ISSP Family and Changing Gender Roles V questionnaire";
+            const string Ess = "European Social Survey rotating modules";
+            const string Gss = "General Social Survey social-change series";
             return new[]
             {
                 Q(SameSexAcceptance, "Same-sex relationship acceptance",
                     "How are same-sex relationships regarded?",
                     "approval of same-sex romantic relationships",
-                    "condemnation to affirmation", CACultureQuestionLayer.Relationship,
+                    "condemnation to affirmation", CACultureQuestionLayer.RelationshipsFamilySexuality,
                     A("Strongly condemned", "Disapproved", "Tolerated", "Accepted", "Affirmed"),
                     Array.Empty<string>(),
                     Array.Empty<string>(), Array.Empty<string>(),
                     A("romance appraisal", "public expression"),
                     A("membership conflict"), A("relationship legitimacy"),
-                    Array.Empty<string>(), A(Schwartz, Norms)),
+                    Array.Empty<string>(), A("same-sex romance outcomes and known unions"),
+                    A(Schwartz, Norms, Wvs, Gss)),
                 Q(PluralityAcceptance, "Relationship plurality acceptance",
                     "How are plural unions regarded?",
                     "approval of sex-neutral relationship plurality",
                     "exclusive unions to preferred plural unions",
-                    CACultureQuestionLayer.Relationship,
+                    CACultureQuestionLayer.RelationshipsFamilySexuality,
                     A("Exclusive only", "Exclusivity preferred", "Plural unions tolerated", "Plural unions accepted", "Plural unions preferred"),
                     new[] { "spouse-count precepts" }, Array.Empty<string>(),
                     Array.Empty<string>(), A("household formation", "jealousy appraisal"),
                     Array.Empty<string>(), A("relationship rules"),
-                    Array.Empty<string>(), A(Schwartz, Norms, Ideology)),
+                    Array.Empty<string>(), A("plural relationship outcomes and household composition"),
+                    A(Schwartz, Norms, Ideology, Wvs)),
+                Q(KinObligation, "Obligation to kin",
+                    "How far do duties to kin extend?",
+                    "expected material and personal obligation to kin",
+                    "individual discretion to binding extended-kin duty",
+                    CACultureQuestionLayer.RelationshipsFamilySexuality,
+                    A("Individual discretion", "Immediate household", "Close kin", "Extended kin", "Binding kin duty"),
+                    Array.Empty<string>(),
+                    A(CASocialSubjectRegistry.HouseholdMembership,
+                        CASocialSubjectRegistry.HouseholdProvision),
+                    Array.Empty<string>(), A("family aid", "care obligation"),
+                    A("kin-support politics"), A("household support rules"),
+                    Array.Empty<string>(), A("household membership and kin provision records"),
+                    A(Schwartz, Norms, Wvs, Issp)),
                 Q(GenderDistribution, "Gender distribution of authority",
                     "How should authority be distributed between women and men?",
                     "legitimacy of gendered authority distribution",
                     "male dominance through symmetry to female dominance",
-                    CACultureQuestionLayer.Authority,
+                    CACultureQuestionLayer.GenderSocialAuthority,
                     A("Strongly male-dominant", "Male-leaning", "Symmetric", "Female-leaning", "Strongly female-dominant"),
                     new[] { "gender-supremacy precepts" }, Array.Empty<string>(),
                     Array.Empty<string>(), A("command legitimacy"),
                     A("office support", "participation conflict"),
                     A("office selection"), Array.Empty<string>(),
-                    A(Schwartz, Norms, Ideology, Institutions)),
+                    A("gender of represented officeholders and binding decision-makers"),
+                    A(Schwartz, Norms, Ideology, Institutions, Wvs, Issp)),
+                Q(GenderedWork, "Gendered work expectations",
+                    "How strongly should work be divided by gender?",
+                    "approval of gender-specific work obligations",
+                    "open work to rigid gender division",
+                    CACultureQuestionLayer.GenderSocialAuthority,
+                    A("Open to all", "Mostly open", "Some customary division", "Strongly divided", "Rigidly divided"),
+                    new[] { "gendered work precepts" }, Array.Empty<string>(),
+                    Array.Empty<string>(), A("work assignment appraisal"),
+                    A("labor participation conflict"), A("work eligibility rules"),
+                    Array.Empty<string>(), A("represented work assignments by gender and role"),
+                    A(Norms, Wvs, Issp, Gss)),
+                Q(GenderOfficeAccess, "Gender access to office",
+                    "Who may hold public office?",
+                    "gender breadth of eligibility for represented office",
+                    "gender-restricted to unrestricted office access",
+                    CACultureQuestionLayer.GenderSocialAuthority,
+                    A("One gender only", "Strong preference", "Conditional access", "Broad access", "Equal access"),
+                    new[] { "gendered leadership precepts" }, Array.Empty<string>(),
+                    Array.Empty<string>(), A("office appointment appraisal"),
+                    A("office-access support"), A("office eligibility"),
+                    Array.Empty<string>(), A("appointments, elections, and office tenure by gender"),
+                    A(Norms, Institutions, Wvs, Issp, Gss)),
                 Q(HereditaryLegitimacy, "Hereditary status legitimacy",
                     "How legitimate is inherited status?",
                     "legitimacy attributed to inherited status and succession",
-                    "illegitimate to naturalized", CACultureQuestionLayer.Status,
+                    "illegitimate to naturalized", CACultureQuestionLayer.StatusHierarchy,
                     A("Illegitimate", "Disfavored", "Permitted", "Respected", "Naturalized"),
                     Array.Empty<string>(),
                     A(CASocialSubjectRegistry.InheritedRank,
                         CASocialSubjectRegistry.KinSuccession),
                     Array.Empty<string>(), A("succession appraisal"),
                     A("status support"), A("office legitimacy"),
-                    Array.Empty<string>(), A(Schwartz, Norms, Institutions)),
+                    Array.Empty<string>(), A("represented inherited rank and kin succession"),
+                    A(Schwartz, Norms, Institutions)),
                 Q(RankDifferentiation, "Social rank differentiation",
                     "How much durable social rank is proper?",
                     "approval of durable rank differentiation",
-                    "rank rejection to entrenched rank", CACultureQuestionLayer.Status,
+                    "rank rejection to entrenched rank", CACultureQuestionLayer.StatusHierarchy,
                     A("Rank rejected", "Rank minimized", "Mixed", "Rank accepted", "Rank entrenched"),
                     Array.Empty<string>(),
-                    A(CASocialSubjectRegistry.OfficeHolding),
+                    A(CASocialSubjectRegistry.OfficeGovernance),
                     Array.Empty<string>(), A("deference appraisal"),
                     A("status and resource legitimacy"),
-                    A("office privilege"), Array.Empty<string>(),
+                    A("office privilege"), Array.Empty<string>(), A("office privilege and status assignments"),
                     A(Schwartz, Norms, Institutions)),
+                Q(StatusMobility, "Movement between social ranks",
+                    "How open should movement between ranks be?",
+                    "expected permeability of durable social status",
+                    "fixed rank to open mobility",
+                    CACultureQuestionLayer.StatusHierarchy,
+                    A("Fixed at birth", "Rare movement", "Limited movement", "Mobility expected", "Open mobility"),
+                    Array.Empty<string>(), A(CASocialSubjectRegistry.OfficeHolding),
+                    Array.Empty<string>(), A("promotion and demotion appraisal"),
+                    A("status-mobility support"), A("appointment and standing rules"),
+                    Array.Empty<string>(), A("represented changes in office, standing, and rank"),
+                    A(Schwartz, Norms, Institutions, Wvs)),
                 Q(OutsiderInclusion, "Outsider social inclusion",
                     "How readily are outsiders included in social life?",
                     "social inclusion of people treated as outsiders",
-                    "exclusionary to integrative", CACultureQuestionLayer.Intergroup,
+                    "exclusionary to integrative", CACultureQuestionLayer.MembershipOutsiders,
                     A("Exclusionary", "Guarded", "Selective", "Receptive", "Integrative"),
                     Array.Empty<string>(),
-                    A(CASocialSubjectRegistry.OutsiderContact,
-                        CASocialSubjectRegistry.FactionMembership),
+                    A(CASocialSubjectRegistry.OutsiderContact),
                     Array.Empty<string>(), A("hospitality", "recruitment", "intermarriage"),
                     A("membership conflict"), A("access and membership"),
-                    Array.Empty<string>(), A(Schwartz, Norms)),
+                    Array.Empty<string>(), A("hospitality, rescue, recruitment, and outsider contact"),
+                    A(Schwartz, Norms, Wvs, Ess)),
                 Q(IntegrationPreference, "Intergroup integration",
                     "How much intergroup integration is expected?",
                     "preference for separation or integration between groups",
                     "required separation to expected integration",
-                    CACultureQuestionLayer.Intergroup,
+                    CACultureQuestionLayer.MembershipOutsiders,
                     A("Separation required", "Separation preferred", "Context-dependent", "Integration preferred", "Integration expected"),
                     Array.Empty<string>(),
                     Array.Empty<string>(),
                     Array.Empty<string>(), A("mixed-group interaction"),
                     A("integration politics"),
                     A("residence and access policy"), Array.Empty<string>(),
-                    A(Schwartz, Norms, Institutions)),
-                Q(CoercionLegitimacy, "Coercive labor legitimacy",
-                    "When is compelled labor legitimate?",
-                    "legitimacy attributed to compelled labor",
-                    "never legitimate to institutionally expected",
-                    CACultureQuestionLayer.Labor,
-                    A("Never legitimate", "Emergency only", "Conditionally tolerated", "Broadly accepted", "Institutionally expected"),
-                    new[] { "slavery and work precepts" },
-                    A(CASocialSubjectRegistry.CompelledService,
-                        CASocialSubjectRegistry.EnforcedOrder),
-                    A("ca.practice.compelled_service"),
-                    A("work refusal", "enforcement response"),
-                    A("labor conflict"), A("work rules"),
-                    Array.Empty<string>(), A(Schwartz, Norms, Ideology, Institutions)),
+                    A("mixed-population residence, work, and social ties"),
+                    A(Schwartz, Norms, Institutions, Ess)),
+                Q(MembershipAccess, "Access to group membership",
+                    "How readily may outsiders become full members?",
+                    "permeability of formal group membership",
+                    "closed descent to open membership",
+                    CACultureQuestionLayer.MembershipOutsiders,
+                    A("Closed by descent", "Rare admission", "Conditional admission", "Accessible", "Open membership"),
+                    Array.Empty<string>(), A(CASocialSubjectRegistry.FactionMembership),
+                    Array.Empty<string>(), A("recruitment and naturalization"),
+                    A("membership-access politics"), A("membership procedure"),
+                    Array.Empty<string>(), A("represented admissions, exclusions, and membership changes"),
+                    A(Norms, Institutions, Wvs, Ess)),
+
                 Q(VoiceInclusion, "Inclusion in public voice",
                     "Who is expected to have a public voice?",
                     "expected breadth of public political voice",
                     "reserved voice to universal voice",
-                    CACultureQuestionLayer.Voice,
+                    CACultureQuestionLayer.PublicAuthoritySocialOrder,
                     A("Voice reserved", "Voice restricted", "Voice conditional", "Voice broadly expected", "Voice universally expected"),
                     Array.Empty<string>(),
                     A(CASocialSubjectRegistry.PublicVoice,
                         CASocialSubjectRegistry.PublicGathering,
-                        CASocialSubjectRegistry.DelegatedAuthority,
-                        CASocialSubjectRegistry.OfficeGovernance),
-                    Array.Empty<string>(), A("meeting participation", "dissent response"),
-                    A("participation conflict"),
-                    A("eligibility and decision procedure"), Array.Empty<string>(),
-                    A(Schwartz, Norms, Institutions)),
-                Q(CaptiveProtection, "Protection owed to defeated people",
-                    "What protection is owed to defeated people?",
-                    "duty of restraint and care toward defeated people",
-                    "no restraint to strong duty of care",
-                    CACultureQuestionLayer.War,
-                    A("No expected restraint", "Minimal restraint", "Conditional protection", "Protection expected", "Strong duty of care"),
-                    new[] { "execution, slavery and war-conduct precepts" },
-                    A(CASocialSubjectRegistry.HumaneCustody,
-                        CASocialSubjectRegistry.QuarterGiven,
-                        CASocialSubjectRegistry.CustodyPunishment),
-                    A("ca.practice.custody_care"),
-                    A("surrender", "custody", "execution", "medical care"),
-                    A("war legitimacy"), A("custody rules"),
-                    Array.Empty<string>(), A(Schwartz, Norms, Ideology, Institutions)),
+                        CASocialSubjectRegistry.DelegatedAuthority),
+                    Array.Empty<string>(), A("meeting participation", "public decisions"),
+                    A("participation conflict"), A("eligibility and decision procedure"),
+                    Array.Empty<string>(), A("represented participation in binding decisions"),
+                    A(Schwartz, Norms, Institutions, Wvs, Ess)),
+                Q(DissentTolerance, "Tolerance of public dissent",
+                    "How much open disagreement should public order permit?",
+                    "legitimacy of expressing disagreement with binding rules",
+                    "suppressed dissent to protected dissent",
+                    CACultureQuestionLayer.PublicAuthoritySocialOrder,
+                    A("Suppressed", "Strongly discouraged", "Conditionally allowed", "Tolerated", "Protected"),
+                    Array.Empty<string>(), Array.Empty<string>(),
+                    Array.Empty<string>(), A("objection", "protest", "public disagreement"),
+                    A("dissent conflict"), A("speech and meeting rules"),
+                    Array.Empty<string>(), A("represented objections, protests, sanctions, and tolerated criticism"),
+                    A(Norms, Institutions, Wvs, Ess, Gss)),
+                Q(EnforcementLegitimacy, "Legitimacy of enforced order",
+                    "When is force used to uphold public order legitimate?",
+                    "legitimacy attributed to institutional enforcement",
+                    "force rejected to routine enforcement",
+                    CACultureQuestionLayer.PublicAuthoritySocialOrder,
+                    A("Force rejected", "Emergency only", "Narrowly authorized", "Broadly authorized", "Routine enforcement"),
+                    Array.Empty<string>(), A(CASocialSubjectRegistry.EnforcedOrder),
+                    Array.Empty<string>(), A("order enforcement appraisal"),
+                    A("public-order support"), A("sanction and enforcement rules"),
+                    Array.Empty<string>(), A("represented orders, resistance, enforcement, and sanctions"),
+                    A(Norms, Institutions, Wvs, Ess)),
+
+                Q(CoercionLegitimacy, "Coercive labor legitimacy",
+                    "When is compelled labor legitimate?",
+                    "legitimacy attributed to compelled labor",
+                    "never legitimate to institutionally expected",
+                    CACultureQuestionLayer.PropertyLaborProvision,
+                    A("Never legitimate", "Emergency only", "Conditionally tolerated", "Broadly accepted", "Institutionally expected"),
+                    new[] { "slavery and work precepts" },
+                    A(CASocialSubjectRegistry.CompelledService),
+                    A("ca.practice.compelled_service"),
+                    A("work refusal", "enforcement response"),
+                    A("labor conflict"), A("work rules"),
+                    Array.Empty<string>(), A("compelled work, refusal, and actual enforcement"),
+                    A(Schwartz, Norms, Ideology, Institutions, Wvs)),
                 Q(MutualProvision, "Mutual provision obligation",
                     "Who is expected to provide during hardship?",
                     "breadth of obligation to provide food, shelter and care",
                     "household responsibility to collective guarantee",
-                    CACultureQuestionLayer.Provision,
+                    CACultureQuestionLayer.PropertyLaborProvision,
                     A("Household only", "Voluntary aid", "Mixed responsibility", "Shared responsibility", "Collective guarantee"),
                     new[] { "charity and communal precepts" },
                     A(CASocialSubjectRegistry.SharedProvision,
                         CASocialSubjectRegistry.MedicalCare,
                         CASocialSubjectRegistry.StoredReserves,
-                        CASocialSubjectRegistry.AuthorityProvision,
-                        CASocialSubjectRegistry.HouseholdProvision),
-                    A("ca.practice.shared_provision"),
-                    A("aid", "food and shelter provision"),
+                        CASocialSubjectRegistry.AuthorityProvision),
+                    A("ca.practice.shared_provision"), A("aid", "food, shelter, and medical provision"),
                     A("support politics"), A("provision systems"),
-                    Array.Empty<string>(), A(Schwartz, Norms, Ideology, Institutions)),
+                    Array.Empty<string>(), A("represented provision, reserves, unmet need, and care"),
+                    A(Schwartz, Norms, Ideology, Institutions, Wvs)),
+                Q(PropertyControl, "Control of property",
+                    "How broadly should control of productive property be shared?",
+                    "legitimacy of concentrated or shared control over productive property",
+                    "concentrated private control to common control",
+                    CACultureQuestionLayer.PropertyLaborProvision,
+                    A("Concentrated private control", "Private control favored", "Mixed control", "Shared control favored", "Common control"),
+                    Array.Empty<string>(), A(CASocialSubjectRegistry.CommonOwnership,
+                        CASocialSubjectRegistry.PrivateOwnership),
+                    Array.Empty<string>(), A("ownership dispute", "resource allocation"),
+                    A("property-control politics"), A("ownership and transfer rules"),
+                    Array.Empty<string>(), A("represented ownership, common stores, transfers, and disputes"),
+                    A(Schwartz, Norms, Institutions, Wvs)),
+
+                Q(CaptiveProtection, "Protection owed to defeated people",
+                    "What protection is owed to defeated people?",
+                    "duty of restraint and care toward defeated people",
+                    "no restraint to strong duty of care",
+                    CACultureQuestionLayer.ViolenceCaptivityPunishment,
+                    A("No expected restraint", "Minimal restraint", "Conditional protection", "Protection expected", "Strong duty of care"),
+                    new[] { "execution, slavery and war-conduct precepts" },
+                    A(CASocialSubjectRegistry.HumaneCustody,
+                        CASocialSubjectRegistry.QuarterGiven),
+                    A("ca.practice.custody_care"),
+                    A("surrender", "custody", "execution", "medical care"),
+                    A("war legitimacy"), A("custody rules"),
+                    Array.Empty<string>(), A("surrender, custody, execution, rescue, and medical care outcomes"),
+                    A(Schwartz, Norms, Ideology, Institutions)),
+                Q(PunishmentSeverity, "Severity of punishment",
+                    "How severe should punishment be after wrongdoing?",
+                    "approval of punitive severity in represented sanctions",
+                    "restorative restraint to severe punishment",
+                    CACultureQuestionLayer.ViolenceCaptivityPunishment,
+                    A("Restorative restraint", "Mild penalties", "Proportional punishment", "Harsh punishment", "Exemplary severity"),
+                    new[] { "execution and punishment precepts" },
+                    A(CASocialSubjectRegistry.CustodyPunishment),
+                    Array.Empty<string>(), A("punishment and clemency appraisal"),
+                    A("punishment politics"), A("sanction schedule"),
+                    Array.Empty<string>(), A("represented sanctions, punishment, clemency, and recidivism"),
+                    A(Norms, Ideology, Institutions, Gss)),
+                Q(RetaliatoryViolence, "Retaliatory violence",
+                    "When is retaliatory violence expected?",
+                    "approval of violence undertaken to repay prior harm",
+                    "restraint to obligatory retaliation",
+                    CACultureQuestionLayer.ViolenceCaptivityPunishment,
+                    A("Retaliation rejected", "Defense only", "Proportional reply", "Retaliation approved", "Retaliation required"),
+                    Array.Empty<string>(), A(CASocialSubjectRegistry.CombatViolence),
+                    Array.Empty<string>(), A("revenge and reprisal appraisal"),
+                    A("war and feud support"), A("reprisal restraint"),
+                    Array.Empty<string>(), A("represented attacks, prior harm, reprisals, and peace agreements"),
+                    A(Schwartz, Norms, Institutions, Wvs)),
+
                 Q(KnowledgeAccess, "Access to established knowledge",
                     "Who should have access to established knowledge?",
                     "breadth of access to represented established knowledge",
-                    "esoteric to open", CACultureQuestionLayer.Knowledge,
+                    "esoteric to open", CACultureQuestionLayer.KnowledgeTradition,
                     A("Esoteric", "Restricted", "Credentialed", "Broad", "Open"),
                     Array.Empty<string>(),
                     A(CASocialSubjectRegistry.KnowledgeTransmission,
@@ -308,21 +468,32 @@ namespace ColonistAwareness
                     A("ca.practice.organized_research"),
                     A("teaching", "publication"), A("knowledge-access politics"),
                     A("archive and school access"),
-                    A("proposition access", "transmission"),
-                    A(Schwartz, Norms, Institutions)),
+                    A("proposition access", "transmission"), A("represented teaching, publication, archives, and proposition access"),
+                    A(Schwartz, Norms, Institutions, Wvs)),
                 Q(NoveltyAcceptance, "Acceptance of novel claims",
                     "How readily are novel claims accepted for testing and use?",
                     "openness to evaluating and adopting novel claims",
                     "tradition-bound to experimental",
-                    CACultureQuestionLayer.Knowledge,
+                    CACultureQuestionLayer.KnowledgeTradition,
                     A("Tradition-bound", "Suspicious", "Selective", "Receptive", "Experimental"),
                     new[] { "research-speed precepts" },
-                    Array.Empty<string>(),
+                    A(CASocialSubjectRegistry.ResearchWork),
                     A("ca.practice.organized_research"),
                     A("research adoption", "foreign knowledge"),
                     A("innovation politics"), A("method rules"),
-                    A("claim evaluation", "research adoption"),
-                    A(Schwartz, Norms, Ideology, Institutions))
+                    A("claim evaluation", "research adoption"), A("represented research attempts, corroboration, adoption, and observed payoff"),
+                    A(Schwartz, Norms, Ideology, Institutions, Wvs)),
+                Q(ExpertiseDeference, "Deference to demonstrated expertise",
+                    "How much weight should demonstrated expertise carry?",
+                    "legitimacy of domain expertise as a source of judgment",
+                    "status-indifferent to expert-led judgment",
+                    CACultureQuestionLayer.KnowledgeTradition,
+                    A("Status-indifferent", "Limited weight", "One consideration", "Expert weight", "Expert-led"),
+                    Array.Empty<string>(), A(CASocialSubjectRegistry.SpecializedCraft),
+                    Array.Empty<string>(), A("advice and skilled-work appraisal"),
+                    A("expert-role support"), A("credential and office rules"),
+                    A("source weighting", "expert testimony"), A("represented advice, skill, source accuracy, and task outcomes"),
+                    A(Schwartz, Norms, Institutions, Wvs, Ess))
             };
         }
 
@@ -331,7 +502,8 @@ namespace ColonistAwareness
             CACultureQuestionLayer layer, string[] anchors,
             string[] ideoligion, string[] subjects, string[] practices,
             string[] behaviors, string[] politics, string[] institutions,
-            string[] knowledge, string[] provenance)
+            string[] knowledge, string[] historicalSources,
+            string[] provenance)
         {
             return new CACultureQuestionDef
             {
@@ -354,6 +526,7 @@ namespace ColonistAwareness
                 PoliticalConsumers = politics,
                 InstitutionConsumers = institutions,
                 KnowledgeConsumers = knowledge,
+                HistoricalSources = historicalSources,
                 ResearchProvenance = provenance
             };
         }

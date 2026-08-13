@@ -5944,7 +5944,8 @@ namespace ColonistAwareness
         private bool TryResolveCommandTarget(string command,
             out string commandName, out string failure)
         {
-            string[] parts = command.Split('|');
+            string[] parts = command.Split(new[] { '|' },
+                StringSplitOptions.None);
             commandName = parts[0].Trim();
             string expectedHash = parts.Length > 1 ? parts[1].Trim() : null;
             string expectedCurrentHash = parts.Length > 2

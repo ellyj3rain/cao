@@ -84,6 +84,14 @@ namespace ColonistAwareness
         internal static CASocialReactionWorldComponent Current =>
             Find.World?.GetComponent<CASocialReactionWorldComponent>();
 
+        internal IReadOnlyList<CASocialReactionRecord> ReactionsForPawn(
+            int pawnId)
+        {
+            return (reactions ?? new List<CASocialReactionRecord>())
+                .Where(value => value != null && value.pawnId == pawnId)
+                .OrderByDescending(value => value.tick).ToList();
+        }
+
         public override void ExposeData()
         {
             Scribe_Values.Look(ref campaignSchemaVersion,
@@ -235,6 +243,9 @@ namespace ColonistAwareness
             }
             CAInstitutionSanctionRuntime.Observe(fact, pawn,
                 populationIdentity, organizationIdentity, response);
+            if (!exposedQuestion.NullOrEmpty())
+                cognition?.RefreshRepresentedEvidence(pawn,
+                    exposedQuestion, fact.Tick);
             CAModuleProfiler.Observe(
                 CAModuleProfileKey.SocialInterpretation,
                 objectsExamined: 1, candidatesAccepted: 1);

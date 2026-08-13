@@ -440,7 +440,8 @@ namespace ColonistAwareness
             }
             if (source.organizationKind != CAOrganizationKind.Household
                 || source.organizationKey.NullOrEmpty()) yield break;
-            string[] parts = source.organizationKey.Split(':');
+            string[] parts = source.organizationKey.Split(new[] { ':' },
+                StringSplitOptions.None);
             if (parts.Length < 3 || !int.TryParse(parts[1], out int mapId))
                 yield break;
             foreach (Map map in Find.Maps)

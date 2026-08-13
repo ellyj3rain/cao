@@ -212,6 +212,15 @@ namespace ColonistAwareness
         public int firstObservedTick = -1;
         public int lastObservedTick = -1;
         public int observationCount;
+        // Direct Culture-question evidence owns a measured population fact.
+        // These fields are absent from ordinary practice observations. The
+        // position remains directional; participation and dispersion describe
+        // how much represented evidence supports the appraisal.
+        public bool hasQuestionEvidence;
+        public float questionPosition;
+        public float questionDispersion;
+        public int observedPawnCount;
+        public int eligiblePopulation;
 
         public void ExposeData()
         {
@@ -229,6 +238,16 @@ namespace ColonistAwareness
                 "lastObservedTick", -1);
             Scribe_Values.Look(ref observationCount,
                 "observationCount", 0);
+            Scribe_Values.Look(ref hasQuestionEvidence,
+                "hasQuestionEvidence", false, forceSave: true);
+            Scribe_Values.Look(ref questionPosition,
+                "questionPosition", 0f, forceSave: true);
+            Scribe_Values.Look(ref questionDispersion,
+                "questionDispersion", 0f, forceSave: true);
+            Scribe_Values.Look(ref observedPawnCount,
+                "observedPawnCount", 0, forceSave: true);
+            Scribe_Values.Look(ref eligiblePopulation,
+                "eligiblePopulation", 0, forceSave: true);
         }
 
         internal CACultureObservation Copy()
@@ -244,7 +263,12 @@ namespace ColonistAwareness
                 evidenceStartTick = evidenceStartTick,
                 firstObservedTick = firstObservedTick,
                 lastObservedTick = lastObservedTick,
-                observationCount = observationCount
+                observationCount = observationCount,
+                hasQuestionEvidence = hasQuestionEvidence,
+                questionPosition = questionPosition,
+                questionDispersion = questionDispersion,
+                observedPawnCount = observedPawnCount,
+                eligiblePopulation = eligiblePopulation
             };
         }
     }
@@ -352,6 +376,10 @@ namespace ColonistAwareness
         public const int CurrentSchemaVersion = 10;
         public const int NameField = 1;
         public const int SourceCultureField = 2;
+        public const int QuestionStateField = 4;
+        public const int DiversityField = 8;
+        public const int AllAuthoredFields = NameField | SourceCultureField
+            | QuestionStateField | DiversityField;
         public int schemaVersion = CurrentSchemaVersion;
         public string id;
         public string name;
@@ -504,7 +532,7 @@ namespace ColonistAwareness
                     .Where(item => item != null).Select(item => item.Copy())
                     .ToList(),
                 lastEvidence = lastEvidence?.Copy(),
-                authoredMask = authoredMask & (NameField | SourceCultureField)
+                authoredMask = authoredMask & AllAuthoredFields
             };
         }
 
@@ -557,7 +585,7 @@ namespace ColonistAwareness
                 .Where(item => item != null).Select(item => item.Copy())
                 .ToList();
             lastEvidence = source.lastEvidence?.Copy();
-            authoredMask = source.authoredMask & (NameField | SourceCultureField);
+            authoredMask = source.authoredMask & AllAuthoredFields;
         }
 
         // Reusable profiles carry inherited meaning and practice only. World
@@ -576,8 +604,7 @@ namespace ColonistAwareness
                 withinGroupSpread = withinGroupSpread,
                 subgroupSeparation = subgroupSeparation,
                 inheritedQuestions = CopyQuestions(inheritedQuestions),
-                authoredMask = authoredMask & (NameField
-                    | SourceCultureField)
+                authoredMask = authoredMask & AllAuthoredFields
             };
         }
 
@@ -593,8 +620,8 @@ namespace ColonistAwareness
             inheritedQuestions = CopyQuestions(template.inheritedQuestions);
             inheritedMeanings = new List<CACulturalMeaning>();
             localMeanings = new List<CACulturalMeaning>();
-            authoredMask = template.authoredMask & (NameField
-                | SourceCultureField);
+            authoredMask = template.authoredMask & AllAuthoredFields;
+            authoredMask |= QuestionStateField | DiversityField;
         }
 
         internal bool Authored(int field)
@@ -871,7 +898,13 @@ namespace ColonistAwareness
                 < culture.transitions.Max(item => item.sequence))
                 return "Culture revision precedes its transition ledger";
             if (validatePractices && culture.observations.Any(item => item == null
-                    || CACulturalPracticeRegistry.Find(item.key) == null
+                    || item.key.NullOrEmpty()
+                    || (item.sourceDomain == "Culture question evidence"
+                        ? !item.key.StartsWith("question:",
+                            StringComparison.Ordinal)
+                            || CACultureQuestionRegistry.Find(item.key
+                                .Substring("question:".Length)) == null
+                        : CACulturalPracticeRegistry.Find(item.key) == null)
                     || item.sourceOwner.NullOrEmpty()
                     || item.sourceDomain.NullOrEmpty()
                     || item.sourceSignature.NullOrEmpty()
@@ -879,7 +912,18 @@ namespace ColonistAwareness
                     || item.evidenceStartTick < -1
                     || item.firstObservedTick < -1
                     || item.lastObservedTick < -1
-                    || item.observationCount < 0))
+                    || item.observationCount < 0
+                    || (item.sourceDomain == "Culture question evidence"
+                        && item.observationCount > 0
+                        && (!item.hasQuestionEvidence
+                            || item.questionPosition < -1f
+                            || item.questionPosition > 1f
+                            || item.questionDispersion < 0f
+                            || item.questionDispersion > 1f
+                            || item.observedPawnCount < 0
+                            || item.eligiblePopulation < 1
+                            || item.observedPawnCount
+                                > item.eligiblePopulation))))
                 return "a Culture observation is incomplete";
             if (validatePractices && culture.observations.GroupBy(
                         ObservationIdentity,
@@ -1876,8 +1920,9 @@ namespace ColonistAwareness
                 .Select(value => new
                 {
                     Pattern = value,
-                    QuestionKey = CACultureQuestionRegistry
-                        .QuestionForSocialSubject(value.SubjectKey)
+                    QuestionKey = !value.QuestionKey.NullOrEmpty()
+                        ? value.QuestionKey : CACultureQuestionRegistry
+                            .QuestionForSocialSubject(value.SubjectKey)
                 })
                 .Where(value => !value.QuestionKey.NullOrEmpty())
                 .GroupBy(value => value.QuestionKey + "\0"
@@ -1891,8 +1936,10 @@ namespace ColonistAwareness
                     value.ObservedPawnCount));
                 float observedMean = group.Sum(value =>
                         value.WeightedApproval / 100f
-                        * CACultureQuestionRegistry.DirectionForSocialSubject(
-                            value.SubjectKey)
+                        * (value.QuestionKey.NullOrEmpty()
+                            ? CACultureQuestionRegistry
+                                .DirectionForSocialSubject(value.SubjectKey)
+                            : 1)
                         * Math.Max(1, value.ObservedPawnCount))
                     / Math.Max(1, totalWeight);
                 float coverage = group.Sum(value => value.Participation
@@ -2067,6 +2114,7 @@ namespace ColonistAwareness
                 ObservationIdentity), StringComparer.Ordinal);
             foreach (CACultureObservation absent in culture.observations
                 .Where(item => item != null
+                    && item.sourceDomain != "Culture question evidence"
                     && !currentIds.Contains(ObservationIdentity(item))))
             {
                 // A broken run of practice evidence must qualify again from
@@ -3540,8 +3588,14 @@ namespace ColonistAwareness
 
         private float DrawActions(Rect inRect, float y)
         {
-            var labels = new List<string>();
-            var actions = new List<Action>();
+            var labels = new List<string>
+            {
+                "Historical and social presets...", "Randomize Culture"
+            };
+            var actions = new List<Action>
+            {
+                OpenBuiltInPresets, RandomizeCulture
+            };
             if (CAAuthoringProfileLibrary.Cultures.Count > 0)
             {
                 labels.Add("Saved Cultures...");
@@ -3591,7 +3645,7 @@ namespace ColonistAwareness
             DrawFact(ref y, width, "Practice evidence",
                 (culture.inheritedPractices.Count
                     + culture.practices.Count).ToString());
-            DrawFact(ref y, width, "Within-group spread",
+            DrawFact(ref y, width, "Global diversity",
                 SpreadLabels[Mathf.Clamp(culture.withinGroupSpread, 0, 4)]);
             DrawFact(ref y, width, "Subgroup separation",
                 HasRepresentedSubgroupDifferences
@@ -3635,8 +3689,9 @@ namespace ColonistAwareness
         {
             DrawExplanation(ref y, width,
                 "Each row sets one population distribution. The named "
-                + "position is its center; spread and subgroup structure "
-                + "preserve variation among people.");
+                + "position is its center. Global diversity sets the default "
+                + "variation among people; a question-specific spread is "
+                + "available under More.");
             string comparison = IdeoligionComparisonWords();
             if (!comparison.NullOrEmpty())
                 DrawExplanation(ref y, width, comparison);
@@ -3646,9 +3701,19 @@ namespace ColonistAwareness
                     "Inherited population spread remains unchanged here. "
                     + "Choose a position to create a local question, then "
                     + "adjust that local distribution directly.");
-            foreach (CACultureQuestionDef definition in
-                CACultureQuestionRegistry.All)
-                DrawQuestion(ref y, width, definition);
+            foreach (IGrouping<CACultureQuestionLayer, CACultureQuestionDef>
+                category in CACultureQuestionRegistry.All.GroupBy(value =>
+                    value.Layer))
+            {
+                y += 8f;
+                Text.Font = GameFont.Medium;
+                Widgets.Label(new Rect(0f, y, width, 30f),
+                    CategoryLabel(category.Key));
+                Text.Font = GameFont.Small;
+                y += 36f;
+                foreach (CACultureQuestionDef definition in category)
+                    DrawQuestion(ref y, width, definition);
+            }
         }
 
         private void DrawPopulationDistributionControls(ref float y,
@@ -3658,12 +3723,13 @@ namespace ColonistAwareness
             if (boundary == CACultureAuthoringBoundary.Inherited)
             {
                 Widgets.Label(new Rect(0f, y + 4f, 190f, 28f),
-                    "Within-group spread");
+                    "Global diversity");
                 float spreadHeight = CACreationUI.DrawSegmentRows(new Rect(
                     190f, y, width - 190f, 28f), SpreadLabels,
                     Mathf.Clamp(culture.withinGroupSpread, 0, 4), value =>
                     {
                         culture.withinGroupSpread = value;
+                        culture.authoredMask |= CACulture.DiversityField;
                         foreach (CACultureQuestionDistribution question in
                             EditableQuestions.Where(item => item != null
                                 && !item.spreadOverride))
@@ -3673,22 +3739,31 @@ namespace ColonistAwareness
                     }, 92f);
                 y += spreadHeight + 8f;
             }
-            if (HasRepresentedSubgroupDifferences
-                && boundary == CACultureAuthoringBoundary.Inherited)
-            {
-                Widgets.Label(new Rect(0f, y + 4f, 190f, 28f),
-                    "Subgroup separation");
-                float separationHeight = CACreationUI.DrawSegmentRows(new Rect(
-                    190f, y, width - 190f, 28f), SeparationLabels,
-                    Mathf.Clamp(culture.subgroupSeparation, 0, 4), value =>
-                    {
-                        culture.subgroupSeparation = value;
-                        CACultureModel.Normalize(culture);
-                        changed?.Invoke();
-                    }, 92f);
-                y += separationHeight + 8f;
-            }
             y += 6f;
+        }
+
+        private static string CategoryLabel(CACultureQuestionLayer layer)
+        {
+            return layer switch
+            {
+                CACultureQuestionLayer.RelationshipsFamilySexuality =>
+                    "Relationships, family, and sexuality",
+                CACultureQuestionLayer.GenderSocialAuthority =>
+                    "Gender and social authority",
+                CACultureQuestionLayer.StatusHierarchy =>
+                    "Status and hierarchy",
+                CACultureQuestionLayer.MembershipOutsiders =>
+                    "Membership and outsiders",
+                CACultureQuestionLayer.PublicAuthoritySocialOrder =>
+                    "Public authority and social order",
+                CACultureQuestionLayer.PropertyLaborProvision =>
+                    "Property, labor, and provision",
+                CACultureQuestionLayer.ViolenceCaptivityPunishment =>
+                    "Violence, captivity, and punishment",
+                CACultureQuestionLayer.KnowledgeTradition =>
+                    "Knowledge and tradition",
+                _ => "Culture"
+            };
         }
 
         private bool HasRepresentedSubgroupDifferences =>
@@ -3741,7 +3816,11 @@ namespace ColonistAwareness
                 : inheritedFallback
                     || boundary == CACultureAuthoringBoundary.Inherited
                         ? CACreationUI.Inherited : CACreationUI.Authored;
-            Widgets.Label(new Rect(width - 256f, at, 180f, 28f), badge);
+            Rect badgeRect = new Rect(width - 256f, at, 180f, 28f);
+            string fittedBadge = FitLabel(badge, badgeRect.width - 6f);
+            Widgets.Label(badgeRect, fittedBadge);
+            if (fittedBadge != badge)
+                TooltipHandler.TipRegion(badgeRect, badge);
             GUI.color = Color.white;
             if (question != null && Widgets.ButtonText(new Rect(width - 72f,
                     at, 60f, 28f), expanded ? "Less" : "More"))
@@ -3760,6 +3839,7 @@ namespace ColonistAwareness
                     CACultureQuestionDistribution target = editable
                         ?? AddQuestion(definition, question);
                     target.mean = (float)definition.AnchorCenters[index];
+                    culture.authoredMask |= CACulture.QuestionStateField;
                     target.lastChangedTick = -1;
                     target.provenance = boundary
                         == CACultureAuthoringBoundary.EstablishedLocal
@@ -3829,6 +3909,7 @@ namespace ColonistAwareness
                     : culture.parentId ?? factionLabel;
             value.evidenceSignature = null;
             EditableQuestions.Add(value);
+            culture.authoredMask |= CACulture.QuestionStateField;
             CACultureModel.Normalize(culture);
             return value;
         }
@@ -3851,10 +3932,12 @@ namespace ColonistAwareness
             float tolerance = FloatSlider(ref y, width,
                 "Divergence tolerated", question.toleranceForDivergence,
                 0f, 1f);
-            float visibility = FloatSlider(ref y, width, "Public visibility",
+            float visibility = FloatSlider(ref y, width,
+                "Observation likelihood",
                 question.visibility, 0f, 1f);
             float confidence = FloatSlider(ref y, width,
-                "Source confidence", question.sourceConfidence, 0f, 1f);
+                "Inherited prior confidence", question.sourceConfidence,
+                0f, 1f);
             if (!Mathf.Approximately(mean, question.mean)
                 || !Mathf.Approximately(spread, question.spread)
                 || !Mathf.Approximately(salience, question.salience)
@@ -3875,6 +3958,7 @@ namespace ColonistAwareness
                 question.toleranceForDivergence = tolerance;
                 question.visibility = visibility;
                 question.sourceConfidence = confidence;
+                culture.authoredMask |= CACulture.QuestionStateField;
                 question.lastChangedTick = -1;
                 CACultureModel.Normalize(culture);
                 changed?.Invoke();
@@ -3887,9 +3971,10 @@ namespace ColonistAwareness
             {
                 question.spreadOverride = false;
                 question.spread = SpreadValue(culture.withinGroupSpread);
+                culture.authoredMask |= CACulture.QuestionStateField;
                 changed?.Invoke();
             }
-            y += 34f;
+            if (question.spreadOverride) y += 34f;
             bool hasInheritedPredecessor = culture.inheritedQuestions.Any(
                 value => value != null
                     && value.questionKey == question.questionKey
@@ -3901,6 +3986,7 @@ namespace ColonistAwareness
                     Mathf.Min(260f, width), 28f), "Use inherited question"))
             {
                 EditableQuestions.Remove(question);
+                culture.authoredMask |= CACulture.QuestionStateField;
                 expandedQuestionKey = null;
                 CACultureModel.Normalize(culture);
                 changed?.Invoke();
@@ -3919,6 +4005,7 @@ namespace ColonistAwareness
                 {
                     subgroup.meanOffset = offset;
                     subgroup.inherited = false;
+                    culture.authoredMask |= CACulture.QuestionStateField;
                     changed?.Invoke();
                 }
             }
@@ -3931,6 +4018,7 @@ namespace ColonistAwareness
                 foreach (CACultureSubgroupDistribution subgroup in
                     question.subgroups.Where(value => value != null))
                     subgroup.inherited = true;
+                culture.authoredMask |= CACulture.QuestionStateField;
                 CACultureModel.Normalize(culture);
                 changed?.Invoke();
             }
@@ -3957,7 +4045,8 @@ namespace ColonistAwareness
                 + (question?.subgroups?.Any(value => value != null
                     && !value.inherited) == true ? 1 : 0);
             return 7 * 36f + Text.CalcHeight(preview,
-                    Mathf.Max(1f, width - 24f)) + 55f
+                    Mathf.Max(1f, width - 24f)) + 21f
+                + (question?.spreadOverride == true ? 34f : 0f)
                 + subgroups * 36f + extraButtons * 34f;
         }
 
@@ -4084,7 +4173,8 @@ namespace ColonistAwareness
                 .Replace("meme:", "")
                 .Replace("precepts:", "");
             if (key.NullOrEmpty()) return "Ideoligion";
-            string[] parts = key.Split('+');
+            string[] parts = key.Split(new[] { '+' },
+                StringSplitOptions.None);
             var labels = new List<string>();
             foreach (string part in parts)
             {
@@ -4273,6 +4363,32 @@ namespace ColonistAwareness
                     + "chosen separately under Visual tradition.",
                 CAAuthoringChoices.CultureProfiles(culture,
                     culture.id ?? factionLabel ?? "ca-culture", changed));
+        }
+
+        private void OpenBuiltInPresets()
+        {
+            var options = CACulturePresetLibrary.All.Select(preset =>
+                new FloatMenuOption(preset.Label + " ("
+                    + preset.ApproximatePeriod + ")\n" + preset.Summary,
+                    delegate
+                    {
+                        CACulturePresetLibrary.Apply(culture, preset,
+                            culture.id ?? factionLabel ?? "authored-culture");
+                        expandedQuestionKey = null;
+                        changed?.Invoke();
+                    })).ToList();
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
+
+        private void RandomizeCulture()
+        {
+            string identity = culture.id ?? factionLabel
+                ?? "authored-culture";
+            CACultureAuthoringKernel.Randomize(culture,
+                CACultureAuthoringKernel.NextRandomizationSeed(culture,
+                    identity), identity);
+            expandedQuestionKey = null;
+            changed?.Invoke();
         }
 
         private void SaveProfile()

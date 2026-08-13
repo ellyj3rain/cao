@@ -138,12 +138,18 @@ namespace ColonistAwareness
                 bool practiceChanged = CACultureHistory.EvaluateTransition(
                     culture, evidence, practices,
                     "settlement " + settlement.name, now);
-                int eligible = CAPopulationProjection.Residents(settlement,
-                    map).Count;
+                List<Pawn> residents = CAPopulationProjection.Residents(
+                    settlement, map);
+                int eligible = residents.Count;
+                List<CASocialGroupPattern> patterns =
+                    CASocialReactionWorldComponent.Current?.PatternsFor(
+                        organizationKey, eligible, now)
+                    ?? new List<CASocialGroupPattern>();
+                patterns.AddRange(DirectQuestionPatterns(culture, residents,
+                    organization, settlement.populationGroups,
+                    "settlement " + settlement.name, now));
                 bool meaningChanged = CACultureHistory
-                    .EvaluateMeaningTransition(culture,
-                        CASocialReactionWorldComponent.Current?.PatternsFor(
-                            organizationKey, eligible, now),
+                    .EvaluateMeaningTransition(culture, patterns,
                         "settlement " + settlement.name, now);
                 if (!practiceChanged && !meaningChanged)
                     continue;
@@ -181,10 +187,17 @@ namespace ColonistAwareness
             bool practiceChanged = CACultureHistory.EvaluateTransition(culture,
                 evidence, practices, "player settlement " + map.uniqueID,
                 now);
+            List<Pawn> colonists = map.mapPawns.FreeColonistsSpawned
+                .Where(value => value != null).ToList();
+            List<CASocialGroupPattern> patterns =
+                CASocialReactionWorldComponent.Current?.PatternsFor(
+                    culture.localityKey, colonists.Count, now)
+                ?? new List<CASocialGroupPattern>();
+            patterns.AddRange(DirectQuestionPatterns(culture, colonists,
+                colony, null,
+                "player settlement " + map.uniqueID, now));
             bool meaningChanged = CACultureHistory.EvaluateMeaningTransition(
-                culture, CASocialReactionWorldComponent.Current?.PatternsFor(
-                    culture.localityKey,
-                    map.mapPawns.FreeColonistsSpawned.Count, now),
+                culture, patterns,
                 "player settlement " + map.uniqueID, now);
             if (!practiceChanged && !meaningChanged)
                 return;
@@ -549,6 +562,310 @@ namespace ColonistAwareness
                 if (room != null) rooms.Add(room.ID);
             }
             return rooms.Count;
+        }
+
+        private sealed class DirectQuestionSample
+        {
+            internal string QuestionKey;
+            internal string Summary;
+            internal float Mean;
+            internal float Dispersion;
+            internal float Participation;
+            internal int ObservedPawns;
+            internal int EligiblePopulation;
+            internal string Signature;
+        }
+
+        private static readonly string[] DirectQuestionKeys =
+        {
+            CACultureQuestionRegistry.SameSexAcceptance,
+            CACultureQuestionRegistry.PluralityAcceptance,
+            CACultureQuestionRegistry.GenderDistribution,
+            CACultureQuestionRegistry.GenderedWork,
+            CACultureQuestionRegistry.GenderOfficeAccess,
+            CACultureQuestionRegistry.IntegrationPreference,
+            CACultureQuestionRegistry.DissentTolerance
+        };
+
+        // Seven questions need facts more specific than a generic social
+        // subject. These samples are computed only from represented relations,
+        // work settings, offices, population composition, and sanction history.
+        // Absence of an event is not treated as disapproval.
+        private static List<CASocialGroupPattern> DirectQuestionPatterns(
+            CACulture culture, List<Pawn> pawns, CAOrganization organization,
+            List<CASettlementPopulationGroup> populationGroups,
+            string scope, int tick)
+        {
+            pawns = (pawns ?? new List<Pawn>()).Where(value => value != null)
+                .ToList();
+            var samples = new List<DirectQuestionSample>();
+            AddRelationshipSamples(samples, pawns);
+            AddGenderSamples(samples, pawns, organization);
+            AddIntegrationSample(samples, pawns, populationGroups);
+            AddDissentSample(samples, organization);
+            List<CASocialGroupPattern> result = ObserveDirectQuestions(
+                culture, samples, scope, tick);
+            CACulturalCognitionWorldComponent cognition =
+                CACulturalCognitionWorldComponent.Current;
+            if (cognition != null)
+                foreach (Pawn pawn in pawns)
+                    foreach (string questionKey in DirectQuestionKeys)
+                        cognition.RefreshRepresentedEvidence(pawn,
+                            questionKey, tick, culture);
+            return result;
+        }
+
+        private static void AddRelationshipSamples(
+            List<DirectQuestionSample> samples, List<Pawn> pawns)
+        {
+            var pawnIds = new HashSet<int>(pawns.Select(value =>
+                value.thingIDNumber));
+            var sameSexPairs = new HashSet<string>(StringComparer.Ordinal);
+            var pluralParticipants = new HashSet<int>();
+            foreach (Pawn pawn in pawns)
+            {
+                List<Pawn> partners = pawn.relations?.DirectRelations
+                    ?.Where(relation => relation?.otherPawn != null
+                        && pawnIds.Contains(relation.otherPawn.thingIDNumber)
+                        && (relation.def == PawnRelationDefOf.Lover
+                            || relation.def == PawnRelationDefOf.Fiance
+                            || relation.def == PawnRelationDefOf.Spouse))
+                    .Select(relation => relation.otherPawn).Distinct().ToList()
+                    ?? new List<Pawn>();
+                foreach (Pawn partner in partners.Where(value =>
+                    pawn.gender != Gender.None && pawn.gender == value.gender))
+                    sameSexPairs.Add(Math.Min(pawn.thingIDNumber,
+                            partner.thingIDNumber) + ":"
+                        + Math.Max(pawn.thingIDNumber,
+                            partner.thingIDNumber));
+                if (partners.Count > 1)
+                {
+                    pluralParticipants.Add(pawn.thingIDNumber);
+                    foreach (Pawn partner in partners)
+                        pluralParticipants.Add(partner.thingIDNumber);
+                }
+            }
+            if (sameSexPairs.Count > 0)
+                samples.Add(Sample(CACultureQuestionRegistry
+                        .SameSexAcceptance,
+                    "represented same-sex unions", 0.65f, 0.18f,
+                    sameSexPairs.Count * 2, pawns.Count,
+                    string.Join(",", sameSexPairs.OrderBy(value => value,
+                        StringComparer.Ordinal))));
+            if (pluralParticipants.Count >= 2)
+                samples.Add(Sample(CACultureQuestionRegistry
+                        .PluralityAcceptance,
+                    "represented plural unions", 0.65f, 0.20f,
+                    pluralParticipants.Count, pawns.Count,
+                    string.Join(",", pluralParticipants.OrderBy(value =>
+                        value))));
+        }
+
+        private static void AddGenderSamples(
+            List<DirectQuestionSample> samples, List<Pawn> pawns,
+            CAOrganization organization)
+        {
+            List<Pawn> gendered = pawns.Where(value => value.gender
+                    != Gender.None).ToList();
+            List<Pawn> holders = (organization?.offices
+                    ?? new List<CAOffice>()).Where(value => value != null
+                        && value.holderId >= 0)
+                .Select(office => gendered.FirstOrDefault(value =>
+                    value.thingIDNumber == office.holderId))
+                .Where(value => value != null).Distinct().ToList();
+            if (holders.Count >= 2)
+            {
+                float femaleShare = holders.Count(value => value.gender
+                    == Gender.Female) / (float)holders.Count;
+                samples.Add(Sample(CACultureQuestionRegistry
+                        .GenderDistribution,
+                    "gender distribution among represented officeholders",
+                    femaleShare * 2f - 1f, 0.16f, holders.Count,
+                    Math.Max(holders.Count, gendered.Count),
+                    string.Join(",", holders.OrderBy(value =>
+                        value.thingIDNumber).Select(value =>
+                            value.thingIDNumber + ":" + value.gender))));
+                int maleHolders = holders.Count(value => value.gender
+                    == Gender.Male);
+                int femaleHolders = holders.Count(value => value.gender
+                    == Gender.Female);
+                if (CACulturalCognitionPureKernel
+                    .TryHistoricalOfficeAccessPosition(maleHolders,
+                        femaleHolders, out float officeAccess))
+                    samples.Add(Sample(CACultureQuestionRegistry
+                            .GenderOfficeAccess,
+                        "represented access to public office", officeAccess,
+                        0.22f, holders.Count,
+                        gendered.Count, "holders:"
+                            + string.Join(",", holders.Select(value =>
+                                value.gender).OrderBy(value => value))));
+            }
+
+            List<Pawn> men = gendered.Where(value => value.gender
+                == Gender.Male && value.workSettings != null).ToList();
+            List<Pawn> women = gendered.Where(value => value.gender
+                == Gender.Female && value.workSettings != null).ToList();
+            if (men.Count < 2 || women.Count < 2) return;
+            List<WorkTypeDef> workTypes = DefDatabase<WorkTypeDef>
+                .AllDefsListForReading.Where(value => value != null).ToList();
+            if (workTypes.Count == 0) return;
+            float difference = workTypes.Average(work => Math.Abs(
+                men.Count(value => value.workSettings.WorkIsActive(work))
+                    / (float)men.Count
+                - women.Count(value => value.workSettings.WorkIsActive(work))
+                    / (float)women.Count));
+            samples.Add(Sample(CACultureQuestionRegistry.GenderedWork,
+                "represented work assignments by gender",
+                CACulturalCognitionPureKernel
+                    .HistoricalGenderedWorkPosition(difference),
+                Mathf.Clamp01(difference), men.Count + women.Count,
+                gendered.Count, "difference=" + difference.ToString("0.00")));
+        }
+
+        private static void AddIntegrationSample(
+            List<DirectQuestionSample> samples, List<Pawn> pawns,
+            List<CASettlementPopulationGroup> populationGroups)
+        {
+            int representedGroups = (populationGroups
+                    ?? new List<CASettlementPopulationGroup>())
+                .Count(value => value != null && value.share > 0);
+            int ideoligions = pawns.Select(value => value.Ideo?.id ?? -1)
+                .Where(value => value >= 0).Distinct().Count();
+            int groups = Math.Max(representedGroups, ideoligions);
+            if (groups < 2 || pawns.Count < 2) return;
+            samples.Add(Sample(CACultureQuestionRegistry
+                    .IntegrationPreference,
+                "multiple represented populations share one settlement",
+                0.55f, 0.24f, pawns.Count, pawns.Count,
+                "groups=" + groups + ";pawns=" + string.Join(",",
+                    pawns.Select(value => value.thingIDNumber)
+                        .OrderBy(value => value))));
+        }
+
+        private static void AddDissentSample(
+            List<DirectQuestionSample> samples, CAOrganization organization)
+        {
+            List<CAInstitutionSanctionAppraisal> sanctions = (organization
+                    ?.sanctionAppraisals
+                    ?? new List<CAInstitutionSanctionAppraisal>())
+                .Where(value => value != null
+                    && (value.subjectKey
+                            == CASocialSubjectRegistry.EnforcedOrder
+                        || value.subjectKey
+                            == CASocialSubjectRegistry.PublicVoice))
+                .OrderByDescending(value => value.tick).Take(24).ToList();
+            int pawns = sanctions.Select(value => value.pawnId).Distinct()
+                .Count();
+            if (pawns < 2) return;
+            float mean = sanctions.Average(value =>
+                value.voluntaryCooperation - value.deterrence);
+            samples.Add(Sample(CACultureQuestionRegistry.DissentTolerance,
+                "represented dissent and institutional response",
+                Mathf.Clamp(mean, -1f, 1f), 0.28f, pawns,
+                Math.Max(pawns, organization?.memberPawnIds?.Count ?? pawns),
+                string.Join(",", sanctions.Select(value =>
+                    value.factIdentity).OrderBy(value => value,
+                        StringComparer.Ordinal))));
+        }
+
+        private static DirectQuestionSample Sample(string key, string summary,
+            float mean, float dispersion, int observed, int eligible,
+            string signature)
+        {
+            return new DirectQuestionSample
+            {
+                QuestionKey = key,
+                Summary = summary,
+                Mean = Mathf.Clamp(mean, -1f, 1f),
+                Dispersion = Mathf.Clamp01(dispersion),
+                ObservedPawns = Math.Max(0, observed),
+                EligiblePopulation = Math.Max(1, eligible),
+                Participation = Mathf.Clamp01(observed
+                    / (float)Math.Max(1, eligible)),
+                Signature = CASocialPatternKernel.StableHash(key + "|"
+                    + (signature ?? "represented"))
+            };
+        }
+
+        private static List<CASocialGroupPattern> ObserveDirectQuestions(
+            CACulture culture, List<DirectQuestionSample> samples,
+            string scope, int tick)
+        {
+            const string domain = "Culture question evidence";
+            culture.observations = culture.observations
+                ?? new List<CACultureObservation>();
+            var current = new HashSet<string>(samples.Select(value =>
+                "question:" + value.QuestionKey), StringComparer.Ordinal);
+            foreach (CACultureObservation absent in culture.observations
+                .Where(value => value != null && value.sourceDomain == domain
+                    && !current.Contains(value.key)))
+            {
+                absent.evidenceStartTick = -1;
+                absent.firstObservedTick = -1;
+                absent.lastObservedTick = -1;
+                absent.observationCount = 0;
+                absent.hasQuestionEvidence = false;
+                absent.questionPosition = 0f;
+                absent.questionDispersion = 0f;
+                absent.observedPawnCount = 0;
+                absent.eligiblePopulation = 0;
+            }
+            var result = new List<CASocialGroupPattern>();
+            foreach (DirectQuestionSample sample in samples)
+            {
+                string key = "question:" + sample.QuestionKey;
+                CACultureObservation observation = culture.observations
+                    .FirstOrDefault(value => value != null && value.key == key
+                        && value.sourceDomain == domain);
+                bool continuous = observation != null
+                    && observation.sourceSignature == sample.Signature
+                    && observation.lastObservedTick >= 0
+                    && tick - observation.lastObservedTick <= 2 * 60000;
+                if (observation == null)
+                {
+                    observation = new CACultureObservation
+                    {
+                        key = key,
+                        sourceDomain = domain
+                    };
+                    culture.observations.Add(observation);
+                }
+                if (!continuous)
+                {
+                    observation.evidenceStartTick = tick;
+                    observation.firstObservedTick = tick;
+                    observation.observationCount = 1;
+                }
+                else observation.observationCount++;
+                observation.summary = sample.Summary;
+                observation.sourceOwner = scope;
+                observation.sourceSignature = sample.Signature;
+                observation.strength = Mathf.RoundToInt(
+                    sample.Participation * 100f);
+                observation.lastObservedTick = tick;
+                observation.hasQuestionEvidence = true;
+                observation.questionPosition = sample.Mean;
+                observation.questionDispersion = sample.Dispersion;
+                observation.observedPawnCount = sample.ObservedPawns;
+                observation.eligiblePopulation = sample.EligiblePopulation;
+                result.Add(new CASocialGroupPattern
+                {
+                    QuestionKey = sample.QuestionKey,
+                    PopulationIdentity = "*",
+                    WeightedApproval = Mathf.RoundToInt(sample.Mean * 100f),
+                    Dispersion = sample.Dispersion,
+                    Polarization = sample.Dispersion,
+                    Participation = sample.Participation,
+                    GroupAlignment = 1f - sample.Dispersion,
+                    EvidenceCount = observation.observationCount,
+                    ObservedPawnCount = sample.ObservedPawns,
+                    EligiblePopulation = sample.EligiblePopulation,
+                    EvidenceStartTick = observation.evidenceStartTick,
+                    LastEvidenceTick = tick,
+                    EvidenceSignature = sample.Signature
+                });
+            }
+            return result;
         }
 
         private static CACultureEvidenceSnapshot Snapshot(int tick,

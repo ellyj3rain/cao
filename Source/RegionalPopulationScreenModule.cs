@@ -2064,12 +2064,16 @@ namespace ColonistAwareness
             CARegionalSettlements.EnsureSettlementPattern(plan);
             int politicalBeliefsFilled = 0;
             int structureFilled = 0;
+            int cultureQuestionsFilled = 0;
             foreach (CARegionalFactionPlan group in plan.factions)
             {
                 if (group == null) continue;
                 group.EnsureCultureAndPolitics(plan);
                 string seed = (plan.candidateId ?? "ca") + ":faction:"
                     + group.key;
+                cultureQuestionsFilled += CACultureAuthoringKernel
+                    .CompleteMissing(group.culture, seed + ":culture",
+                        "starting-region generation");
                 politicalBeliefsFilled += CAPoliticalBeliefsModel.DeriveUnset(
                     group.politicalBeliefs, seed + ":politics",
                     CAPoliticalContext.ForFaction(plan, group));
@@ -2126,6 +2130,9 @@ namespace ColonistAwareness
             if (politicalBeliefsFilled > 0)
                 filled.Add(Counted(politicalBeliefsFilled,
                     "set of political beliefs"));
+            if (cultureQuestionsFilled > 0)
+                filled.Add(Counted(cultureQuestionsFilled,
+                    "Culture question"));
             if (structureFilled > 0)
                 filled.Add(Counted(structureFilled,
                     "set of faction rules"));

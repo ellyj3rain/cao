@@ -46,7 +46,7 @@ namespace ColonistAwareness
     // source reorganization does not change a schema; a persisted contract does.
     public static class CACampaignSchemaCatalog
     {
-        public const int CurrentCatalogVersion = 2;
+        public const int CurrentCatalogVersion = 3;
 
         public static readonly CACampaignSchemaDefinition[] All =
         {
@@ -69,7 +69,7 @@ namespace ColonistAwareness
             D("world.organization", 2, 1, 1),
             D("world.organization-relations", 1),
             D("world.regional", 2, 1, 1),
-            D("world.cultural-cognition", 1, 1, 2),
+            D("world.cultural-cognition", 2, 2, 2),
             D("world.political-cognition", 1, 1, 2),
             D("world.proposition-knowledge", 1, 1, 2),
             D("world.social-reactions", 1),

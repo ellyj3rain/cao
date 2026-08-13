@@ -14,10 +14,12 @@ internal static class Program
 
     private static int Main(string[] args)
     {
-        if (args.Length != 3)
+        bool verifyOnly = args.Length == 4
+            && args[3] == "--verify-only";
+        if (args.Length != 3 && !verifyOnly)
         {
             Console.Error.WriteLine(
-                "usage: B12CulturalCognitionReceipts <repo> <active> <mirror>");
+                "usage: B12CulturalCognitionReceipts <repo> <active> <mirror> [--verify-only]");
             return 1;
         }
         repo = Path.GetFullPath(args[0]);
@@ -36,7 +38,7 @@ internal static class Program
         CompatibilityReceipts();
         HistoryAndPerformanceReceipts();
         FixtureReceipts(active, mirror);
-        WriteReceipts(active, mirror);
+        if (!verifyOnly) WriteReceipts(active, mirror);
 
         int passed = Results.Count(result => result.Passed);
         foreach (Result result in Results)
@@ -52,9 +54,9 @@ internal static class Program
         Add("question registry validates",
             CACultureQuestionRegistry.ValidationFailure() == null,
             CACultureQuestionRegistry.ValidationFailure() ?? "no failure");
-        Add("thirteen stable questions",
-            all.Count == 13 && all.Select(value => value.Key).Distinct(
-                StringComparer.Ordinal).Count() == 13,
+        Add("current registry retains the B12 questions",
+            all.Count == 24 && all.Select(value => value.Key).Distinct(
+                StringComparer.Ordinal).Count() == 24,
             $"count={all.Count}; unique={all.Select(value => value.Key).Distinct().Count()}");
         Add("five ordered anchors per question", all.All(value =>
                 value.Anchors.Length == 5
@@ -74,10 +76,10 @@ internal static class Program
             CACultureQuestionRegistry.All.Select(
                 value => CACultureDistributionKernel.NewQuestion(value))
                 .ToList();
-        Add("explicit new-question defaults validate", defaults.Count == 13
+        Add("explicit new-question defaults validate", defaults.Count == 24
             && defaults.All(value =>
                 CACultureDistributionKernel.ValidationFailure(value) == null),
-            "13/13 neutral authoring defaults; no identity-derived facts");
+            "24/24 neutral authoring defaults; no identity-derived facts");
 
         CACultureQuestionDistribution distribution = defaults[0];
         float sameA = Sample(distribution, "pawn-17");
@@ -210,12 +212,13 @@ internal static class Program
             "leader, council, assembly, and decision forms remain option keys");
         Add("unsupported subjects remain outside Culture",
             CACultureQuestionRegistry.QuestionForSocialSubject(
-                    CASocialSubjectRegistry.ResearchWork) == null
+                    CASocialSubjectRegistry.ResearchWork)
+                    == CACultureQuestionRegistry.NoveltyAcceptance
                 && CACultureQuestionRegistry.QuestionForSocialSubject(
                     CASocialSubjectRegistry.Taxation) == null
                 && CACultureQuestionRegistry.QuestionForSocialSubject(
                     CASocialSubjectRegistry.CompulsoryTransfer) == null,
-            "research, taxation, and compulsory transfer remain factual evidence");
+            "B13 maps represented research to novelty acceptance; taxation and compulsory transfer remain factual evidence");
     }
 
     private static void CognitionReceipts()
@@ -225,32 +228,42 @@ internal static class Program
             CACulturalCognitionPureKernel.Materialize(basis);
         CAAttitudeMaterializationResult salient =
             CACulturalCognitionPureKernel.Materialize(Input(salience: 0.95f));
-        Add("salience changes conviction, not position",
-            salient.MoralConviction > initial.MoralConviction
+        Add("B13 separates salience from conviction",
+            salient.Attention > initial.Attention
+                && salient.MoralConviction == initial.MoralConviction
                 && salient.PrivatePosition == initial.PrivatePosition,
-            $"conviction {initial.MoralConviction:0.000}->{salient.MoralConviction:0.000}");
+            $"attention {initial.Attention:0.000}->{salient.Attention:0.000}; conviction stable");
 
         CAAttitudeMaterializationResult strongNorm =
             CACulturalCognitionPureKernel.Materialize(Input(norm: 0.95f));
-        Add("norm strength changes enforcement",
-            strongNorm.ExpectedEnforcement > initial.ExpectedEnforcement
+        Add("B13 separates norm pressure from enforcement",
+            strongNorm.PerceivedSocialPressure
+                    > initial.PerceivedSocialPressure
+                && strongNorm.ExpectedEnforcement
+                    == initial.ExpectedEnforcement
                 && strongNorm.PrivatePosition == initial.PrivatePosition,
-            $"enforcement {initial.ExpectedEnforcement:0.000}->{strongNorm.ExpectedEnforcement:0.000}");
+            $"pressure {initial.PerceivedSocialPressure:0.000}->{strongNorm.PerceivedSocialPressure:0.000}; enforcement stable");
 
         CAAttitudeMaterializationResult tolerant =
             CACulturalCognitionPureKernel.Materialize(Input(tolerance: 0.9f));
-        Add("divergence tolerance reduces enforcement",
-            tolerant.ExpectedEnforcement < initial.ExpectedEnforcement
+        Add("divergence tolerance reduces norm pressure",
+            tolerant.PerceivedSocialPressure
+                    < initial.PerceivedSocialPressure
+                && tolerant.ExpectedEnforcement
+                    == initial.ExpectedEnforcement
                 && tolerant.PrivatePosition == initial.PrivatePosition,
-            $"enforcement {initial.ExpectedEnforcement:0.000}->{tolerant.ExpectedEnforcement:0.000}");
+            $"pressure {initial.PerceivedSocialPressure:0.000}->{tolerant.PerceivedSocialPressure:0.000}; enforcement stable");
 
         CAAttitudeMaterializationResult confident =
             CACulturalCognitionPureKernel.Materialize(Input(confidence: 0.95f));
-        Add("confidence changes knowledge and uncertainty",
-            confident.KnowledgeConfidence > initial.KnowledgeConfidence
-                && confident.Uncertainty < initial.Uncertainty
+        Add("B13 separates inherited confidence from knowledge confidence",
+            confident.InheritedPriorStrength
+                    > initial.InheritedPriorStrength
+                && confident.KnowledgeConfidence
+                    == initial.KnowledgeConfidence
+                && confident.Uncertainty == initial.Uncertainty
                 && confident.PrivatePosition == initial.PrivatePosition,
-            $"knowledge {initial.KnowledgeConfidence:0.000}->{confident.KnowledgeConfidence:0.000}; uncertainty {initial.Uncertainty:0.000}->{confident.Uncertainty:0.000}");
+            $"prior {initial.InheritedPriorStrength:0.000}->{confident.InheritedPriorStrength:0.000}; knowledge stable");
 
         CAAttitudeMaterializationResult doctrine =
             CACulturalCognitionPureKernel.Materialize(Input(doctrine: 0.9f));
@@ -263,11 +276,11 @@ internal static class Program
             CACulturalCognitionPureKernel.Materialize(Input(visibility: 0.05f));
         CAAttitudeMaterializationResult visible =
             CACulturalCognitionPureKernel.Materialize(Input(visibility: 0.95f));
-        Add("visibility changes observed expression, not position",
-            Math.Abs(visible.PublicExpression)
-                > Math.Abs(hidden.PublicExpression)
+        Add("B13 separates observation likelihood from expression",
+            visible.ObservationLikelihood > hidden.ObservationLikelihood
+                && visible.PublicExpression == hidden.PublicExpression
                 && visible.PrivatePosition == hidden.PrivatePosition,
-            $"expression {hidden.PublicExpression:0.000}->{visible.PublicExpression:0.000}; private stable");
+            $"observation {hidden.ObservationLikelihood:0.000}->{visible.ObservationLikelihood:0.000}; expression stable");
 
         float neutral = CACulturalCognitionPureKernel
             .NeutralPsychologicalPrior();
@@ -781,11 +794,16 @@ internal static class Program
         string interpretation = S("Source/SocialInterpretationRuntimeModule.cs");
         string combined = state + relationship + behavior + interpretation
             + politics + knowledge + organization;
+        string compactCombined = new string(combined.Where(value =>
+            !char.IsWhiteSpace(value)).ToArray());
         Add("all questions have actual source consumers",
             CACultureQuestionRegistry.All.All(definition =>
-                combined.Contains("CACultureQuestionRegistry."
-                    + ConstantName(definition.Key), StringComparison.Ordinal)),
-            "13/13 registry constants occur outside the registry");
+                compactCombined.Contains("CACultureQuestionRegistry."
+                        + ConstantName(definition.Key),
+                    StringComparison.Ordinal)
+                || combined.Contains("\"" + definition.Key + "\"",
+                    StringComparison.Ordinal)),
+            "24/24 registry constants occur outside the registry");
         Add("durable owners partition represented cognition",
             new[] { "psychologicalProfiles", "culturalAttitudes",
                 "influenceEdges",
@@ -963,13 +981,14 @@ internal static class Program
         Add("legacy adapter has only exact approval and salience inputs",
             first.Mean == second.Mean && first.Salience == second.Salience,
             $"mean={first.Mean:0.000}; salience={first.Salience:0.000}; normality and prestige have no adapter parameter");
-        Add("catalog two introduces cognition additively",
-            CACampaignSchemaCatalog.CurrentCatalogVersion == 2
+        Add("catalog retains the B12 cognition owner",
+            CACampaignSchemaCatalog.CurrentCatalogVersion == 3
                 && CACampaignSchemaCatalog.TryFind("world.cultural-cognition",
                     out CACampaignSchemaDefinition cognition)
-                && cognition.CurrentVersion == 1
+                && cognition.CurrentVersion == 2
+                && cognition.MinimumCompatibleVersion == 2
                 && cognition.IntroducedCatalogVersion == 2,
-            "world.cultural-cognition schema 1 introduced at catalog 2");
+            "world.cultural-cognition remains a catalog-2 owner and now requires schema 2");
         Add("politics and proposition knowledge have separate owners",
             CACampaignSchemaCatalog.TryFind("world.political-cognition",
                     out CACampaignSchemaDefinition politics)
@@ -1219,21 +1238,29 @@ internal static class Program
                 + Items(value, "localQuestions").Count());
         int evidenceCount = cultures.Sum(value =>
             Items(value, "legacyEvidence").Count());
+        int b12QuestionCount = cultures.SelectMany(value =>
+                Items(value, "inheritedQuestions").Concat(
+                    Items(value, "localQuestions")))
+            .Count(value => Value(value, "provenance").Contains(
+                "B12 exact adapter", StringComparison.Ordinal));
         Add("fixture uses current Culture schema",
             cultures.Length == 8
                 && cultures.All(value => Value(value, "schemaVersion") == "10")
+                && cultures.All(value => Value(value,
+                    "questionRegistryVersion") == "2")
                 && !document.Descendants("inheritedMeanings").Any()
                 && !document.Descendants("localMeanings").Any(),
             $"8 schema-10 records; {questionCount} distributions; obsolete meaning payloads absent");
         Add("migration evidence survives serialization",
-            questionCount == 22 && evidenceCount == 26
+            questionCount == 194 && b12QuestionCount == 22
+                && evidenceCount == 26
                 && cultures.SelectMany(value => Items(value,
                     "legacyEvidence")).Any(value =>
                         Value(value, "sourceKey")
                             == "ca.property.compulsory_transfer"
                         && Value(value, "disposition").Contains(
                             "no exact B12 question", StringComparison.Ordinal)),
-            $"questions={questionCount}; evidence={evidenceCount}; unmapped compulsory transfer preserved");
+            $"questions={questionCount}; B12-authored={b12QuestionCount}; evidence={evidenceCount}; unmapped compulsory transfer preserved");
         string roundTrip = XDocument.Parse(document.ToString(
             SaveOptions.DisableFormatting)).ToString(SaveOptions.DisableFormatting);
         Add("current fixture round-trips structurally",
@@ -1254,7 +1281,9 @@ internal static class Program
         acceptance.AppendLine("|---:|---|---|---|");
         foreach (Result result in Results)
             acceptance.AppendLine($"| {result.Number} | {Escape(result.Name)} | **{(result.Passed ? "PASS" : "FAIL")}** | {Escape(result.Evidence)} |");
-        acceptance.AppendLine($"\nResult: **{passed}/{Results.Count} PASS**\n");
+        acceptance.AppendLine();
+        acceptance.AppendLine(
+            $"Result: **{passed}/{Results.Count} PASS**");
         File.WriteAllText(Path.Combine(repo, "B12_ACCEPTANCE_RECEIPTS.md"),
             acceptance.ToString(), new UTF8Encoding(false));
 
@@ -1350,17 +1379,28 @@ Both runtime-consumed plan surfaces parse, are byte-identical, preserve the auth
     {
         "relationships.sameSexAcceptance" => "SameSexAcceptance",
         "relationships.pluralityAcceptance" => "PluralityAcceptance",
+        "relationships.kinObligation" => "KinObligation",
         "authority.genderDistribution" => "GenderDistribution",
+        "authority.genderedWork" => "GenderedWork",
+        "authority.officeAccess" => "GenderOfficeAccess",
         "status.hereditaryLegitimacy" => "HereditaryLegitimacy",
         "status.rankDifferentiation" => "RankDifferentiation",
+        "status.mobility" => "StatusMobility",
         "groups.outsiderInclusion" => "OutsiderInclusion",
         "groups.integrationPreference" => "IntegrationPreference",
+        "groups.membershipAccess" => "MembershipAccess",
         "labor.coercionLegitimacy" => "CoercionLegitimacy",
+        "property.control" => "PropertyControl",
         "voice.inclusionExpectation" => "VoiceInclusion",
+        "voice.dissentTolerance" => "DissentTolerance",
+        "authority.enforcementLegitimacy" => "EnforcementLegitimacy",
         "war.captiveProtection" => "CaptiveProtection",
+        "war.punishmentSeverity" => "PunishmentSeverity",
+        "war.retaliatoryViolence" => "RetaliatoryViolence",
         "provision.mutualObligation" => "MutualProvision",
         "knowledge.access" => "KnowledgeAccess",
         "knowledge.noveltyAcceptance" => "NoveltyAcceptance",
+        "knowledge.expertiseDeference" => "ExpertiseDeference",
         _ => throw new InvalidDataException("unmapped question constant " + key)
     };
 

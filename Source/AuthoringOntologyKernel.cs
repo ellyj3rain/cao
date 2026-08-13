@@ -254,7 +254,8 @@ namespace ColonistAwareness
         public static bool ValidKey(string key)
         {
             if (string.IsNullOrWhiteSpace(key)) return false;
-            string[] parts = key.Split('.');
+            string[] parts = key.Split(new[] { '.' },
+                StringSplitOptions.None);
             return parts.Length == 3 && parts.All(part => part.Length > 0
                 && part.All(value => char.IsLetterOrDigit(value)
                     || value == '_' || value == '-'));

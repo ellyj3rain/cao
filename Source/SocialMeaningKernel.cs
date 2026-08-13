@@ -413,7 +413,8 @@ namespace ColonistAwareness
         public static bool ValidKey(string key)
         {
             if (string.IsNullOrWhiteSpace(key)) return false;
-            string[] parts = key.Split('.');
+            string[] parts = key.Split(new[] { '.' },
+                StringSplitOptions.None);
             if (parts.Length != 3 || parts.Any(string.IsNullOrWhiteSpace))
                 return false;
             return parts.All(part => part.All(value => char.IsLetterOrDigit(value)
@@ -485,7 +486,8 @@ namespace ColonistAwareness
             string factualCondition, string culturalEffect,
             params string[] consumers)
         {
-            string domain = key.Split('.')[1].Replace('_', ' ');
+            string domain = key.Split(new[] { '.' },
+                StringSplitOptions.None)[1].Replace('_', ' ');
             RegisterBuiltIn(key, label, description, domain,
                 authoritativeSource, factualCondition,
                 "represented actors and informed populations",
@@ -887,6 +889,10 @@ namespace ColonistAwareness
     public sealed class CASocialGroupPattern
     {
         public string SubjectKey;
+        // Direct question evidence is used only when the source event already
+        // owns the exact Culture question. Generic social facts continue to
+        // resolve through SubjectKey and the registry adapter.
+        public string QuestionKey;
         public string PopulationIdentity;
         public int WeightedApproval;
         public float Dispersion;

@@ -890,7 +890,8 @@ namespace ColonistAwareness
                 if (record.seededAssets != null)
                     foreach (string entry in record.seededAssets)
                     {
-                        string[] parts = entry.Split('|');
+                        string[] parts = entry.Split(new[] { '|' },
+                            StringSplitOptions.None);
                         if (parts.Length < 3) continue;
                         int x, z;
                         if (!int.TryParse(parts[1], out x)

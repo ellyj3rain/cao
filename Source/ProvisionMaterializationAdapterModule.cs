@@ -217,7 +217,8 @@ namespace ColonistAwareness
         {
             def = null;
             count = 0;
-            string[] parts = source?.Split(':');
+            string[] parts = source?.Split(new[] { ':' },
+                StringSplitOptions.None);
             if (parts == null || parts.Length != 3
                 || parts[0] != "authored"
                 || !int.TryParse(parts[2], out count) || count <= 0)
@@ -233,7 +234,8 @@ namespace ColonistAwareness
             ISet<int> reservedObservedStockIds, out Thing stock)
         {
             stock = null;
-            string[] parts = source?.Split(':');
+            string[] parts = source?.Split(new[] { ':' },
+                StringSplitOptions.None);
             if (parts == null || parts.Length != 3
                 || parts[0] != "observed" || parts[1] != "thing"
                 || !int.TryParse(parts[2], out int thingId)) return false;

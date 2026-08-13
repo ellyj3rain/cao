@@ -271,7 +271,8 @@ namespace ColonistAwareness
                 return "[CA][Faction] no world - faction setup skipped";
 
             store.PruneOrphans();
-            int cultures = 0, beliefSets = 0, beliefFields = 0;
+            int cultures = 0, cultureQuestions = 0, beliefSets = 0,
+                beliefFields = 0;
             int structureFields = 0, skipped = 0;
 
             foreach (Faction faction in Find.FactionManager
@@ -291,6 +292,10 @@ namespace ColonistAwareness
                 bool cultureGenerated = CACultureInitialState.EnsureForFaction(
                     record.culture, faction);
                 if (cultureMissing || cultureGenerated) cultures++;
+                if (!faction.IsPlayer)
+                    cultureQuestions += CACultureAuthoringKernel
+                        .CompleteMissing(record.culture, seed + ":culture",
+                            "world faction generation");
 
                 if (record.politicalBeliefs == null)
                     record.politicalBeliefs = new CAPoliticalBeliefs();
@@ -325,7 +330,8 @@ namespace ColonistAwareness
             }
 
             return "[CA][Faction] setup pass (" + reason + "): "
-                + cultures + " Cultures, " + beliefSets
+                + cultures + " Culture identities, " + cultureQuestions
+                + " Culture questions, " + beliefSets
                 + " political-belief sets, " + beliefFields
                 + " political-belief fields, " + structureFields
                 + " current-order mechanisms generated; " + skipped

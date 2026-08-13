@@ -84,6 +84,10 @@ namespace ColonistAwareness
         public readonly float Reactance;
         public readonly float EpistemicVigilance;
         public readonly float PsychologicalUncertainty;
+        public readonly float PsychologicalPositionShift;
+        public readonly float DirectEvidenceConfidence;
+        public readonly float RepresentedEnforcement;
+        public readonly float MoralExperience;
 
         public CAAttitudeMaterializationInput(float sampledPrivatePosition,
             float populationMean, float descriptiveNormPrior,
@@ -93,7 +97,11 @@ namespace ColonistAwareness
             float doctrinePressure,
             float agreeableness, float groupIdentification,
             float reactance, float epistemicVigilance,
-            float psychologicalUncertainty)
+            float psychologicalUncertainty,
+            float psychologicalPositionShift = 0f,
+            float directEvidenceConfidence = 0.35f,
+            float representedEnforcement = 0f,
+            float moralExperience = 0f)
         {
             SampledPrivatePosition = sampledPrivatePosition;
             PopulationMean = populationMean;
@@ -109,35 +117,81 @@ namespace ColonistAwareness
             Reactance = reactance;
             EpistemicVigilance = epistemicVigilance;
             PsychologicalUncertainty = psychologicalUncertainty;
+            PsychologicalPositionShift = psychologicalPositionShift;
+            DirectEvidenceConfidence = directEvidenceConfidence;
+            RepresentedEnforcement = representedEnforcement;
+            MoralExperience = moralExperience;
+        }
+    }
+
+    public readonly struct CARepresentedSourceAppraisal
+    {
+        public readonly float Weight;
+        public readonly float Trust;
+        public readonly float Prestige;
+        public readonly float PayoffVisibility;
+
+        public CARepresentedSourceAppraisal(float weight, float trust,
+            float prestige, float payoffVisibility)
+        {
+            Weight = weight;
+            Trust = trust;
+            Prestige = prestige;
+            PayoffVisibility = payoffVisibility;
+        }
+    }
+
+    public readonly struct CARepresentedMoralExperience
+    {
+        public readonly float Salience;
+        public readonly float ApprovalMagnitude;
+        public readonly float KnowledgeConfidence;
+
+        public CARepresentedMoralExperience(float salience,
+            float approvalMagnitude, float knowledgeConfidence)
+        {
+            Salience = salience;
+            ApprovalMagnitude = approvalMagnitude;
+            KnowledgeConfidence = knowledgeConfidence;
         }
     }
 
     public readonly struct CAAttitudeMaterializationResult
     {
         public readonly float PrivatePosition;
+        public readonly float Attention;
         public readonly float MoralConviction;
         public readonly float IdentityCentrality;
+        public readonly float InheritedPriorStrength;
         public readonly float KnowledgeConfidence;
         public readonly float DescriptiveNorm;
         public readonly float InjunctiveNorm;
+        public readonly float PerceivedSocialPressure;
         public readonly float ExpectedEnforcement;
         public readonly float PublicExpression;
+        public readonly float ObservationLikelihood;
         public readonly float Uncertainty;
 
         public CAAttitudeMaterializationResult(float privatePosition,
-            float moralConviction, float identityCentrality,
-            float knowledgeConfidence, float descriptiveNorm,
-            float injunctiveNorm, float expectedEnforcement,
-            float publicExpression, float uncertainty)
+            float attention, float moralConviction, float identityCentrality,
+            float inheritedPriorStrength, float knowledgeConfidence,
+            float descriptiveNorm, float injunctiveNorm,
+            float perceivedSocialPressure, float expectedEnforcement,
+            float publicExpression, float observationLikelihood,
+            float uncertainty)
         {
             PrivatePosition = privatePosition;
+            Attention = attention;
             MoralConviction = moralConviction;
             IdentityCentrality = identityCentrality;
+            InheritedPriorStrength = inheritedPriorStrength;
             KnowledgeConfidence = knowledgeConfidence;
             DescriptiveNorm = descriptiveNorm;
             InjunctiveNorm = injunctiveNorm;
+            PerceivedSocialPressure = perceivedSocialPressure;
             ExpectedEnforcement = expectedEnforcement;
             PublicExpression = publicExpression;
+            ObservationLikelihood = observationLikelihood;
             Uncertainty = uncertainty;
         }
     }
@@ -334,13 +388,15 @@ namespace ColonistAwareness
         public readonly float ConflictFreedom;
         public readonly float EpistemicVigilance;
         public readonly float NoveltyAcceptance;
+        public readonly float ExpertiseDeference;
 
         public CAKnowledgeAcceptanceInput(float sourceReliability,
             float relationshipTrust, float expertise, float prestige,
             float authority, float motiveIntegrity, float corroboration,
             float plausibility, float priorCongruence, float methodQuality,
             float observedPayoff, float conflictFreedom,
-            float epistemicVigilance, float noveltyAcceptance)
+            float epistemicVigilance, float noveltyAcceptance,
+            float expertiseDeference = 0.5f)
         {
             SourceReliability = sourceReliability;
             RelationshipTrust = relationshipTrust;
@@ -356,6 +412,7 @@ namespace ColonistAwareness
             ConflictFreedom = conflictFreedom;
             EpistemicVigilance = epistemicVigilance;
             NoveltyAcceptance = noveltyAcceptance;
+            ExpertiseDeference = expertiseDeference;
         }
     }
 
@@ -395,6 +452,120 @@ namespace ColonistAwareness
         public const double MaxPoliticalIssueFamilyWiseError = 0.01d;
         public const int MaxInstitutionLegitimacyAppraisals = 256;
         public const int MaxInstitutionSanctionAppraisals = 256;
+        public const string ExpertiseSocial = "Social";
+        public const string ExpertiseIntellectual = "Intellectual";
+        public const string ExpertiseMedicine = "Medicine";
+        public const string ExpertiseCooking = "Cooking";
+        public const string ExpertisePlants = "Plants";
+        public const string ExpertiseAnimals = "Animals";
+        public const string ExpertiseCrafting = "Crafting";
+        public const string ExpertiseConstruction = "Construction";
+        public const string ExpertiseShooting = "Shooting";
+        public const string ExpertiseMelee = "Melee";
+        public const string ExpertiseArtistic = "Artistic";
+
+        // A claim source earns deference from demonstrated, subject-relevant
+        // skill. Every built-in social subject has an explicit domain; an
+        // unregistered integration subject retains the neutral 0.5 prior.
+        private static readonly IReadOnlyDictionary<string, string[]>
+            ExpertiseDomains = new Dictionary<string, string[]>(
+                StringComparer.Ordinal)
+            {
+                [CASocialSubjectRegistry.PublicGathering] =
+                    new[] { ExpertiseSocial },
+                [CASocialSubjectRegistry.OutsiderContact] =
+                    new[] { ExpertiseSocial },
+                [CASocialSubjectRegistry.DefendedBoundary] =
+                    new[] { ExpertiseConstruction, ExpertiseShooting,
+                        ExpertiseMelee },
+                [CASocialSubjectRegistry.ResearchWork] =
+                    new[] { ExpertiseIntellectual },
+                [CASocialSubjectRegistry.PublicVoice] =
+                    new[] { ExpertiseSocial },
+                [CASocialSubjectRegistry.CompelledService] =
+                    new[] { ExpertiseSocial },
+                [CASocialSubjectRegistry.EnforcedOrder] =
+                    new[] { ExpertiseSocial, ExpertiseShooting,
+                        ExpertiseMelee },
+                [CASocialSubjectRegistry.CompulsoryTransfer] =
+                    new[] { ExpertiseSocial, ExpertiseIntellectual },
+                [CASocialSubjectRegistry.SharedProvision] =
+                    new[] { ExpertiseSocial, ExpertiseIntellectual },
+                [CASocialSubjectRegistry.InheritedRank] =
+                    new[] { ExpertiseSocial },
+                [CASocialSubjectRegistry.HumaneCustody] =
+                    new[] { ExpertiseMedicine, ExpertiseSocial },
+                [CASocialSubjectRegistry.QuarterGiven] =
+                    new[] { ExpertiseShooting, ExpertiseMelee,
+                        ExpertiseSocial },
+                [CASocialSubjectRegistry.MedicalCare] =
+                    new[] { ExpertiseMedicine },
+                [CASocialSubjectRegistry.CustodyPunishment] =
+                    new[] { ExpertiseShooting, ExpertiseMelee,
+                        ExpertiseSocial },
+                [CASocialSubjectRegistry.VoluntaryTrade] =
+                    new[] { ExpertiseSocial },
+                [CASocialSubjectRegistry.MealPreparation] =
+                    new[] { ExpertiseCooking },
+                [CASocialSubjectRegistry.KnowledgeTransmission] =
+                    new[] { ExpertiseIntellectual, ExpertiseSocial },
+                [CASocialSubjectRegistry.LongRangeCommunication] =
+                    new[] { ExpertiseIntellectual },
+                [CASocialSubjectRegistry.FactionMembership] =
+                    new[] { ExpertiseSocial },
+                [CASocialSubjectRegistry.HouseholdMembership] =
+                    new[] { ExpertiseSocial },
+                [CASocialSubjectRegistry.ArtAndRemembrance] =
+                    new[] { ExpertiseArtistic },
+                [CASocialSubjectRegistry.DelegatedAuthority] =
+                    new[] { ExpertiseSocial },
+                [CASocialSubjectRegistry.OfficeGovernance] =
+                    new[] { ExpertiseSocial, ExpertiseIntellectual },
+                [CASocialSubjectRegistry.AnimalTending] =
+                    new[] { ExpertiseAnimals },
+                [CASocialSubjectRegistry.Cultivation] =
+                    new[] { ExpertisePlants },
+                [CASocialSubjectRegistry.GeneralCraft] =
+                    new[] { ExpertiseCrafting, ExpertiseConstruction },
+                [CASocialSubjectRegistry.RepairAndRebuilding] =
+                    new[] { ExpertiseCrafting, ExpertiseConstruction },
+                [CASocialSubjectRegistry.SpecializedCraft] =
+                    new[] { ExpertiseCrafting },
+                [CASocialSubjectRegistry.CommonOwnership] =
+                    new[] { ExpertiseSocial, ExpertiseIntellectual },
+                [CASocialSubjectRegistry.Confiscation] =
+                    new[] { ExpertiseSocial, ExpertiseIntellectual },
+                [CASocialSubjectRegistry.PrivateOwnership] =
+                    new[] { ExpertiseSocial, ExpertiseIntellectual },
+                [CASocialSubjectRegistry.Taxation] =
+                    new[] { ExpertiseSocial, ExpertiseIntellectual },
+                [CASocialSubjectRegistry.SharedRecreation] =
+                    new[] { ExpertiseSocial },
+                [CASocialSubjectRegistry.VoluntaryAgreement] =
+                    new[] { ExpertiseSocial },
+                [CASocialSubjectRegistry.ReligiousObservance] =
+                    new[] { ExpertiseSocial },
+                [CASocialSubjectRegistry.SecurityService] =
+                    new[] { ExpertiseShooting, ExpertiseMelee },
+                [CASocialSubjectRegistry.MaintainedHousing] =
+                    new[] { ExpertiseConstruction },
+                [CASocialSubjectRegistry.PublicWorks] =
+                    new[] { ExpertiseConstruction },
+                [CASocialSubjectRegistry.KinSuccession] =
+                    new[] { ExpertiseSocial },
+                [CASocialSubjectRegistry.OfficeHolding] =
+                    new[] { ExpertiseSocial },
+                [CASocialSubjectRegistry.StoredReserves] =
+                    new[] { ExpertiseSocial, ExpertiseIntellectual },
+                [CASocialSubjectRegistry.AuthorityProvision] =
+                    new[] { ExpertiseSocial, ExpertiseIntellectual },
+                [CASocialSubjectRegistry.HouseholdProvision] =
+                    new[] { ExpertiseSocial, ExpertiseIntellectual },
+                [CASocialSubjectRegistry.RouteUse] =
+                    new[] { ExpertiseConstruction },
+                [CASocialSubjectRegistry.CombatViolence] =
+                    new[] { ExpertiseShooting, ExpertiseMelee }
+            };
 
         // The durable ledger is bounded by topic and globally. Current
         // research references have first retention priority, followed by
@@ -461,34 +632,212 @@ namespace ColonistAwareness
         public static CAAttitudeMaterializationResult Materialize(
             CAAttitudeMaterializationInput input)
         {
-            float privatePosition = Clamp(input.SampledPrivatePosition,
-                -1f, 1f);
+            float privatePosition = Clamp(input.SampledPrivatePosition
+                + input.PsychologicalPositionShift, -1f, 1f);
             float injunctive = Clamp(input.PopulationMean * 0.75f
                 + input.DoctrinePressure * 0.25f, -1f, 1f);
-            float enforcement = Clamp01(input.NormStrength
+            // Norm pressure is a population property. Expected enforcement is
+            // learned from represented rules and sanction history; one never
+            // aliases the other.
+            float socialPressure = Clamp01(input.NormStrength
                 * (1f - input.DivergenceTolerance));
-            float conformity = Clamp01((input.Agreeableness
-                + input.GroupIdentification) * 0.5f);
-            float pressure = conformity * enforcement;
-            float reactance = Clamp01(input.Reactance) * enforcement;
-            float expression = Lerp(privatePosition, injunctive,
-                pressure * 0.65f);
-            expression += Math.Sign(privatePosition - injunctive)
-                * reactance * 0.15f;
-            // Visibility governs how much of the chosen expression becomes
-            // socially observable. It never changes the private position.
-            expression = Lerp(0f, expression, Clamp01(input.Visibility));
+            float enforcement = Clamp01(input.RepresentedEnforcement);
+            float expression = PublicExpression(privatePosition, injunctive,
+                socialPressure, enforcement, input.Agreeableness,
+                input.GroupIdentification, input.Reactance);
+            float attention = Clamp01(input.Salience
+                * (0.65f + Math.Abs(privatePosition) * 0.35f));
+            // Group identification and position extremity establish identity
+            // centrality. Attention must not turn salience into conviction by
+            // an indirect path through identity.
+            float identity = Clamp01(input.GroupIdentification
+                * (0.55f + Math.Abs(privatePosition) * 0.45f));
+            // Conviction needs position extremity, doctrine, identity, or
+            // lived moral evidence. Salience changes attention, not conviction
+            // by itself.
+            float conviction = MoralConviction(privatePosition,
+                input.DoctrinePressure, identity, input.MoralExperience);
+            float evidence = Clamp01(input.DirectEvidenceConfidence);
+            float knowledgeConfidence = KnowledgeConfidence(evidence,
+                input.PsychologicalUncertainty,
+                input.EpistemicVigilance);
+            float uncertainty = KnowledgeUncertainty(evidence,
+                input.PsychologicalUncertainty,
+                input.EpistemicVigilance);
             return new CAAttitudeMaterializationResult(
-                privatePosition,
-                Clamp01(input.Salience
-                    * (0.45f + input.NormStrength * 0.55f)),
-                Clamp01(input.Salience * input.GroupIdentification),
-                Clamp01(input.SourceConfidence
-                    * (0.55f + input.EpistemicVigilance * 0.45f)),
+                privatePosition, attention, conviction, identity,
+                Clamp01(input.SourceConfidence), knowledgeConfidence,
                 Clamp(input.DescriptiveNormPrior, -1f, 1f), injunctive,
-                enforcement, Clamp(expression, -1f, 1f),
-                Clamp01(1f - input.SourceConfidence
-                    * (1f - input.PsychologicalUncertainty * 0.5f)));
+                socialPressure, enforcement, Clamp(expression, -1f, 1f),
+                Clamp01(input.Visibility), uncertainty);
+        }
+
+        public static float PublicExpression(float privatePosition,
+            float perceivedInjunctiveNorm, float perceivedSocialPressure,
+            float expectedEnforcement, float agreeableness,
+            float groupIdentification, float reactance)
+        {
+            float conformity = Clamp01((Clamp01(agreeableness)
+                + Clamp01(groupIdentification)) * 0.5f);
+            float pressure = conformity * Clamp01(
+                Clamp01(perceivedSocialPressure) * 0.65f
+                + Clamp01(expectedEnforcement) * 0.35f);
+            float backlash = Clamp01(reactance)
+                * Clamp01(expectedEnforcement);
+            float expression = Lerp(Clamp(privatePosition, -1f, 1f),
+                Clamp(perceivedInjunctiveNorm, -1f, 1f),
+                pressure * 0.65f);
+            expression += Math.Sign(privatePosition
+                    - perceivedInjunctiveNorm)
+                * backlash * 0.15f;
+            return Clamp(expression, -1f, 1f);
+        }
+
+        public static float MoralConviction(float privatePosition,
+            float doctrinePressure, float identityCentrality,
+            float moralExperience)
+        {
+            return Clamp01(Math.Abs(Clamp(privatePosition, -1f, 1f))
+                * 0.34f
+                + Math.Abs(Clamp(doctrinePressure, -1f, 1f)) * 0.22f
+                + Clamp01(identityCentrality) * 0.20f
+                + Clamp01(moralExperience) * 0.24f);
+        }
+
+        public static float KnowledgeConfidence(float directEvidence,
+            float psychologicalUncertainty, float epistemicVigilance)
+        {
+            return Clamp01(Clamp01(directEvidence) * 0.55f
+                + (1f - Clamp01(psychologicalUncertainty)) * 0.25f
+                + Clamp01(epistemicVigilance) * 0.20f);
+        }
+
+        public static float KnowledgeUncertainty(float directEvidence,
+            float psychologicalUncertainty, float epistemicVigilance)
+        {
+            return Clamp01(1f - (Clamp01(directEvidence) * 0.55f
+                + (1f - Clamp01(psychologicalUncertainty)) * 0.30f
+                + Clamp01(epistemicVigilance) * 0.15f));
+        }
+
+        // Source appraisal is built only from represented, question-specific
+        // observations. An empty history retains a conservative uncertainty
+        // floor; it is never interpreted as negative evidence.
+        public static float RepresentedEvidenceConfidence(
+            IEnumerable<CARepresentedSourceAppraisal> sources)
+        {
+            CARepresentedSourceAppraisal[] represented = (sources
+                    ?? Enumerable.Empty<CARepresentedSourceAppraisal>())
+                .Take(6).ToArray();
+            if (represented.Length == 0) return 0.30f;
+            float appraisal = represented.Average(value =>
+                Clamp01(value.Trust) * 0.35f
+                + Clamp01(value.Prestige) * 0.25f
+                + Clamp01(value.PayoffVisibility) * 0.20f
+                + Clamp01(value.Weight) * 0.20f);
+            return Clamp01(0.30f + represented.Length * 0.05f
+                + appraisal * 0.35f);
+        }
+
+        // Conviction consumes the magnitude of represented lived moral
+        // experience. Direction remains in the private position and the
+        // event appraisal; a missing event contributes nothing.
+        public static float RepresentedMoralExperience(
+            IEnumerable<CARepresentedMoralExperience> experiences)
+        {
+            CARepresentedMoralExperience[] represented = (experiences
+                    ?? Enumerable.Empty<CARepresentedMoralExperience>())
+                .Take(12).ToArray();
+            if (represented.Length == 0) return 0f;
+            return Clamp01(represented.Average(value =>
+                Clamp01(value.Salience)
+                * (0.45f + Clamp01(value.ApprovalMagnitude) * 0.35f
+                    + Clamp01(value.KnowledgeConfidence) * 0.20f)));
+        }
+
+        public static IReadOnlyList<string>
+            ExpertiseDomainsForSocialSubject(string subjectKey)
+        {
+            return !string.IsNullOrWhiteSpace(subjectKey)
+                && ExpertiseDomains.TryGetValue(subjectKey,
+                    out string[] domains)
+                ? domains : Array.Empty<string>();
+        }
+
+        public static float DemonstratedExpertise(string subjectKey,
+            Func<string, float> normalizedSkillForDomain)
+        {
+            IReadOnlyList<string> domains =
+                ExpertiseDomainsForSocialSubject(subjectKey);
+            if (domains.Count == 0 || normalizedSkillForDomain == null)
+                return 0.5f;
+            return Clamp01(domains.Max(domain =>
+                normalizedSkillForDomain(domain)));
+        }
+
+        // Population evidence is available only to the represented share of
+        // the population. The stable sample avoids a fresh reroll on load.
+        public static bool ReceivesRepresentedQuestionEvidence(int pawnId,
+            string evidenceSignature, float participation)
+        {
+            float represented = Clamp01(participation);
+            if (represented <= 0f) return false;
+            if (represented >= 1f) return true;
+            uint sample = StableHash(pawnId + "|"
+                + (evidenceSignature ?? "unrecorded question evidence"));
+            return (sample & 0x00FFFFFFu) / 16777215f < represented;
+        }
+
+        // Direct historical evidence appraises a represented population fact,
+        // not a synthetic speaker. Agreement and disagreement remain in the
+        // measured position; reliability follows participation, consistency,
+        // and repeated observation.
+        public static CARepresentedSourceAppraisal
+            RepresentedQuestionSourceAppraisal(float dispersion,
+                float participation, int observationCount)
+        {
+            float represented = Clamp01(participation);
+            float consistency = 1f - Clamp01(dispersion);
+            float continuity = Clamp01(Math.Max(0, observationCount) / 6f);
+            float trust = Clamp01(consistency * 0.55f
+                + continuity * 0.25f + represented * 0.20f);
+            return new CARepresentedSourceAppraisal(represented, trust,
+                0.5f, represented * (0.5f + consistency * 0.5f));
+        }
+
+        public static CARepresentedMoralExperience
+            RepresentedQuestionMoralExperience(float position,
+                float dispersion, float participation, int observationCount)
+        {
+            CARepresentedSourceAppraisal source =
+                RepresentedQuestionSourceAppraisal(dispersion,
+                    participation, observationCount);
+            return new CARepresentedMoralExperience(
+                Clamp01(participation),
+                Math.Abs(Clamp(position, -1f, 1f)), source.Trust);
+        }
+
+        // The registered scale runs from open work (-1) to rigid division
+        // (+1). Assignment difference therefore increases, rather than
+        // reverses, the recorded position.
+        public static float HistoricalGenderedWorkPosition(
+            float assignmentDifference)
+        {
+            return Clamp(Clamp01(assignmentDifference) * 2f - 1f,
+                -1f, 1f);
+        }
+
+        // Mixed represented officeholders are positive evidence of broad
+        // access. A single-gender holder set is composition, not proof that
+        // anyone else was ineligible, so it produces no access sample.
+        public static bool TryHistoricalOfficeAccessPosition(
+            int maleOfficeholders, int femaleOfficeholders,
+            out float position)
+        {
+            bool represented = maleOfficeholders > 0
+                && femaleOfficeholders > 0;
+            position = represented ? 0.70f : 0f;
+            return represented;
         }
 
         public static CACulturalInfluenceResult Influence(
@@ -505,8 +854,7 @@ namespace ColonistAwareness
                 return new CACulturalInfluenceResult(targetPrivate,
                     descriptiveNorm, injunctiveNorm,
                     Lerp(targetPrivate, injunctiveNorm,
-                        Clamp01(expectedEnforcement) * 0.45f)
-                        * Clamp01(visibility));
+                        Clamp01(expectedEnforcement) * 0.45f));
             float total = accepted.Sum(InfluenceWeight);
             float observed = accepted.Sum(value => value.PublicExpression
                 * InfluenceWeight(value)) / total;
@@ -526,8 +874,7 @@ namespace ColonistAwareness
             return new CACulturalInfluenceResult(nextPrivate,
                 nextDescriptive, nextInjunctive,
                 Lerp(nextPrivate, nextInjunctive,
-                    Clamp01(expectedEnforcement) * 0.45f)
-                    * Clamp01(visibility));
+                    Clamp01(expectedEnforcement) * 0.45f));
         }
 
         private static float InfluenceWeight(CACulturalInfluenceSample value)
@@ -765,9 +1112,11 @@ namespace ColonistAwareness
         public static CAKnowledgeAcceptanceResult EvaluateKnowledge(
             CAKnowledgeAcceptanceInput input)
         {
+            float expertiseWeight = 0.60f
+                + Clamp01(input.ExpertiseDeference) * 0.80f;
             float source = Clamp01(input.SourceReliability) * 0.16f
                 + Clamp01(input.RelationshipTrust) * 0.10f
-                + Clamp01(input.Expertise) * 0.13f
+                + Clamp01(input.Expertise * expertiseWeight) * 0.13f
                 + Clamp01(input.Prestige) * 0.05f
                 + Clamp01(input.Authority) * 0.04f
                 + Clamp01(input.MotiveIntegrity) * 0.08f;

@@ -432,11 +432,7 @@ namespace ColonistAwareness
                 : sourcePawn == holder ? 1f : Mathf.Clamp01(
                     (holder.relations?.OpinionOf(sourcePawn) ?? 0) / 200f
                         + 0.5f);
-            float expertise = sourcePawn == null ? 0.5f : Mathf.Clamp01(
-                Math.Max(sourcePawn.skills?.GetSkill(SkillDefOf.Social)
-                        ?.Level ?? 0,
-                    sourcePawn.skills?.GetSkill(SkillDefOf.Intellectual)
-                        ?.Level ?? 0) / 20f);
+            float expertise = ExpertiseFor(sourcePawn, fact.SubjectKey);
             float prestige = sourcePawn?.Faction?.leader == sourcePawn ? 1f
                 : sourcePawn == null ? 0.5f : Mathf.Clamp01(
                     (sourcePawn.skills?.GetSkill(SkillDefOf.Social)?.Level
@@ -472,7 +468,11 @@ namespace ColonistAwareness
                 noveltyAcceptance: CACulturalCognitionWorldComponent.Current
                     ?.AttitudeFor(holder,
                         CACultureQuestionRegistry.NoveltyAcceptance)
-                        ?.privateAttitude ?? 0f);
+                        ?.privateAttitude ?? 0f,
+                expertiseDeference: Mathf.InverseLerp(-1f, 1f,
+                    CACulturalCognitionWorldComponent.Current?.AttitudeFor(
+                        holder, CACultureQuestionRegistry.ExpertiseDeference)
+                        ?.privateAttitude ?? 0f));
             CAPoliticalEvidenceMap.TryFor(fact, out string politicalAxis,
                 out string politicalOption, out float politicalSupport);
             CAKnowledgePropositionRecord record = Acquire("fact:"
@@ -594,7 +594,7 @@ namespace ColonistAwareness
             if (!evidenceKey.NullOrEmpty()
                 ) AddBounded(record.evidence, evidenceKey,
                     CACulturalCognitionPureKernel.MaxKnowledgeEvidence);
-            ReevaluateKnowledge(record);
+            ReevaluateKnowledge(record, appraisal.ExpertiseDeference);
             if (!contradictsIdentity.NullOrEmpty())
                 LinkExplicitContradiction(record.identity,
                     contradictsIdentity);
@@ -622,8 +622,9 @@ namespace ColonistAwareness
             return true;
         }
 
-        private static void ReevaluateKnowledge(
-            CAKnowledgePropositionRecord record)
+        private void ReevaluateKnowledge(
+            CAKnowledgePropositionRecord record,
+            float? expertiseDeference = null)
         {
             if (record == null) return;
             record.conflictFreedom = CACulturalCognitionPureKernel
@@ -640,9 +641,29 @@ namespace ColonistAwareness
                         record.methodQuality, record.observedPayoff,
                         record.conflictFreedom,
                         record.epistemicVigilance,
-                        record.noveltyAcceptance));
+                        record.noveltyAcceptance,
+                        expertiseDeference
+                            ?? ExpertiseDeferenceFor(record)));
             record.confidence = accepted.Confidence;
             record.transmissibility = accepted.Transmissibility;
+        }
+
+        private static float ExpertiseDeferenceFor(
+            CAKnowledgePropositionRecord record)
+        {
+            if (record?.holderIdentity.NullOrEmpty() != false)
+                return 0.5f;
+            string identity = record.holderIdentity.StartsWith("pawn:",
+                    StringComparison.Ordinal)
+                ? record.holderIdentity.Substring(5)
+                : record.holderIdentity;
+            if (!int.TryParse(identity, out int pawnId)) return 0.5f;
+            Pawn holder = PawnById(pawnId);
+            float position = CACulturalCognitionWorldComponent.Current
+                ?.AttitudeFor(holder,
+                    CACultureQuestionRegistry.ExpertiseDeference)
+                ?.privateAttitude ?? 0f;
+            return Mathf.InverseLerp(-1f, 1f, position);
         }
 
         internal void RecordSettlementResearch(
@@ -970,6 +991,48 @@ namespace ColonistAwareness
         {
             return PawnsFinder.AllMapsWorldAndTemporary_Alive
                 .FirstOrDefault(value => value?.thingIDNumber == id);
+        }
+
+        private static float ExpertiseFor(Pawn pawn, string subjectKey)
+        {
+            if (pawn?.skills == null || subjectKey.NullOrEmpty()) return 0.5f;
+            return CACulturalCognitionPureKernel.DemonstratedExpertise(
+                subjectKey, domain =>
+                {
+                    SkillDef skill = ExpertiseSkill(domain);
+                    return skill == null ? 0f : Mathf.Clamp01(
+                        (pawn.skills.GetSkill(skill)?.Level ?? 0) / 20f);
+                });
+        }
+
+        private static SkillDef ExpertiseSkill(string domain)
+        {
+            switch (domain)
+            {
+                case CACulturalCognitionPureKernel.ExpertiseSocial:
+                    return SkillDefOf.Social;
+                case CACulturalCognitionPureKernel.ExpertiseIntellectual:
+                    return SkillDefOf.Intellectual;
+                case CACulturalCognitionPureKernel.ExpertiseMedicine:
+                    return SkillDefOf.Medicine;
+                case CACulturalCognitionPureKernel.ExpertiseCooking:
+                    return SkillDefOf.Cooking;
+                case CACulturalCognitionPureKernel.ExpertisePlants:
+                    return SkillDefOf.Plants;
+                case CACulturalCognitionPureKernel.ExpertiseAnimals:
+                    return SkillDefOf.Animals;
+                case CACulturalCognitionPureKernel.ExpertiseCrafting:
+                    return SkillDefOf.Crafting;
+                case CACulturalCognitionPureKernel.ExpertiseConstruction:
+                    return SkillDefOf.Construction;
+                case CACulturalCognitionPureKernel.ExpertiseShooting:
+                    return SkillDefOf.Shooting;
+                case CACulturalCognitionPureKernel.ExpertiseMelee:
+                    return SkillDefOf.Melee;
+                case CACulturalCognitionPureKernel.ExpertiseArtistic:
+                    return SkillDefOf.Artistic;
+                default: return null;
+            }
         }
 
         private static float SourceAuthority(Pawn pawn)

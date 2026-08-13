@@ -185,7 +185,8 @@ namespace ColonistAwareness
                 foreach (string entry in record.populationAssignments
                     ?? new List<string>())
                 {
-                    string key = entry.Split(':')[0];
+                    string key = entry.Split(new[] { ':' },
+                        StringSplitOptions.None)[0];
                     int count;
                     byPopulationGroup.TryGetValue(key, out count);
                     byPopulationGroup[key] = count + 1;
@@ -394,7 +395,8 @@ namespace ColonistAwareness
                 foreach (string asset in record.seededAssets
                     ?? new List<string>())
                 {
-                    string kind = asset.Split('|')[0];
+                    string kind = asset.Split(new[] { '|' },
+                        StringSplitOptions.None)[0];
                     if (!kind.StartsWith("CA_Aperture")
                         && kind != "CA_WindowGlazed") continue;
                     int count;
