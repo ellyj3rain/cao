@@ -8,9 +8,9 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | Form | `major.minor.kohai.patch-maturity` |
 | Hard caps | minor 12; kohai 16; patch 24 |
 | Replay start | `0.1.0.0-pre-alpha` |
-| Current version | `1.4.0.0-alpha` |
-| Closed chronology | `A1-B12` |
-| Next batch | `B13` |
+| Current version | `1.4.1.0-alpha` |
+| Closed chronology | `A1-B13` |
+| Next batch | `B14` |
 | Executable source | [`tools/version-model.mjs`](tools/version-model.mjs) |
 
 ## Tier meanings
@@ -67,6 +67,7 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | VU-037 | B10 | 2026-08-12 | patch | `1.3.0.4-alpha` | Causal closure and elimination of synthetic social state | `T-002`, `T-004`, `T-005`, `T-006`, `T-010`, `T-013`, `T-014`, `T-015`, `T-016`, `T-018`, `T-019`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B10 audits and repairs the aggregate B6-B9 framework in place. Persistent factual domestic units replace hash-created households; domain evidence replaces random capability; direct operational contracts replace tendency-created programs; exact operators and funding replace provision categories; and Culture, Political Beliefs, assets, and fixture tools return to their proper causal roles. This closes proxies inside the existing capability boundary and therefore carries the patch tier. |
 | VU-038 | B11 | 2026-08-12 to 2026-08-13 | patch | `1.3.0.5-alpha` | Durable campaign boundary and compositional authoring closure | `T-001`, `T-002`, `T-004`, `T-019`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B11 establishes the first durable campaign boundary over the B10 causal model: one executable schema catalog, preflight and idempotent migration receipts, explicit module and cadence ownership, and disabled-by-default bounded profiling. Its authoring addendum closes the same boundary by distinguishing social subjects, meanings, and concrete repeated practices; expanding the production vocabulary from actual mechanics; making Political Beliefs and current order independently compositional; and enforcing partial copy-on-apply sets and content-driven authoring. These are structural and corrective closures of the existing capability rather than a new gameplay capability, so the unit carries the patch tier. |
 | VU-039 | B12 | 2026-08-13 | minor | `1.4.0.0-alpha` | Cultural cognition, political emergence, and proposition knowledge | `T-001`, `T-002`, `T-004`, `T-005`, `T-006`, `T-019`, `T-022`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B12 adds a new simulation capability across authoring and runtime: Culture becomes population distributions over explicit questions; pawns retain private and public attitudes, sparse influence, and bounded psychology; political positions and coalitions emerge from represented evidence; organizations own legitimacy and sanction history; and proposition knowledge owns claims, access, transmission, research receipts, and decay. Separate durable owners, exact B11 migration evidence, direct consumers, fixed-seed causal receipts, and a current-schema fixture make this a minor capability boundary rather than another corrective patch. |
+| VU-040 | B13 | 2026-08-13 | kohai | `1.4.1.0-alpha` | Culture completion and causal fidelity | `T-001`, `T-002`, `T-004`, `T-006`, `T-019`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B13 completes and matures B12's Culture capability without replacing its durable ownership architecture. It expands the production registry to twenty-four questions in eight player-legible categories, supplies complete historical and social presets, puts manual editing, presets, and random generation through one Culture object, and separates salience from conviction, norm strength from expected enforcement, source confidence from knowledge confidence, and visibility from public-expression compression. Question-specific psychology, represented observations, downstream consumers, world-faction completion, schema-2 cognition persistence, fixed-seed receipts, and the converted current fixture close the same capability as a coherent integration unit, so the unit carries the kohai tier. |
 
 ## Historical version evidence
 
@@ -76,12 +77,12 @@ A22 is the maturity boundary: reproducible assembly followed an end-to-end runti
 
 ## Next movement
 
-`B13` is the next ordinary batch. Its content determines its tier after it exists:
+`B14` is the next ordinary batch. Its content determines its tier after it exists:
 
-| If B13 is | Result |
+| If B14 is | Result |
 |---|---|
-| patch or hotfix | `1.4.0.1-alpha` |
-| kohai | `1.4.1.0-alpha` |
+| patch or hotfix | `1.4.1.1-alpha` |
+| kohai | `1.4.2.0-alpha` |
 | minor | `1.5.0.0-alpha` (the minor tier advances capability; maturity remains unchanged) |
 
 The thematic catalog is series-neutral in [`Batches/THREADS.md`](Batches/THREADS.md). Temporary `AT-*` and `ATF-*` identifiers resolve through [`Batches/THREAD_ID_CROSSWALK.md`](Batches/THREAD_ID_CROSSWALK.md).

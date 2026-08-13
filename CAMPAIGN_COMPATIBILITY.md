@@ -1,8 +1,8 @@
 # Campaign compatibility
 
-Status: canonical for `1.4.0.0-alpha` / B12
+Status: canonical for `1.4.1.0-alpha` / B13
 Current campaign boundary: `1`
-Current schema catalog: `2`
+Current schema catalog: `3`
 
 B11 is CAO's first durable campaign boundary. A world confirmed under this
 boundary is historical state. Later code may govern future events differently,
@@ -39,6 +39,15 @@ facts represented at the upgrade tick. The compatibility component publishes
 catalog 2 only after every current owner validates and each new family has an
 initialization receipt. No B12 owner backdates pawn attitudes, coalitions,
 institutional appraisals, propositions, or research history.
+
+Catalog 3 is B13's current fidelity boundary. It retains the same durable owner
+set and raises cultural cognition to schema 2 so attention, inherited-prior
+strength, perceived social pressure, and observation likelihood persist as
+separate facts. Nested Culture payloads require question registry 2. The
+experimental catalog-2/schema-1 cognition payload is below the compatible floor:
+preflight rejects it visibly instead of inventing values for the separated
+causes. The current pending authoring fixture is converted directly under its
+own schema and is not a realized campaign migration.
 
 The same streaming validator runs on the closed XML candidate after
 `ScribeSaver.FinalizeSaving` and before SafeSaver replaces the prior file. Only
@@ -174,15 +183,16 @@ A future destructive live-state migration is exceptional and requires all of:
 
 ## Remaining live proof
 
-B12's non-interactive evidence uses the current authored regional fixture, the
+B13's non-interactive evidence uses the current authored regional fixture, the
 catalog-1 B11 upgrade envelope, and the retained controlled B10 envelope. It
 proves preflight decisions, exact
 component scope/cardinality, repeated-record validation, digest corruption
 rejection, stable IDs, deterministic additive metadata, idempotence,
 source-input immutability, exact Culture evidence migration, independently
-owned cultural cognition, political cognition, proposition knowledge and
-organization appraisals, no creation rerun, no invented prior history, retained
-B10/B11 regression, and build/deployment identity.
+owned and causally separated cultural cognition, political cognition,
+proposition knowledge and organization appraisals, no creation rerun, no
+invented prior history, retained B10/B11/B12 regression, and build/deployment
+identity.
 
 It does not pretend to automate a true RimWorld save round trip. The operator's
 first retained campaign is the live proof: create and save the campaign, close
@@ -201,5 +211,5 @@ Every later implementation batch states:
 - performance impact: operations/cadence, bounded work, scans, index/cache
   effects and profiler keys.
 
-The next action after B12 is the operator's RimWorld runtime test and, once
+The next action after B13 is the operator's RimWorld runtime test and, once
 accepted, the first retained campaign save.

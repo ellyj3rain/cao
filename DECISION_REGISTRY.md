@@ -2471,3 +2471,40 @@
   receipts establish executable causality and isolation, not psychometric
   validity, empirical calibration, clinical interpretation, predictive accuracy,
   or operator gameplay acceptance.
+
+- **DR-164** (2026-08-13) - **The production Culture registry contains
+  twenty-four questions in eight categories.** Each category contains three
+  questions and every question has five ordered semantic anchors, represented
+  evidence sources, research provenance, pawn appraisal, a substantive consumer,
+  and a longitudinal feedback route. Survey and research sources justify the
+  construct and ordering; they do not constitute empirical RimWorld calibration.
+
+- **DR-165** (2026-08-13) - **Culture has one authoring object and one visible
+  diversity control.** Manual editing, nine complete historical/social presets,
+  saved profiles, deterministic randomization, and generated completion all
+  write `CACulture` question distributions. No preset mode, custom mode, or
+  blend state exists. Global diversity owns default spread; question-specific
+  spread is an advanced local override and neither moves a question center.
+
+- **DR-166** (2026-08-13) - **Neighboring Culture causes remain separately
+  represented.** Salience owns attention, not conviction. Norm strength and
+  divergence tolerance own perceived social pressure, not expected enforcement.
+  Source confidence owns inherited-prior strength, not knowledge confidence.
+  Visibility owns observation likelihood, not expression compression.
+  Question-specific psychology supplies only a bounded private-position
+  deviation. Demonstrated domain expertise, not status alone, receives weight
+  under expertise deference.
+
+- **DR-167** (2026-08-13) - **Culture changes through represented evidence,
+  never missing-event inference.** Direct observations from unions, offices,
+  work, mixed populations, and sanctions persist before transition. Remaining
+  questions use exact factual-subject adapters. An absent event is not negative
+  evidence, and concrete practice history remains distinct from a Culture
+  question distribution.
+
+- **DR-168** (2026-08-13) - **B13 completes B12 as a kohai capability unit.**
+  Campaign catalog 3 publishes cultural-cognition schema 2 and requires Culture
+  question registry 2. Starting Region and broader non-player faction generation
+  complete missing Culture through the same deterministic kernel; authored
+  player state is never silently randomized. Experimental catalog-2 cognition
+  schema 1 is rejected rather than converted into invented separated causes.

@@ -50,8 +50,8 @@ None.
 | `Source/FrontierModule.cs:136` | physical, spatial, or presentation variation | site placement after factual holding eligibility | `Rand.PushState(siteSeed);` |
 | `Source/FrontierModule.cs:141` | physical, spatial, or presentation variation | site placement after factual holding eligibility | `finally { Rand.PopState(); }` |
 | `Source/GossipModule.cs:83` | bounded represented-event uncertainty | bounded transmission attempt between actual actors | `return Rand.Value < UnityEngine.Mathf.Clamp(p, 0.05f, 0.9f);` |
-| `Source/OrganizationModule.cs:1767` | physical, spatial, or presentation variation | frontier physical-plan receipt after eligibility | `int seed = Gen.HashCombineInt(worldSeed, tileId,` |
-| `Source/OrganizationModule.cs:1781` | physical, spatial, or presentation variation | frontier physical-plan receipt after eligibility | `.HashCombineInt(seed,` |
+| `Source/OrganizationModule.cs:1766` | physical, spatial, or presentation variation | frontier physical-plan receipt after eligibility | `int seed = Gen.HashCombineInt(worldSeed, tileId,` |
+| `Source/OrganizationModule.cs:1780` | physical, spatial, or presentation variation | frontier physical-plan receipt after eligibility | `.HashCombineInt(seed,` |
 | `Source/PatrolSystemModule.cs:255` | bounded scheduling or equivalent route ordering | patrol staggering and equivalent route geometry | `return GenText.StableStringHash(key ?? "") & 0x7fffffff;` |
 | `Source/PatrolSystemModule.cs:325` | bounded scheduling or equivalent route ordering | patrol staggering and equivalent route geometry | `int seed = Gen.HashCombineInt(map.uniqueID, c.x, c.z,` |
 | `Source/PatrolSystemModule.cs:431` | bounded scheduling or equivalent route ordering | patrol staggering and equivalent route geometry | `return Gen.HashCombineInt(GenText.StableStringHash(key ?? ""),` |

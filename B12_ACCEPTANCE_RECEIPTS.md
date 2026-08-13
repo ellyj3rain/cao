@@ -5,10 +5,10 @@ These receipts exercise the pure equations used by the runtime wrappers, inspect
 | # | Contract | Result | Evidence |
 |---:|---|---|---|
 | 1 | question registry validates | **PASS** | no failure |
-| 2 | thirteen stable questions | **PASS** | count=13; unique=13 |
+| 2 | current registry retains the B12 questions | **PASS** | count=24; unique=24 |
 | 3 | five ordered anchors per question | **PASS** | all anchors are named and strictly monotonic |
 | 4 | every question names a represented consumer | **PASS** | behavior, political, institution, and knowledge routes inspected |
-| 5 | explicit new-question defaults validate | **PASS** | 13/13 neutral authoring defaults; no identity-derived facts |
+| 5 | explicit new-question defaults validate | **PASS** | 24/24 neutral authoring defaults; no identity-derived facts |
 | 6 | materialization is deterministic | **PASS** | same seed=0.353485/0.353485 |
 | 7 | pawns vary within one population | **PASS** | pawn17=0.353; pawn18=0.095 |
 | 8 | variance floor rejects degenerate input | **PASS** | floor=0.06 |
@@ -21,20 +21,20 @@ These receipts exercise the pure equations used by the runtime wrappers, inspect
 | 15 | outsider inclusion is independent from integration | **PASS** | changing outsider inclusion leaves integration unchanged |
 | 16 | hereditary status is independent from rank | **PASS** | inheritance legitimacy does not author durable rank |
 | 17 | nominal political forms remain nominal | **PASS** | leader, council, assembly, and decision forms remain option keys |
-| 18 | unsupported subjects remain outside Culture | **PASS** | research, taxation, and compulsory transfer remain factual evidence |
-| 19 | salience changes conviction, not position | **PASS** | conviction 0.376->0.715 |
-| 20 | norm strength changes enforcement | **PASS** | enforcement 0.358->0.617 |
-| 21 | divergence tolerance reduces enforcement | **PASS** | enforcement 0.358->0.055 |
-| 22 | confidence changes knowledge and uncertainty | **PASS** | knowledge 0.451->0.779; uncertainty 0.519->0.169 |
+| 18 | unsupported subjects remain outside Culture | **PASS** | B13 maps represented research to novelty acceptance; taxation and compulsory transfer remain factual evidence |
+| 19 | B13 separates salience from conviction | **PASS** | attention 0.360->0.684; conviction stable |
+| 20 | B13 separates norm pressure from enforcement | **PASS** | pressure 0.358->0.617; enforcement stable |
+| 21 | divergence tolerance reduces norm pressure | **PASS** | pressure 0.358->0.055; enforcement stable |
+| 22 | B13 separates inherited confidence from knowledge confidence | **PASS** | prior 0.550->0.950; knowledge stable |
 | 23 | doctrine changes injunctive pressure, not Culture | **PASS** | injunctive 0.075->0.300; private stable |
-| 24 | visibility changes observed expression, not position | **PASS** | expression 0.010->0.186; private stable |
+| 24 | B13 separates observation likelihood from expression | **PASS** | observation 0.050->0.950; expression stable |
 | 25 | unobserved psychology uses an explicit neutral prior | **PASS** | prior=0.500; identity is not an evidence source |
 | 26 | sparse influence is bounded and selective | **PASS** | accepted=-0.165; distant=-0.800 |
 | 27 | relationship approach is bounded and monotonic | **PASS** | 0.70..1.15 |
 | 28 | institution fit follows belief-practice agreement | **PASS** | agreement produces greater legitimacy fit |
 | 29 | novelty changes knowledge transmissibility | **PASS** | receptive > tradition-bound |
 | 30 | descriptive and injunctive norms remain separate | **PASS** | descriptive=-0.70; injunctive=0.28 |
-| 31 | private and public positions can diverge | **PASS** | gap=0.21 |
+| 31 | private and public positions can diverge | **PASS** | gap=0.11 |
 | 32 | perceived and actual norms can diverge | **PASS** | represented perceived=-0.60 and actual=+0.40 |
 | 33 | pluralistic ignorance is representable | **PASS** | private support can coexist with contrary expression and belief |
 | 34 | referent trust and prestige alter influence | **PASS** | positive referent=0.023; negative referent=-0.023 |
@@ -73,7 +73,7 @@ These receipts exercise the pure equations used by the runtime wrappers, inspect
 | 67 | research uses the complete represented contract | **PASS** | question, actors, authority, method, facility, materials, evidence, preservation, and dissemination |
 | 68 | institutions preserve represented knowledge | **PASS** | organization records become custodied propositions |
 | 69 | knowledge networks remain sparse and bounded | **PASS** | recent institutional records and prior knowledge are capped |
-| 70 | all questions have actual source consumers | **PASS** | 13/13 registry constants occur outside the registry |
+| 70 | all questions have actual source consumers | **PASS** | 24/24 registry constants occur outside the registry |
 | 71 | durable owners partition represented cognition | **PASS** | cultural cognition, political cognition, and proposition knowledge persist separately |
 | 72 | legitimacy is owned by the represented organization | **PASS** | organization schedules and owns legitimacy; cognition provides read-only evidence; no duplicate institution ledger |
 | 73 | Culture changes selection appraisal, not authorization | **PASS** | Allowed remains the causal authorization; CA discretionary job selection consumes the response |
@@ -91,7 +91,7 @@ These receipts exercise the pure equations used by the runtime wrappers, inspect
 | 85 | preflight validates nested B12 payloads | **PASS** | question, psychology, attitude, coalition, knowledge, and organization appraisal payloads are checked |
 | 86 | new owner version tags are always serialized | **PASS** | all catalog-2 world owners force their required inline version tag even when its value equals the current schema |
 | 87 | legacy adapter has only exact approval and salience inputs | **PASS** | mean=0.400; salience=0.540; normality and prestige have no adapter parameter |
-| 88 | catalog two introduces cognition additively | **PASS** | world.cultural-cognition schema 1 introduced at catalog 2 |
+| 88 | catalog retains the B12 cognition owner | **PASS** | world.cultural-cognition remains a catalog-2 owner and now requires schema 2 |
 | 89 | politics and proposition knowledge have separate owners | **PASS** | catalog 2 introduces both schema-1 owners additively |
 | 90 | durable Culture catalog admits exact nine-to-ten migration | **PASS** | minimum=9; current=10 |
 | 91 | organization schema adds owner-held institutional appraisals | **PASS** | world.organization 1 -> 2 carries legitimacy and sanction appraisals |
@@ -111,11 +111,11 @@ These receipts exercise the pure equations used by the runtime wrappers, inspect
 | 105 | social and political graphs are sparse | **PASS** | each pawn retains at most eight influence edges; issue links are faction-bounded |
 | 106 | history, research, and sanction memory are capped | **PASS** | per-pawn evidence, research inputs, and sanction histories have explicit caps |
 | 107 | fixture pair replacement rolls back injected failure | **PASS** | active and mirror originals survive a failure after the first replacement |
-| 108 | active and mirror fixtures agree | **PASS** | SHA-256=5862A5F810454CB3537836289051E3528A1F6888BF3D11495CD3CC53EAD876B9; mirror=5862A5F810454CB3537836289051E3528A1F6888BF3D11495CD3CC53EAD876B9 |
+| 108 | active and mirror fixtures agree | **PASS** | SHA-256=27354E00647007BD54EC5D5E0B29E7E408E40CEEBE4A3CAAADE068D23BDCA101; mirror=27354E00647007BD54EC5D5E0B29E7E408E40CEEBE4A3CAAADE068D23BDCA101 |
 | 109 | fixture carries the B12 authoring epoch | **PASS** | authoringDataEpoch=12 |
 | 110 | authored identity and composition survive | **PASS** | region/candidate/tile/scale; 3 factions; 4 settlements; 9 populations; 19 program facts |
-| 111 | fixture uses current Culture schema | **PASS** | 8 schema-10 records; 22 distributions; obsolete meaning payloads absent |
-| 112 | migration evidence survives serialization | **PASS** | questions=22; evidence=26; unmapped compulsory transfer preserved |
+| 111 | fixture uses current Culture schema | **PASS** | 8 schema-10 records; 194 distributions; obsolete meaning payloads absent |
+| 112 | migration evidence survives serialization | **PASS** | questions=194; B12-authored=22; evidence=26; unmapped compulsory transfer preserved |
 | 113 | current fixture round-trips structurally | **PASS** | question identities survive XML readback |
 
 Result: **113/113 PASS**

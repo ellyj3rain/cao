@@ -1,7 +1,7 @@
 # Colonist Awareness - roadmap
 
-The A sequence is closed at `A102`; the chronology is complete through `B12`,
-and `B13` is the next development batch after the operator runtime test.
+The A sequence is closed at `A102`; the chronology is complete through `B13`,
+and `B14` is the next development batch after the operator runtime test.
 Historical batch identifiers below use the current sequence. Thematic `T-*`
 identifiers link continuing work across nonadjacent batches. The chronological
 catalog is [`BATCH_LOG.md`](BATCH_LOG.md); thematic links are in
@@ -1642,7 +1642,35 @@ Culture schema 10 maps B11 meanings only through exact ordered-question adapters
 and preserves all dimensions and unmatched subjects as evidence. The epoch-12,
 regional-plan-schema-11 fixture keeps the same identity, 3 factions, 4
 settlements, 9 population groups, and 19 established operations while adding 22
-question distributions and 26 legacy evidence records. The 104-case B12 suite,
+question distributions and 26 legacy evidence records. The 113-case B12 suite,
 retained regressions, five review lenses, clean build, publication, and
 byte-verified deployment close static acceptance. The next action is the
-operator's RimWorld runtime test; `B13` remains next.
+operator's RimWorld runtime test.
+
+## Culture Completion and Causal Fidelity - B13 / T-001, T-002, T-004, T-006, T-019, T-021-T-025, T-028, T-030
+
+B13 completes B12's Culture capability without replacing its durable owner.
+Twenty-four questions now form eight categories with three questions each.
+Every question owns five semantic anchors, evidence and research provenance,
+question-specific pawn appraisal, substantive consumers, and a historical
+feedback route. Nine complete historical/social presets, saved profiles, manual
+editing, deterministic randomization, and generated completion write the same
+Culture object. One global diversity control owns default population spread;
+per-question spread remains advanced.
+
+The cognition path keeps neighboring causes separate: salience affects
+attention rather than manufacturing conviction; norm strength and divergence
+tolerance affect social pressure rather than expected enforcement; source
+confidence affects inherited-prior strength rather than knowledge confidence;
+visibility affects observation likelihood rather than compressing expression;
+and psychology supplies only a bounded question-specific private deviation.
+Starting Region and broader non-player faction generation use the same Culture
+completion kernel, while player Culture is never silently rerolled.
+
+Campaign catalog 3 carries cultural-cognition schema 2 and Culture registry 2.
+The governed fixture retains its exact identity and composition while eight
+Culture records carry 192 complete root distributions, two authored local rows,
+and 26 evidence records. Sixty-seven B13 receipts join the retained 75 B10, 78 B11,
+and 113 B12 assertions. Independent causal, structural, and surface review, a
+clean build, and byte-verified deployment close static acceptance. The next
+action is the operator's RimWorld runtime test; `B14` remains next.

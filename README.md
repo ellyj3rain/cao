@@ -6,7 +6,7 @@ institutions, beliefs, and authority. Factions make decisions and carry their
 consequences forward instead of resetting to isolated game events.
 
 <!-- cao:generated:version BEGIN -->
-Current version: `1.4.0.0-alpha`. Implementation is complete through batch `B12`; `B13` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.
+Current version: `1.4.1.0-alpha`. Implementation is complete through batch `B13`; `B14` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.
 <!-- cao:generated:version END -->
 
 ## Framework
@@ -60,26 +60,32 @@ World tendencies guide or summarize their owning facts and do not create the
 institutions they describe.
 
 Culture is persistent social history with substantive inherited state. Its
-current authoring authority is a population distribution over thirteen explicit
-questions: relationships, authority, inherited status, rank, outsiders,
-intergroup integration, compelled labor, public voice, defeated people,
-provision, knowledge access, and novel claims. Each distribution retains a
-center, spread, descriptive-norm prior, prestige signal, salience, norm strength,
-visibility, confidence, divergence tolerance, optional subgroup mixture,
-provenance, and evidence signature. Concrete social subjects remain factual
-referents; practices remain repeated conduct with actors, conditions, authority,
-materials, evidence, and consumers. Neither is silently promoted into a Culture
-question.
+current authoring authority is a population distribution over twenty-four
+explicit questions in eight categories: relationships and family, gender and
+social authority, status and hierarchy, membership and outsiders, public
+authority and social order, property and provision, violence and punishment,
+and knowledge and tradition. Each question has five ordered anchors, a center,
+population spread, norm and evidence settings, provenance, historical feedback,
+and material consumers. Concrete social subjects remain factual referents;
+practices remain repeated conduct with actors, conditions, authority, materials,
+evidence, and consumers. Neither is silently promoted into a Culture question.
 
-The Culture composer presents one question at a time with five descriptive
-anchors and optional fine controls. It also exposes constituents, inherited and
-current concrete practices, historical evidence, continuity, and the optional
-native visual tradition. Exact values round-trip without loss. Saved profiles
-copy inherited distributions without world identity or historical state. At
-runtime a pawn receives a deterministic private position, public expression,
-perceived descriptive and injunctive norms, confidence, moral conviction, and
-uncertainty. Sparse represented influence may change those attitudes over time;
-one event, unchanged evidence, or opening an editor cannot.
+The Culture composer groups all eight categories, exposes one global diversity
+control, and keeps question-specific spread under advanced details. Nine
+complete historical and social presets, manual editing, saved profiles, and
+deterministic randomization all write the same Culture object; there is no
+preset mode or blend state. It also exposes constituents, inherited and current
+concrete practices, historical evidence, continuity, and the optional native
+visual tradition. Exact values round-trip without loss. At runtime a pawn
+receives a deterministic private position, public expression, attention,
+inherited-prior strength, perceived social pressure, observation likelihood,
+knowledge confidence, moral conviction, and uncertainty. Question-specific
+psychology contributes a small bounded private deviation. Sparse represented
+influence may change those attitudes over time. Direct historical observations
+persist measured position, spread, represented population, continuity, and
+source identity before stable pawn appraisal; expertise deference uses
+demonstrated skill in the factual subject's explicit domain. One event,
+unchanged evidence, or opening an editor cannot manufacture a Culture change.
 
 Persistent psychology, Culture, native Ideoligion, Political Beliefs, current
 order, institutions, proposition knowledge, actions, and practices remain
@@ -87,6 +93,9 @@ separate causes and owners. Culture contributes appraisal and the selection of
 otherwise valid discretionary CA action. It does not override direct player
 intent or create knowledge, permission, authority, resources, technology,
 office, land, relationships, institutions, or completed research.
+Regional pawn appraisal retains the exact settlement institution resolved from
+the pawn's represented population assignment; local social history and
+institutional jurisdiction are not reconstructed from faction membership.
 
 The same concepts have different temporal meanings on the two creation sides:
 
@@ -157,9 +166,9 @@ changes require a full RimWorld restart.
 | `MODULE_OWNERSHIP.md` | Authoritative module, mutation, cadence, cache, and diagnostics ownership |
 | `SCHEMA_REGISTRY.md`, `PERSISTENCE_CENSUS.md`, `CAMPAIGN_COMPATIBILITY.md` | Durable campaign schema, independent source-writer census, preflight, migration, update, and rollback contracts |
 | `AUTHORING_ONTOLOGY_COVERAGE.md` | Production social/political vocabulary, mechanics coverage, control contracts, categories, and exclusions |
-| `B12_CAUSAL_CONTRACT.md`, `B12_CULTURE_QUESTION_AUDIT.md` | Current Culture-question ownership, direct consumers, migration, and evidence disposition |
-| `CULTURAL_COGNITION_RESEARCH.md` | Research basis, admitted constructs, and evidence limits |
-| `B12_ACCEPTANCE_RECEIPTS.md`, `B12_REVIEW_RECEIPT.md` | Executable B12 closure and five-lens review evidence |
+| `B13_CAUSAL_CONTRACT.md`, `CULTURE_RESEARCH_CORPUS.md` | Current twenty-four-question Culture ownership, source basis, causal separations, consumers, feedback, and calibration limits |
+| `CULTURAL_COGNITION_RESEARCH.md`, `B12_CULTURE_QUESTION_AUDIT.md` | B12 research and migration evidence retained beneath the B13 completion |
+| `B13_ACCEPTANCE_RECEIPTS.md`, `B13_REVIEW_RECEIPT.md` | Executable B13 closure and independent causal, structural, and surface review evidence |
 
 ## Project history
 

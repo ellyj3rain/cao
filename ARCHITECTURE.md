@@ -678,9 +678,22 @@ partial-set, category-cardinality, and control-contract registries. It does not
 own Culture, political, faction, settlement, or world state. The current
 production inventory contains 45 social referents, 30 concrete practices, 52
 political mechanisms, 12 belief sets, 10 current-order sets, 33 explicit
-control contracts, and 13 Culture questions. `AUTHORING_ONTOLOGY_COVERAGE.md`
+control contracts, and 24 Culture questions in eight categories. `AUTHORING_ONTOLOGY_COVERAGE.md`
 maps the active mechanics,
 sources, consumers, category counts, duplicate-surface audit, and exclusions.
+
+`CACultureAuthoringKernel` and `CACulturePresetLibrary` are pure authoring
+adapters over `CACulture`; manual changes, complete historical/social presets,
+saved profiles, deterministic randomization, and generated completion create no
+parallel mode state. One global diversity value supplies default population
+spread and an expanded question may override only its own spread. Salience,
+conviction, norm pressure, represented enforcement, inherited-prior strength,
+knowledge confidence, observation likelihood, and public expression remain
+separate realized causes in the cultural-cognition owner. Direct historical
+question evidence persists its measured position, spread, represented
+population, continuity, and source identity once in the Culture observation
+ledger before stable pawn appraisal. Expertise deference uses an explicit
+demonstrated-skill map for every built-in factual subject.
 
 `CACulturalCognitionWorldComponent`, `CAPoliticalCognitionWorldComponent`, and
 `CAPropositionKnowledgeWorldComponent` separately own psychology/attitudes/

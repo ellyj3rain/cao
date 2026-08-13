@@ -99,18 +99,21 @@ durable repeated conduct with actors, target, trigger or cadence, operator,
 authority, setting, material conditions, evidence, consumer, provenance, and
 implicated subjects. A factual subject does not become a question or practice.
 
-The production vocabulary contains 13 Culture questions, 45 factual social
-referents, and 30 concrete practices derived from the active mechanics inventory.
+The production vocabulary contains 24 Culture questions in eight categories,
+45 factual social referents, and 30 concrete practices derived from the active mechanics inventory.
 Every Culture question identifies a coherent construct, direct authoring fact,
 constraints, migration rule, and real consumer. Every referent and practice has a
 factual source and consumer. An open registration contract remains
 representational capacity, not evidence that unsupported future content exists.
 
 The same Culture composer serves player founding, established factions, and
-settlements at their different temporal scopes. It exposes constituents, five
-descriptive anchors and optional fine controls for each question, inherited and
-current concrete practices, legacy evidence, disagreements, continuity,
-transitions, optional visual tradition, and causal preview. A founding Culture
+settlements at their different temporal scopes. It exposes constituents, eight
+question categories, five descriptive anchors per question, one global
+diversity control, advanced per-question spread, complete historical/social
+presets, deterministic randomization, inherited and current concrete practices,
+legacy evidence, disagreements, continuity, transitions, optional visual
+tradition, and causal preview. All authoring paths write the same Culture object.
+A founding Culture
 must contain at least one substantive question distribution or inherited
 practice. Saved Culture profiles copy inherited distributions, practices, and
 optional visual tradition without locality,
@@ -238,13 +241,14 @@ realization state, and the player-founding object directly.
 Pending authoring remains pre-release and an epoch mismatch may reject an
 unconfirmed regional draft, founding draft, or reusable set with one diagnostic.
 It cannot clear realized Culture, Political Beliefs, current order, social
-interpretation, or campaign history. Live B12 state follows the durable campaign
-manifest and explicit compatibility contract. The governed B12 fixture contains
+interpretation, or campaign history. Live B13 state follows the durable campaign
+manifest and explicit compatibility contract. The governed B13 fixture contains
 intentional world, region, candidate, arrival, scale, faction, settlement,
 population, and 19 explicitly established operational facts. On load it enters
 the same production realization path as an operator-authored draft; the fixture
 generator calls the production authoring kernel and contains no parallel causal
 model. Its active and keyed surfaces preserve three factions, four settlements,
-nine population groups, nineteen established operations, 22 exact Culture
-question distributions, and 26 preserved legacy evidence records under epoch 12
-and regional-plan schema 11.
+nine population groups, nineteen established operations, 192 complete root
+Culture question distributions, 2 authored local distributions, and 26
+preserved evidence records under epoch 12, regional-plan schema 11, and Culture
+registry 2.

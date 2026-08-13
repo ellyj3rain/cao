@@ -4,10 +4,10 @@
 |---|---|
 | Active plan | `C:\Users\jleyv\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlan.xml` |
 | Mirror plan | `C:\Users\jleyv\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlans\regional-plan-9bcbba2fdcd1e7f334711a69635242a2.xml` |
-| SHA-256 | `5862A5F810454CB3537836289051E3528A1F6888BF3D11495CD3CC53EAD876B9` on both files |
+| SHA-256 | `27354E00647007BD54EC5D5E0B29E7E408E40CEEBE4A3CAAADE068D23BDCA101` on both files |
 | Identity | `CA-RG-EB596A12` / `613b1fe44104` / arrival `389638` / map `350` |
 | Composition | 3 factions / 4 settlements / 9 population groups / 19 established program facts |
-| Culture | 8 schema-10 records / 22 exact question distributions / 26 preserved B11 source records |
+| Culture | 8 schema-10 records / 194 exact question distributions / 26 preserved B11 source records |
 | Current-schema rerun | schema-10 state validates and remains byte-identical at the recorded hash |
 | Pair replacement | injected failure after active replacement rolls both files back to their original bytes |
 

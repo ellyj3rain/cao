@@ -41,3 +41,13 @@ Deferred subjects in the supplied matrix remain deferred. The registry admits a 
 `CACultureQuestionDef` records research provenance and names every doctrine adapter, former-subject adapter, practice-evidence adapter, and downstream behavior, political, institutional, or knowledge consumer. `CAPsychologyEvidenceRecord` preserves the source feature, construct, shift, uncertainty change, scope, and provenance of an admitted pawn-level mapping. `CAKnowledgePropositionRecord` preserves holder, source, evidence, access, confidence, transmission, custody, and decay state.
 
 Fixed-seed B12 receipts establish determinism, variance, monotonic parameter effects, causal isolation, persistence shape, migration preservation, and fixture round-trip behavior. Operator runtime testing remains the authority for whether the resulting interaction flow looks and plays correctly in RimWorld.
+
+## B13 extension
+
+`CULTURE_RESEARCH_CORPUS.md` extends this B12 foundation without replacing it.
+It governs the complete 24-question, eight-category authoring registry, the
+historical and social preset rationales, source-to-consumer routes, and the
+corrected causal separation of salience, conviction, norm pressure,
+enforcement, inherited source confidence, knowledge confidence, visibility,
+and observable expression. B13 presets remain research-informed design priors;
+they are not described as empirically calibrated populations.

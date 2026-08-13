@@ -20,6 +20,7 @@ Project identity, historical regulation, build provenance, validation, deploymen
 
 - [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 - [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 ### <a id="t-002"></a>T-002 - Builds, deployment, reproducibility, and receipts
 
@@ -50,6 +51,7 @@ Project identity, historical regulation, build provenance, validation, deploymen
 
 - [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 - [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 ### <a id="t-030"></a>T-030 - Validation and evidence discipline
 
@@ -146,6 +148,7 @@ Project identity, historical regulation, build provenance, validation, deploymen
 
 - [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 - [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 ## TF-02 - Pawn cognition and authority
 
@@ -180,6 +183,7 @@ Disposition, knowledge, communication, command, and accountability.
 
 - [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 - [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 ### <a id="t-005"></a>T-005 - Communications and command authority
 
@@ -261,6 +265,7 @@ Animal cognition and infrastructure plus pawn welfare and clinical evidence.
 
 - [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 - [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 ### <a id="t-012"></a>T-012 - Animal cognition and infrastructure
 
@@ -413,6 +418,7 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 
 - [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 - [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 ### <a id="t-020"></a>T-020 - Regional geometry, projection, and scatter
 
@@ -463,6 +469,7 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 - [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 ### <a id="t-026"></a>T-026 - World tendencies and geography
 
@@ -512,6 +519,7 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 
 - [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 - [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 ### <a id="t-023"></a>T-023 - Culture, beliefs, and Ideoligion
 
@@ -546,6 +554,7 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 
 - [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 - [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 ## TF-10 - Onboarding and authoring
 
@@ -582,6 +591,7 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 
 - [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 - [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 ### <a id="t-025"></a>T-025 - Authoring surfaces and UI grammar
 
@@ -624,6 +634,7 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 
 - [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 - [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 ## TF-11 - Runtime tooling and controls
 
@@ -689,3 +700,4 @@ Canonical vocabulary, model convergence, copy register, and product truthfulness
 - [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 - [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 - [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT

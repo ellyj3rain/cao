@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Governance |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.4.0.0-alpha` · closed batch tip `B12` · next `B13` |
+| Version | `1.4.1.0-alpha` · closed batch tip `B13` · next `B14` |
 <!-- cao:generated:version END -->
 | Design authority | ellyj3rain |
 | Repository | `GOVERNANCE.md` |
@@ -99,7 +99,7 @@ substrate; the other three are what make the mod a framework.
   evidence. Local Git commits are supporting engineering evidence when retained.
 - Batch identifiers share one namespace across letter eras. The A sequence is
   closed at `A102`; development continues with `[B#]` in the same directory and
-  log. `B12` is closed and `B13` is next after the operator runtime-test boundary. A new letter does not create another
+  log. `B13` is closed and `B14` is next after the operator runtime-test boundary. A new letter does not create another
   history tree, generator, catalog, or projection layer.
 - The records now under `Batches/` establish this append-only contract. The
   immediately preceding generated history tree was a regulatory projection, not
@@ -136,7 +136,7 @@ not expose those objects.
 ## Batch, thread, and version discipline
 
 - **Batch** is the atomic chronological development record. The closed history is
-  `A1` through `A102`, followed by `B1` through `B12`; `B13` is the next identifier.
+  `A1` through `A102`, followed by `B1` through `B13`; `B14` is the next identifier.
 - **Thread and family** are permanent, series-neutral semantic classifications.
   `T-*` and `TF-*` may connect nonadjacent batches across any letter sequence, and
   one batch may participate in several threads.
@@ -157,11 +157,11 @@ Maturity advances independently through `pre-alpha`, `alpha`, `beta`, `rc`, and
 GA.
 
 `tools/version-model.mjs` is the executable replay source. It derives `VERSION`,
-the generated version stamps, and `VERSION_MAP.md`; validates exact A1-B12
+the generated version stamps, and `VERSION_MAP.md`; validates exact A1-B13
 coverage; checks the thematic namespace; and fails if the declared next batch has
 already been consumed. Mechanically derived version facts are generated and
-gated, not hand-typed. Thirty-nine evidenced version units derive
-`1.4.0.0-alpha`.
+gated, not hand-typed. Forty evidenced version units derive
+`1.4.1.0-alpha`.
 
 When new development begins, the first batch opens the next contiguous version
 unit. Immediately following batches may share that version only when they form one
@@ -254,5 +254,28 @@ B12 closes only after 113/113 causal receipts, current-schema fixture agreement,
 retained B10/B11 regressions, causal, psychometric/statistical, structural,
 correctness, and surface review, a clean build, normal publication, and
 byte-identical closed-process deployment. Static evidence does not establish
-psychometric validity, empirical calibration, or gameplay quality. `B13` is
-next; the immediate action is the operator's RimWorld runtime test.
+psychometric validity, empirical calibration, or gameplay quality.
+
+## B13 Culture Completion Contract
+
+B13 retains B12's owners and completes Culture as twenty-four explicit
+questions in eight categories. Every question has five ordered anchors,
+represented evidence, research provenance, pawn appraisal, a substantive
+consumer, and historical feedback. Manual editing, complete historical/social
+presets, saved profiles, deterministic randomization, and generated completion
+all write the same Culture object. One global diversity control owns default
+population spread; per-question spread is advanced and local. Practices remain
+observed historical conduct.
+
+Salience and conviction, norm pressure and expected enforcement, inherited
+source confidence and current knowledge confidence, visibility and expression,
+and psychology and Culture identity remain separate causes. Campaign catalog 3
+persists the separated cognition fields under schema 2 and requires Culture
+question registry 2. Missing-event inference, identity-derived authoring, and
+silent player rerolls are invalid.
+
+B13 closes only after 67/67 B13 receipts, retained 75/78/113 B10-B12 suites,
+current-fixture agreement, independent causal/structural/surface review, a clean
+build, and byte-identical closed-process deployment. Static evidence does not
+establish empirical calibration or gameplay quality. `B14` is next; the
+immediate action is the operator's RimWorld runtime test.

@@ -3384,3 +3384,38 @@
   receipt demonstrates two distinct reporters reaching one holder while the
   holder's self-route is rejected; all 113 B12 receipts and the retained B10/B11
   regression suites pass after the correction.
+
+- **F-164** (2026-08-13 UTC / 2026-08-13 PDT) - **B12 established durable
+  cultural cognition, but its thirteen-question authoring set and several
+  adjacent field semantics did not complete the intended Culture capability.**
+  The pre-change fidelity audit found a sound owner, migration boundary,
+  private/public attitude model, sparse influence, political and knowledge
+  separation, and authoring editor. It also found incomplete historical/social
+  presets, no complete broader-world Culture generation path, and causal
+  conflations between salience and conviction, norm pressure and enforcement,
+  inherited source confidence and current knowledge confidence, and visibility
+  and public expression.
+
+  B13 retains that ownership architecture and expands the production registry to
+  twenty-four questions in eight categories. Nine complete presets, manual edits,
+  deterministic randomization, saved profiles, and missing-row completion write
+  one `CACulture` object. One global diversity control owns default spread and
+  expanded questions may override only their own spread. Practices remain
+  observed history. Non-player Starting Region and broader world-faction paths
+  use the same completion kernel without rerolling authored player state.
+
+  Cultural cognition schema 2 persists attention, inherited-prior strength,
+  perceived social pressure, and observation likelihood as separate facts.
+  Represented enforcement and direct evidence own their corresponding outcomes;
+  psychology supplies bounded question-specific private deviation; demonstrated
+  expertise changes source weighting. Seven direct represented-fact routes and
+  seventeen exact adapters provide historical feedback without treating absence
+  as disapproval.
+
+  The governed fixture retains its world, region, candidate, arrival, scale,
+  three factions, four settlements, nine population groups, and nineteen
+  established operations. Eight Culture records now contain 192 complete root
+  distributions, two authored local rows, and 26 evidence records. Sixty-seven B13
+  assertions and retained 75/78/113 B10-B12 suites establish static causal,
+  persistence, generation, and serialization contracts. Operator runtime
+  acceptance remains separate.

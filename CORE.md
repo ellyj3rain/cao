@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Core |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.4.0.0-alpha` · closed batch tip `B12` · next `B13` |
+| Version | `1.4.1.0-alpha` · closed batch tip `B13` · next `B14` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `CORE.md` |
@@ -91,17 +91,20 @@ mod owns the persistent organizational reason and continuity.
 
 Culture is persistent longitudinal social-historical state with a substantive
 inherited baseline. Its current normative authority is a population distribution
-over each admitted Culture question, not a broad meaning row or factual social
-subject. A distribution owns its center, spread, descriptive norm, prestige,
-salience, tightness, visibility, confidence, divergence tolerance, subgroup
-mixture, provenance, and evidence signature. Social subjects remain factual
+over twenty-four admitted Culture questions in eight categories, not a broad
+meaning row or factual social subject. A distribution owns its center, spread,
+descriptive norm, prestige, salience, norm pressure, visibility, inherited-prior
+confidence, divergence tolerance, subgroup mixture, provenance, and evidence
+signature. Social subjects remain factual
 referents and practices remain concrete repeated conduct with evidence and
 consumers. Exact B11 meanings migrate only where an ordered question exists;
 only weighted approval and salience acquire current question semantics, and
 every former dimension otherwise remains explicit legacy evidence.
 
-Pawns retain deterministic private and public attitudes, perceived norms,
-confidence, moral conviction, and uncertainty. Sparse represented influence may
+Pawns retain deterministic private and public attitudes, attention, inherited-
+prior strength, perceived norms and social pressure, observation likelihood,
+knowledge confidence, moral conviction, and uncertainty. Question-specific
+psychology supplies only a bounded private deviation. Sparse represented influence may
 move those attitudes over time. Persistent psychology, Culture, native
 Ideoligion, Political Beliefs, current order, organizations, proposition
 knowledge, acts, and practices are separate causes and durable owners. Culture
@@ -140,13 +143,15 @@ because the founders hold them.
   founders retain their different temporal boundaries. Contextual explanation
   belongs to the owning decision, and Starting Region preserves its spatial map
   without universal detail, development-intensity, or facility-bundle controls.
-- **DR-116 through DR-119, as superseded by DR-148 through DR-163.** Culture at
+- **DR-116 through DR-119, as superseded by DR-148 through DR-168.** Culture at
   T0 contains substantive question distributions and concrete practices with
   real source-and-consumer contracts. Political Beliefs and current order remain
   independently composable mechanism sets; presets are explicit partial
   copy-on-apply patches. Pending-authoring epoch 12 may reject incompatible
   unconfirmed drafts, while realized campaign state follows the durable B11
-  boundary and B12 owner-specific additive migrations.
+  boundary and current owner-specific compatibility rules. Manual, preset,
+  profile, random, and generated Culture share one object; causal fields remain
+  separate and authored player state is never silently rerolled.
 - Stitching controls geographic continuity only, never population or political
   intensity. Vanilla `OverallPopulation` stays authoritative for major-settlement
   abundance.
@@ -189,7 +194,8 @@ values remain available as contextual fine tuning, not the default description
 of a population. Faction Relations remains the visual reference for relational
 authoring. The production vocabulary, question registry, category policy,
 political composition, and duplicate-surface constraints are inventoried in
-`AUTHORING_ONTOLOGY_COVERAGE.md` and `B12_CULTURE_QUESTION_AUDIT.md`.
+`AUTHORING_ONTOLOGY_COVERAGE.md`, `B13_CAUSAL_CONTRACT.md`, and
+`CULTURE_RESEARCH_CORPUS.md`.
 
 ## Ownership
 
