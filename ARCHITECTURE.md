@@ -346,7 +346,7 @@ materialize player homes, entered settlements, encounters, and other events that
 need pawn-, thing-, job-, or Lord-level detail.
 
 A faction owns inherited Culture and its optional native visual tradition,
-Ideoligion, Political Beliefs, current faction structure, and the authority shared
+Ideoligion, Political Beliefs, instituted current order, and the authority shared
 between its settlements. A settlement keeps a stable CA identity even when its
 faction changes. Its realized record owns residents, population groups,
 organizations, material state, relationships, materialization history, and one
@@ -359,9 +359,12 @@ from the current settlement summary. It records inherited origin, local identity
 constituent populations, inherited and current meanings, inherited and lived
 practices, typed observations, successive transitions, and complete provenance.
 Each meaning concerns one registered namespaced social subject and separately
-records approval, normality, prestige, and salience. The registry is open to CA
-modules and explicit adapters, while ordinary editors admit only subjects with a
-real factual source and consumer. Unknown valid keys survive persistence.
+records approval, normality, prestige, and salience. Social subjects are
+interpretive referents, not practices. A practice records concrete repeated
+conduct, participants, operator, trigger or cadence, authority, setting, material
+conditions, evidence, consumer, and implicated subjects. Production subjects and
+practices require a real factual source and consumer; unknown valid keys survive
+persistence.
 
 Pawn-held knowledge gates individual interpretation. Culture, Political Beliefs,
 native Ideoligion where it overlaps, personal state, institutions, and relations
@@ -390,7 +393,7 @@ fit lived local history. Each consumer still requires its own authority,
 knowledge, land, technology, labor, materials, treasury, and execution lane.
 Culture never manufactures those causes.
 
-An existing faction's structure is realized state from a society with history.
+An existing faction's current order is realized state from a society with history.
 An established settlement begins with an explicit temporal basis and may retain
 mature institutions and local Culture, but authoring does not invent unobserved
 event history merely to make it established. The player founding state is
@@ -399,7 +402,7 @@ by the founders, a receipt for their native Ideoligion content and revision, and
 the Founding Arrangement adopted at landing. Native Ideoligion validity is checked
 before the receipt may authorize scenario notification. That arrangement
 materializes once as exact, duration-aware founding relations. It is not expanded
-into broader faction-structure answers that the player did not choose. Player
+into broader current-order answers that the player did not choose. Player
 institutions and local historical Culture develop through simulation; the
 established-faction generator does not fill them at game start.
 
@@ -411,18 +414,20 @@ and observed consequences create new facts and records. Organization records kee
 their source, place and time, reporting chain, confidence, access, replacement,
 and loss. They may be stale, false, secret, corrupted, or absent.
 
-Faction structure answers concrete questions about leadership, decisions,
-participation, dissent, ownership, economy, work, support, membership, status,
-local order, defense, and war conduct. Political beliefs answer the same
-questions for what a population believes; they may differ from the structure now
-in force. Player authoring asks all thirteen questions directly. Complete
-profiles copy explicit vectors but create no political identity, and missing
-positions are not randomly completed. NPC generation derives a position only
-from same-axis realized structure, an explicit observed fact, or a scored
-cultural meaning and records the causal evidence used; unsupported axes remain
-unset. Settlement authority records what a faction's settlements decide and
-provide together. Offices, votes, delegation, emergency powers, succession,
-trade, mobilization, negotiation, surrender, and agreements use those saved facts.
+Political subjects cover leadership, decisions, participation, dissent,
+ownership, economy, work, support, membership, status, local order, defense, and
+war conduct. Political Beliefs record normative mechanisms; current order records
+instituted mechanisms. Several compatible mechanisms may coexist on one subject,
+and only an explicit absence mechanism excludes standing leadership, local-order,
+or defense mechanisms on that same subject. Partial belief and current-order sets
+copy only listed mechanisms and preserve unrelated authored facts. They create no
+political identity and are never shared mutable world owners. NPC generation
+derives a belief only from same-subject current order, an explicit observed fact,
+or a scored cultural meaning and records the causal evidence used; unsupported
+subjects remain unset. Settlement authority records what a faction's settlements
+decide and provide together. Offices, votes, delegation, emergency powers,
+succession, trade, mobilization, negotiation, surrender, and agreements use
+those saved facts.
 
 Organizations own offices, groups, customs, security, agreements, policies,
 claims, relations, and decision history. Organization customs follow the social
@@ -642,6 +647,31 @@ communication, symbolic, or spatial nodes. An institution exists only when its
 operator, members or target population, authority, activity, inputs, outputs,
 access, and maintenance connect to those nodes. The complete ownership ledger
 and repeated synthetic-state sweep live in `B10_CAUSAL_PROVENANCE_AUDIT.md`.
+
+## Durable campaign and authoring ownership
+
+`CACampaignSchemaCatalog` is the executable list of live semantic state families.
+`CACampaignCompatibilityWorldComponent` owns the boundary, manifest, and migration
+receipts. Streaming preflight accepts current state or the controlled B10 envelope
+before Scribe load, and unsupported state fails visibly without partial mutation.
+Creation drafts use a separate pending-authoring epoch; they cannot erase realized
+campaign history. Supported migrations preserve stable semantic identity, are
+idempotent, and describe upgrade-time initialization without inventing earlier
+history.
+
+`AuthoringOntologyKernel` owns immutable semantic-kind, production-vocabulary,
+partial-set, category-cardinality, and control-contract registries. It does not
+own Culture, political, faction, settlement, or world state. The current
+production inventory contains 45 social referents, 30 concrete practices, 52
+political mechanisms, 12 belief sets, 10 current-order sets, and 33 explicit
+control contracts. `AUTHORING_ONTOLOGY_COVERAGE.md` maps the active mechanics,
+sources, consumers, category counts, duplicate-surface audit, and exclusions.
+
+`CAModuleProfiler` is runtime-only, disabled by default, bounded to a fixed key
+set, resettable, and excluded from save causality. The module and mutation graphs,
+cadence inventory, indexes, and invalidation paths are governed in
+`MODULE_OWNERSHIP.md`; schema and operator update procedures are governed in
+`SCHEMA_REGISTRY.md` and `CAMPAIGN_COMPATIBILITY.md`.
 
 ## Non-goals / boundaries
 

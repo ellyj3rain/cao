@@ -19,8 +19,8 @@ export const KOHAI_HARD_CAP = 16;
 export const PATCH_HARD_CAP = 24;
 export const MATURITY_LADDER = Object.freeze(["pre-alpha", "alpha", "beta", "rc"]);
 export const ROOT_REPLAY_START_VERSION = "0.1.0.0-pre-alpha";
-export const CLOSED_BATCH_TIP = "B10";
-export const NEXT_BATCH = "B11";
+export const CLOSED_BATCH_TIP = "B11";
+export const NEXT_BATCH = "B12";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_REPO_ROOT = resolve(here, "..");
@@ -406,6 +406,17 @@ export const VERSION_UNITS = Object.freeze([
     threads: ["T-002", "T-004", "T-005", "T-006", "T-010", "T-013", "T-014", "T-015", "T-016", "T-018", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
     rationale: "B10 audits and repairs the aggregate B6-B9 framework in place. Persistent factual domestic units replace hash-created households; domain evidence replaces random capability; direct operational contracts replace tendency-created programs; exact operators and funding replace provision categories; and Culture, Political Beliefs, assets, and fixture tools return to their proper causal roles. This closes proxies inside the existing capability boundary and therefore carries the patch tier.",
   },
+  {
+    id: "VU-038",
+    series: "B",
+    first: 11,
+    last: 11,
+    dates: "2026-08-12 to 2026-08-13",
+    tier: "patch",
+    name: "Durable campaign boundary and compositional authoring closure",
+    threads: ["T-001", "T-002", "T-004", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
+    rationale: "B11 establishes the first durable campaign boundary over the B10 causal model: one executable schema catalog, preflight and idempotent migration receipts, explicit module and cadence ownership, and disabled-by-default bounded profiling. Its authoring addendum closes the same boundary by distinguishing social subjects, meanings, and concrete repeated practices; expanding the production vocabulary from actual mechanics; making Political Beliefs and current order independently compositional; and enforcing partial copy-on-apply sets and content-driven authoring. These are structural and corrective closures of the existing capability rather than a new gameplay capability, so the unit carries the patch tier.",
+  },
 ]);
 
 function parseVersion(version) {
@@ -650,9 +661,10 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     "B8",
     "B9",
     "B10",
+    "B11",
   ];
   if (JSON.stringify(covered) !== JSON.stringify(expected)) {
-    errors.push("version units must cover A1-B10 exactly once, contiguously, and in order");
+    errors.push("version units must cover A1-B11 exactly once, contiguously, and in order");
   }
   VERSION_UNITS.forEach((unit, index) => {
     const expectedId = `VU-${String(index + 1).padStart(3, "0")}`;
@@ -669,17 +681,17 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
   if (JSON.stringify(closedIds) !== JSON.stringify(expected)) {
     errors.push("Batches/ must contain exactly the closed A001-A102 and B001-B010 record set");
   }
-  if (batchFiles.some((name) => /^B0*11-.*\.md$/.test(name))) {
-    errors.push("B11 must remain unconsumed until the next development batch");
+  if (batchFiles.some((name) => /^B0*12-.*\.md$/.test(name))) {
+    errors.push("B12 must remain unconsumed until the next development batch");
   }
 
   const batchLog = readFileSync(join(repoRoot, "BATCH_LOG.md"), "utf8");
   const logIds = [...batchLog.matchAll(/^\| \[([A-Z])(\d+)\]/gm)]
     .map((match) => `${match[1]}${Number(match[2])}`);
   if (JSON.stringify(logIds) !== JSON.stringify(closedIds)) {
-    errors.push("BATCH_LOG.md must index A1-B10 exactly once and in order");
+    errors.push("BATCH_LOG.md must index A1-B11 exactly once and in order");
   }
-  if (/^\| \[B11\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B11 record yet");
+  if (/^\| \[B12\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B12 record yet");
 
   const threads = readFileSync(join(repoRoot, "Batches", "THREADS.md"), "utf8");
   const declaredThreads = new Set([...threads.matchAll(/<a id="t-(\d{3})"><\/a>T-(\d{3})/g)].map((match) => `T-${match[1]}`));
@@ -764,7 +776,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (args.has("--write")) writeGenerated(DEFAULT_REPO_ROOT);
   const result = validateRepository(DEFAULT_REPO_ROOT);
   if (args.has("--json")) console.log(JSON.stringify(result, null, 2));
-  else if (result.ok) console.log(`version-model: OK — ${result.currentVersion}; ${result.unitCount} units cover A1-B10; ${result.nextBatch} remains next`);
+  else if (result.ok) console.log(`version-model: OK — ${result.currentVersion}; ${result.unitCount} units cover A1-B11; ${result.nextBatch} remains next`);
   else result.errors.forEach((error) => console.error(`version-model: ${error}`));
   process.exit(result.ok ? 0 : 1);
 }

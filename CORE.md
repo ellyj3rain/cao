@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Core |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.3.0.4-alpha` · closed batch tip `B10` · next `B11` |
+| Version | `1.3.0.5-alpha` · closed batch tip `B11` · next `B12` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `CORE.md` |
@@ -92,7 +92,9 @@ mod owns the persistent organizational reason and continuity.
 Culture is persistent longitudinal social-historical state with a substantive
 inherited baseline. A local Culture retains identity, constituent populations,
 inherited and current meanings about namespaced social subjects, inherited and
-lived practices, observations, transitions, and provenance. Meanings distinguish
+lived practices, observations, transitions, and provenance. Subjects are
+interpretive referents; meanings are population-scoped evaluations; practices
+are concrete repeated conduct with evidence and consumers. Meanings distinguish
 approval, normality, prestige, and salience for the named subject. Actual informed
 pawn responses aggregate into subject-specific social patterns; qualified
 historical evidence derives `Culture(T+1)` from `Culture(T)`. Spatial, social,
@@ -131,11 +133,13 @@ because the founders hold them.
   founders retain their different temporal boundaries. Contextual explanation
   belongs to the owning decision, and Starting Region preserves its spatial map
   without universal detail, development-intensity, or facility-bundle controls.
-- **DR-116 through DR-119.** Culture at T0 contains substantive social meanings
-  and practices; the subject registry stays open while editors expose only real
-  source-and-consumer contracts; Political Beliefs are question-first complete
-  vectors with causal NPC evidence; and the current data epoch discards incompatible pre-release
-  authoring state rather than embedding migration machinery.
+- **DR-116 through DR-119, as superseded by DR-148 through DR-155.** Culture at
+  T0 contains substantive social meanings and concrete practices with real
+  source-and-consumer contracts. Political Beliefs and current order are
+  independently composable mechanism sets; presets are explicit partial
+  copy-on-apply patches. Pending-authoring epoch 11 may reject incompatible
+  unconfirmed drafts, while realized B11 campaign state follows the durable
+  schema and migration boundary.
 - Stitching controls geographic continuity only, never population or political
   intensity. Vanilla `OverallPopulation` stays authoritative for major-settlement
   abundance.
@@ -175,7 +179,9 @@ B10 audit and DR-133 through DR-144.
 Culture authoring begins with semantic social meanings and practices. Exact
 continuous values remain available as contextual fine tuning, not the default
 description of a population. Faction Relations remains the visual reference for
-relational authoring. These constraints are ratified in DR-120 through DR-132.
+relational authoring. The production vocabulary, category policy, political
+composition, and duplicate-surface constraints are ratified in DR-151 through
+DR-155 and inventoried in `AUTHORING_ONTOLOGY_COVERAGE.md`.
 
 ## Ownership
 

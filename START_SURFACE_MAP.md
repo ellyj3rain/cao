@@ -90,11 +90,11 @@ appropriate to societies with prior histories.
 ## Persistence and validation
 
 One keyed pending file per world identity stores the current regional candidate;
-the active mirror carries the same plan. Regional schema 10 writes factions,
+the active mirror carries the same plan. Regional schema 11 writes factions,
 settlements, relations, population groups, explicit operational facts,
 settlement-program schema 4 entries, program-asset identities, provision
 arrangements, substantive local Culture, and the regional copy of
-`playerFounding`. Culture and Political Beliefs schema 8 stores substantive
+`playerFounding`. Culture and Political Beliefs schema 9 stores substantive
 inherited and current state. A world component owns the same confirmed founding state for
 regional, ordinary, and forced-map starts. It records Culture, Political
 Beliefs, the exact Founding Arrangement and its provenance, the native player

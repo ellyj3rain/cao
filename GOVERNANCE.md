@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Governance |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.3.0.4-alpha` · closed batch tip `B10` · next `B11` |
+| Version | `1.3.0.5-alpha` · closed batch tip `B11` · next `B12` |
 <!-- cao:generated:version END -->
 | Design authority | ellyj3rain |
 | Repository | `GOVERNANCE.md` |
@@ -53,8 +53,10 @@ substrate; the other three are what make the mod a framework.
   global Compact, Standard, or Expanded authoring states or repeated detail
   toggles.
 - **Social systems keep their boundaries.** Culture is persistent longitudinal
-  social history with substantive inherited meanings and practices over open
-  namespaced subjects; Ideoligion is RimWorld's native religious and moral substrate;
+  social history. Social subjects are interpretive referents, meanings are
+  population-scoped evaluations, and practices are concrete repeated conduct;
+  each production entry has factual evidence and a consumer. Ideoligion is
+  RimWorld's native religious and moral substrate;
   Political Beliefs are normative commitments; institutions and adopted rules
   are realized order; observed practice is what people actually do. Agreement
   and contradiction remain representable rather than being collapsed for UI
@@ -97,7 +99,7 @@ substrate; the other three are what make the mod a framework.
   evidence. Local Git commits are supporting engineering evidence when retained.
 - Batch identifiers share one namespace across letter eras. The A sequence is
   closed at `A102`; development continues with `[B#]` in the same directory and
-  log. `B10` is closed and `B11` is next after aggregate operator runtime validation. A new letter does not create another
+  log. `B11` is closed and `B12` is next after the operator campaign-start boundary. A new letter does not create another
   history tree, generator, catalog, or projection layer.
 - The records now under `Batches/` establish this append-only contract. The
   immediately preceding generated history tree was a regulatory projection, not
@@ -134,7 +136,7 @@ not expose those objects.
 ## Batch, thread, and version discipline
 
 - **Batch** is the atomic chronological development record. The closed history is
-  `A1` through `A102`, followed by `B1` through `B10`; `B11` is the next identifier.
+  `A1` through `A102`, followed by `B1` through `B11`; `B12` is the next identifier.
 - **Thread and family** are permanent, series-neutral semantic classifications.
   `T-*` and `TF-*` may connect nonadjacent batches across any letter sequence, and
   one batch may participate in several threads.
@@ -155,11 +157,11 @@ Maturity advances independently through `pre-alpha`, `alpha`, `beta`, `rc`, and
 GA.
 
 `tools/version-model.mjs` is the executable replay source. It derives `VERSION`,
-the generated version stamps, and `VERSION_MAP.md`; validates exact A1-B10
+the generated version stamps, and `VERSION_MAP.md`; validates exact A1-B11
 coverage; checks the thematic namespace; and fails if the declared next batch has
 already been consumed. Mechanically derived version facts are generated and
-gated, not hand-typed. Thirty-seven evidenced version units derive
-`1.3.0.4-alpha`.
+gated, not hand-typed. Thirty-eight evidenced version units derive
+`1.3.0.5-alpha`.
 
 When new development begins, the first batch opens the next contiguous version
 unit. Immediately following batches may share that version only when they form one
@@ -186,9 +188,44 @@ Political Beliefs remain distinct from instituted order. Provision operators,
 funding, stock, access, and behavior are actual facts. Assets are nodes of an
 institution, never the institution itself.
 
-Fixing one proxy does not close a repository-wide causal audit. B10 closes only
+Fixing one proxy does not close a repository-wide causal audit. B10 closed only
 after the repeated sweep and independent reviews contain no unresolved Critical
 or High synthetic-state finding, the corrected fixture reaches the generation
-boundary, and the deployed assembly is byte verified. `B11` remains next; the
-next action is aggregate operator runtime validation rather than another feature
-batch.
+boundary, and the deployed assembly was byte verified.
+
+## B11 Durable Campaign and Authoring Contract
+
+Every persisted state family has one schema key, version, semantic owner, and
+authorized mutation path. Current campaign state is preflighted before Scribe
+load, supported migration is idempotent, and upgrade-time initialization records
+truthful provenance. Pending authoring data has a separate replaceable epoch and
+cannot erase realized campaign history. Unsupported live state fails visibly.
+
+Every runtime cadence has one owner. Derived indexes name their authority,
+invalidation, rebuild, stale-entry, and save policy. Coordinators do not become
+secondary state owners; adapters do not invent state. Profiling is disabled by
+default, bounded, runtime-only, and semantically inert. Future implementation
+batches record module, campaign-compatibility, and performance impact.
+
+Representational capacity, production vocabulary, runtime realization, and
+control surface are separate completion layers. Extensibility is not breadth,
+and demonstration examples do not become production ontology. Every production
+social subject and concrete practice requires distinct mechanics, a factual
+source, and a consumer. Internal source taxonomy is not automatically player
+navigation; empty and one-item categories are omitted, and top-level categories
+appear only when multiple meaningful groups contain enough content to aid
+discovery.
+
+Political Beliefs, current order, authority, institutions, economy,
+self-identification, and observed practice remain distinct. Presets are explicit
+copy-on-apply partial patches. Several compatible mechanisms may coexist;
+exclusivity requires a recorded engine or model invariant. Named archetypes may
+seed or describe state but cannot replace its independent facts. Shared layout
+primitives do not justify duplicate semantic records or duplicate authoring
+surfaces.
+
+B11 closes only after retained B10 regressions, the complete mechanics coverage
+matrix, five-lens review with no unresolved Critical or High finding, a clean
+build, normal publication, and byte-identical closed-process deployment. Static
+closure does not establish gameplay quality. `B12` remains next; the immediate
+action is the operator's campaign start and retention test.

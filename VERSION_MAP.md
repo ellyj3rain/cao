@@ -8,9 +8,9 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | Form | `major.minor.kohai.patch-maturity` |
 | Hard caps | minor 12; kohai 16; patch 24 |
 | Replay start | `0.1.0.0-pre-alpha` |
-| Current version | `1.3.0.4-alpha` |
-| Closed chronology | `A1-B10` |
-| Next batch | `B11` |
+| Current version | `1.3.0.5-alpha` |
+| Closed chronology | `A1-B11` |
+| Next batch | `B12` |
 | Executable source | [`tools/version-model.mjs`](tools/version-model.mjs) |
 
 ## Tier meanings
@@ -65,6 +65,7 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | VU-035 | B8 | 2026-08-11 to 2026-08-12 | patch | `1.3.0.2-alpha` | Substantive inherited Culture, political composer, and open social-meaning substrate | `T-002`, `T-004`, `T-006`, `T-019`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B8 completes the corrective B7 creation boundary by replacing name-and-style Culture with substantive inherited meanings and practices, replacing partial political presets and arbitrary completion with question-first complete vectors and causal NPC derivation, and connecting registered social facts through pawn response, group pattern, and longitudinal Culture transition. It deliberately resets unsupported pre-release authoring data rather than migrating invalid objects. This repairs the existing capability in place and therefore carries the patch tier. |
 | VU-036 | B9 | 2026-08-12 | patch | `1.3.0.3-alpha` | Starting Region information architecture and settlement program closure | `T-002`, `T-013`, `T-014`, `T-015`, `T-016`, `T-019`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B9 closes the remaining pre-runtime faults in the B6-B8 creation capability. It makes Starting Region selection and comparison coherent, removes non-decisions and implementation provenance from ordinary Details, replaces the fixed starting-facility mask with an open causal settlement-program registry and exact materialization contract, makes provision operators socially and materially real, and presents Culture through semantic meanings with contextual exact values. This is an in-place correction of the existing authoring and generation boundary, so the unit carries the patch tier. |
 | VU-037 | B10 | 2026-08-12 | patch | `1.3.0.4-alpha` | Causal closure and elimination of synthetic social state | `T-002`, `T-004`, `T-005`, `T-006`, `T-010`, `T-013`, `T-014`, `T-015`, `T-016`, `T-018`, `T-019`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B10 audits and repairs the aggregate B6-B9 framework in place. Persistent factual domestic units replace hash-created households; domain evidence replaces random capability; direct operational contracts replace tendency-created programs; exact operators and funding replace provision categories; and Culture, Political Beliefs, assets, and fixture tools return to their proper causal roles. This closes proxies inside the existing capability boundary and therefore carries the patch tier. |
+| VU-038 | B11 | 2026-08-12 to 2026-08-13 | patch | `1.3.0.5-alpha` | Durable campaign boundary and compositional authoring closure | `T-001`, `T-002`, `T-004`, `T-019`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B11 establishes the first durable campaign boundary over the B10 causal model: one executable schema catalog, preflight and idempotent migration receipts, explicit module and cadence ownership, and disabled-by-default bounded profiling. Its authoring addendum closes the same boundary by distinguishing social subjects, meanings, and concrete repeated practices; expanding the production vocabulary from actual mechanics; making Political Beliefs and current order independently compositional; and enforcing partial copy-on-apply sets and content-driven authoring. These are structural and corrective closures of the existing capability rather than a new gameplay capability, so the unit carries the patch tier. |
 
 ## Historical version evidence
 
@@ -74,11 +75,11 @@ A22 is the maturity boundary: reproducible assembly followed an end-to-end runti
 
 ## Next movement
 
-`B11` is the next ordinary batch. Its content determines its tier after it exists:
+`B12` is the next ordinary batch. Its content determines its tier after it exists:
 
-| If B11 is | Result |
+| If B12 is | Result |
 |---|---|
-| patch or hotfix | `1.3.0.5-alpha` |
+| patch or hotfix | `1.3.0.6-alpha` |
 | kohai | `1.3.1.0-alpha` |
 | minor | `1.4.0.0-alpha` (the minor tier advances capability; maturity remains unchanged) |
 

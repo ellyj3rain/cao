@@ -3304,3 +3304,37 @@
   RimWorld was closed for deployment, and the active Steam-mod target is
   byte-identical to that assembly. Aggregate look and play remain pending
   operator evidence.
+
+- **F-161** (2026-08-12 UTC / 2026-08-12 PDT) - **The post-B10 tree supports a
+  durable campaign boundary, but the inherited authoring vocabulary did not yet
+  meet that boundary.** The structural audit found one coherent owner per live
+  schema and cadence after narrow extraction of compatibility, profiling,
+  pending-authoring, and settlement-wealth responsibilities. Streaming preflight,
+  a complete executable manifest, idempotent controlled B10 upgrade, stable-ID
+  receipts, truthful additive provenance, visible rejection, and rollback
+  documentation establish the first retainable campaign baseline without a
+  general destructive migration framework.
+
+  The addendum audit distinguished four completion layers and classified 36
+  mechanically observable social fact families. The former production surface
+  had 12 social-subject examples and no distinct concrete-practice vocabulary.
+  The corrected build has 45 sourced and consumed social referents and 33 sourced
+  and consumed repeated practices. Subject, meaning, and practice records and
+  candidate universes are distinct; invalid subject-shaped pending practices are
+  accepted only when actual longitudinal evidence establishes their concrete
+  conduct.
+
+  Political Beliefs and current order now retain several independent mechanisms
+  per subject. Synthetic `mixed` values, first-value views, complete Political
+  Profiles, and authority bundles mislabeled as beliefs are absent. Twelve belief
+  sets and ten current-order sets declare exact additive patches and preserve
+  unrelated or compatible state. Culture and political authoring use
+  content-driven sections; source-domain and one-item tab projection is gone.
+
+  The governed fixture advances to pending epoch 11, regional-plan schema 11,
+  and Culture/Political Beliefs schema 9 while retaining its existing identity,
+  three factions, four settlements, nine population groups, and nineteen
+  established operations. Exact receipt, review, build, commit, and deployment
+  evidence is recorded in the B11 evidence files and append-only batch record.
+  Look, interaction, campaign start, save, and later update remain operator
+  runtime evidence rather than static claims.

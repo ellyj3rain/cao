@@ -603,3 +603,26 @@ World generation consumes one persisted realization. UI drawing and navigation
 cannot form memberships, adopt policies, assign operators, or reroll semantic
 facts. The governed fixture contains intentional authoring facts only and enters
 the same production realization path as an operator-authored draft.
+
+## 17. Durable serialization and compositional authoring seam
+
+RimWorld's Scribe loader mutates objects while loading them, so CA campaign
+compatibility is decided by a streaming read-only preflight before the normal
+load path. The executable schema manifest then validates one semantic version and
+owner per state family. Pending creation XML remains replaceable pre-campaign
+state; it is not a mechanism for clearing realized world, map, organization,
+Culture, political, knowledge, or behavior history.
+
+Native factions, Ideoligions, relations, things, rooms, work, policies, and acts
+remain the factual sources for CA authoring and interpretation. The social-subject
+registry names what a population evaluates. Cultural meanings store that
+evaluation. Concrete practices store repeated represented conduct and identify
+the native or CA evidence adapter and runtime consumer. Political Beliefs store
+normative mechanisms, while current order stores instituted mechanisms. Shared
+editor layout does not merge those records or grant authority to presentation.
+
+The authoring projection caches immutable registry slices and applies category
+navigation only when multiple human-relevant groups contain enough entries to
+improve discovery. Source-module taxonomies are diagnostic metadata, not the
+player's ontology. Partial sets copy their exact mechanisms into the selected
+owner and retain no shared runtime authority afterward.

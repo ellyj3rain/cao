@@ -6,7 +6,7 @@ institutions, beliefs, and authority. Factions make decisions and carry their
 consequences forward instead of resetting to isolated game events.
 
 <!-- cao:generated:version BEGIN -->
-Current version: `1.3.0.4-alpha`. Implementation is complete through batch `B10`; `B11` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.
+Current version: `1.3.0.5-alpha`. Implementation is complete through batch `B11`; `B12` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.
 <!-- cao:generated:version END -->
 
 ## Framework
@@ -63,18 +63,21 @@ Culture is persistent social history with substantive inherited state. Each
 Culture records constituent populations; inherited and current meanings about
 concrete social subjects; inherited and lived practices; observations;
 transitions; and provenance. A meaning records approval, normality, prestige, and
-salience for one namespaced subject. Twelve initial subjects connect factual
-sources to real spatial, social, institutional, political, and
-settlement-development consumers, and later modules can register more without a
-Culture schema change. RimWorld's native `CultureDef` remains a separately
-labeled optional visual tradition, not the cultural model.
+salience for one of 45 production social referents. A practice is a different
+record: one of 30 concrete forms of repeated conduct with participants, operator,
+trigger or cadence, authority, setting, material conditions, evidence, and a
+runtime consumer. Subjects, meanings, and practices never substitute for one
+another. RimWorld's native `CultureDef` remains a separately labeled optional
+visual tradition, not the cultural model.
 
-The Culture composer edits overview, semantic social meanings, inherited
-practices, visual tradition, and a factual causal preview. Guided meaning cards
-are the normal authoring surface; exact continuous values remain available as
-contextual fine tuning and round-trip without loss. Name plus visual tradition is
-not a valid Culture. Saved profiles copy inherited meanings and practices without
-world identity or historical state. In play, informed pawn responses aggregate
+The Culture composer edits constituents, semantic social meanings, inherited
+and current concrete practices, disagreements, continuity, visual tradition, and
+a factual causal preview. Content-driven sections omit empty and one-item
+navigation; internal source domains are not projected as tabs. Exact continuous
+values remain available from the relevant meaning or practice and round-trip
+without loss. Name plus visual tradition is not a valid Culture. Saved Culture
+profiles copy inherited values without world identity or historical state. In
+play, informed pawn responses aggregate
 into subject-specific social patterns; qualified repeated evidence can produce
 `Culture(T+1)` from `Culture(T)`. One event, unchanged evidence, or opening an
 editor cannot. Culture ranks otherwise valid possibilities and creates no
@@ -86,12 +89,16 @@ The same concepts have different temporal meanings on the two creation sides:
 |---|---|
 | Culture, Ideoligion, Political Beliefs, realized social order, institutions, material state, and established historical basis are facts about a society already present. | Founders bring inherited Culture, native Ideoligion, and Political Beliefs, then choose the rules instituted at landing. Local institutions and historical Culture develop through play. |
 
-Political Beliefs are authored question-first across thirteen normative
-questions. Complete profiles are transparent copy accelerators rather than
-political identities, all answers remain independently editable, and missing
-player positions are never filled randomly. NPC positions are derived from
-same-axis realized structure, explicit observed facts, or scored cultural
-meaning with a stable causal receipt; unsupported positions remain unset.
+Political Beliefs are normative mechanisms over thirteen independently editable
+subjects. Several compatible mechanisms may coexist on one subject. Twelve
+belief sets are explicit partial copy-on-apply patches: they add only their listed
+commitments and preserve every unlisted or compatible authored fact. Established
+societies edit current order through a distinct compositional editor and ten
+equally explicit current-order sets. There is no Political Profile type, no
+synthetic `mixed` option, and no random completion of missing positions. NPC
+beliefs derive only from same-subject current order, explicit observed facts, or
+scored cultural meaning with stable causal evidence; unsupported positions stay
+unset.
 
 RimWorld's native Ideoligion chooser remains first-class inside this coordinated
 flow. Native presets, saved Ideoligions, fixed and fluid creation, memes,
@@ -139,6 +146,10 @@ changes require a full RimWorld restart.
 | `VERSION_MAP.md` | Chronological, tier-bearing version units |
 | `tools/version-model.mjs` | Version replay, generated stamps, and structural checks |
 | `B10_CAUSAL_PROVENANCE_AUDIT.md` | Current causal owners, corrected proxies, program contracts, and institution-asset classifications |
+| `MODULE_OWNERSHIP.md` | Authoritative module, mutation, cadence, cache, and diagnostics ownership |
+| `SCHEMA_REGISTRY.md`, `PERSISTENCE_CENSUS.md`, `CAMPAIGN_COMPATIBILITY.md` | Durable campaign schema, independent source-writer census, preflight, migration, update, and rollback contracts |
+| `AUTHORING_ONTOLOGY_COVERAGE.md` | Production social/political vocabulary, mechanics coverage, control contracts, categories, and exclusions |
+| `B11_ACCEPTANCE_RECEIPTS.md`, `B11_REVIEW_RECEIPT.md` | Executable B11 closure and five-lens review evidence |
 
 ## Project history
 

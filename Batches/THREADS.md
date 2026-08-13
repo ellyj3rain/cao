@@ -18,6 +18,8 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [A71 - Canonical governance doc-pack retrofit](A071-2026-08-06-canonical-governance-doc-pack-retrofit.md) - 2026-08-06 08:10–08:32 UTC / 01:10–01:32 PST
 - [A85 - Political architecture ratification](A085-2026-08-07-political-architecture-ratification.md) - 2026-08-07 20:37–22:46 UTC / 13:37–15:46 PST
 
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+
 ### <a id="t-002"></a>T-002 - Builds, deployment, reproducibility, and receipts
 
 - [A2 - Imported awareness and tactical baseline](A002-2026-07-22-imported-awareness-and-tactical-baseline.md) - 2026-07-22
@@ -44,6 +46,8 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 - [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 
 ### <a id="t-030"></a>T-030 - Validation and evidence discipline
 
@@ -138,6 +142,8 @@ Project identity, historical regulation, build provenance, validation, deploymen
 
 - [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+
 ## TF-02 - Pawn cognition and authority
 
 Disposition, knowledge, communication, command, and accountability.
@@ -168,6 +174,8 @@ Disposition, knowledge, communication, command, and accountability.
 - [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
 - [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 
 ### <a id="t-005"></a>T-005 - Communications and command authority
 
@@ -397,6 +405,8 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 
 - [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+
 ### <a id="t-020"></a>T-020 - Regional geometry, projection, and scatter
 
 - [A32 - Regional living-world architecture ratification](A032-2026-07-28-regional-living-world-architecture-ratification.md) - 2026-07-28 03:33 UTC / 20:33 PST
@@ -445,6 +455,8 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 
 - [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+
 ### <a id="t-026"></a>T-026 - World tendencies and geography
 
 - [A72 - Carrier-owned mountain mutation](A072-2026-08-06-carrier-owned-mountain-mutation.md) - 2026-08-06 08:47 UTC / 01:47 PST
@@ -491,6 +503,8 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 
 - [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+
 ### <a id="t-023"></a>T-023 - Culture, beliefs, and Ideoligion
 
 - [A28 - Space-program residents and negotiation](A028-2026-07-27-space-program-residents-and-negotiation.md) - 2026-07-27 21:55–22:50 UTC / 14:55–15:50 PST
@@ -521,6 +535,8 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 - [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 
 ## TF-10 - Onboarding and authoring
 
@@ -554,6 +570,8 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 - [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 
 ### <a id="t-025"></a>T-025 - Authoring surfaces and UI grammar
 
@@ -593,6 +611,8 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 - [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 
 ## TF-11 - Runtime tooling and controls
 
@@ -656,3 +676,4 @@ Canonical vocabulary, model convergence, copy register, and product truthfulness
 - [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 - [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT

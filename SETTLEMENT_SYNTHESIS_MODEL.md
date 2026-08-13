@@ -9,7 +9,7 @@ and setup UI use the same terms.
 | Level | Saved facts |
 |---|---|
 | Region | selected world areas, arrival area, world tendencies, settlement pattern, principal settlement scale, regional relation pattern, frontier holdings |
-| Faction | source faction, substantive inherited Culture, optional visual tradition, native Ideoligion receipt, complete Political Beliefs, faction structure, settlement authority, faction era |
+| Faction | source faction, substantive inherited Culture, optional visual tradition, native Ideoligion receipt, normative Political Beliefs, instituted current order, settlement authority, faction era |
 | Settlement | owning faction, world area, population origin, resident population, land capacity, role, form, realized access, services, civic state, economy, trade, specialization, historical development, scale, population groups, settlement program, provision arrangements, local Culture |
 | Faction relation | left faction, right faction, realized relation, authored/generated provenance |
 | Frontier holding | world area, household size, land capacity, material level, form, faction status |
@@ -50,7 +50,7 @@ Generation consumes one confirmed candidate in this order:
    them, and persist faction relations. Starting-region rows retain authored
    count, positions, owners, and relation overrides.
 3. Resolve each established faction's substantive Culture, native Ideoligion,
-   Political Beliefs, faction structure, settlement authority, and temporal
+   Political Beliefs, current order, settlement authority, and temporal
    basis. Resolve the player's inherited Culture and Political Beliefs, retain
    the native Ideoligion receipt, and materialize only the exact rules adopted at
    landing. Broader player structure remains unset until play establishes it.
@@ -91,39 +91,45 @@ Every Culture saves:
 A cultural meaning concerns one namespaced registered social subject. It stores
 approval, normality, prestige, salience, population scope, provenance, source
 identity, evidence signature, and historical ticks. A cultural practice records
-durable repeated conduct. Selecting a meaning does not create a practice.
+durable repeated conduct with actors, target, trigger or cadence, operator,
+authority, setting, material conditions, evidence, consumer, provenance, and
+implicated subjects. Selecting a meaning does not create a practice.
 
-The initial open registry contains twelve subjects spanning shared space,
-exchange, defense, knowledge, public voice, compelled service, enforced order,
-compulsory transfer, shared provision, inherited rank, custody, and conduct in
-war. Each registered subject identifies its factual source and real consumers.
-Later CA modules and explicit adapters may register more. Unknown valid keys
-survive persistence; inert unregistered strings do not enter ordinary editors.
+The production vocabulary contains 45 social referents and 30 concrete practices
+derived from the active mechanics inventory. Every entry identifies its factual
+source and real consumer. An open registration contract remains representational
+capacity, not evidence that unsupported future content already exists. Unknown
+valid keys survive persistence; inert unregistered strings do not enter ordinary
+editors.
 
 The same Culture composer serves player founding, established factions, and
-settlements. It exposes overview, social meanings, inherited practices, optional
-visual tradition, and causal preview. A founding Culture must contain at least
-one substantive meaning or inherited practice. Saved profiles copy inherited
-meanings, practices, and optional visual tradition without locality,
+settlements at their different temporal scopes. It exposes constituents, social
+meanings, inherited and current concrete practices, disagreements, continuity,
+transitions, optional visual tradition, and causal preview. A founding Culture
+must contain at least one substantive meaning or inherited practice. Saved
+Culture profiles copy inherited meanings, practices, and optional visual
+tradition without locality,
 observations, transitions, evidence, or a live profile pointer.
 
 ## Political Beliefs and realized order
 
-Political Beliefs and faction structure answer the same thirteen concrete
-questions about leadership, decisions, participation, dissent, ownership,
-economy, work, support, membership, status, local order, defense, and conduct in
-war. Beliefs record what a population considers proper. Structure records what
-is in force. Agreement and contradiction are both valid state.
+Political Beliefs and current order use the same thirteen comparison subjects:
+leadership, decisions, participation, dissent, ownership, economy, work,
+support, membership, status, local order, defense, and conduct in war. Beliefs
+record what a population considers proper. Current order records instituted
+mechanisms. Agreement and contradiction are both valid state.
 
-Player authoring is question-first. Each answer is independently authored. Five
-complete built-in profiles provide transparent accelerators; each answers all
-thirteen questions, has no parent or missing value, and copies the vector as
-authored state. The profile key and name do not enter world identity. Missing
-player positions are never filled randomly.
+Each subject is independently composable and may carry several compatible
+mechanisms. Only explicit absence on leadership, local order, or defense excludes
+standing mechanisms on that same subject. Twelve belief sets and ten current-order
+sets are transparent partial accelerators. Each declares its exact mechanisms,
+adds those mechanisms to a copy, and preserves unlisted and already-authored
+compatible facts. Set identity never enters world identity, later saved-set edits
+cannot mutate a world, and missing player positions are never filled randomly.
 
 NPC generation derives one axis only from:
 
-- the same axis in realized faction structure;
+- the same subject in realized current order;
 - an explicit axis-specific observed fact; or
 - a non-neutral cultural meaning that scores that axis.
 
@@ -211,23 +217,25 @@ supports.
 
 ## Persistence
 
-The current authoring data epoch is `10`. The pending-plan schema is `10`; the
+The current pending-authoring data epoch is `11`. The pending-plan schema is `11`; the
 materialized settlement record uses schema `8`; settlement programs and entries
 use schema `4`; operational facts use schema `3`; program-asset receipts use
 schema `1`; provision arrangements use schema `5`; domestic units and residence
-use schema `1`; capability assessments use schema `2`; player founding remains
-schema `3`. The plan writes factions, settlements, population
-groups, programs, provision arrangements, local Culture, Political Beliefs,
-faction structure, settlement authority, relations, holdings, patterns, scales,
+use schema `1`; capability assessments use schema `2`; Culture and Political
+Beliefs use schema `9`; player founding remains schema `3`. The plan writes
+factions, settlements, population groups, programs, provision arrangements,
+local Culture, Political Beliefs, current order, settlement authority, relations, holdings, patterns, scales,
 realization state, and the player-founding object directly.
 
-This project is pre-release. An epoch mismatch clears incompatible CA-owned
-Culture, Political Beliefs, profile, founding-draft, social-interpretation, and
-regional-authoring state with one diagnostic. The current implementation does
-not preserve abandoned fields, aliases, partial profiles, old preset identities,
-or field-by-field migration machinery. The governed B10 fixture contains
+Pending authoring remains pre-release and an epoch mismatch may reject an
+unconfirmed regional draft, founding draft, or reusable set with one diagnostic.
+It cannot clear realized Culture, Political Beliefs, current order, social
+interpretation, or campaign history. Live B11 state follows the durable campaign
+manifest and explicit compatibility contract. The governed B11 fixture contains
 intentional world, region, candidate, arrival, scale, faction, settlement,
 population, and 19 explicitly established operational facts. On load it enters
 the same production realization path as an operator-authored draft; the fixture
 generator calls the production authoring kernel and contains no parallel causal
-model.
+model. Its active and keyed surfaces preserve three factions, four settlements,
+nine population groups, and nineteen established operations under epoch 11 and
+regional-plan schema 11.

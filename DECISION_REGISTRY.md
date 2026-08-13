@@ -2361,3 +2361,52 @@
   reachable by its actual consumers, and unclaimed by another arrangement.
   Patrol and security consumers use only armed typed residents assigned by the
   exact live Defense program; no generic armed-pawn fallback exists.
+
+- **DR-148** (2026-08-12) - **B11 establishes the first durable campaign
+  boundary.** Every live CA state family has one executable schema key, version,
+  owner, validation path, and supported compatibility range. Preflight precedes
+  Scribe mutation, migrations are idempotent, upgrade initialization records its
+  actual time and evidence, and unsupported live state fails visibly. Pending
+  authoring data remains separately replaceable and cannot erase campaign history.
+
+- **DR-149** (2026-08-12) - **Modules are ownership boundaries, not file-size
+  partitions.** A subordinate module is warranted by distinct state, lifecycle,
+  cadence, integration, dependency, failure, or test responsibility. Every
+  mutation and cadence has one owner; derived indexes name authority and
+  invalidation. Coordinators and adapters do not become secondary state owners.
+
+- **DR-150** (2026-08-12) - **Runtime profiling is semantically inert.** The CA
+  module profiler is disabled by default, bounded to known keys, low-allocation,
+  resettable, exportable, and absent from persistence. Enabling or disabling it
+  cannot alter authoritative state, generation, compatibility, or fixture output.
+
+- **DR-151** (2026-08-12) - **Authoring completion has four separate layers.**
+  Representational capacity, current production vocabulary, runtime realization,
+  and control surface are reported independently. An open registry or a set of
+  demonstrations does not establish production breadth.
+
+- **DR-152** (2026-08-12) - **Social subjects, meanings, and practices are
+  different semantic kinds.** A subject is an interpretive referent; a meaning is
+  one population's evaluation of it; a practice is concrete repeated conduct
+  with actors, conditions, operator, evidence, and consumer. A subject key alone
+  is invalid practice state.
+
+- **DR-153** (2026-08-12) - **Political authoring is compositional and
+  temporally exact.** Political Beliefs store normative mechanisms. Current order
+  stores instituted mechanisms. Several compatible mechanisms may coexist, and
+  exclusivity exists only where an explicit mechanical invariant requires it.
+  Institutions, economy, authority, self-identification, and observed practice
+  remain their own facts.
+
+- **DR-154** (2026-08-12) - **Presets are explicit partial copy-on-apply
+  patches.** A belief or current-order set adds only its declared mechanisms,
+  preserves unlisted and compatible authored facts, and retains no shared world
+  authority after application. Named archetypes are optional seeds or derived
+  descriptions, not ontological political types.
+
+- **DR-155** (2026-08-12) - **Player navigation follows author tasks and actual
+  content.** Internal source domains do not automatically become categories.
+  Empty and one-item categories are omitted; groups of two or three remain inline
+  unless a recorded information-architecture need warrants otherwise; top-level
+  navigation requires several substantial human-relevant groups. Shared layout
+  primitives do not justify duplicate semantic authoring surfaces.
