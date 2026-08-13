@@ -20,8 +20,9 @@ receipts, review, deployment, and operator runtime evidence remain separate.
 | Branch | `mallowfluff/b3-creation-flow-interaction` |
 | Exact B10 baseline | `f372c6b50294f631a370d111b1641536bade7876` |
 | B10 source closure | `3d93e4405ddbcdd5e842f9dd0245de8fe157b974` |
-| B10 governance closure | The following governance commit carries this state, the append-only B10 record, generated version projections, evidence reports, and README twin. |
-| Publication | Normal fast-forward publication to the current branch is part of B10 closure. |
+| B10 governance closure | `a531da1d719d6daf4f0b1fea7d260cf5589c2975` carries the append-only B10 record, generated version projections, evidence reports, and README twin. |
+| B10 deployment receipt | The following receipt commit records the byte-verified active DLL after the required post-publication deployment. |
+| Publication | Source and governance fast-forwarded to the current remote branch before deployment; the final receipt follows by another normal fast-forward. |
 
 The portable chronology contains 112 closed batches: `A1-A102` and `B1-B10`.
 Thirty-seven contiguous version units cover that chronology exactly once. B10 is
@@ -83,7 +84,7 @@ same identity and composition, and agree byte for byte.
 | Module-impact review | New and changed owners record state, mutation, lifecycle, cadence, dependencies, consumers, receipts, and B11 review status |
 | Release build | PASS - 0 warnings; 0 errors |
 | Assembly | 3,415,040 bytes; SHA-256 `DD0EC6DB5C7D0C3B607C1D6FFBE813F6469CD4796CAB10E5C0D70D4223FFDF60` |
-| Deployment | `DEPLOYMENT_RECEIPT_PENDING` |
+| Deployment | PASS - RimWorld was closed; the active Steam mod junction resolves to the project root, whose DLL is byte-identical to the verified build at 3,415,040 bytes and SHA-256 `DD0EC6DB5C7D0C3B607C1D6FFBE813F6469CD4796CAB10E5C0D70D4223FFDF60` |
 
 Static evidence establishes the source, serialization, fixture, and deployment
 candidate. It does not select options, advance the game, or establish visual and

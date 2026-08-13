@@ -9,6 +9,7 @@
 | Scope | Active source, persistence, generation, authoring, fixture tooling, and runtime consumers |
 | Result | The repeated repository-wide sweep has no unresolved Critical or High synthetic-social-state finding. Optional breadth remains absent rather than represented by a proxy. |
 | Executable evidence | [`B10_ACCEPTANCE_RECEIPTS.md`](B10_ACCEPTANCE_RECEIPTS.md), 75/75; [`B10_SYNTHETIC_STATE_SWEEP.md`](B10_SYNTHETIC_STATE_SWEEP.md), 152 classified occurrences and 0 unresolved Critical/High |
+| Deployment | RimWorld closed; verified and active assemblies are byte-identical at 3,415,040 bytes and SHA-256 `DD0EC6DB5C7D0C3B607C1D6FFBE813F6469CD4796CAB10E5C0D70D4223FFDF60` |
 
 ## Ownership ledger
 

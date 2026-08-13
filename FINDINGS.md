@@ -3301,4 +3301,6 @@
   arrival, and map-scale identity under authoring epoch 10 and regional-plan
   schema 10. The clean Release assembly is 3,415,040 bytes at SHA-256
   `DD0EC6DB5C7D0C3B607C1D6FFBE813F6469CD4796CAB10E5C0D70D4223FFDF60`.
-  Aggregate look and play remain pending operator evidence.
+  RimWorld was closed for deployment, and the active Steam-mod target is
+  byte-identical to that assembly. Aggregate look and play remain pending
+  operator evidence.
