@@ -8,7 +8,7 @@
 
 # Session State
 
-Updated 2026-08-13 23:30 UTC / 16:30 PST.
+Updated 2026-08-13 23:42 UTC / 16:42 PST.
 
 Read this before claiming where creation or gameplay testing stands. Compile,
 receipts, review, deployment, and operator runtime evidence remain separate.
@@ -21,8 +21,8 @@ receipts, review, deployment, and operator runtime evidence remain separate.
 | Exact B12 baseline | `e9ad9377186b79598a9ac15a21252d0dd2b132cd` |
 | B13 baseline audit | `96a9587` (`[B13] audit: establish B12 fidelity baseline`) |
 | B13 source closure | `e89d9367b83652c6250a62d2419d605c4e2f9b03` (`[B13] source: refresh cognition across jurisdiction changes`), following implementation `23dbd335d7054e37eeb12837b2e0ece307776242` and context/index correction `d55380ecac5064c73080d82ab7b55188ce70f92e` |
-| B13 governance closure | Pending the coherent governance commit containing this record. |
-| B13 deployment receipt | Pending closed-process copy of the verified assembly. |
+| B13 governance closure | `959ab3e5dfee346388dbf0460c6a4df62145eb62` (`[B13] governance: ratify Culture completion and causal fidelity`) |
+| B13 deployment receipt | **PASS** - `B13_DEPLOYMENT_RECEIPT.md` records closed-process replacement, backup, and exact source/target byte identity. |
 
 The portable chronology contains 115 closed batches: `A1-A102` and `B1-B13`.
 Forty contiguous version units cover that chronology exactly once. B13 is
@@ -74,7 +74,7 @@ The active and keyed surfaces are byte-identical.
 | Independent review | **PASS** - causal, structural, and player-facing surface review close with 0 Critical/High/Medium/Low; `B13_REVIEW_RECEIPT.md` |
 | Release build | **PASS** - two no-incremental Release builds from source commit `e89d936` produced 0 warnings, 0 errors, and identical bytes |
 | Assembly | 3,973,120 bytes; SHA-256 `889F81BD696627359F6EFB096304303CAE3066D7870F001E1316DAD2D4324372` |
-| Deployment | Pending closed-process copy and post-copy byte comparison |
+| Deployment | **PASS** - RimWorld was closed; source and target are byte-identical at 3,973,120 bytes and SHA-256 `889F81BD696627359F6EFB096304303CAE3066D7870F001E1316DAD2D4324372`; the verified B12 target remains recoverable. |
 
 Static evidence establishes the source, serialization, fixture, and deployment
 candidate. It does not select options, advance the game, or establish visual and
@@ -82,7 +82,8 @@ gameplay acceptance.
 
 ## Operator runtime boundary
 
-B13 ends at the operator runtime-test boundary after final deployment. Codex
+B13 ends at the operator runtime-test boundary. Publication and byte-verified
+deployment are complete. Codex
 does not advance creation, choose authoring values, start the game, alter saves,
 or claim how the game looks and plays on the operator's behalf.
 
@@ -100,8 +101,8 @@ or claim how the game looks and plays on the operator's behalf.
 ## Environment and preserved evidence
 
 - RimWorld target: 1.6.4871 rev590.
-- RimWorld remains closed through verification and assembly replacement. Codex
-  does not launch it afterward.
+- RimWorld remained closed through verification and assembly replacement.
+  Codex did not launch it afterward.
 - `B13_CAUSAL_CONTRACT.md`, `CULTURE_RESEARCH_CORPUS.md`,
   `AUTHORING_ONTOLOGY_COVERAGE.md`, `MODULE_OWNERSHIP.md`,
   `SCHEMA_REGISTRY.md`, `PERSISTENCE_CENSUS.md`, and
