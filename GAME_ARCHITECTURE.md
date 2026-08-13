@@ -575,8 +575,31 @@ functional contract. The saved program entry records the selected defs and the
 placed identities so reload and generation consume one realized fact.
 
 Faction era is a ceiling, never proof of a settlement facility. A research
-readout is valid only after the settlement owns a research program and an actual
-loaded bench candidate. Likewise, a provision arrangement is valid only after
-its operator, stock, access, funding, and spatial supports exist. The generator
-does not fabricate vendor, religious, dues, or abstract operator institutions to
-make a supply record possible.
+program requires an active project or question, qualified worker, supporting
+organization, relevant knowledge, and either a real bench or an explicit
+non-bench research contract. A bench is a work node, not a research institution.
+Likewise, a provision arrangement is valid only after its exact operator, stock,
+access, labor, funding, material nodes, and distribution behavior exist. The
+generator does not fabricate vendor, religious, dues, or abstract operator
+institutions to make a supply record possible.
+
+## 16. Causal Ownership of Social State
+
+Native pawn relations and assigned beds are evidence available to domestic
+formation. They do not imply that every nearby or similarly ordered pawn shares
+a household. CA persists factual domestic units, their source-scoped members,
+residential and provision bindings, and represented transition history. A pawn
+without a valid multi-pawn unit retains individual self-provision.
+
+Native work, skills, buildings, stocks, transactions, research projects,
+policies, offices, routes, and histories provide domain evidence for practiced
+capability. The capability resolver may summarize that evidence, but no score,
+random perturbation, stable hash, ThingDef, room role, Culture value, Political
+Belief, or world tendency creates the practice itself. Hashes and randomness
+remain valid only after eligibility for equivalent names, layouts, visual forms,
+material candidates, or bounded scheduling has been established.
+
+World generation consumes one persisted realization. UI drawing and navigation
+cannot form memberships, adopt policies, assign operators, or reroll semantic
+facts. The governed fixture contains intentional authoring facts only and enters
+the same production realization path as an operator-authored draft.

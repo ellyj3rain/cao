@@ -3264,3 +3264,41 @@
   arrival/scale identity, and per-settlement program/provision counts. Visual
   layout, selection feel, Faction Relations, fine-tune reopening, and the
   generated game remain operator judgments.
+
+- **F-160** (2026-08-12 UTC / 2026-08-12 PDT) - **The aggregate framework
+  contained deterministic and random proxies in causal ownership positions.**
+  The B10 ledger found hash-selected households, random capability jitter,
+  tendency-created programs, category-created provision arrangements,
+  Political Beliefs copied into current structure, a hash-selected independent
+  Ideoligion, random local factions and relations, hash-created specialization,
+  assets standing in for institutions, parallel fixture derivation, and a tax
+  editor that rolled an institutional decision. All were Critical or High
+  because they asserted semantic state without the process that makes it exist.
+
+  B10 replaces those paths with persistent domestic-unit membership and
+  represented transitions; eight domain-specific capability evidence records;
+  complete settlement-program operational evidence; factual domestic,
+  communal, and authority provision contracts; exact Ideoligion and relation
+  identities; and separate normative belief, instituted order, Culture,
+  authority, material, and behavior state. Unsupported programs and provision
+  forms remain absent. ThingDefs and rooms are classified as material, work,
+  storage, access, communication, symbolic, or spatial nodes rather than proof
+  of an institution.
+
+  The renewed source sweep classifies all 152 active C# RNG/hash occurrences
+  and leaves no unresolved Critical or High synthetic-state finding. B10
+  acceptance passes 75/75 against the production kernels. The final convergence
+  adds an explicit established-program authoring owner, exact per-role program
+  asset receipts, atomic rebuild rebinding, exclusive and reachable provision
+  stock, exact provision-kind matching, live Defense labor assignments, and
+  exact program continuity through later work.
+
+  The active and keyed fixture surfaces are byte-identical at 65,717 bytes and
+  SHA-256
+  `F539239672875C668F750A09CCC370B4B6AFD8165B0F6FA7D37543AFE8391440`.
+  They preserve three factions, four settlements, nine population groups, 19
+  explicit established-program facts, and the current world, region, candidate,
+  arrival, and map-scale identity under authoring epoch 10 and regional-plan
+  schema 10. The clean Release assembly is 3,415,040 bytes at SHA-256
+  `DD0EC6DB5C7D0C3B607C1D6FFBE813F6469CD4796CAB10E5C0D70D4223FFDF60`.
+  Aggregate look and play remain pending operator evidence.

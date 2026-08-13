@@ -172,41 +172,51 @@ Population groups record share, affiliation, Ideoligion source and certainty,
 political-belief source, and separate-quarter status. Materialization assigns
 real pawns to those saved groups.
 
-Established settlement composition is an open derived program, never a fixed
-facility mask or intensity profile. Each namespaced program definition owns its
-source facts, applicability, candidate-resolution and materialization contracts,
-inspection summary, runtime or maintenance consumer, and fallback. Each saved
-entry owns selected functional candidates, required extent, materialization
-state, placed identities, blockers, and a stable signature. One program may
-require rooms, worktables, storage, operators, stock, access, and several linked
-assets.
+Established settlement composition is an open operational program, never a
+fixed facility mask, intensity profile, or axis-threshold product. Every active
+entry records the concrete need, actual operator where required, standing,
+knowledge, labor, material inputs and nodes, service/activity, target population,
+access, funding or maintenance, failure condition, and causal signature. Loaded
+functional candidates are resolved only after that contract is complete. A room,
+worktable, storage object, bed, ritual site, communication object, or other asset
+is a node; it cannot establish its own organization or institution.
 
-The initial registry contains 22 programs across housing, food, storage,
-medicine, production, trade, governance, security, defense, research, religion,
-social life, culture, agriculture, communications, and transport. Loaded native,
-expansion, and ported assets participate through actual functional contracts;
-visual-only props do not establish a program. Access, services, civic state,
-economic capacity, trade connectivity, specialization, role, history, and urban
-support remain independent realized facts. Urban-growth tendency changes only
-the threshold, not city status itself.
+The registry contains 22 possible program contracts across housing, food,
+storage, medicine, production, trade, governance, security, defense, research,
+religion, social life, culture, agriculture, communications, and transport.
+Unsupported contracts stay absent. Housing, food preparation, recreation,
+instituted governance, exact routes, and post-materialization domestic provision
+can arise from their direct facts. The other programs require explicit saved
+operational evidence or a complete provision arrangement. Loaded native,
+expansion, and ported assets participate through functional contracts;
+visual-only props do not establish a program.
 
-Provision arrangements are causal records rather than arbitrary stacks. A
-household, communal, or authority operator must exist socially, materially, and
-behaviorally before its arrangement can be generated. Operator, access, funding,
-stock, program support, cause, and exact counts are saved once and consumed
-without rerolling. Unsupported vendor, religious, dues, and abstract-distribution
-branches are absent.
+Provision arrangements are causal records rather than arbitrary stacks. An
+individual or persistent domestic unit, communal organization, or authority must
+exist socially, materially, and behaviorally before its arrangement can be
+generated. Domestic units form from actual partner, kin, shared-residence, or
+authored co-residential evidence and preserve source-scoped membership and
+transitions. Operator, labor, knowledge, access, funding, stock, material nodes,
+policy where required, program support, cause, and exact counts are saved once
+and consumed without rerolling. Unsupported vendor, religious, dues, and
+abstract-distribution branches are absent.
 
-Capability is a derived assessment. Faction era is the upper bound; actual
-facilities, infrastructure, knowledge, pawns, buildings, stocks, roads, water,
-and organizations determine what a settlement can practice. A capability cache
-never overrides those supports.
+Capability is a derived domain assessment. Medicine, production, logistics,
+civic administration, research, security, commerce, and communications each
+retain their exact actors, organizations, active work, knowledge, material
+nodes, historical observations, blockers, confidence, assessment tick, and
+source signature. Missing evidence yields an absent, weak, or uncertain result.
+There is no random jitter, and a capability cache never owns or creates its
+supports.
 
 ## Persistence
 
-The current authoring data epoch is `8`. The pending-plan schema is `8`; the
-settlement-program schema is `1`; Culture and Political Beliefs schema is `8`;
-player founding schema is `3`. The plan writes factions, settlements, population
+The current authoring data epoch is `10`. The pending-plan schema is `10`; the
+materialized settlement record uses schema `8`; settlement programs and entries
+use schema `4`; operational facts use schema `3`; program-asset receipts use
+schema `1`; provision arrangements use schema `5`; domestic units and residence
+use schema `1`; capability assessments use schema `2`; player founding remains
+schema `3`. The plan writes factions, settlements, population
 groups, programs, provision arrangements, local Culture, Political Beliefs,
 faction structure, settlement authority, relations, holdings, patterns, scales,
 realization state, and the player-founding object directly.
@@ -215,6 +225,9 @@ This project is pre-release. An epoch mismatch clears incompatible CA-owned
 Culture, Political Beliefs, profile, founding-draft, social-interpretation, and
 regional-authoring state with one diagnostic. The current implementation does
 not preserve abandoned fields, aliases, partial profiles, old preset identities,
-or field-by-field migration machinery. The governed B9 fixture is generated
-directly from its intentional world, region, candidate, arrival, scale, faction,
-settlement, and population inputs.
+or field-by-field migration machinery. The governed B10 fixture contains
+intentional world, region, candidate, arrival, scale, faction, settlement,
+population, and 19 explicitly established operational facts. On load it enters
+the same production realization path as an operator-authored draft; the fixture
+generator calls the production authoring kernel and contains no parallel causal
+model.

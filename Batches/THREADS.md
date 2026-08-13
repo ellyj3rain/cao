@@ -43,6 +43,8 @@ Project identity, historical regulation, build provenance, validation, deploymen
 
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
 ### <a id="t-030"></a>T-030 - Validation and evidence discipline
 
 - [A1 - Repository establishment and governance surface](A001-2026-07-22-repository-establishment-and-governance-surface.md) - 2026-07-22
@@ -134,6 +136,8 @@ Project identity, historical regulation, build provenance, validation, deploymen
 
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
 ## TF-02 - Pawn cognition and authority
 
 Disposition, knowledge, communication, command, and accountability.
@@ -163,6 +167,8 @@ Disposition, knowledge, communication, command, and accountability.
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
 ### <a id="t-005"></a>T-005 - Communications and command authority
 
 - [A3 - First pillar slice and execution hardening](A003-2026-07-22-first-pillar-slice-and-execution-hardening.md) - 2026-07-22
@@ -170,6 +176,8 @@ Disposition, knowledge, communication, command, and accountability.
 - [A6 - Communications media and organization](A006-2026-07-24-communications-media-and-organization.md) - 2026-07-24 04:00 UTC / 21:00 PST
 - [A14 - Pawn-private welfare and conditional accountability](A014-2026-07-25-pawn-private-welfare-and-conditional-accountability.md) - 2026-07-25 00:30–12:40 UTC / 17:30–05:40 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 ## TF-03 - Combat doctrine
 
@@ -222,6 +230,8 @@ Pawn autonomy, permissions, equipment, and bounded self-directed work.
 - [A49 - Spatial initiative and native shelf construction](A049-2026-07-28-spatial-initiative-and-native-shelf-construction.md) - 2026-07-28 23:20 UTC / 16:20 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
 ## TF-05 - Animals and welfare
 
 Animal cognition and infrastructure plus pawn welfare and clinical evidence.
@@ -235,6 +245,8 @@ Animal cognition and infrastructure plus pawn welfare and clinical evidence.
 - [A63 - Conviction memory and per-issue judgment](A063-2026-08-05-conviction-memory-and-per-issue-judgment.md) - 2026-08-05
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 ### <a id="t-012"></a>T-012 - Animal cognition and infrastructure
 
@@ -265,6 +277,8 @@ Home planning, space programs, residents, furnishing, and facility siting.
 
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
 ### <a id="t-014"></a>T-014 - Space programs and residents
 
 - [A26 - Planned room-use layer and placement receipt](A026-2026-07-27-planned-room-use-layer-and-placement-receipt.md) - 2026-07-27 19:52–20:37 UTC / 12:52–13:37 PST
@@ -281,6 +295,8 @@ Home planning, space programs, residents, furnishing, and facility siting.
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 ### <a id="t-015"></a>T-015 - Facility siting and furnishing
 
@@ -306,6 +322,8 @@ Home planning, space programs, residents, furnishing, and facility siting.
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 ## TF-07 - Logistics, waste, and economy
 
@@ -333,6 +351,8 @@ Materials, storage, inventory, toxic waste, transactions, and obligations.
 
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
 ### <a id="t-017"></a>T-017 - Toxic-waste lifecycle
 
 - [A42 - Facility-siting evidence and comparison](A042-2026-07-28-facility-siting-evidence-and-comparison.md) - 2026-07-28 08:40–08:48 UTC / 01:40–01:48 PST
@@ -346,6 +366,8 @@ Materials, storage, inventory, toxic waste, transactions, and obligations.
 
 - [A69 - Institutional transactions and credit policy](A069-2026-08-05-institutional-transactions-and-credit-policy.md) - 2026-08-05
 - [A97 - Transactions, stock plans, tiers, and threat muster](A097-2026-08-08-transactions-stock-plans-tiers-and-threat-muster.md) - 2026-08-08 22:09 UTC / 15:09 PST
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 ## TF-08 - Regional world simulation
 
@@ -372,6 +394,8 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 ### <a id="t-020"></a>T-020 - Regional geometry, projection, and scatter
 
@@ -419,6 +443,8 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
 ### <a id="t-026"></a>T-026 - World tendencies and geography
 
 - [A72 - Carrier-owned mountain mutation](A072-2026-08-06-carrier-owned-mountain-mutation.md) - 2026-08-06 08:47 UTC / 01:47 PST
@@ -463,6 +489,8 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
 ### <a id="t-023"></a>T-023 - Culture, beliefs, and Ideoligion
 
 - [A28 - Space-program residents and negotiation](A028-2026-07-27-space-program-residents-and-negotiation.md) - 2026-07-27 21:55–22:50 UTC / 14:55–15:50 PST
@@ -491,6 +519,8 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 - [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 ## TF-10 - Onboarding and authoring
 
@@ -522,6 +552,8 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 ### <a id="t-025"></a>T-025 - Authoring surfaces and UI grammar
 
@@ -559,6 +591,8 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 ## TF-11 - Runtime tooling and controls
 
@@ -621,3 +655,4 @@ Canonical vocabulary, model convergence, copy register, and product truthfulness
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT

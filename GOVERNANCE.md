@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Governance |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.3.0.3-alpha` · closed batch tip `B9` · next `B10` |
+| Version | `1.3.0.4-alpha` · closed batch tip `B10` · next `B11` |
 <!-- cao:generated:version END -->
 | Design authority | ellyj3rain |
 | Repository | `GOVERNANCE.md` |
@@ -97,7 +97,7 @@ substrate; the other three are what make the mod a framework.
   evidence. Local Git commits are supporting engineering evidence when retained.
 - Batch identifiers share one namespace across letter eras. The A sequence is
   closed at `A102`; development continues with `[B#]` in the same directory and
-  log. `B9` is closed and `B10` is next after operator runtime validation. A new letter does not create another
+  log. `B10` is closed and `B11` is next after aggregate operator runtime validation. A new letter does not create another
   history tree, generator, catalog, or projection layer.
 - The records now under `Batches/` establish this append-only contract. The
   immediately preceding generated history tree was a regulatory projection, not
@@ -134,7 +134,7 @@ not expose those objects.
 ## Batch, thread, and version discipline
 
 - **Batch** is the atomic chronological development record. The closed history is
-  `A1` through `A102`, followed by `B1` through `B9`; `B10` is the next identifier.
+  `A1` through `A102`, followed by `B1` through `B10`; `B11` is the next identifier.
 - **Thread and family** are permanent, series-neutral semantic classifications.
   `T-*` and `TF-*` may connect nonadjacent batches across any letter sequence, and
   one batch may participate in several threads.
@@ -155,11 +155,11 @@ Maturity advances independently through `pre-alpha`, `alpha`, `beta`, `rc`, and
 GA.
 
 `tools/version-model.mjs` is the executable replay source. It derives `VERSION`,
-the generated version stamps, and `VERSION_MAP.md`; validates exact A1-B9
+the generated version stamps, and `VERSION_MAP.md`; validates exact A1-B10
 coverage; checks the thematic namespace; and fails if the declared next batch has
 already been consumed. Mechanically derived version facts are generated and
-gated, not hand-typed. Thirty-six evidenced version units derive
-`1.3.0.3-alpha`.
+gated, not hand-typed. Thirty-seven evidenced version units derive
+`1.3.0.4-alpha`.
 
 When new development begins, the first batch opens the next contiguous version
 unit. Immediately following batches may share that version only when they form one
@@ -168,21 +168,27 @@ content determines its tier. A later return to the same thread opens a later
 version unit; thread continuity never moves a batch backward or merges
 noncontiguous time.
 
-## B9 Starting Region Contract
+## B10 Causal Closure Contract
 
-Objects and Map remain canonical Starting Region navigation. Details contains
-meaningful decisions, essential inspection, and blocking warnings at the scope
-that owns them; one valid option is a fact, not a control. Ordinary player copy
-does not expose generation provenance, schema language, receipts, or explanations
-of the implementation architecture. Titles use explicit conventional English
-composition.
+Aggregate runtime validation follows causal closure. A deterministic label,
+hash, score, random perturbation, broad tendency, asset, read model, Political
+Belief, or Culture value cannot occupy the place of a social fact. Hashes and
+randomness select only among causally equivalent names, layouts, visual forms,
+materials, or bounded schedules after eligibility exists.
 
-Established settlement composition is an open derived program over loaded
-functional contracts, not a fixed facility mask. Program candidates are
-content-pack neutral and must have a real functional or spatial contract.
-Provision operators must exist socially, materially, and behaviorally. Faction
-technology remains faction state, while settlement research requires actual
-research institutions and assets. Culture uses semantic interpretation for
-normal authoring and contextual exact values for advanced fine tuning. Faction
-Relations remains the relational-authoring visual reference. B9 is the final
-pre-runtime correction; B10 cannot begin before operator runtime validation.
+Domestic units have persistent factual membership and represented transitions.
+Practiced capability derives from domain-specific actors, organizations, work,
+knowledge, material, and history. World tendencies summarize or guide; they do
+not instantiate institutions. Every active settlement program has a concrete
+need and complete operational contract. Culture affects meaning, legitimacy,
+participation, priority, and form without granting execution capability.
+Political Beliefs remain distinct from instituted order. Provision operators,
+funding, stock, access, and behavior are actual facts. Assets are nodes of an
+institution, never the institution itself.
+
+Fixing one proxy does not close a repository-wide causal audit. B10 closes only
+after the repeated sweep and independent reviews contain no unresolved Critical
+or High synthetic-state finding, the corrected fixture reaches the generation
+boundary, and the deployed assembly is byte verified. `B11` remains next; the
+next action is aggregate operator runtime validation rather than another feature
+batch.

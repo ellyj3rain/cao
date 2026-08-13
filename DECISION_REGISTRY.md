@@ -2279,3 +2279,85 @@
 - **DR-132** (2026-08-12) - **B9 is the final pre-runtime correction batch.**
   B10 remains next and cannot begin before the operator validates the deployed
   creation flow and generated game.
+
+- **DR-133** (2026-08-12) - **Aggregate runtime validation requires causal
+  closure.** Deterministic output, persistence, UI visibility, compilation, and
+  receipts do not establish a simulation when a proxy occupies a foundational
+  entity or process.
+
+- **DR-134** (2026-08-12) - **Hashes and randomness select equivalent forms,
+  not semantic facts.** They may choose names, layouts, visual or material
+  variants, bounded schedules, and eligible tie-breaks only after causal
+  eligibility exists.
+
+- **DR-135** (2026-08-12) - **Domestic units possess persistent factual
+  membership.** Partner, kin, shared residence, or explicit co-residential
+  evidence forms a unit; pawn ordering, adjacency, hash position, and arbitrary
+  group size do not. A resident without a valid unit self-provisions
+  individually.
+
+- **DR-136** (2026-08-12) - **Practiced capability is domain evidence.** Actors,
+  organizations, active work, knowledge, material nodes, history, blockers,
+  confidence, assessment time, and a source signature own the assessment. A
+  random score does not.
+
+- **DR-137** (2026-08-12) - **World tendencies summarize or guide.** They may
+  explain realized facts or pressure an owning generation threshold or
+  placement decision; they never instantiate an institution or program.
+
+- **DR-138** (2026-08-12) - **Settlement programs require complete operational
+  contracts.** Need, operator, standing, knowledge, labor, material, activity,
+  target, access, funding or maintenance, runtime consumer, and failure state
+  precede asset selection and materialization.
+
+- **DR-139** (2026-08-12) - **Culture affects social meaning without granting
+  execution capability.** It may shape demand, legitimacy, participation,
+  prestige, stigma, funding willingness, maintenance, siting, form, adoption,
+  resistance, and historical transition. Authority, knowledge, labor, material,
+  land, organization, and execution remain separate facts.
+
+- **DR-140** (2026-08-12) - **Political Beliefs remain distinct from current
+  order.** Normative change can alter legitimacy, compliance, dissent, reform
+  pressure, and conflict; it cannot directly rewrite offices, policy, ownership,
+  taxation, work, stores, access, or provision.
+
+- **DR-141** (2026-08-12) - **Provision operators exist socially, materially,
+  and behaviorally.** Domestic, communal, and authority arrangements require
+  exact operators and complete labor, stock, access, material, funding, and
+  distribution contracts. Tax support also requires adopted policy and actual
+  collection.
+
+- **DR-142** (2026-08-12) - **Assets are nodes, not institutions.** A building,
+  room, worktable, store, bed, ritual site, or communication object becomes part
+  of an institution only through actual operator, members or target population,
+  authority, work, inputs, outputs, access, and maintenance.
+
+- **DR-143** (2026-08-12) - **The B10 data epoch discards invalid derived
+  state.** Authoring epoch 10 and regional-plan schema 10 preserve compatible intentional
+  identities and B8 social meaning while removing hash-created households,
+  random capability, tendency-created programs, category-created provisions,
+  unsupported instances, and synthetic providers.
+
+- **DR-144** (2026-08-12) - **A repository-wide causal audit closes only after
+  a renewed clean sweep.** Correcting one proxy is insufficient. B10 requires no
+  unresolved Critical or High synthetic-state finding, production-path fixture
+  realization, independent review, a clean build, byte-verified deployment, and
+  then aggregate operator runtime validation.
+
+- **DR-145** (2026-08-12) - **Established operations have an explicit
+  authoring owner.** The Starting Region settlement editor establishes or
+  removes one complete operational fact for one exact population-group
+  operator. The governed fixture uses the same pure formation kernel; neither
+  UI inspection nor fixture code derives a parallel institution model.
+
+- **DR-146** (2026-08-12) - **Program assets retain exact causal identity.**
+  Every placed Thing or zone role persists its program key, operator identity,
+  program signature, role, and native identity. Repair and rebuilding rebind
+  that receipt atomically. A generic placed-asset list is not sufficient
+  evidence for later institutional work.
+
+- **DR-147** (2026-08-12) - **Provision stock and security labor are exclusive
+  factual resources.** Provision stock must be live, on settlement ground,
+  reachable by its actual consumers, and unclaimed by another arrangement.
+  Patrol and security consumers use only armed typed residents assigned by the
+  exact live Defense program; no generic armed-pawn fallback exists.

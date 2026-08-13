@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Session State |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.3.0.3-alpha` · closed batch tip `B9` · next `B10` |
+| Version | `1.3.0.4-alpha` · closed batch tip `B10` · next `B11` |
 <!-- cao:generated:version END -->
 | Repository | `SESSION_STATE.md` |
 | Status | ACTIVE - current operational state. |
@@ -18,48 +18,37 @@ receipts, review, deployment, and operator runtime evidence remain separate.
 | Surface | State |
 |---|---|
 | Branch | `mallowfluff/b3-creation-flow-interaction` |
-| Exact B9 baseline | `a30677744f966aec0416695bd3c6413c3a75acdd` |
-| B9 source closure | `20b181413a13a2b168c9c5d8dc23fb20241909c4` |
-| B9 governance closure | The following governance commit carries this state, the B9 append-only record, generated version projections, and README twin. |
-| Publication | Normal fast-forward publication to the current branch is part of B9 closure. |
+| Exact B10 baseline | `f372c6b50294f631a370d111b1641536bade7876` |
+| B10 source closure | `3d93e4405ddbcdd5e842f9dd0245de8fe157b974` |
+| B10 governance closure | The following governance commit carries this state, the append-only B10 record, generated version projections, evidence reports, and README twin. |
+| Publication | Normal fast-forward publication to the current branch is part of B10 closure. |
 
-The portable chronology contains 111 closed batches: `A1-A102` and `B1-B9`.
-Thirty-six contiguous version units cover that chronology exactly once. B9 is
-`VU-036`, a patch unit deriving `1.3.0.3-alpha`. Series-neutral `T-*` threads
-classify work without changing chronology. `B10` remains next and cannot begin
-before operator runtime validation.
+The portable chronology contains 112 closed batches: `A1-A102` and `B1-B10`.
+Thirty-seven contiguous version units cover that chronology exactly once. B10 is
+`VU-037`, a patch unit deriving `1.3.0.4-alpha`. Series-neutral `T-*` threads
+classify work without changing chronology. `B11` remains next; feature work does
+not begin before aggregate operator runtime validation.
 
-## Current Creation Contract
+## Current Causal Contract
 
 | Surface | Current state |
 |---|---|
-| World | RimWorld world settings plus CA causal World Tendencies |
-| Landing | Native landing tile plus confirmed regional footprint and arrival area |
-| Starting Region navigation | Objects and Map are canonical; Details owns object-specific decisions and inspection; compact settlement Details supports previous/next comparison without regeneration |
-| Established factions | Culture, native Ideoligion, complete Political Beliefs, realized structure, Settlement Authority, relations, and faction technology |
-| Established settlements | Identity, population, local Culture, placement, 22-program open settlement composition, and causal provision arrangements |
-| Player founding | Inherited Culture, native Ideoligion, complete Political Beliefs, and exact rules adopted at landing |
-| Culture authoring | Semantic meanings and practices by default; exact continuous values through contextual fine tuning |
-| Confirmation | Validates and consumes confirmed state; it does not reroll tendencies, programs, provisions, Culture, or relations |
+| Domestic identity | Persistent factual units form from represented partner, kin, residence, or explicit co-residence evidence; unlinked residents self-provision individually |
+| Residence | Typed persistent assignments reconcile native faction and settlement transitions before social and institutional consumers |
+| Practiced capability | Medicine, production, logistics, civic, research, security, commerce, and communications summarize direct domain evidence without random jitter |
+| World tendencies | Read models or generation pressures at their owning surface; they never instantiate programs or institutions |
+| Settlement programs | Explicit need and exact operator, standing, knowledge, labor, material, target, access, funding or maintenance, runtime, and failure contract |
+| Established-program authoring | Starting Region settlement Details establishes or removes one operational fact for one exact population-group operator |
+| Program assets | Every placed Thing or zone role persists exact program, operator, signature, role, and native identity; rebuilding atomically rebinds it |
+| Provision | Exact domestic, communal, or authority operator; materialization is preflighted and atomic; stock is live, unique, local, and reachable |
+| Security | Live Defense program, exact assets and operator, armed typed-resident labor, and persisted assignments; patrols use only live assigned guards |
+| Research and later work | Exact program/operator/signature survives research, cultivation, roads, repair, rebuilding, and completion revalidation |
+| Culture and Political Beliefs | Culture shapes meaning and participation; Political Beliefs remain normative; neither creates current order, authority, work, knowledge, or material |
+| Confirmation | Consumes persisted facts and production realization; it does not reroll identities, programs, provisions, Culture, relations, or institutions |
 
-One-option setup fields are facts rather than controls. Ordinary player UI does
-not expose generation provenance, schema language, receipts, or architectural
-exposition. Faction Relations is the visual reference for relation authoring.
-
-## Settlement Programs and Provisions
-
-The active registry contains 22 programs across 16 functional domains:
-housing, food, storage, medicine, production, trade, governance, security,
-defense, research, religion, social life, culture, agriculture, communications,
-and transport. Candidate resolution uses loaded functional contracts independent
-of content pack. Ported `Anon2CushionedChair` and `DankPyon_Bust` qualify through
-the same functional evidence; visual-only props do not establish a program.
-
-The seven-bit Starting Facilities mask, exception mask, exception values, and
-facility-resolution persistence are absent. Provision operators are limited to
-household, communal, and authority arrangements backed by real operator, access,
-stock, funding, program, and behavior evidence. Vendor, religious, dues, and
-abstract-distribution branches are absent.
+One-option setup fields remain facts rather than controls. Ordinary player UI
+does not expose generation provenance, schema language, receipt keys, or raw
+authored/observed implementation identifiers.
 
 ## Governed Runtime Fixture
 
@@ -67,68 +56,65 @@ abstract-distribution branches are absent.
 |---|---|
 | Active plan | `%USERPROFILE%\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlan.xml` |
 | Keyed mirror | `%USERPROFILE%\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlans\regional-plan-9bcbba2fdcd1e7f334711a69635242a2.xml` |
-| Fixture SHA-256 | `1DDAA4CD9ADC2CD557471B01D754BA37AE191A3588155645B1A872680D8ED4D2` on both files |
-| File size | 72,169 bytes on both files |
-| Schema | authoring epoch 8; regional plan 8; settlement program 1; Culture and Political Beliefs 8; player founding 3 |
+| Fixture SHA-256 | `F539239672875C668F750A09CCC370B4B6AFD8165B0F6FA7D37543AFE8391440` on both files |
+| File size | 65,717 bytes on both files |
+| Schema | authoring epoch 10; regional plan 10; settlement record 8; program and entry 4; operational fact 3; program asset 1; provision 5; Culture and Political Beliefs 8 |
 | Identity | world `alysaliu|1|Algorab Markab`; region `CA-RG-EB596A12`; candidate `613b1fe44104`; arrival tile `389638`; map scale 350 |
-| Composition | 3 factions; 4 settlements; 9 population groups |
-| Megaeth | 15 programs; 3 provision arrangements |
-| Red Cervexa | 17 programs; 3 provision arrangements |
-| Tascan Bramble | 13 programs; 2 provision arrangements |
-| Black Delta | 13 programs; 1 provision arrangement |
+| Composition | 3 factions; 4 settlements; 9 population groups; 19 explicit established-program facts |
+| Megaeth | Food preparation, Storage, Medicine, Production, Gathering |
+| Red Cervexa | Food preparation, Storage, Medicine, Production, Custody, Gathering |
+| Tascan Bramble | Food preparation, Storage, Medicine, Gathering |
+| Black Delta | Food preparation, Storage, Medicine, Gathering |
 
-Serialization/readback preserves ownership, settlement/faction relationships,
-population assignments, programs, provision counts, and signatures. The active
-and keyed surfaces are byte-identical.
+The recovery masks are historical evidence only. The fixture generator translates
+the supported composition through the production authoring kernel and omits
+derived programs, provisions, capability, domestic units, and world summaries.
+Runtime `RefreshDraftRealization` owns derivation. Both surfaces parse, retain the
+same identity and composition, and agree byte for byte.
 
 ## Verification and Deployment
 
 | Gate | Result |
 |---|---|
-| B9 acceptance | 84 cases: 79 statically verified; 5 operator-runtime observations |
-| B8 retained acceptance | PASS - 57/57 |
-| World Tendencies | PASS - 185 assertions |
-| Player founding | PASS - 48 assertions |
-| Creation interaction | PASS - 54 assertions |
-| Behavior convergence | 107 cases: 98 statically verified; 9 operator-runtime observations |
-| Review lenses | Information architecture, settlement ontology, causality, UI, and playability: no unresolved Critical or High finding |
-| Release build | PASS - 0 errors; 12 inherited warnings |
-| Assembly | 3,404,288 bytes; SHA-256 `9AD4EE62359CF1961FFCB55A7C45C946914F99E264FD7C819F74342E51D0EE19` |
-| Deployment | RimWorld was closed; active project DLL is byte-identical to the verified build at the same SHA-256 |
+| Causal-provenance audit | Complete ownership and program-by-program ledger; no unresolved Critical or High finding |
+| Synthetic-state sweep | PASS - 152 active RNG/hash occurrences classified; 0 unresolved Critical/High |
+| B10 acceptance | PASS - 75/75 |
+| Fixture round-trip | PASS - 3 factions, 4 settlements, 9 groups, 19 operational facts; active and mirror byte-identical |
+| Module-impact review | New and changed owners record state, mutation, lifecycle, cadence, dependencies, consumers, receipts, and B11 review status |
+| Release build | PASS - 0 warnings; 0 errors |
+| Assembly | 3,415,040 bytes; SHA-256 `DD0EC6DB5C7D0C3B607C1D6FFBE813F6469CD4796CAB10E5C0D70D4223FFDF60` |
+| Deployment | `DEPLOYMENT_RECEIPT_PENDING` |
 
-Static layout receipts cover 1280×720, 1366×768, 1600×900, 1920×1080, the
-operator window dimensions represented by the fixture evidence, and supported UI
-scale inputs. These receipts establish measured bounds, not visual acceptance.
+Static evidence establishes the source, serialization, fixture, and deployment
+candidate. It does not select options, advance the game, or establish visual and
+gameplay acceptance.
 
 ## Operator Runtime Boundary
 
-B9 is deployed and ready. The next action is the operator test; Codex must not
-advance the creation flow, choose authoring values, start the game, alter saves,
-or claim visual acceptance on the operator's behalf.
+B10 is the aggregate pre-runtime convergence batch. After publication and
+byte-verified deployment, the next action is the operator test. Codex must not
+advance creation, choose authoring values, start the game, alter saves, or claim
+how the game looks and plays on the operator's behalf.
 
 | Observation | Operator check |
 |---|---|
-| B9-33 | Inspect compact Starting Region layout and confirm no clipping or overlap. |
-| B9-34 | Inspect wide layout and confirm the object rail, map, and Details hierarchy remain coherent. |
-| B9-35 | Select factions and settlements from Objects and Map; confirm shared selection and `View Details`. |
-| B9-36 | Compare settlements with previous/next controls and confirm natural ordering and scroll reset. |
-| B9-75 | Fine-tune a Culture meaning, close and reopen it, and confirm exact values persist without replacing semantic copy. |
-| Faction Relations | Confirm it remains the visual and interaction quality reference and shows relation state without provenance copy. |
-| Settlement Composition | Inspect all four saved programs, provision operators, candidate assets, and any explicit fallback. |
-| Generation | Confirm the selected region reaches map generation and materializes confirmed state without rerolling it. |
-| Behavior 97-103, 105 | Complete creation, verify initialization and optional-asset fallback, observe Standard/Proactive/Autonomous boundaries, direct orders, and first-hour log health. |
-| Behavior 104 | Run separately on a compatible-region save/reload fixture; the selected developer region is not its authority. |
-
-Static evidence does not select options, advance the game, change saves, or
-substitute for how the creation flow and generated colony look and play.
+| Creation load | Open the current pending plan and confirm all 3 factions, 4 settlements, 9 population groups, and 19 established operations remain present. |
+| Program authoring | Establish and remove a settlement operation; confirm the named population-group operator and unavailable-contract explanation remain intelligible. |
+| Map generation | Generate the selected region and confirm persisted operations materialize without rerolling or dropping the composition. |
+| Program assets | Inspect multi-node programs and confirm every visible node belongs to the intended operation; destroy/rebuild only if useful to the test. |
+| Domestic provision | Confirm residents without factual shared-unit evidence do not become arbitrary households and retain usable self-provision. |
+| Provision | Confirm operators, nodes, stock, and access agree with the authored settlement and no one stock pile appears to supply several arrangements incorrectly. |
+| Security | Confirm patrols and security activity use actual armed assigned residents rather than any convenient pawn. |
+| Culture and order | Confirm Culture, Political Beliefs, current order, and actual institutions remain distinct and legible. |
+| Capability | Confirm capability summaries explain actual actors, work, knowledge, material, history, and blockers without creating new programs. |
+| Save/load | Save and reload the generated state; confirm membership, program/operator/asset identity, provision, security assignments, and blockers remain stable. |
+| Runtime health | Inspect the first-hour log and report any error, dropped work, impossible access, or visibly synthetic relation. |
 
 ## Environment and Preserved Evidence
 
 - RimWorld target: 1.6.4871 rev590.
 - Odyssey is installed; active runtime state is not asserted without a launch.
-- `PARALLEL_ONTOLOGY_AUDIT.md` remains a damaged consolidation; its recovered
-  full copy remains in the preservation package.
-- Preservation package:
-  `Projects\colonist-awareness-preservation-20260806-0614Z-2314PDT`, with a
-  verified mirror on `D:`.
-- The RS-008 source save and recovered documents remain out-of-band evidence.
+- `B10_CAUSAL_PROVENANCE_AUDIT.md`, `B10_ACCEPTANCE_RECEIPTS.md`, and
+  `B10_SYNTHETIC_STATE_SWEEP.md` are the current static closure evidence.
+- Operator control of time, pawn orders, windows, saves, and autosave remains
+  unchanged unless explicitly requested.

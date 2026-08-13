@@ -591,12 +591,16 @@ same facts at their actual owning scope.
 ## Settlement Program Architecture
 
 `CASettlementProgramRegistry` is open and namespaced. Each definition records
-domain, owner, causal sources, applicability, loaded-candidate contract,
+domain, owner, operational source contract, loaded-candidate contract,
 materialization contract, inspection summary, maintenance or runtime consumer,
-fallback, and functional evidence. Each settlement entry records selected
-candidates, required extent, materialization state, placed identities, blockers,
-and a stable signature. `CASettlementProgramMaterializer` consumes the confirmed
-entry and records native results; it does not reroll authoring.
+failure result, and functional evidence. Applicability is decided only by
+`CASettlementProgramOperationalEvidence`: need, actual operator, standing,
+knowledge, labor, material, target population, access, funding, stock, policy,
+and maintenance. Broad axis thresholds are not program predicates. Each saved
+entry retains those causes alongside selected candidates, required extent,
+materialization state, placed identities, blockers, and a stable signature.
+`CASettlementProgramMaterializer` consumes the confirmed entry and records
+native results; it does not reroll authoring.
 
 The initial 22 programs span housing, food, storage, medicine, production,
 trade, governance, security, defense, research, religion, social life, culture,
@@ -606,11 +610,38 @@ adapters are permitted only when no stronger native contract exists and the
 owning module records a real consumer. A decorative object alone establishes no
 program.
 
-Provision arrangements share the same causal boundary. Household, communal,
-and authority are the only current operator types. Each requires a real social
-operator, physical program support, access, funding, stock, and a behavior
-consumer. Confirmation freezes the derived program and provision records; map
-generation materializes those records rather than reinterpreting tendencies.
+Provision arrangements share the same causal boundary. Individual, domestic
+unit, communal organization, and authority are the current factual operator
+types. A persistent `CADomesticUnit` is formed only from represented partner,
+kin, shared residence, or authored co-residence evidence; a hash, pawn order, or
+population adjacency cannot form one. Communal and authority arrangements need
+their actual organization or jurisdiction, workers, physical program support,
+access, funding, stock, and distribution behavior. Tax support additionally
+needs adopted policy and collection. Confirmation freezes the derived program
+and provision records; map generation materializes those records rather than
+reinterpreting tendencies.
+
+## Causal social ownership
+
+`CASettlementCapabilityResolver` derives eight practiced domains from typed
+evidence containing actors, organizations, active operations, knowledge,
+material nodes, history, blockers, confidence, assessment tick, and a source
+signature. It has no random jitter and does not create a program. World axes are
+read models or generation pressures and cannot feed the reality they summarize.
+
+Political Beliefs remain normative positions. Current order, offices, policies,
+ownership, taxation, work, and provision are separately persisted facts that
+change through represented decisions and transitions. Culture resolves one
+namespaced subject for one population and may affect demand, legitimacy,
+participation, prestige, stigma, funding willingness, maintenance, siting, form,
+or resistance. It cannot grant authority, knowledge, labor, technology,
+materials, land, treasury, office, or execution capability.
+
+Native rooms and things are typed as material, work, storage, access,
+communication, symbolic, or spatial nodes. An institution exists only when its
+operator, members or target population, authority, activity, inputs, outputs,
+access, and maintenance connect to those nodes. The complete ownership ledger
+and repeated synthetic-state sweep live in `B10_CAUSAL_PROVENANCE_AUDIT.md`.
 
 ## Non-goals / boundaries
 

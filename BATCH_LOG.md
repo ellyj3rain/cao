@@ -2,8 +2,8 @@
 
 This is the chronological index of Colonist Awareness's append-only atomic batch sequence. Together with the recorded provenance, these governed records are the project's portable history; they do not depend on a particular Git host. Batch files use one alphanumeric namespace and live together under [`Batches/`](Batches/). Letter changes mark development eras; they do not create separate history systems. Series-neutral thematic classification lives in [`Batches/THREADS.md`](Batches/THREADS.md); contiguous tier-bearing development units live in [`VERSION_MAP.md`](VERSION_MAP.md).
 
-The A sequence closes at `A102`. The closed chronology continues through `B9`;
-`B10` is the next development batch.
+The A sequence closes at `A102`. The closed chronology continues through `B10`;
+`B11` is the next development batch.
 
 | Batch | Date | Descriptive name | Threads |
 |---|---|---|---|
@@ -119,5 +119,6 @@ The A sequence closes at `A102`. The closed chronology continues through `B9`;
 | [B8](Batches/B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) | 2026-08-11–2026-08-12 UTC / 2026-08-11 PST | Substantive inherited Culture, political composer, and open social-meaning substrate | [`T-002`](Batches/THREADS.md#t-002), [`T-004`](Batches/THREADS.md#t-004), [`T-006`](Batches/THREADS.md#t-006), [`T-019`](Batches/THREADS.md#t-019), [`T-021`](Batches/THREADS.md#t-021), [`T-022`](Batches/THREADS.md#t-022), [`T-023`](Batches/THREADS.md#t-023), [`T-024`](Batches/THREADS.md#t-024), [`T-025`](Batches/THREADS.md#t-025), [`T-028`](Batches/THREADS.md#t-028), [`T-030`](Batches/THREADS.md#t-030) |
 
 | [B9](Batches/B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) | 2026-08-12 UTC / 2026-08-12 PDT | Starting Region Information Architecture and Settlement Program Closure | [`T-002`](Batches/THREADS.md#t-002), [`T-013`](Batches/THREADS.md#t-013), [`T-014`](Batches/THREADS.md#t-014), [`T-015`](Batches/THREADS.md#t-015), [`T-016`](Batches/THREADS.md#t-016), [`T-019`](Batches/THREADS.md#t-019), [`T-021`](Batches/THREADS.md#t-021), [`T-022`](Batches/THREADS.md#t-022), [`T-023`](Batches/THREADS.md#t-023), [`T-024`](Batches/THREADS.md#t-024), [`T-025`](Batches/THREADS.md#t-025), [`T-028`](Batches/THREADS.md#t-028), [`T-030`](Batches/THREADS.md#t-030) |
+| [B10](Batches/B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) | 2026-08-12 UTC / 2026-08-12 PDT | Causal Closure and Elimination of Synthetic Social State | [`T-002`](Batches/THREADS.md#t-002), [`T-004`](Batches/THREADS.md#t-004), [`T-005`](Batches/THREADS.md#t-005), [`T-006`](Batches/THREADS.md#t-006), [`T-010`](Batches/THREADS.md#t-010), [`T-013`](Batches/THREADS.md#t-013), [`T-014`](Batches/THREADS.md#t-014), [`T-015`](Batches/THREADS.md#t-015), [`T-016`](Batches/THREADS.md#t-016), [`T-018`](Batches/THREADS.md#t-018), [`T-019`](Batches/THREADS.md#t-019), [`T-021`](Batches/THREADS.md#t-021), [`T-022`](Batches/THREADS.md#t-022), [`T-023`](Batches/THREADS.md#t-023), [`T-024`](Batches/THREADS.md#t-024), [`T-025`](Batches/THREADS.md#t-025), [`T-028`](Batches/THREADS.md#t-028), [`T-030`](Batches/THREADS.md#t-030) |
 
 Former pre-recatalog labels resolve through [`Batches/FORMER_LABELS.md`](Batches/FORMER_LABELS.md).

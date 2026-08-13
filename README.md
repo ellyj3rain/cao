@@ -6,7 +6,7 @@ institutions, beliefs, and authority. Factions make decisions and carry their
 consequences forward instead of resetting to isolated game events.
 
 <!-- cao:generated:version BEGIN -->
-Current version: `1.3.0.3-alpha`. Implementation is complete through batch `B9`; `B10` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.
+Current version: `1.3.0.4-alpha`. Implementation is complete through batch `B10`; `B11` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.
 <!-- cao:generated:version END -->
 
 ## Framework
@@ -39,14 +39,25 @@ comparison. One valid option is shown as a fact only when it matters, not as a
 button, and generation provenance remains diagnostic rather than player copy.
 
 Settlement scale, access, services, civic capacity, and material composition are
-realized from population, land, geography, technology, institutions, economy,
-trade, history, and loaded functional objects. An open 22-program registry
-records housing, food, storage, medicine, production, trade, governance,
-security, defense, research, religion, social life, culture, agriculture,
-communications, and transport requirements. Programs can require several rooms,
-assets, operators, stocks, and access paths; they are not a facility checklist or
-development slider. Household, communal, and authority provisions appear only
-when their actual social and material operators exist.
+realized from actual population, land, geography, knowledge, institutions,
+economy, trade, work, and history. An open registry defines 22 possible program
+contracts across housing, food, storage, medicine, production, trade,
+governance, security, defense, research, religion, social life, culture,
+agriculture, communications, and transport. A program becomes active only when
+its concrete need, operator, standing, knowledge, labor, materials, target,
+access, funding or maintenance, behavior, and failure contract are represented.
+Unsupported programs stay absent. Buildings and rooms are nodes used by a
+program; they do not prove an institution exists.
+
+Domestic provision belongs to a real pawn or a persistent domestic unit formed
+from represented partner, kin, residence, or explicit co-residence facts. Pawn
+ordering and hashes never create a household. Communal and authority provisions
+require real organizations, workers, stock, access, funding, and distribution;
+tax-funded provision also requires an adopted tax policy and collection.
+Practiced capability is a domain evidence summary over actual actors,
+organizations, work, knowledge, materials, and history, without random jitter.
+World tendencies guide or summarize their owning facts and do not create the
+institutions they describe.
 
 Culture is persistent social history with substantive inherited state. Each
 Culture records constituent populations; inherited and current meanings about
@@ -127,6 +138,7 @@ changes require a full RimWorld restart.
 | `Batches/THREADS.md` | Series-neutral thematic classification |
 | `VERSION_MAP.md` | Chronological, tier-bearing version units |
 | `tools/version-model.mjs` | Version replay, generated stamps, and structural checks |
+| `B10_CAUSAL_PROVENANCE_AUDIT.md` | Current causal owners, corrected proxies, program contracts, and institution-asset classifications |
 
 ## Project history
 
@@ -152,7 +164,8 @@ surface, not the project identity or the authority for its portable history.
 
 Executable receipts cover authoring ownership, creation navigation, founding
 state, World tendencies, behavior authorization, Culture persistence and
-transition, consumer reach, fixture round-trip, and derived-state stability.
+transition, domestic identity, capability evidence, operational programs,
+provision operators, fixture/runtime equivalence, and derived-state stability.
 Static receipts, builds, hashes, and reviews establish that a candidate is ready
 for the operator; they do not establish how the game looks or plays. See
 [`SESSION_STATE.md`](SESSION_STATE.md) for the exact current assembly, deployment,

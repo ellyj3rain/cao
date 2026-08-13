@@ -1555,10 +1555,34 @@ exposition; aligns faction, settlement, region, and Culture information with the
 scope that owns it; and replaces fixed row heights with measured layout.
 
 The seven-bit Starting Facilities model is retired. An open 22-program registry
-derives robust established-settlement composition from actual population, land,
-access, institutions, economy, role, history, and loaded functional asset
-contracts. Household, communal, and authority provisions require real operators
-and supports. Culture onboarding is semantic by default with exact-value fine
-tuning retained contextually. The regenerated schema-8 fixture and verified B9
-assembly are deployed. `B10` remains next, but no B10 feature work begins before
-the operator runtime test.
+records established-settlement composition over loaded functional asset
+contracts. B10 subsequently corrects its causal ownership: only complete direct
+operational evidence may activate an entry, while unsupported contracts remain
+absent. Culture onboarding is semantic by default with exact-value fine tuning
+retained contextually.
+
+## Causal Closure and Elimination of Synthetic Social State - B10 / T-002, T-004-T-006, T-010, T-013-T-016, T-018-T-025, T-028, T-030
+
+B10 audits the aggregate social, political, cultural, institutional, behavioral,
+material, spatial, authoring, persistence, and fixture paths before aggregate
+runtime validation. Persistent domestic units replace hash-selected households;
+domain evidence replaces random capability; direct operational contracts replace
+tendency-created programs; exact operators replace provision categories; and
+normative belief, practiced order, Culture, authority, work, knowledge, material,
+and assets remain causally separate.
+
+The B10 causal-provenance ledger covers every mechanically significant state
+family and records the 22 program outcomes and institution-asset classifications.
+The renewed synthetic-state sweep classifies 152 active RNG/hash occurrences
+with no unresolved Critical or High finding. Seventy-five acceptance receipts
+prove domestic identity, capability evidence, explicit program formation, exact
+program/operator/asset continuity, provision stock and access, produced security
+assignments, Culture and political boundaries, persistence, UI non-authority,
+and fixture/runtime equivalence. Authoring epoch 10 and plan schema 10 discard
+incompatible pre-release derived state while preserving the intentional
+three-faction/four-settlement composition and its 19 established operations.
+
+The next action is aggregate operator runtime validation of creation, generated
+settlements, domestic and provision behavior, program materialization, Culture,
+political order, capability readouts, and continued save/load. `B11` remains the
+next ordinary batch; it does not begin before that evidence.

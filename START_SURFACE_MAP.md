@@ -45,8 +45,11 @@ the same order as the object rail without regenerating state.
 
 Factions own Culture, Ideoligion, Political Beliefs, realized structure,
 Settlement Authority, relations, and technology. Settlements own identity,
-population, local Culture, location, realized material state, one open derived
-settlement program, and causal provision arrangements. Ordinary Details shows
+population, local Culture, location, realized material state, explicitly
+established operational facts, the programs derived from those facts, and
+causal provision arrangements. Settlement Details can establish or remove one
+operation for one exact population-group operator. Unsupported operations remain
+absent and explain the missing contract. Ordinary Details shows
 only meaningful authoring choices, essential inspection, blocking warnings, and
 object-specific secondary inspection. One valid choice is a fact, not a button;
 generation and schema provenance remain diagnostic state.
@@ -87,9 +90,10 @@ appropriate to societies with prior histories.
 ## Persistence and validation
 
 One keyed pending file per world identity stores the current regional candidate;
-the active mirror carries the same plan. Regional schema 8 writes factions,
-settlements, relations, population groups, settlement-program schema 1 entries,
-provision arrangements, substantive local Culture, and the regional copy of
+the active mirror carries the same plan. Regional schema 10 writes factions,
+settlements, relations, population groups, explicit operational facts,
+settlement-program schema 4 entries, program-asset identities, provision
+arrangements, substantive local Culture, and the regional copy of
 `playerFounding`. Culture and Political Beliefs schema 8 stores substantive
 inherited and current state. A world component owns the same confirmed founding state for
 regional, ordinary, and forced-map starts. It records Culture, Political
@@ -109,11 +113,12 @@ does not reroll the player's chosen arrangement.
 ## Runtime gate
 
 The next operator test must confirm that both active plan surfaces restore the
-same three-faction/four-settlement composition without losing the arrival area
-or options; that Objects, Map, Details, selection, and settlement comparison feel
-natural; that Culture semantic editing and contextual exact-value fine tuning
-reopen without loss; that every settlement's saved program and provision
-arrangements remain present; and that the selected map generates. Visual
-hierarchy, copy fit, Faction Relations, geography, feature placement, settlement
-identifiers, cultural readings, program composition, residents, and provisions
-remain runtime judgments.
+same three-faction/four-settlement composition and 19 explicit established
+operations without losing the arrival area or options; that Objects, Map,
+Details, selection, program establishment/removal, and settlement comparison
+feel natural; that Culture semantic editing and contextual exact-value fine
+tuning reopen without loss; that factual programs, exact operators, assets,
+provisions, and security assignments survive generation and save/load; and that
+the selected map generates. Visual hierarchy, copy fit, Faction Relations,
+geography, feature placement, settlement identifiers, cultural readings,
+program composition, residents, and provisions remain runtime judgments.

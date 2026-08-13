@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Core |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.3.0.3-alpha` · closed batch tip `B9` · next `B10` |
+| Version | `1.3.0.4-alpha` · closed batch tip `B10` · next `B11` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `CORE.md` |
@@ -134,7 +134,7 @@ because the founders hold them.
 - **DR-116 through DR-119.** Culture at T0 contains substantive social meanings
   and practices; the subject registry stays open while editors expose only real
   source-and-consumer contracts; Political Beliefs are question-first complete
-  vectors with causal NPC evidence; and epoch 8 discards incompatible pre-release
+  vectors with causal NPC evidence; and the current data epoch discards incompatible pre-release
   authoring state rather than embedding migration machinery.
 - Stitching controls geographic continuity only, never population or political
   intensity. Vanilla `OverallPopulation` stays authoritative for major-settlement
@@ -148,14 +148,29 @@ and essential inspection. A field becomes a control only when more than one
 valid choice exists. Generated-source labels, schema facts, receipts, and
 architectural explanation remain outside ordinary player copy.
 
-An established settlement owns an open causal settlement program. The program
-derives from its people, land, access, services, civic state, economy, trade,
-specialization, role, technology ceiling, and history, then resolves loaded
-functional assets through native contracts. It is not a development slider,
-facility bundle, or fixed enum. Provisions require a real household, communal,
-or authority operator with material support and a behavior consumer. Faction
-technology stays faction state; settlement research exists only where an actual
-research program and asset support it.
+An established settlement owns an open causal settlement program. Each active
+entry begins with a concrete need and records its actual operator, standing,
+knowledge, labor, material inputs, nodes, target population, access, funding,
+maintenance, behavior consumer, and failure condition. Broad tendencies and
+capability scores are summaries or planning pressures; they never instantiate a
+program. Loaded functional assets are selected only after the social and
+operational contract exists. A room, building, or worktable is a material node,
+not an institution.
+
+Domestic provision belongs to actual pawns or persistent domestic units formed
+from represented partner, kin, residence, or retained co-residential facts.
+Unresolved residents self-provision individually rather than becoming a
+hash-selected household. Communal and authority provision require actual
+organizations, workers, stock, access, funding, and distribution. Tax-funded
+provision additionally requires a legitimate authority, adopted tax policy,
+tax base, collection, and expenditure. Political Beliefs remain normative;
+they do not create current order or provision systems.
+
+Practiced capability is a domain-specific evidence assessment over actors,
+organizations, active work, knowledge, material nodes, history, blockers, and
+confidence. It contains no random jitter and cannot be the sole cause of the
+programs it summarizes. These causal-ownership constraints are ratified in the
+B10 audit and DR-133 through DR-144.
 
 Culture authoring begins with semantic social meanings and practices. Exact
 continuous values remain available as contextual fine tuning, not the default
