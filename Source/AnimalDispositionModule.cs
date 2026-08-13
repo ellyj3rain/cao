@@ -109,8 +109,7 @@ namespace ColonistAwareness
                     + wildness * 0.25f
                     + (race.predator ? 0.12f : 0f)
                     + (race.herdAnimal ? 0.08f : 0f)
-                    + cognition * 0.10f
-                    + StableVariation(pawn, 181243, 0.16f),
+                    + cognition * 0.10f,
 
                 nerve = 0.28f
                     + body * 0.24f
@@ -120,8 +119,7 @@ namespace ColonistAwareness
                     + cognition * 0.05f
                     - (race.herdAnimal ? 0.06f : 0f)
                     - pain * 0.28f
-                    + moodShift * 0.12f
-                    + StableVariation(pawn, 481931, 0.18f),
+                    + moodShift * 0.12f,
 
                 attachment = 0.04f
                     + Mathf.Clamp01(race.petness) * 0.38f
@@ -129,8 +127,7 @@ namespace ColonistAwareness
                     + (obedience ? 0.14f : 0f)
                     + (hasMaster ? 0.14f : 0f)
                     + (bonded ? 0.20f : 0f)
-                    - wildness * 0.12f
-                    + StableVariation(pawn, 769927, 0.10f),
+                    - wildness * 0.12f,
 
                 defensiveDrive = 0.12f
                     + body * 0.14f
@@ -140,7 +137,6 @@ namespace ColonistAwareness
                     + (directedAttack ? 0.12f : 0f)
                     + (bonded ? 0.06f : 0f)
                     - pain * 0.08f
-                    + StableVariation(pawn, 997651, 0.16f)
             };
 
             result.vigilance = Mathf.Clamp01(result.vigilance);
@@ -148,13 +144,6 @@ namespace ColonistAwareness
             result.attachment = Mathf.Clamp01(result.attachment);
             result.defensiveDrive = Mathf.Clamp01(result.defensiveDrive);
             return result;
-        }
-
-        private static float StableVariation(Pawn pawn, int salt, float amplitude)
-        {
-            int seed = Gen.HashCombineInt(pawn.thingIDNumber,
-                pawn.def.shortHash, salt, 582371);
-            return (Rand.ValueSeeded(seed) * 2f - 1f) * amplitude;
         }
 
         private static bool UsableAnchor(Pawn animal, Pawn anchor)

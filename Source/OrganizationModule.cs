@@ -89,6 +89,9 @@ namespace ColonistAwareness
         public string kindLabel;
         public string name;
         public string assignedOffice;
+        public string programKey;
+        public string operatorIdentity;
+        public string programSignature;
         // The actual guards, by pawn id - a practice without named
         // people is a label; with them, patrol behavior has someone to
         // send around the walls.
@@ -101,6 +104,9 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref kindLabel, "kindLabel");
             Scribe_Values.Look(ref name, "name");
             Scribe_Values.Look(ref assignedOffice, "assignedOffice");
+            Scribe_Values.Look(ref programKey, "programKey");
+            Scribe_Values.Look(ref operatorIdentity, "operatorIdentity");
+            Scribe_Values.Look(ref programSignature, "programSignature");
             Scribe_Collections.Look(ref guardPawnIds, "guardPawnIds",
                 LookMode.Value);
             if (Scribe.mode == LoadSaveMode.PostLoadInit
@@ -827,7 +833,8 @@ namespace ColonistAwareness
                 {
                     cost = 0.05f;
                     int fort, train;
-                    CapabilityAxesOf(target.organizationKey, out fort,
+                    CASettlementSecurityFacts.Read(target.organizationKey,
+                        out fort,
                         out train);
                     if (fort + train >= 5)
                     {
@@ -889,21 +896,6 @@ namespace ColonistAwareness
                 return m;
             }
             return null;
-        }
-
-        private static void CapabilityAxesOf(string key, out int fort,
-            out int train)
-        {
-            fort = 0; train = 0;
-            CARegionalWorldComponent regional =
-                CARegionalWorldComponent.Current;
-            if (regional == null) return;
-            for (int i = 0; i < regional.Records.Count; i++)
-            {
-                CARegionalSettlementRecord r = regional.Records[i];
-                if (r.regionalId + "#" + r.slot == key)
-                { fort = r.fortification; train = r.training; return; }
-            }
         }
 
         private static Ideo IdeoOf(CAOrganization organization)
@@ -1288,6 +1280,7 @@ namespace ColonistAwareness
 
     public sealed class CAOrganizationWorldComponent : WorldComponent
     {
+        private int authoringDataEpoch = CAAuthoringDataEpoch.Current;
         private List<CAOrganization> organizations = new List<CAOrganization>();
         private List<CAFrontierMapPlan> frontierMapPlans =
             new List<CAFrontierMapPlan>();
@@ -1507,7 +1500,7 @@ namespace ColonistAwareness
             int suitableCapacity = Mathf.Clamp(
                 map.Size.x * map.Size.z / 40000, 2, 8);
             int count = CAWorldTendencyCausalKernel.FrontierHoldingCount(
-                seed, suitableCapacity, policy.frontierHoldingFrequency);
+                suitableCapacity, policy.frontierHoldingFrequency);
             int landCapacity = FrontierLandCapacity(map);
             var created = new CAFrontierMapPlan
             {
@@ -1525,23 +1518,22 @@ namespace ColonistAwareness
             };
             for (int i = 0; i < count; i++)
             {
-                int household = CAWorldTendencyCausalKernel
-                    .FrontierHouseholdSize(seed, i, landCapacity,
+                int residents = CAWorldTendencyCausalKernel
+                    .FrontierResidentCount(landCapacity,
                         policy.frontierHoldingSize);
                 int material = CAWorldTendencyCausalKernel
-                    .FrontierMaterialLevel(seed, i, landCapacity,
+                    .FrontierMaterialLevel(landCapacity,
                         policy.frontierHoldingSize);
                 created.holdings.Add(new CAFrontierHoldingPlan
                 {
                     key = i,
                     memberTileId = tileId,
-                    householdSize = household,
+                    residentCount = residents,
                     landCapacity = landCapacity,
                     materialLevel = material,
                     form = CAWorldTendencyCausalKernel.FrontierForm(
-                        household, material),
-                    factionless = CAWorldTendencyCausalKernel.Unit(seed, i,
-                        1414213) < 0.45f
+                        residents, material),
+                    factionless = true
                 });
             }
             frontierMapPlans.Add(created);
@@ -1565,12 +1557,12 @@ namespace ColonistAwareness
                     || !keys.Add(holding.key)
                     || holding.landCapacity < 1
                     || holding.landCapacity > 3
-                    || holding.householdSize < 1
-                    || holding.householdSize > 6
+                    || holding.residentCount < 1
+                    || holding.residentCount > 6
                     || holding.materialLevel < 0
                     || holding.materialLevel > holding.landCapacity
                     || holding.form != CAWorldTendencyCausalKernel
-                        .FrontierForm(holding.householdSize,
+                        .FrontierForm(holding.residentCount,
                             holding.materialLevel))
                     return false;
             }
@@ -1819,8 +1811,8 @@ namespace ColonistAwareness
                                 + regional.Records[r].slot
                             == org.organizationKey)
                         {
-                            fort = regional.Records[r].fortification;
-                            train = regional.Records[r].training;
+                            CASettlementSecurityFacts.Read(
+                                org.organizationKey, out fort, out train);
                             break;
                         }
 
@@ -1901,47 +1893,21 @@ namespace ColonistAwareness
         {
             RunDiplomaticAppraisals(now);
             CAOrganization colony = EnsureColony();
-            // Production fills the treasury each quadrum. Payments are
-            // deducted from that treasury.
+            // Treasuries change only through represented transactions and
+            // adopted collection policy. A capability summary never mints
+            // money. Organizations with no rate or taxable parties collect
+            // nothing.
             for (int i = 0; i < organizations.Count; i++)
             {
                 CAOrganization o = organizations[i];
-                if (o.organizationKey == "player" || o.IsFederation
-                    || o.IsFactionOrganization) continue;
-                if (o.lastIncomeTick < 0) o.lastIncomeTick = now;
-                if (now - o.lastIncomeTick < 900000) continue;
-                o.lastIncomeTick = now;
-                CARegionalWorldComponent regional =
-                    CARegionalWorldComponent.Current;
-                if (regional == null) continue;
-                for (int r = 0; r < regional.Records.Count; r++)
+                if (o.lastIncomeTick < 0)
                 {
-                    CARegionalSettlementRecord rec = regional.Records[r];
-                    if (rec.regionalId + "#" + rec.slot != o.organizationKey)
-                        continue;
-                    o.treasury += 100f + rec.production * 60f;
-                    break;
-                }
-            }
-            // Tax collected from assigned parties, in addition to local
-            // production. An organization with no tax rate adopted
-            // and nobody bound to it collects nothing, which is why
-            // this changes no existing settlement until relations
-            // exist to be assessed.
-            for (int i = 0; i < organizations.Count; i++)
-            {
-                CAOrganization o = organizations[i];
-                if (o.IsFederation || o.IsFactionOrganization)
-                {
-                    // Shared taxation flows through the responsibilities on
-                    // the organization's typed member relations.
-                    if (now - o.lastIncomeTick < 900000) continue;
-                    if (CATaxation.RateOf(o) <= 0f) continue;
                     o.lastIncomeTick = now;
-                    CATaxation.Collect(o, this, now);
                     continue;
                 }
-                if (o.lastIncomeTick != now) continue;
+                if (now - o.lastIncomeTick < 900000) continue;
+                o.lastIncomeTick = now;
+                if (CATaxation.RateOf(o) <= 0f) continue;
                 CATaxation.Collect(o, this, now);
             }
             for (int i = 0; i < agreements.Count; i++)
@@ -2123,16 +2089,10 @@ namespace ColonistAwareness
             for (int i = 0; i < maps.Count; i++)
                 if (maps[i].IsPlayerHome) { home = maps[i]; break; }
             if (home == null) return;
+            // The agreement creates the obligation; actual stored treasury
+            // constrains what can be dispatched. Settlement capability is a
+            // read model and never changes the amount.
             int amount = 80;
-            CARegionalWorldComponent regional =
-                CARegionalWorldComponent.Current;
-            if (regional != null)
-                for (int i = 0; i < regional.Records.Count; i++)
-                {
-                    CARegionalSettlementRecord r = regional.Records[i];
-                    if (r.regionalId + "#" + r.slot == npcKey)
-                    { amount = 80 + r.production * 40; break; }
-                }
             // A protected settlement with enough public support may withhold
             // tribute after imposed policies or broken agreements.
             if (label == "tribute" && comp.kind == "protection"
@@ -2339,30 +2299,59 @@ namespace ColonistAwareness
         public override void ExposeData()
         {
             base.ExposeData();
-            Scribe_Values.Look(ref arrivalLoud, "CA_arrivalLoud", false);
-            Scribe_Values.Look(ref arrivalTick, "CA_arrivalTick", -1);
-            Scribe_Values.Look(ref arrivalCell, "CA_arrivalCell",
-                IntVec3.Invalid);
-            Scribe_Collections.Look(ref organizations, "CA_organizations",
-                LookMode.Deep);
-            Scribe_Collections.Look(ref frontierMapPlans,
-                "CA_frontierMapPlans", LookMode.Deep);
-            Scribe_Collections.Look(ref agreements, "CA_agreements",
-                LookMode.Deep);
-            Scribe_Values.Look(ref nextAgreementId, "CA_nextAgreementId", 1);
-            Scribe_Collections.Look(ref breachCases, "CA_breachCases",
-                LookMode.Deep);
-            Scribe_Values.Look(ref nextCaseId, "CA_nextCaseId", 1);
-            Scribe_Collections.Look(ref hostileActs, "CA_hostileActs",
-                LookMode.Deep);
-            Scribe_Collections.Look(ref offers, "CA_offers", LookMode.Deep);
-            Scribe_Collections.Look(ref pendingGatherings,
-                "CA_pendingGatherings", LookMode.Deep);
-            Scribe_Values.Look(ref nextOfferId, "CA_nextOfferId", 1);
-            Scribe_Values.Look(ref lastInitiativeTick,
-                "CA_lastInitiativeTick", -999999);
-            Scribe_Values.Look(ref offMapActivityCursor,
-                "CA_offMapActivityCursor", 0);
+            Scribe_Values.Look(ref authoringDataEpoch,
+                "CA_authoringDataEpoch", 0);
+            bool current = Scribe.mode == LoadSaveMode.Saving
+                || CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch);
+            if (current)
+            {
+                Scribe_Values.Look(ref arrivalLoud, "CA_arrivalLoud", false);
+                Scribe_Values.Look(ref arrivalTick, "CA_arrivalTick", -1);
+                Scribe_Values.Look(ref arrivalCell, "CA_arrivalCell",
+                    IntVec3.Invalid);
+                Scribe_Collections.Look(ref organizations,
+                    "CA_organizations", LookMode.Deep);
+                Scribe_Collections.Look(ref frontierMapPlans,
+                    "CA_frontierMapPlans", LookMode.Deep);
+                Scribe_Collections.Look(ref agreements, "CA_agreements",
+                    LookMode.Deep);
+                Scribe_Values.Look(ref nextAgreementId,
+                    "CA_nextAgreementId", 1);
+                Scribe_Collections.Look(ref breachCases, "CA_breachCases",
+                    LookMode.Deep);
+                Scribe_Values.Look(ref nextCaseId, "CA_nextCaseId", 1);
+                Scribe_Collections.Look(ref hostileActs, "CA_hostileActs",
+                    LookMode.Deep);
+                Scribe_Collections.Look(ref offers, "CA_offers",
+                    LookMode.Deep);
+                Scribe_Collections.Look(ref pendingGatherings,
+                    "CA_pendingGatherings", LookMode.Deep);
+                Scribe_Values.Look(ref nextOfferId, "CA_nextOfferId", 1);
+                Scribe_Values.Look(ref lastInitiativeTick,
+                    "CA_lastInitiativeTick", -999999);
+                Scribe_Values.Look(ref offMapActivityCursor,
+                    "CA_offMapActivityCursor", 0);
+            }
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && !current)
+            {
+                organizations = new List<CAOrganization>();
+                frontierMapPlans = new List<CAFrontierMapPlan>();
+                agreements = new List<CAAgreement>();
+                breachCases = new List<CABreachCase>();
+                hostileActs = new List<CAHostileActRecord>();
+                offers = new List<CAAgreementOffer>();
+                pendingGatherings = new List<CAPendingGathering>();
+                nextAgreementId = 1;
+                nextCaseId = 1;
+                nextOfferId = 1;
+                lastInitiativeTick = -999999;
+                offMapActivityCursor = 0;
+                arrivalLoud = false;
+                arrivalTick = -1;
+                arrivalCell = IntVec3.Invalid;
+                authoringDataEpoch = CAAuthoringDataEpoch.Current;
+                CAAuthoringDataEpoch.RecordDiscard("organization state");
+            }
             if (organizations == null)
                 organizations = new List<CAOrganization>();
             if (frontierMapPlans == null)
@@ -2375,7 +2364,7 @@ namespace ColonistAwareness
             if (offers == null) offers = new List<CAAgreementOffer>();
             if (pendingGatherings == null)
                 pendingGatherings = new List<CAPendingGathering>();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && current)
                 CAMembershipValidation.Run(organizations);
         }
     }
@@ -2742,25 +2731,6 @@ namespace ColonistAwareness
             if (anySquads) Adopt(org, "squad organization", "practiced");
             if (stackActive) Adopt(org, "stack and breach", "practiced");
 
-            // Skilled fighters can establish basic combat customs in a new
-            // colony before the player has used them there.
-            int bestCombat = 0;
-            for (int i = 0; i < colonists.Count; i++)
-            {
-                var skills = colonists[i].skills;
-                if (skills == null) continue;
-                int s = Mathf.Max(
-                    skills.GetSkill(SkillDefOf.Shooting).Level,
-                    skills.GetSkill(SkillDefOf.Melee).Level);
-                if (s > bestCombat) bestCombat = s;
-            }
-            if (bestCombat >= 6)
-            {
-                Adopt(org, "formation", "known by a skilled fighter");
-                Adopt(org, "line", "known by a skilled fighter");
-            }
-            if (bestCombat >= 10)
-                Adopt(org, "ambush", "known by a skilled fighter");
         }
 
         private static void Adopt(CAOrganization org, string key,
@@ -3080,13 +3050,10 @@ namespace ColonistAwareness
             return false;
         }
 
-        // Regional settlements: every materialized settlement record gets an
-        // organization, seeded from what its materialization actually
-        // produced - resident pawns, capability axes, faction identity. The
-        // populated regional world is already socially organized; this makes
-        // that organization a persistent object. Observation-based (no edits
-        // to the regional lane's files): records with a live map and no org
-        // yet are seeded within one sync cadence of materializing.
+        // This cadence updates organizations that already exist as represented
+        // institutions. A settlement record, map, resident population, or
+        // capability assessment does not constitute an organization and may
+        // not create one here.
         public static void SyncRegionalSettlements(
             CAOrganizationWorldComponent comp)
         {
@@ -3095,9 +3062,6 @@ namespace ColonistAwareness
             if (regional == null) return;
             IReadOnlyList<CARegionalSettlementRecord> records =
                 regional.Records;
-            // Load-smoothing: seed at most TWO settlements per pulse so
-            // the first minute after the big load is a ripple, not a spike.
-            int seededThisPulse = 0;
             for (int i = 0; i < records.Count; i++)
             {
                 CARegionalSettlementRecord record = records[i];
@@ -3105,29 +3069,9 @@ namespace ColonistAwareness
                 Map map = FindMap(record.lastMapId);
                 string key = record.regionalId + "#" + record.slot;
                 CAOrganization org = comp.ByKey(key);
-                if (org == null)
-                {
-                    if (map == null || seededThisPulse >= 2) continue;
-                    seededThisPulse++;
-                    org = comp.EnsureFor(key, record.name,
-                        record.faction.Name + " - "
-                        + record.FactionEraLabel + "; "
-                        + record.OperationalRoleText(),
-                        CAOrganizationKind.Settlement);
-                    SeedSettlementOrg(org, record, map);
-                }
-                else
-                {
-                    // Organization customs follow realized social order even
-                    // while the map is unloaded. Political beliefs remain a
-                    // separate standard against which that order is judged.
-                    CAPoliticalBeliefPractice.ReconcileCurrentStructure(org,
-                        CAFactionStateWorldComponent.Current
-                            ?.Find(record.faction)?.factionStructure);
-                    if (map != null)
-                        RefreshSettlementOrg(org, record, map);
-                }
-                CAProvisionArrangements.ReconcileTaxFunding(record);
+                if (org == null) continue;
+                if (map != null)
+                    RefreshSettlementOrg(org, record, map);
             }
             ReconcileHostileAgreements(comp.EnsureColony(), records);
         }
@@ -3165,188 +3109,6 @@ namespace ColonistAwareness
                     "travelers arrived quietly and settled nearby");
         }
 
-        private static void SeedSettlementOrg(CAOrganization org,
-            CARegionalSettlementRecord record, Map map)
-        {
-            NoteArrival(org, record);
-            org.Record("settlement organization established - seeded at"
-                + " materialization of " + record.name);
-
-            // Seed organization customs from the realized social order.
-            CAPoliticalBeliefPractice.ReconcileCurrentStructure(org,
-                CAFactionStateWorldComponent.Current
-                    ?.Find(record.faction)?.factionStructure);
-            if (record.generationSummary != null)
-                org.Record("organization", "starting state: "
-                    + record.generationSummary);
-
-            Pawn head = PickHead(record, map, -1);
-            if (head != null)
-            {
-                string title = record.faction.def.leaderTitle
-                    .NullOrEmpty() ? "leader"
-                    : record.faction.def.leaderTitle;
-                org.offices.Add(new CAOffice
-                {
-                    sourceKey = "head",
-                    name = title.CapitalizeFirst(),
-                    seniority = 900,
-                    holderId = head.thingIDNumber,
-                    holderLabel = head.LabelShort,
-                    grants = "settlement leadership"
-                });
-                org.Record("office established - "
-                    + title.CapitalizeFirst() + ", held by "
-                    + head.LabelShort);
-            }
-
-            List<Pawn> residents = ResidentsOf(record, map);
-            var armedIds = new List<int>();
-            for (int i = 0; i < residents.Count; i++)
-                if (residents[i].equipment?.Primary != null)
-                    armedIds.Add(residents[i].thingIDNumber);
-            if (armedIds.Count > 0)
-                org.groups.Add(new CAOrganizationGroup
-                {
-                    name = "armed group",
-                    memberIds = armedIds,
-                    standing = residents.Count > 0
-                        ? (float)armedIds.Count / residents.Count : 0f
-                });
-            var laborIds = new List<int>();
-            for (int i = 0; i < residents.Count; i++)
-                if (residents[i].equipment?.Primary == null)
-                    laborIds.Add(residents[i].thingIDNumber);
-            if (laborIds.Count > 0)
-                org.groups.Add(new CAOrganizationGroup
-                {
-                    name = "labor",
-                    memberIds = laborIds,
-                    standing = residents.Count > 0
-                        ? (float)laborIds.Count / residents.Count : 0f
-                });
-
-            if (record.training >= 2)
-                SeedCustom(org, "formation");
-            if (record.fortification >= 2)
-                SeedCustom(org, "line");
-            if (record.training >= 3)
-                SeedCustom(org, "ambush");
-
-            // The organization's standing defense as a real arrangement: a
-            // line on its own perimeter, owned by the organization - the
-            // discoverable object the player may find, join the fight over,
-            // or inherit. Only where the record's fortification produced an
-            // actual defended edge.
-            if (record.fortification >= 2
-                && record.localRect != CellRect.Empty)
-            {
-                var comp2 = CAArrangementMapComponent.For(map);
-                if (comp2 != null)
-                {
-                    List<IntVec3> edge = PerimeterCells(record.localRect,
-                        map);
-                    CAArrangement line = comp2.CreateForOrganization(
-                        org.organizationKey, record.name,
-                        CAArrangementKind.Line, edge);
-                    if (line != null)
-                    {
-                        org.securityPractices.Add(new CASecurityPractice
-                        {
-                            mapId = map.uniqueID,
-                            arrangementId = line.id,
-                            kindLabel = "line",
-                            name = line.name,
-                            assignedOffice = org.offices.Count > 0
-                                ? org.offices[0].name : null
-                        });
-                        org.Record("security practice registered - "
-                            + line.name);
-                    }
-                }
-            }
-
-            org.treasury = 200f + record.production * 150f
-                + record.logistics * 50f;
-            org.claims.Add(new CAClaim
-            {
-                kind = "core",
-                label = "settlement ground",
-                area = record.localRect.Area,
-                mapId = map.uniqueID
-            });
-            if (record.cultivatedPlantCount > 0)
-                org.claims.Add(new CAClaim
-                {
-                    kind = "worked land",
-                    label = "cultivation",
-                    area = record.cultivatedPlantCount,
-                    mapId = map.uniqueID
-                });
-            int roadCells = 0;
-            for (int x = record.localRect.minX; x <= record.localRect.maxX;
-                x += 3)
-                for (int z = record.localRect.minZ;
-                    z <= record.localRect.maxZ; z += 3)
-                {
-                    IntVec3 rc = new IntVec3(x, 0, z);
-                    if (!rc.InBounds(map)) continue;
-                    TerrainDef t = rc.GetTerrain(map);
-                    if (t != null && t.IsRoad) roadCells++;
-                }
-            if (roadCells > 0)
-                org.claims.Add(new CAClaim
-                {
-                    kind = "road interest",
-                    label = "road through settlement ground (sampled)",
-                    area = roadCells,
-                    mapId = map.uniqueID
-                });
-
-            CASettlementDevelopmentProposal creationProposal =
-                CASettlementAssetRegistry.CreationFromRecord(record);
-            record.creationSitingEvaluated = true;
-            record.creationSitingFeasible =
-                CASettlementAssetRegistry.CanSiteCreationDemands(map,
-                    record.localRect, creationProposal,
-                    out string creationSitingBlocker);
-            record.creationMaterialFeasible =
-                creationProposal.MaterialFeasible;
-            record.creationProposalSignature =
-                creationProposal.StableSignature();
-            record.creationExecutable = record.creationAuthorized
-                && record.creationMaterialFeasible
-                && record.creationSitingFeasible;
-            record.creationBlocker = record.creationExecutable
-                ? null : creationSitingBlocker ?? record.creationBlocker
-                    ?? "confirmed creation history is not materializable";
-            if (record.creationExecutable)
-            {
-                CASettlementProgramMaterializer.Materialize(org, record, map);
-            }
-            else
-                org.Record("works", "confirmed creation history blocked - "
-                    + record.creationBlocker);
-            // Apply faction structure after residents and furnishings exist:
-            // offices, facility holdings, staffed posts, membership, and
-            // security practices.
-            CAAxisMaterialization.Apply(org, record, map);
-            // Provision programs become complete only after the axis pass has
-            // created their holdings, access, staffing, and funding behavior.
-            CAProvisionArrangements.CompleteMaterialization(record, map);
-            // Future work now reads the realized institution and current
-            // material settlement. It does not inherit creation feasibility.
-            RefreshDevelopmentAuthority(org, record, map);
-            record.layout = CASettlementLayoutBuilder.Build(record, map);
-            if (record.layout != null && record.layout.gates.Count > 0)
-                org.Record("settlement", "layout recorded - "
-                    + record.layout.gates.Count + " entrances, "
-                    + record.layout.roomRoles.Count + " rooms, "
-                    + record.layout.facilityKinds.Count
-                    + " facilities");
-            LogGraph(record, map);
-        }
-
         internal static void RefreshDevelopmentAuthority(CAOrganization org,
             CARegionalSettlementRecord record, Map map)
         {
@@ -3376,15 +3138,17 @@ namespace ColonistAwareness
             record.developmentProposer = org?.name ?? org?.organizationKey;
             record.developmentApprover = developmentAuthorized
                 ? developmentIntent.AuthorityIdentity : null;
-            record.developmentLaborSource = "current native settlement residents";
-            record.developmentBeneficiaries = map?.mapPawns
-                    ?.SpawnedPawnsInFaction(record.faction)
-                    ?.Where(pawn => pawn != null && !pawn.Dead
+            record.developmentLaborSource = proposal.LaborBasis;
+            record.developmentBeneficiaries = map == null
+                ? new List<string>()
+                : CAPopulationProjection.Residents(record, map)
+                    .Where(pawn => pawn != null && !pawn.Dead
+                        && pawn.Faction == record.faction
                         && pawn.RaceProps.Humanlike && !pawn.IsPrisoner)
                     .Select(pawn => pawn.LabelShort)
                     .Distinct().OrderBy(label => label,
                         StringComparer.Ordinal).ToList()
-                ?? new List<string>();
+                ;
             if (record.developmentBeneficiaries.Count == 0)
                 record.developmentBeneficiaries.Add(
                     "current settlement residents");
@@ -3445,10 +3209,13 @@ namespace ColonistAwareness
             CARegionalSettlementRecord record, Map map)
         {
             int now = Find.TickManager.TicksGame;
-            List<Pawn> residents = ResidentsOf(record, map);
+            List<Pawn> residents = CAPopulationProjection.Residents(record,
+                map);
             RefreshDevelopmentAuthority(org, record, map);
 
-            // Fold-back: settlement losses cost their organization standing.
+            // Population loss and warnings are observations of represented
+            // events. This cadence does not appoint successors, create armed
+            // groups, improve defenses, or infer an institution from a score.
             if (org.lastPopulation >= 0
                 && residents.Count < org.lastPopulation)
             {
@@ -3458,209 +3225,34 @@ namespace ColonistAwareness
                 org.Record("losses", "losses suffered - " + lost
                     + " residents fewer; public support now "
                     + org.publicSupport.ToStringPercent());
-                // Neighbors record when a settlement goes silent.
                 if (residents.Count == 0)
                     NotifySettlementSilent(org, record);
             }
             org.lastPopulation = residents.Count;
 
-            // An allied settlement under attack sends a warning and opens a
-            // response deadline.
             if (AlliedToPlayer(org) && now - org.lastWarningTick > 60000
                 && record.localRect != CellRect.Empty
                 && UnderAttack(record, map))
             {
-                CAOrganizationWorldComponent wc =
+                CAOrganizationWorldComponent world =
                     CAOrganizationWorldComponent.Current;
-                if (wc != null && wc.OpenCaseFor(org.organizationKey) == null)
+                if (world != null
+                    && world.OpenCaseFor(org.organizationKey) == null)
                 {
                     org.lastWarningTick = now;
-                    wc.OpenBreachCase("answer the warning", "player",
+                    world.OpenBreachCase("answer the warning", "player",
                         org.organizationKey, now + 60000, -1);
                     Messages.Message("Warning from " + record.name
-                        + " (warning agreement): hostiles at their"
-                        + " settlement.",
+                        + " (warning agreement): hostiles at their settlement.",
                         new LookTargets(record.localRect.CenterCell, map),
                         MessageTypeDefOf.ThreatSmall, false);
-                    wc.EnsureColony().Record("warning-received",
+                    world.EnsureColony().Record("warning-received",
                         "warning received from " + record.name
                         + " - hostiles at their settlement; relief expected");
                 }
             }
             ProcessBreachCase(org, record, map, now);
-
-            // An office vacant for a full quadrum is removed if the settlement
-            // remains orderly without it.
-            for (int i = org.offices.Count - 1; i >= 0; i--)
-            {
-                CAOffice o = org.offices[i];
-                if (o.holderId >= 0 || o.vacantSinceTick <= 0) continue;
-                if (now - o.vacantSinceTick < 900000) continue;
-                if (org.publicSupport < 0.35f) continue;
-                org.Record("office", "the office withered - " + o.name
-                    + " sat vacant a season; none claimed it, none missed"
-                    + " it; the settlement orders itself");
-                org.offices.RemoveAt(i);
-                org.publicSupport = Mathf.Max(org.publicSupport, 0.6f);
-            }
-
-            // A collapsing organization (public support
-            // under 0.35) with an armed strongman outside the head office
-            // is seized - deterministic, inspectable, no dice. The
-            // strongman resets the organization around himself; whether
-            // his line becomes a dynasty is for the successions to say.
-            if (org.publicSupport < 0.35f && org.offices.Count > 0)
-            {
-                CAOffice head = org.offices[0];
-                CAOrganizationGroup armedGroup = null;
-                for (int i = 0; i < org.groups.Count; i++)
-                    if (org.groups[i].name == "armed group")
-                    { armedGroup = org.groups[i]; break; }
-                if (armedGroup != null && armedGroup.memberIds.Count > 0)
-                {
-                    Pawn strongman = null;
-                    float best = -1f;
-                    for (int i = 0; i < armedGroup.memberIds.Count; i++)
-                    {
-                        Pawn p = FindPawn(map, armedGroup.memberIds[i]);
-                        if (p == null || p.Dead
-                            || p.thingIDNumber == head.holderId) continue;
-                        float pow = p.kindDef != null
-                            ? p.kindDef.combatPower : 0f;
-                        if (pow > best) { best = pow; strongman = p; }
-                    }
-                    if (strongman != null)
-                    {
-                        head.lastHolderId = head.holderId;
-                        head.holderId = strongman.thingIDNumber;
-                        head.holderLabel = strongman.LabelShort;
-                        head.usurped = true;
-                        org.publicSupport = 0.5f;
-                        org.Record("office", "COUP - " + strongman.LabelShort
-                            + " of the armed group seized " + head.name
-                            + " amid collapse; the organization resets"
-                            + " around the strongman");
-                    }
-                }
-            }
-
-            // Organizational construction intent, first expression: a
-            // well-fortified settlement maintains and improves its own
-            // standing line during play - sandbags fill the gaps.
-            if (record.fortification >= 3
-                && now - org.lastImproveTick > 180000)
-            {
-                org.lastImproveTick = now;
-                int added = ImproveLine(org, record, map);
-                if (added > 0)
-                    org.Record("defenses improved - " + added
-                        + " sandbag positions added along the line");
-            }
-
-            // Succession: a dead or vanished head is replaced from the
-            // settlement's own living residents - never fabricated, unlike
-            // the engine's stranger-succession. Logged as a decision.
-            for (int i = 0; i < org.offices.Count; i++)
-            {
-                CAOffice office = org.offices[i];
-                if (office.sourceKey != "head") continue;
-                Pawn holder = FindPawn(map, office.holderId);
-                if (holder != null && !holder.Dead && holder.Spawned)
-                    continue;
-                // A stable, lightly militarized collectivist
-                // commune (high public support, barely militarized) does not
-                // refill a fallen head - none step forward, the commune
-                // continues. The office sits vacant; disuse will wither
-                // it, and anarchism becomes readable from lived practice.
-                if (office.holderId < 0 && office.vacantSinceTick > 0)
-                    continue;
-                if (org.publicSupport >= 0.7f && office.holderId >= 0
-                    && HasMeme(record, "Collectivist"))
-                {
-                    CAOrganizationGroup armedGroup = null;
-                    for (int ab = 0; ab < org.groups.Count; ab++)
-                        if (org.groups[ab].name == "armed group")
-                        { armedGroup = org.groups[ab]; break; }
-                    if (armedGroup == null || armedGroup.standing < 0.3f)
-                    {
-                        org.Record("office", "none stepped forward - the"
-                            + " commune continues without a head");
-                        office.lastHolderId = office.holderId;
-                        office.holderId = -1;
-                        office.holderLabel = null;
-                        office.vacantSinceTick = now;
-                        continue;
-                    }
-                }
-                Pawn heir = null;
-                bool byBlood = false;
-                if (office.successionRule == "hereditary"
-                    && office.holderId >= 0)
-                    heir = FindKinHeir(record, map, office.holderId);
-                if (heir != null) byBlood = true;
-                else heir = PickHead(record, map, office.holderId);
-                if (heir != null)
-                {
-                    bool kinOfLast = byBlood
-                        || IsKinOf(heir, office.holderId);
-                    int predecessor = office.holderId;
-                    string predecessorLabel = office.holderLabel;
-                    office.lastHolderId = predecessor;
-                    office.holderId = heir.thingIDNumber;
-                    office.holderLabel = heir.LabelShort;
-                    if (kinOfLast)
-                    {
-                        office.kinSuccessions++;
-                        if (office.usurped)
-                        {
-                            office.usurped = false;
-                            org.Record("office",
-                                "the line is legitimized - blood follows"
-                                + " the usurper; a true dynasty now");
-                        }
-                        if (office.successionRule != "hereditary")
-                        {
-                            office.successionRule = "hereditary";
-                            org.Record("office", "succession by blood is"
-                                + " now the custom - " + office.name
-                                + " passes within the line");
-                        }
-                        org.Record("office", "the office passes by blood"
-                            + " - " + heir.LabelShort + " succeeds "
-                            + (predecessorLabel ?? "the fallen"));
-                    }
-                    else if (office.successionRule == "hereditary")
-                    {
-                        office.usurped = true;
-                        org.publicSupport = Mathf.Max(0.2f,
-                            org.publicSupport - 0.15f);
-                        org.Record("office", "USURPED - no blood heir"
-                            + " stood; " + heir.LabelShort + " seized "
-                            + office.name + " (public support "
-                            + org.publicSupport.ToStringPercent() + ")");
-                    }
-                    else
-                    {
-                        org.Record("office", "office changed hands - "
-                            + office.name + ": "
-                            + (predecessorLabel ?? "vacant") + " -> "
-                            + heir.LabelShort
-                            + (holder == null ? " (predecessor lost)"
-                                : " (predecessor dead)"));
-                    }
-                }
-                else if (office.holderLabel != null)
-                {
-                    org.Record("office", "office vacant - " + office.name
-                        + " has no living successor among residents");
-                    office.holderId = -1;
-                    office.holderLabel = null;
-                    office.vacantSinceTick = now;
-                    org.publicSupport = Mathf.Max(0.2f, org.publicSupport - 0.2f);
-                }
-            }
         }
-
         private static void NotifySettlementSilent(CAOrganization fallen,
             CARegionalSettlementRecord record)
         {
@@ -3851,140 +3443,6 @@ namespace ColonistAwareness
             return CAOrganizationStances.Between(colony, org) == "Ally";
         }
 
-        private static int ImproveLine(CAOrganization org,
-            CARegionalSettlementRecord record, Map map)
-        {
-            var comp = CAArrangementMapComponent.For(map);
-            if (comp == null) return 0;
-            CAArrangement line = null;
-            for (int i = 0; i < org.securityPractices.Count; i++)
-            {
-                CASecurityPractice sp = org.securityPractices[i];
-                if (sp.mapId != map.uniqueID) continue;
-                for (int j = 0; j < comp.All.Count; j++)
-                    if (comp.All[j].id == sp.arrangementId
-                        && comp.All[j].kind == (int)CAArrangementKind.Line)
-                    { line = comp.All[j]; break; }
-                if (line != null) break;
-            }
-            if (line == null) return 0;
-            int added = 0;
-            for (int i = 0; i < line.cells.Count && added < 4; i++)
-            {
-                IntVec3 c = line.cells[i];
-                if (!c.InBounds(map) || !c.Standable(map)) continue;
-                if (c.GetEdifice(map) != null) continue;
-                try
-                {
-                    Thing bags = ThingMaker.MakeThing(ThingDefOf.Sandbags,
-                        ThingDefOf.Cloth);
-                    bags.SetFaction(record.faction);
-                    GenSpawn.Spawn(bags, c, map);
-                    added++;
-                }
-                catch { break; }
-            }
-            return added;
-        }
-
-        private static bool HasMeme(CARegionalSettlementRecord record,
-            string memeDefName)
-        {
-            try
-            {
-                Ideo ideo = record.faction?.ideos?.PrimaryIdeo;
-                if (ideo == null) return false;
-                for (int i = 0; i < ideo.memes.Count; i++)
-                    if (ideo.memes[i].defName == memeDefName) return true;
-            }
-            catch { }
-            return false;
-        }
-
-        private static bool IsKinOf(Pawn candidate, int predecessorId)
-        {
-            if (candidate?.relations == null || predecessorId < 0)
-                return false;
-            try
-            {
-                var rels = candidate.relations.DirectRelations;
-                for (int i = 0; i < rels.Count; i++)
-                    if (rels[i].otherPawn != null
-                        && rels[i].otherPawn.thingIDNumber == predecessorId)
-                        return true;
-            }
-            catch { }
-            return false;
-        }
-
-        private static Pawn FindKinHeir(CARegionalSettlementRecord record,
-            Map map, int predecessorId)
-        {
-            List<Pawn> residents = ResidentsOf(record, map);
-            for (int i = 0; i < residents.Count; i++)
-                if (!residents[i].Dead
-                    && IsKinOf(residents[i], predecessorId))
-                    return residents[i];
-            return null;
-        }
-
-        private static Pawn PickHead(CARegionalSettlementRecord record,
-            Map map, int excludeId)
-        {
-            List<Pawn> residents = ResidentsOf(record, map);
-            Pawn best = null;
-            float bestPower = -1f;
-            for (int i = 0; i < residents.Count; i++)
-            {
-                Pawn p = residents[i];
-                if (p.thingIDNumber == excludeId || p.Dead) continue;
-                if (p.kindDef != null && p.kindDef.factionLeader) return p;
-                float power = p.kindDef != null ? p.kindDef.combatPower : 0f;
-                if (power > bestPower) { bestPower = power; best = p; }
-            }
-            return best;
-        }
-
-        private static List<Pawn> ResidentsOf(
-            CARegionalSettlementRecord record, Map map)
-        {
-            return CAPopulationProjection.Residents(record, map);
-        }
-
-        private static Pawn FindPawn(Map map, int id)
-        {
-            if (map == null || id < 0) return null;
-            List<Pawn> pawns = map.mapPawns.AllPawns;
-            for (int i = 0; i < pawns.Count; i++)
-                if (pawns[i].thingIDNumber == id) return pawns[i];
-            return null;
-        }
-
-        private static List<IntVec3> PerimeterCells(CellRect rect, Map map)
-        {
-            var cells = new List<IntVec3>();
-            int step = 0;
-            foreach (IntVec3 c in rect.EdgeCells)
-            {
-                if (step++ % 2 != 0) continue;
-                if (c.InBounds(map)) cells.Add(c);
-            }
-            return cells;
-        }
-
-        private static void SeedCustom(CAOrganization org, string key)
-        {
-            if (org.HasCustom(key)) return;
-            org.customs.Add(new CAOrganizationCustom
-            {
-                key = key,
-                source = "generated",
-                adoptedTick = Find.TickManager.TicksGame
-            });
-        }
-
-        // Native faction relations are authoritative. Hostility directly
-        // closes agreements without saving a second stance model.
         private static void ReconcileHostileAgreements(
             CAOrganization colony,
             IReadOnlyList<CARegionalSettlementRecord> records)
@@ -5251,12 +4709,13 @@ namespace ColonistAwareness
                 + "the resulting boundary. Materials, paving, and defenses "
                 + "depend on local resources and development." },
             new[] { "Settlement composition",
-                "Population, ground, access, services, current order, economy, "
-                + "regional role, and history determine which settlement "
-                + "programs are present when play begins." },
+                "A starting program exists only where its saved contract names "
+                + "the need, operator, labor, knowledge, material, access, and "
+                + "maintenance it requires." },
             new[] { "Provision arrangements",
-                "Food, medicine, shelter, and supplies follow the population, "
-                + "current order, and settlement program." },
+                "Each provision arrangement names its actual operator, funding, "
+                + "stock, material nodes, access rule, and eligible residents. "
+                + "Missing parts block that arrangement." },
             new[] { "Repairs and research",
                 "Residents repair damaged settlement buildings and replace "
                 + "destroyed program assets through normal work. Active "
@@ -5275,7 +4734,7 @@ namespace ColonistAwareness
             new[] { "Frontier holdings",
                 "Frontier sites range from cabins to developed homesteads. "
                 + "They may belong to a faction or remain unaffiliated. "
-                + "Frequency controls holding count. Size controls household "
+                + "Frequency controls holding count. Size controls residents "
                 + "and material form within local land limits." },
             new[] { "Organizations",
                 "Settlements track offices, policies, claims, security "

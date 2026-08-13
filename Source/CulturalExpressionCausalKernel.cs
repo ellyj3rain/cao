@@ -16,7 +16,7 @@ namespace ColonistAwareness
         public int Share;
         public string IdeoligionSource;
         public string BeliefSource;
-        public bool SeparateQuarter;
+        public bool IdeoligionProtected;
     }
 
     public sealed class CACulturalWeightedBeliefCause
@@ -63,8 +63,6 @@ namespace ColonistAwareness
         public int Role = -1;
         public int Scale = -1;
         public int Form = -1;
-        public int Fortification = -1;
-        public int Organization = -1;
         public bool Road;
         public bool River;
         public bool Coast;
@@ -156,7 +154,7 @@ namespace ColonistAwareness
         public string Label;
         public int Share;
         public bool Inherited;
-        public bool SeparateQuarter;
+        public bool IdeoligionProtected;
     }
 
     public sealed class CACulturalTransitionState
@@ -401,7 +399,7 @@ namespace ColonistAwareness
         }
     }
 
-    // Pure B5 causal operations shared by production adapters and executable
+    // Pure causal operations shared by production adapters and executable
     // receipts. RimWorld-facing code gathers facts; this kernel changes no
     // authored, saved, or materialized state.
     public static class CACulturalExpressionCausalKernel
@@ -423,7 +421,8 @@ namespace ColonistAwareness
                 .OrderByDescending(item => item.Share)
                 .ThenBy(item => item.Identity, StringComparer.Ordinal)
                 .ToList();
-            int quartered = populations.Count(item => item.SeparateQuarter);
+            int protectedIdeoligions = populations.Count(item =>
+                item.IdeoligionProtected);
             int ideologySources = input.PopulationIdeoligionIdentities != null
                 && input.PopulationIdeoligionIdentities.Count > 0
                 ? input.PopulationIdeoligionIdentities
@@ -447,7 +446,7 @@ namespace ColonistAwareness
                 .ThenBy(item => item.Key, StringComparer.Ordinal).ToList();
             bool plural = constituents.Count > 1 || (populations.Count > 1
                 && (ideologySources > 1 || beliefSources > 1
-                    || quartered > 0));
+                    || protectedIdeoligions > 0));
             int status = Status(input.Tension, plural, input.Founding,
                 input.CultureTransitionCount, practices.Count);
 
@@ -494,8 +493,6 @@ namespace ColonistAwareness
                 "residents/land=" + input.Residents + "/" + input.Land,
                 "role/scale/form=" + input.Role + "/" + input.Scale + "/"
                     + input.Form,
-                "fortification/organization=" + input.Fortification + "/"
-                    + input.Organization,
                 "settlement programs=" + (input.SettlementPrograms
                     ?? "none"),
                 "provisions=" + (input.ProvisionFingerprint ?? "none"),
@@ -556,7 +553,8 @@ namespace ColonistAwareness
                         ?? "Culture not recorded",
                     Share = group.Sum(item => item.Share),
                     Inherited = group.Any(item => item.Inherited),
-                    SeparateQuarter = group.Any(item => item.SeparateQuarter)
+                    IdeoligionProtected = group.Any(item =>
+                        item.IdeoligionProtected)
                 })
                 .OrderByDescending(item => item.Share)
                 .ThenBy(item => item.CultureId, StringComparer.Ordinal)
@@ -569,7 +567,8 @@ namespace ColonistAwareness
             return string.Join(",", NormalizeConstituents(values).Select(item =>
                 item.CultureId + ":" + item.Share + ":"
                     + (item.Inherited ? "inherited" : "local") + ":"
-                    + (item.SeparateQuarter ? "separate" : "shared")));
+                    + (item.IdeoligionProtected
+                        ? "Ideoligion-protected" : "unprotected")));
         }
 
         public static string PracticeFingerprint(
@@ -637,7 +636,8 @@ namespace ColonistAwareness
                 .Select(item => item.Share + "%:" + (item.Key ?? "group")
                     + ":" + (item.IdeoligionSource ?? "default") + ":"
                     + (item.BeliefSource ?? "default") + ":"
-                    + (item.SeparateQuarter ? "quarter" : "shared"))
+                    + (item.IdeoligionProtected
+                        ? "Ideoligion-protected" : "unprotected"))
                 .ToArray();
             return normalized.Length == 0 ? "none" : string.Join(",", normalized);
         }

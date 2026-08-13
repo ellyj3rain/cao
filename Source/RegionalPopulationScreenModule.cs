@@ -90,35 +90,9 @@ namespace ColonistAwareness
                     Verse.Find.GameInitData.mapSize, out profile);
             if (plan != null)
             {
-                if (!plan.confirmed)
-                {
-                    // Page entry is a draft initialization boundary. Confirmed
-                    // plans are immutable and only validated below.
-                    if (plan.worldPolicy == null)
-                        plan.worldPolicy =
-                            CAWorldTendenciesSession.Policy.Copy();
-                    if (plan.regionName.NullOrEmpty())
-                        plan.regionName =
-                            CARegionalPlanUtility.RegionName(plan);
-                    CARegionalPlanUtility.EnsureRelationRows(plan);
-                    foreach (CARegionalFactionPlan group in plan.factions
-                        .Where(item => item != null))
-                        group.EnsureCultureAndPolitics(plan);
-                    CARegionalSetupSession.RefreshDraftRealization(plan);
-                    foreach (CARegionalSettlementPlan settlement in
-                        plan.settlements.Where(item => item != null))
-                    {
-                        if (settlement.populationOrigin
-                                == CASettlementOrigin.Unset
-                            && ReallocatableSettlements(settlement).Count == 0)
-                        {
-                            settlement.populationOrigin =
-                                CASettlementOrigin.ScenarioOverride;
-                            settlement.reallocatedFromTileId = -1;
-                        }
-                    }
-                }
-                else if (!CARegionalPlanUtility
+                // Opening this page may inspect and validate, but it cannot
+                // realize, normalize, or otherwise author the saved draft.
+                if (plan.confirmed && !CARegionalPlanUtility
                     .TryValidateStartingSettlements(plan,
                         out string confirmedFailure))
                     Log.Error("[CA][Regional][StartingRegion] confirmed "
@@ -141,7 +115,6 @@ namespace ColonistAwareness
             CARegionalSetupSession.EditingDialogOpen = false;
             CARegionMapWidget.Release();
             CARegionalProjectionPreview.Release();
-            CARegionalSetupSession.SavePending();
         }
 
         public override void DoWindowContents(Rect inRect)
@@ -898,7 +871,8 @@ namespace ColonistAwareness
                 string populationLabel = populationGroup.label + " · "
                     + PopulationGroupKindWords(populationGroup) + " · "
                     + populationGroup.CertaintyWords
-                    + (populationGroup.quarter ? " · quartered" : "");
+                    + (populationGroup.ideoligionProtected
+                        ? " · Ideoligion protected" : "");
                 float populationHeight = Mathf.Max(28f, Text.CalcHeight(
                     populationLabel, width - LabelWidth - 12f) + 8f);
                 Widgets.Label(new Rect(0f, y + 3f, LabelWidth,
@@ -953,7 +927,7 @@ namespace ColonistAwareness
             y += Row + Gap;
 
             Rule(ref y, width);
-            Title(ref y, width, "Settlement Composition");
+            Title(ref y, width, "Settlement programs");
             Note(ref y, width, CASettlementProgramRegistry.Summary(place));
             DrawSettlementProgramInspector(ref y, width, place);
 
@@ -1395,8 +1369,11 @@ namespace ColonistAwareness
                 : !populationGroup.politicalBeliefsId.NullOrEmpty()
                     ? populationGroup.politicalBeliefsId : "None set";
             string ideoligionWords;
-            if (populationGroup.independentIdeoligionKey >= 0)
-                ideoligionWords = "Independent Ideoligion";
+            if (populationGroup.nativeIdeoligionId >= 0)
+                ideoligionWords = Find.IdeoManager?.IdeosListForReading?
+                    .FirstOrDefault(ideo => ideo != null
+                        && ideo.id == populationGroup.nativeIdeoligionId)
+                    ?.name ?? "Selected Ideoligion unavailable";
             else if (ideoligionSource?.LivingIdeo != null)
                 ideoligionWords = ideoligionSource.LivingIdeo.name;
             else if (ideoligionSource != null && ModsConfig.IdeologyActive)
@@ -1583,8 +1560,9 @@ namespace ColonistAwareness
         private void OpenSettlementAuthorityMenu(CARegionalFactionPlan group)
         {
             var options = new List<CACreationChoice>();
-            CASettlementAuthority current =
-                CARegionalSettlements.SettlementAuthorityOf(plan, group);
+            CASettlementAuthority current;
+            bool hasCurrent = CARegionalSettlements.TrySettlementAuthorityOf(
+                plan, group, out current);
             foreach (CASettlementAuthority authority in
                 CARegionalSettlements.ActiveSettlementAuthorities)
             {
@@ -1604,7 +1582,7 @@ namespace ColonistAwareness
                     Traits = "Faction-wide settlement authority",
                     Badge = "Explicit structure",
                     Accent = CACreationUI.Authored,
-                    Selected = group.settlementAuthorityExplicit
+                    Selected = hasCurrent && group.settlementAuthorityExplicit
                         && current == authority,
                     ConfirmLabel = "Use this authority",
                     Choose = delegate
@@ -1621,8 +1599,9 @@ namespace ColonistAwareness
                 Name = "Follow faction structure",
                 Summary = "Derive settlement authority from the faction's "
                     + "current structure.",
-                Traits = "Current result: "
-                    + CARegionalSettlements.SettlementAuthorityWords(current),
+                Traits = hasCurrent ? "Current result: "
+                    + CARegionalSettlements.SettlementAuthorityWords(current)
+                    : "Current result: faction structure is incomplete",
                 Badge = "Faction structure",
                 Accent = CACreationUI.Generated,
                 Selected = !group.settlementAuthorityExplicit,
@@ -1630,9 +1609,6 @@ namespace ColonistAwareness
                 Choose = delegate
                 {
                     group.settlementAuthorityExplicit = false;
-                    group.settlementAuthority = (byte)
-                        CARegionalSettlements.DeriveSettlementAuthority(
-                            plan, group);
                     CARegionalSetupSession.SavePending();
                 }
             });
@@ -1858,18 +1834,19 @@ namespace ColonistAwareness
             int minorities = place.populationGroups.Count(c => c != null
                 && (c.kind == CAPopulationGroupKind.OtherFaction
                     || c.kind == CAPopulationGroupKind.LocalResidents));
-            int quarters = place.populationGroups.Count(c => c != null && c.quarter);
+            int protections = place.populationGroups.Count(c => c != null
+                && c.ideoligionProtected);
             int ideoligions = place.populationGroups.Count(c => c != null
-                && (c.ideoligionFactionKey >= 0 || c.independentIdeoligionKey >= 0));
+                && (c.ideoligionFactionKey >= 0 || c.nativeIdeoligionId >= 0));
             var parts = new List<string>();
             parts.Add(place.populationGroups.Count == 1 ? "1 population group"
                 : place.populationGroups.Count + " population groups");
             if (minorities > 0)
                 parts.Add(minorities + " minorit"
                     + (minorities == 1 ? "y" : "ies"));
-            if (quarters > 0)
-                parts.Add(quarters + " separate quarter"
-                    + (quarters == 1 ? "" : "s"));
+            if (protections > 0)
+                parts.Add(protections + " protected Ideoligion group"
+                    + (protections == 1 ? "" : "s"));
             if (ideoligions > 0)
                 parts.Add(ideoligions + " separate Ideoligion"
                     + (ideoligions == 1 ? "" : "s"));
@@ -1988,7 +1965,8 @@ namespace ColonistAwareness
         // ---- operations -----------------------------------------------------
 
         // Complete open draft state in dependency order: faction beliefs and
-        // structure, settlement pattern, population groups, then provisions.
+        // structure, settlement pattern, then population groups. Provision
+        // contracts remain absent until authored or observed operators exist.
         private void GenerateUnspecified()
         {
             bool patternFilled = !plan.settlementRealizationComplete;
@@ -2010,10 +1988,9 @@ namespace ColonistAwareness
             }
 
             int populationGroupsFilled = 0;
-            int provisionsFilled = 0;
-            // Faction structure can change derived facilities. Recompute the
-            // still-unconfirmed settlement realization before provisions read
-            // it; the fixed candidate seed keeps every unrelated fact stable.
+            // Faction structure can change factual settlement context.
+            // Recompute the still-unconfirmed realization; the fixed candidate
+            // seed keeps every unrelated fact stable.
             CARegionalSettlements.Invalidate(plan);
             CARegionalSettlements.EnsureSettlementPattern(plan);
             foreach (CARegionalSettlementPlan place in plan.settlements)
@@ -2021,15 +1998,9 @@ namespace ColonistAwareness
                 if (place == null) continue;
                 bool hadPopulationGroups = place.populationGroups != null
                     && place.populationGroups.Count > 0;
-                bool hadProvisions = place.provisionArrangements != null
-                    && place.provisionArrangements.Any(item => item != null
-                        && item.active);
                 CASettlementComposition.EnsureDerived(plan, place);
                 if (!hadPopulationGroups && place.populationGroups.Count > 0)
                     populationGroupsFilled++;
-                if (!hadProvisions && place.provisionArrangements.Any(item =>
-                        item != null && item.active))
-                    provisionsFilled++;
             }
             // Open origins draw from nearby existing settlements. Generation
             // never creates additional world population.
@@ -2056,19 +2027,12 @@ namespace ColonistAwareness
             {
                 CARegionalSettlements.Invalidate(plan);
                 CARegionalSettlements.EnsureSettlementPattern(plan);
-                foreach (CARegionalSettlementPlan place in plan.settlements
-                    .Where(item => item != null))
-                    CASettlementComposition.ReconcileProvisionArrangements(plan,
-                        place);
             }
             CARegionalSetupSession.SavePending();
             var filled = new List<string>();
             if (populationGroupsFilled > 0)
                 filled.Add(Counted(populationGroupsFilled,
                     "settlement population"));
-            if (provisionsFilled > 0)
-                filled.Add(Counted(provisionsFilled,
-                    "starting-provision set"));
             if (patternFilled) filled.Add("the regional pattern");
             if (politicalBeliefsFilled > 0)
                 filled.Add(Counted(politicalBeliefsFilled,
@@ -2247,7 +2211,7 @@ namespace ColonistAwareness
         {
             int populatedSettlements = 0;
             int minorityGroups = 0;
-            int quarters = 0;
+            int protections = 0;
             int factionIdeoligions = 0;
             int independentIdeoligions = 0;
             foreach (CARegionalSettlementPlan place in plan.settlements)
@@ -2261,8 +2225,8 @@ namespace ColonistAwareness
                     if (populationGroup.kind == CAPopulationGroupKind.OtherFaction
                         || populationGroup.kind == CAPopulationGroupKind.LocalResidents)
                         minorityGroups++;
-                    if (populationGroup.quarter) quarters++;
-                    if (populationGroup.independentIdeoligionKey >= 0)
+                    if (populationGroup.ideoligionProtected) protections++;
+                    if (populationGroup.nativeIdeoligionId >= 0)
                         independentIdeoligions++;
                     else if (populationGroup.ideoligionFactionKey >= 0)
                         factionIdeoligions++;
@@ -2275,9 +2239,9 @@ namespace ColonistAwareness
             if (minorityGroups > 0)
                 parts.Add(minorityGroups + " minority population group"
                     + (minorityGroups == 1 ? "" : "s"));
-            if (quarters > 0)
-                parts.Add(quarters + " separate quarter"
-                    + (quarters == 1 ? "" : "s"));
+            if (protections > 0)
+                parts.Add(protections + " protected Ideoligion group"
+                    + (protections == 1 ? "" : "s"));
             if (factionIdeoligions > 0)
                 parts.Add(factionIdeoligions + " faction-sourced Ideoligion"
                     + (factionIdeoligions == 1 ? "" : "s"));

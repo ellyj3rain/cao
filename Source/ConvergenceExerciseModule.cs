@@ -232,7 +232,6 @@ namespace ColonistAwareness
                     ?? new CARegionalWorldPolicy();
                 // History axes that guarantee an interesting composition.
                 plan.worldPolicy.reallocationSourceVariety = 1f;
-                plan.worldPolicy.unaffiliatedPopulationShare = 0.6f;
 
                 // Two factions with different political beliefs.
                 var councilFaction = new CARegionalFactionPlan
@@ -324,7 +323,7 @@ namespace ColonistAwareness
                         ideoligionFactionKey = 2,
                         politicalBeliefsFactionKey = 2,
                         ideoligionCertainty = 1,
-                        quarter = true,
+                        ideoligionProtected = true,
                         authored = true
                     });
                     first.provisionArrangements.Clear();

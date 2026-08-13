@@ -13,24 +13,6 @@ namespace ColonistAwareness
     {
         internal const int Derive = -1;
 
-        // Index into a settlement's capability vector. Named so a
-        // caller cannot silently mean the wrong one.
-        internal const int CapCommunications = 0;
-        internal const int CapMedicine = 1;
-        internal const int CapProduction = 2;
-        internal const int CapLogistics = 3;
-        internal const int CapFortification = 4;
-        internal const int CapWeapons = 5;
-        internal const int CapTraining = 6;
-        internal const int CapOrganization = 7;
-        internal const int CapCount = 8;
-
-        internal static readonly string[] CapabilityNames =
-        {
-            "communications", "medicine", "production", "logistics",
-            "fortification", "weapons", "training", "organization"
-        };
-
         // Faction knowledge and local ability are separate. The faction
         // template supplies an era baseline; facilities and infrastructure
         // determine what a settlement can practice.
@@ -81,65 +63,6 @@ namespace ColonistAwareness
                 : CAMorphForm.Industrial;
         }
 
-        // ---- local capabilities ----------------------------------
-
-        // Faction knowledge sets the upper limit before local constraints.
-        internal static int CapabilityBasis(TechLevel eraPrior)
-        {
-            return Mathf.Clamp((int)eraPrior - 1, 0, 5);
-        }
-
-        // Local programs and infrastructure can lower what a settlement
-        // can practice without changing what its faction knows.
-        internal static int LocalPracticeCeiling(CASettlementProgram program,
-            bool roadLinked, bool coastal, TechLevel knowledge)
-        {
-            int access = roadLinked && coastal ? 2
-                : roadLinked || coastal ? 1 : 0;
-            int services = program?.Has(CASettlementProgramRegistry.Research)
-                == true ? 3
-                : program?.Has(CASettlementProgramRegistry.Medicine) == true
-                    ? 2 : 0;
-            int civic = program?.Has(CASettlementProgramRegistry.Governance)
-                == true ? 2 : 0;
-            return LocalPracticeCeiling(program, access, services,
-                civic, knowledge);
-        }
-
-        internal static int LocalPracticeCeiling(CASettlementProgram program,
-            int accessInfrastructure, int serviceInfrastructure,
-            int civicInfrastructure, TechLevel knowledge)
-        {
-            int basis = CapabilityBasis(knowledge);
-            bool laboratory = program?.Has(
-                CASettlementProgramRegistry.Research) == true;
-            bool workshop = program?.Has(
-                CASettlementProgramRegistry.Production) == true;
-            int drop = laboratory ? 0 : workshop ? 1 : 2;
-            if (accessInfrastructure <= 0) drop++;
-            if (serviceInfrastructure <= 0) drop++;
-            if (civicInfrastructure >= 2 && workshop) drop--;
-            return Mathf.Clamp(basis - drop, 0, 5);
-        }
-
-        // Deterministic capability before per-settlement variation. Preview
-        // and materialization use this same calculation.
-        internal static int PracticedCapabilityBasis(int index,
-            TechLevel knowledge, int localCeiling)
-        {
-            return Mathf.Max(0,
-                Mathf.Min(CapabilityBasis(knowledge), localCeiling));
-        }
-
-        internal static int PracticedCapability(int index,
-            TechLevel knowledge, int localCeiling)
-        {
-            int basis = PracticedCapabilityBasis(index, knowledge,
-                localCeiling);
-            return Mathf.Clamp(basis + Rand.RangeInclusive(-1, 1), 0,
-                Mathf.Max(0, localCeiling));
-        }
-
         // ---- native Ideoligion ------------------------------------
 
         // A settlement uses its faction's Ideoligion.
@@ -161,7 +84,8 @@ namespace ColonistAwareness
         }
     }
 
-    // Infrastructure is derived independently of the open settlement program.
+    // These values are read models over saved ground and complete operational
+    // contracts. They never create a service, institution, or program.
     internal static class CASettlementStartingState
     {
         internal static int Access(CARegionalPlan plan,
@@ -172,6 +96,15 @@ namespace ColonistAwareness
             return DerivedAccess(plan, place);
         }
 
+        internal static int ExpectedAccess(CARegionalSettlementPlan place)
+        {
+            if (place == null) return 0;
+            int links = (place.hasRoadAccess ? 1 : 0)
+                + (place.hasRiverAccess ? 1 : 0)
+                + (place.hasCoastalAccess ? 1 : 0);
+            return Mathf.Clamp(links, 0, 3);
+        }
+
         internal static int Services(CARegionalPlan plan,
             CARegionalSettlementPlan place)
         {
@@ -180,11 +113,23 @@ namespace ColonistAwareness
             return DerivedServices(plan, place);
         }
 
+        internal static int ExpectedServices(CARegionalPlan plan,
+            CARegionalSettlementPlan place)
+        {
+            return DerivedServices(plan, place);
+        }
+
         internal static int Civic(CARegionalPlan plan,
             CARegionalSettlementPlan place)
         {
             if (place != null && place.realizedCivicInfrastructure >= 0)
                 return Mathf.Clamp(place.realizedCivicInfrastructure, 0, 3);
+            return DerivedCivic(plan, place);
+        }
+
+        internal static int ExpectedCivic(CARegionalPlan plan,
+            CARegionalSettlementPlan place)
+        {
             return DerivedCivic(plan, place);
         }
 
@@ -200,43 +145,42 @@ namespace ColonistAwareness
                 place.memberTileId);
             int links = (road ? 1 : 0) + (river ? 1 : 0)
                 + (coast ? 1 : 0);
-            int value = links >= 2 ? 2 : links == 1 ? 1 : 0;
-            if ((CASettlementRole)place.realizedRole
-                    == CASettlementRole.Center
-                && place.residentPopulation >= 500)
-                value++;
-            return Mathf.Clamp(value, 0, 3);
+            return Mathf.Clamp(links, 0, 3);
         }
 
         private static int DerivedServices(CARegionalPlan plan,
             CARegionalSettlementPlan place)
         {
             if (place == null) return 0;
-            FactionDef owner = plan?.FactionPlan(place.factionKey)
-                ?.ResolvedFactionDef;
-            int tier = CASettlementAxes.Tier(
-                CASettlementAxes.TemplateEraPrior(owner));
-            int value = place.residentPopulation >= 500 ? 2
-                : place.residentPopulation >= 140 ? 1 : 0;
-            if (tier >= 2 && place.residentPopulation >= 280) value++;
-            if ((CASettlementRole)place.realizedRole
-                    == CASettlementRole.Center
-                && place.residentPopulation >= 280) value++;
-            return Mathf.Clamp(value, 0, 3);
+            return CountComplete(plan, place,
+                CASettlementProgramRegistry.FoodPreparation,
+                CASettlementProgramRegistry.Storage,
+                CASettlementProgramRegistry.Medicine,
+                CASettlementProgramRegistry.Gathering,
+                CASettlementProgramRegistry.Recreation,
+                CASettlementProgramRegistry.Communications);
         }
 
         private static int DerivedCivic(CARegionalPlan plan,
             CARegionalSettlementPlan place)
         {
             if (place == null) return 0;
-            int value = place.residentPopulation >= 700 ? 2
-                : place.residentPopulation >= 220 ? 1 : 0;
-            if (place.historicalDevelopment >= 2) value++;
-            if ((CASettlementRole)place.realizedRole
-                    == CASettlementRole.Center
-                && place.residentPopulation >= 280)
-                value++;
-            return Mathf.Clamp(value, 0, 3);
+            return CountComplete(plan, place,
+                CASettlementProgramRegistry.Governance,
+                CASettlementProgramRegistry.Custody,
+                CASettlementProgramRegistry.AuthorityProvision);
+        }
+
+        private static int CountComplete(CARegionalPlan plan,
+            CARegionalSettlementPlan place, params string[] keys)
+        {
+            if (place == null || keys == null || keys.Length == 0) return 0;
+            HashSet<string> wanted = new HashSet<string>(keys);
+            int count = CASettlementProgramOperationalResolver.Build(plan,
+                    place, CASettlementProgramRegistry.Find)
+                .Count(item => item != null && item.Complete
+                    && wanted.Contains(item.Key));
+            return Mathf.Clamp(count, 0, 3);
         }
 
     }

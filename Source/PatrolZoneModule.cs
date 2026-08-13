@@ -51,7 +51,7 @@ namespace ColonistAwareness
             return n;
         }
 
-        public bool ContainsCell(IntVec3 c)
+        public new bool ContainsCell(IntVec3 c)
         {
             return c.InBounds(Map) && Map.zoneManager.ZoneAt(c) == this;
         }

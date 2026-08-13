@@ -10,6 +10,7 @@ namespace ColonistAwareness
     // replace only records it owns.
     public sealed class CAOrganizationRelationsWorldComponent : WorldComponent
     {
+        private int authoringDataEpoch = CAAuthoringDataEpoch.Current;
         private List<CARelation> relations = new List<CARelation>();
         private List<CAFacilityHolding> holdings =
             new List<CAFacilityHolding>();
@@ -29,15 +30,32 @@ namespace ColonistAwareness
         public override void ExposeData()
         {
             base.ExposeData();
-            Scribe_Collections.Look(ref relations, "CA_relations",
-                LookMode.Deep);
-            Scribe_Collections.Look(ref holdings, "CA_holdings",
-                LookMode.Deep);
-            Scribe_Collections.Look(ref removedRecords, "CA_removedRecords",
-                LookMode.Deep);
-            Scribe_Values.Look(ref nextId, "CA_nextRelationId", 1);
+            Scribe_Values.Look(ref authoringDataEpoch,
+                "CA_authoringDataEpoch", 0);
+            bool current = Scribe.mode == LoadSaveMode.Saving
+                || CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch);
+            if (current)
+            {
+                Scribe_Collections.Look(ref relations, "CA_relations",
+                    LookMode.Deep);
+                Scribe_Collections.Look(ref holdings, "CA_holdings",
+                    LookMode.Deep);
+                Scribe_Collections.Look(ref removedRecords,
+                    "CA_removedRecords", LookMode.Deep);
+                Scribe_Values.Look(ref nextId, "CA_nextRelationId", 1);
+            }
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
+                if (!current)
+                {
+                    relations = new List<CARelation>();
+                    holdings = new List<CAFacilityHolding>();
+                    removedRecords = new List<CARemovedRecord>();
+                    nextId = 1;
+                    authoringDataEpoch = CAAuthoringDataEpoch.Current;
+                    CAAuthoringDataEpoch.RecordDiscard(
+                        "organization relations and holdings");
+                }
                 if (relations == null)
                     relations = new List<CARelation>();
                 if (holdings == null)
@@ -199,7 +217,8 @@ namespace ColonistAwareness
         internal static string Signature(CAFacilityHolding h)
         {
             return "hold|" + h.facilityKind + "|" + h.mapId + "|"
-                + h.cell;
+                + h.cell + "|" + (h.programSignature ?? "") + "|"
+                + (h.assetRole ?? "");
         }
 
         private bool WasRemoved(string signature)
@@ -261,6 +280,11 @@ namespace ColonistAwareness
         internal void RemoveDerivedRelation(CARelation r)
         {
             relations.Remove(r);
+        }
+
+        internal void RemoveDerivedHolding(CAFacilityHolding holding)
+        {
+            holdings.Remove(holding);
         }
 
         private void RecordRemoval(string signature, string originKey)

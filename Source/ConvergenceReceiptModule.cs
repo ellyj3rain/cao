@@ -248,7 +248,9 @@ namespace ColonistAwareness
                 {
                     if (arrangement == null
                         || arrangement.operatorKind
-                            == CAProvisionOperator.Household) continue;
+                            == CAProvisionOperator.DomesticUnit
+                        || arrangement?.operatorKind
+                            == CAProvisionOperator.Individual) continue;
                     string orgKey = CAProvisionArrangements.ProviderKey(record,
                         arrangement);
                     CAOrganization op = orgs?.ByKey(orgKey);
@@ -261,7 +263,8 @@ namespace ColonistAwareness
                         == CAProvisionFunding.Taxation)
                     {
                         bool policy = op != null && op.policies.Any(p =>
-                            p != null && p.key == "tax rate");
+                            p != null && p.key == arrangement.policyKey
+                            && p.value == arrangement.policyValue);
                         int now = Find.TickManager?.TicksGame ?? 0;
                         string payerKey = record.regionalId + "#"
                             + record.slot;

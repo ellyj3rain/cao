@@ -176,8 +176,8 @@ namespace ColonistAwareness
                 if (!UsesFactionState(faction)) { skipped++; continue; }
                 Ideo ideo = faction.ideos?.PrimaryIdeo;
                 CAFactionState record = store.EnsureFor(faction);
-                string seed = (Find.World?.info?.persistentRandomValue ?? 0)
-                    + ":" + (faction.def?.defName ?? "none") + ":"
+                string seed = CAPlayerFoundingSession.WorldIdentity()
+                    + ":faction:" + (faction.def?.defName ?? "none") + ":"
                     + faction.loadID;
 
                 bool cultureMissing = record.culture == null
@@ -205,9 +205,14 @@ namespace ColonistAwareness
                 // The player faction begins with only the arrangement adopted
                 // at founding; its remaining institutions emerge through play.
                 if (!faction.IsPlayer && !record.institutionalStateIncomplete)
+                {
                     structureFields += CAFactionStructureModel
-                        .GenerateEstablishedUnset(record.factionStructure,
-                            record.politicalBeliefs, seed + ":structure");
+                        .PreserveEstablishedUnset(record.factionStructure);
+                    if (CAFactionAxes.Axes.Any(axis => CAFactionAxes.StateOf(
+                            record.factionStructure, axis.Key)
+                            == CAAxisSource.Unset))
+                        record.institutionalStateIncomplete = true;
+                }
                 if (record.generatedAtTick < 0)
                 {
                     record.generatedAtTick = GenTicks.TicksAbs;

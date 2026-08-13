@@ -9,9 +9,8 @@ using UnityEngine;
 
 namespace ColonistAwareness
 {
-    // Give a visiting hostile faction a durable organization record for its
-    // doctrine, memory, and support. It reads the same settlement layout as
-    // other actors, limited to facts its members have observed.
+    // Resolve the durable organization already recorded for a faction. An
+    // encounter does not create doctrine, support, membership, or history.
     internal static class CAHostileFactionOrganization
     {
         internal static string KeyFor(Faction faction)
@@ -20,79 +19,15 @@ namespace ColonistAwareness
                 : "faction:" + faction.loadID;
         }
 
-        // Build the faction's organization record from current faction facts.
+        // Recognize an existing faction. Encounter alone supplies no doctrine,
+        // history, public support, or practiced capability.
         internal static CAOrganization For(Faction faction)
         {
             if (faction == null) return null;
             var comp = CAOrganizationWorldComponent.Current;
             if (comp == null) return null;
             if (faction.IsPlayer) return comp.EnsureColony();
-
-            string key = KeyFor(faction);
-            CAOrganization existing = comp.ByKey(key);
-            if (existing != null) return existing;
-
-            CAOrganization org = comp.EnsureFor(key, faction.Name,
-                "a people without a seat on this ground",
-                CAOrganizationKind.Faction);
-            SeedDoctrine(org, faction);
-            org.Record("organization", faction.Name
-                + " is recognized on this ground");
-            return org;
-        }
-
-        // Doctrine on the same terms settlements earn it: practiced
-        // war-making grants formation, holding ground grants the line,
-        // and only a people who make war their trade understand
-        // prepared ground well enough to look for it.
-        private static void SeedDoctrine(CAOrganization org,
-            Faction faction)
-        {
-            try
-            {
-                int tech = (int)(faction.def?.techLevel
-                    ?? TechLevel.Neolithic);
-                bool warlike = faction.def != null
-                    && (faction.def.permanentEnemy
-                        || faction.def.naturalEnemy
-                        || faction.HostileTo(Faction.OfPlayer));
-                int settled = CountSettlements(faction);
-
-                if (tech >= 3 || warlike)
-                    Seed(org, "formation");
-                if (settled > 0 || tech >= 4)
-                    Seed(org, "line");
-                // Prepared ground is a professional's idea: a people
-                // who raid for a living, or who field a technological
-                // army, have met it and learned to look for it.
-                if (warlike && tech >= 3)
-                    Seed(org, "ambush");
-                if (tech >= 4)
-                    Seed(org, "status reporting");
-                org.publicSupport = Mathf.Clamp01(0.4f + tech * 0.08f);
-            }
-            catch { }
-        }
-
-        private static int CountSettlements(Faction faction)
-        {
-            try
-            {
-                return Find.WorldObjects?.Settlements?
-                    .Count(s => s.Faction == faction) ?? 0;
-            }
-            catch { return 0; }
-        }
-
-        private static void Seed(CAOrganization org, string key)
-        {
-            if (org.HasCustom(key)) return;
-            org.customs.Add(new CAOrganizationCustom
-            {
-                key = key,
-                source = "faction starting state",
-                adoptedTick = Find.TickManager.TicksGame
-            });
+            return comp.ByKey(KeyFor(faction));
         }
     }
 

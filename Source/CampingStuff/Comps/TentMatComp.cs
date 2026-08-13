@@ -7,7 +7,7 @@ namespace Camping_Stuff;
 
 public class TentMatComp : CompTentPartWithCellsDamage //(Thing)
 {
-	public CompProperties_TentMat Props => (CompProperties_TentMat)this.props;
+	public new CompProperties_TentMat Props => (CompProperties_TentMat)this.props;
 
 #if RELEASE_1_3 || RELEASE_1_2 || RELEASE_1_1
 	public TerrainDef Spawns => this.Props.spawnedFloor;

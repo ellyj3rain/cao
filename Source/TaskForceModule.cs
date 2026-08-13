@@ -7,17 +7,13 @@ using Verse;
 
 namespace ColonistAwareness
 {
-    // A task force carries a commander, mission, equipment, observations, and
-    // partial adherence to its faction's doctrine.
+    // A task force carries a commander, mission, equipment, and observations.
     public sealed class CATaskForce : IExposable
     {
         public int factionLoadId = -1;
         public int commanderId = -1;
         public string mission = "assault";
         public int arrivedTick;
-        // 0 = a rabble that does as it pleases, 1 = disciplined and
-        // faithful to its people's doctrine
-        public float adherence = 0.6f;
         // WHAT THIS FORCE HAS ESTABLISHED ITSELF. Never the map's
         // truth - only what these eyes saw, or what they were told,
         // or what they remember from the last time they came.
@@ -32,7 +28,6 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref commanderId, "commanderId", -1);
             Scribe_Values.Look(ref mission, "mission");
             Scribe_Values.Look(ref arrivedTick, "arrivedTick", 0);
-            Scribe_Values.Look(ref adherence, "adherence", 0.6f);
             Scribe_Collections.Look(ref knownEntrances, "knownEntrances",
                 LookMode.Value);
             Scribe_Collections.Look(ref knownDefences, "knownDefences",
@@ -49,19 +44,11 @@ namespace ColonistAwareness
             }
         }
 
-        // A concept is available to this force when its people hold it
-        // AND this particular party is disciplined enough to act on
-        // it. A faithful splinter can out-think its own faction; a
-        // rabble carrying a proud tradition still charges the guns.
-        public bool CanAct(CAOrganization factionOrg, string concept,
-            int seedSalt)
+        // The force may use only doctrine its organization actually adopted or
+        // practiced. Arrival order and deterministic variation do not grant it.
+        public bool Practices(CAOrganization factionOrg, string concept)
         {
-            if (factionOrg == null) return false;
-            if (!factionOrg.HasCustom(concept)) return false;
-            uint h = (uint)(factionLoadId * 2654435761u
-                + (uint)seedSalt * 40503u + (uint)arrivedTick);
-            h ^= h >> 13;
-            return (h % 1000) < adherence * 1000f;
+            return factionOrg?.HasCustom(concept) == true;
         }
     }
 
@@ -135,23 +122,11 @@ namespace ColonistAwareness
                 .FirstOrDefault();
             CAOrganization org = CAHostileFactionOrganization.For(faction);
 
-            // discipline comes from the party itself: its leader, its
-            // size, and how well its people are held together
-            float adherence = 0.35f;
-            if (org != null) adherence += org.publicSupport * 0.3f;
-            if (commander != null)
-                adherence += Mathf.Min(0.25f,
-                    (commander.skills?.GetSkill(SkillDefOf.Social)
-                        ?.Level ?? 0) * 0.02f);
-            if (pawns.Count <= 3) adherence -= 0.1f;   // a handful
-            adherence = Mathf.Clamp01(adherence);
-
             var force = new CATaskForce
             {
                 factionLoadId = faction.loadID,
                 commanderId = commander?.thingIDNumber ?? -1,
                 arrivedTick = Find.TickManager.TicksGame,
-                adherence = adherence,
                 mission = faction.HostileTo(Faction.OfPlayer)
                     ? "assault" : "visit"
             };

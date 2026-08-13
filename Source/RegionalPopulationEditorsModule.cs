@@ -115,13 +115,14 @@ namespace ColonistAwareness
                 });
 
             if (!main)
-                SegmentRow(ref y, view.width, "Settlement pattern",
-                    "A separate quarter keeps distinct households, gathering "
-                        + "space, and provision nodes.",
-                    new[] { "Mixed throughout", "Separate quarter" },
-                    population.quarter ? 1 : 0, index =>
+                SegmentRow(ref y, view.width, "Ideoligion protection",
+                    "Protection preserves this population's distinct "
+                        + "Ideoligion when local orthodoxy would otherwise "
+                        + "suppress it. It does not assign residential ground.",
+                    new[] { "No protection", "Protected" },
+                    population.ideoligionProtected ? 1 : 0, index =>
                     {
-                        population.quarter = index == 1;
+                        population.ideoligionProtected = index == 1;
                         MarkChanged();
                     });
 
@@ -266,8 +267,11 @@ namespace ColonistAwareness
 
         private string IdeoligionWords()
         {
-            if (population.independentIdeoligionKey >= 0)
-                return "Independent Ideoligion";
+            if (population.nativeIdeoligionId >= 0)
+                return Find.IdeoManager?.IdeosListForReading?
+                    .FirstOrDefault(ideo => ideo != null
+                        && ideo.id == population.nativeIdeoligionId)?.name
+                    ?? "Selected Ideoligion unavailable";
             CARegionalFactionPlan source = plan.FactionPlan(
                 CACreationFlowContracts.EffectiveSourceKey(
                     population.ideoligionFactionKey, population.factionKey));
@@ -291,7 +295,7 @@ namespace ColonistAwareness
 
         private string IdeoligionSourceState()
         {
-            return population.independentIdeoligionKey < 0
+            return population.nativeIdeoligionId < 0
                 && CACreationFlowContracts.FollowsAffiliation(
                     population.ideoligionFactionKey)
                 ? "Follows affiliation" : "Independent";
@@ -373,12 +377,12 @@ namespace ColonistAwareness
                 Icon = plan.FactionPlan(population.factionKey)?.LivingIdeo?.Icon,
                 Accent = CACreationUI.Generated,
                 Selected = population.ideoligionFactionKey < 0
-                    && population.independentIdeoligionKey < 0,
+                    && population.nativeIdeoligionId < 0,
                 ConfirmLabel = "Use affiliated Ideoligion",
                 Choose = delegate
                 {
                     population.ideoligionFactionKey = -1;
-                    population.independentIdeoligionKey = -1;
+                    population.nativeIdeoligionId = -1;
                     MarkChanged();
                 }
             });
@@ -395,34 +399,45 @@ namespace ColonistAwareness
                     Badge = "Ideoligion source",
                     Icon = local.LivingIdeo?.Icon,
                     Accent = CARegionalWorldOverlay.FactionColor(local.key),
-                    Selected = population.independentIdeoligionKey < 0
+                    Selected = population.nativeIdeoligionId < 0
                         && population.ideoligionFactionKey == local.key,
                     ConfirmLabel = "Use this Ideoligion",
                     Choose = delegate
                     {
                         population.ideoligionFactionKey = local.key;
-                        population.independentIdeoligionKey = -1;
+                        population.nativeIdeoligionId = -1;
                         MarkChanged();
                     }
                 });
             }
-            options.Add(new CACreationChoice
+            HashSet<int> factionIdeos = new HashSet<int>(plan.factions
+                .Where(item => item?.LivingIdeo != null)
+                .Select(item => item.LivingIdeo.id));
+            foreach (Ideo existing in (Find.IdeoManager?.IdeosListForReading
+                         ?? new List<Ideo>()).Where(ideo => ideo != null
+                         && !factionIdeos.Contains(ideo.id))
+                     .OrderBy(ideo => ideo.name))
             {
-                Key = "independent",
-                Name = "Independent Ideoligion",
-                Summary = "Generate a separate Ideoligion for this group.",
-                Badge = "Ideoligion source",
-                Accent = CACreationUI.Authored,
-                Selected = population.independentIdeoligionKey >= 0,
-                ConfirmLabel = "Use an independent Ideoligion",
-                Choose = delegate
+                Ideo local = existing;
+                options.Add(new CACreationChoice
                 {
-                    population.independentIdeoligionKey =
-                        settlement.slot * 100 + population.key;
-                    population.ideoligionFactionKey = -1;
-                    MarkChanged();
-                }
-            });
+                    Key = "ideo:" + local.id,
+                    Name = local.name ?? "Ideoligion #" + local.id,
+                    Summary = "Use this existing Ideoligion independently "
+                        + "of faction affiliation.",
+                    Badge = "Existing Ideoligion",
+                    Icon = local.Icon,
+                    Accent = CACreationUI.Authored,
+                    Selected = population.nativeIdeoligionId == local.id,
+                    ConfirmLabel = "Use this Ideoligion",
+                    Choose = delegate
+                    {
+                        population.nativeIdeoligionId = local.id;
+                        population.ideoligionFactionKey = -1;
+                        MarkChanged();
+                    }
+                });
+            }
             CACreationUI.OpenChoices("Ideoligion",
                 "Choose religious and moral belief only. Faction affiliation "
                 + "and political beliefs remain unchanged.", options);

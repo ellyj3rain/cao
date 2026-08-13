@@ -54,12 +54,13 @@ namespace ColonistAwareness
         // Ideoligion source, independent of faction affiliation. -1 inherits
         // from factionKey.
         public int ideoligionFactionKey = -1;
-        // >= 0 creates a deterministic independent Ideoligion at
-        // materialization and registers it as a minor Ideoligion.
-        public int independentIdeoligionKey = -1;
-        // A concentrated population group receives a local quarter and, when
-        // applicable, separate provision rooms.
-        public bool quarter;
+        // An exact native Ideoligion identity, independent of faction
+        // affiliation. The referenced Ideoligion must already exist; a
+        // population row never mints belief from a key or random seed.
+        public int nativeIdeoligionId = -1;
+        // Keeps a distinct Ideoligion from being suppressed by local
+        // orthodoxy. This is belief protection, not residential geometry.
+        public bool ideoligionProtected;
         public bool authored;
 
         public void ExposeData()
@@ -78,8 +79,10 @@ namespace ColonistAwareness
                 "ideoligionCertainty", 1);
             Scribe_Values.Look(ref ideoligionFactionKey,
                 "ideoligionFactionKey", -1);
-            Scribe_Values.Look(ref independentIdeoligionKey, "independentIdeoligionKey", -1);
-            Scribe_Values.Look(ref quarter, "quarter", false);
+            Scribe_Values.Look(ref nativeIdeoligionId,
+                "nativeIdeoligionId", -1);
+            Scribe_Values.Look(ref ideoligionProtected,
+                "ideoligionProtected", false);
             Scribe_Values.Look(ref authored, "authored", false);
         }
 
@@ -111,7 +114,8 @@ namespace ColonistAwareness
         Authority,
         // Kitchens supplied through shared work.
         Communal,
-        Household
+        DomesticUnit,
+        Individual
     }
 
     public enum CAProvisionAccess : byte
@@ -119,21 +123,21 @@ namespace ColonistAwareness
 
     public enum CAProvisionFunding : byte
     {
-        Household,
+        Domestic,
         Taxation,
         SharedWork
     }
 
     public enum CAProvisionDistribution : byte
-    { Household, Neighborhood, Centralized }
+    { Domestic, Neighborhood, Centralized }
 
     // How far an arrangement's provision actually reaches [layer E].
     public enum CAProvisionReach : byte
-    { Household, Settlement, Region }
+    { Domestic, Settlement, Region }
 
     public sealed class CAProvisionArrangement : IExposable
     {
-        public const int CurrentSchemaVersion = 2;
+        public const int CurrentSchemaVersion = 5;
         public int schemaVersion = CurrentSchemaVersion;
         public int key;
         // Stable causal slot. Generated provisions are reconciled by this
@@ -142,12 +146,27 @@ namespace ColonistAwareness
         public string basisKey;
         public string basisLabel;
         public CAProvisionOperator operatorKind;
+        // Exact operator and provenance. Labels summarize these fields; they
+        // never create the arrangement.
+        public string operatorIdentity;
+        public string operatorSource;
         // Which population group operates this arrangement; -1 means
         // the settlement as a whole.
         public int populationGroupKey = -1;
         public CAProvisionAccess access;
+        public string accessSource;
         public CAProvisionFunding funding;
+        public string fundingSource;
         public CAProvisionDistribution distribution;
+        public string distributionSource;
+        public string laborSource;
+        public string knowledgeSource;
+        public string materialSource;
+        public string stockSource;
+        public string policyKey;
+        public string policyValue;
+        public string collectionPath;
+        public bool operational;
         public bool active = true;
         public string inactiveReason;
         // Stamped when the settlement materializes: whether this
@@ -170,14 +189,28 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref basisKey, "basisKey");
             Scribe_Values.Look(ref basisLabel, "basisLabel");
             Scribe_Values.Look(ref operatorKind, "operatorKind",
-                CAProvisionOperator.Household);
+                CAProvisionOperator.Individual);
+            Scribe_Values.Look(ref operatorIdentity, "operatorIdentity");
+            Scribe_Values.Look(ref operatorSource, "operatorSource");
             Scribe_Values.Look(ref populationGroupKey, "populationGroupKey", -1);
             Scribe_Values.Look(ref access, "access",
                 CAProvisionAccess.Universal);
+            Scribe_Values.Look(ref accessSource, "accessSource");
             Scribe_Values.Look(ref funding, "funding",
-                CAProvisionFunding.Household);
+                CAProvisionFunding.Domestic);
+            Scribe_Values.Look(ref fundingSource, "fundingSource");
             Scribe_Values.Look(ref distribution, "distribution",
                 CAProvisionDistribution.Centralized);
+            Scribe_Values.Look(ref distributionSource,
+                "distributionSource");
+            Scribe_Values.Look(ref laborSource, "laborSource");
+            Scribe_Values.Look(ref knowledgeSource, "knowledgeSource");
+            Scribe_Values.Look(ref materialSource, "materialSource");
+            Scribe_Values.Look(ref stockSource, "stockSource");
+            Scribe_Values.Look(ref policyKey, "policyKey");
+            Scribe_Values.Look(ref policyValue, "policyValue");
+            Scribe_Values.Look(ref collectionPath, "collectionPath");
+            Scribe_Values.Look(ref operational, "operational", false);
             Scribe_Values.Look(ref active, "active", true);
             Scribe_Values.Look(ref inactiveReason, "inactiveReason");
             Scribe_Values.Look(ref waterSecured, "waterSecured", true);
@@ -196,7 +229,9 @@ namespace ColonistAwareness
                         return "authority reserve";
                     case CAProvisionOperator.Communal:
                         return "communal kitchens";
-                    default: return "household hearths";
+                    case CAProvisionOperator.DomesticUnit:
+                        return "domestic hearth";
+                    default: return "individual provision";
                 }
             }
         }
@@ -224,8 +259,8 @@ namespace ColonistAwareness
                 {
                     case CAProvisionFunding.SharedWork:
                         return "shared work";
-                    case CAProvisionFunding.Household:
-                        return "the household";
+                    case CAProvisionFunding.Domestic:
+                        return "the members";
                     default: return funding.ToString().ToLower();
                 }
             }
@@ -265,6 +300,7 @@ namespace ColonistAwareness
                     new List<CAProvisionArrangement>();
             if (settlementPlan.populationGroups.Count == 0)
                 DerivePopulationGroups(plan, settlementPlan);
+            CADomesticProvisionAdapter.EnsureDemands(settlementPlan);
             CACultureHistory.EnsureSettlementCulture(plan, settlementPlan);
             ReconcileProvisionArrangements(plan, settlementPlan);
         }
@@ -283,47 +319,42 @@ namespace ColonistAwareness
         internal static List<CAProvisionArrangement> GenerateProvisionArrangements(
             CARegionalPlan plan, CARegionalSettlementPlan source)
         {
-            CARegionalFactionPlan owner = plan?.FactionPlan(source?.factionKey
-                ?? -1);
-            if (plan == null || source == null || owner == null)
+            if (plan == null || source == null)
                 return new List<CAProvisionArrangement>();
-            // Draft authoring may complete unset generated choices. A
-            // confirmed plan is evidence and validation must remain pure.
-            if (!plan.confirmed)
-                owner.EnsureCultureAndPolitics(plan);
-            string AxisOf(CARegionalFactionPlan faction, string key) =>
-                CAFactionAxes.KeyOf(faction?.factionStructure, key)
-                    ?? CAFactionAxes.KeyOf(faction?.politicalBeliefs?.positions,
-                        key);
-            var facts = new CAProvisionCausalFacts
+            // The current arrangement is the authoritative fact. This pass
+            // validates its complete causal contract; it does not derive an
+            // operator from Culture, Political Beliefs, tendencies, scale, or
+            // infrastructure summaries.
+            var facts = new CAProvisionCausalFacts();
+            foreach (CAProvisionArrangement arrangement in
+                source.provisionArrangements
+                    ?? new List<CAProvisionArrangement>())
             {
-                Support = CAFactionAxes.KeyOf(owner.factionStructure,
-                    CAFactionAxes.Support),
-                Ownership = AxisOf(owner, CAFactionAxes.Ownership),
-                Work = AxisOf(owner, CAFactionAxes.Work),
-                Pattern = plan.settlementPattern,
-                Authority = (int)CARegionalSettlements.SettlementAuthorityOf(
-                    plan, owner),
-                Role = source.realizedRole,
-                Scale = source.realizedScale,
-                Access = CASettlementStartingState.Access(plan, source),
-                Services = CASettlementStartingState.Services(plan, source),
-                Civic = CASettlementStartingState.Civic(plan, source)
-            };
-            foreach (CASettlementPopulationGroup population in
-                source.populationGroups ?? new List<CASettlementPopulationGroup>())
-            {
-                if (population == null) continue;
-                int factionKey = population.politicalBeliefsFactionKey >= 0
-                    ? population.politicalBeliefsFactionKey
-                    : population.factionKey;
-                facts.Population.Add(new CAProvisionPopulationFact
+                if (arrangement == null || !arrangement.active) continue;
+                facts.Operators.Add(new CAProvisionOperatorFact
                 {
-                    Key = population.key,
-                    OtherFaction = population.kind
-                        == CAPopulationGroupKind.OtherFaction,
-                    Ownership = AxisOf(plan.FactionPlan(factionKey),
-                        CAFactionAxes.Ownership)
+                    Key = arrangement.key,
+                    BasisKey = arrangement.basisKey,
+                    BasisLabel = arrangement.basisLabel,
+                    Operator = arrangement.operatorKind.ToString(),
+                    OperatorIdentity = arrangement.operatorIdentity,
+                    OperatorSource = arrangement.operatorSource,
+                    PopulationGroupKey = arrangement.populationGroupKey,
+                    Access = arrangement.access.ToString(),
+                    AccessSource = arrangement.accessSource,
+                    Funding = arrangement.funding.ToString(),
+                    FundingSource = arrangement.fundingSource,
+                    Distribution = arrangement.distribution.ToString(),
+                    DistributionSource = arrangement.distributionSource,
+                    LaborSource = arrangement.laborSource,
+                    KnowledgeSource = arrangement.knowledgeSource,
+                    MaterialSource = arrangement.materialSource,
+                    StockSource = arrangement.stockSource,
+                    PolicyKey = arrangement.policyKey,
+                    PolicyValue = arrangement.policyValue,
+                    CollectionPath = arrangement.collectionPath,
+                    Nodes = arrangement.nodes,
+                    Reach = arrangement.reach.ToString()
                 });
             }
             return CAProvisionCausalKernel.Derive(facts).Select(spec =>
@@ -334,14 +365,27 @@ namespace ColonistAwareness
                     basisLabel = spec.BasisLabel,
                     operatorKind = (CAProvisionOperator)Enum.Parse(
                         typeof(CAProvisionOperator), spec.Operator),
+                    operatorIdentity = spec.OperatorIdentity,
+                    operatorSource = spec.OperatorSource,
                     populationGroupKey = spec.PopulationGroupKey,
                     access = (CAProvisionAccess)Enum.Parse(
                         typeof(CAProvisionAccess), spec.Access),
+                    accessSource = spec.AccessSource,
                     funding = (CAProvisionFunding)Enum.Parse(
                         typeof(CAProvisionFunding), spec.Funding),
+                    fundingSource = spec.FundingSource,
                     distribution = (CAProvisionDistribution)Enum.Parse(
                         typeof(CAProvisionDistribution), spec.Distribution),
-                    active = true, waterSecured = true,
+                    distributionSource = spec.DistributionSource,
+                    laborSource = spec.LaborSource,
+                    knowledgeSource = spec.KnowledgeSource,
+                    materialSource = spec.MaterialSource,
+                    stockSource = spec.StockSource,
+                    policyKey = spec.PolicyKey,
+                    policyValue = spec.PolicyValue,
+                    collectionPath = spec.CollectionPath,
+                    active = true, operational = false,
+                    waterSecured = true,
                     nodes = spec.Nodes,
                     reach = (CAProvisionReach)Enum.Parse(
                         typeof(CAProvisionReach), spec.Reach)
@@ -361,94 +405,40 @@ namespace ColonistAwareness
                 string.Join("|", values.Select(item => item == null ? "null"
                     : string.Join(":", item.schemaVersion, item.key,
                         item.basisKey, item.basisLabel, item.operatorKind,
-                        item.populationGroupKey, item.access, item.funding,
-                        item.distribution, item.active, item.inactiveReason ?? "",
-                        item.waterSecured, item.nodes, item.reach)));
+                        item.operatorIdentity, item.operatorSource,
+                        item.populationGroupKey, item.access,
+                        item.accessSource, item.funding,
+                        item.fundingSource, item.distribution,
+                        item.distributionSource, item.laborSource,
+                        item.knowledgeSource, item.materialSource,
+                        item.stockSource, item.policyKey,
+                        item.policyValue, item.collectionPath,
+                        item.active, item.nodes, item.reach)));
             if (Signature(saved) == Signature(expected)) return true;
-            failure = "the saved provision arrangements do not match the "
-                + "population, adopted order, settlement authority, role, "
-                + "scale, access, services, and civic state";
+            failure = "the saved provision arrangements do not match their "
+                + "authored or observed operator, funding, labor, stock, "
+                + "material, access, and distribution contracts";
             return false;
         }
 
-        private static int Seed(CARegionalPlan plan,
-            CARegionalSettlementPlan settlementPlan, string salt)
-        {
-            return Gen.HashCombineInt(GenText.StableStringHash(
-                (plan.candidateId ?? "ca-candidate") + ":" + salt),
-                settlementPlan.slot * 7919);
-        }
-
-        // Settlement population: the main population, residents affiliated
-        // with another faction, and unaffiliated residents. Historical
-        // disruption influences the generated mix.
+        // Unset composition creates only the factual owning population.
+        // Minority, unaffiliated, and belief-protected populations are authored
+        // settlement facts; a tendency or random draw cannot create them.
         private static void DerivePopulationGroups(CARegionalPlan plan,
             CARegionalSettlementPlan settlementPlan)
         {
-            CARegionalWorldPolicy policy = plan.worldPolicy
-                ?? new CARegionalWorldPolicy();
             CARegionalFactionPlan owner = plan.FactionPlan(
                 settlementPlan.factionKey);
-            Rand.PushState(Seed(plan, settlementPlan, "populationGroups"));
-            try
+            settlementPlan.populationGroups.Add(
+                new CASettlementPopulationGroup
             {
-                int unaffiliated = CAWorldTendencyCausalKernel
-                    .UnaffiliatedPercent(policy.unaffiliatedPopulationShare,
-                        Rand.RangeInclusive(0, 3));
-                int minorityShare = 0;
-                CARegionalFactionPlan minoritySource = null;
-                List<CARegionalFactionPlan> others =
-                    plan.factions.Where(item => item != null
-                        && item.key != settlementPlan.factionKey
-                        && plan.settlements.Any(place => place != null
-                            && place.factionKey == item.key)
-                        && plan.RelationBetween(settlementPlan.factionKey,
-                            item.key) != FactionRelationKind.Hostile)
-                    .OrderBy(item => item.key).ToList();
-                // Minority residence follows actual neighboring ownership and
-                // saved relations. Settlement-ownership variety has already
-                // done its work when owners were assigned.
-                if (others.Count > 0 && Rand.Chance(0.55f))
-                {
-                    minoritySource = others[Rand.Range(0, others.Count)];
-                    minorityShare = 8 + Rand.RangeInclusive(0, 22);
-                }
-                int dominant = 100 - unaffiliated - minorityShare;
-
-                settlementPlan.populationGroups.Add(new CASettlementPopulationGroup
-                {
-                    key = 1,
-                    kind = CAPopulationGroupKind.Main,
-                    label = CARegionalPlanUtility.FactionName(owner),
-                    share = dominant,
-                    factionKey = settlementPlan.factionKey,
-                    ideoligionCertainty = 1 + (Rand.Chance(0.35f) ? 1 : 0)
-                });
-                if (minoritySource != null)
-                    settlementPlan.populationGroups.Add(new CASettlementPopulationGroup
-                    {
-                        key = 2,
-                        kind = CAPopulationGroupKind.OtherFaction,
-                        label = CARegionalPlanUtility.FactionName(
-                            minoritySource),
-                        share = minorityShare,
-                        factionKey = minoritySource.key,
-                        ideoligionCertainty = Rand.Chance(0.5f) ? 1 : 2,
-                        // A substantial minority tends to have its own
-                        // quarter; a small one lives distributed.
-                        quarter = minorityShare >= 18
-                    });
-                settlementPlan.populationGroups.Add(new CASettlementPopulationGroup
-                {
-                    key = 3,
-                    kind = CAPopulationGroupKind.Unaffiliated,
-                    label = "Unaffiliated",
-                    share = unaffiliated,
-                    factionKey = -1,
-                    ideoligionCertainty = 0
-                });
-            }
-            finally { Rand.PopState(); }
+                key = 1,
+                kind = CAPopulationGroupKind.Main,
+                label = CARegionalPlanUtility.FactionName(owner),
+                share = 100,
+                factionKey = settlementPlan.factionKey,
+                ideoligionCertainty = 1
+            });
         }
 
         internal static string DescribePopulationGroups(
@@ -475,20 +465,18 @@ namespace ColonistAwareness
             {
                 if (record?.populationGroups == null || record.populationGroups.Count == 0
                     || map == null || record.faction == null) return;
-                if (record.populationAssignments == null)
-                    record.populationAssignments = new List<string>();
-                record.populationAssignments.Clear();
+                CASettlementResidenceState.Normalize(record);
 
                 List<Pawn> residents = map.mapPawns
                     .SpawnedPawnsInFaction(record.faction)
                     .Where(p => p != null && p.RaceProps.Humanlike
                         && p.Position.InHorDistOf(
-                            record.localRect.CenterCell, 60f))
+                            record.localRect.CenterCell, 60f)
+                        && CASettlementResidenceState.Active(record,
+                            p.thingIDNumber) == null)
                     .OrderBy(p => p.thingIDNumber).ToList();
                 if (residents.Count == 0) return;
 
-                int seed = Gen.HashCombineInt(
-                    GenText.StableStringHash(record.regionalId), 4483);
                 // [rights axis] How this faction treats difference decides
                 // what happens to distinct-Ideoligion population groups at projection -
                 // the axis' first behavioral consumer.
@@ -496,10 +484,7 @@ namespace ColonistAwareness
                     CAFactionStateWorldComponent.Current
                         ?.Find(record.faction)?.factionStructure, CAFactionAxes.Dissent);
 
-                Rand.PushState(seed);
-                try
-                {
-                    int externalShare = record.populationGroups
+                int externalShare = record.populationGroups
                         .Where(item => IsProjectableOtherFaction(record, map,
                             item))
                         .Sum(item => item.share);
@@ -540,10 +525,8 @@ namespace ColonistAwareness
                     CASettlementPopulationGroup dominant = record.populationGroups
                         .FirstOrDefault(item => item != null && item.kind
                             == CAPopulationGroupKind.Main);
-                    for (; cursor < residents.Count; cursor++)
-                        Tag(record, dominant, residents[cursor]);
-                }
-                finally { Rand.PopState(); }
+                for (; cursor < residents.Count; cursor++)
+                    Tag(record, dominant, residents[cursor]);
 
                 Log.Message("[CA][Population] " + (record.name ?? "settlement")
                     + ": " + record.populationAssignments.Count
@@ -605,11 +588,11 @@ namespace ColonistAwareness
                         record.localRect.CenterCell, map, 18);
                 GenSpawn.Spawn(pawn, cell, map);
                 lord.AddPawn(pawn);
-                if (populationGroup.independentIdeoligionKey >= 0
+                if (populationGroup.nativeIdeoligionId >= 0
                     || populationGroup.ideoligionFactionKey >= 0)
                 {
-                    Ideo ideoligion = populationGroup.independentIdeoligionKey >= 0
-                        ? IndependentIdeoligionFor(record, populationGroup)
+                    Ideo ideoligion = populationGroup.nativeIdeoligionId >= 0
+                        ? IdeoligionById(populationGroup.nativeIdeoligionId)
                         : FactionForGroup(map, populationGroup.ideoligionFactionKey)
                             ?.ideos?.PrimaryIdeo;
                     if (ideoligion != null && pawn.ideo != null
@@ -626,10 +609,8 @@ namespace ColonistAwareness
 
         // A population group within the dominant faction may keep a different
         // Ideoligion. Plural rule registers it as a minor Ideoligion;
-        // majoritarian rule permits it without faction support; customary rule
-        // registers established quarters; orthodoxy suppresses unquartered
-        // groups and records that suppression. A quartered group keeps its
-        // Ideoligion.
+        // majoritarian rule permits it without faction support; protection
+        // preserves it under orthodoxy. Unprotected groups may be suppressed.
         private static void ProjectWithin(
             CARegionalSettlementRecord record, Map map,
             CASettlementPopulationGroup populationGroup, List<Pawn> residents,
@@ -640,13 +621,14 @@ namespace ColonistAwareness
             if (populationGroup.share > 0 && count == 0) count = 1;
             int ideoligionFactionKey = populationGroup.ideoligionFactionKey >= 0
                 ? populationGroup.ideoligionFactionKey : populationGroup.factionKey;
-            Ideo target = populationGroup.independentIdeoligionKey >= 0
-                ? IndependentIdeoligionFor(record, populationGroup)
+            Ideo target = populationGroup.nativeIdeoligionId >= 0
+                ? IdeoligionById(populationGroup.nativeIdeoligionId)
                 : populationGroup.kind == CAPopulationGroupKind.Unaffiliated
                     && populationGroup.ideoligionFactionKey < 0 ? null
                 : FactionForGroup(map, ideoligionFactionKey)?.ideos?.PrimaryIdeo;
             Ideo dominant = record.faction.ideos?.PrimaryIdeo;
-            bool suppress = rights == "orthodoxy" && !populationGroup.quarter
+            bool suppress = rights == "orthodoxy"
+                && !populationGroup.ideoligionProtected
                 && target != null && dominant != null
                 && target != dominant;
             int suppressed = 0;
@@ -676,8 +658,10 @@ namespace ColonistAwareness
                 {
                     pawn.ideo.SetIdeo(target);
                     if (rights == null || rights == "plural"
-                        || (rights == "customary" && populationGroup.quarter)
-                        || (rights == "orthodoxy" && populationGroup.quarter))
+                        || (rights == "customary"
+                            && populationGroup.ideoligionProtected)
+                        || (rights == "orthodoxy"
+                            && populationGroup.ideoligionProtected))
                         RegisterMinorIdeo(record.faction, target);
                 }
                 Tag(record, populationGroup, pawn);
@@ -699,8 +683,10 @@ namespace ColonistAwareness
             CASettlementPopulationGroup populationGroup, Pawn pawn)
         {
             if (record == null || populationGroup == null || pawn == null) return;
-            record.populationAssignments.Add(populationGroup.key + ":"
-                + pawn.thingIDNumber);
+            CASettlementResidenceState.Assign(record, pawn,
+                populationGroup.key, "initial population realization",
+                "saved population group " + populationGroup.key
+                    + " materialized as a resident");
         }
 
         // Population cohesion sets the native Ideoligion certainty value.
@@ -716,44 +702,14 @@ namespace ColonistAwareness
             catch { }
         }
 
-        // Creates an Ideoligion for an unaffiliated population group. Region
-        // and group keys make generation deterministic, and later settlements
-        // reuse the existing Ideoligion by name.
-        private static Ideo IndependentIdeoligionFor(
-            CARegionalSettlementRecord record, CASettlementPopulationGroup populationGroup)
+        private static Ideo IdeoligionById(int id)
         {
             try
             {
-                if (record?.faction?.def == null) return null;
-                int seed = Gen.HashCombineInt(GenText.StableStringHash(
-                    (record.regionalId ?? "r") + ":independent-ideoligion"),
-                    populationGroup.independentIdeoligionKey * 613);
-                Rand.PushState(seed);
-                try
-                {
-                    Ideo minted = IdeoGenerator.GenerateIdeo(
-                        new IdeoGenerationParms(record.faction.def));
-                    if (minted == null) return null;
-                    Ideo existing = Find.IdeoManager.IdeosListForReading
-                        .FirstOrDefault(i => i != null && i != minted
-                            && i.name == minted.name);
-                    if (existing != null) return existing;
-                    Find.IdeoManager.Add(minted);
-                    Log.Message("[CA][Ideoligion] minted independent "
-                        + "ideoligion '" + minted.name + "' for a "
-                        + "community of "
-                        + (record.name ?? "a settlement")
-                        + " - no faction affiliation");
-                    return minted;
-                }
-                finally { Rand.PopState(); }
+                return Find.IdeoManager?.IdeosListForReading?
+                    .FirstOrDefault(ideo => ideo != null && ideo.id == id);
             }
-            catch (Exception e)
-            {
-                Log.Warning("[CA][Ideoligion] independent Ideoligion generation failed: "
-                    + e.Message);
-                return null;
-            }
+            catch { return null; }
         }
 
         // The engine's own concept for "this faction contains followers
@@ -776,32 +732,25 @@ namespace ColonistAwareness
         internal static string AssignedPopulationGroupOf(
             CARegionalSettlementRecord record, Pawn pawn)
         {
-            if (record?.populationAssignments == null || pawn == null)
-                return null;
-            string suffix = ":" + pawn.thingIDNumber;
-            for (int i = 0; i < record.populationAssignments.Count; i++)
-                if (record.populationAssignments[i].EndsWith(suffix))
-                    return record.populationAssignments[i].Split(':')[0];
-            return null;
+            if (record == null || pawn == null) return null;
+            CASettlementResidenceAssignment assignment =
+                CASettlementResidenceState.Active(record,
+                    pawn.thingIDNumber);
+            return assignment?.populationGroupKey.ToString();
         }
 
-        // Current residents are live humanlike pawns in the settlement area.
-        // Population assignments admit authored minority factions; owner-
-        // faction pawns in the same area cover births and later arrivals.
+        // Current residents are live humanlike pawns with an active typed
+        // residence assignment. Faction identity and proximity alone cannot
+        // admit a passerby.
         internal static List<Pawn> Residents(CARegionalSettlementRecord record,
             Map map)
         {
             var result = new List<Pawn>();
             if (record == null || map?.mapPawns == null) return result;
-            var assigned = new HashSet<int>();
-            foreach (string entry in record.populationAssignments
-                ?? new List<string>())
-            {
-                string[] parts = entry.Split(':');
-                int pawnId;
-                if (parts.Length == 2 && int.TryParse(parts[1], out pawnId))
-                    assigned.Add(pawnId);
-            }
+            CASettlementResidenceState.Normalize(record);
+            var assigned = new HashSet<int>(record.residenceAssignments
+                .Where(item => item != null && item.active)
+                .Select(item => item.pawnId));
             CellRect reach = record.localRect == CellRect.Empty
                 ? CellRect.Empty : record.localRect.ExpandedBy(12);
             foreach (Pawn pawn in map.mapPawns.AllPawnsSpawned)
@@ -810,8 +759,7 @@ namespace ColonistAwareness
                     || !pawn.RaceProps.Humanlike) continue;
                 if (reach != CellRect.Empty && !reach.Contains(pawn.Position))
                     continue;
-                if (pawn.Faction == record.faction
-                    || assigned.Contains(pawn.thingIDNumber))
+                if (assigned.Contains(pawn.thingIDNumber))
                     result.Add(pawn);
             }
             return result.OrderBy(pawn => pawn.thingIDNumber).ToList();
@@ -820,16 +768,11 @@ namespace ColonistAwareness
         internal static List<Pawn> ResidentsInPopulationGroup(
             CARegionalSettlementRecord record, Map map, int populationGroupKey)
         {
-            var ids = new HashSet<int>();
-            foreach (string entry in record?.populationAssignments
-                ?? new List<string>())
-            {
-                string[] parts = entry.Split(':');
-                int key, pawnId;
-                if (parts.Length == 2 && int.TryParse(parts[0], out key)
-                    && key == populationGroupKey
-                    && int.TryParse(parts[1], out pawnId)) ids.Add(pawnId);
-            }
+            var ids = new HashSet<int>((record?.residenceAssignments
+                    ?? new List<CASettlementResidenceAssignment>())
+                .Where(item => item != null && item.active
+                    && item.populationGroupKey == populationGroupKey)
+                .Select(item => item.pawnId));
             return Residents(record, map)
                 .Where(pawn => ids.Contains(pawn.thingIDNumber)).ToList();
         }
@@ -867,389 +810,39 @@ namespace ColonistAwareness
     // reserves to the settlement authority, reconciles taxation, and stocks
     // each non-household node. Household hearths deliberately create no
     // organization.
+    // Persistence/query facade. Runtime resolution, funding, material nodes,
+    // and access each have a separate subordinate owner.
     internal static class CAProvisionArrangements
     {
-        internal const string TaxRateSource =
-            "provision-arrangements:tax-rate";
-        private const string TaxRelationOriginPrefix =
-            "provision-arrangements:tax:";
-
-        internal static string TaxRelationOrigin(string providerKey)
-        {
-            return TaxRelationOriginPrefix + providerKey;
-        }
-
-        // Every arrangement has a stable material identity. Authority and
-        // communal identities also name organizations; household identities
-        // deliberately do not. A :node suffix identifies one physical node.
         internal static string ProviderKey(CARegionalSettlementRecord record,
             CAProvisionArrangement arrangement)
         {
-            if (record == null || arrangement == null) return null;
-            string settlementKey = record.regionalId + "#" + record.slot;
-            return arrangement.operatorKind == CAProvisionOperator.Authority
-                ? settlementKey
-                : arrangement.operatorKind == CAProvisionOperator.Communal
-                    ? settlementKey + ":prov" + arrangement.key
-                    : settlementKey + ":household" + arrangement.key;
+            return record == null || arrangement == null
+                ? null : arrangement.operatorIdentity;
         }
 
         internal static string NodeKey(CARegionalSettlementRecord record,
             CAProvisionArrangement arrangement, int node)
         {
-            return ProviderKey(record, arrangement) + ":node"
+            string provider = ProviderKey(record, arrangement);
+            return provider.NullOrEmpty() ? null : provider + ":node"
                 + Math.Max(0, node);
         }
 
-        internal static bool IsHouseholdIdentity(string key)
+        internal static bool IsDomesticIdentity(
+            CARegionalSettlementRecord record, string key)
         {
-            return key?.Contains(":household") == true;
-        }
-
-        internal static CAProvisionArrangement ArrangementForProvider(
-            CARegionalSettlementRecord record, string providerKey)
-        {
-            return (record?.provisionArrangements
-                    ?? new List<CAProvisionArrangement>())
-                .FirstOrDefault(item => item != null && item.active
-                    && (ProviderKey(record, item) == providerKey
-                        || providerKey?.StartsWith(ProviderKey(record, item)
-                            + ":node", StringComparison.Ordinal) == true));
-        }
-
-        // Keeps provider tax links current without rebuilding kitchens or
-        // creating settlement organizations ahead of their normal seed path.
-        internal static void ReconcileTaxFunding(
-            CARegionalSettlementRecord record)
-        {
-            CAOrganizationWorldComponent orgs =
-                CAOrganizationWorldComponent.Current;
-            if (record?.provisionArrangements == null || orgs == null) return;
-            foreach (CAProvisionArrangement arrangement in
-                record.provisionArrangements)
-            {
-                if (arrangement == null || arrangement.operatorKind
-                    == CAProvisionOperator.Household) continue;
-                CAOrganization provider = orgs.ByKey(ProviderKey(record,
-                    arrangement));
-                if (provider != null)
-                    ReconcileTaxFunding(record, arrangement, provider);
-            }
-        }
-
-        // A refused starting tax rate is a saved decision. Removing the
-        // generated link through the normal ledger path records its removal,
-        // so later reconciliation cannot silently restore it.
-        internal static void RefuseTaxFunding(string providerKey)
-        {
-            CAOrganizationRelationsWorldComponent ledger =
-                CAOrganizationRelationsWorldComponent.Current;
-            if (ledger == null || providerKey.NullOrEmpty()) return;
-            string origin = TaxRelationOrigin(providerKey);
-            List<CARelation> links = ledger.RelationsIn(providerKey)
-                .Where(relation => relation != null
-                    && relation.origin.Replaceable
-                    && relation.origin.originKey == origin).ToList();
-            foreach (CARelation link in links)
-                ledger.Remove(link);
-        }
-
-        internal static void RealizeOperatorsAndStock(
-            CARegionalSettlementRecord record,
-            Map map,
-            Func<Room, string, int, string, int> stock)
-        {
-            CAOrganizationWorldComponent orgs =
-                CAOrganizationWorldComponent.Current;
-            if (record.provisionArrangements == null) return;
-            bool water = WaterNear(record, map);
-            foreach (IGrouping<CAProvisionOperator, CAProvisionArrangement>
-                kindGroup in record.provisionArrangements
-                    .Where(item => item != null && item.active)
-                    .GroupBy(item => item.operatorKind))
-            {
-                string programKey = CASettlementProgramRegistry
-                    .ProgramKeyFor(kindGroup.Key);
-                CASettlementProgramEntry program = record.settlementProgram
-                    ?.Entry(programKey);
-                if (program == null || program.materializationState
-                        != "assets placed") continue;
-                bool complete = true;
-                int totalNodes = 0;
-                int totalStocked = 0;
-                foreach (CAProvisionArrangement arrangement in kindGroup)
-                {
-                    arrangement.waterSecured = water;
-                    string identity = ProviderKey(record, arrangement);
-                    CASettlementPopulationGroup populationGroup =
-                        arrangement.populationGroupKey < 0 ? null
-                        : record.populationGroups.FirstOrDefault(item =>
-                            item != null && item.key
-                                == arrangement.populationGroupKey);
-                    CAOrganization op = null;
-                    if (arrangement.operatorKind
-                        != CAProvisionOperator.Household)
-                    {
-                        string orgName = (populationGroup != null
-                                ? populationGroup.label + " " : "")
-                            + arrangement.OperatorWords + " of "
-                            + (record.name ?? "the settlement");
-                        op = arrangement.operatorKind
-                                == CAProvisionOperator.Authority
-                            ? orgs?.ByKey(identity)
-                            : orgs?.EnsureFor(identity, orgName,
-                                "established with the settlement; "
-                                + arrangement.access.ToString().ToLower()
-                                + " access, funded by "
-                                + arrangement.FundingWords,
-                                CAOrganizationKind.Group);
-                        if (op == null)
-                        {
-                            complete = false;
-                            continue;
-                        }
-                        ReconcileTaxFunding(record, arrangement, op);
-                    }
-                    int nodes = Mathf.Clamp(arrangement.nodes, 1, 3);
-                    int stockPer = ((arrangement.operatorKind
-                            == CAProvisionOperator.Authority ? 60 : 40)
-                        + (arrangement.reach == CAProvisionReach.Region
-                            ? 40 : 0)) / nodes;
-                    if (!water) stockPer /= 2;
-                    int stocked = 0;
-                    for (int n = 0; n < nodes; n++)
-                    {
-                        string nodeKey = NodeKey(record, arrangement, n);
-                        Room room = ProgramRoom(record, map, nodeKey);
-                        int placed = stock(room, "Pemmican", stockPer,
-                            identity);
-                        stocked += placed;
-                        totalNodes++;
-                        if (placed != 1) complete = false;
-                    }
-                    totalStocked += stocked;
-                    op?.Record("provisioning", arrangement.Summary
-                        + " - " + nodes + " node"
-                        + (nodes == 1 ? "" : "s") + " raised"
-                        + (populationGroup?.quarter == true
-                            ? " in its own quarter" : "") + ", "
-                        + stocked + " stocked reserve"
-                        + (stocked == 1 ? "" : "s"));
-                    if (!water)
-                        op?.Record("provisioning", "no secured water "
-                            + "within reach - the kitchens run on half "
-                            + "stores until a source is secured");
-                }
-                program.materializationState = complete && totalNodes > 0
-                    && totalStocked == totalNodes
-                        ? "institutions pending" : "blocked";
-                if (program.materializationState == "blocked"
-                    && program.blocker.NullOrEmpty())
-                    program.blocker = "the saved provision operators, node "
-                        + "identity, funding, and stocked reserves could not "
-                        + "all be realized";
-            }
-        }
-
-        private static Room ProgramRoom(CARegionalSettlementRecord record,
-            Map map, string nodeKey)
-        {
-            if (map == null || record?.seededAssets == null
-                || nodeKey.NullOrEmpty()) return null;
-            foreach (string asset in record.seededAssets)
-            {
-                string[] parts = asset.Split('|');
-                if (parts.Length < 5 || parts[4] != nodeKey) continue;
-                if (!int.TryParse(parts[1], out int x)
-                    || !int.TryParse(parts[2], out int z)) continue;
-                IntVec3 cell = new IntVec3(x, 0, z);
-                if (cell.InBounds(map)) return cell.GetRoom(map);
-            }
-            return null;
-        }
-
-        // Tax-funded support has both halves of the taxation loop: the
-        // provider's policy and a relation naming the settlement treasury
-        // that pays it. Either half alone is only descriptive state.
-        private static void ReconcileTaxFunding(
-            CARegionalSettlementRecord record,
-            CAProvisionArrangement arrangement, CAOrganization provider)
-        {
-            string relationOrigin = TaxRelationOrigin(
-                provider.organizationKey);
-            CAOrganizationRelationsWorldComponent ledger =
-                CAOrganizationRelationsWorldComponent.Current;
-            if (arrangement.funding != CAProvisionFunding.Taxation)
-            {
-                ledger?.ClearDerived(relationOrigin);
-                provider.policies.RemoveAll(policy => policy != null
-                    && policy.key == "tax rate"
-                    && policy.generatedBy == TaxRateSource);
-                return;
-            }
-
-            string payerKey = record.regionalId + "#" + record.slot;
-            int now = Find.TickManager?.TicksGame ?? 0;
-            bool selfFundedAuthority = provider.organizationKey == payerKey;
-            bool linked = selfFundedAuthority || ledger != null && ledger
-                .RelationsIn(provider.organizationKey).Any(relation =>
-                    relation != null && !relation.Expired(now)
-                    && relation.IsOrganizationParty
-                    && relation.OrganizationPartyKey == payerKey
-                    && relation.Delegates(CAResponsibilities.Taxes));
-            if (!linked && ledger != null)
-            {
-                ledger.ClearDerived(relationOrigin);
-                var relation = new CARelation
-                {
-                    orgKey = provider.organizationKey,
-                    role = "support contributor",
-                    status = "settlement",
-                    startTick = now,
-                    origin = CAOrigin.Derived(relationOrigin),
-                    delegatedResponsibilities = new List<string>
-                        { CAResponsibilities.Taxes }
-                };
-                relation.Party = CARelationPartyRef.OfOrganization(payerKey);
-                linked = ledger.Add(relation);
-            }
-            if (!linked)
-            {
-                provider.policies.RemoveAll(policy => policy != null
-                    && policy.key == "tax rate"
-                    && policy.generatedBy == TaxRateSource);
-                return;
-            }
-
-            CAPolicyRecord taxRate = provider.policies.FirstOrDefault(
-                policy => policy != null && policy.key == "tax rate");
-            if (taxRate == null)
-            {
-                provider.policies.Add(new CAPolicyRecord
-                {
-                    key = "tax rate",
-                    value = "light",
-                    adoptedTick = Find.TickManager.TicksGame,
-                    generatedBy = TaxRateSource
-                });
-            }
-        }
-
-        // Final completion gate. Physical nodes and stock are necessary but
-        // insufficient: non-household provision must also have its operator,
-        // provider-bound holdings, enough active workers, and a realized
-        // funding path. Household provision proves household-bound holdings
-        // and stock without inventing an organization.
-        internal static void CompleteMaterialization(
-            CARegionalSettlementRecord record, Map map)
-        {
-            if (record?.settlementProgram == null || map == null) return;
-            CAOrganizationWorldComponent orgs =
-                CAOrganizationWorldComponent.Current;
-            CAOrganizationRelationsWorldComponent ledger =
-                CAOrganizationRelationsWorldComponent.Current;
-            int now = Find.TickManager?.TicksGame ?? 0;
-            foreach (IGrouping<CAProvisionOperator, CAProvisionArrangement>
-                kindGroup in (record.provisionArrangements
-                    ?? new List<CAProvisionArrangement>())
-                    .Where(item => item != null && item.active)
-                    .GroupBy(item => item.operatorKind))
-            {
-                CASettlementProgramEntry program = record.settlementProgram
-                    .Entry(CASettlementProgramRegistry.ProgramKeyFor(
-                        kindGroup.Key));
-                if (program == null || program.materializationState
-                        != "institutions pending") continue;
-                bool complete = true;
-                foreach (CAProvisionArrangement arrangement in kindGroup)
-                {
-                    string providerKey = ProviderKey(record, arrangement);
-                    int nodes = Mathf.Clamp(arrangement.nodes, 1, 3);
-                    int stocked = (record.startingStock
-                            ?? new List<CAStartingStockRecord>())
-                        .Count(item => item != null
-                            && item.providerOrgKey == providerKey
-                            && item.thingId >= 0);
-                    List<CAFacilityHolding> holdings = ledger?.Holdings
-                        .Where(item => item != null && item.mapId == map.uniqueID
-                            && (item.operatorOrgKey == providerKey
-                                || item.ownerOrgKey == providerKey))
-                        .ToList() ?? new List<CAFacilityHolding>();
-                    bool stockAndAccess = stocked >= nodes
-                        && holdings.Count > 0
-                        && holdings.All(item => !item.allocationRule.NullOrEmpty());
-                    if (arrangement.operatorKind
-                        == CAProvisionOperator.Household)
-                    {
-                        complete &= orgs?.ByKey(providerKey) == null
-                            && stockAndAccess;
-                        continue;
-                    }
-                    CAOrganization provider = orgs?.ByKey(providerKey);
-                    bool staffed = provider != null
-                        && provider.memberPawnIds.Distinct().Count() >= nodes;
-                    bool funded = FundingRealized(record, arrangement,
-                        provider, ledger, now);
-                    complete &= provider != null && stockAndAccess
-                        && staffed && funded;
-                }
-                program.materializationState = complete
-                    ? "materialized" : "blocked";
-                if (!complete && program.blocker.NullOrEmpty())
-                    program.blocker = "the provision program lacks a complete "
-                        + "operator, access, staffing, funding, or stocked-node "
-                        + "contract";
-            }
-        }
-
-        private static bool FundingRealized(
-            CARegionalSettlementRecord record,
-            CAProvisionArrangement arrangement, CAOrganization provider,
-            CAOrganizationRelationsWorldComponent ledger, int now)
-        {
-            if (arrangement.funding == CAProvisionFunding.Household)
-                return arrangement.operatorKind
-                    == CAProvisionOperator.Household;
-            if (provider == null) return false;
-            if (arrangement.funding == CAProvisionFunding.SharedWork)
-                return provider.memberPawnIds.Count >= Math.Max(1,
-                    arrangement.nodes) && ledger?.RelationsIn(
-                        provider.organizationKey).Any(relation =>
-                            relation != null && !relation.Expired(now)
-                            && relation.Delegates(CAResponsibilities.Work))
-                        == true;
-            if (arrangement.funding == CAProvisionFunding.Taxation)
-            {
-                bool policy = provider.policies.Any(item => item != null
-                    && item.key == "tax rate" && item.generatedBy
-                        == TaxRateSource);
-                bool self = provider.organizationKey == record.regionalId
-                    + "#" + record.slot;
-                bool link = self || ledger?.RelationsIn(
-                    provider.organizationKey).Any(relation =>
-                        relation != null && !relation.Expired(now)
-                        && relation.Delegates(CAResponsibilities.Taxes))
-                    == true;
-                return policy && link;
-            }
-            return false;
-        }
-
-        // Water is secured when water terrain exists within reach of the
-        // settlement. Plumbing is not inferred.
-        private static bool WaterNear(CARegionalSettlementRecord record,
-            Map map)
-        {
-            CellRect scan = record.localRect.ExpandedBy(16)
-                .ClipInsideMap(map);
-            for (int x = scan.minX; x <= scan.maxX; x += 4)
-                for (int z = scan.minZ; z <= scan.maxZ; z += 4)
-                {
-                    TerrainDef terrain =
-                        new IntVec3(x, 0, z).GetTerrain(map);
-                    if (terrain != null && terrain.IsWater) return true;
-                }
-            return false;
+            if (record == null || key.NullOrEmpty()) return false;
+            if (record.domesticUnits?.Any(unit => unit != null && unit.active
+                    && unit.unitIdentity == key) == true)
+                return true;
+            if (!key.StartsWith("pawn:", StringComparison.Ordinal)
+                && !key.StartsWith("individual:",
+                    StringComparison.Ordinal)) return false;
+            int separator = key.IndexOf(':');
+            return separator >= 0
+                && int.TryParse(key.Substring(separator + 1), out int pawnId)
+                && CASettlementResidenceState.Active(record, pawnId) != null;
         }
     }
 }

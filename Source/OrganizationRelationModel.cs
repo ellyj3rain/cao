@@ -424,6 +424,15 @@ namespace ColonistAwareness
         public int ownerPawnId = -1;
         public string operatorOrgKey;
         public int operatorPawnId = -1;
+        // Generic identities preserve domestic-unit and other typed operators
+        // without pretending they are organizations or pawns.
+        public string ownerIdentity;
+        public string operatorIdentity;
+        public int provisionArrangementKey;
+        public int provisionNodeIndex = -1;
+        public string programKey;
+        public string programSignature;
+        public string assetRole;
 
         public string capitalSource = CACapitalSources.Private;
         public string allocationRule = CAAllocationRules.InternalUse;
@@ -447,6 +456,15 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref ownerPawnId, "ownerPawnId", -1);
             Scribe_Values.Look(ref operatorOrgKey, "operatorOrgKey");
             Scribe_Values.Look(ref operatorPawnId, "operatorPawnId", -1);
+            Scribe_Values.Look(ref ownerIdentity, "ownerIdentity");
+            Scribe_Values.Look(ref operatorIdentity, "operatorIdentity");
+            Scribe_Values.Look(ref provisionArrangementKey,
+                "provisionArrangementKey", 0);
+            Scribe_Values.Look(ref provisionNodeIndex,
+                "provisionNodeIndex", -1);
+            Scribe_Values.Look(ref programKey, "programKey");
+            Scribe_Values.Look(ref programSignature, "programSignature");
+            Scribe_Values.Look(ref assetRole, "assetRole");
             Scribe_Values.Look(ref capitalSource, "capitalSource",
                 CACapitalSources.Private);
             Scribe_Values.Look(ref allocationRule, "allocationRule",

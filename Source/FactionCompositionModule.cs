@@ -386,10 +386,12 @@ namespace ColonistAwareness
             if (group == null) return 0;
             group.EnsureCultureAndPolitics(plan);
             if (group.institutionalStateIncomplete) return 0;
-            string seed = (plan?.candidateId ?? "ca") + ":faction:"
-                + group.key + ":structure";
-            return CAFactionStructureModel.GenerateEstablishedUnset(
-                group.factionStructure, group.politicalBeliefs, seed);
+            int generated = CAFactionStructureModel.PreserveEstablishedUnset(
+                group.factionStructure);
+            if (Axes.Any(axis => StateOf(group.factionStructure, axis.Key)
+                    == CAAxisSource.Unset))
+                group.institutionalStateIncomplete = true;
+            return generated;
         }
 
         internal static void Author(CARegionalFactionPlan group,

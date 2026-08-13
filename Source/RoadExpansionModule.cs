@@ -12,6 +12,9 @@ namespace ColonistAwareness
     public sealed class CARoadProject : IExposable
     {
         public string ownerKey;
+        public string programKey;
+        public string operatorIdentity;
+        public string programSignature;
         public IntVec3 from = IntVec3.Invalid;
         public IntVec3 to = IntVec3.Invalid;
         public List<IntVec3> pending = new List<IntVec3>();
@@ -32,6 +35,9 @@ namespace ColonistAwareness
         public void ExposeData()
         {
             Scribe_Values.Look(ref ownerKey, "ownerKey");
+            Scribe_Values.Look(ref programKey, "programKey");
+            Scribe_Values.Look(ref operatorIdentity, "operatorIdentity");
+            Scribe_Values.Look(ref programSignature, "programSignature");
             Scribe_Values.Look(ref from, "from", IntVec3.Invalid);
             Scribe_Values.Look(ref to, "to", IntVec3.Invalid);
             Scribe_Collections.Look(ref pending, "pending",
@@ -114,12 +120,21 @@ namespace ColonistAwareness
                 string key = record.regionalId + "#" + record.slot;
                 CAOrganization org = comp.ByKey(key);
                 if (org == null) continue;
-
-                CARoadProject project = projects
-                    .FirstOrDefault(p => p != null && p.ownerKey == key);
+                foreach (CASettlementProgramEntry program in record
+                    .settlementProgram?.Entries(
+                        CASettlementProgramRegistry.Transport)
+                        ?? Enumerable.Empty<CASettlementProgramEntry>())
+                {
+                if (!CASettlementProgramRuntimeContract.TryResolve(record,
+                        map, program, requireMaterializedAssets: true,
+                        out CASettlementProgramRuntimeResolution _))
+                    continue;
+                CARoadProject project = projects.FirstOrDefault(p =>
+                    p != null && p.ownerKey == key
+                    && p.programSignature == program.signature);
                 if (project == null)
                 {
-                    project = Propose(record, org, key, world);
+                    project = Propose(record, program, org, key, world);
                     if (project == null) continue;
                     projects.Add(project);
                     org.Record("works", "road ordered - " + project.reason);
@@ -130,7 +145,8 @@ namespace ColonistAwareness
                     projects.Remove(project);
                     continue;
                 }
-                Advance(record, org, project);
+                Advance(record, program, org, project);
+                }
             }
             projects.RemoveAll(p => p == null
                 || (p.pending != null && p.pending.Count == 0
@@ -156,8 +172,11 @@ namespace ColonistAwareness
                 CABehaviorDecision decision;
                 bool validLabor = job != null
                     && job.loadID == project.laborJobId
-                    && CASettlementInstitutionalAuthorization
+                && CASettlementInstitutionalAuthorization
                         .TryReauthorizeCompletion(record, map, worker, job,
+                            project.programKey, project.operatorIdentity,
+                            project.programSignature,
+                            requireMaterializedAssets: true,
                             project.behaviorKey, project.episodeId,
                             (CAAuthorityOrigin)project.laborAuthorityOrigin,
                             project.authorityIdentity, project.owner,
@@ -174,10 +193,13 @@ namespace ColonistAwareness
             CABehaviorDecision decision;
             return CASettlementInstitutionalAuthorization
                 .TryReauthorizeCompletion(record, map, null, null,
+                    project.programKey, project.operatorIdentity,
+                    project.programSignature,
+                    requireMaterializedAssets: true,
                     project.behaviorKey, project.episodeId,
                     (CAAuthorityOrigin)project.authorityOrigin,
                     project.authorityIdentity, project.owner,
-                    project.reason, out decision);
+                    "road project: " + project.reason, out decision);
         }
 
         private void CancelLabor(CARoadProject project)
@@ -201,7 +223,7 @@ namespace ColonistAwareness
         // watch post or a road toward an agreement partner. It does not create
         // either target, funding, labor, authority, or a passable route.
         private CARoadProject Propose(CARegionalSettlementRecord record,
-            CAOrganization org, string key,
+            CASettlementProgramEntry program, CAOrganization org, string key,
             CARegionalWorldComponent world)
         {
             if (org.treasury < SilverPerSegment * 12) return null;
@@ -302,7 +324,11 @@ namespace ColonistAwareness
             if (!projectDecision.Allowed) return null;
             return new CARoadProject
             {
-                ownerKey = key, from = start, to = target,
+                ownerKey = key,
+                programKey = program.programKey,
+                operatorIdentity = program.operatorIdentity,
+                programSignature = program.signature,
+                from = start, to = target,
                 pending = line, reason = why,
                 behaviorKey = record.developmentBehaviorKey,
                 episodeId = record.developmentEpisodeId,
@@ -320,7 +346,8 @@ namespace ColonistAwareness
         // road and the next few cells become road, paid for out of the
         // treasury. No worker, no money - no road.
         private void Advance(CARegionalSettlementRecord record,
-            CAOrganization org, CARoadProject project)
+            CASettlementProgramEntry program, CAOrganization org,
+            CARoadProject project)
         {
             if (project.pending == null || project.pending.Count == 0)
                 return;
@@ -329,7 +356,7 @@ namespace ColonistAwareness
             IntVec3 head = project.pending[0];
             if (!head.InBounds(map)) { project.pending.RemoveAt(0); return; }
 
-            Pawn worker = FindWorker(record, head);
+            Pawn worker = FindWorker(record, program, head);
             if (worker == null) return;
             if (!worker.Position.InHorDistOf(head, 4f))
             {
@@ -338,8 +365,10 @@ namespace ColonistAwareness
                 {
                     Job approach = JobMaker.MakeJob(JobDefOf.Goto, head);
                     if (CASettlementInstitutionalAuthorization.TryAuthorizeJob(
-                            record, worker, approach,
+                            record, program, worker, approach,
+                            CASettlementDemandKind.Access,
                             "road approach " + head,
+                            requireMaterializedAssets: true,
                             out CABehaviorDecision _, out CAIntentContext _))
                         worker.jobs.StartJob(approach,
                             JobCondition.InterruptForced);
@@ -356,8 +385,10 @@ namespace ColonistAwareness
             Job roadWork = JobMaker.MakeJob(JobDefOf.Wait, head);
             roadWork.expiryInterval = 300;
             if (!CASettlementInstitutionalAuthorization.TryAuthorizeJob(record,
-                    worker, roadWork, "lay road from " + project.from
+                    program, worker, roadWork, CASettlementDemandKind.Access,
+                    "lay road from " + project.from
                         + " toward " + project.to,
+                    requireMaterializedAssets: true,
                     out CABehaviorDecision _,
                     out CAIntentContext laborIntent)) return;
             worker.jobs.StartJob(roadWork, JobCondition.InterruptForced);
@@ -390,6 +421,9 @@ namespace ColonistAwareness
             bool authorized = condition == JobCondition.Succeeded
                 && CASettlementInstitutionalAuthorization
                     .TryReauthorizeCompletion(record, map, worker, job,
+                        project.programKey, project.operatorIdentity,
+                        project.programSignature,
+                        requireMaterializedAssets: true,
                         project.behaviorKey, project.episodeId,
                         (CAAuthorityOrigin)project.laborAuthorityOrigin,
                         project.authorityIdentity, project.owner,
@@ -435,10 +469,13 @@ namespace ColonistAwareness
         }
 
         private Pawn FindWorker(CARegionalSettlementRecord record,
-            IntVec3 head)
+            CASettlementProgramEntry program, IntVec3 head)
         {
-            var pawns = map.mapPawns
-                .SpawnedPawnsInFaction(record.faction);
+            if (!CASettlementProgramRuntimeContract.TryResolve(record, map,
+                    program, requireMaterializedAssets: true,
+                    out CASettlementProgramRuntimeResolution runtime))
+                return null;
+            List<Pawn> pawns = runtime.Workers;
             for (int i = 0; i < pawns.Count; i++)
             {
                 Pawn p = pawns[i];

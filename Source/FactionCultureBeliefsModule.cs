@@ -21,7 +21,7 @@ namespace ColonistAwareness
         public string label;
         public int share;
         public bool inherited = true;
-        public bool separateQuarter;
+        public bool ideoligionProtected;
 
         public void ExposeData()
         {
@@ -29,8 +29,8 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref label, "label");
             Scribe_Values.Look(ref share, "share", 0);
             Scribe_Values.Look(ref inherited, "inherited", true);
-            Scribe_Values.Look(ref separateQuarter,
-                "separateQuarter", false);
+            Scribe_Values.Look(ref ideoligionProtected,
+                "ideoligionProtected", false);
         }
 
         internal CACultureConstituent Copy()
@@ -41,7 +41,7 @@ namespace ColonistAwareness
                 label = label,
                 share = share,
                 inherited = inherited,
-                separateQuarter = separateQuarter
+                ideoligionProtected = ideoligionProtected
             };
         }
     }
@@ -405,7 +405,7 @@ namespace ColonistAwareness
                 LookMode.Deep);
             Scribe_Deep.Look(ref lastEvidence, "lastEvidence");
             Scribe_Values.Look(ref authoredMask, "authoredMask", 0);
-            // A top-level B8 epoch owns whether this object is loadable. The
+            // The top-level authoring epoch owns whether this object is loadable. The
             // nested object never upgrades an earlier development schema.
         }
 
@@ -618,7 +618,7 @@ namespace ColonistAwareness
             if (positions == null) positions = new List<CAAxisEntry>();
             if (derivationReceipts == null)
                 derivationReceipts = new List<CAPoliticalDerivationReceipt>();
-            // A top-level B8 epoch owns whether this object is loadable. The
+            // The top-level authoring epoch owns whether this object is loadable. The
             // nested object never upgrades an earlier development schema.
         }
 
@@ -715,9 +715,8 @@ namespace ColonistAwareness
         {
             if (culture == null) return;
             Normalize(culture);
-            int hash = GenText.StableStringHash(seed ?? "ca-culture");
             if (culture.id.NullOrEmpty())
-                culture.id = "culture:" + Math.Abs((long)hash);
+                culture.id = "culture:" + (seed ?? "unowned");
             if (culture.constituents.Count == 0)
                 culture.constituents.Add(new CACultureConstituent
                 {
@@ -854,9 +853,8 @@ namespace ColonistAwareness
             string inheritedId = inherited.id;
             local.parentId = inheritedId;
             local.id = "culture:player-local:"
-                + Math.Abs((long)GenText.StableStringHash(
-                    (Find.World?.info?.persistentRandomValue ?? 0)
-                        + ":" + map.uniqueID));
+                + CAPlayerFoundingSession.WorldIdentity()
+                + ":map:" + map.uniqueID;
             local.localityKey = locality;
             local.name = LocalName(inherited.name);
             local.maturity = establishedStart
@@ -910,9 +908,8 @@ namespace ColonistAwareness
                         : CACultureModel.NativeDef(inherited));
                 local.parentId = inherited?.id;
                 local.id = "culture:settlement:"
-                    + Math.Abs((long)GenText.StableStringHash(
-                        (plan.regionalId ?? plan.candidateId ?? "region")
-                            + ":" + settlement.slot));
+                    + (plan.regionalId ?? plan.candidateId ?? "region")
+                    + ":" + settlement.slot;
                 local.localityKey = (plan.regionName
                         ?? plan.regionalId ?? "region")
                     + "/" + CARegionalPlanUtility.SettlementName(plan,
@@ -1381,7 +1378,8 @@ namespace ColonistAwareness
                     result.Add(identity, entry);
                 }
                 entry.share += population.share;
-                entry.separateQuarter |= population.quarter;
+                entry.ideoligionProtected |=
+                    population.ideoligionProtected;
             }
             if (result.Count == 0)
             {
@@ -1419,8 +1417,8 @@ namespace ColonistAwareness
                 .Where(item => item != null)
                 .OrderBy(item => item.cultureId ?? item.label)
                 .Select(item => (item.cultureId ?? "unrecorded") + ":"
-                    + item.share + ":" + (item.separateQuarter
-                        ? "separate" : "shared")));
+                    + item.share + ":" + (item.ideoligionProtected
+                        ? "Ideoligion-protected" : "unprotected")));
         }
 
         private static CACulturalHistoryEvidence Evidence(
@@ -1497,8 +1495,7 @@ namespace ColonistAwareness
             if (beliefs == null) return;
             Normalize(beliefs);
             if (beliefs.id.NullOrEmpty())
-                beliefs.id = "politics:" + Math.Abs((long)
-                    GenText.StableStringHash(seed ?? "ca-politics"));
+                beliefs.id = "politics:" + (seed ?? "unowned");
         }
 
         internal static int DeriveUnset(CAPoliticalBeliefs beliefs,
@@ -1535,7 +1532,7 @@ namespace ColonistAwareness
                             pair.Key).Select(pair => pair.Key + "="
                                 + pair.Value)),
                         evidence = string.Join(" | ", axis.Evidence),
-                        tieBroken = axis.TieBroken
+                        tieBroken = false
                     });
                 filled++;
             }
@@ -1613,29 +1610,13 @@ namespace ColonistAwareness
 
     internal static class CAFactionStructureModel
     {
-        internal static int GenerateEstablishedUnset(List<CAAxisEntry> structure,
-            CAPoliticalBeliefs beliefs, string seed)
+        // Current order is an established fact, not a randomized expression
+        // of what the population believes ought to be true. Without authored
+        // or observed institutional evidence, unset axes remain unset.
+        internal static int PreserveEstablishedUnset(
+            List<CAAxisEntry> structure)
         {
-            if (structure == null) return 0;
-            int hash = GenText.StableStringHash(seed ?? "ca-structure");
-            int filled = 0;
-            for (int i = 0; i < CAFactionAxes.Axes.Length; i++)
-            {
-                CAAxisDef def = CAFactionAxes.Axes[i];
-                if (CAFactionAxes.StateOf(structure, def.Key)
-                    != CAAxisSource.Unset) continue;
-                string ideal = CAFactionAxes.KeyOf(beliefs?.positions, def.Key);
-                bool followsIdeal = ideal != null
-                    && Math.Abs((long)Gen.HashCombineInt(hash, i * 73 + 5))
-                        % 100 < 76;
-                string chosen = followsIdeal ? ideal : def.Options[(int)(
-                    Math.Abs((long)Gen.HashCombineInt(hash, i * 73 + 19))
-                    % def.Options.Length)].Key;
-                CAFactionAxes.Set(structure, def.Key, chosen,
-                    CAAxisSource.Generated);
-                filled++;
-            }
-            return filled;
+            return 0;
         }
 
         internal static List<string> Tensions(

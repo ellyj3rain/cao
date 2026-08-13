@@ -21,7 +21,8 @@ namespace ColonistAwareness
         Research = 7,
         Defense = 8,
         Maintenance = 9,
-        Access = 10
+        Access = 10,
+        Cultivation = 11
     }
 
     // A settlement proposal names needs and native assets before authority is
@@ -41,11 +42,12 @@ namespace ColonistAwareness
         internal readonly List<string> ProgramAssetRoles = new List<string>();
         internal readonly List<string> ProgramSpatialRequirements =
             new List<string>();
-        internal bool RequiresSeparateProvisionQuarter;
+        internal bool RequiresGroupProvisionRoom;
         internal string FundingBasis;
         internal string MaterialBasis;
         internal bool FundingFeasible;
         internal bool MaterialFeasible;
+        internal string LaborBasis;
 
         internal bool HasCandidate(CASettlementDemandKind demand)
         {
@@ -76,8 +78,7 @@ namespace ColonistAwareness
                     .OrderBy(role => role, StringComparer.Ordinal).ToArray())
                 + ":spatial=" + string.Join(",", ProgramSpatialRequirements
                     .OrderBy(item => item, StringComparer.Ordinal).ToArray())
-                + ":separateProvisionQuarter="
-                + RequiresSeparateProvisionQuarter
+                + ":groupProvisionRoom=" + RequiresGroupProvisionRoom
                 + ":demands=" + string.Join(",", Demands.OrderBy(demand => (int)demand)
                     .Select(demand => ((int)demand).ToString()).ToArray())
                 + ":" + string.Join(",", AssetCandidates
@@ -173,7 +174,7 @@ namespace ColonistAwareness
         {
             if (programKey == CASettlementProgramRegistry.FoodPreparation
                 || programKey
-                    == CASettlementProgramRegistry.HouseholdProvision)
+                    == CASettlementProgramRegistry.DomesticProvision)
                 return CASettlementDemandKind.FoodPreparation;
             if (programKey == CASettlementProgramRegistry.Storage
                 || programKey
@@ -246,27 +247,40 @@ namespace ColonistAwareness
         }
 
         internal static CASettlementDevelopmentProposal BuildCreationProposal(
-            CASettlementProgram program, int economicCapacity, int landCapacity,
+            CASettlementProgram program, int landCapacity,
             IEnumerable<CAProvisionArrangement> provisions = null)
         {
-            var proposal = new CASettlementDevelopmentProposal
-            {
-                FundingFeasible = economicCapacity >= 0,
-                FundingBasis = economicCapacity >= 0
-                    ? "authored historical economic capacity "
-                        + economicCapacity
-                    : "no historical funding capacity",
-                MaterialBasis = landCapacity >= 0
-                    ? "native buildable definitions and authored land capacity "
-                        + landCapacity
-                    : "no authored land capacity"
-            };
-            proposal.RequiresSeparateProvisionQuarter = (provisions
+            List<CASettlementProgramEntry> activeEntries = (program?.entries
+                    ?? new List<CASettlementProgramEntry>())
+                .Where(entry => entry != null && entry.blocker.NullOrEmpty())
+                .ToList();
+            string[] fundingSources = activeEntries
+                .Where(entry => entry.requiresFunding)
+                .Select(entry => entry.fundingSource)
+                .Where(source => !source.NullOrEmpty()).Distinct().ToArray();
+            string[] materialSources = activeEntries
+                .Where(entry => entry.requiresMaterial)
+                .Select(entry => entry.materialSource)
+                .Where(source => !source.NullOrEmpty()).Distinct().ToArray();
+            var proposal = new CASettlementDevelopmentProposal();
+            proposal.FundingFeasible = activeEntries.Count > 0
+                && activeEntries.All(entry => !entry.requiresFunding
+                    || !entry.fundingSource.NullOrEmpty());
+            proposal.FundingBasis = activeEntries.Count == 0
+                ? "no active settlement program"
+                : fundingSources.Length == 0
+                    ? "active programs require no separate funding contract"
+                    : string.Join("; ", fundingSources);
+            proposal.MaterialBasis = landCapacity > 0
+                ? (materialSources.Length == 0
+                    ? "no complete material source is recorded"
+                    : string.Join("; ", materialSources))
+                : "no usable authored settlement ground";
+            proposal.RequiresGroupProvisionRoom = (provisions
                     ?? Enumerable.Empty<CAProvisionArrangement>()).Any(item =>
                         item != null && item.active
                         && item.populationGroupKey >= 0);
-            foreach (CASettlementProgramEntry entry in program?.entries
-                ?? new List<CASettlementProgramEntry>())
+            foreach (CASettlementProgramEntry entry in activeEntries)
             {
                 if (entry == null || !entry.blocker.NullOrEmpty()) continue;
                 proposal.ProgramKeys.Add(entry.programKey);
@@ -304,8 +318,10 @@ namespace ColonistAwareness
                 }
             }
 
-            proposal.MaterialFeasible = landCapacity >= 0
+            proposal.MaterialFeasible = landCapacity > 0
                 && proposal.ProgramKeys.Count > 0
+                && activeEntries.All(entry => !entry.requiresMaterial
+                    || !entry.materialSource.NullOrEmpty())
                 && proposal.ProgramKeys.All(key =>
                     CASettlementProgramRegistry.Find(key) != null)
                 && proposal.ProgramAssetRoles.All(role =>
@@ -331,7 +347,6 @@ namespace ColonistAwareness
                 MaterialBasis = "no creation record"
             };
             return BuildCreationProposal(record.settlementProgram,
-                record.economicCapacity,
                 record.landCapacity, record.provisionArrangements);
         }
 
@@ -345,7 +360,7 @@ namespace ColonistAwareness
             if (record == null) return false;
             CASettlementDevelopmentProposal expected = BuildCreationProposal(
                 record.settlementProgram,
-                record.economicCapacity, record.landCapacity,
+                record.landCapacity,
                 record.provisionArrangements);
             string signature = expected.StableSignature();
             bool mismatch = record.creationProposalSignature != signature
@@ -376,10 +391,10 @@ namespace ColonistAwareness
                 .Select(cell => cell.GetRoom(map)).Where(room => room != null
                     && !room.PsychologicallyOutdoors && !room.IsDoorway
                     && room.CellCount >= 6).Distinct().ToList();
-            if (proposal.RequiresSeparateProvisionQuarter
+            if (proposal.RequiresGroupProvisionRoom
                 && insideRooms.Count < 2)
             {
-                blocker = "the separate provision quarter requires a second "
+                blocker = "group-specific provision requires a second "
                     + "realized indoor room";
                 return false;
             }
@@ -501,10 +516,10 @@ namespace ColonistAwareness
             return true;
         }
 
-        // Later development is a fact about the settlement that exists now,
-        // not a replay of its initial settlement program. Maintenance is
-        // available over current faction structures, access over current
-        // settlement ground, and research only where a real bench exists.
+        // Later development consumes exact work that is available now. Saved
+        // program contracts continue to authorize their own research,
+        // cultivation, and transport work; damaged or missing represented
+        // assets create a maintenance demand. Generic presence creates none.
         internal static CASettlementDevelopmentProposal
             BuildInstitutionalProposal(CARegionalSettlementRecord record,
                 CAOrganization organization, Map map)
@@ -514,77 +529,135 @@ namespace ColonistAwareness
                 && map != null && record.faction != null
                 && !record.faction.IsPlayer
                 && record.localRect != CellRect.Empty;
-            int residents = 0;
-            int structures = 0;
-            int researchBenches = 0;
-            int usableCells = 0;
-            var seenStructures = new HashSet<int>();
-            if (validGround)
-            {
-                IReadOnlyList<Pawn> pawns = map.mapPawns
-                    .SpawnedPawnsInFaction(record.faction);
-                for (int i = 0; i < pawns.Count; i++)
-                {
-                    Pawn pawn = pawns[i];
-                    if (pawn != null && !pawn.Dead && pawn.RaceProps.Humanlike
-                        && !pawn.IsPrisoner)
-                        residents++;
-                }
-                foreach (IntVec3 cell in record.localRect)
-                {
-                    if (!cell.InBounds(map)) continue;
-                    if (cell.Walkable(map)) usableCells++;
-                    List<Thing> things = cell.GetThingList(map);
-                    for (int i = 0; i < things.Count; i++)
-                    {
-                        Building building = things[i] as Building;
-                        if (building == null
-                            || building.Faction != record.faction
-                            || !seenStructures.Add(
-                                building.thingIDNumber)) continue;
-                        structures++;
-                        if (building.def?.defName == "SimpleResearchBench")
-                            researchBenches++;
-                    }
-                }
-            }
+            List<Pawn> residents = validGround
+                ? CAPopulationProjection.Residents(record, map)
+                    .Where(pawn => pawn != null && !pawn.Dead
+                        && pawn.Faction == record.faction
+                        && pawn.RaceProps.Humanlike && !pawn.IsPrisoner)
+                    .ToList()
+                : new List<Pawn>();
+            int usableCells = validGround ? record.localRect.Cells.Count(
+                cell => cell.InBounds(map) && cell.Walkable(map)) : 0;
+            int maintenanceTargets = validGround
+                ? MaintenanceTargetCount(record, map) : 0;
+            CASettlementProgramEntry research = OperationalProgram(record,
+                CASettlementProgramRegistry.Research);
+            bool qualifiedResearcher = residents.Any(pawn =>
+                pawn.skills?.GetSkill(SkillDefOf.Intellectual)?.Level > 0);
+            bool researchBench = research != null && HasPlacedAsset(map,
+                research, thing => thing is Building
+                    && thing.def?.defName == "SimpleResearchBench"
+                    && thing.Faction == record.faction);
+            CASettlementProgramEntry agriculture = OperationalProgram(record,
+                CASettlementProgramRegistry.Agriculture);
+            bool cultivation = agriculture != null
+                && HasPlacedCultivation(map, agriculture);
+            CASettlementProgramEntry transport = OperationalProgram(record,
+                CASettlementProgramRegistry.Transport);
 
-            proposal.FundingFeasible = organization != null;
+            proposal.FundingFeasible = organization?.treasury > 0f;
             proposal.FundingBasis = organization == null
-                ? "no current settlement institution"
+                ? "no current settlement organization"
+                : organization.treasury <= 0f
+                    ? "the current settlement organization has no recorded funds"
                 : "current institutional treasury "
                     + organization.treasury.ToString("F0")
                     + "; job-specific costs remain action-bound";
-            proposal.MaterialFeasible = validGround && residents > 0
-                && usableCells > 0;
-            proposal.MaterialBasis = !validGround
-                ? "no current materialized settlement ground"
-                : "current settlement ground with " + residents
-                    + " resident workers, " + structures
-                    + " faction structures, and " + usableCells
-                    + " usable cells";
-            if (validGround && usableCells > 0)
-            {
-                proposal.Demands.Add(CASettlementDemandKind.Access);
-                proposal.AssetCandidates.Add(((int)
-                    CASettlementDemandKind.Access)
-                    + "|current-ground:" + usableCells);
-            }
-            if (structures > 0 || record?.seededAssets?.Count > 0)
+            if (maintenanceTargets > 0)
             {
                 proposal.Demands.Add(CASettlementDemandKind.Maintenance);
                 proposal.AssetCandidates.Add(((int)
                     CASettlementDemandKind.Maintenance)
-                    + "|current-structures:" + structures);
+                    + "|represented-targets:" + maintenanceTargets);
             }
-            if (researchBenches > 0)
+            if (research != null && researchBench && qualifiedResearcher)
             {
                 proposal.Demands.Add(CASettlementDemandKind.Research);
                 proposal.AssetCandidates.Add(((int)
                     CASettlementDemandKind.Research)
-                    + "|current-benches:" + researchBenches);
+                    + "|program:" + research.signature);
             }
+            if (agriculture != null && cultivation)
+            {
+                proposal.Demands.Add(CASettlementDemandKind.Cultivation);
+                proposal.AssetCandidates.Add(((int)
+                    CASettlementDemandKind.Cultivation)
+                    + "|program:" + agriculture.signature);
+            }
+            if (transport != null)
+            {
+                proposal.Demands.Add(CASettlementDemandKind.Access);
+                proposal.AssetCandidates.Add(((int)
+                    CASettlementDemandKind.Access)
+                    + "|program:" + transport.signature);
+            }
+            proposal.MaterialFeasible = validGround && residents.Count > 0
+                && usableCells > 0 && proposal.Demands.Count > 0;
+            proposal.LaborBasis = residents.Count == 0
+                ? "no typed current settlement residents"
+                : "typed settlement residence: " + string.Join(", ",
+                    residents.Select(pawn => "pawn:" + pawn.thingIDNumber)
+                        .OrderBy(value => value, StringComparer.Ordinal));
+            proposal.MaterialBasis = !validGround
+                ? "no current materialized settlement ground"
+                : "current settlement ground with " + residents.Count
+                    + " typed resident workers, " + maintenanceTargets
+                    + " maintenance targets, and " + usableCells
+                    + " usable cells";
             return proposal;
+        }
+
+        private static CASettlementProgramEntry OperationalProgram(
+            CARegionalSettlementRecord record, string key)
+        {
+            return record?.settlementProgram?.Entries(key).FirstOrDefault(
+                entry => entry.blocker.NullOrEmpty()
+                    && (entry.materializationState == "materialized"
+                        || entry.materializationState
+                            == "present in saved geography"));
+        }
+
+        private static bool HasPlacedAsset(Map map,
+            CASettlementProgramEntry entry, Func<Thing, bool> predicate)
+        {
+            var ids = new HashSet<string>(entry?.placedThingIds
+                ?? new List<string>(), StringComparer.Ordinal);
+            return ids.Count > 0 && map.listerThings.AllThings.Any(thing =>
+                thing != null && ids.Contains(thing.ThingID)
+                    && predicate(thing));
+        }
+
+        private static bool HasPlacedCultivation(Map map,
+            CASettlementProgramEntry entry)
+        {
+            var ids = new HashSet<int>((entry?.placedThingIds
+                    ?? new List<string>()).Where(value => value != null
+                        && value.StartsWith("zone:",
+                            StringComparison.Ordinal))
+                .Select(value => int.TryParse(value.Substring(5),
+                    out int id) ? id : -1).Where(id => id >= 0));
+            return ids.Count > 0 && map.zoneManager.AllZones.Any(zone =>
+                zone is Zone_Growing && ids.Contains(zone.ID));
+        }
+
+        private static int MaintenanceTargetCount(
+            CARegionalSettlementRecord record, Map map)
+        {
+            var represented = new HashSet<string>((record.settlementProgram
+                    ?.entries ?? new List<CASettlementProgramEntry>())
+                .Where(entry => entry != null)
+                .SelectMany(entry => entry.placedThingIds
+                    ?? new List<string>()).Where(value => value != null
+                    && !value.StartsWith("zone:",
+                        StringComparison.Ordinal)), StringComparer.Ordinal);
+            int damaged = map.listerThings.AllThings.OfType<Building>().Count(
+                building => represented.Contains(building.ThingID)
+                    && building.Faction == record.faction
+                    && building.def.useHitPoints
+                    && building.HitPoints < building.MaxHitPoints);
+            int missing = represented.Count(id => !map.listerThings.AllThings
+                .Any(thing => thing?.ThingID == id));
+            return damaged + missing;
         }
 
         internal static bool CanExerciseInstitutionalDevelopment(Map map,
@@ -677,7 +750,9 @@ namespace ColonistAwareness
         }
 
         internal static bool TryAuthorizeJob(CARegionalSettlementRecord record,
-            Pawn worker, Job job, string targetOrDemand,
+            CASettlementProgramEntry program, Pawn worker, Job job,
+            CASettlementDemandKind demand, string targetOrDemand,
+            bool requireMaterializedAssets,
             out CABehaviorDecision decision, out CAIntentContext intent)
         {
             intent = default(CAIntentContext);
@@ -698,20 +773,32 @@ namespace ColonistAwareness
                 && !record.developmentAuthorityIdentity.NullOrEmpty();
             bool material = proposal.FundingFeasible
                 && proposal.MaterialFeasible && currentSiting;
+            bool exactDemand = proposal.Demands.Contains(demand);
+            bool exactProgram = CASettlementProgramRuntimeContract.TryResolve(
+                record, currentMap, program, requireMaterializedAssets,
+                out CASettlementProgramRuntimeResolution runtime);
+            bool residentWorker = exactProgram
+                && CASettlementProgramRuntimeContract.WorkerAuthorized(
+                    runtime, worker);
+            bool qualified = demand != CASettlementDemandKind.Research
+                || worker?.skills?.GetSkill(SkillDefOf.Intellectual)?.Level > 0;
             var context = CABehaviorContext.ForPawn(worker,
                 CAAuthorityOrigin.Continuation,
                 authoritySatisfied: validAuthority,
-                knowledgeSatisfied: proposal.Demands.Count > 0,
+                knowledgeSatisfied: exactDemand && exactProgram,
                 knowledgeFresh: true, liveValidated: true,
                 knowledgeRelayed: false, knowledgeAgeTicks: 0,
                 knowledgeConfidence: 1f, knowledgeUncertainty: 0f,
-                capabilitySatisfied: worker != null && job != null,
-                materialSatisfied: material,
+                capabilitySatisfied: residentWorker && qualified
+                    && job != null,
+                materialSatisfied: material && exactDemand && exactProgram,
                 currentIntentCompatible: worker != null
                     && !worker.Drafted && !worker.InMentalState,
                 directPlayerOwnership: false,
                 authorityBasis: record?.developmentAuthorityIdentity,
-                knowledgeBasis: proposal.StableSignature(),
+                knowledgeBasis: exactDemand && exactProgram
+                    ? demand + " under program " + program.signature
+                    : "no current " + demand + " contract",
                 owner: record?.developmentOwner
                     ?? "existing settlement institution");
             return CABehaviorJobOrigin.TryAuthorizeAndRegister(worker, job,
@@ -729,6 +816,8 @@ namespace ColonistAwareness
         // receipt restored by CABehaviorIntentMapComponent.
         internal static bool TryReauthorizeCompletion(
             CARegionalSettlementRecord record, Map map, Pawn worker, Job job,
+            string programKey, string operatorIdentity,
+            string programSignature, bool requireMaterializedAssets,
             string behaviorKey, int episodeId,
             CAAuthorityOrigin savedAuthorityOrigin,
             string authorityIdentity, string owner, string targetOrDemand,
@@ -749,6 +838,17 @@ namespace ColonistAwareness
             bool savedOriginValid = (savedAuthorityOrigin
                     & (institutionalOrigins | CAAuthorityOrigin.Continuation
                         | CAAuthorityOrigin.SaveRestore)) != 0;
+            CASettlementProgramEntry exactProgram = record?.settlementProgram
+                ?.Entries(programKey).FirstOrDefault(entry => entry != null
+                    && entry.operatorIdentity == operatorIdentity
+                    && entry.signature == programSignature);
+            bool programOperational =
+                CASettlementProgramRuntimeContract.TryResolve(record, map,
+                    exactProgram, requireMaterializedAssets,
+                    out CASettlementProgramRuntimeResolution runtime)
+                && (worker == null
+                    || CASettlementProgramRuntimeContract.WorkerAuthorized(
+                        runtime, worker));
             bool currentAuthority = record != null && map != null
                 && organization != null && record.faction != null
                 && !record.faction.IsPlayer && record.developmentAuthorized
@@ -761,7 +861,9 @@ namespace ColonistAwareness
                 && record.developmentOwner == owner
                 && organization.organizationKey == owner
                 && !authorityIdentity.NullOrEmpty()
-                && !owner.NullOrEmpty();
+                && !owner.NullOrEmpty()
+                && programOperational
+                && CommitmentStillExists(record, map, targetOrDemand);
 
             bool ownedJob = job == null && worker == null;
             if (job != null || worker != null)
@@ -813,7 +915,8 @@ namespace ColonistAwareness
             string authorityIdentity = record?.faction?.Name
                 ?? organization?.name ?? "unnamed settlement";
             bool valid = record != null && organization != null
-                && record.faction != null && !record.faction.IsPlayer;
+                && record.faction != null && !record.faction.IsPlayer
+                && proposal?.Demands?.Count > 0;
             var context = new CABehaviorContext(null,
                 CAActorContext.NPCSettlement | CAActorContext.NPCInstitution,
                 CAInitiativeTier.Standard, CAAuthorityOrigin.Institutional,
@@ -823,7 +926,7 @@ namespace ColonistAwareness
                 knowledgeFresh: true, liveValidated: true,
                 knowledgeRelayed: false, knowledgeAgeTicks: 0,
                 knowledgeConfidence: 1f, knowledgeUncertainty: 0f,
-                capabilitySatisfied: valid,
+                capabilitySatisfied: valid && proposal.MaterialFeasible,
                 materialSatisfied: proposal != null
                     && proposal.FundingFeasible
                     && proposal.MaterialFeasible
@@ -869,6 +972,34 @@ namespace ColonistAwareness
                     ownerId: record.faction.loadID);
             }
             return true;
+        }
+
+        private static bool CommitmentStillExists(
+            CARegionalSettlementRecord record, Map map,
+            string targetOrDemand)
+        {
+            if (record == null || map == null) return false;
+            string target = targetOrDemand ?? "";
+            string key = target.IndexOf("research",
+                    StringComparison.OrdinalIgnoreCase) >= 0
+                ? CASettlementProgramRegistry.Research
+                : target.IndexOf("cultivation",
+                    StringComparison.OrdinalIgnoreCase) >= 0
+                    ? CASettlementProgramRegistry.Agriculture
+                    : target.IndexOf("road",
+                        StringComparison.OrdinalIgnoreCase) >= 0
+                        ? CASettlementProgramRegistry.Transport : null;
+            if (key != null)
+                return record.settlementProgram?.Entries(key).Any(entry =>
+                    entry.blocker.NullOrEmpty()) == true;
+            // Repair and rebuilding commitments are represented by their saved
+            // program-asset ledger and survive completion of the work itself.
+            if (target.IndexOf("repair", StringComparison.OrdinalIgnoreCase)
+                    >= 0
+                || target.IndexOf("rebuild",
+                    StringComparison.OrdinalIgnoreCase) >= 0)
+                return record.seededAssets?.Count > 0;
+            return false;
         }
     }
 

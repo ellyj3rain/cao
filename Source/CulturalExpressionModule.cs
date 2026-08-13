@@ -110,8 +110,6 @@ namespace ColonistAwareness
             internal int Role = -1;
             internal int Scale = -1;
             internal int Form = -1;
-            internal int Fortification = -1;
-            internal int Organization = -1;
             internal bool Road;
             internal bool River;
             internal bool Coast;
@@ -136,9 +134,6 @@ namespace ColonistAwareness
             int access = CASettlementStartingState.Access(plan, settlement);
             int services = CASettlementStartingState.Services(plan, settlement);
             int civic = CASettlementStartingState.Civic(plan, settlement);
-            int practiceCeiling = CASettlementAxes.LocalPracticeCeiling(
-                settlement.settlementProgram, access, services, civic,
-                knowledge);
             int hostile = 0;
             int neutral = 0;
             foreach (CARegionalRelationPlan relation in plan?.relations
@@ -187,12 +182,6 @@ namespace ColonistAwareness
                 Scale = settlement.realizedScale,
                 Form = (int)CASettlementAxes.Form(settlement.authoredForm,
                     knowledge),
-                Fortification = CASettlementAxes.PracticedCapabilityBasis(
-                    CASettlementAxes.CapFortification, knowledge,
-                    practiceCeiling),
-                Organization = CASettlementAxes.PracticedCapabilityBasis(
-                    CASettlementAxes.CapOrganization, knowledge,
-                    practiceCeiling),
                 Road = CARegionalPlanUtility.ConstituentHasRoad(
                     settlement.memberTileId),
                 River = CARegionalPlanUtility.ConstituentHasRiver(
@@ -270,8 +259,6 @@ namespace ColonistAwareness
                 Role = settlement.realizedRole,
                 Scale = settlement.realizedScale,
                 Form = settlement.settlementForm,
-                Fortification = settlement.fortification,
-                Organization = settlement.organization,
                 Road = CARegionalPlanUtility.ConstituentHasRoad(
                     settlement.memberTileId),
                 River = CARegionalPlanUtility.ConstituentHasRiver(
@@ -412,7 +399,8 @@ namespace ColonistAwareness
                                 Share = item.share,
                                 IdeoligionSource = IdeoligionSource(item),
                                 BeliefSource = BeliefSource(item),
-                                SeparateQuarter = item.quarter
+                                IdeoligionProtected =
+                                    item.ideoligionProtected
                             }).ToList(),
                         WeightedBeliefs = input.PopulationBeliefs.Select(item =>
                             new CACulturalWeightedBeliefCause
@@ -437,8 +425,6 @@ namespace ColonistAwareness
                         Role = input.Role,
                         Scale = input.Scale,
                         Form = input.Form,
-                        Fortification = input.Fortification,
-                        Organization = input.Organization,
                         Road = input.Road,
                         River = input.River,
                         Coast = input.Coast,
@@ -504,7 +490,7 @@ namespace ColonistAwareness
                     Label = item.label,
                     Share = item.share,
                     Inherited = item.inherited,
-                    SeparateQuarter = item.separateQuarter
+                    IdeoligionProtected = item.ideoligionProtected
                 }).ToList();
         }
 
@@ -681,7 +667,8 @@ namespace ColonistAwareness
                 return string.Join("; ", sources.Select(item =>
                     (item.label ?? item.cultureId ?? "Culture not recorded")
                     + " (" + item.share + "%"
-                    + (item.separateQuarter ? ", separate quarter" : "")
+                    + (item.ideoligionProtected
+                        ? ", Ideoligion protected" : "")
                     + ")"));
             return populations.Count == 0
                 ? "No constituent population history is recorded."
@@ -729,11 +716,12 @@ namespace ColonistAwareness
                 (item.label.NullOrEmpty()
                     ? "Population group " + item.key : item.label)
                 + " (" + item.share + "%, "
-                + (item.independentIdeoligionKey >= 0
-                    ? "independent Ideoligion"
+                + (item.nativeIdeoligionId >= 0
+                    ? "selected Ideoligion"
                     : "faction Ideoligion") + ", "
                 + item.CertaintyWords.ToLowerInvariant()
-                + (item.quarter ? ", separate quarters" : "") + ")")
+                + (item.ideoligionProtected
+                    ? ", Ideoligion protected" : "") + ")")
                 .ToArray();
             return words.Length == 0 ? "not recorded"
                 : string.Join("; ", words);
@@ -828,7 +816,8 @@ namespace ColonistAwareness
             return string.Join(",", populations.Select(item => item.share + "%:"
                 + BeliefSource(item) + ":" + IdeoligionSource(item)
                 + ":certainty=" + item.ideoligionCertainty
-                + (item.quarter ? ":quarter" : "")).ToArray());
+                + (item.ideoligionProtected
+                    ? ":Ideoligion-protected" : "")).ToArray());
         }
 
         private static string BeliefSource(CASettlementPopulationGroup group)
@@ -841,8 +830,8 @@ namespace ColonistAwareness
 
         private static string IdeoligionSource(CASettlementPopulationGroup group)
         {
-            return group.independentIdeoligionKey >= 0
-                ? "independent:" + group.independentIdeoligionKey
+            return group.nativeIdeoligionId >= 0
+                ? "native-ideo:" + group.nativeIdeoligionId
                 : "faction:" + (group.ideoligionFactionKey >= 0
                     ? group.ideoligionFactionKey : group.factionKey);
         }
@@ -855,7 +844,9 @@ namespace ColonistAwareness
                 .OrderBy(item => item.basisKey)
                 .Select(item => item.key + ":" + item.basisKey + "="
                     + item.operatorKind + "/group=" + item.populationGroupKey
-                    + "/" + item.access + "/" + item.funding + "/"
+                    + "/" + item.access + "@"
+                    + (item.accessSource ?? "unrecorded") + "/"
+                    + item.funding + "/"
                     + item.distribution + "/active=" + item.active
                     + "/reason=" + (item.inactiveReason ?? "none")
                     + "/water=" + item.waterSecured + "/nodes=" + item.nodes
@@ -922,7 +913,11 @@ namespace ColonistAwareness
             {
                 if (group == null || group.share <= 0) continue;
                 Ideo source = null;
-                if (group.independentIdeoligionKey < 0)
+                if (group.nativeIdeoligionId >= 0)
+                    source = Find.IdeoManager?.IdeosListForReading?
+                        .FirstOrDefault(ideo => ideo != null
+                            && ideo.id == group.nativeIdeoligionId);
+                else
                 {
                     int factionKey = group.ideoligionFactionKey >= 0
                         ? group.ideoligionFactionKey : group.factionKey;
@@ -933,20 +928,20 @@ namespace ColonistAwareness
                     ? new List<string>() : IdeoligionCommitmentKeys(source);
                 List<string> labels = source == null
                     ? new List<string>() : IdeoligionCommitmentLabels(source);
-                if (group.independentIdeoligionKey >= 0)
+                if (group.nativeIdeoligionId >= 0)
                 {
-                    keys.Add("independent:"
-                        + group.independentIdeoligionKey);
-                    labels.Add("separate local belief generated when the "
-                        + "community is materialized");
+                    keys.Add("native-ideo:" + group.nativeIdeoligionId);
+                    labels.Add("existing Ideoligion selected for this "
+                        + "population");
                 }
                 result.Add(new WeightedIdeoligionSource
                 {
                     Identity = IdeoligionSource(group),
                     Label = group.label.NullOrEmpty()
                         ? "Population group " + group.key : group.label,
-                    Name = source?.name ?? (group.independentIdeoligionKey >= 0
-                        ? "Independent Ideoligion" : "Ideoligion not recorded"),
+                    Name = source?.name ?? (group.nativeIdeoligionId >= 0
+                        ? "Selected Ideoligion unavailable"
+                        : "Ideoligion not recorded"),
                     Share = group.share,
                     CommitmentKeys = keys,
                     CommitmentLabels = labels
@@ -1059,9 +1054,8 @@ namespace ColonistAwareness
                         politicalBeliefsId = item.politicalBeliefsId,
                         ideoligionCertainty = item.ideoligionCertainty,
                         ideoligionFactionKey = item.ideoligionFactionKey,
-                        independentIdeoligionKey =
-                            item.independentIdeoligionKey,
-                        quarter = item.quarter
+                        nativeIdeoligionId = item.nativeIdeoligionId,
+                        ideoligionProtected = item.ideoligionProtected
                     }).ToList();
         }
 
@@ -1077,6 +1071,7 @@ namespace ColonistAwareness
                     operatorKind = item.operatorKind,
                     populationGroupKey = item.populationGroupKey,
                     access = item.access,
+                    accessSource = item.accessSource,
                     funding = item.funding,
                     distribution = item.distribution,
                     active = item.active,

@@ -68,14 +68,8 @@ namespace ColonistAwareness
                         defaults.frontierHoldingFrequency)) tailored++;
                 if (!Mathf.Approximately(p.frontierHoldingSize,
                         defaults.frontierHoldingSize)) tailored++;
-                if (!Mathf.Approximately(p.unaffiliatedPopulationShare,
-                        defaults.unaffiliatedPopulationShare)) tailored++;
                 if (!Mathf.Approximately(p.reallocationSourceVariety,
                         defaults.reallocationSourceVariety)) tailored++;
-                if (!Mathf.Approximately(p.localFactionChance,
-                        defaults.localFactionChance)) tailored++;
-                if (!Mathf.Approximately(p.regionalConflictChance,
-                        defaults.regionalConflictChance)) tailored++;
                 if (!Mathf.Approximately(p.offMapActivityRate,
                         defaults.offMapActivityRate)) tailored++;
                 return frequencySummary + (tailored == 0 ? " · defaults elsewhere"
@@ -193,50 +187,30 @@ namespace ColonistAwareness
                 + "development, trade, specialization, regional role, and "
                 + "history remain required.");
 
-            Section(ref y, width, "Frontier homes");
-            BandRow(ref y, width, "Frontier settlement",
+            Section(ref y, width, "Frontier sites");
+            BandRow(ref y, width, "Frontier sites",
                 p.frontierHoldingFrequency,
                 FrontierHoldingFrequencyBands,
                 v => Set(p, ref p.frontierHoldingFrequency, v),
                 "Direct effect: how many suitable unoccupied areas receive a "
-                + "frontier household. It does not change major settlements "
-                + "or the form of each home.");
-            BandRow(ref y, width, "Homestead size",
+                + "frontier site. It does not change major settlements, the "
+                + "site's residents, or its material form.");
+            BandRow(ref y, width, "Holding size",
                 p.frontierHoldingSize, FrontierHoldingSizeBands,
                 v => Set(p, ref p.frontierHoldingSize, v),
-                "Direct effect: household size and material form after a "
-                + "frontier site exists. Local land limits the result. The "
-                + "number of sites is independent.");
+                "Direct effect: resident count and material form after a "
+                + "frontier site exists. Local land limits the result. It "
+                + "does not create family or institutional relationships; "
+                + "the number of sites is independent.");
 
-            Section(ref y, width, "Population");
-            BandRow(ref y, width, "Residents outside factions",
-                p.unaffiliatedPopulationShare,
-                UnaffiliatedPopulationBands,
-                v => Set(p, ref p.unaffiliatedPopulationShare, v),
-                "Direct effect: the generated share of residents without "
-                + "faction membership. Settlement ownership, settlement "
-                + "count, and faction relations are independent.");
-
-            Section(ref y, width, "Factions");
+            Section(ref y, width, "Faction sources");
             BandRow(ref y, width, "Settlement origins",
                 p.reallocationSourceVariety, ReallocationSourceVarietyBands,
                 v => Set(p, ref p.reallocationSourceVariety, v),
-                "Direct effect: whether population sources repeat an owner or "
-                + "draw from another eligible world faction. Final ownership, "
-                + "population shares, settlement count, and relations are "
-                + "independent.");
-            BandRow(ref y, width, "New local factions",
-                p.localFactionChance, LocalFactionBands,
-                v => Set(p, ref p.localFactionChance, v),
-                "Direct effect: whether a generated owner keeps its world "
-                + "faction or forms a new local faction. Settlement count and "
-                + "placement are independent.");
-            BandRow(ref y, width, "Faction relations",
-                p.regionalConflictChance, RegionalConflictBands,
-                v => Set(p, ref p.regionalConflictChance, v),
-                "Direct effect: the chance that newly generated faction pairs "
-                + "begin hostile. Existing relations and Starting Region "
-                + "choices remain authoritative.");
+                "Direct effect: how many distinct actual world-faction sources "
+                + "are represented when RimWorld settlements are reallocated. "
+                + "It creates no faction or relation; Starting Region authors "
+                + "those facts explicitly.");
 
             Section(ref y, width, "Distant world");
             BandRow(ref y, width, "Distant activity",
@@ -270,13 +244,13 @@ namespace ColonistAwareness
             {
                 Name = "Balanced world",
                 Summary = "The semantic middle for every world tendency.",
-                Traits = "Mixed regions · typical settlement · mixed relations",
+                Traits = "Mixed regions · typical settlement · mixed origins",
                 Details = "Every control begins at its middle choice. Land, "
                     + "population, access, existing relations, and scenario "
                     + "overrides still determine realized outcomes.",
                 IconPath = "Rimshare/WorldMapIcons/compass",
                 Apply = p => Configure(p, 0.4f, 0.5f, 0.5f, 0.45f,
-                    0.45f, 0.5f, 0.45f, 0.5f, 0.45f, 0.4f, 0.5f)
+                    0.45f, 0.5f, 0.5f, 0.5f)
             };
 
         private static readonly WorldProfile[] Profiles =
@@ -288,35 +262,35 @@ namespace ColonistAwareness
                 Summary = "Connected, clustered regions with stronger urban growth.",
                 Traits = "Connected land · clustered settlements · fewer frontiers",
                 Details = "Favors broad connected regions, clustered placement, "
-                    + "urban development, varied origins, and established world "
-                    + "factions. It does not add major settlements.",
+                    + "urban development, varied actual origins, and established "
+                    + "world factions. It does not add major settlements.",
                 IconPath = "Rimshare/WorldMapIcons/factory",
                 Apply = p => Configure(p, 0.72f, 0.5f, 0.82f, 0.8f,
-                    0.15f, 0.5f, 0.15f, 0.82f, 0.15f, 0.12f, 0.82f)
+                    0.15f, 0.5f, 0.82f, 0.82f)
             },
             new WorldProfile
             {
                 Name = "Open frontier",
                 Summary = "Separate regions with dispersed settlements and homesteads.",
-                Traits = "Open ground · many homesteads · new local factions",
-                Details = "Favors separate regions, spread-out placement, many "
-                    + "frontier homes, unaffiliated residents, and new local "
-                    + "factions. Major-settlement count remains unchanged.",
+                Traits = "Open ground · many homesteads · mixed origins",
+                Details = "Favors separate regions, spread-out placement and "
+                    + "many frontier homes. Major-settlement count, factions, "
+                    + "relations, and population membership remain factual.",
                 IconPath = "Rimshare/WorldMapIcons/forward-sun",
                 Apply = p => Configure(p, 0.12f, 0.2f, 0.2f, 0.15f,
-                    0.78f, 0.82f, 0.8f, 0.5f, 0.78f, 0.4f, 0.5f)
+                    0.78f, 0.82f, 0.5f, 0.5f)
             },
             new WorldProfile
             {
                 Name = "Fractured rim",
-                Summary = "Dispersed populations, local factions, and contested ground.",
-                Traits = "Varied origins · local factions · hostile relations",
+                Summary = "Dispersed settlements with varied world origins.",
+                Traits = "Varied origins · open ground · active distant world",
                 Details = "Favors spread-out settlements, small frontier homes, "
-                    + "unaffiliated residents, varied sources, new local factions, "
-                    + "and hostile generated relations.",
+                    + "varied actual sources, and active distant settlements. "
+                    + "It does not invent population or political state.",
                 IconPath = "Rimshare/WorldMapIcons/cracked-shield",
                 Apply = p => Configure(p, 0.4f, 0.5f, 0.2f, 0.45f,
-                    0.78f, 0.18f, 0.8f, 0.82f, 0.78f, 0.75f, 0.82f)
+                    0.78f, 0.18f, 0.82f, 0.82f)
             }
         };
 
@@ -381,14 +355,8 @@ namespace ColonistAwareness
                     expected.frontierHoldingFrequency)
                 && Mathf.Approximately(value.frontierHoldingSize,
                     expected.frontierHoldingSize)
-                && Mathf.Approximately(value.unaffiliatedPopulationShare,
-                    expected.unaffiliatedPopulationShare)
                 && Mathf.Approximately(value.reallocationSourceVariety,
                     expected.reallocationSourceVariety)
-                && Mathf.Approximately(value.localFactionChance,
-                    expected.localFactionChance)
-                && Mathf.Approximately(value.regionalConflictChance,
-                    expected.regionalConflictChance)
                 && Mathf.Approximately(value.offMapActivityRate,
                     expected.offMapActivityRate);
         }
@@ -397,8 +365,7 @@ namespace ColonistAwareness
             float regionFrequency, float regionSize,
             float settlementSpacing, float urbanDevelopment,
             float frontierFrequency, float frontierSize,
-            float unaffiliated, float sourceVariety, float localFactions,
-            float conflict, float offMap)
+            float sourceVariety, float offMap)
         {
             p.stitchedRegionFrequencyMin = Mathf.Clamp01(
                 regionFrequency - 0.15f);
@@ -414,10 +381,7 @@ namespace ColonistAwareness
             p.urbanGrowthPropensity = urbanDevelopment;
             p.frontierHoldingFrequency = frontierFrequency;
             p.frontierHoldingSize = frontierSize;
-            p.unaffiliatedPopulationShare = unaffiliated;
             p.reallocationSourceVariety = sourceVariety;
-            p.localFactionChance = localFactions;
-            p.regionalConflictChance = conflict;
             p.offMapActivityRate = offMap;
         }
 
@@ -462,20 +426,11 @@ namespace ColonistAwareness
         private static readonly BandOption[] FrontierHoldingSizeBands =
         {
             new BandOption("Lone cabins", 0.18f,
-                "Realized holdings favor small households and simple material form."),
+                "Realized holdings favor few residents and simple material form."),
             new BandOption("Mixed holdings", 0.5f,
                 "Land capacity decides between cabins and worked homesteads."),
             new BandOption("Established homesteads", 0.82f,
-                "Capable sites favor larger households and established form.")
-        };
-        private static readonly BandOption[] UnaffiliatedPopulationBands =
-        {
-            new BandOption("Mostly affiliated", 0.15f,
-                "Most residents belong to a faction."),
-            new BandOption("Mixed membership", 0.45f,
-                "Some settlements include unaffiliated residents."),
-            new BandOption("Many unaffiliated", 0.8f,
-                "Unaffiliated residents are common.")
+                "Capable sites favor more residents and established form.")
         };
         private static readonly BandOption[] ReallocationSourceVarietyBands =
         {
@@ -485,24 +440,6 @@ namespace ColonistAwareness
                 "Source selection mixes repeated and different owners."),
             new BandOption("Varied origins", 0.82f,
                 "Source selection favors owners not yet represented.")
-        };
-        private static readonly BandOption[] LocalFactionBands =
-        {
-            new BandOption("Mostly remain", 0.15f,
-                "Generated ownership usually retains the source world faction."),
-            new BandOption("Some form", 0.45f,
-                "Some generated owners become new local factions."),
-            new BandOption("Often form", 0.78f,
-                "Generated owners often become new local factions.")
-        };
-        private static readonly BandOption[] RegionalConflictBands =
-        {
-            new BandOption("Mostly peaceful", 0.12f,
-                "New faction pairs usually receive neutral relations."),
-            new BandOption("Mixed", 0.4f,
-                "New faction pairs receive neutral and hostile relations."),
-            new BandOption("Contentious", 0.75f,
-                "New faction pairs often receive hostile relations.")
         };
         private static readonly BandOption[] OffMapActivityBands =
         {

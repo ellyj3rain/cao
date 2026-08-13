@@ -267,13 +267,10 @@ namespace ColonistAwareness
                 // the security axis materialized named guards - posts at
                 // least one node even below the fortification tier;
                 // keeping order is what the practice is for.
-                bool keepsWatch = GuardIdsFor(key).Count > 0;
-                if (record.fortification < 2 && !keepsWatch)
-                    return circuit;
-                int want = 1 + (record.fortification - 2 + record.training)
-                    / 2;
-                if (want < 1) want = 1;
-                if (want > 3) want = 3;
+                int guards = CASettlementSecurityAssignments
+                    .LiveGuardIds(record, map).Count;
+                if (guards == 0) return circuit;
+                int want = Math.Min(3, Math.Max(1, (guards + 1) / 2));
 
                 CellRect rect = record.localRect;
                 IntVec3 center = rect.CenterCell;
@@ -335,8 +332,9 @@ namespace ColonistAwareness
                     Log.Message("[CA] patrol lane: " + (record.name ?? key)
                         + " posted " + circuit.nodes.Count
                         + " security node(s) over its approaches"
-                        + " (fortification " + record.fortification
-                        + ", training " + record.training + ")");
+                        + " (" + guards + " assigned guard"
+                        + (guards == 1 ? "" : "s")
+                        + ")");
             }
             catch (Exception e)
             {
@@ -477,12 +475,9 @@ namespace ColonistAwareness
         // armed resident: the watch walks its own watch.
         private Pawn FindPatroller(CARegionalSettlementRecord record)
         {
-            string key = record.regionalId + "#" + record.slot;
-            HashSet<int> named = GuardIdsFor(key);
-            Pawn fallback = null;
-            Pawn armed = null;
-            List<Pawn> pawns =
-                map.mapPawns.SpawnedPawnsInFaction(record.faction);
+            HashSet<int> named = CASettlementSecurityAssignments
+                .LiveGuardIds(record, map);
+            List<Pawn> pawns = CAPopulationProjection.Residents(record, map);
             for (int i = 0; i < pawns.Count; i++)
             {
                 Pawn p = pawns[i];
@@ -507,26 +502,10 @@ namespace ColonistAwareness
                 if (p.mindState?.duty?.def != DutyDefOf.DefendBase)
                     continue;
                 if (PawnAssigned(p)) continue;
-                if (named.Contains(p.thingIDNumber)) return p;
-                if (armed == null && p.equipment?.Primary != null)
-                    armed = p;
-                else if (fallback == null) fallback = p;
+                if (named.Contains(p.thingIDNumber)
+                    && p.equipment?.Primary != null) return p;
             }
-            return armed ?? fallback;
-        }
-
-        private HashSet<int> GuardIdsFor(string key)
-        {
-            var ids = new HashSet<int>();
-            CAOrganization org =
-                CAOrganizationWorldComponent.Current?.ByKey(key);
-            if (org?.securityPractices == null) return ids;
-            foreach (CASecurityPractice practice in org.securityPractices)
-                if (practice?.guardPawnIds != null
-                    && practice.mapId == map.uniqueID)
-                    foreach (int id in practice.guardPawnIds)
-                        ids.Add(id);
-            return ids;
+            return null;
         }
 
         private IntVec3 HomePost(Pawn p,
@@ -678,15 +657,9 @@ namespace ColonistAwareness
             }
         }
 
-        // ---- contact doctrine: the settlement's posture decides ----
-        // No org-level security-posture axis exists yet: the policy
-        // catalog is deliberately closed ("no invented policy keys"),
-        // CAPolicyLookup reads the player's law only, and the security
-        // practices carry placement kinds ("patrol base", "line"), not
-        // temperament. PROVISIONAL derivation until a policy key
-        // exists: an organization in standing (public support >= 0.5) whose
-        // people are drilled (training >= 3) meets contact like
-        // soldiers; everyone else falls back and reports.
+        // Contact doctrine comes from the organization's explicit security
+        // policy. With no recorded doctrine, the patrol reports the contact
+        // and native garrison behavior remains in charge.
         private void OnContact(int index, CAPatrolAssignment a,
             CAPatrolCircuit circuit, Pawn p, int now)
         {
@@ -739,13 +712,9 @@ namespace ColonistAwareness
             if (doctrine != null && !doctrine.value.NullOrEmpty())
                 return doctrine.value == "constabulary"
                     || doctrine.value == "rulers";
-            CARegionalSettlementRecord record = RecordFor(key);
-            // Tactical doctrine belongs to the organization, not to world
-            // generation. The inherited world-wide posture is removed, so
-            // the organization's own standing and training are now the only
-            // thing that decides whether its patrols engage.
-            return org.publicSupport >= 0.5f
-                && (record?.training ?? 0) >= 3;
+            // Without explicit doctrine CA issues no order to stand and fight.
+            // The patrol reports and native garrison behavior remains in charge.
+            return false;
         }
 
         private CARegionalSettlementRecord RecordFor(string key)

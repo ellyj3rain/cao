@@ -759,16 +759,9 @@ namespace ColonistAwareness
         {
             if (!ModsConfig.IdeologyActive
                 || CAPlayerFoundingModel.NativeIdeo != null) return;
-            List<IdeoPresetDef> presets = DefDatabase<IdeoPresetDef>
-                .AllDefsListForReading.OrderBy(item => item.defName).ToList();
-            IdeoPresetDef chosen = null;
-            if (presets.Count > 0)
-            {
-                int index = (int)(Math.Abs((long)GenText.StableStringHash(
-                    CAPlayerFoundingModel.Seed + ":ideo")) % presets.Count);
-                chosen = presets[index];
-            }
-            AssignPreset(chosen);
+            // Classic is the explicit empty-state default. A preset becomes
+            // authoritative only when the player chooses it.
+            AssignPreset(null);
         }
 
         private void AssignPreset(IdeoPresetDef preset)

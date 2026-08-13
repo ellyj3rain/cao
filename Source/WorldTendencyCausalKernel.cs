@@ -107,73 +107,36 @@ namespace ColonistAwareness
 
         // One suitable constituent can support at most one generated holding.
         // Size never changes this count.
-        public static int FrontierHoldingCount(int seed, int suitableSites,
+        public static int FrontierHoldingCount(int suitableSites,
             float frequency)
         {
-            int count = 0;
             int sites = Math.Max(0, Math.Min(8, suitableSites));
-            for (int i = 0; i < sites; i++)
-                if (Unit(seed, i, 2718281) < Clamp01(frequency)) count++;
-            return count;
+            return Clamp((int)Math.Round(sites * Clamp01(frequency)),
+                0, sites);
         }
 
-        // Size owns household and material form after a site exists. Land is a
-        // hard capacity constraint and frequency is deliberately absent.
-        public static int FrontierHouseholdSize(int seed, int holdingIndex,
-            int landCapacity, float size)
+        // Size owns resident count and material form after a site exists. Land
+        // is a hard capacity constraint and frequency is deliberately absent.
+        public static int FrontierResidentCount(int landCapacity, float size)
         {
             int cap = Math.Max(1, Math.Min(6, 2 + Clamp(landCapacity, 0, 3)));
             int preferred = 1 + (int)Math.Round(Clamp01(size) * (cap - 1));
-            int jitter = Unit(seed, holdingIndex, 314159) < 0.35f ? -1
-                : Unit(seed, holdingIndex, 314159) > 0.82f ? 1 : 0;
-            return Clamp(preferred + jitter, 1, cap);
+            return Clamp(preferred, 1, cap);
         }
 
-        public static int FrontierMaterialLevel(int seed, int holdingIndex,
-            int landCapacity, float size)
+        public static int FrontierMaterialLevel(int landCapacity, float size)
         {
             int preferred = (int)Math.Round(Clamp01(size) * 3f);
-            if (Unit(seed, holdingIndex, 1618033) > 0.88f) preferred++;
             return Clamp(preferred, 0, Clamp(landCapacity, 0, 3));
         }
 
         // 0 = cabin, 1 = established homestead.
-        public static int FrontierForm(int householdSize, int materialLevel)
+        public static int FrontierForm(int residentCount, int materialLevel)
         {
-            return householdSize >= 3 && materialLevel >= 2 ? 1 : 0;
+            return residentCount >= 3 && materialLevel >= 2 ? 1 : 0;
         }
 
-        public static int UnaffiliatedPercent(float share, int variation)
-        {
-            return Clamp(3 + (int)(Clamp01(share) * 12f)
-                + Clamp(variation, 0, 3), 0, 45);
-        }
-
-        public static bool UseDifferentSettlementOwner(int seed, int slot,
-            float variety)
-        {
-            return Unit(seed, slot, 777013) < Clamp01(variety);
-        }
-
-        public static bool CreateLocalFaction(int seed, int slot,
-            float propensity)
-        {
-            return Unit(seed, slot, 777019) < Clamp01(propensity);
-        }
-
-        // 0 neutral, 1 hostile. The saved relation is the only downstream
-        // political input; consumers never call this method again.
-        public static int GeneratedRelation(int seed, int leftKey,
-            int rightKey, float conflictPropensity)
-        {
-            int left = Math.Min(leftKey, rightKey);
-            int right = Math.Max(leftKey, rightKey);
-            int pair = unchecked(left * 397 ^ right * 7919);
-            return Unit(seed, pair, 777023) < Clamp01(conflictPropensity)
-                ? 1 : 0;
-        }
-
-        public static int GeneratedPopulation(int seed, int slot,
+        public static int PopulationFromFacts(
             int landCapacity, int historicalDevelopment, int techTier,
             bool scenarioOverride)
         {
@@ -182,8 +145,7 @@ namespace ColonistAwareness
             int tier = Clamp(techTier, 0, 3);
             int basePopulation = 45 + ground * 55 + history * 70
                 + tier * 85 + (scenarioOverride ? 70 : 0);
-            int variation = (int)(Unit(seed, slot, 777029) * 91f) - 45;
-            return Math.Max(18, basePopulation + variation);
+            return Math.Max(18, basePopulation);
         }
 
         public static int EconomicCapacity(int population, int civic,

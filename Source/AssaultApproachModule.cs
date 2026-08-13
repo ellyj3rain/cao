@@ -58,14 +58,13 @@ namespace ColonistAwareness
 
             CAOrganization org = CAHostileFactionOrganization.For(faction);
             if (org == null) return;
-            // The force, not the faction, decides: its people supply
-            // the doctrine, this party supplies the discipline to use
-            // it. A rabble carrying a proud tradition still charges.
+            // CA changes the native approach only for doctrine the faction has
+            // actually practiced or adopted.
             var registry = map.GetComponent<CATaskForceMapComponent>();
             CATaskForce unit = registry?.ForFaction(faction);
             if (unit == null) return;
-            bool readsPreparedGround = unit.CanAct(org, "ambush", 11);
-            bool holdsLine = unit.CanAct(org, "line", 22);
+            bool readsPreparedGround = unit.Practices(org, "ambush");
+            bool holdsLine = unit.Practices(org, "line");
 
             if (!readsPreparedGround && !holdsLine) return;  // walk in
 

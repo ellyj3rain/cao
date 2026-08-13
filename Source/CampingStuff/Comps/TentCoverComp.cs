@@ -14,7 +14,7 @@ namespace Camping_Stuff;
 /// </remarks>
 public class TentCoverComp : CompTentPartWithCellsDamage //(Thing)
 {
-	public CompProperties_TentCover Props => (CompProperties_TentCover)this.props;
+	public new CompProperties_TentCover Props => (CompProperties_TentCover)this.props;
 
 	protected override int DamageUnit => Math.Max((int)Math.Floor((1.0 / this.Props.tentSpec.layoutParts) * this.parent.MaxHitPoints), 1);
 	protected override double DamageCost => (double)this.parent.def.costStuffCount / this.Props.tentSpec.layoutParts;

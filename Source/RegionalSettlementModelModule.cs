@@ -308,29 +308,50 @@ namespace ColonistAwareness
                         + " has an incomplete or out-of-range realized fact";
                     return false;
                 }
+                int expectedLand = LandCapacity(settlement.memberTileId);
+                int expectedHistory = HistoricalDevelopment(settlement);
+                int expectedPopulation = CAWorldTendencyCausalKernel
+                    .PopulationFromFacts(expectedLand, expectedHistory,
+                        TechTier(plan.FactionPlan(settlement.factionKey)),
+                        settlement.populationOrigin
+                            == CASettlementOrigin.ScenarioOverride);
+                int expectedAccess = CASettlementStartingState
+                    .ExpectedAccess(settlement);
+                int expectedServices = CASettlementStartingState
+                    .ExpectedServices(plan, settlement);
+                int expectedCivic = CASettlementStartingState
+                    .ExpectedCivic(plan, settlement);
+                int expectedSpecialization = Specialization(plan, settlement);
                 int expectedEconomy = EconomicCapacity(plan, settlement);
+                int expectedTrade = TradeConnectivity(plan, settlement);
                 int expectedSupport = CAWorldTendencyCausalKernel.UrbanSupport(
-                    settlement.residentPopulation, settlement.landCapacity,
-                    settlement.realizedAccessInfrastructure,
-                    settlement.realizedServiceInfrastructure,
-                    settlement.realizedCivicInfrastructure,
-                    expectedEconomy,
-                    settlement.tradeConnectivity, settlement.specialization,
+                    expectedPopulation, expectedLand, expectedAccess,
+                    expectedServices, expectedCivic, expectedEconomy,
+                    expectedTrade, expectedSpecialization,
                     (CASettlementRole)settlement.realizedRole
                         == CASettlementRole.Center,
-                    settlement.historicalDevelopment);
+                    expectedHistory);
                 int expectedScale = CAWorldTendencyCausalKernel
-                    .SettlementScale(settlement.residentPopulation,
+                    .SettlementScale(expectedPopulation,
                         expectedSupport,
                         plan.worldPolicy.urbanGrowthPropensity);
-                if (settlement.economicCapacity != expectedEconomy
+                if (settlement.landCapacity != expectedLand
+                    || settlement.historicalDevelopment != expectedHistory
+                    || settlement.residentPopulation != expectedPopulation
+                    || settlement.realizedAccessInfrastructure
+                        != expectedAccess
+                    || settlement.realizedServiceInfrastructure
+                        != expectedServices
+                    || settlement.realizedCivicInfrastructure != expectedCivic
+                    || settlement.specialization != expectedSpecialization
+                    || settlement.economicCapacity != expectedEconomy
+                    || settlement.tradeConnectivity != expectedTrade
                     || settlement.urbanSupport != expectedSupport
                     || settlement.realizedScale != expectedScale)
                 {
                     failure = "settlement " + settlement.slot
-                        + " has economic capacity, scale, or urban support "
-                        + "inconsistent with its "
-                        + "saved facts";
+                        + " has a realized read model inconsistent with its "
+                        + "saved causes";
                     return false;
                 }
                 string savedProgramSignature = settlement
@@ -364,6 +385,20 @@ namespace ColonistAwareness
                 failure = "the realized settlement hierarchy is incomplete";
                 return false;
             }
+            if (settlements.Count > 1)
+            {
+                CARegionalSettlementPlan expectedCenter = settlements
+                    .OrderByDescending(item => item.residentPopulation)
+                    .ThenByDescending(item => item.landCapacity)
+                    .ThenBy(item => item.slot).First();
+                if (expectedCenter.realizedRole
+                    != (byte)CASettlementRole.Center)
+                {
+                    failure = "the realized settlement center does not match "
+                        + "population and land capacity";
+                    return false;
+                }
+            }
             byte expectedScaleMaximum = settlements.Count == 0 ? (byte)0
                 : settlements.Max(item => item.realizedScale);
             if (plan.settlementScale != expectedScaleMaximum)
@@ -394,6 +429,21 @@ namespace ColonistAwareness
                         failure = "the realized relation for faction pair "
                             + factionKeys[i] + "-" + factionKeys[j]
                             + " is missing or invalid";
+                        return false;
+                    }
+                    CARegionalFactionPlan left = plan.FactionPlan(
+                        factionKeys[i]);
+                    CARegionalFactionPlan right = plan.FactionPlan(
+                        factionKeys[j]);
+                    bool nativePair = left?.source
+                            == CARegionalFactionSource.ExistingWorldFaction
+                        && right?.source
+                            == CARegionalFactionSource.ExistingWorldFaction;
+                    if (!nativePair && !relation.authorRelation)
+                    {
+                        failure = "the realized relation for faction pair "
+                            + factionKeys[i] + "-" + factionKeys[j]
+                            + " has no native or authored source";
                         return false;
                     }
                 }
@@ -443,15 +493,15 @@ namespace ColonistAwareness
                     || holdings.Take(i).Any(item => item != null
                         && item.memberTileId == saved.memberTileId)
                     || saved.landCapacity < 1 || saved.landCapacity > 3
-                    || saved.householdSize != CAWorldTendencyCausalKernel
-                        .FrontierHouseholdSize(seed, i, saved.landCapacity,
+                    || saved.residentCount != CAWorldTendencyCausalKernel
+                        .FrontierResidentCount(saved.landCapacity,
                             plan.worldPolicy.frontierHoldingSize)
                     || saved.materialLevel != CAWorldTendencyCausalKernel
-                        .FrontierMaterialLevel(seed, i, saved.landCapacity,
+                        .FrontierMaterialLevel(saved.landCapacity,
                             plan.worldPolicy.frontierHoldingSize)
                     || saved.form != CAWorldTendencyCausalKernel.FrontierForm(
-                        saved.householdSize, saved.materialLevel)
-                    || saved.factionless != (i % 2 == 0))
+                        saved.residentCount, saved.materialLevel)
+                    || !saved.factionless)
                 {
                     failure = "frontier holding " + i
                         + " is incomplete or inconsistent with its saved causes";
@@ -498,8 +548,9 @@ namespace ColonistAwareness
             int seed = GenText.StableStringHash((plan.candidateId ?? "ca")
                 + ":settlement-realization");
 
-            // Population, land and historical development exist before urban
-            // scale. They are persisted per settlement.
+            // Population source and ground exist before urban scale. History
+            // records only the established boundary and explicit evidence;
+            // no origin category or hash invents additional development.
             foreach (CARegionalSettlementPlan settlement in settlements)
             {
                 settlement.realizedAccessInfrastructure = -1;
@@ -512,17 +563,12 @@ namespace ColonistAwareness
                 settlement.landCapacity = LandCapacity(
                     settlement.memberTileId);
                 settlement.historicalDevelopment = HistoricalDevelopment(
-                    plan, settlement, seed);
+                    settlement);
                 CACultureHistory.EnsureSettlementCulture(plan, settlement);
-                if (settlement.historicalDevelopment >= 2)
-                    CACultureHistory.MarkEstablished(settlement.localCulture,
-                        "established history realized",
-                        "Saved pre-game development establishes this as a "
-                            + "mature local culture.");
                 int tier = TechTier(plan.FactionPlan(settlement.factionKey));
                 settlement.residentPopulation =
-                    CAWorldTendencyCausalKernel.GeneratedPopulation(seed,
-                        settlement.slot, settlement.landCapacity,
+                    CAWorldTendencyCausalKernel.PopulationFromFacts(
+                        settlement.landCapacity,
                         settlement.historicalDevelopment, tier,
                         settlement.populationOrigin
                             == CASettlementOrigin.ScenarioOverride);
@@ -538,7 +584,7 @@ namespace ColonistAwareness
                     : settlement == center ? CASettlementRole.Center
                     : CASettlementRole.Satellite);
 
-            RealizeRelations(plan, policy, seed);
+            RealizeRelations(plan);
             List<int> factionKeys = (plan.factions
                     ?? new List<CARegionalFactionPlan>())
                 .Where(item => item != null).Select(item => item.key)
@@ -575,8 +621,8 @@ namespace ColonistAwareness
                     CASettlementStartingState.Services(plan, settlement);
                 settlement.realizedCivicInfrastructure =
                     CASettlementStartingState.Civic(plan, settlement);
-                settlement.specialization = Mathf.Clamp(
-                    CountBits(settlement.operationalRoleMask), 0, 3);
+                settlement.specialization = Specialization(plan,
+                    settlement);
                 settlement.economicCapacity = EconomicCapacity(plan,
                     settlement);
                 settlement.tradeConnectivity = TradeConnectivity(plan,
@@ -665,27 +711,27 @@ namespace ColonistAwareness
                     && LandCapacity(id) > 0)
                 .OrderBy(id => CAWorldTendencyCausalKernel.Unit(seed, id,
                     2718283)).ThenBy(id => id).ToList();
-            int count = CAWorldTendencyCausalKernel.FrontierHoldingCount(seed,
+            int count = CAWorldTendencyCausalKernel.FrontierHoldingCount(
                 suitable.Count, policy.frontierHoldingFrequency);
             for (int i = 0; i < count && i < suitable.Count; i++)
             {
                 int land = LandCapacity(suitable[i]);
-                int household = CAWorldTendencyCausalKernel
-                    .FrontierHouseholdSize(seed, i, land,
+                int residents = CAWorldTendencyCausalKernel
+                    .FrontierResidentCount(land,
                         policy.frontierHoldingSize);
                 int material = CAWorldTendencyCausalKernel
-                    .FrontierMaterialLevel(seed, i, land,
+                    .FrontierMaterialLevel(land,
                         policy.frontierHoldingSize);
                 result.Add(new CAFrontierHoldingPlan
                 {
                     key = i,
                     memberTileId = suitable[i],
-                    householdSize = household,
+                    residentCount = residents,
                     landCapacity = land,
                     materialLevel = material,
                     form = CAWorldTendencyCausalKernel.FrontierForm(
-                        household, material),
-                    factionless = i % 2 == 0
+                        residents, material),
+                    factionless = true
                 });
             }
             return result;
@@ -714,10 +760,6 @@ namespace ColonistAwareness
                 Mathf.RoundToInt(policy.frontierHoldingFrequency * 10000f));
             hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
                 Mathf.RoundToInt(policy.frontierHoldingSize * 10000f));
-            if (plan?.relations?.Any(item => item != null
-                    && !item.authorRelation) == true)
-                hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                    Mathf.RoundToInt(policy.regionalConflictChance * 10000f));
             foreach (CARegionalRelationPlan relation in (plan?.relations
                 ?? new List<CARegionalRelationPlan>()).Where(item => item != null)
                 .OrderBy(item => item.leftFactionKey)
@@ -783,8 +825,7 @@ namespace ColonistAwareness
             return hash;
         }
 
-        private static void RealizeRelations(CARegionalPlan plan,
-            CARegionalWorldPolicy policy, int seed)
+        private static void RealizeRelations(CARegionalPlan plan)
         {
             CARegionalPlanUtility.EnsureRelationRows(plan);
             foreach (CARegionalRelationPlan relation in plan.relations
@@ -802,13 +843,13 @@ namespace ColonistAwareness
                         == CARegionalFactionSource.ExistingWorldFaction
                     ? CARegionalPlanUtility.FactionByLoadId(
                         rightPlan.existingFactionLoadId) : null;
-                relation.relation = left != null && right != null
-                    ? left.RelationKindWith(right)
-                    : CAWorldTendencyCausalKernel.GeneratedRelation(seed,
-                        relation.leftFactionKey, relation.rightFactionKey,
-                        policy.regionalConflictChance) == 1
-                            ? FactionRelationKind.Hostile
-                            : FactionRelationKind.Neutral;
+                if (left != null && right != null)
+                    relation.relation = left.RelationKindWith(right);
+                else if (!relation.authorRelation)
+                    Log.Warning("[CA][Region] faction relation "
+                        + relation.leftFactionKey + "-"
+                        + relation.rightFactionKey + " remains unset: no "
+                        + "native relation or Starting Region decision exists");
             }
         }
 
@@ -826,23 +867,24 @@ namespace ColonistAwareness
             }
         }
 
-        private static int HistoricalDevelopment(CARegionalPlan plan,
-            CARegionalSettlementPlan settlement, int seed)
+        private static int HistoricalDevelopment(
+            CARegionalSettlementPlan settlement)
         {
-            int value = settlement.populationOrigin
-                == CASettlementOrigin.ReallocatedFromWorldPool ? 2 : 1;
-            try
-            {
-                PlanetTile tile = CARegionalPlanUtility.SurfaceTile(
-                    settlement.memberTileId);
-                Landmark landmark = tile.Valid ? tile.Tile?.Landmark : null;
-                if (string.Equals(landmark?.def?.category, "structure",
-                        StringComparison.OrdinalIgnoreCase)) value++;
-            }
-            catch { }
-            if (CAWorldTendencyCausalKernel.Unit(seed, settlement.slot,
-                    70001) > 0.72f) value++;
-            return Mathf.Clamp(value, 0, 3);
+            if (settlement == null) return 0;
+            int explicitEvidence = (settlement.localCulture?.transitions
+                    ?? new List<CACultureTransition>()).Count(item =>
+                        item != null)
+                + (settlement.localCulture?.observations
+                    ?? new List<CACultureObservation>()).Count(item =>
+                        item != null)
+                + (settlement.operationalFacts
+                    ?? new List<CASettlementOperationalFact>()).Count(item =>
+                        item != null && item.active
+                        && item.provenance?.StartsWith("observed:",
+                            StringComparison.Ordinal) == true);
+            // Starting-region settlements are established societies at the
+            // scenario boundary. Higher values require recorded evidence.
+            return explicitEvidence >= 2 ? 3 : explicitEvidence == 1 ? 2 : 1;
         }
 
         private static int TechTier(CARegionalFactionPlan group)
@@ -857,33 +899,57 @@ namespace ColonistAwareness
         private static int TradeConnectivity(CARegionalPlan plan,
             CARegionalSettlementPlan settlement)
         {
-            int value = CARegionalPlanUtility.ConstituentHasRoad(
-                settlement.memberTileId) ? 1 : 0;
-            if (CARegionalPlanUtility.ConstituentHasRiver(
-                    settlement.memberTileId)
-                || CARegionalPlanUtility.ConstituentIsCoastal(
-                    settlement.memberTileId)) value++;
-            if (CARegionalOperationalRoles.Has(settlement.operationalRoleMask,
-                    CARegionalOperationalRole.LogisticsPoint)) value++;
-            bool openRelation = plan.settlements.Any(other => other != null
-                && other != settlement && other.factionKey
-                    != settlement.factionKey
-                && plan.RelationBetween(settlement.factionKey,
-                    other.factionKey) != FactionRelationKind.Hostile);
-            if (openRelation) value++;
-            return Mathf.Clamp(value, 0, 3);
+            int trade = CompleteProgramCount(plan, settlement,
+                CASettlementProgramRegistry.Trade);
+            if (trade == 0) return 0;
+            bool route = settlement.hasRoadAccess || settlement.hasRiverAccess
+                || settlement.hasCoastalAccess;
+            int support = CompleteProgramCount(plan, settlement,
+                CASettlementProgramRegistry.Transport,
+                CASettlementProgramRegistry.Communications);
+            return Mathf.Clamp(1 + (route ? 1 : 0)
+                + (support > 0 ? 1 : 0), 0, 3);
         }
 
         private static int EconomicCapacity(CARegionalPlan plan,
             CARegionalSettlementPlan settlement)
         {
-            return CAWorldTendencyCausalKernel.EconomicCapacity(
-                settlement.residentPopulation,
-                settlement.realizedCivicInfrastructure,
-                settlement.realizedCivicInfrastructure >= 1
-                    && settlement.historicalDevelopment >= 1,
-                settlement.realizedAccessInfrastructure >= 1
-                    || settlement.realizedServiceInfrastructure >= 1);
+            return CompleteProgramCount(plan, settlement,
+                CASettlementProgramRegistry.Production,
+                CASettlementProgramRegistry.SpecializedIndustry,
+                CASettlementProgramRegistry.Trade,
+                CASettlementProgramRegistry.Agriculture,
+                CASettlementProgramRegistry.Animals,
+                CASettlementProgramRegistry.CommunalProvision,
+                CASettlementProgramRegistry.AuthorityProvision,
+                CASettlementProgramRegistry.DomesticProvision);
+        }
+
+        private static int Specialization(CARegionalPlan plan,
+            CARegionalSettlementPlan settlement)
+        {
+            return CompleteProgramCount(plan, settlement,
+                CASettlementProgramRegistry.SpecializedIndustry,
+                CASettlementProgramRegistry.Medicine,
+                CASettlementProgramRegistry.Research,
+                CASettlementProgramRegistry.Defense,
+                CASettlementProgramRegistry.Agriculture,
+                CASettlementProgramRegistry.Animals,
+                CASettlementProgramRegistry.ArtAndMemory,
+                CASettlementProgramRegistry.Religion);
+        }
+
+        private static int CompleteProgramCount(CARegionalPlan plan,
+            CARegionalSettlementPlan settlement, params string[] keys)
+        {
+            if (settlement == null || keys == null || keys.Length == 0)
+                return 0;
+            HashSet<string> wanted = new HashSet<string>(keys);
+            int count = CASettlementProgramOperationalResolver.Build(plan,
+                    settlement, CASettlementProgramRegistry.Find)
+                .Count(item => item != null && item.Complete
+                    && wanted.Contains(item.Key));
+            return Mathf.Clamp(count, 0, 3);
         }
 
         private static int RouteEdges(IEnumerable<int> tileIds)
@@ -921,18 +987,6 @@ namespace ColonistAwareness
             return pairs == 0 ? 0f : total / pairs;
         }
 
-        private static int CountBits(int value)
-        {
-            int count = 0;
-            uint bits = unchecked((uint)value);
-            while (bits != 0)
-            {
-                count += (int)(bits & 1u);
-                bits >>= 1;
-            }
-            return count;
-        }
-
         internal static string SettlementProfile(CARegionalPlan plan)
         {
             var topology = (CASettlementPattern)plan.settlementPattern;
@@ -944,59 +998,61 @@ namespace ColonistAwareness
             return PatternWords(topology) + " · " + ScaleWords(scale);
         }
 
-        // Settlement authority is separate from faction structure. It derives
-        // from leadership and participation unless explicitly authored.
-        internal static CASettlementAuthority DeriveSettlementAuthority(
-            CARegionalPlan plan, CARegionalFactionPlan group)
+        // Settlement authority is separate from Political Beliefs. It may be
+        // authored directly or summarized from complete instituted leadership
+        // and participation facts. Settlement count never supplies authority.
+        internal static bool TrySettlementAuthorityOf(CARegionalPlan plan,
+            CARegionalFactionPlan group, out CASettlementAuthority authority)
         {
-            if (plan == null || group == null)
-                return CASettlementAuthority.Central;
-            group.EnsureCultureAndPolitics(plan);
-            int held = plan.settlements.Count(b => b != null
-                && b.factionKey == group.key);
-            if (held <= 1)
-                return CASettlementAuthority.Central;
+            authority = CASettlementAuthority.Central;
+            if (group == null) return false;
+            if (group.settlementAuthorityExplicit)
+            {
+                authority = NormalizeAuthority(
+                    (CASettlementAuthority)group.settlementAuthority);
+                return true;
+            }
 
             string leadership = CAFactionAxes.KeyOf(group.factionStructure,
                 CAFactionAxes.Leadership);
             string participation = CAFactionAxes.KeyOf(group.factionStructure,
                 CAFactionAxes.Participation);
-            if (leadership.NullOrEmpty())
-                leadership = CAFactionAxes.KeyOf(
-                    group.politicalBeliefs?.positions, CAFactionAxes.Leadership);
-            if (participation.NullOrEmpty())
-                participation = CAFactionAxes.KeyOf(
-                    group.politicalBeliefs?.positions, CAFactionAxes.Participation);
+            if (leadership.NullOrEmpty() || participation.NullOrEmpty())
+                return false;
 
             switch (leadership)
             {
                 case "none":
-                    return CASettlementAuthority.Independent;
+                    authority = CASettlementAuthority.Independent;
+                    break;
                 case "federated":
-                    return CASettlementAuthority.IndependentWithSharedDefense;
+                    authority = CASettlementAuthority.IndependentWithSharedDefense;
+                    break;
                 case "whole":
-                    return CASettlementAuthority.Independent;
+                    authority = CASettlementAuthority.Independent;
+                    break;
                 case "council":
-                    return participation == "universal"
+                    authority = participation == "universal"
                         ? CASettlementAuthority.Shared
                         : CASettlementAuthority.CentralWithLocalRule;
+                    break;
                 case "single":
-                    return participation == "universal" && held >= 3
+                    authority = participation == "universal"
                         ? CASettlementAuthority.CentralWithLocalRule
                         : CASettlementAuthority.Central;
+                    break;
                 default:
-                    return held >= 3 ? CASettlementAuthority.CentralWithLocalRule
-                        : CASettlementAuthority.Central;
+                    return false;
             }
+            return true;
         }
 
         internal static CASettlementAuthority SettlementAuthorityOf(
             CARegionalPlan plan, CARegionalFactionPlan group)
         {
-            if (group.settlementAuthorityExplicit)
-                return NormalizeAuthority(
-                    (CASettlementAuthority)group.settlementAuthority);
-            return DeriveSettlementAuthority(plan, group);
+            CASettlementAuthority authority;
+            return TrySettlementAuthorityOf(plan, group, out authority)
+                ? authority : CASettlementAuthority.Central;
         }
 
         // Responsibilities shared by member settlements at faction level.
@@ -1212,9 +1268,6 @@ namespace ColonistAwareness
             "settlement-authority:";
         private const string AuthorityRosterOriginPrefix =
             "settlement-roster:";
-        private const string AuthorityTaxRateSource =
-            "settlement-authority:tax-rate";
-
         internal static void Materialize(CARegionalPlan plan,
             IEnumerable<CARegionalSettlementRecord> records)
         {
@@ -1241,11 +1294,25 @@ namespace ColonistAwareness
                         ?? CARegionalPlanUtility.FactionByLoadId(
                             group.existingFactionLoadId);
                     if (faction == null) continue;
-                    CASettlementAuthority authority =
-                        CARegionalSettlements.SettlementAuthorityOf(plan, group);
+                    // Every established settlement owns its local operating
+                    // organization. Shared faction authority is a separate
+                    // relation and may legitimately be absent.
+                    foreach (CARegionalSettlementRecord record in mine)
+                    {
+                        string settlementKey = record.regionalId + "#"
+                            + record.slot;
+                        orgs.EnsureFor(settlementKey,
+                            record.name ?? settlementKey,
+                            "local organization of "
+                                + (record.name ?? settlementKey),
+                            CAOrganizationKind.Settlement);
+                    }
+                    CASettlementAuthority authority;
+                    bool authorityKnown = CARegionalSettlements
+                        .TrySettlementAuthorityOf(plan, group, out authority);
                     string factionKey = "faction:" + faction.loadID;
                     var desiredMembers = new HashSet<string>();
-                    if (mine.Count >= 2
+                    if (authorityKnown && mine.Count >= 2
                         && authority != CASettlementAuthority.Independent)
                         foreach (CARegionalSettlementRecord record in mine)
                             desiredMembers.Add(record.regionalId + "#"
@@ -1253,7 +1320,6 @@ namespace ColonistAwareness
                     ReconcileDerivedMembers(factionKey, desiredMembers);
                     if (desiredMembers.Count == 0)
                     {
-                        RemoveDerivedTaxRate(orgs.ByKey(factionKey));
                         continue;
                     }
 
@@ -1294,14 +1360,6 @@ namespace ColonistAwareness
                             : ", shared responsibilities: "
                                 + string.Join(", ", delegated)));
 
-                    // Shared taxation follows the faction's current decision
-                    // rule and records which settlements agreed.
-                    if (delegated.Contains(CAResponsibilities.Taxes))
-                        SetSharedTaxRate(plan, group, factionBody, authority,
-                            mine, now);
-                    else
-                        RemoveDerivedTaxRate(factionBody);
-
                     Log.Message("[CA][Settlements] " + faction.Name + ": "
                         + CARegionalSettlements.SettlementAuthorityWords(authority)
                         + ", " + mine.Count
@@ -1341,109 +1399,6 @@ namespace ColonistAwareness
                 .ToList();
             foreach (CARelation relation in staleRelations)
                 ledger.RemoveDerivedRelation(relation);
-        }
-
-        // A deterministic faction decision made by its member settlements.
-        private static void SetSharedTaxRate(CARegionalPlan plan,
-            CARegionalFactionPlan group, CAOrganization factionBody,
-            CASettlementAuthority authority,
-            List<CARegionalSettlementRecord> settlements, int now)
-        {
-            CAPolicyRecord existing = factionBody.policies.FirstOrDefault(p =>
-                p != null && p.key == "tax rate");
-            // An authored or imposed tax policy owns the key. Regional
-            // generation never overwrites it.
-            if (existing != null
-                && existing.generatedBy != AuthorityTaxRateSource) return;
-            string decisions = CAFactionAxes.KeyOf(group.factionStructure,
-                CAFactionAxes.Decisions);
-            string level = authority
-                == CASettlementAuthority.Central
-                ? "standard" : "light";
-            int count = settlements.Count;
-            bool adopted;
-            string words;
-            Rand.PushState(Gen.HashCombineInt(GenText.StableStringHash(
-                (plan.regionalId ?? "r") + ":shared-tax-rate"),
-                group.key * 131));
-            try
-            {
-                if (decisions == "consensus")
-                {
-                    adopted = Rand.Chance(0.8f);
-                    words = adopted
-                        ? "all " + count + " member settlements ("
-                            + SettlementNames(settlements, null)
-                            + ") agreed to a " + level + " tax rate"
-                        : "the member settlements did not agree - the "
-                            + "center collects nothing";
-                }
-                else if (decisions == "majority")
-                {
-                    int yes = Rand.RangeInclusive(count * 2 / 5, count);
-                    adopted = yes * 2 > count;
-                    var forVotes = new List<string>();
-                    var against = new List<string>();
-                    for (int i = 0; i < count; i++)
-                        (i < yes ? forVotes : against).Add(
-                            settlements[i].name ?? "settlement "
-                            + settlements[i].slot);
-                    words = "member settlements voted " + yes + " to "
-                        + (count - yes) + " on a " + level
-                        + " tax rate - "
-                        + (adopted ? "carried" : "REFUSED")
-                        + " (for: " + string.Join(", ",
-                            forVotes.ToArray())
-                        + (against.Count > 0
-                            ? "; against: " + string.Join(", ",
-                                against.ToArray()) : "") + ")";
-                }
-                else
-                {
-                    adopted = true;
-                    words = (decisions == "decree"
-                        ? "set by the center: " : "set: ")
-                        + "a " + level
-                        + " tax rate for "
-                        + SettlementNames(settlements, null);
-                }
-            }
-            finally { Rand.PopState(); }
-            if (adopted)
-            {
-                if (existing == null)
-                {
-                    existing = new CAPolicyRecord { key = "tax rate" };
-                    factionBody.policies.Add(existing);
-                }
-                existing.value = level;
-                existing.adoptedTick = now;
-                existing.generatedBy = AuthorityTaxRateSource;
-            }
-            else if (existing != null)
-                factionBody.policies.Remove(existing);
-            factionBody.Record("decision", words);
-        }
-
-        private static void RemoveDerivedTaxRate(
-            CAOrganization factionBody)
-        {
-            if (factionBody?.policies == null) return;
-            factionBody.policies.RemoveAll(policy => policy != null
-                && policy.key == "tax rate"
-                && policy.generatedBy == AuthorityTaxRateSource);
-        }
-
-        private static string SettlementNames(
-            List<CARegionalSettlementRecord> settlements, string skip)
-        {
-            var names = new List<string>();
-            foreach (CARegionalSettlementRecord record in settlements)
-            {
-                string name = record.name ?? "settlement " + record.slot;
-                if (name != skip) names.Add(name);
-            }
-            return string.Join(", ", names.ToArray());
         }
 
         // A federation joins otherwise independent factions for the selected

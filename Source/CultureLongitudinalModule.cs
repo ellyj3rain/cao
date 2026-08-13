@@ -216,7 +216,8 @@ namespace ColonistAwareness
                     ?? new List<CASettlementPopulationGroup>())
                     .Where(item => item != null).OrderBy(item => item.key)
                     .Select(item => item.key + ":" + item.share + ":"
-                        + (item.quarter ? "quarter" : "mixed")));
+                        + (item.ideoligionProtected
+                            ? "Ideoligion-protected" : "unprotected")));
             string spatial = "rooms=" + (settlement.layout?.roomCells?.Count
                     ?? 0) + ";roads=" + (settlement.layout?.roads?.Count
                     ?? 0) + ";gates=" + (settlement.layout?.gates?.Count

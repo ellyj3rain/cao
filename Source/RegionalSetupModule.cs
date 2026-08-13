@@ -116,9 +116,6 @@ namespace ColonistAwareness
         public int stitchedRegionSizeMin = 3;
         public int stitchedRegionSizeMax = 5;
 
-        // Controls the generated share of residents without a faction.
-        public float unaffiliatedPopulationShare = 0.45f;
-
         // Controls generated major-settlement placement. Low values spread
         // authorized settlements across the region; high values favor placing
         // them near settlements already assigned. Pattern classification reads
@@ -129,15 +126,13 @@ namespace ColonistAwareness
         // applies only to suitable land.
         public float frontierHoldingFrequency = 0.45f;
 
-        // Frontier size is applied after a site exists. Household size and
-        // material conditions still limit which forms are possible.
+        // Frontier size is applied after a site exists. It controls the
+        // factual resident count and material form, not a household identity.
         public float frontierHoldingSize = 0.50f;
 
-        // These three propensities own separate steps: source ownership mix,
-        // local-faction creation, and relation generation.
+        // Selects how many distinct actual world-faction sources appear in
+        // automatically reallocated settlements. It never creates a faction.
         public float reallocationSourceVariety = 0.50f;
-        public float localFactionChance = 0.45f;
-        public float regionalConflictChance = 0.4f;
 
         // Urban scale applies only when population, geography,
         // infrastructure, trade, and history can support a city.
@@ -159,9 +154,6 @@ namespace ColonistAwareness
                 "stitchedRegionSizeMin", 3);
             Scribe_Values.Look(ref stitchedRegionSizeMax,
                 "stitchedRegionSizeMax", 5);
-            Scribe_Values.Look(ref unaffiliatedPopulationShare,
-                "unaffiliatedPopulationShare",
-                0.45f);
             Scribe_Values.Look(ref settlementConcentration,
                 "settlementConcentration",
                 0.50f);
@@ -172,10 +164,6 @@ namespace ColonistAwareness
                 "frontierHoldingSize", 0.50f);
             Scribe_Values.Look(ref reallocationSourceVariety,
                 "reallocationSourceVariety", 0.50f);
-            Scribe_Values.Look(ref localFactionChance,
-                "localFactionChance", 0.45f);
-            Scribe_Values.Look(ref regionalConflictChance,
-                "regionalConflictChance", 0.4f);
             Scribe_Values.Look(ref urbanGrowthPropensity,
                 "urbanGrowthPropensity", 0.45f);
             Scribe_Values.Look(ref offMapActivityRate,
@@ -227,13 +215,10 @@ namespace ColonistAwareness
                 realizedStitchedRegionFrequency = realizedStitchedRegionFrequency,
                 stitchedRegionSizeMin = stitchedRegionSizeMin,
                 stitchedRegionSizeMax = stitchedRegionSizeMax,
-                unaffiliatedPopulationShare = unaffiliatedPopulationShare,
                 settlementConcentration = settlementConcentration,
                 frontierHoldingFrequency = frontierHoldingFrequency,
                 frontierHoldingSize = frontierHoldingSize,
                 reallocationSourceVariety = reallocationSourceVariety,
-                localFactionChance = localFactionChance,
-                regionalConflictChance = regionalConflictChance,
                 urbanGrowthPropensity = urbanGrowthPropensity,
                 offMapActivityRate = offMapActivityRate
             };
@@ -293,66 +278,42 @@ namespace ColonistAwareness
                 Math.Max(1, PlacementLandCapacity(id) - 1));
             int count = Math.Min(8, Math.Min(pool.Count, physicalCapacity));
             List<Settlement> sources = SelectSettlementSources(pool, count,
-                seed, reallocationSourceVariety);
-            List<FactionDef> localDefs = CARegionalPlanUtility
-                .EligibleNewFactionDefs().OrderBy(def => def.defName).ToList();
+                reallocationSourceVariety);
             var usedByTile = new Dictionary<int, int>();
             var assignedTiles = new List<int>();
 
             for (int i = 0; i < sources.Count; i++)
             {
                 Settlement source = sources[i];
-                bool local = localDefs.Count > 0
-                    && CAWorldTendencyCausalKernel.CreateLocalFaction(seed,
-                        i, localFactionChance);
                 CARegionalFactionPlan group = null;
-                if (!local)
-                    group = plan.factions.FirstOrDefault(item => item.source
+                group = plan.factions.FirstOrDefault(item => item.source
                             == CARegionalFactionSource.ExistingWorldFaction
                         && item.existingFactionLoadId
                             == source.Faction.loadID);
                 if (group == null)
                 {
                     int key = CARegionalPlanUtility.LowestFreeFactionKey(plan);
-                    FactionDef localDef = local ? localDefs[(int)(
-                        CAWorldTendencyCausalKernel.Unit(seed, i, 777031)
-                        * localDefs.Count) % localDefs.Count] : null;
                     group = new CARegionalFactionPlan
                     {
                         key = key,
-                        source = local
-                            ? CARegionalFactionSource.NewWorldFaction
-                            : CARegionalFactionSource.ExistingWorldFaction,
-                        existingFactionLoadId = local ? -1
-                            : source.Faction.loadID,
-                        customFactionDefName = localDef?.defName,
-                        playerRelation = local
-                            ? FactionRelationKind.Neutral
-                            : source.Faction.PlayerRelationKind,
-                        authorPlayerRelation = local,
+                        source = CARegionalFactionSource.ExistingWorldFaction,
+                        existingFactionLoadId = source.Faction.loadID,
+                        playerRelation = source.Faction.PlayerRelationKind,
+                        authorPlayerRelation = false,
                         visibleInWorld = true
                     };
                     plan.factions.Add(group);
                     foreach (CARegionalFactionPlan other in plan.factions
                         .Where(item => item != group))
                     {
-                        Faction left = local ? null : source.Faction;
+                        Faction left = source.Faction;
                         Faction right = CARegionalPlanUtility.FactionByLoadId(
                             other.existingFactionLoadId);
-                        bool bothExisting = left != null && right != null
-                            && other.source == CARegionalFactionSource
-                                .ExistingWorldFaction;
-                        FactionRelationKind relation = bothExisting
-                            ? left.RelationKindWith(right)
-                            : CAWorldTendencyCausalKernel.GeneratedRelation(
-                                seed, group.key, other.key,
-                                regionalConflictChance) == 1
-                                    ? FactionRelationKind.Hostile
-                                    : FactionRelationKind.Neutral;
-                        // Every automatic relation is generated provenance,
-                        // whether copied from RimWorld or resolved from the
-                        // regional-conflict propensity. The author flag is
-                        // reserved for a Starting Region override.
+                        if (left == null || right == null) continue;
+                        FactionRelationKind relation =
+                            left.RelationKindWith(right);
+                        // Automatic relations preserve an actual RimWorld
+                        // relation. Starting Region overrides remain separate.
                         plan.SetRelation(group.key, other.key, relation,
                             false);
                     }
@@ -393,21 +354,26 @@ namespace ColonistAwareness
                 + " major settlement"
                 + (plan.settlements.Count == 1 ? "" : "s")
                 + " reallocated from RimWorld's nearby settlement pool; "
-                + "placement, relations, frontier holdings, and settlement "
-                + "state realized once";
+                + "placement and frontier holdings realized once; faction "
+                + "relations preserved from the reallocated world sources";
         }
 
         private static List<Settlement> SelectSettlementSources(
-            List<Settlement> pool, int count, int seed, float variety)
+            List<Settlement> pool, int count, float variety)
         {
             var selected = new List<Settlement>();
             var remaining = new List<Settlement>(pool);
+            int distinctAvailable = remaining.Select(item => item.Faction)
+                .Where(item => item != null).Distinct().Count();
+            int targetDistinct = count <= 0 ? 0 : Math.Min(count,
+                1 + (int)Math.Round(Mathf.Clamp01(variety)
+                    * Math.Max(0, distinctAvailable - 1)));
             while (selected.Count < count && remaining.Count > 0)
             {
+                int represented = selected.Select(item => item.Faction)
+                    .Where(item => item != null).Distinct().Count();
                 bool different = selected.Count > 0
-                    && CAWorldTendencyCausalKernel
-                        .UseDifferentSettlementOwner(seed, selected.Count,
-                            variety);
+                    && represented < targetDistinct;
                 List<Settlement> preferred = different
                     ? remaining.Where(item => selected.All(chosen =>
                         chosen.Faction != item.Faction)).ToList()
@@ -678,10 +644,9 @@ namespace ColonistAwareness
         public int reallocatedFromTileId = -1;
         public int siteClusterKey = -1;
         public int operationalRoleMask;
-        // Realized settlement facts. These are generated once from the
-        // settlement's population source, ground, links, facilities, faction,
-        // regional role, and history. Runtime generation consumes these saved
-        // values rather than consulting World tendencies again.
+        // Realized settlement summaries. These are written once from saved
+        // population, ground, complete operating contracts, routes, and
+        // explicit history. They do not create the facts they summarize.
         public int residentPopulation = -1;
         public int landCapacity = -1;
         public int realizedAccessInfrastructure = -1;
@@ -704,6 +669,13 @@ namespace ColonistAwareness
             new List<CASettlementPopulationGroup>();
         public List<CAProvisionArrangement> provisionArrangements =
             new List<CAProvisionArrangement>();
+        // Population-level domestic demand is factual before pawns exist.
+        // Unit identities are deliberately unresolved until native pawn
+        // relations and owned beds can establish them.
+        public List<CADomesticProvisionDemand> domesticProvisionDemands =
+            new List<CADomesticProvisionDemand>();
+        public List<CASettlementOperationalFact> operationalFacts =
+            new List<CASettlementOperationalFact>();
         public CASettlementProgram settlementProgram =
             new CASettlementProgram();
         // The settlement's own persistent culture. It begins from its
@@ -759,11 +731,20 @@ namespace ColonistAwareness
             Scribe_Collections.Look(ref provisionArrangements,
                 "provisionArrangements",
                 LookMode.Deep);
+            Scribe_Collections.Look(ref domesticProvisionDemands,
+                "domesticProvisionDemands", LookMode.Deep);
+            Scribe_Collections.Look(ref operationalFacts,
+                "operationalFacts", LookMode.Deep);
             Scribe_Deep.Look(ref settlementProgram, "settlementProgram");
             Scribe_Deep.Look(ref localCulture, "localCulture");
             if (populationGroups == null) populationGroups = new List<CASettlementPopulationGroup>();
             if (provisionArrangements == null)
                 provisionArrangements = new List<CAProvisionArrangement>();
+            if (domesticProvisionDemands == null)
+                domesticProvisionDemands =
+                    new List<CADomesticProvisionDemand>();
+            if (operationalFacts == null)
+                operationalFacts = new List<CASettlementOperationalFact>();
             if (settlementProgram == null)
                 settlementProgram = new CASettlementProgram();
             Scribe_Values.Look(ref realizedRole, "realizedRole", (byte)0);
@@ -779,26 +760,39 @@ namespace ColonistAwareness
     }
 
     // One persisted frontier holding. Frequency owns how many rows exist;
-    // size owns household and material form after the site is selected.
+    // size owns resident count and material form after site eligibility.
+    // Domestic identity is established later from actual pawn relations.
     public sealed class CAFrontierHoldingPlan : IExposable
     {
         public int key;
         public int memberTileId = -1;
-        public int householdSize = 1;
+        public int residentCount = 1;
         public int landCapacity;
         public int materialLevel;
         public int form; // 0 cabin, 1 established homestead
         public bool factionless;
+        public bool materialized;
+        public int materializedMapId = -1;
+        public IntVec3 site = IntVec3.Invalid;
+        public List<int> residentPawnIds = new List<int>();
 
         public void ExposeData()
         {
             Scribe_Values.Look(ref key, "key", 0);
             Scribe_Values.Look(ref memberTileId, "memberTileId", -1);
-            Scribe_Values.Look(ref householdSize, "householdSize", 1);
+            Scribe_Values.Look(ref residentCount, "residentCount", 1);
             Scribe_Values.Look(ref landCapacity, "landCapacity", 0);
             Scribe_Values.Look(ref materialLevel, "materialLevel", 0);
             Scribe_Values.Look(ref form, "form", 0);
             Scribe_Values.Look(ref factionless, "factionless", false);
+            Scribe_Values.Look(ref materialized, "materialized", false);
+            Scribe_Values.Look(ref materializedMapId,
+                "materializedMapId", -1);
+            Scribe_Values.Look(ref site, "site", IntVec3.Invalid);
+            Scribe_Collections.Look(ref residentPawnIds,
+                "residentPawnIds", LookMode.Value);
+            if (residentPawnIds == null)
+                residentPawnIds = new List<int>();
         }
     }
 
@@ -821,12 +815,12 @@ namespace ColonistAwareness
 
     public sealed class CARegionalPlan : IExposable
     {
-        internal const int CurrentSchemaVersion = 8;
+        internal const int CurrentSchemaVersion = 10;
 
-        // Schema 8 is the B9 authoring epoch: substantive B8 Culture and
-        // Political Beliefs remain direct, while settlement composition uses
-        // saved route facts, provision arrangements, and the open
-        // settlement-program schema.
+        // Schema 10 is the current causal-closure epoch. Domestic provision remains
+        // unresolved until factual pawn relations exist; capabilities are
+        // evidence-backed read models; programs and provision arrangements
+        // carry their direct operational causes.
         // Earlier development schemas are deliberately unsupported.
         public int schemaVersion = CurrentSchemaVersion;
         public string regionalId;
@@ -979,11 +973,6 @@ namespace ColonistAwareness
                     frontierHoldings = new List<CAFrontierHoldingPlan>();
                 if (playerFounding == null)
                     playerFounding = new CAPlayerFoundingPlan();
-                if (candidateId.NullOrEmpty())
-                    candidateId = operatorAuthored
-                        ? CARegionalPlanUtility.MintCandidateId()
-                        : "auto" + unchecked((uint)GenText.StableStringHash(
-                            regionalId ?? "regional-plan")).ToString("X8");
                 foreach (CARegionalFactionPlan faction in factions.Where(
                     item => item != null))
                     faction.EnsureCultureAndPolitics(this);
@@ -2476,6 +2465,10 @@ namespace ColonistAwareness
                         CAWorldTendenciesSession.Policy);
                 else
                     CAWorldTendenciesSession.Adopt(plan.worldPolicy);
+                // Loading is an explicit reconstruction boundary. The page
+                // that displays this draft remains read-only until the
+                // operator invokes a control.
+                RefreshDraftRealization(plan);
                 Pending = plan;
                 pendingIdentity = identity;
                 Verse.Find.WorldInterface.SelectedTile = plan.StartTile;
@@ -2968,7 +2961,7 @@ namespace ColonistAwareness
                 // parity requires. It does not by itself establish parity:
                 // preview and generation must also consume the same execution
                 // contracts, and that equivalence is unverified.
-                if (plan.candidateId == null)
+                if (plan.candidateId.NullOrEmpty())
                     plan.candidateId =
                         CARegionalPlanUtility.MintCandidateId();
                 CARegionalSettlements.RealizeForConfirmation(plan);
