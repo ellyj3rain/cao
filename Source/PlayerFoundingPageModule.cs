@@ -275,7 +275,14 @@ namespace ColonistAwareness
                 new CAFoundingAction("Compose Culture", delegate
                 {
                     Find.WindowStack.Add(new Dialog_CACultureEditor(
-                        draft.culture, "Founders", Changed));
+                        draft.culture, "Founders", Changed,
+                        CACultureAuthoringBoundary.Inherited,
+                        CAPlayerFoundingModel.NativeIdeo,
+                        !ModsConfig.IdeologyActive
+                            ? CACultureIdeoligionComparison.None
+                            : CAPlayerFoundingModel.NativeIdeo == null
+                                ? CACultureIdeoligionComparison.Pending
+                                : CACultureIdeoligionComparison.Single));
                 })
             };
             if (CAAuthoringProfileLibrary.Cultures.Count > 0)
@@ -606,6 +613,10 @@ namespace ColonistAwareness
         private string CultureStateWords()
         {
             if ((draft?.culture?.authoredMask ?? 0) != 0) return "Edited";
+            if (draft?.culture?.inheritedQuestions?.Any(value => value != null
+                    && (value.provenance ?? "").StartsWith("authored",
+                        StringComparison.OrdinalIgnoreCase)) == true)
+                return "Edited";
             return "Inherited";
         }
 

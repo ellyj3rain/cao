@@ -113,10 +113,11 @@ namespace ColonistAwareness
                     Fire observed = homeFires.Find(f => f != null
                         && f.Spawned && !f.IsForbidden(p)
                         && fireWorker.HasJobOnThing(p, f, false));
-                    CABehaviorDecision decision = CABehaviorGate.Evaluate(
+                    CABehaviorDecision decision = CABehaviorGate
+                        .EvaluateForSelection(
                         "hazard.fire_response", FireContext(p, observed,
                             capabilitySatisfied: observed != null));
-                    if (decision.Allowed)
+                    if (decision.SelectionApproved)
                         p.jobs.EndCurrentJob(JobCondition.InterruptForced);
                     continue;
                 }

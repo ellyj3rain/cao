@@ -46,12 +46,12 @@ namespace ColonistAwareness
     // source reorganization does not change a schema; a persisted contract does.
     public static class CACampaignSchemaCatalog
     {
-        public const int CurrentCatalogVersion = 1;
+        public const int CurrentCatalogVersion = 2;
 
         public static readonly CACampaignSchemaDefinition[] All =
         {
             D("campaign.boundary", 1),
-            D("world.act-ledger", 1),
+            D("world.act-ledger", 2, 1, 1),
             D("map.arrangements", 1),
             D("map.assault-awareness", 1),
             D("map.autonomous-home", 1),
@@ -61,14 +61,17 @@ namespace ColonistAwareness
             D("map.combat-aftermath", 1),
             D("game.combat-spatial-log", 1),
             D("game.combat-topology", 1),
-            D("map.culture-longitudinal", 1),
+            D("map.culture-longitudinal", 2, 1, 1),
             D("map.equipment-transition", 1),
             D("game.hidden-things", 1),
-            D("world.faction-state", 1),
-            D("world.player-founding", 1),
-            D("world.organization", 1),
+            D("world.faction-state", 2, 1, 1),
+            D("world.player-founding", 2, 1, 1),
+            D("world.organization", 2, 1, 1),
             D("world.organization-relations", 1),
-            D("world.regional", 1),
+            D("world.regional", 2, 1, 1),
+            D("world.cultural-cognition", 1, 1, 2),
+            D("world.political-cognition", 1, 1, 2),
+            D("world.proposition-knowledge", 1, 1, 2),
             D("world.social-reactions", 1),
             D("world.transaction-ledger", 1),
             D("map.home-space-program", 1),
@@ -107,7 +110,7 @@ namespace ColonistAwareness
             D("native.regional-settlement-lord", 1),
             D("native.ca-job-drivers", 1),
             D("world.regional-reservation", 1),
-            D("model.culture", 9),
+            D("model.culture", 10, 9, 1),
             D("model.political-beliefs", 9),
             D("model.current-order", 1),
             D("model.founding-arrangement", 1),
@@ -179,6 +182,14 @@ namespace ColonistAwareness
         private static CACampaignSchemaDefinition D(string key, int version)
         {
             return new CACampaignSchemaDefinition(key, version, version, 1);
+        }
+
+        private static CACampaignSchemaDefinition D(string key,
+            int currentVersion, int minimumCompatibleVersion,
+            int introducedCatalogVersion)
+        {
+            return new CACampaignSchemaDefinition(key, currentVersion,
+                minimumCompatibleVersion, introducedCatalogVersion);
         }
     }
 

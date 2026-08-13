@@ -72,8 +72,7 @@ namespace ColonistAwareness
 
     public sealed class CAFactionStateWorldComponent : WorldComponent
     {
-        private int campaignSchemaVersion =
-            CACampaignCompatibilityKernel.CurrentBoundaryVersion;
+        private int campaignSchemaVersion = 2;
         private int legacyAuthoringDataEpoch =
             CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private List<CAFactionState> factionStates =
@@ -288,8 +287,7 @@ namespace ColonistAwareness
                 bool cultureMissing = record.culture == null
                     || record.culture.id.NullOrEmpty();
                 if (record.culture == null) record.culture = new CACulture();
-                CACultureModel.EnsureGenerated(record.culture, seed,
-                    CAFactionStartingState.DefaultCulture(faction, ideo));
+                CACultureModel.EnsureIdentity(record.culture, seed);
                 bool cultureGenerated = CACultureInitialState.EnsureForFaction(
                     record.culture, faction);
                 if (cultureMissing || cultureGenerated) cultures++;

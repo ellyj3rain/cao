@@ -912,18 +912,7 @@ namespace ColonistAwareness
             Note(ref y, width, SettlementCultureSummary(place));
             if (Widgets.ButtonText(new Rect(0f, y, width, 28f),
                     "Compose local Culture..."))
-                Verse.Find.WindowStack.Add(new Dialog_CACultureEditor(
-                    place.localCulture,
-                    CARegionalPlanUtility.SettlementName(plan, place),
-                    delegate
-                    {
-                        place.localCulture.temporalBasis =
-                            "Established before the scenario began.";
-                        place.localCulture.maturity =
-                            CACultureMaturity.Established;
-                        place.localCulture.transitions.Clear();
-                        CARegionalSetupSession.SavePending();
-                    }, CACultureAuthoringBoundary.EstablishedLocal));
+                OpenSettlementCultureEditor(place);
             y += Row + Gap;
 
             Rule(ref y, width);
@@ -1015,19 +1004,109 @@ namespace ColonistAwareness
             if (culture == null) return "Culture not recorded";
             int constituentCount = culture.constituents?.Count(item =>
                 item != null && item.share > 0) ?? 0;
-            int meanings = (culture.inheritedMeanings?.Count ?? 0)
-                + (culture.localMeanings?.Count ?? 0);
+            List<CACultureQuestionDistribution> questions = CACultureModel
+                .PopulationQuestions(culture).ToList();
+            int meanings = questions.Count;
             int practices = (culture.inheritedPractices?.Count ?? 0)
                 + (culture.practices?.Count ?? 0);
-            int disputes = culture.inheritedMeanings.Concat(
-                    culture.localMeanings).Where(item => item != null)
-                .GroupBy(item => item.subjectKey).Count(group =>
-                    group.Min(item => item.approval) < 0
-                    && group.Max(item => item.approval) > 0);
+            int disputes = questions.Count(item => item != null
+                && (item.spread >= 0.55f || (item.subgroups?.Any(group =>
+                    group != null && Math.Abs(group.meanOffset) >= 0.20f)
+                        == true)));
             return Counted(constituentCount, "cultural source") + " · "
-                + Counted(meanings, "social meaning") + " · "
+                + Counted(meanings, "cultural question") + " · "
                 + Counted(practices, "practice") + " · "
-                + Counted(disputes, "internal dispute");
+                + Counted(disputes, "broad or divided question");
+        }
+
+        private void OpenSettlementCultureEditor(
+            CARegionalSettlementPlan place)
+        {
+            Ideo comparator = SettlementIdeoligionComparator(place,
+                out CACultureIdeoligionComparison comparison);
+            Verse.Find.WindowStack.Add(new Dialog_CACultureEditor(
+                place.localCulture,
+                CARegionalPlanUtility.SettlementName(plan, place),
+                delegate
+                {
+                    place.localCulture.temporalBasis =
+                        "Established before the scenario began.";
+                    place.localCulture.maturity =
+                        CACultureMaturity.Established;
+                    place.localCulture.transitions.Clear();
+                    CARegionalSetupSession.SavePending();
+                }, CACultureAuthoringBoundary.EstablishedLocal,
+                comparator, comparison));
+        }
+
+        private Ideo SettlementIdeoligionComparator(
+            CARegionalSettlementPlan settlement,
+            out CACultureIdeoligionComparison comparison)
+        {
+            comparison = CACultureIdeoligionComparison.None;
+            if (settlement?.populationGroups == null) return null;
+            var represented = new List<Ideo>();
+            bool unresolved = false;
+            bool withoutSingleDoctrine = false;
+            bool pending = false;
+            int groupCount = 0;
+            foreach (CASettlementPopulationGroup group in settlement
+                .populationGroups.Where(value => value != null
+                    && value.share > 0))
+            {
+                groupCount++;
+                Ideo value = null;
+                if (group.nativeIdeoligionId >= 0)
+                {
+                    value = Find.IdeoManager?.IdeosListForReading?
+                        .FirstOrDefault(ideo => ideo != null
+                            && ideo.id == group.nativeIdeoligionId);
+                    if (value == null) unresolved = true;
+                }
+                else
+                {
+                    int sourceKey = group.ideoligionFactionKey >= 0
+                        ? group.ideoligionFactionKey : group.factionKey;
+                    if (sourceKey < 0)
+                        withoutSingleDoctrine = true;
+                    else
+                    {
+                        CARegionalFactionPlan source = plan.FactionPlan(
+                            sourceKey);
+                        value = source?.LivingIdeo;
+                        if (source == null)
+                            unresolved = true;
+                        else if (value == null && ModsConfig.IdeologyActive
+                            && source.source == CARegionalFactionSource
+                                .NewWorldFaction)
+                            pending = true;
+                        else if (value == null && ModsConfig.IdeologyActive
+                            && source.source == CARegionalFactionSource
+                                .ExistingWorldFaction
+                            && CARegionalPlanUtility.FactionByLoadId(
+                                source.existingFactionLoadId) == null)
+                            unresolved = true;
+                        else if (value == null)
+                            withoutSingleDoctrine = true;
+                    }
+                }
+                if (value == null || represented.Contains(value)) continue;
+                represented.Add(value);
+            }
+            if (unresolved)
+                comparison = CACultureIdeoligionComparison.Unresolved;
+            else if (represented.Count > 1
+                || (represented.Count > 0
+                    && (withoutSingleDoctrine || pending)))
+                comparison = CACultureIdeoligionComparison.Mixed;
+            else if (groupCount == 0 || pending)
+                comparison = CACultureIdeoligionComparison.Pending;
+            else if (represented.Count == 0)
+                comparison = CACultureIdeoligionComparison.None;
+            else
+                comparison = CACultureIdeoligionComparison.Single;
+            return comparison == CACultureIdeoligionComparison.Single
+                ? represented[0] : null;
         }
 
         private string SettlementRouteWords(
@@ -1147,7 +1226,17 @@ namespace ColonistAwareness
             if (Widgets.ButtonText(cultureEdit, "Compose Culture..."))
                 Verse.Find.WindowStack.Add(new Dialog_CACultureEditor(
                     group.culture, group.Summary,
-                    CARegionalSetupSession.SavePending));
+                    CARegionalSetupSession.SavePending,
+                    CACultureAuthoringBoundary.Inherited,
+                    group.LivingIdeo,
+                    !ModsConfig.IdeologyActive
+                        ? CACultureIdeoligionComparison.None
+                        : group.LivingIdeo != null
+                            ? CACultureIdeoligionComparison.Single
+                            : group.source == CARegionalFactionSource
+                                .NewWorldFaction
+                                ? CACultureIdeoligionComparison.Pending
+                                : CACultureIdeoligionComparison.None));
             y += Row + Gap;
             Ideo livingIdeoligion = group.LivingIdeo;
             Readout(ref y, width, "Ideoligion", livingIdeoligion != null

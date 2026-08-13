@@ -172,6 +172,72 @@ namespace ColonistAwareness
         public const string PayloadDigestSuffix = " -->";
         public const int MaxBufferedElementsPerRecord = 1000000;
         public const long MaxBufferedTextCharactersPerRecord = 67108864;
+        private static readonly HashSet<string> CulturalQuestionKeys =
+            new HashSet<string>(new[]
+            {
+                "relationships.sameSexAcceptance",
+                "relationships.pluralityAcceptance",
+                "authority.genderDistribution",
+                "status.hereditaryLegitimacy",
+                "status.rankDifferentiation",
+                "groups.outsiderInclusion",
+                "groups.integrationPreference",
+                "labor.coercionLegitimacy",
+                "voice.inclusionExpectation",
+                "war.captiveProtection",
+                "provision.mutualObligation",
+                "knowledge.access",
+                "knowledge.noveltyAcceptance"
+            }, StringComparer.Ordinal);
+        private static readonly HashSet<string> PoliticalAxisKeys =
+            new HashSet<string>(new[]
+            {
+                "leadership", "decisions", "participation", "dissent",
+                "ownership", "economy", "work", "support", "membership",
+                "status", "localOrder", "defense", "warConduct"
+            }, StringComparer.Ordinal);
+        private static readonly HashSet<string> PsychologyConstructKeys =
+            new HashSet<string>(new[]
+            {
+                "honesty-humility", "emotionality", "extraversion",
+                "agreeableness", "conscientiousness", "openness",
+                "psychological reactance", "need for closure",
+                "empathic concern", "personal distress",
+                "epistemic vigilance", "status seeking",
+                "dangerous-world belief", "competitive-world belief",
+                "domain risk tolerance", "source trust",
+                "group identification"
+            }, StringComparer.Ordinal);
+        private static readonly IReadOnlyDictionary<string, string[]>
+            PoliticalAxisOptions = new Dictionary<string, string[]>(
+                StringComparer.Ordinal)
+            {
+                ["leadership"] = new[] { "single", "council", "whole",
+                    "federated", "none" },
+                ["decisions"] = new[] { "decree", "majority", "consensus",
+                    "custom" },
+                ["participation"] = new[] { "universal", "members",
+                    "standing", "heads" },
+                ["dissent"] = new[] { "plural", "majoritarian",
+                    "orthodoxy", "customary" },
+                ["ownership"] = new[] { "private", "cooperative", "common",
+                    "state" },
+                ["economy"] = new[] { "market", "planned", "communal" },
+                ["work"] = new[] { "contract", "organized", "duty",
+                    "household" },
+                ["support"] = new[] { "private", "public", "communal",
+                    "charitable" },
+                ["membership"] = new[] { "open", "vetted", "hereditary",
+                    "closed" },
+                ["status"] = new[] { "equal", "earned", "hereditary",
+                    "castes" },
+                ["localOrder"] = new[] { "none", "watch", "constabulary",
+                    "rulers" },
+                ["defense"] = new[] { "none", "levy", "militia",
+                    "professional", "caste" },
+                ["warConduct"] = new[] { "quarter", "strength",
+                    "combatants" }
+            };
 
         private sealed class MechanismRecord
         {
@@ -434,6 +500,15 @@ namespace ColonistAwareness
             O("world.regional",
                 "ColonistAwareness.CARegionalWorldComponent",
                 "CA_regionalSchemaVersion", true),
+            O("world.cultural-cognition",
+                "ColonistAwareness.CACulturalCognitionWorldComponent",
+                "CA_culturalCognitionOwnerVersion", true),
+            O("world.political-cognition",
+                "ColonistAwareness.CAPoliticalCognitionWorldComponent",
+                "CA_politicalCognitionOwnerVersion", true),
+            O("world.proposition-knowledge",
+                "ColonistAwareness.CAPropositionKnowledgeWorldComponent",
+                "CA_propositionKnowledgeOwnerVersion", true),
             O("world.social-reactions",
                 "ColonistAwareness.CASocialReactionWorldComponent",
                 "CA_socialReactionSchemaVersion", true)
@@ -467,6 +542,18 @@ namespace ColonistAwareness
                 "ColonistAwareness.CARegionalWorldComponent",
                 K(), "CA_regionalSettlements", "CA_regionalPlans",
                 "CA_regionalWorldPolicy", "CA_groundwaterTuning"),
+            P(CACampaignPayloadScope.WorldOnce,
+                "ColonistAwareness.CACulturalCognitionWorldComponent",
+                K(), "CA_psychologicalProfiles", "CA_culturalAttitudes",
+                "CA_socialInfluenceEdges"),
+            P(CACampaignPayloadScope.WorldOnce,
+                "ColonistAwareness.CAPoliticalCognitionWorldComponent",
+                K(), "CA_pawnPoliticalAttitudes", "CA_politicalIssueLinks",
+                "CA_politicalCoalitions"),
+            P(CACampaignPayloadScope.WorldOnce,
+                "ColonistAwareness.CAPropositionKnowledgeWorldComponent",
+                K(), "CA_knowledgePropositions",
+                "CA_researchProgramReceipts"),
             P(CACampaignPayloadScope.WorldOnce,
                 "ColonistAwareness.CASocialReactionWorldComponent",
                 K(), "CA_socialReactions"),
@@ -1471,8 +1558,25 @@ namespace ColonistAwareness
             if (root == null) return;
             ValidateNestedSchemaBindings(componentType, root, failures);
             if (componentType == "ColonistAwareness.CAActLedger")
+            {
                 ValidateIdContinuity(root, "CA_actRecords/li", "id",
                     "CA_actRecordNextId", failures);
+                foreach (PayloadElementFrame record in FindFrames(root,
+                             "CA_actRecords/li"))
+                {
+                    ValidateOptionalParallel(record, "knownByIds",
+                        "knownSourceIds", failures);
+                    ValidateOptionalParallel(record, "knownByIds",
+                        "knownHow", failures);
+                    ValidateOptionalParallel(record, "knownSourceHolderIds",
+                        "knownSourcePawnIds", failures);
+                    ValidateOptionalParallel(record, "knownSourcePawnIds",
+                        "knownSourceHow", failures);
+                    ValidateOptionalParallel(record,
+                        "answeredSourceHolderIds", "answeredSourcePawnIds",
+                        failures);
+                }
+            }
             else if (componentType == "ColonistAwareness.CATransactionLedger")
                 ValidateIdContinuity(root, "transactions/li", "id",
                     "nextId", failures);
@@ -1488,6 +1592,39 @@ namespace ColonistAwareness
             else if (componentType ==
                 "ColonistAwareness.CARegionalWorldComponent")
                 ValidateRegionalNestedPayload(root, failures);
+            else if (componentType ==
+                "ColonistAwareness.CACulturalCognitionWorldComponent")
+                ValidateCulturalCognitionNestedPayload(root, failures);
+            else if (componentType ==
+                "ColonistAwareness.CAPoliticalCognitionWorldComponent")
+                ValidatePoliticalCognitionNestedPayload(root, failures);
+            else if (componentType ==
+                "ColonistAwareness.CAPropositionKnowledgeWorldComponent")
+                ValidatePropositionKnowledgeNestedPayload(root, failures);
+            else if (componentType ==
+                "ColonistAwareness.CAOrganizationWorldComponent")
+                ValidateOrganizationLegitimacyPayload(root, failures);
+        }
+
+        private static void ValidateOptionalParallel(PayloadElementFrame parent,
+            string leftName, string rightName, List<string> failures)
+        {
+            PayloadElementFrame left = parent.Children.FirstOrDefault(value =>
+                value.Name == leftName);
+            PayloadElementFrame right = parent.Children.FirstOrDefault(value =>
+                value.Name == rightName);
+            if (left == null && right == null) return;
+            if (left == null || right == null || IsNullValue(left)
+                || IsNullValue(right))
+            {
+                failures.Add(parent.Path + " optional parallel collections "
+                    + leftName + ", " + rightName
+                    + " must occur together and be non-null");
+                return;
+            }
+            if (left.ItemCount != right.ItemCount)
+                failures.Add(parent.Path + " optional parallel collections "
+                    + leftName + ", " + rightName + " differ in length");
         }
 
         private static void ValidateNestedSchemaBindings(string componentType,
@@ -1513,27 +1650,882 @@ namespace ColonistAwareness
                             item.Key == binding.SchemaKey);
                     PayloadElementFrame version = frame.Children
                         .FirstOrDefault(item => item.Name == "schemaVersion");
-                    if (version != null
-                        && (!int.TryParse(version.Text.ToString(),
-                                out int savedVersion)
-                            || savedVersion != schema.CurrentVersion))
+                    int savedVersion = -1;
+                    if (version == null || !int.TryParse(
+                            version.Text.ToString(), out savedVersion))
                         failures.Add(binding.ParentPath + " "
-                            + binding.SchemaKey + " schemaVersion is "
-                            + version.Text + ", expected "
-                            + schema.CurrentVersion);
+                            + binding.SchemaKey
+                            + " schemaVersion is missing or invalid");
+                    else
+                    {
+                        CACampaignCompatibilityDecision decision =
+                            CACampaignCompatibilityKernel.EvaluateSchema(
+                                binding.SchemaKey, savedVersion);
+                        if (!decision.CanLoad)
+                            failures.Add(binding.ParentPath + " "
+                                + decision.Reason);
+                    }
                     if (binding.SchemaKey == "model.culture")
-                        ValidateRequiredChildren(frame,
-                            K("constituents", "inheritedMeanings",
-                                "localMeanings", "transitions",
-                                "inheritedPractices", "practices",
-                                "observations"), K("lastEvidence"), K(),
-                            failures);
+                    {
+                        if (savedVersion >= 10)
+                        {
+                            ValidateRequiredChildren(frame,
+                                K("constituents", "questionRegistryVersion",
+                                    "withinGroupSpread",
+                                    "subgroupSeparation",
+                                    "inheritedQuestions", "localQuestions",
+                                    "legacyEvidence", "transitions",
+                                    "inheritedPractices", "practices",
+                                    "observations"), K("lastEvidence"), K(),
+                                failures);
+                            ValidateCultureQuestionPayload(frame, failures);
+                        }
+                        else
+                            ValidateRequiredChildren(frame,
+                                K("constituents", "inheritedMeanings",
+                                    "localMeanings", "transitions",
+                                    "inheritedPractices", "practices",
+                                    "observations"), K("lastEvidence"), K(),
+                                failures);
+                    }
                     else if (binding.SchemaKey ==
                         "model.political-beliefs")
                         ValidateRequiredChildren(frame,
                             K("positions", "derivationReceipts"), K(), K(),
                             failures);
                 }
+            }
+        }
+
+        private static void ValidateCultureQuestionPayload(
+            PayloadElementFrame culture, List<string> failures)
+        {
+            RequireInteger(culture, "questionRegistryVersion", 1, 1,
+                failures);
+            foreach (string collectionName in new[]
+                { "inheritedQuestions", "localQuestions" })
+            {
+                PayloadElementFrame collection = culture.Children
+                    .FirstOrDefault(value => value.Name == collectionName);
+                if (collection == null || IsNullValue(collection)) continue;
+                var identities = new HashSet<string>(StringComparer.Ordinal);
+                foreach (PayloadElementFrame question in collection.Children
+                    .Where(value => value.Name == "li"))
+                {
+                    ValidateRequiredChildren(question,
+                        K("schemaVersion", "questionKey", "subgroups"), K(),
+                        K(), failures);
+                    RequireInteger(question, "schemaVersion", 1, 1,
+                        failures);
+                    string key = RequireText(question, "questionKey",
+                        failures);
+                    if (!string.IsNullOrEmpty(key)
+                        && !CulturalQuestionKeys.Contains(key))
+                        failures.Add(DisplayPath(question, "questionKey")
+                            + " is not registered");
+                    string scope = OptionalText(question, "populationScope")
+                        ?? "*";
+                    if (!identities.Add((key ?? "") + "\0" + scope))
+                        failures.Add(question.Path
+                            + " duplicates a question and population scope");
+                    RequireFloat(question, "mean", -1f, 1f, 0f, failures);
+                    RequireFloat(question, "descriptiveNormPrior", -1f, 1f,
+                        0f, failures);
+                    RequireFloat(question, "prestigeSignal", -1f, 1f, 0f,
+                        failures);
+                    RequireFloat(question, "spread", 0.06f, 1f, 0.28f,
+                        failures);
+                    RequireFloat(question, "salience", 0f, 1f, 0.55f,
+                        failures);
+                    RequireFloat(question, "normStrength", 0f, 1f, 0.50f,
+                        failures);
+                    RequireFloat(question, "visibility", 0f, 1f, 0.65f,
+                        failures);
+                    RequireFloat(question, "sourceConfidence", 0f, 1f,
+                        0.60f, failures);
+                    RequireFloat(question, "toleranceForDivergence", 0f, 1f,
+                        0.50f, failures);
+                    ValidateSubgroupMixture(question, failures);
+                }
+            }
+        }
+
+        private static void ValidateSubgroupMixture(
+            PayloadElementFrame question, List<string> failures)
+        {
+            PayloadElementFrame subgroups = question.Children.FirstOrDefault(
+                value => value.Name == "subgroups");
+            if (subgroups == null || IsNullValue(subgroups)) return;
+            int total = 0;
+            var keys = new HashSet<string>(StringComparer.Ordinal);
+            foreach (PayloadElementFrame subgroup in subgroups.Children
+                .Where(value => value.Name == "li"))
+            {
+                string key = RequireText(subgroup, "subgroupKey", failures);
+                if (!string.IsNullOrEmpty(key) && !keys.Add(key))
+                    failures.Add(subgroup.Path + " duplicates subgroup " + key);
+                int share = RequireInteger(subgroup, "share", 0, 100,
+                    failures);
+                total += Math.Max(0, share);
+                RequireFloat(subgroup, "meanOffset", -1f, 1f, 0f,
+                    failures);
+                RequireFloat(subgroup, "spreadMultiplier", 0.1f, 3f, 1f,
+                    failures);
+            }
+            if (subgroups.ItemCount > 0 && total != 100)
+                failures.Add(subgroups.Path + " shares total " + total
+                    + ", expected 100");
+        }
+
+        private static void ValidateCulturalCognitionNestedPayload(
+            PayloadElementFrame root, List<string> failures)
+        {
+            var profileIds = new HashSet<int>();
+            foreach (PayloadElementFrame profile in FindFrames(root,
+                "CA_psychologicalProfiles/li"))
+            {
+                ValidateRequiredChildren(profile,
+                    K("schemaVersion", "pawnId", "mappingVersion",
+                        "evidence", "constructUncertainties",
+                        "dynamicState"),
+                    K(), K(), failures);
+                RequireInteger(profile, "schemaVersion", 1, 1, failures);
+                RequireInteger(profile, "mappingVersion", 1, 1, failures);
+                int pawnId = RequireInteger(profile, "pawnId", 1,
+                    int.MaxValue, failures);
+                if (pawnId > 0 && !profileIds.Add(pawnId))
+                    failures.Add(profile.Path + " duplicates pawn " + pawnId);
+                foreach (string field in new[]
+                    {
+                        "honestyHumility", "emotionality", "extraversion",
+                        "agreeableness", "conscientiousness", "openness",
+                        "reactance", "needForClosure", "empathicConcern",
+                        "personalDistress", "epistemicVigilance",
+                        "statusSeeking", "dangerousWorldBelief",
+                        "competitiveWorldBelief", "domainRiskTolerance",
+                        "sourceTrust", "groupIdentification"
+                    })
+                    RequireFloat(profile, field, 0f, 1f, 0.5f, failures);
+                RequireFloat(profile, "uncertainty", 0f, 1f, 0.35f,
+                    failures);
+                PayloadElementFrame constructUncertainties = profile.Children
+                    .FirstOrDefault(value => value.Name
+                        == "constructUncertainties");
+                if (constructUncertainties == null
+                    || IsNullValue(constructUncertainties))
+                    failures.Add(DisplayPath(profile,
+                        "constructUncertainties") + " is missing or null");
+                else
+                {
+                    var constructs = new HashSet<string>(
+                        StringComparer.Ordinal);
+                    foreach (PayloadElementFrame construct in
+                        constructUncertainties.Children.Where(value =>
+                            value.Name == "li"))
+                    {
+                        string key = RequireText(construct, "construct",
+                            failures);
+                        if (!string.IsNullOrEmpty(key)
+                            && !PsychologyConstructKeys.Contains(key))
+                            failures.Add(construct.Path
+                                + " names unknown construct " + key);
+                        else if (!string.IsNullOrEmpty(key)
+                            && !constructs.Add(key))
+                            failures.Add(construct.Path
+                                + " duplicates construct " + key);
+                        RequireFloat(construct, "uncertainty", 0f, 1f,
+                            0.35f, failures);
+                    }
+                    if (!constructs.SetEquals(PsychologyConstructKeys))
+                        failures.Add(constructUncertainties.Path
+                            + " does not contain the complete construct set");
+                }
+                PayloadElementFrame evidence = profile.Children
+                    .FirstOrDefault(value => value.Name == "evidence");
+                if (evidence == null || IsNullValue(evidence)
+                    || evidence.ItemCount == 0)
+                    failures.Add(DisplayPath(profile, "evidence")
+                        + " must contain at least one mapping record");
+                else
+                    foreach (PayloadElementFrame record in evidence.Children
+                        .Where(value => value.Name == "li"))
+                    {
+                        RequireText(record, "sourceFeature", failures);
+                        RequireText(record, "construct", failures);
+                        RequireText(record, "scope", failures);
+                        RequireText(record, "provenance", failures);
+                        RequireFinite(record, "meanShift", 0f, failures);
+                        RequireFinite(record, "uncertaintyChange", 0f,
+                            failures);
+                    }
+                PayloadElementFrame dynamic = profile.Children
+                    .FirstOrDefault(value => value.Name == "dynamicState");
+                if (dynamic != null && !IsNullValue(dynamic))
+                    foreach (string field in new[]
+                        {
+                            "mood", "pain", "fatigue", "fear", "anger",
+                            "grief", "scarcityPerception", "personalThreat",
+                            "groupThreat", "recentSuccess", "humiliation",
+                            "cognitiveLoad"
+                        })
+                        RequireFloat(dynamic, field, 0f, 1f,
+                            field == "mood" ? 0.5f : 0f, failures);
+            }
+
+            var attitudeIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (PayloadElementFrame attitude in FindFrames(root,
+                "CA_culturalAttitudes/li"))
+            {
+                ValidateRequiredChildren(attitude,
+                    K("schemaVersion", "pawnId", "cultureId", "subgroupId",
+                        "questionKey"), K(), K(), failures);
+                RequireInteger(attitude, "schemaVersion", 1, 1, failures);
+                int pawnId = RequireInteger(attitude, "pawnId", 1,
+                    int.MaxValue, failures);
+                string culture = RequireText(attitude, "cultureId", failures);
+                string subgroup = RequireText(attitude, "subgroupId", failures);
+                string question = RequireText(attitude, "questionKey",
+                    failures);
+                if (!string.IsNullOrEmpty(question)
+                    && !CulturalQuestionKeys.Contains(question))
+                    failures.Add(DisplayPath(attitude, "questionKey")
+                        + " is not registered");
+                string identity = pawnId + "\0" + culture + "\0" + subgroup
+                    + "\0" + question;
+                if (!attitudeIds.Add(identity))
+                    failures.Add(attitude.Path + " duplicates attitude "
+                        + identity.Replace('\0', '/'));
+                foreach (string field in new[]
+                    {
+                        "privateAttitude", "perceivedDescriptiveNorm",
+                        "perceivedInjunctiveNorm", "publicExpression",
+                        "prestigeSignal"
+                    })
+                    RequireFloat(attitude, field, -1f, 1f, 0f, failures);
+                foreach (string field in new[]
+                    {
+                        "moralConviction", "identityCentrality",
+                        "knowledgeConfidence", "expectedEnforcement",
+                        "publicVisibility", "uncertainty"
+                    })
+                    RequireFloat(attitude, field, 0f, 1f, 0f, failures);
+            }
+
+            var edgeIds = new HashSet<string>(StringComparer.Ordinal);
+            var inboundEdges = new Dictionary<int, int>();
+            foreach (PayloadElementFrame edge in FindFrames(root,
+                "CA_socialInfluenceEdges/li"))
+            {
+                int source = RequireInteger(edge, "sourcePawnId", 1,
+                    int.MaxValue, failures);
+                int target = RequireInteger(edge, "targetPawnId", 1,
+                    int.MaxValue, failures);
+                if (target > 0)
+                {
+                    inboundEdges.TryGetValue(target, out int inbound);
+                    inboundEdges[target] = inbound + 1;
+                }
+                if (source == target && source > 0)
+                    failures.Add(edge.Path + " has a self influence edge");
+                RequireText(edge, "edgeType", failures);
+                ValidateRequiredChildren(edge, K("exposures",
+                    "lastContactTick"),
+                    K(), K(), failures);
+                RequireInteger(edge, "lastContactTick", -1,
+                    int.MaxValue, failures);
+                PayloadElementFrame exposures = edge.Children.FirstOrDefault(
+                    value => value.Name == "exposures");
+                if (exposures != null && !IsNullValue(exposures))
+                {
+                    var observedSubjects = new HashSet<string>(
+                        StringComparer.Ordinal);
+                    PayloadElementFrame[] items = exposures.Children
+                        .Where(value => value.Name == "li")
+                        .ToArray();
+                    if (items.Length > CACultureQuestionRegistry.All.Count
+                            + PoliticalAxisOptions.Count)
+                        failures.Add(exposures.Path
+                            + " exceeds the exposure-subject bound");
+                    foreach (PayloadElementFrame item in items)
+                    {
+                        ValidateRequiredChildren(item,
+                            K("subjectKey", "lastObservedTick"), K(), K(),
+                            failures);
+                        string key = RequireText(item, "subjectKey",
+                            failures);
+                        RequireInteger(item, "lastObservedTick", -1,
+                            int.MaxValue, failures);
+                        bool political = key?.StartsWith("politics:",
+                                StringComparison.Ordinal) == true
+                            && PoliticalAxisOptions.ContainsKey(key.Substring(
+                                "politics:".Length));
+                        if (CACultureQuestionRegistry.Find(key) == null
+                            && !political)
+                            failures.Add(item.Path
+                                + " is not a registered influence subject");
+                        else if (!observedSubjects.Add(key))
+                            failures.Add(item.Path
+                                + " duplicates observed subject " + key);
+                    }
+                }
+                if (!edgeIds.Add(source + "\0" + target))
+                    failures.Add(edge.Path + " duplicates influence edge "
+                        + source + "/" + target);
+                foreach (string field in new[]
+                    { "weight", "trust", "prestige", "conformity",
+                        "payoffVisibility" })
+                    RequireFloat(edge, field, 0f, 1f, 0f, failures);
+            }
+            foreach (KeyValuePair<int, int> inbound in inboundEdges.Where(
+                value => value.Value > CACulturalCognitionPureKernel
+                    .MaxInfluenceEdgesPerPawn))
+                failures.Add("pawn " + inbound.Key + " has "
+                    + inbound.Value + " inbound influence edges; maximum is "
+                    + CACulturalCognitionPureKernel
+                        .MaxInfluenceEdgesPerPawn);
+
+        }
+
+        private static void ValidatePoliticalCognitionNestedPayload(
+            PayloadElementFrame root, List<string> failures)
+        {
+            var attitudeIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (PayloadElementFrame attitude in FindFrames(root,
+                "CA_pawnPoliticalAttitudes/li"))
+            {
+                int pawnId = RequireInteger(attitude, "pawnId", 1,
+                    int.MaxValue, failures);
+                string axisKey = RequireText(attitude, "axisKey", failures);
+                if (!string.IsNullOrEmpty(axisKey)
+                    && !PoliticalAxisKeys.Contains(axisKey))
+                    failures.Add(DisplayPath(attitude, "axisKey")
+                        + " is not registered");
+                PayloadElementFrame options = attitude.Children
+                    .FirstOrDefault(value => value.Name == "options");
+                if (options == null || IsNullValue(options))
+                    failures.Add(DisplayPath(attitude, "options") + " is null");
+                else
+                {
+                    var optionKeys = new HashSet<string>(
+                        StringComparer.Ordinal);
+                    foreach (PayloadElementFrame option in options.Children
+                        .Where(value => value.Name == "li"))
+                    {
+                    string optionKey = RequireText(option, "optionKey",
+                        failures);
+                    if (!string.IsNullOrEmpty(optionKey)
+                        && !optionKeys.Add(optionKey))
+                        failures.Add(option.Path + " duplicates option "
+                            + optionKey);
+                    RequireFloat(option, "support", -1f, 1f, 0f, failures);
+                    }
+                    if (PoliticalAxisOptions.TryGetValue(axisKey,
+                            out string[] expected)
+                        && !optionKeys.SetEquals(expected))
+                        failures.Add(options.Path
+                            + " does not contain the canonical options for "
+                            + axisKey);
+                }
+                ValidateRequiredChildren(attitude, K("evidenceHistory"),
+                    K(), K(), failures);
+                PayloadElementFrame history = attitude.Children
+                    .FirstOrDefault(value => value.Name == "evidenceHistory");
+                if (history != null && history.ItemCount
+                    > CACulturalCognitionPureKernel
+                        .MaxPoliticalEvidenceHistory)
+                    failures.Add(history.Path + " contains "
+                        + history.ItemCount + " records; maximum is "
+                        + CACulturalCognitionPureKernel
+                            .MaxPoliticalEvidenceHistory);
+                ValidateNonNullValues(attitude, "evidenceHistory", failures);
+                foreach (string field in new[]
+                    {
+                        "salience", "confidence", "moralConviction",
+                        "identityCentrality"
+                    })
+                    RequireFloat(attitude, field, 0f, 1f, 0f, failures);
+                foreach (string field in new[]
+                    {
+                        "perceivedMajority", "publicExpression",
+                        "materialInterest"
+                    })
+                    RequireFloat(attitude, field, -1f, 1f, 0f, failures);
+                string identity = pawnId + "\0" + axisKey;
+                if (!attitudeIds.Add(identity))
+                    failures.Add(attitude.Path
+                        + " duplicates political attitude "
+                        + identity.Replace('\0', '/'));
+            }
+
+            var issueLinkIds = new HashSet<string>(StringComparer.Ordinal);
+            var issueLinksPerFaction = new Dictionary<string, int>(
+                StringComparer.Ordinal);
+            foreach (PayloadElementFrame link in FindFrames(root,
+                "CA_politicalIssueLinks/li"))
+            {
+                string faction = RequireText(link, "factionBoundary",
+                    failures);
+                if (!string.IsNullOrEmpty(faction))
+                {
+                    issueLinksPerFaction.TryGetValue(faction,
+                        out int linkCount);
+                    issueLinksPerFaction[faction] = linkCount + 1;
+                }
+                string left = RequireText(link, "leftIssueKey", failures);
+                string right = RequireText(link, "rightIssueKey", failures);
+                if (!string.IsNullOrEmpty(left)
+                    && !CanonicalPoliticalIssueKey(left))
+                    failures.Add(DisplayPath(link, "leftIssueKey")
+                        + " is not a canonical political issue");
+                if (!string.IsNullOrEmpty(right)
+                    && !CanonicalPoliticalIssueKey(right))
+                    failures.Add(DisplayPath(link, "rightIssueKey")
+                        + " is not a canonical political issue");
+                if (!string.IsNullOrEmpty(left)
+                    && !string.IsNullOrEmpty(right)
+                    && string.CompareOrdinal(left, right) >= 0)
+                    failures.Add(link.Path
+                        + " has a noncanonical issue-key order");
+                RequireFloat(link, "learnedCorrelation", -1f, 1f, 0f,
+                    failures);
+                RequireFloat(link, "identityAttachment", 0f, 1f, 0f,
+                    failures);
+                RequireFloat(link, "constraint", 0f, 1f, 0f, failures);
+                RequireInteger(link, "observations",
+                    CACulturalCognitionPureKernel
+                        .MinPoliticalIssueLinkObservations,
+                    int.MaxValue, failures);
+                RequireText(link, "evidenceSignature", failures);
+                string identity = faction + "\0" + left + "\0" + right;
+                if (!issueLinkIds.Add(identity))
+                    failures.Add(link.Path + " duplicates political issue link "
+                        + identity.Replace('\0', '/'));
+            }
+            foreach (KeyValuePair<string, int> count in issueLinksPerFaction
+                .Where(value => value.Value
+                    > CACulturalCognitionPureKernel
+                        .MaxPoliticalIssueLinksPerFaction))
+                failures.Add("political issue links for " + count.Key
+                    + " contain " + count.Value + " records; maximum is "
+                    + CACulturalCognitionPureKernel
+                        .MaxPoliticalIssueLinksPerFaction);
+
+            var coalitionIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (PayloadElementFrame coalition in FindFrames(root,
+                "CA_politicalCoalitions/li"))
+            {
+                string identity = RequireText(coalition, "identity", failures);
+                RequireText(coalition, "factionBoundary", failures);
+                ValidateRequiredChildren(coalition,
+                    K("memberPawnIds", "issueKeys", "grievanceKeys",
+                        "institutionalGoals"), K(), K(), failures);
+                ValidateIntegerValues(coalition, "memberPawnIds", 0,
+                    int.MaxValue, unique: true, failures);
+                ValidateNonemptyValues(coalition, "issueKeys", failures);
+                ValidatePoliticalIssueValues(coalition, "issueKeys",
+                    failures);
+                if (!string.IsNullOrEmpty(identity)
+                    && !coalitionIds.Add(identity))
+                    failures.Add(coalition.Path + " duplicates coalition "
+                        + identity);
+                RequireInteger(coalition, "leaderPawnId", -1, int.MaxValue,
+                    failures);
+                foreach (string field in new[]
+                    { "perceivedEfficacy", "cohesion", "publicSupport" })
+                    RequireFloat(coalition, field, 0f, 1f, 0f, failures);
+            }
+        }
+
+        private static void ValidatePropositionKnowledgeNestedPayload(
+            PayloadElementFrame root, List<string> failures)
+        {
+            var propositionIds = new HashSet<string>(StringComparer.Ordinal);
+            PayloadElementFrame[] propositions = FindFrames(root,
+                "CA_knowledgePropositions/li").ToArray();
+            if (propositions.Length
+                > CACulturalCognitionPureKernel.MaxKnowledgePropositions)
+                failures.Add("CA_knowledgePropositions contains "
+                    + propositions.Length + " records; maximum is "
+                    + CACulturalCognitionPureKernel.MaxKnowledgePropositions);
+            var topicCounts = new Dictionary<string, int>(
+                StringComparer.Ordinal);
+            foreach (PayloadElementFrame proposition in propositions)
+            {
+                string identity = RequireText(proposition, "identity",
+                    failures);
+                string topic = RequireText(proposition, "topic", failures);
+                if (!string.IsNullOrEmpty(topic))
+                {
+                    topicCounts.TryGetValue(topic, out int topicCount);
+                    topicCounts[topic] = topicCount + 1;
+                }
+                RequireText(proposition, "claim", failures);
+                RequireText(proposition, "holderIdentity", failures);
+                RequireText(proposition, "sourceIdentity", failures);
+                RequireText(proposition, "sourceType", failures);
+                RequireText(proposition, "acquisitionChannel", failures);
+                ValidateRequiredChildren(proposition,
+                    K("provenanceChain", "evidence", "contradictions",
+                        "corroboratingSources"),
+                    K(), K(), failures);
+                ValidateNonNullValues(proposition, "provenanceChain",
+                    failures);
+                ValidateNonNullValues(proposition, "evidence", failures);
+                ValidateNonNullValues(proposition, "contradictions",
+                    failures);
+                ValidateNonemptyValues(proposition, "corroboratingSources",
+                    failures);
+                ValidateCollectionMaximum(proposition, "provenanceChain",
+                    CACulturalCognitionPureKernel.MaxKnowledgeProvenance,
+                    failures);
+                ValidateCollectionMaximum(proposition, "evidence",
+                    CACulturalCognitionPureKernel.MaxKnowledgeEvidence,
+                    failures);
+                ValidateCollectionMaximum(proposition, "contradictions",
+                    CACulturalCognitionPureKernel.MaxKnowledgeContradictions,
+                    failures);
+                ValidateCollectionMaximum(proposition,
+                    "corroboratingSources",
+                    CACulturalCognitionPureKernel.MaxKnowledgeProvenance,
+                    failures);
+                if (!string.IsNullOrEmpty(identity)
+                    && !propositionIds.Add(identity))
+                    failures.Add(proposition.Path
+                        + " duplicates knowledge proposition " + identity);
+                foreach (string field in new[]
+                    {
+                        "confidence", "transmissibility",
+                        "sourceReliability", "sourceTrust", "expertise",
+                        "prestige", "authority",
+                        "motiveIntegrity", "corroboration", "plausibility",
+                        "priorCongruence", "methodQuality",
+                        "observedPayoff", "uncontestedConflictFreedom",
+                        "conflictFreedom", "epistemicVigilance"
+                    })
+                    RequireFloat(proposition, field, 0f, 1f,
+                        field == "confidence" || field == "transmissibility"
+                            ? 0f : 0.5f, failures);
+                RequireFloat(proposition, "noveltyAcceptance", -1f, 1f,
+                    0f, failures);
+                string politicalAxis = OptionalText(proposition,
+                    "politicalAxisKey");
+                string politicalOption = OptionalText(proposition,
+                    "politicalOptionKey");
+                float politicalSupport = RequireFloat(proposition,
+                    "politicalSupport", -1f, 1f, 0f, failures);
+                bool noPoliticalBinding = string.IsNullOrEmpty(politicalAxis)
+                    && string.IsNullOrEmpty(politicalOption)
+                    && Math.Abs(politicalSupport) < 0.0001f;
+                if (!noPoliticalBinding
+                    && (!PoliticalAxisOptions.TryGetValue(politicalAxis,
+                            out string[] politicalOptions)
+                        || !politicalOptions.Contains(politicalOption,
+                            StringComparer.Ordinal)))
+                    failures.Add(proposition.Path
+                        + " has an incomplete or noncanonical political binding");
+                RequireFloat(proposition, "decayRate", 0f, float.MaxValue,
+                    0f, failures);
+            }
+            foreach (KeyValuePair<string, int> topic in topicCounts.Where(
+                value => value.Value
+                    > CACulturalCognitionPureKernel.MaxKnowledgePerTopic))
+                failures.Add("CA_knowledgePropositions topic " + topic.Key
+                    + " contains " + topic.Value + " records; maximum is "
+                    + CACulturalCognitionPureKernel.MaxKnowledgePerTopic);
+
+            var researchIds = new HashSet<string>(StringComparer.Ordinal);
+            PayloadElementFrame[] research = FindFrames(root,
+                "CA_researchProgramReceipts/li").ToArray();
+            if (research.Length
+                > CACulturalCognitionPureKernel.MaxResearchPrograms)
+                failures.Add("CA_researchProgramReceipts contains "
+                    + research.Length + " records; maximum is "
+                    + CACulturalCognitionPureKernel.MaxResearchPrograms);
+            foreach (PayloadElementFrame receipt in research)
+            {
+                string identity = RequireText(receipt, "identity", failures);
+                RequireText(receipt, "projectKey", failures);
+                RequireText(receipt, "institutionIdentity", failures);
+                RequireText(receipt, "authorityBasis", failures);
+                RequireText(receipt, "method", failures);
+                RequireText(receipt, "facilityIdentity", failures);
+                RequireText(receipt, "materialBasis", failures);
+                RequireText(receipt, "preservation", failures);
+                RequireText(receipt, "dissemination", failures);
+                ValidateRequiredChildren(receipt,
+                    K("priorKnowledgeKeys", "skilledPawnIds", "evidenceKeys"),
+                    K(), K(), failures);
+                ValidateNonNullValues(receipt, "priorKnowledgeKeys",
+                    failures);
+                ValidateIntegerValues(receipt, "skilledPawnIds", 0,
+                    int.MaxValue, unique: false, failures);
+                ValidateNonNullValues(receipt, "evidenceKeys", failures);
+                ValidateCollectionMaximum(receipt, "priorKnowledgeKeys",
+                    CACulturalCognitionPureKernel.MaxResearchPriorKnowledge,
+                    failures);
+                ValidateCollectionMaximum(receipt, "skilledPawnIds",
+                    CACulturalCognitionPureKernel.MaxResearchSkilledPawns,
+                    failures);
+                ValidateCollectionMaximum(receipt, "evidenceKeys",
+                    CACulturalCognitionPureKernel.MaxResearchEvidence,
+                    failures);
+                RequireInteger(receipt, "collaborationCount", 0,
+                    int.MaxValue, failures);
+                if (!string.IsNullOrEmpty(identity)
+                    && !researchIds.Add(identity))
+                    failures.Add(receipt.Path
+                        + " duplicates research receipt " + identity);
+            }
+        }
+
+        private static void ValidateOrganizationLegitimacyPayload(
+            PayloadElementFrame root, List<string> failures)
+        {
+            PayloadElementFrame ownerVersion = root.Children.FirstOrDefault(
+                value => value.Name == "CA_organizationSchemaVersion");
+            int version = ownerVersion != null && int.TryParse(
+                ownerVersion.Text.ToString(), out int parsed) ? parsed : 0;
+            foreach (PayloadElementFrame organization in FindFrames(root,
+                "CA_organizations/li"))
+            {
+                PayloadElementFrame appraisals = organization.Children
+                    .FirstOrDefault(value => value.Name
+                        == "legitimacyAppraisals");
+                if (version >= 2 && (appraisals == null
+                    || IsNullValue(appraisals)))
+                {
+                    failures.Add(DisplayPath(organization,
+                        "legitimacyAppraisals") + " is missing or null");
+                    continue;
+                }
+                if (appraisals == null || IsNullValue(appraisals)) continue;
+                ValidateCollectionMaximum(organization,
+                    "legitimacyAppraisals",
+                    CACulturalCognitionPureKernel
+                        .MaxInstitutionLegitimacyAppraisals, failures);
+                var scopes = new HashSet<string>(StringComparer.Ordinal);
+                foreach (PayloadElementFrame appraisal in appraisals.Children
+                    .Where(value => value.Name == "li"))
+                {
+                    string scope = RequireText(appraisal, "populationScope",
+                        failures);
+                    if (!string.IsNullOrEmpty(scope) && !scopes.Add(scope))
+                        failures.Add(appraisal.Path
+                            + " duplicates legitimacy scope " + scope);
+                    foreach (string field in new[]
+                        {
+                            "proceduralFairness", "outcomePerformance",
+                            "lawAndCustomFit", "identityRepresentation",
+                            "competence", "corruption", "coercion",
+                            "culturalFit", "ideoligionFit", "politicalFit",
+                            "personalTreatment", "trust",
+                            "evidenceConfidence", "reportedPublicSupport",
+                            "outstandingSupportLoss", "legitimacy"
+                        })
+                        RequireFloat(appraisal, field, 0f, 1f,
+                            field == "reportedPublicSupport"
+                                || field == "outstandingSupportLoss"
+                                || field == "legitimacy"
+                                || field == "evidenceConfidence"
+                                    ? 0f : 0.5f, failures);
+                }
+
+                PayloadElementFrame sanctions = organization.Children
+                    .FirstOrDefault(value => value.Name
+                        == "sanctionAppraisals");
+                if (version >= 2 && (sanctions == null
+                    || IsNullValue(sanctions)))
+                {
+                    failures.Add(DisplayPath(organization,
+                        "sanctionAppraisals") + " is missing or null");
+                    continue;
+                }
+                if (sanctions == null || IsNullValue(sanctions)) continue;
+                ValidateCollectionMaximum(organization,
+                    "sanctionAppraisals",
+                    CACulturalCognitionPureKernel
+                        .MaxInstitutionSanctionAppraisals, failures);
+                var sanctionIds = new HashSet<string>(
+                    StringComparer.Ordinal);
+                foreach (PayloadElementFrame sanction in sanctions.Children
+                    .Where(value => value.Name == "li"))
+                {
+                    string fact = RequireText(sanction, "factIdentity",
+                        failures);
+                    RequireText(sanction, "subjectKey", failures);
+                    int pawnId = RequireInteger(sanction, "pawnId", 1,
+                        int.MaxValue, failures);
+                    RequireText(sanction, "populationScope", failures);
+                    string identity = fact + "\0" + pawnId;
+                    if (!sanctionIds.Add(identity))
+                        failures.Add(sanction.Path
+                            + " duplicates sanction appraisal "
+                            + identity.Replace('\0', '/'));
+                    foreach (string field in new[]
+                        {
+                            "legitimacy", "proportionality", "visibility",
+                            "consistency", "procedure", "socialSupport",
+                            "intrinsicMotivation", "psychologicalReactance",
+                            "deterrence", "normReinforcement", "reactance",
+                            "voluntaryCooperation"
+                        })
+                        RequireFloat(sanction, field, 0f, 1f, 0f,
+                            failures);
+                }
+            }
+        }
+
+        private static string OptionalText(PayloadElementFrame parent,
+            string name)
+        {
+            PayloadElementFrame field = parent.Children.FirstOrDefault(value =>
+                value.Name == name);
+            return field == null || IsNullValue(field)
+                ? null : field.Text.ToString().Trim();
+        }
+
+        private static string RequireText(PayloadElementFrame parent,
+            string name, List<string> failures)
+        {
+            string value = OptionalText(parent, name);
+            if (!string.IsNullOrWhiteSpace(value)) return value;
+            failures.Add(DisplayPath(parent, name) + " is missing or empty");
+            return null;
+        }
+
+        private static int RequireInteger(PayloadElementFrame parent,
+            string name, int minimum, int maximum, List<string> failures)
+        {
+            string text = OptionalText(parent, name);
+            if (text != null && int.TryParse(text, out int value)
+                && value >= minimum && value <= maximum) return value;
+            failures.Add(DisplayPath(parent, name) + " must be between "
+                + minimum + " and " + maximum);
+            return 0;
+        }
+
+        private static float RequireFloat(PayloadElementFrame parent,
+            string name, float minimum, float maximum, float defaultValue,
+            List<string> failures)
+        {
+            string text = OptionalText(parent, name);
+            if (text == null) return defaultValue;
+            if (float.TryParse(text,
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out float value) && !float.IsNaN(value)
+                && !float.IsInfinity(value) && value >= minimum
+                && value <= maximum) return value;
+            failures.Add(DisplayPath(parent, name) + " must be between "
+                + minimum + " and " + maximum);
+            return defaultValue;
+        }
+
+        private static float RequireFinite(PayloadElementFrame parent,
+            string name, float defaultValue, List<string> failures)
+        {
+            string text = OptionalText(parent, name);
+            if (text == null) return defaultValue;
+            if (float.TryParse(text,
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out float value) && !float.IsNaN(value)
+                && !float.IsInfinity(value)) return value;
+            failures.Add(DisplayPath(parent, name)
+                + " must be a finite number");
+            return defaultValue;
+        }
+
+        private static void ValidateNonNullValues(PayloadElementFrame parent,
+            string collectionName, List<string> failures)
+        {
+            PayloadElementFrame collection = parent.Children.FirstOrDefault(
+                value => value.Name == collectionName);
+            if (collection == null || IsNullValue(collection)) return;
+            foreach (PayloadElementFrame item in collection.Children.Where(
+                value => value.Name == "li"))
+                if (IsNullValue(item)) failures.Add(item.Path
+                    + " contains a null value");
+        }
+
+        private static void ValidateCollectionMaximum(
+            PayloadElementFrame parent, string collectionName, int maximum,
+            List<string> failures)
+        {
+            PayloadElementFrame collection = parent.Children.FirstOrDefault(
+                value => value.Name == collectionName);
+            if (collection == null || IsNullValue(collection)) return;
+            if (collection.ItemCount > maximum)
+                failures.Add(collection.Path + " contains "
+                    + collection.ItemCount + " records; maximum is "
+                    + maximum);
+        }
+
+        private static bool CanonicalPoliticalIssueKey(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return false;
+            int split = value.IndexOf(':');
+            if (split <= 0 || split >= value.Length - 1) return false;
+            string axis = value.Substring(0, split);
+            string option = value.Substring(split + 1);
+            return PoliticalAxisOptions.TryGetValue(axis,
+                    out string[] expected)
+                && expected.Contains(option, StringComparer.Ordinal);
+        }
+
+        private static void ValidatePoliticalIssueValues(
+            PayloadElementFrame parent, string collectionName,
+            List<string> failures)
+        {
+            PayloadElementFrame collection = parent.Children.FirstOrDefault(
+                value => value.Name == collectionName);
+            if (collection == null || IsNullValue(collection)) return;
+            foreach (PayloadElementFrame item in collection.Children.Where(
+                value => value.Name == "li"))
+            {
+                string issue = item.Text.ToString().Trim();
+                if (!CanonicalPoliticalIssueKey(issue))
+                    failures.Add(item.Path
+                        + " is not a canonical political issue");
+            }
+        }
+
+        private static void ValidateNonemptyValues(
+            PayloadElementFrame parent, string collectionName,
+            List<string> failures)
+        {
+            PayloadElementFrame collection = parent.Children.FirstOrDefault(
+                value => value.Name == collectionName);
+            if (collection == null || IsNullValue(collection)) return;
+            foreach (PayloadElementFrame item in collection.Children.Where(
+                value => value.Name == "li"))
+                if (IsNullValue(item)
+                    || string.IsNullOrWhiteSpace(item.Text.ToString()))
+                    failures.Add(item.Path + " contains an empty value");
+        }
+
+        private static void ValidateIntegerValues(PayloadElementFrame parent,
+            string collectionName, int minimum, int maximum, bool unique,
+            List<string> failures)
+        {
+            PayloadElementFrame collection = parent.Children.FirstOrDefault(
+                value => value.Name == collectionName);
+            if (collection == null || IsNullValue(collection)) return;
+            var seen = new HashSet<int>();
+            foreach (PayloadElementFrame item in collection.Children.Where(
+                value => value.Name == "li"))
+            {
+                string text = IsNullValue(item)
+                    ? null : item.Text.ToString().Trim();
+                if (text == null || !int.TryParse(text, out int value)
+                    || value < minimum || value > maximum)
+                {
+                    failures.Add(item.Path + " must be between " + minimum
+                        + " and " + maximum);
+                    continue;
+                }
+                if (unique && !seen.Add(value))
+                    failures.Add(item.Path + " duplicates value " + value);
             }
         }
 
@@ -1999,6 +2991,8 @@ namespace ColonistAwareness
             {
                 CACampaignOwnerVersionDefinition required =
                     CACampaignPreflightReader.OwnerVersionDefinitions[i];
+                if (ComponentIntroducedAfter(required.ComponentType,
+                        document.CatalogVersion)) continue;
                 int count = document.OwnerVersions.Count(item =>
                     item.ComponentType == required.ComponentType);
                 if (required.RequiredOncePerSave && count != 1)
@@ -2020,10 +3014,17 @@ namespace ColonistAwareness
             CACampaignCompatibilityDecision coverageDecision =
                 ValidateCatalogCoverage();
             if (!coverageDecision.CanLoad) return coverageDecision;
+            bool catalogUpgrade = document.CatalogVersion
+                < CACampaignSchemaCatalog.CurrentCatalogVersion;
             return new CACampaignCompatibilityDecision(
-                CACampaignCompatibilityKind.Current,
-                "current durable campaign boundary, catalog, manifest, and "
-                + "complete digested owner payload are compatible");
+                catalogUpgrade
+                    ? CACampaignCompatibilityKind.AdditiveBootstrap
+                    : CACampaignCompatibilityKind.Current,
+                catalogUpgrade
+                    ? "compatible earlier campaign catalog; initialize newly "
+                        + "introduced owners from current represented facts"
+                    : "current durable campaign boundary, catalog, manifest, "
+                        + "and complete digested owner payload are compatible");
         }
 
         public static CACampaignCompatibilityDecision ValidatePayloads(
@@ -2034,6 +3035,8 @@ namespace ColonistAwareness
             {
                 CACampaignPayloadDefinition definition =
                     CACampaignPreflightReader.PayloadDefinitions[i];
+                if (ComponentIntroducedAfter(definition.ComponentType,
+                        document.CatalogVersion)) continue;
                 List<CACampaignPayloadRecord> records = document.Payloads
                     .Where(item => string.Equals(item.ComponentType,
                         definition.ComponentType, StringComparison.Ordinal))
@@ -2158,6 +3161,8 @@ namespace ColonistAwareness
             {
                 CACampaignOwnerVersionDefinition definition =
                     CACampaignPreflightReader.OwnerVersionDefinitions[i];
+                if (ComponentIntroducedAfter(definition.ComponentType,
+                        document.CatalogVersion)) continue;
                 int actual = document.OwnerVersions.Count(item =>
                     item.ComponentType == definition.ComponentType);
                 int expected = definition.RequiredOncePerSave
@@ -2190,6 +3195,21 @@ namespace ColonistAwareness
                         + " has an unexpected map ordinal");
             }
             return CompatibleCardinality();
+        }
+
+        private static bool ComponentIntroducedAfter(string componentType,
+            int savedCatalogVersion)
+        {
+            CACampaignOwnerVersionDefinition owner =
+                CACampaignPreflightReader.OwnerVersionDefinitions
+                    .FirstOrDefault(item => string.Equals(item.ComponentType,
+                        componentType, StringComparison.Ordinal));
+            if (owner.ComponentType == null
+                || !CACampaignSchemaCatalog.TryFind(owner.SchemaKey,
+                    out CACampaignSchemaDefinition schema))
+                return false;
+            return schema.IntroducedCatalogVersion
+                > Math.Max(1, savedCatalogVersion);
         }
 
         private static CACampaignCompatibilityDecision CompatibleCardinality()

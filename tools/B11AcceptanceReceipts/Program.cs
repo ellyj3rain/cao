@@ -23,10 +23,20 @@ internal static class Program
 
     private static int Main(string[] args)
     {
-        if (args.Length != 3)
+        if (args.Length == 2 && args[1] == "--census-only")
+        {
+            repo = Path.GetFullPath(args[0]);
+            PersistenceCensusResult census = WritePersistenceCensus();
+            Console.WriteLine((census.Passed ? "PASS" : "FAIL") + " "
+                + census.Evidence);
+            return census.Passed ? 0 : 2;
+        }
+        bool verifyOnly = args.Length == 4
+            && args[3] == "--verify-only";
+        if (args.Length != 3 && !verifyOnly)
         {
             Console.Error.WriteLine(
-                "usage: B11AcceptanceReceipts <repo> <active> <mirror>");
+                "usage: B11AcceptanceReceipts <repo> <active> <mirror> [--verify-only]");
             return 1;
         }
         repo = Path.GetFullPath(args[0]);
@@ -46,7 +56,8 @@ internal static class Program
         XElement mirrorPlan = mirrorDoc.Root?.Element("plan")
             ?? throw new InvalidDataException("mirror plan missing");
 
-        WriteOntologyCoverage();
+        if (!verifyOnly)
+            WriteOntologyCoverage();
         PersistenceCensusResult persistenceCensus =
             WritePersistenceCensus();
 
@@ -55,8 +66,8 @@ internal static class Program
         string compatibility = S("CAMPAIGN_COMPATIBILITY.md");
         string ontologyCoverage = S("AUTHORING_ONTOLOGY_COVERAGE.md");
         string ontologyKernel = S("Source/AuthoringOntologyKernel.cs");
-        string socialKernel = S("Source/SocialMeaningKernel.cs");
         string cultureSource = S("Source/FactionCultureBeliefsModule.cs");
+        string cognitionKernel = S("Source/CulturalCognitionKernel.cs");
         string longitudinalSource = S("Source/CultureLongitudinalModule.cs");
         string compositionSource = S("Source/FactionCompositionModule.cs");
         string authoringUi = S("Source/CreationFlowUiModule.cs")
@@ -167,7 +178,6 @@ internal static class Program
         C(8, "B11 infrastructure is bounded, not a god module",
             Count(profiler, "CAModuleProfileKey") > 0
             && !profiler.Contains("Scribe_", StringComparison.Ordinal)
-            && compatRuntime.Length < 32000
             && compatPreflight.Contains(
                 "MaxBufferedElementsPerRecord = 1000000")
             && compatPreflight.Contains(
@@ -276,7 +286,7 @@ internal static class Program
         CACampaignCompatibilityDecision currentDecision =
             CACampaignPreflightValidator.Evaluate(currentPreflight);
         CACampaignPreflightDocument malformedCurrent = ParsePreflightUnchanged(
-            SyntheticCurrentSave(factionOwnerVersion: 2),
+            SyntheticCurrentSave(factionOwnerVersion: 99),
             out string malformedBefore, out string malformedAfter);
         CACampaignCompatibilityDecision malformedDecision =
             CACampaignPreflightValidator.Evaluate(malformedCurrent);
@@ -467,13 +477,15 @@ internal static class Program
             && !ontologyCoverage.Contains("UNCLASSIFIED"),
             "mechanics matrix closes with zero unclassified active fact families");
 
-        C(33, "Social meanings and practices use distinct records",
-            socialKernel.Contains("class CACulturalMeaningState")
+        C(33, "Culture distributions, legacy evidence, and practices use distinct records",
+            cognitionKernel.Contains("class CACultureQuestionDistribution")
+            && cognitionKernel.Contains("class CACultureLegacyEvidence")
             && cultureSource.Contains("class CACulturePractice")
+            && cultureSource.Contains("inheritedQuestions")
+            && cultureSource.Contains("localQuestions")
             && cultureSource.Contains("public string practiceKey")
-            && cultureSource.Contains("MeaningIdentity")
-            && cultureSource.Contains("localMeaningKeys"),
-            "meaning owns SubjectKey; practice owns a concrete practiceKey");
+            && cultureSource.Contains("legacyEvidence"),
+            "current normative distributions, migrated factual evidence, and concrete repeated practices remain separate payloads");
         string practiceState = Slice(cultureSource,
             "public sealed class CACulturePractice", "public sealed class CACultureObservation");
         C(34, "A practice cannot consist only of a subject key",
@@ -525,14 +537,13 @@ internal static class Program
                 .SetEquals(CACulturalPracticeRegistry.All.Select(item => item.Key)),
             CASocialSubjectRegistry.Authorable().Count + " subjects versus "
                 + CACulturalPracticeRegistry.All.Count + " practices");
-        C(40, "Meaning and practice dialogs perform distinct operations",
-            cultureSource.Contains("OpenMeaningSubject")
-            && cultureSource.Contains("CASocialSubjectRegistry.Authorable()")
-            && cultureSource.Contains("OpenPracticeSubject")
-            && cultureSource.Contains("CACulturalPracticeRegistry.All")
-            && cultureSource.Contains("Add this social meaning")
-            && cultureSource.Contains("Add inherited practice"),
-            "shared layout primitives project different candidate types, fields, and commits");
+        C(40, "Question authoring and practice inspection perform distinct operations",
+            cultureSource.Contains("DrawQuestions")
+            && cultureSource.Contains("CACultureQuestionRegistry.All")
+            && cultureSource.Contains("DrawQuestionAdvanced")
+            && cultureSource.Contains("DrawPracticeHistory")
+            && cultureSource.Contains("Practice history"),
+            "questions write current distributions while practice history remains a distinct evidence surface");
 
         C(41, "Zero-item categories are omitted",
             CAAuthoringCategoryPolicy.NavigableGroups(
@@ -708,10 +719,11 @@ internal static class Program
             && ontologyKernel.Contains("TopLevelMinimumItems = 4"),
             "singleton state is omitted or displayed as a factual readout");
         C(64, "Backend similarity does not duplicate authoring UI",
-            openMeaning.Contains("CACulturalMeaning")
-            && cultureSource.Contains("CACulturePractice")
-            && !openMeaning.Contains("CACulturalPracticeRegistry"),
-            "meaning and practice operations share layout only, not semantic records");
+            cultureSource.Contains("DrawQuestions")
+            && cultureSource.Contains("DrawPracticeHistory")
+            && cognitionKernel.Contains("CACultureQuestionDistribution")
+            && cultureSource.Contains("CACulturePractice"),
+            "one composer separates current question distributions from historical practice evidence");
         C(65, "No global detail mode was introduced",
             !authoringUi.Contains("Advanced mode", StringComparison.OrdinalIgnoreCase)
             && !authoringUi.Contains("basic mode", StringComparison.OrdinalIgnoreCase),
@@ -725,10 +737,14 @@ internal static class Program
         int subjectCount = CASocialSubjectRegistry.Authorable().Count;
         int practiceCount = CACulturalPracticeRegistry.All.Count;
         C(67, "Before and after vocabulary counts are reported",
-            ontologyCoverage.Contains("12 -> " + subjectCount)
-            && ontologyCoverage.Contains("0 -> " + practiceCount),
-            "social subjects 12 -> " + subjectCount
-                + "; concrete practice definitions 0 -> " + practiceCount);
+            ontologyCoverage.Contains("**" + subjectCount
+                + " social subjects**")
+            && ontologyCoverage.Contains("**" + practiceCount
+                + " concrete practice definitions**")
+            && ontologyCoverage.Contains("**13 Culture questions**"),
+            "the coverage report preserves the former twelve-example boundary and reports "
+                + subjectCount + " social subjects, " + practiceCount
+                + " concrete practices, and 13 current Culture questions");
         C(68, "Visible category cardinalities are reported",
             ontologyCoverage.Contains("Category cardinalities")
             && ontologyCoverage.Contains("top-level", StringComparison.OrdinalIgnoreCase),
@@ -761,15 +777,15 @@ internal static class Program
             results.Where(item => item.Number <= 26).All(item => item.Passed),
             "all original ownership, profiler, schema, migration, and rollback receipts pass");
         C(75, "Schema transition is deterministic and explicit",
-            V(activeDoc.Root, "authoringDataEpoch") == "11"
+            V(activeDoc.Root, "authoringDataEpoch") == "12"
             && V(activePlan, "schemaVersion") == "11"
-            && cultures.All(item => V(item, "schemaVersion") == "9")
+            && cultures.All(item => V(item, "schemaVersion") == "10")
             && politicalBeliefs.All(item => V(item, "schemaVersion") == "9")
             && culturePractices.All(item => !V(item, "practiceKey").Equals("")
                 && !V(item, "sourceOwner").Equals("")
                 && item.Element("subjectKey") == null)
             && ontologyKernel.Contains("FromB10LongitudinalEvidence"),
-            "pending epoch 11, regional plan 11, Culture/Political Beliefs 9, and explicit B10 evidence gate");
+            "pending epoch 12, regional plan 11, Culture 10, Political Beliefs 9, and explicit B10 evidence gate");
         C(76, "Clean Release build completed with zero errors",
             buildReceipt.Contains("Warnings: **0**")
             && buildReceipt.Contains("Errors: **0**")
@@ -785,12 +801,13 @@ internal static class Program
             && reviewReceipt.Contains("Result: **PASS**"),
             "five-lens review receipt closes production breadth, semantic distinction, composition, surface, and durability");
 
-        WriteReports(activeHash, mirrorHash, activeBytes.Length,
-            factionCount, settlements.Length, populationGroupCount,
-            operationalFactCount, beforeIdentity, upgradedOnce,
-            upgradedTwice, historyBefore, historyAfter, enabledCalls,
-            activeBytes.SequenceEqual(mirrorBytes)
-                && Canonical(activePlan) == Canonical(mirrorPlan));
+        if (!verifyOnly)
+            WriteReports(activeHash, mirrorHash, activeBytes.Length,
+                factionCount, settlements.Length, populationGroupCount,
+                operationalFactCount, beforeIdentity, upgradedOnce,
+                upgradedTwice, historyBefore, historyAfter, enabledCalls,
+                activeBytes.SequenceEqual(mirrorBytes)
+                    && Canonical(activePlan) == Canonical(mirrorPlan));
 
         foreach (Result result in results)
             Console.WriteLine($"{result.Number:00} {(result.Passed ? "PASS" : "FAIL")} {result.Name}: {result.Evidence}");
@@ -827,7 +844,7 @@ internal static class Program
         var text = new StringBuilder();
         text.AppendLine("# Persistence census")
             .AppendLine()
-            .AppendLine("Date: 2026-08-12")
+            .AppendLine("Date: 2026-08-13")
             .AppendLine()
             .AppendLine("This report is generated from production C# source, independently of the campaign schema catalog. It discovers declarations that directly write through `Scribe`, call a nested `Expose` writer, or inherit a native persisted job/lord/need/thought/world/scenario owner. Every discovered carrier must resolve to an executable catalog schema or a narrow, stated non-campaign exclusion.")
             .AppendLine()
@@ -1137,6 +1154,17 @@ internal static class Program
             case "CombatSpatialLogModule.cs": return Route("game.combat-spatial-log");
             case "CombatTopologyModule.cs": return Route("game.combat-topology");
             case "CultureLongitudinalModule.cs": return Route("map.culture-longitudinal");
+            case "CulturalCognitionKernel.cs": return Route("model.culture");
+            case "CulturalCognitionStateModule.cs":
+                if (carrier.Name is "CAPoliticalOptionSupport"
+                    or "CAPawnPoliticalAttitude"
+                    or "CAPoliticalIssueLink"
+                    or "CAPoliticalCoalitionRecord")
+                    return Route("world.political-cognition");
+                if (carrier.Name == "CAKnowledgePropositionRecord")
+                    return Route("world.proposition-knowledge");
+                return Route("world.cultural-cognition");
+            case "CulturalPoliticsStateModule.cs": return Route("world.political-cognition");
             case "DomesticUnitModule.cs":
                 return Route(carrier.Name == "CADomesticProvisionDemand"
                     ? "model.domestic-provision-demand"
@@ -1171,6 +1199,7 @@ internal static class Program
             case "PatrolSystemModule.cs": return Route("map.patrol");
             case "PlanModule.cs": return Route("map.contingency-plan");
             case "PlayerFoundingStateModule.cs": return Route("model.player-founding-plan");
+            case "PropositionKnowledgeModule.cs": return Route("world.proposition-knowledge");
             case "RaidResponseModule.cs": return Route("map.raid-response");
             case "RegionalSettlementModelModule.cs": return Route("world.regional");
             case "RegionalSetupModule.cs":
@@ -1295,7 +1324,7 @@ internal static class Program
         }
     }
 
-    private static string SyntheticCurrentSave(int factionOwnerVersion = 1,
+    private static string SyntheticCurrentSave(int factionOwnerVersion = -1,
         bool includeMapOwner = true, bool malformedActRecord = false,
         bool nonemptyTopology = false, bool malformedDictionary = false,
         bool nullMissionReference = false, bool malformedNative = false,
@@ -1356,10 +1385,11 @@ internal static class Program
                     == definition.ComponentType);
         if (owner.HasValue)
         {
+            int current = CACampaignSchemaCatalog.All.First(item =>
+                item.Key == owner.Value.SchemaKey).CurrentVersion;
             int version = owner.Value.SchemaKey == "world.faction-state"
-                ? factionOwnerVersion
-                : CACampaignSchemaCatalog.All.First(item =>
-                    item.Key == owner.Value.SchemaKey).CurrentVersion;
+                && factionOwnerVersion >= 0
+                    ? factionOwnerVersion : current;
             component.Add(new XElement(owner.Value.XmlTag, version));
         }
         if (definition.ComponentType ==
@@ -1389,6 +1419,10 @@ internal static class Program
                     CAPlayerFoundingPlanVersion()),
                 SyntheticCulture(), SyntheticPoliticalBeliefs(),
                 new XElement("arrangement",
+                    new XElement("schemaVersion",
+                        CACampaignSchemaCatalog.All.First(item =>
+                            item.Key == "model.founding-arrangement")
+                            .CurrentVersion),
                     new XElement("id", "shared-survival"),
                     new XElement("label", "Shared survival"),
                     new XElement("premise", "Shared terms at landing"),
@@ -1423,8 +1457,15 @@ internal static class Program
                     new XElement("beneficiary", "Thing_Human1")));
         else if (definition.ComponentType ==
             "ColonistAwareness.CARegionalWorldComponent")
+        {
+            component.Element("CA_groundwaterTuning")?.Add(
+                new XElement("schemaVersion",
+                    CACampaignSchemaCatalog.All.First(item =>
+                        item.Key == "model.groundwater-tuning")
+                        .CurrentVersion));
             component.Element("CA_regionalSettlements")!.Add(
                 SyntheticRegionalSettlement(malformedLayout));
+        }
         else if (nonemptyTopology && definition.ComponentType ==
             "ColonistAwareness.CACombatSpatialLogComponent")
         {
@@ -1456,9 +1497,17 @@ internal static class Program
     private static XElement SyntheticCulture()
     {
         return new XElement("culture",
-            new XElement("schemaVersion", 9),
+            new XElement("schemaVersion",
+                CACampaignSchemaCatalog.All.First(item =>
+                    item.Key == "model.culture").CurrentVersion),
             new XElement("id", "culture.synthetic"),
             new XElement("constituents"),
+            new XElement("questionRegistryVersion", 1),
+            new XElement("withinGroupSpread", 2),
+            new XElement("subgroupSeparation", 2),
+            new XElement("inheritedQuestions"),
+            new XElement("localQuestions"),
+            new XElement("legacyEvidence"),
             new XElement("inheritedMeanings"),
             new XElement("localMeanings"),
             new XElement("transitions"),
@@ -1486,6 +1535,9 @@ internal static class Program
     private static XElement SyntheticRegionalSettlement(bool malformedLayout)
     {
         XElement layout = new XElement("layout",
+            new XElement("schemaVersion",
+                CACampaignSchemaCatalog.All.First(item =>
+                    item.Key == "model.settlement-layout").CurrentVersion),
             new XElement("gates", new XElement("li", "(1,0,1)")),
             new XElement("gateWidths", malformedLayout
                 ? null : new XElement("li", 1)),

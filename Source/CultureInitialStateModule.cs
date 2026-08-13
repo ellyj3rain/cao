@@ -35,8 +35,8 @@ namespace ColonistAwareness
             if (culture.name.NullOrEmpty())
                 culture.name = (populationName.NullOrEmpty()
                     ? "Unnamed faction" : populationName) + " culture";
-            CACultureModel.EnsureGenerated(culture,
-                owner + ":culture-t0", null);
+            CACultureModel.EnsureIdentity(culture,
+                owner + ":culture-t0");
             if (culture.constituents.Count == 1
                 && culture.constituents[0] != null)
             {

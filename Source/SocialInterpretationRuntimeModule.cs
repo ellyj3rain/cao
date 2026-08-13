@@ -132,11 +132,22 @@ namespace ColonistAwareness
         {
             if (act == null || pawn == null || !act.Knows(pawn.thingIDNumber))
                 return;
-            CASocialFactContext fact;
-            if (!CASocialActAdapter.TryMap(act, pawn, out fact))
-                return;
-            RecordFact(fact, pawn, culture, populationIdentity,
-                organizationIdentity, otherContributions);
+            int[] representedSources = act.UnansweredSourcePawnIdsFor(
+                    pawn.thingIDNumber).ToArray();
+            foreach (int sourcePawnId in representedSources)
+            {
+                CASocialFactContext fact;
+                if (!CASocialActAdapter.TryMap(act, pawn, out fact))
+                    return;
+                fact.KnowledgeSource = act.KnowledgeSourceFor(
+                    pawn.thingIDNumber, sourcePawnId);
+                if (sourcePawnId >= 0)
+                    fact.EpistemicSourceIdentity = sourcePawnId.ToString();
+                RecordFact(fact, pawn, culture, populationIdentity,
+                    organizationIdentity, otherContributions);
+                act.MarkKnowledgeSourceAnswered(pawn.thingIDNumber,
+                    sourcePawnId);
+            }
         }
 
         // Generic ingress for any loaded source owner. The owner registers its
@@ -152,21 +163,47 @@ namespace ColonistAwareness
                 CAModuleProfileKey.SocialInterpretation))
             {
             if (pawn == null) return false;
+            string sourceWords = fact?.KnowledgeSource ?? "";
+            bool directKnowledge = sourceWords.IndexOf("direct",
+                    System.StringComparison.OrdinalIgnoreCase) >= 0
+                || sourceWords.Equals("Firsthand",
+                    System.StringComparison.OrdinalIgnoreCase)
+                || sourceWords.Equals("Witnessed",
+                    System.StringComparison.OrdinalIgnoreCase);
+            string acquisitionChannel = directKnowledge
+                ? "direct observation" : "testimony or report";
+            CAPropositionKnowledgeWorldComponent.Current?.RecordObservedFact(
+                fact, pawn,
+                fact == null || fact.KnowledgeSource.NullOrEmpty()
+                    ? "represented social source" : fact.KnowledgeSource,
+                acquisitionChannel,
+                fact?.EpistemicSourceIdentity,
+                fact?.Tick ?? -1);
+            CACulturalCognitionWorldComponent cognition =
+                CACulturalCognitionWorldComponent.Current;
+            CACulturalMeaningResolution culturalMeaning = cognition == null
+                ? CACultureModel.Resolve(culture, fact?.SubjectKey,
+                    populationIdentity)
+                : cognition.ResolveFor(pawn, culture, fact?.SubjectKey,
+                    populationIdentity);
+            string reactionIdentity = fact?.FactIdentity;
+            bool alreadyReacted = reactions.Any(value => value != null
+                && value.factIdentity == reactionIdentity
+                && value.pawnId == pawn.thingIDNumber);
             CAPersistedSocialReaction response =
                 CASocialReactionPersistenceKernel.Record(
                     fact, pawn.thingIDNumber.ToString(), populationIdentity,
                     organizationIdentity, InfluenceOf(pawn),
-                    CACultureModel.Resolve(culture, fact?.SubjectKey,
-                        populationIdentity), otherContributions,
+                    culturalMeaning, otherContributions,
                     reactions.Where(value => value != null).Select(value =>
                         value.factIdentity + "|" + value.pawnId));
-            if (response == null)
+            if (response == null && alreadyReacted)
             {
-                CAModuleProfiler.Observe(
-                    CAModuleProfileKey.SocialInterpretation,
-                    objectsExamined: 1, workSkippedOrDeferred: 1);
-                return false;
+                CAModuleProfiler.Observe(CAModuleProfileKey.SocialInterpretation,
+                    objectsExamined: 1, candidatesAccepted: 1);
+                return true;
             }
+            if (response == null) return false;
             reactions.Add(new CASocialReactionRecord
             {
                 subjectKey = response.SubjectKey,
@@ -184,6 +221,20 @@ namespace ColonistAwareness
                 internalContradiction = response.InternalContradiction,
                 contributions = response.Contributions
             });
+            string exposedQuestion = CACultureQuestionRegistry
+                .QuestionForSocialSubject(fact.SubjectKey);
+            if (!exposedQuestion.NullOrEmpty()
+                && int.TryParse(fact.ActorIdentity, out int sourcePawnId))
+            {
+                cognition?.RecordQuestionExposure(pawn, sourcePawnId,
+                    exposedQuestion, fact.Tick);
+                if (CAPoliticalEvidenceMap.TryFor(fact, out string axis,
+                        out _, out _))
+                    cognition?.RecordPoliticalExposure(pawn, sourcePawnId,
+                        axis, fact.Tick);
+            }
+            CAInstitutionSanctionRuntime.Observe(fact, pawn,
+                populationIdentity, organizationIdentity, response);
             CAModuleProfiler.Observe(
                 CAModuleProfileKey.SocialInterpretation,
                 objectsExamined: 1, candidatesAccepted: 1);
@@ -361,6 +412,8 @@ namespace ColonistAwareness
                 TargetIdentity = act.subjectPawnId.ToString(),
                 OrganizationIdentity = act.orgKey,
                 KnowledgeSource = act.HowKnown(knower.thingIDNumber).ToString(),
+                EpistemicSourceIdentity = act.SourceIdentityFor(
+                    knower.thingIDNumber),
                 Known = true,
                 Realization = realization,
                 Tick = act.tick

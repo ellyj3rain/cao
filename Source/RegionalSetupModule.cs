@@ -2908,7 +2908,8 @@ namespace ColonistAwareness
             if (commit)
             {
                 CABehaviorDecision authoringDecision =
-                    CABehaviorGate.Evaluate("spatial.creation_authoring",
+                    CABehaviorGate.EvaluateForSelection(
+                        "spatial.creation_authoring",
                         new CABehaviorContext(actor: null,
                             actorContext: CAActorContext.CreationAuthor,
                             initiative: CAInitiativeTier.Standard,
@@ -2927,7 +2928,7 @@ namespace ColonistAwareness
                             knowledgeBasis:
                                 "validated current authored candidate",
                             owner: "creation author"));
-                if (!authoringDecision.Allowed)
+                if (!authoringDecision.SelectionApproved)
                 {
                     Messages.Message("The starting region cannot be confirmed: "
                         + authoringDecision.PrimaryReason + ".",

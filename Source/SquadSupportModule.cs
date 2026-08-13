@@ -1268,9 +1268,10 @@ namespace ColonistAwareness
                 authorityBasis: authorityIdentity,
                 knowledgeBasis: evidence.Basis,
                 owner: "squad support");
-            decision = CABehaviorGate.Evaluate(behaviorKey, context);
+            decision = CABehaviorGate.EvaluateForSelection(behaviorKey,
+                context);
             intent = default(CAIntentContext);
-            if (!decision.Allowed) return false;
+            if (!decision.SelectionApproved) return false;
             intent = CACombatIntent.Authorized(actor,
                 CAIntentController.RaidDefense, behaviorKey,
                 authorityOrigin, authorityIdentity, "squad support",

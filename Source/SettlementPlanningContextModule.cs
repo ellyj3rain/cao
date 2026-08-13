@@ -740,9 +740,9 @@ namespace ColonistAwareness
                     + candidate,
                 knowledgeBasis: proposal?.StableSignature(),
                 owner: "creation author");
-            decision = CABehaviorGate.Evaluate("spatial.creation_authoring",
-                context);
-            if (!decision.Allowed) return false;
+            decision = CABehaviorGate.EvaluateForSelection(
+                "spatial.creation_authoring", context);
+            if (!decision.SelectionApproved) return false;
             intent = CACombatIntent.Authorized(null,
                 CAIntentController.SettlementDevelopment,
                 "spatial.creation_authoring", CAAuthorityOrigin.WorldAuthoring,
@@ -905,8 +905,9 @@ namespace ColonistAwareness
                 knowledgeBasis: "exact saved institutional commitment for "
                     + (targetOrDemand ?? "native completion"),
                 owner: owner);
-            decision = CABehaviorGate.Evaluate(behaviorKey, context);
-            return decision.Allowed;
+            decision = CABehaviorGate.EvaluateForSelection(behaviorKey,
+                context);
+            return decision.SelectionApproved;
         }
 
         internal static bool TryAuthorizeLaterDevelopment(
@@ -940,9 +941,9 @@ namespace ColonistAwareness
                     + " settlement institution",
                 knowledgeBasis: proposal?.StableSignature(),
                 owner: organization?.organizationKey);
-            decision = CABehaviorGate.Evaluate(
+            decision = CABehaviorGate.EvaluateForSelection(
                 "spatial.npc_settlement_development", context);
-            if (!decision.Allowed) return false;
+            if (!decision.SelectionApproved) return false;
             bool existing = record.developmentAuthorized
                 && record.developmentEpisodeId > 0
                 && record.developmentBehaviorKey

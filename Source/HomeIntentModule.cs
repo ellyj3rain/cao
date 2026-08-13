@@ -1100,9 +1100,9 @@ namespace ColonistAwareness
                 authorityBasis: authorityBasis,
                 knowledgeBasis: knowledgeBasis,
                 owner: nameof(PlannedUseMapComponent));
-            CABehaviorDecision decision = CABehaviorGate.Evaluate(
+            CABehaviorDecision decision = CABehaviorGate.EvaluateForSelection(
                 behaviorKey, context);
-            if (!decision.Allowed) return false;
+            if (!decision.SelectionApproved) return false;
 
             intent = CACombatIntent.Authorized(resident,
                 CAIntentController.Logistics, behaviorKey,

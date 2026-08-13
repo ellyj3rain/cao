@@ -54,9 +54,10 @@ namespace ColonistAwareness
                         knowledgeBasis:
                             "directly carried captive with current bleeding",
                         owner: "raider captive custody");
-                    CABehaviorDecision decision = CABehaviorGate.Evaluate(
+                    CABehaviorDecision decision = CABehaviorGate
+                        .EvaluateForSelection(
                         "npc.captive_stabilization", context);
-                    if (!decision.Allowed) continue;
+                    if (!decision.SelectionApproved) continue;
                     TendUtility.DoTend(r, carried, null);
                     Messages.Message(r.LabelShortCap + " field-dressed " + carried.LabelShortCap + " before carrying them off.",
                         new TargetInfo(r.Position, map), MessageTypeDefOf.NeutralEvent, historical: false);

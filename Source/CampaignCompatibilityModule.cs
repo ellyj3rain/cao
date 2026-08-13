@@ -104,11 +104,7 @@ namespace ColonistAwareness
                 RecordMigration("campaign.boundary", from, boundaryVersion,
                     CACampaignCompatibility.ProvenanceFor(decision.Kind));
             }
-            if (catalogVersion == 0)
-                catalogVersion = CACampaignSchemaCatalog.CurrentCatalogVersion;
-            EnsureCatalog(CACampaignCompatibility.ProvenanceFor(
-                decision.Kind));
-            CACampaignCompatibility.DrainPending(this);
+            ValidateCatalogForLoad();
         }
 
         public override void FinalizeInit(bool fromLoad)
@@ -173,6 +169,16 @@ namespace ColonistAwareness
                     CACampaignCompatibility.BlockRuntime(decision.Reason);
                     return;
                 }
+                CACampaignSchemaDefinition definition =
+                    CACampaignSchemaCatalog.All.First(item =>
+                        item.Key == saved.schemaKey);
+                if (saved.version < definition.CurrentVersion)
+                {
+                    int from = saved.version;
+                    saved.version = definition.CurrentVersion;
+                    RecordMigration(saved.schemaKey, from, saved.version,
+                        provenance + "; admitted supported owner migration");
+                }
             }
             for (int i = 0; i < CACampaignSchemaCatalog.All.Length; i++)
             {
@@ -197,6 +203,37 @@ namespace ColonistAwareness
             // receipt. A later catalog therefore cannot strand new entries
             // behind an older persisted catalog number.
             catalogVersion = CACampaignSchemaCatalog.CurrentCatalogVersion;
+        }
+
+        // Load admission validates the saved manifest without publishing any
+        // newer owner version. Owners migrate and validate their own payloads
+        // during PostLoadInit; FinalizeInit publishes the completed catalog.
+        private void ValidateCatalogForLoad()
+        {
+            if (!CACampaignSchemaCatalog.ValidateDefinitions(
+                    out string definitionFailure))
+            {
+                CACampaignCompatibility.BlockRuntime(definitionFailure);
+                return;
+            }
+            for (int i = 0; i < schemas.Count; i++)
+            {
+                CACampaignSchemaRecord saved = schemas[i];
+                if (saved == null || saved.schemaKey.NullOrEmpty())
+                {
+                    CACampaignCompatibility.BlockRuntime(
+                        "campaign schema manifest contains an empty record");
+                    return;
+                }
+                CACampaignCompatibilityDecision decision =
+                    CACampaignCompatibilityKernel.EvaluateSchema(
+                        saved.schemaKey, saved.version);
+                if (!decision.CanLoad)
+                {
+                    CACampaignCompatibility.BlockRuntime(decision.Reason);
+                    return;
+                }
+            }
         }
 
         internal string Report()

@@ -66,6 +66,11 @@ namespace ColonistAwareness
 
         private static DispositionProfile Compute(Pawn p)
         {
+            CACulturalCognitionWorldComponent cognition =
+                CACulturalCognitionWorldComponent.Current;
+            if (cognition != null)
+                return cognition.DispositionFor(p);
+
             var d = Default();
 
             // Skills: competence is confidence.

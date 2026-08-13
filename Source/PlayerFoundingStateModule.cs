@@ -126,8 +126,7 @@ namespace ColonistAwareness
     // institutions that subsequently develop through play.
     public sealed class CAPlayerFoundingWorldComponent : WorldComponent
     {
-        private int campaignSchemaVersion =
-            CACampaignCompatibilityKernel.CurrentBoundaryVersion;
+        private int campaignSchemaVersion = 2;
         private int legacyAuthoringDataEpoch =
             CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private CAPlayerFoundingPlan founding =
@@ -402,8 +401,8 @@ namespace ColonistAwareness
                 DetermineTemporalBoundary(draft);
 
             string seed = Seed;
-            CACultureModel.EnsureGenerated(draft.culture,
-                seed + ":culture", PlayerCultureDef());
+            CACultureModel.EnsureIdentity(draft.culture,
+                seed + ":culture");
             CAPoliticalBeliefsModel.Ensure(draft.politicalBeliefs,
                 seed + ":politics");
             if (draft.arrangement == null

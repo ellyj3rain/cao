@@ -757,9 +757,9 @@ namespace ColonistAwareness
                 authorityBasis: authorityIdentity,
                 knowledgeBasis: knowledgeBasis,
                 owner: "raid-response behavior");
-            CABehaviorDecision decision = CABehaviorGate.Evaluate(
+            CABehaviorDecision decision = CABehaviorGate.EvaluateForSelection(
                 behaviorKey, context);
-            if (!decision.Allowed) return false;
+            if (!decision.SelectionApproved) return false;
             CAIntentContext previous;
             int episode = CATactical.TryGetContext(pawn, out previous)
                 && previous.IsValid ? previous.EpisodeId : 0;

@@ -640,15 +640,19 @@ namespace ColonistAwareness
             for (int k = 0; k < e.knownByIds.Count; k++)
             {
                 int pawnId = e.knownByIds[k];
-                if (e.pawnsAnswered.Contains(pawnId)) continue;
                 Pawn pawn = FindPawn(pawnId);
                 if (pawn == null || pawn.needs?.mood == null)
                     continue;
-                e.pawnsAnswered.Add(pawnId);
+                bool firstJudgment = !e.pawnsAnswered.Contains(pawnId);
+                if (!firstJudgment
+                    && !e.HasUnansweredKnowledgeSource(pawnId))
+                    continue;
+                if (firstJudgment) e.pawnsAnswered.Add(pawnId);
 
                 var contributions = new List<CASocialContribution>();
-                foreach (string key in
-                    CAPoliticalBeliefPractice.StandardsHeldBy(pawn))
+                foreach (string key in firstJudgment
+                    ? CAPoliticalBeliefPractice.StandardsHeldBy(pawn)
+                    : Enumerable.Empty<string>())
                 {
                     Row row;
                     string meaning;
@@ -672,11 +676,14 @@ namespace ColonistAwareness
                         verdict == CAVerdict.Offends, meaning, key,
                         EventIdentity(key, e));
                 }
-                AddIdeoligionContribution(e, pawn, contributions);
-                AddDispositionContribution(e, pawn, contributions);
-                AddRelationshipContribution(e, pawn, contributions);
-                AddGroupAndOfficeContributions(pawn, contributions);
-                AddMemoryContribution(pawn, contributions);
+                if (firstJudgment)
+                {
+                    AddIdeoligionContribution(e, pawn, contributions);
+                    AddDispositionContribution(e, pawn, contributions);
+                    AddRelationshipContribution(e, pawn, contributions);
+                    AddGroupAndOfficeContributions(pawn, contributions);
+                    AddMemoryContribution(pawn, contributions);
+                }
                 string populationIdentity;
                 string organizationIdentity;
                 CACulture culture = CASocialReactionWorldComponent.CultureFor(

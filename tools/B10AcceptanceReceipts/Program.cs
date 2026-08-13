@@ -13,10 +13,12 @@ internal static class Program
 
     private static int Main(string[] args)
     {
-        if (args.Length != 3)
+        bool verifyOnly = args.Length == 4
+            && args[3] == "--verify-only";
+        if (args.Length != 3 && !verifyOnly)
         {
             Console.Error.WriteLine(
-                "usage: B10AcceptanceReceipts <repo> <active> <mirror>");
+                "usage: B10AcceptanceReceipts <repo> <active> <mirror> [--verify-only]");
             return 1;
         }
         repo = Path.GetFullPath(args[0]);
@@ -432,8 +434,11 @@ internal static class Program
                 && sweep.Contains("Classified occurrences: **"),
             "second repository-wide pass has no unresolved Critical/High");
         C(58, "Creation reaches corrected map-generation boundary",
-            Value(root, "authoringDataEpoch") == "11"
-                && Value(plan, "schemaVersion") == "11"
+            int.TryParse(Value(root, "authoringDataEpoch"), out int epoch)
+                && epoch >= 11
+                && int.TryParse(Value(plan, "schemaVersion"),
+                    out int planSchema)
+                && planSchema >= 11
                 && Value(plan, "confirmed") == "False"
                 && Items(plan, "factions").Count() == 3
                 && settlements.Length == 4
@@ -441,7 +446,7 @@ internal static class Program
                 && world.Contains("TryValidateRealization")
                 && world.Contains("TryValidateSaved")
                 && world.Contains("BuildCreationProposal"),
-            "fixture and production validation/materialization path are structurally ready; operator runtime remains next");
+            "the current fixture remains at or beyond the B10 creation boundary and the production validation/materialization path is structurally ready; operator runtime remains separate");
 
         C(59, "Same-kind program operators retain separate entries",
             program.Contains(
@@ -628,7 +633,8 @@ internal static class Program
 
         bool mirrorEqual = File.ReadAllBytes(active).SequenceEqual(
             File.ReadAllBytes(mirror));
-        WriteReport(active, mirror, mirrorEqual);
+        if (!verifyOnly)
+            WriteReport(active, mirror, mirrorEqual);
         foreach (Result result in Results)
             Console.WriteLine($"{result.Number:00} {(result.Passed ? "PASS" : "FAIL")} {result.Name}");
         int passed = Results.Count(item => item.Passed);

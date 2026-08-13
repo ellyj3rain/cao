@@ -958,8 +958,7 @@ namespace ColonistAwareness
             internal int MemberIndex;
         }
 
-        private int campaignSchemaVersion =
-            CACampaignCompatibilityKernel.CurrentBoundaryVersion;
+        private int campaignSchemaVersion = 2;
         private int legacyAuthoringDataEpoch =
             CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private List<CARegionalSettlementRecord> records =
@@ -1364,7 +1363,15 @@ namespace ColonistAwareness
 
         private string MigrateB10State()
         {
-            string structureFailure = ValidateOwnerStructure(10);
+            int savedRegionSchema = regions.Count == 0
+                ? CARegionalPlan.CurrentSchemaVersion
+                : regions[0]?.schemaVersion ?? -1;
+            if (savedRegionSchema != 10
+                && savedRegionSchema != CARegionalPlan.CurrentSchemaVersion)
+                return "regional plan schema " + savedRegionSchema
+                    + " has no supported B12 migration";
+            string structureFailure = ValidateOwnerStructure(
+                savedRegionSchema);
             if (!structureFailure.NullOrEmpty()) return structureFailure;
             var commits = new List<Action>();
             for (int regionIndex = 0; regionIndex < regions.Count;
@@ -1373,9 +1380,10 @@ namespace ColonistAwareness
                 CARegionalPlan region = regions[regionIndex];
                 if (region == null)
                     return "regional plan " + regionIndex + " is null";
-                if (region.schemaVersion != 10)
+                if (region.schemaVersion != savedRegionSchema)
                     return "regional plan " + region.regionalId + " schema is "
-                        + region.schemaVersion + ", expected 10";
+                        + region.schemaVersion + ", expected "
+                        + savedRegionSchema;
                 if (region.factions == null || region.settlements == null)
                     return "regional plan " + region.regionalId
                         + " has missing social collections";

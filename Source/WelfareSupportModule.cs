@@ -264,9 +264,10 @@ namespace ColonistAwareness
                     ? "direct welfare concern"
                     : "relayed welfare concern with preserved source age",
                 owner: "one threshold-support transaction");
-            CABehaviorDecision requestDecision = CABehaviorGate.Evaluate(
+            CABehaviorDecision requestDecision = CABehaviorGate
+                .EvaluateForSelection(
                 "welfare.threshold_support", requestContext);
-            if (!requestDecision.Allowed)
+            if (!requestDecision.SelectionApproved)
             {
                 CATrace.Skip(requester, "threshold support request",
                     requestDecision.PrimaryReason,

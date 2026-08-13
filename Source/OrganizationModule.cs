@@ -924,8 +924,170 @@ namespace ColonistAwareness
         Group
     }
 
+    // An organization owns its legitimacy appraisal. Cultural cognition
+    // supplies one evidence-backed fit estimate; it does not copy the
+    // organization into a parallel institution record.
+    public sealed class CAInstitutionLegitimacyAppraisal : IExposable
+    {
+        public string populationScope;
+        public float proceduralFairness = 0.5f;
+        public float outcomePerformance = 0.5f;
+        public float lawAndCustomFit = 0.5f;
+        public float identityRepresentation = 0.5f;
+        public float competence = 0.5f;
+        public float corruption = 0.5f;
+        public float coercion = 0.5f;
+        public float culturalFit = 0.5f;
+        public float ideoligionFit = 0.5f;
+        public float politicalFit = 0.5f;
+        public float personalTreatment = 0.5f;
+        public float trust = 0.5f;
+        public float evidenceConfidence;
+        public float reportedPublicSupport;
+        public float outstandingSupportLoss;
+        public float legitimacy;
+        public string sourceSignature;
+        public int lastUpdatedTick = -1;
+
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref populationScope, "populationScope");
+            Scribe_Values.Look(ref proceduralFairness,
+                "proceduralFairness", 0.5f);
+            Scribe_Values.Look(ref outcomePerformance,
+                "outcomePerformance", 0.5f);
+            Scribe_Values.Look(ref lawAndCustomFit,
+                "lawAndCustomFit", 0.5f);
+            Scribe_Values.Look(ref identityRepresentation,
+                "identityRepresentation", 0.5f);
+            Scribe_Values.Look(ref competence, "competence", 0.5f);
+            Scribe_Values.Look(ref corruption, "corruption", 0.5f);
+            Scribe_Values.Look(ref coercion, "coercion", 0.5f);
+            Scribe_Values.Look(ref culturalFit, "culturalFit", 0.5f);
+            Scribe_Values.Look(ref ideoligionFit, "ideoligionFit", 0.5f);
+            Scribe_Values.Look(ref politicalFit, "politicalFit", 0.5f);
+            Scribe_Values.Look(ref personalTreatment,
+                "personalTreatment", 0.5f);
+            Scribe_Values.Look(ref trust, "trust", 0.5f);
+            Scribe_Values.Look(ref evidenceConfidence,
+                "evidenceConfidence", 0f);
+            Scribe_Values.Look(ref reportedPublicSupport,
+                "reportedPublicSupport", 0f);
+            Scribe_Values.Look(ref outstandingSupportLoss,
+                "outstandingSupportLoss", 0f);
+            Scribe_Values.Look(ref legitimacy, "legitimacy", 0f);
+            Scribe_Values.Look(ref sourceSignature, "sourceSignature");
+            Scribe_Values.Look(ref lastUpdatedTick, "lastUpdatedTick", -1);
+        }
+    }
+
+    public sealed class CAInstitutionSanctionAppraisal : IExposable
+    {
+        public string factIdentity;
+        public string subjectKey;
+        public int pawnId = -1;
+        public string populationScope;
+        public float legitimacy;
+        public float proportionality;
+        public float visibility;
+        public float consistency;
+        public float procedure;
+        public float socialSupport;
+        public float intrinsicMotivation;
+        public float psychologicalReactance;
+        public float deterrence;
+        public float normReinforcement;
+        public float reactance;
+        public float voluntaryCooperation;
+        public int tick = -1;
+
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref factIdentity, "factIdentity");
+            Scribe_Values.Look(ref subjectKey, "subjectKey");
+            Scribe_Values.Look(ref pawnId, "pawnId", -1);
+            Scribe_Values.Look(ref populationScope, "populationScope");
+            Scribe_Values.Look(ref legitimacy, "legitimacy", 0f);
+            Scribe_Values.Look(ref proportionality, "proportionality", 0f);
+            Scribe_Values.Look(ref visibility, "visibility", 0f);
+            Scribe_Values.Look(ref consistency, "consistency", 0f);
+            Scribe_Values.Look(ref procedure, "procedure", 0f);
+            Scribe_Values.Look(ref socialSupport, "socialSupport", 0f);
+            Scribe_Values.Look(ref intrinsicMotivation,
+                "intrinsicMotivation", 0f);
+            Scribe_Values.Look(ref psychologicalReactance,
+                "psychologicalReactance", 0f);
+            Scribe_Values.Look(ref deterrence, "deterrence", 0f);
+            Scribe_Values.Look(ref normReinforcement,
+                "normReinforcement", 0f);
+            Scribe_Values.Look(ref reactance, "reactance", 0f);
+            Scribe_Values.Look(ref voluntaryCooperation,
+                "voluntaryCooperation", 0f);
+            Scribe_Values.Look(ref tick, "tick", -1);
+        }
+    }
+
+    internal static class CAInstitutionSanctionRuntime
+    {
+        internal static void Observe(CASocialFactContext fact, Pawn pawn,
+            string populationScope, string organizationIdentity,
+            CAPersistedSocialReaction reaction)
+        {
+            if (fact == null || pawn == null || reaction == null
+                || !IsSanctionSubject(fact.SubjectKey))
+                return;
+            CAOrganizationWorldComponent owner =
+                CAOrganizationWorldComponent.Current;
+            CAOrganization organization = !organizationIdentity.NullOrEmpty()
+                ? owner?.ByKey(organizationIdentity) : null;
+            if (organization == null)
+                organization = owner?.Organizations.FirstOrDefault(value =>
+                    value?.memberPawnIds?.Contains(pawn.thingIDNumber) == true);
+            if (organization == null) return;
+            CAInstitutionLegitimacyAppraisal legitimacy = organization
+                .legitimacyAppraisals?.Where(value => value != null)
+                .OrderByDescending(value => value.lastUpdatedTick)
+                .FirstOrDefault();
+            float procedure = Mathf.Clamp01(
+                legitimacy?.proceduralFairness ?? 0.5f);
+            float personalTreatment = Mathf.Clamp01(
+                legitimacy?.personalTreatment ?? 0.5f);
+            int now = fact.Tick >= 0
+                ? fact.Tick : Find.TickManager?.TicksGame ?? 0;
+            int recent = organization.sanctionAppraisals?.Count(value =>
+                value != null && value.subjectKey == fact.SubjectKey
+                && now - value.tick <= 5 * 60000) ?? 0;
+            CAPsychologicalProfile psychology =
+                CACulturalCognitionWorldComponent.Current?.ProfileFor(pawn);
+            organization.RecordSanction(fact.FactIdentity, fact.SubjectKey,
+                pawn.thingIDNumber, populationScope,
+                legitimacy?.legitimacy ?? organization.publicSupport,
+                (procedure + personalTreatment) * 0.5f,
+                Mathf.Clamp01(reaction.Salience / 100f),
+                Mathf.Clamp01(0.35f + recent * 0.15f),
+                procedure,
+                Mathf.Clamp01((reaction.Approval + 100f) / 200f),
+                Mathf.Clamp01((reaction.Approval + 100f) / 200f),
+                psychology?.reactance ?? 0.5f, now);
+        }
+
+        private static bool IsSanctionSubject(string subjectKey)
+        {
+            return subjectKey == CASocialSubjectRegistry.CustodyPunishment
+                || subjectKey == CASocialSubjectRegistry.EnforcedOrder
+                || subjectKey == CASocialSubjectRegistry.CompelledService
+                || subjectKey == CASocialSubjectRegistry.CompulsoryTransfer
+                || subjectKey == CASocialSubjectRegistry.Confiscation
+                || subjectKey == CASocialSubjectRegistry.Taxation;
+        }
+    }
+
     public sealed class CAOrganization : IExposable
     {
+        public const int MaxLegitimacyAppraisals =
+            CACulturalCognitionPureKernel.MaxInstitutionLegitimacyAppraisals;
+        public const int MaxSanctionAppraisals =
+            CACulturalCognitionPureKernel.MaxInstitutionSanctionAppraisals;
         public string organizationKey;
         public CAOrganizationKind organizationKind =
             CAOrganizationKind.Settlement;
@@ -966,6 +1128,10 @@ namespace ColonistAwareness
         public int lastBeliefCheckTick = -1;
         // Outstanding public support loss from unresolved belief conflicts.
         public float unrecoveredSupportLoss;
+        public List<CAInstitutionLegitimacyAppraisal> legitimacyAppraisals =
+            new List<CAInstitutionLegitimacyAppraisal>();
+        public List<CAInstitutionSanctionAppraisal> sanctionAppraisals =
+            new List<CAInstitutionSanctionAppraisal>();
 
         // Each federation membership records what that member delegated.
         public int sunsetTick = -1;
@@ -1084,9 +1250,128 @@ namespace ColonistAwareness
                 "lastBeliefCheckTick", -1);
             Scribe_Values.Look(ref unrecoveredSupportLoss,
                 "unrecoveredSupportLoss", 0f);
+            Scribe_Collections.Look(ref legitimacyAppraisals,
+                "legitimacyAppraisals", LookMode.Deep);
+            Scribe_Collections.Look(ref sanctionAppraisals,
+                "sanctionAppraisals", LookMode.Deep);
             Scribe_Values.Look(ref affiliatedWithPlayer,
                 "affiliatedWithPlayer", false);
             Scribe_Values.Look(ref sunsetTick, "sunsetTick", -1);
+        }
+
+        internal void RecordLegitimacy(string populationScope,
+            float culturalFit, string sourceSignature, int tick)
+        {
+            RecordLegitimacy(populationScope,
+                new CAInstitutionLegitimacyInput(
+                    proceduralFairness: 0.5f,
+                    outcomePerformance: Mathf.Clamp01(publicSupport),
+                    lawAndCustomFit: 0.5f,
+                    identityRepresentation: 0.5f,
+                    competence: 0.5f,
+                    corruption: 0.5f,
+                    coercion: 0.5f,
+                    culturalFit: culturalFit,
+                    ideoligionFit: 0.5f,
+                    politicalFit: Mathf.Clamp01(1f
+                        - unrecoveredSupportLoss),
+                    personalTreatment: 0.5f,
+                    trust: 0.5f,
+                    publicSupport: Mathf.Clamp01(publicSupport)),
+                0.35f, sourceSignature, tick);
+        }
+
+        internal void RecordLegitimacy(string populationScope,
+            CAInstitutionLegitimacyInput input, float evidenceConfidence,
+            string sourceSignature, int tick)
+        {
+            if (legitimacyAppraisals == null)
+                legitimacyAppraisals =
+                    new List<CAInstitutionLegitimacyAppraisal>();
+            string scope = populationScope.NullOrEmpty()
+                ? "member population" : populationScope;
+            CAInstitutionLegitimacyAppraisal record = legitimacyAppraisals
+                .FirstOrDefault(value => value != null
+                    && value.populationScope == scope);
+            if (record == null)
+            {
+                record = new CAInstitutionLegitimacyAppraisal
+                    { populationScope = scope };
+                legitimacyAppraisals.Add(record);
+            }
+            record.proceduralFairness = Mathf.Clamp01(
+                input.ProceduralFairness);
+            record.outcomePerformance = Mathf.Clamp01(
+                input.OutcomePerformance);
+            record.lawAndCustomFit = Mathf.Clamp01(input.LawAndCustomFit);
+            record.identityRepresentation = Mathf.Clamp01(
+                input.IdentityRepresentation);
+            record.competence = Mathf.Clamp01(input.Competence);
+            record.corruption = Mathf.Clamp01(input.Corruption);
+            record.coercion = Mathf.Clamp01(input.Coercion);
+            record.culturalFit = Mathf.Clamp01(input.CulturalFit);
+            record.ideoligionFit = Mathf.Clamp01(input.IdeoligionFit);
+            record.politicalFit = Mathf.Clamp01(input.PoliticalFit);
+            record.personalTreatment = Mathf.Clamp01(
+                input.PersonalTreatment);
+            record.trust = Mathf.Clamp01(input.Trust);
+            record.evidenceConfidence = Mathf.Clamp01(evidenceConfidence);
+            record.reportedPublicSupport = Mathf.Clamp01(
+                input.PublicSupport);
+            record.outstandingSupportLoss = Mathf.Clamp01(
+                unrecoveredSupportLoss);
+            float estimated = CACulturalCognitionPureKernel
+                .InstitutionLegitimacy(input);
+            record.legitimacy = Mathf.Clamp01(Mathf.Lerp(0.5f, estimated,
+                record.evidenceConfidence));
+            record.sourceSignature = sourceSignature;
+            record.lastUpdatedTick = tick;
+        }
+
+        internal void RecordSanction(string factIdentity, string subjectKey,
+            int pawnId, string populationScope, float legitimacy,
+            float proportionality, float visibility, float consistency,
+            float procedure, float socialSupport, float intrinsicMotivation,
+            float psychologicalReactance, int tick)
+        {
+            if (factIdentity.NullOrEmpty() || pawnId < 0) return;
+            if (sanctionAppraisals == null)
+                sanctionAppraisals =
+                    new List<CAInstitutionSanctionAppraisal>();
+            if (sanctionAppraisals.Any(value => value != null
+                    && value.factIdentity == factIdentity
+                    && value.pawnId == pawnId))
+                return;
+            CASanctionResponseResult result =
+                CACulturalCognitionPureKernel.SanctionResponse(
+                    legitimacy, proportionality, visibility, consistency,
+                    procedure, socialSupport, intrinsicMotivation,
+                    psychologicalReactance);
+            sanctionAppraisals.Add(new CAInstitutionSanctionAppraisal
+            {
+                factIdentity = factIdentity,
+                subjectKey = subjectKey,
+                pawnId = pawnId,
+                populationScope = populationScope.NullOrEmpty()
+                    ? "member population" : populationScope,
+                legitimacy = Mathf.Clamp01(legitimacy),
+                proportionality = Mathf.Clamp01(proportionality),
+                visibility = Mathf.Clamp01(visibility),
+                consistency = Mathf.Clamp01(consistency),
+                procedure = Mathf.Clamp01(procedure),
+                socialSupport = Mathf.Clamp01(socialSupport),
+                intrinsicMotivation = Mathf.Clamp01(intrinsicMotivation),
+                psychologicalReactance = Mathf.Clamp01(
+                    psychologicalReactance),
+                deterrence = result.Deterrence,
+                normReinforcement = result.NormReinforcement,
+                reactance = result.Reactance,
+                voluntaryCooperation = result.VoluntaryCooperation,
+                tick = tick
+            });
+            if (sanctionAppraisals.Count > MaxSanctionAppraisals)
+                sanctionAppraisals.RemoveRange(0,
+                    sanctionAppraisals.Count - MaxSanctionAppraisals);
         }
     }
 
@@ -1255,19 +1540,22 @@ namespace ColonistAwareness
 
     public sealed class CAOrganizationWorldComponent : WorldComponent
     {
-        private int campaignSchemaVersion =
-            CACampaignCompatibilityKernel.CurrentBoundaryVersion;
+        private int campaignSchemaVersion = 2;
         private int legacyAuthoringDataEpoch =
             CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private List<CAOrganization> organizations = new List<CAOrganization>();
         // Runtime-only owner index. The persisted list remains the single
         // durable representation and this lookup is rebuilt after load.
         private Dictionary<string, CAOrganization> organizationIndex;
+        // Runtime-only authority index, rebuilt at the organization owner's
+        // mutation cadence so political cognition never scans all offices.
+        private HashSet<int> officeHolderIndex = new HashSet<int>();
         private List<CAFrontierMapPlan> frontierMapPlans =
             new List<CAFrontierMapPlan>();
         private List<CAAgreement> agreements = new List<CAAgreement>();
         private int nextAgreementId = 1;
         private int lastSyncTick = -99999;
+        private int nextLegitimacyTick = 60000;
 
         public IReadOnlyList<CAAgreement> Agreements
         {
@@ -1639,6 +1927,25 @@ namespace ColonistAwareness
         private void InvalidateOrganizationIndex()
         {
             organizationIndex = null;
+            officeHolderIndex?.Clear();
+        }
+
+        internal bool HasOfficeHolder(int pawnId)
+        {
+            return pawnId >= 0 && officeHolderIndex?.Contains(pawnId) == true;
+        }
+
+        private void RebuildOfficeHolderIndex()
+        {
+            if (officeHolderIndex == null)
+                officeHolderIndex = new HashSet<int>();
+            else officeHolderIndex.Clear();
+            if (organizations == null) return;
+            foreach (CAOffice office in organizations.Where(value =>
+                         value?.offices != null).SelectMany(value =>
+                         value.offices).Where(value => value != null
+                         && value.holderId >= 0))
+                officeHolderIndex.Add(office.holderId);
         }
 
         public CAOrganization EnsureFor(string key, string name,
@@ -1666,6 +1973,11 @@ namespace ColonistAwareness
         {
             base.WorldComponentTick();
             int now = Find.TickManager.TicksGame;
+            if (now >= nextLegitimacyTick)
+            {
+                nextLegitimacyTick = now + 60000;
+                UpdateInstitutionLegitimacy(now);
+            }
             if (now - lastSyncTick < 2500) return;
             lastSyncTick = now;
             using (CAModuleProfiler.Measure(
@@ -1681,7 +1993,190 @@ namespace ColonistAwareness
                 ProcessAgreementsAndFederations(now);
                 TickGatherings(now);
                 PulsePoliticalBeliefsUnderBudget(now);
+                RebuildOfficeHolderIndex();
             }
+        }
+
+        private void UpdateInstitutionLegitimacy(int now)
+        {
+            CACulturalCognitionWorldComponent cognition =
+                CACulturalCognitionWorldComponent.Current;
+            if (cognition == null) return;
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.InstitutionalLegitimacy))
+            {
+                int examined = 0;
+                foreach (CAOrganization organization in organizations.Where(
+                    value => value != null
+                        && !value.organizationKey.NullOrEmpty()))
+                {
+                    CAInstitutionLegitimacyEvidence evidence = cognition
+                        == null ? MissingInstitutionEvidence()
+                        : InstitutionEvidenceFor(organization, cognition,
+                            CAPoliticalCognitionWorldComponent.Current);
+                    organization.RecordLegitimacy("member population",
+                        evidence.Input, evidence.EvidenceConfidence,
+                        evidence.SourceSignature, now);
+                    examined++;
+                }
+                CAModuleProfiler.Observe(
+                    CAModuleProfileKey.InstitutionalLegitimacy,
+                    objectsExamined: examined,
+                    candidatesAccepted: examined);
+            }
+        }
+
+        private static CAInstitutionLegitimacyEvidence
+            MissingInstitutionEvidence()
+        {
+            return new CAInstitutionLegitimacyEvidence(
+                new CAInstitutionLegitimacyInput(0.5f, 0.5f, 0.5f,
+                    0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+                    0.5f, 0.5f, 0.5f), 0f,
+                "cultural cognition unavailable");
+        }
+
+        private static CAInstitutionLegitimacyEvidence InstitutionEvidenceFor(
+            CAOrganization organization,
+            CACulturalCognitionWorldComponent cognition,
+            CAPoliticalCognitionWorldComponent politics)
+        {
+            if (organization == null) return MissingInstitutionEvidence();
+            float cultural = cognition.InstitutionCulturalFitFor(
+                organization, out string culturalSignature);
+            float procedure = ProcedureEvidence(organization);
+            float performance = PerformanceEvidence(organization);
+            float representation = RepresentationEvidence(organization);
+            float competence = CompetenceEvidence(organization);
+            float corruption = 0.5f;
+            float coercion = CoercionEvidence(organization);
+            float ideoligion = 0.5f;
+            float political = politics?.InstitutionPoliticalFitFor(
+                organization) ?? 0.5f;
+            float treatment = PersonalTreatment(organization);
+            float trust = TrustEvidence(organization);
+            float publicSupport = Mathf.Clamp01(organization.publicSupport);
+            int representedInputs = 1;
+            if (organization.sanctionAppraisals?.Count > 0)
+                representedInputs++;
+            if (organization.memberPawnIds?.Count > 0)
+                representedInputs += 4;
+            if (organization.offices?.Count > 0) representedInputs += 2;
+            if (organization.decisionHistory?.Count > 0)
+                representedInputs += 2;
+            float evidenceConfidence = Mathf.Clamp01(0.20f
+                + representedInputs / 13f * 0.75f);
+            return new CAInstitutionLegitimacyEvidence(
+                new CAInstitutionLegitimacyInput(procedure, performance,
+                    0.5f, representation, competence, corruption, coercion,
+                    cultural, ideoligion, political, treatment, trust,
+                    publicSupport), evidenceConfidence,
+                culturalSignature
+                    + ";procedure=" + procedure.ToString("0.000")
+                    + ";performance=" + performance.ToString("0.000")
+                    + ";representation="
+                    + representation.ToString("0.000")
+                    + ";publicSupport=" + publicSupport.ToString("0.000")
+                    + ";evidenceConfidence="
+                    + evidenceConfidence.ToString("0.000"));
+        }
+
+        private static float ProcedureEvidence(CAOrganization organization)
+        {
+            List<CAInstitutionSanctionAppraisal> represented =
+                (organization?.sanctionAppraisals
+                    ?? new List<CAInstitutionSanctionAppraisal>())
+                .Where(value => value != null).ToList();
+            return represented.Count == 0 ? 0.5f
+                : Mathf.Clamp01(represented.Average(value =>
+                    value.procedure));
+        }
+
+        private static float PerformanceEvidence(CAOrganization organization)
+        {
+            List<CADecisionEntry> represented = (organization?.decisionHistory
+                    ?? new List<CADecisionEntry>())
+                .Where(value => value != null && (value.kind
+                        == "agreement-made" || value.kind == "warning-honored"
+                    || value.kind == "warning-shared"
+                    || value.kind == "agreement-broken"
+                    || value.kind == "warning-ignored"
+                    || value.kind == "losses"))
+                .ToList();
+            if (represented.Count == 0) return 0.5f;
+            int favorable = represented.Count(value => value.kind
+                    == "agreement-made" || value.kind == "warning-honored"
+                || value.kind == "warning-shared");
+            int adverse = represented.Count - favorable;
+            return Mathf.Clamp01(0.5f
+                + (favorable - adverse) / (2f * represented.Count));
+        }
+
+        private static float RepresentationEvidence(
+            CAOrganization organization)
+        {
+            int members = organization?.memberPawnIds?.Count ?? 0;
+            int holders = organization?.offices?.Count(value => value != null
+                && value.holderId >= 0
+                && organization.memberPawnIds.Contains(value.holderId)) ?? 0;
+            int offices = organization?.offices?.Count ?? 0;
+            return offices == 0 ? 0.5f : Mathf.Clamp01(holders
+                / (float)Math.Max(1, offices)
+                * (members > 0 ? 1f : 0.5f));
+        }
+
+        private static float CompetenceEvidence(CAOrganization organization)
+        {
+            List<Pawn> holders = (organization?.offices
+                    ?? new List<CAOffice>()).Where(value => value != null
+                    && value.holderId >= 0).Select(value => PawnByIdForEvidence(
+                        value.holderId)).Where(value => value != null).ToList();
+            return holders.Count == 0 ? 0.5f : Mathf.Clamp01((float)(
+                holders.Average(value => value.skills?.GetSkill(
+                    SkillDefOf.Social)?.Level ?? 0) / 20d));
+        }
+
+        private static float CoercionEvidence(CAOrganization organization)
+        {
+            int enforcement = organization?.decisionHistory?.Count(value =>
+                value != null && (value.kind == "custody"
+                    || value.kind == "security")) ?? 0;
+            int total = organization?.decisionHistory?.Count ?? 0;
+            return total == 0 ? 0.5f : Mathf.Clamp01(
+                enforcement / (float)total);
+        }
+
+        private static float PersonalTreatment(CAOrganization organization)
+        {
+            int favorable = organization?.decisionHistory?.Count(value =>
+                value != null && (value.kind == "care"
+                    || value.kind == "support")) ?? 0;
+            int adverse = organization?.decisionHistory?.Count(value =>
+                value != null && value.kind == "breach") ?? 0;
+            return favorable + adverse == 0 ? 0.5f : Mathf.Clamp01(
+                0.5f + favorable * 0.05f - adverse * 0.10f);
+        }
+
+        private static float TrustEvidence(CAOrganization organization)
+        {
+            List<Pawn> members = (organization?.memberPawnIds
+                    ?? new List<int>()).Select(PawnByIdForEvidence)
+                .Where(value => value != null).ToList();
+            List<Pawn> holders = (organization?.offices
+                    ?? new List<CAOffice>()).Where(value => value != null
+                    && value.holderId >= 0).Select(value => PawnByIdForEvidence(
+                        value.holderId)).Where(value => value != null).ToList();
+            if (members.Count == 0 || holders.Count == 0) return 0.5f;
+            return Mathf.Clamp01((float)members.SelectMany(member =>
+                    holders.Where(holder => holder != member).Select(holder =>
+                        (member.relations?.OpinionOf(holder) ?? 0) / 200f
+                            + 0.5f)).DefaultIfEmpty(0.5f).Average());
+        }
+
+        private static Pawn PawnByIdForEvidence(int id)
+        {
+            return CACulturalCognitionWorldComponent.Current?.CognitionPawns()
+                .FirstOrDefault(value => value?.thingIDNumber == id);
         }
 
         // Player-facing and loaded organizations update every world pulse.
@@ -2369,19 +2864,57 @@ namespace ColonistAwareness
                     "CA_lastInitiativeTick", -999999);
                 Scribe_Values.Look(ref offMapActivityCursor,
                     "CA_offMapActivityCursor", 0);
+                Scribe_Values.Look(ref nextLegitimacyTick,
+                    "CA_nextInstitutionLegitimacyTick", 60000);
             }
             if (Scribe.mode == LoadSaveMode.PostLoadInit && readable)
             {
                 CACampaignCompatibility.CompleteOwnerLoad(
                     "world.organization", ref campaignSchemaVersion,
-                    legacyAuthoringDataEpoch, ValidateCampaignState);
+                    legacyAuthoringDataEpoch, ValidateCampaignState,
+                    MigrateCampaignState);
                 InvalidateOrganizationIndex();
                 EnsureOrganizationIndex();
+                RebuildOfficeHolderIndex();
                 CAMembershipValidation.Run(organizations);
             }
         }
 
+        private string MigrateCampaignState()
+        {
+            bool fromB11 = campaignSchemaVersion == 1;
+            bool fromB10 = campaignSchemaVersion == 0
+                && legacyAuthoringDataEpoch
+                    == CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
+            if (!fromB11 && !fromB10)
+                return "organization owner schema " + campaignSchemaVersion
+                    + " has no supported migration";
+            string retainedFailure = ValidateCampaignState(
+                requireInstitutionAppraisals: false);
+            if (!retainedFailure.NullOrEmpty()) return retainedFailure;
+            // The retained payload is valid before mutation. The only upgrade
+            // operation is replacing two absent catalog-2 lists with empty
+            // lists, so the following commit cannot invalidate retained state
+            // and never invents appraisal history.
+            foreach (CAOrganization organization in organizations
+                .Where(value => value != null))
+            {
+                if (organization.legitimacyAppraisals == null)
+                    organization.legitimacyAppraisals =
+                        new List<CAInstitutionLegitimacyAppraisal>();
+                if (organization.sanctionAppraisals == null)
+                    organization.sanctionAppraisals =
+                        new List<CAInstitutionSanctionAppraisal>();
+            }
+            return null;
+        }
+
         private string ValidateCampaignState()
+        {
+            return ValidateCampaignState(requireInstitutionAppraisals: true);
+        }
+
+        private string ValidateCampaignState(bool requireInstitutionAppraisals)
         {
             if (organizations == null || frontierMapPlans == null
                 || agreements == null || breachCases == null
@@ -2408,7 +2941,10 @@ namespace ColonistAwareness
                     || organization.decisionHistory == null
                     || organization.memberPawnIds == null
                     || organization.openBeliefConflicts == null
-                    || organization.beliefConflictStartTicks == null)
+                    || organization.beliefConflictStartTicks == null
+                    || (requireInstitutionAppraisals
+                        && (organization.legitimacyAppraisals == null
+                            || organization.sanctionAppraisals == null)))
                     return "organization " + organization.organizationKey
                         + " has missing owned collections";
                 if (organization.offices.Any(item => item == null)
@@ -2417,7 +2953,11 @@ namespace ColonistAwareness
                     || organization.securityPractices.Any(item => item == null)
                     || organization.claims.Any(item => item == null)
                     || organization.policies.Any(item => item == null)
-                    || organization.decisionHistory.Any(item => item == null))
+                    || organization.decisionHistory.Any(item => item == null)
+                    || (organization.legitimacyAppraisals?.Any(item =>
+                        item == null) == true)
+                    || (organization.sanctionAppraisals?.Any(item =>
+                        item == null) == true))
                     return "organization " + organization.organizationKey
                         + " has a null owned record";
                 if (organization.groups.Any(group => group.memberIds == null))
@@ -2427,6 +2967,60 @@ namespace ColonistAwareness
                         practice.guardPawnIds == null))
                     return "organization " + organization.organizationKey
                         + " has a security practice without guard state";
+                if (organization.legitimacyAppraisals?.Any(appraisal =>
+                        appraisal.populationScope.NullOrEmpty()
+                        || !ValidUnit(appraisal.proceduralFairness)
+                        || !ValidUnit(appraisal.outcomePerformance)
+                        || !ValidUnit(appraisal.lawAndCustomFit)
+                        || !ValidUnit(appraisal.identityRepresentation)
+                        || !ValidUnit(appraisal.competence)
+                        || !ValidUnit(appraisal.corruption)
+                        || !ValidUnit(appraisal.coercion)
+                        || !ValidUnit(appraisal.culturalFit)
+                        || !ValidUnit(appraisal.ideoligionFit)
+                        || !ValidUnit(appraisal.politicalFit)
+                        || !ValidUnit(appraisal.personalTreatment)
+                        || !ValidUnit(appraisal.trust)
+                        || !ValidUnit(appraisal.evidenceConfidence)
+                        || !ValidUnit(appraisal.reportedPublicSupport)
+                        || !ValidUnit(appraisal.outstandingSupportLoss)
+                        || !ValidUnit(appraisal.legitimacy)) == true)
+                    return "organization " + organization.organizationKey
+                        + " has an invalid legitimacy appraisal";
+                if ((organization.legitimacyAppraisals?.Count ?? 0)
+                        > CAOrganization.MaxLegitimacyAppraisals
+                    || organization.legitimacyAppraisals?.GroupBy(value =>
+                            value.populationScope, StringComparer.Ordinal)
+                        .Any(group => group.Count() > 1) == true)
+                    return "organization " + organization.organizationKey
+                        + " exceeds or duplicates legitimacy scopes";
+                if (organization.sanctionAppraisals?.Any(appraisal =>
+                        appraisal.factIdentity.NullOrEmpty()
+                        || appraisal.subjectKey.NullOrEmpty()
+                        || appraisal.pawnId < 0
+                        || appraisal.populationScope.NullOrEmpty()
+                        || !ValidUnit(appraisal.legitimacy)
+                        || !ValidUnit(appraisal.proportionality)
+                        || !ValidUnit(appraisal.visibility)
+                        || !ValidUnit(appraisal.consistency)
+                        || !ValidUnit(appraisal.procedure)
+                        || !ValidUnit(appraisal.socialSupport)
+                        || !ValidUnit(appraisal.intrinsicMotivation)
+                        || !ValidUnit(appraisal.psychologicalReactance)
+                        || !ValidUnit(appraisal.deterrence)
+                        || !ValidUnit(appraisal.normReinforcement)
+                        || !ValidUnit(appraisal.reactance)
+                        || !ValidUnit(appraisal.voluntaryCooperation)) == true)
+                    return "organization " + organization.organizationKey
+                        + " has an invalid sanction appraisal";
+                if ((organization.sanctionAppraisals?.Count ?? 0)
+                        > CAOrganization.MaxSanctionAppraisals
+                    || organization.sanctionAppraisals?.GroupBy(value =>
+                            (value.factIdentity ?? "") + "\0" + value.pawnId,
+                            StringComparer.Ordinal)
+                        .Any(group => group.Count() > 1) == true)
+                    return "organization " + organization.organizationKey
+                        + " exceeds or duplicates sanction appraisals";
             }
             var agreementIds = new HashSet<int>();
             int maxAgreementId = 0;
@@ -2450,6 +3044,12 @@ namespace ColonistAwareness
                 || pendingGatherings.Any(item => item == null))
                 return "an organization-owned record is null";
             return null;
+        }
+
+        private static bool ValidUnit(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value)
+                && value >= 0f && value <= 1f;
         }
     }
 
@@ -3110,9 +3710,9 @@ namespace ColonistAwareness
                         knowledgeBasis: "actor-held threat fact",
                         owner: "colony organization");
                     CABehaviorDecision reportDecision =
-                        CABehaviorGate.Evaluate(
+                        CABehaviorGate.EvaluateForSelection(
                             "communication.status_report", reportContext);
-                    if (!reportDecision.Allowed) continue;
+                    if (!reportDecision.SelectionApproved) continue;
                     laceLast[p.thingIDNumber] = now;
                     CATrace.Pawn(p, "LACE (adopted practice): "
                         + CAStatusReport.For(p), anchor: p.Position);

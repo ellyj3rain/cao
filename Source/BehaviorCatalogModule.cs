@@ -686,6 +686,9 @@ namespace ColonistAwareness
         public readonly float KnowledgeUncertainty;
         public readonly string Owner;
         public readonly CAIntentOrigin SuggestedIntentOrigin;
+        public readonly bool CulturalAppraisalApplied;
+        public readonly float CulturalSupport;
+        public readonly CACulturalBehaviorResponse CulturalResponse;
 
         internal CABehaviorDecision(bool allowed, string key,
             CAInitiativeTier current, CAInitiativeTier required,
@@ -694,7 +697,8 @@ namespace ColonistAwareness
             CABehaviorBlockReason primaryBlock, string authorityBasis,
             string knowledgeBasis, int knowledgeAgeTicks,
             float knowledgeConfidence, float knowledgeUncertainty, string owner,
-            CAIntentOrigin origin)
+            CAIntentOrigin origin, bool culturalAppraisalApplied,
+            float culturalSupport, CACulturalBehaviorResponse culturalResponse)
         {
             Allowed = allowed;
             BehaviorKey = key;
@@ -715,11 +719,48 @@ namespace ColonistAwareness
             KnowledgeUncertainty = knowledgeUncertainty;
             Owner = owner;
             SuggestedIntentOrigin = origin;
+            CulturalAppraisalApplied = culturalAppraisalApplied;
+            CulturalSupport = culturalSupport;
+            CulturalResponse = culturalResponse;
         }
 
         public string PrimaryReason
         {
             get { return ReasonFor(PrimaryBlock); }
+        }
+
+        // Authorization and autonomous selection are separate. Culture never
+        // removes knowledge, authority, capability, materials, or native
+        // compatibility. It can change whether a CA-originated discretionary
+        // action is selected; direct operator intent remains authoritative.
+        public bool SelectsAction(CAAuthorityOrigin origin)
+        {
+            if (!Allowed) return false;
+            if ((origin & (CAAuthorityOrigin.OperatorDirect
+                    | CAAuthorityOrigin.OperatorRelay
+                    | CAAuthorityOrigin.SaveRestore)) != 0)
+                return true;
+            return SelectionApproved;
+        }
+
+        public bool SelectionApproved => Allowed
+            && (!CulturalAppraisalApplied
+                || CulturalResponse == CACulturalBehaviorResponse.Volunteer
+                || CulturalResponse == CACulturalBehaviorResponse.Comply);
+
+        internal CABehaviorDecision WithCulturalAppraisal(
+            CACulturalBehaviorAppraisal appraisal)
+        {
+            if (appraisal == null) return this;
+            return new CABehaviorDecision(Allowed, BehaviorKey, CurrentTier,
+                RequiredTier, FeatureEnabled, KnowledgeSatisfied,
+                AuthoritySatisfied, CapabilitySatisfied, MaterialSatisfied,
+                CurrentIntentCompatible, DirectPlayerOwnership, PrimaryBlock,
+                AuthorityBasis, KnowledgeBasis, KnowledgeAgeTicks,
+                KnowledgeConfidence, KnowledgeUncertainty, Owner,
+                SuggestedIntentOrigin, culturalAppraisalApplied: true,
+                culturalSupport: appraisal.support,
+                culturalResponse: appraisal.response);
         }
 
         internal static string ReasonFor(CABehaviorBlockReason block)
@@ -781,6 +822,17 @@ namespace ColonistAwareness
                     CAInitiativeTier.Standard, false,
                     CABehaviorBlockReason.UnknownBehavior);
             return Evaluate(definition, context);
+        }
+
+        // Required origination boundary: permission is evaluated first, then
+        // represented Culture may affect discretionary selection without
+        // changing the authorization result. Callers that may originate work,
+        // plans, direct effects, or intents consume SelectionApproved.
+        public static CABehaviorDecision EvaluateForSelection(
+            string behaviorKey, CABehaviorContext context)
+        {
+            return CABehaviorSelection.Apply(Evaluate(behaviorKey, context),
+                context);
         }
 
         public static CABehaviorDecision Evaluate(
@@ -928,6 +980,7 @@ namespace ColonistAwareness
             CABehaviorContext context, CAInitiativeTier required, bool feature,
             CABehaviorBlockReason block)
         {
+            Pawn pawn = context.Actor;
             CAModuleProfiler.Observe(
                 CAModuleProfileKey.BehaviorAuthorization,
                 objectsExamined: 1,
@@ -942,8 +995,9 @@ namespace ColonistAwareness
                 context.KnowledgeBasis, context.KnowledgeAgeTicks,
                 context.KnowledgeConfidence, context.KnowledgeUncertainty,
                 context.Owner,
-                SuggestedOrigin(context.AuthorityOrigin));
-            Pawn pawn = context.Actor;
+                SuggestedOrigin(context.AuthorityOrigin),
+                culturalAppraisalApplied: false, culturalSupport: 0f,
+                culturalResponse: CACulturalBehaviorResponse.Comply);
             if (pawn?.Map != null)
                 CABehaviorIntentMapComponent.For(pawn.Map)?.ObserveDecision(
                     pawn, decision);
@@ -977,6 +1031,33 @@ namespace ColonistAwareness
             if ((origin & CAAuthorityOrigin.WorldAuthoring) != 0)
                 return CAIntentOrigin.WorldAuthoring;
             return CAIntentOrigin.Unknown;
+        }
+    }
+
+    // Authorization is a pure permission decision. Cultural cognition belongs
+    // to discretionary selection after permission has been established, and
+    // direct operator, relay, or restored intent never invokes it.
+    public static class CABehaviorSelection
+    {
+        public static CABehaviorDecision Apply(CABehaviorDecision decision,
+            CABehaviorContext context)
+        {
+            Pawn pawn = context.Actor;
+            if (!decision.Allowed || pawn == null
+                || (context.AuthorityOrigin
+                    & (CAAuthorityOrigin.OperatorDirect
+                        | CAAuthorityOrigin.OperatorRelay
+                        | CAAuthorityOrigin.SaveRestore)) != 0)
+                return decision;
+            CACulturalBehaviorAppraisal appraisal =
+                CACulturalCognitionWorldComponent.Current
+                    ?.AppraiseBehavior(pawn, decision.BehaviorKey, context);
+            CABehaviorDecision selected = decision.WithCulturalAppraisal(
+                appraisal);
+            if (pawn.Map != null)
+                CABehaviorIntentMapComponent.For(pawn.Map)?.ObserveDecision(
+                    pawn, selected);
+            return selected;
         }
     }
 

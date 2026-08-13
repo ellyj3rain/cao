@@ -319,9 +319,10 @@ namespace ColonistAwareness
                 knowledgeBasis: why + "; route has " + line.Count
                     + " native terrain cells",
                 owner: record.developmentOwner);
-            CABehaviorDecision projectDecision = CABehaviorGate.Evaluate(
+            CABehaviorDecision projectDecision = CABehaviorGate
+                .EvaluateForSelection(
                 "spatial.npc_settlement_development", proposalContext);
-            if (!projectDecision.Allowed) return null;
+            if (!projectDecision.SelectionApproved) return null;
             return new CARoadProject
             {
                 ownerKey = key,

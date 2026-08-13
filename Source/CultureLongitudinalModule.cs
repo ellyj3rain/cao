@@ -14,8 +14,7 @@ namespace ColonistAwareness
     // work on behalf of either the player or an NPC institution.
     public sealed class CACultureLongitudinalMapComponent : MapComponent
     {
-        private int campaignSchemaVersion =
-            CACampaignCompatibilityKernel.CurrentBoundaryVersion;
+        private int campaignSchemaVersion = 2;
         private int legacyAuthoringDataEpoch =
             CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private const int EvaluationCadence = 60000;

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using RimWorld;
 using RimWorld.Planet;
 using UnityEngine;
@@ -50,6 +51,12 @@ namespace ColonistAwareness
         // the house idiom)
         public List<int> knownByIds = new List<int>();
         public List<byte> knownHow = new List<byte>();
+        public List<int> knownSourceIds = new List<int>();
+        public List<int> knownSourceHolderIds = new List<int>();
+        public List<int> knownSourcePawnIds = new List<int>();
+        public List<byte> knownSourceHow = new List<byte>();
+        public List<int> answeredSourceHolderIds = new List<int>();
+        public List<int> answeredSourcePawnIds = new List<int>();
         // response bookkeeping: each org and each pawn answers an
         // event ONCE - the event-identity half of no-duplicate-onset
         public List<string> orgsAnswered = new List<string>();
@@ -60,11 +67,91 @@ namespace ColonistAwareness
             return knownByIds.Contains(pawnId);
         }
 
-        public void Learn(int pawnId, CAActKnowledgeSource how)
+        public void Learn(int pawnId, CAActKnowledgeSource how,
+            int sourcePawnId = -1)
         {
-            if (pawnId < 0 || Knows(pawnId)) return;
-            knownByIds.Add(pawnId);
-            knownHow.Add((byte)how);
+            if (pawnId < 0) return;
+            if (how == CAActKnowledgeSource.Reported
+                && !CACulturalCognitionPureKernel.IsDistinctReportRoute(
+                    pawnId, sourcePawnId))
+                return;
+            int at = knownByIds.IndexOf(pawnId);
+            if (at < 0)
+            {
+                knownByIds.Add(pawnId);
+                knownHow.Add((byte)how);
+                knownSourceIds.Add(sourcePawnId);
+            }
+            if (sourcePawnId >= 0 && !HasSource(pawnId, sourcePawnId))
+            {
+                knownSourceHolderIds.Add(pawnId);
+                knownSourcePawnIds.Add(sourcePawnId);
+                knownSourceHow.Add((byte)how);
+            }
+        }
+
+        private bool HasSource(int holderPawnId, int sourcePawnId)
+        {
+            for (int i = 0; i < knownSourceHolderIds.Count
+                && i < knownSourcePawnIds.Count; i++)
+                if (knownSourceHolderIds[i] == holderPawnId
+                    && knownSourcePawnIds[i] == sourcePawnId)
+                    return true;
+            return false;
+        }
+
+        public IEnumerable<int> SourcePawnIdsFor(int pawnId)
+        {
+            for (int i = 0; i < knownSourceHolderIds.Count
+                && i < knownSourcePawnIds.Count; i++)
+                if (knownSourceHolderIds[i] == pawnId
+                    && knownSourcePawnIds[i] >= 0)
+                    yield return knownSourcePawnIds[i];
+        }
+
+        public IEnumerable<int> UnansweredSourcePawnIdsFor(int pawnId)
+        {
+            int[] sources = SourcePawnIdsFor(pawnId).Distinct().ToArray();
+            if (sources.Length == 0) sources = new[] { -1 };
+            foreach (int sourcePawnId in sources)
+                if (!SourceAnswered(pawnId, sourcePawnId))
+                    yield return sourcePawnId;
+        }
+
+        public bool HasUnansweredKnowledgeSource(int pawnId) =>
+            UnansweredSourcePawnIdsFor(pawnId).Any();
+
+        public CAActKnowledgeSource HowKnownFrom(int holderPawnId,
+            int sourcePawnId)
+        {
+            for (int i = 0; i < knownSourceHolderIds.Count
+                && i < knownSourcePawnIds.Count
+                && i < knownSourceHow.Count; i++)
+                if (knownSourceHolderIds[i] == holderPawnId
+                    && knownSourcePawnIds[i] == sourcePawnId)
+                    return (CAActKnowledgeSource)knownSourceHow[i];
+            return HowKnown(holderPawnId);
+        }
+
+        public string KnowledgeSourceFor(int holderPawnId, int sourcePawnId) =>
+            CACulturalCognitionPureKernel.ActKnowledgeChannel(
+                (byte)HowKnownFrom(holderPawnId, sourcePawnId));
+
+        public void MarkKnowledgeSourceAnswered(int pawnId, int sourcePawnId)
+        {
+            if (SourceAnswered(pawnId, sourcePawnId)) return;
+            answeredSourceHolderIds.Add(pawnId);
+            answeredSourcePawnIds.Add(sourcePawnId);
+        }
+
+        private bool SourceAnswered(int holderPawnId, int sourcePawnId)
+        {
+            for (int i = 0; i < answeredSourceHolderIds.Count
+                && i < answeredSourcePawnIds.Count; i++)
+                if (answeredSourceHolderIds[i] == holderPawnId
+                    && answeredSourcePawnIds[i] == sourcePawnId)
+                    return true;
+            return false;
         }
 
         public CAActKnowledgeSource HowKnown(int pawnId)
@@ -72,6 +159,21 @@ namespace ColonistAwareness
             int at = knownByIds.IndexOf(pawnId);
             return at < 0 ? CAActKnowledgeSource.Reported
                 : (CAActKnowledgeSource)knownHow[at];
+        }
+
+        public string SourceIdentityFor(int pawnId)
+        {
+            int at = knownByIds.IndexOf(pawnId);
+            if (at < 0) return null;
+            int sourcePawnId = at < knownSourceIds.Count
+                ? knownSourceIds[at] : -1;
+            if (sourcePawnId >= 0) return sourcePawnId.ToString();
+            CAActKnowledgeSource how = HowKnown(pawnId);
+            if (how == CAActKnowledgeSource.Firsthand
+                || how == CAActKnowledgeSource.Witnessed)
+                return pawnId.ToString();
+            return orgKey.NullOrEmpty()
+                ? "unresolved report source" : "organization:" + orgKey;
         }
 
         public void ExposeData()
@@ -102,6 +204,18 @@ namespace ColonistAwareness
                 LookMode.Value);
             Scribe_Collections.Look(ref knownHow, "knownHow",
                 LookMode.Value);
+            Scribe_Collections.Look(ref knownSourceIds, "knownSourceIds",
+                LookMode.Value);
+            Scribe_Collections.Look(ref knownSourceHolderIds,
+                "knownSourceHolderIds", LookMode.Value);
+            Scribe_Collections.Look(ref knownSourcePawnIds,
+                "knownSourcePawnIds", LookMode.Value);
+            Scribe_Collections.Look(ref knownSourceHow,
+                "knownSourceHow", LookMode.Value);
+            Scribe_Collections.Look(ref answeredSourceHolderIds,
+                "answeredSourceHolderIds", LookMode.Value);
+            Scribe_Collections.Look(ref answeredSourcePawnIds,
+                "answeredSourcePawnIds", LookMode.Value);
             Scribe_Collections.Look(ref orgsAnswered, "orgsAnswered",
                 LookMode.Value);
             Scribe_Collections.Look(ref pawnsAnswered, "pawnsAnswered",
@@ -110,6 +224,56 @@ namespace ColonistAwareness
             {
                 if (knownByIds == null) knownByIds = new List<int>();
                 if (knownHow == null) knownHow = new List<byte>();
+                if (knownSourceIds == null)
+                    knownSourceIds = new List<int>();
+                if (knownSourceHolderIds == null)
+                    knownSourceHolderIds = new List<int>();
+                if (knownSourcePawnIds == null)
+                    knownSourcePawnIds = new List<int>();
+                if (knownSourceHow == null)
+                    knownSourceHow = new List<byte>();
+                if (answeredSourceHolderIds == null)
+                    answeredSourceHolderIds = new List<int>();
+                if (answeredSourcePawnIds == null)
+                    answeredSourcePawnIds = new List<int>();
+                while (knownSourceIds.Count < knownByIds.Count)
+                    knownSourceIds.Add(-1);
+                if (knownSourceIds.Count > knownByIds.Count)
+                    knownSourceIds.RemoveRange(knownByIds.Count,
+                        knownSourceIds.Count - knownByIds.Count);
+                int paired = System.Math.Min(knownSourceHolderIds.Count,
+                    knownSourcePawnIds.Count);
+                while (knownSourceHow.Count < paired)
+                    knownSourceHow.Add((byte)CAActKnowledgeSource.Reported);
+                paired = System.Math.Min(paired, knownSourceHow.Count);
+                if (knownSourceHolderIds.Count > paired)
+                    knownSourceHolderIds.RemoveRange(paired,
+                        knownSourceHolderIds.Count - paired);
+                if (knownSourcePawnIds.Count > paired)
+                    knownSourcePawnIds.RemoveRange(paired,
+                        knownSourcePawnIds.Count - paired);
+                if (knownSourceHow.Count > paired)
+                    knownSourceHow.RemoveRange(paired,
+                        knownSourceHow.Count - paired);
+                int answered = System.Math.Min(
+                    answeredSourceHolderIds.Count,
+                    answeredSourcePawnIds.Count);
+                if (answeredSourceHolderIds.Count > answered)
+                    answeredSourceHolderIds.RemoveRange(answered,
+                        answeredSourceHolderIds.Count - answered);
+                if (answeredSourcePawnIds.Count > answered)
+                    answeredSourcePawnIds.RemoveRange(answered,
+                        answeredSourcePawnIds.Count - answered);
+                for (int i = 0; i < knownByIds.Count; i++)
+                    if (knownSourceIds[i] >= 0
+                        && !HasSource(knownByIds[i], knownSourceIds[i]))
+                    {
+                        knownSourceHolderIds.Add(knownByIds[i]);
+                        knownSourcePawnIds.Add(knownSourceIds[i]);
+                        knownSourceHow.Add(i < knownHow.Count
+                            ? knownHow[i]
+                            : (byte)CAActKnowledgeSource.Reported);
+                    }
                 if (orgsAnswered == null)
                     orgsAnswered = new List<string>();
                 if (pawnsAnswered == null)
@@ -185,8 +349,10 @@ namespace ColonistAwareness
                 circumstance = circumstance,
                 lethal = lethal
             };
-            e.Learn(actorPawnId, CAActKnowledgeSource.Firsthand);
-            e.Learn(subjectPawnId, CAActKnowledgeSource.Firsthand);
+            e.Learn(actorPawnId, CAActKnowledgeSource.Firsthand,
+                actorPawnId);
+            e.Learn(subjectPawnId, CAActKnowledgeSource.Firsthand,
+                subjectPawnId);
             if (map != null && cell.IsValid)
             {
                 foreach (Pawn p in map.mapPawns.AllPawnsSpawned)
@@ -199,7 +365,8 @@ namespace ColonistAwareness
                         continue;
                     if (!GenSight.LineOfSight(p.Position, cell, map,
                         true)) continue;
-                    e.Learn(p.thingIDNumber, CAActKnowledgeSource.Witnessed);
+                    e.Learn(p.thingIDNumber, CAActKnowledgeSource.Witnessed,
+                        p.thingIDNumber);
                 }
             }
             records.Add(e);
@@ -241,14 +408,19 @@ namespace ColonistAwareness
                     if (org?.memberPawnIds == null
                         || !org.HasCustom("status reporting"))
                         continue;
-                    bool anyMemberKnows = false;
+                    int[] reporterIds = org.memberPawnIds.Where(e.Knows)
+                        .Distinct().ToArray();
+                    if (reporterIds.Length == 0) continue;
                     for (int m = 0; m < org.memberPawnIds.Count; m++)
-                        if (e.Knows(org.memberPawnIds[m]))
-                        { anyMemberKnows = true; break; }
-                    if (!anyMemberKnows) continue;
-                    for (int m = 0; m < org.memberPawnIds.Count; m++)
-                        e.Learn(org.memberPawnIds[m],
-                            CAActKnowledgeSource.Reported);
+                        foreach (int reporterId in reporterIds)
+                        {
+                            if (!CACulturalCognitionPureKernel
+                                .IsDistinctReportRoute(
+                                    org.memberPawnIds[m], reporterId))
+                                continue;
+                            e.Learn(org.memberPawnIds[m],
+                                CAActKnowledgeSource.Reported, reporterId);
+                        }
                 }
             }
         }

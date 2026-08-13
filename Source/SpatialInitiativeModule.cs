@@ -643,9 +643,9 @@ namespace ColonistAwareness
                     + " initiative ceiling",
                 knowledgeBasis: domain.OccupiedStacks + "/"
                     + domain.Capacity + " occupied stack slots");
-            CABehaviorDecision decision = CABehaviorGate.Evaluate(
+            CABehaviorDecision decision = CABehaviorGate.EvaluateForSelection(
                 "logistics.storage_capacity", context);
-            if (!decision.Allowed)
+            if (!decision.SelectionApproved)
                 return Finish("native stockpile #" + zone.ID
                     + " planning blocked: " + decision.PrimaryReason,
                     out outcome);
@@ -787,9 +787,9 @@ namespace ColonistAwareness
                     + " and its initiative ceiling",
                 knowledgeBasis: plan.missingLinksBefore
                     + " missing facility relationship(s)");
-            CABehaviorDecision decision = CABehaviorGate.Evaluate(
+            CABehaviorDecision decision = CABehaviorGate.EvaluateForSelection(
                 "spatial.program_furnishing", context);
-            if (!decision.Allowed)
+            if (!decision.SelectionApproved)
                 return Finish("authored room program #" + program.id
                     + " planning blocked: " + decision.PrimaryReason,
                     out outcome);

@@ -355,9 +355,10 @@ namespace ColonistAwareness
                     knowledgeBasis: "exact native construction cost deficit: "
                         + string.Join(", ", proposedDeficits.ToArray()),
                     owner: "home material objective");
-                CABehaviorDecision stagingDecision = CABehaviorGate.Evaluate(
+                CABehaviorDecision stagingDecision = CABehaviorGate
+                    .EvaluateForSelection(
                     "logistics.material_staging", stagingContext);
-                if (!stagingDecision.Allowed)
+                if (!stagingDecision.SelectionApproved)
                 {
                     outcome = "material staging blocked: "
                         + stagingDecision.PrimaryReason;
@@ -781,9 +782,10 @@ namespace ColonistAwareness
                     + demand.programId,
                 knowledgeBasis: "persisted exact wood deficit " + deficit,
                 owner: "home material source objective");
-            CABehaviorDecision sourceDecision = CABehaviorGate.Evaluate(
+            CABehaviorDecision sourceDecision = CABehaviorGate
+                .EvaluateForSelection(
                 "logistics.material_source", sourceContext);
-            if (!sourceDecision.Allowed)
+            if (!sourceDecision.SelectionApproved)
             {
                 outcome = "wood deficit " + deficit + "; source blocked: "
                     + sourceDecision.PrimaryReason;

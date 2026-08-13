@@ -8,7 +8,11 @@ namespace ColonistAwareness
     // deleted through this epoch.
     internal static class CAPendingAuthoringDataEpoch
     {
-        internal const int Current = 11;
+        // B12 replaces pending Culture social-meaning drafts with governed
+        // question distributions. These pre-release drafts are deliberately
+        // discarded through the existing explicit diagnostic boundary rather
+        // than normalized into invented current state.
+        internal const int Current = 12;
         private static bool diagnosticScheduled;
         private static bool diagnosticEmitted;
 

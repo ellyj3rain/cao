@@ -222,7 +222,8 @@ namespace ColonistAwareness
         private void MaintainMap(Map map)
         {
             if (map == null) return;
-            CABehaviorDecision policyDecision = CABehaviorGate.Evaluate(
+            CABehaviorDecision policyDecision = CABehaviorGate
+                .EvaluateForSelection(
                 "operations.shared_item_access", new CABehaviorContext(
                     actor: null, actorContext: CAActorContext.PlayerColony,
                     initiative: CAInitiativeTier.Standard,
@@ -235,7 +236,7 @@ namespace ColonistAwareness
                     authorityBasis: "enabled player colony access policy",
                     knowledgeBasis: "ordinary visible item state",
                     owner: "player colony access policy"));
-            if (!policyDecision.Allowed) return;
+            if (!policyDecision.SelectionApproved) return;
             List<Thing> things = map.listerThings
                 .ThingsInGroup(ThingRequestGroup.HaulableEver);
             for (int i = 0; i < things.Count; i++)
@@ -563,13 +564,14 @@ namespace ColonistAwareness
                 string continuingKey = current.def == JobDefOf.Wear
                     ? "operations.wear_protection"
                     : "operations.arm_for_known_threat";
-                CABehaviorDecision continuing = CABehaviorGate.Evaluate(
+                CABehaviorDecision continuing = CABehaviorGate
+                    .EvaluateForSelection(
                     continuingKey, EquipmentContext(pawn, threat,
                         CAAuthorityOrigin.Continuation,
                         ownsReceipt,
                         capabilitySatisfied: true,
                         materialSatisfied: current.targetA.IsValid));
-                if (!continuing.Allowed) return null;
+                if (!continuing.SelectionApproved) return null;
                 return current;
             }
 

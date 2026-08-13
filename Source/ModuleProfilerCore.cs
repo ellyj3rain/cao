@@ -31,7 +31,12 @@ namespace ColonistAwareness
         FullWorldScan = 17,
         CompatibilityPreflight = 18,
         KnowledgeObservation = 19,
-        Count = 20
+        CulturalCognition = 20,
+        PoliticalCognition = 21,
+        PoliticalCoalition = 22,
+        InstitutionalLegitimacy = 23,
+        PropositionKnowledge = 24,
+        Count = 25
     }
 
     public sealed class CAModuleMetric

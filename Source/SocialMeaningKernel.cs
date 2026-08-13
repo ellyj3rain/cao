@@ -681,6 +681,9 @@ namespace ColonistAwareness
         public string TargetIdentity;
         public string OrganizationIdentity;
         public string KnowledgeSource;
+        // The witness, reporter, record custodian, or other represented route
+        // by which the holder learned the fact. This is not the event actor.
+        public string EpistemicSourceIdentity;
         public bool Known;
         // +1 means the registered subject occurred; -1 means the recorded
         // fact is its concrete absence or violation. Culture interprets the

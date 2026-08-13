@@ -964,14 +964,12 @@ namespace ColonistAwareness
                 CAOrganizationInheritance.RefreshDevelopmentAuthority(org,
                     record, map);
                 if (!record.developmentExecutable) continue;
-                CACulturalMeaningResolution research = CACultureModel.Resolve(
-                    record.culture, CASocialSubjectRegistry.ResearchWork);
-                bool researchFirst = research.Approval + research.Prestige
-                    + research.Salience >= 80;
-                if (researchFirst && TryResearch(record, org)) continue;
                 if (TryCultivation(record, org)) continue;
                 if (TryRepair(record, org)) continue;
                 if (TryRebuild(record, org)) continue;
+                // Research remains a represented program and work contract.
+                // Culture may affect a worker's appraisal after eligibility;
+                // an old activity label never creates priority or capacity.
                 TryResearch(record, org);
             }
         }
@@ -1414,7 +1412,14 @@ namespace ColonistAwareness
                         "research at " + research.bench,
                         out researchDecision);
             CABehaviorIntentMapComponent.For(map)?.Unregister(worker, job);
-            if (!researchAuthorized) return;
+            int researchTick = Find.TickManager?.TicksGame ?? -1;
+            if (!researchAuthorized)
+            {
+                CAPropositionKnowledgeWorldComponent.Current
+                    ?.RecordSettlementResearch(research, worker,
+                        researchRecord, false, researchTick);
+                return;
+            }
             CAOrganization researchOrg = CAOrganizationWorldComponent.Current
                 ?.ByKey(research.settlementKey);
             CASettlementProgramEntry researchProgram = researchRecord
@@ -1430,10 +1435,19 @@ namespace ColonistAwareness
                         && building.Position == research.bench
                         && building.def?.defName?.Contains(
                             "ResearchBench") == true);
-            if (!currentBench || researchOrg == null) return;
+            if (!currentBench || researchOrg == null)
+            {
+                CAPropositionKnowledgeWorldComponent.Current
+                    ?.RecordSettlementResearch(research, worker,
+                        researchRecord, false, researchTick);
+                return;
+            }
             researchRecord.researchStock++;
             researchRecord.lastResearchActivityTick =
-                Find.TickManager?.TicksGame ?? -1;
+                researchTick;
+            CAPropositionKnowledgeWorldComponent.Current
+                ?.RecordSettlementResearch(research, worker, researchRecord,
+                    true, researchTick);
             if (researchRecord.researchStock == 25
                 || researchRecord.researchStock == 75
                 || researchRecord.researchStock == 150)

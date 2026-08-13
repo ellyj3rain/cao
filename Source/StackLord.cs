@@ -283,9 +283,10 @@ namespace ColonistAwareness
                     knowledgeBasis: "all assigned stack members set at "
                         + doorCell,
                     owner: "stack lord at " + doorCell);
-                CABehaviorDecision decision = CABehaviorGate.Evaluate(
+                CABehaviorDecision decision = CABehaviorGate
+                    .EvaluateForSelection(
                     "support.stack_auto_breach", context);
-                if (!decision.Allowed)
+                if (!decision.SelectionApproved)
                 {
                     denied = decision;
                     return false;

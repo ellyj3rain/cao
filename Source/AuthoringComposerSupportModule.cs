@@ -68,9 +68,9 @@ namespace ColonistAwareness
                     CompactSummary = "Saved Culture",
                     Traits = CultureDetails(local.values),
                     Details = "Applying this Culture copies its inherited "
-                        + "meanings, inherited practices, name, and optional "
-                        + "visual tradition. Locality and history remain with "
-                        + "the target population.",
+                        + "question distributions, name, and optional visual "
+                        + "tradition. Practice history, migration evidence, "
+                        + "locality, and transitions remain with the target.",
                     Group = "Saved Cultures",
                     Badge = "Saved Culture",
                     Accent = CACreationUI.Authored,
@@ -177,22 +177,19 @@ namespace ColonistAwareness
                     ? "neutral fallback"
                     : culture.sourceCultureDefName
                         + " unavailable; neutral fallback");
-            int meanings = culture.inheritedMeanings.Count
-                + culture.localMeanings.Count;
-            int practices = culture.inheritedPractices.Count
-                + culture.practices.Count;
-            string salient = string.Join(", ", culture.inheritedMeanings
-                .Concat(culture.localMeanings)
-                .Where(item => item != null)
+            List<CACultureQuestionDistribution> questions = CACultureModel
+                .PopulationQuestions(culture).ToList();
+            int meanings = questions.Count;
+            string salient = string.Join(", ", questions
                 .OrderByDescending(item => item.salience)
-                .ThenBy(item => item.subjectKey)
-                .Take(3).Select(item => CASocialSubjectRegistry
-                    .Find(item.subjectKey)?.Label ?? item.subjectKey).ToArray());
+                .ThenBy(item => item.questionKey)
+                .Take(3).Select(item => CACultureQuestionRegistry
+                    .Find(item.questionKey)?.Label ?? item.questionKey)
+                .ToArray());
             return "Culture: " + (culture.name ?? "inherited Culture")
-                + ". Social meanings: " + meanings + (salient.NullOrEmpty()
+                + ". Cultural questions: " + meanings + (salient.NullOrEmpty()
                     ? "." : " (" + salient + ").")
-                + " Inherited and lived practices: " + practices
-                + ". Constituent sources: " + culture.constituents.Count
+                + " Constituent sources: " + culture.constituents.Count
                 + ". Visual tradition: " + source + ". Continuity: "
                 + CACultureHistory.ContinuitySummary(culture) + ".";
         }

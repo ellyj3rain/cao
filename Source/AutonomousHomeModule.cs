@@ -3036,11 +3036,11 @@ namespace ColonistAwareness
                         ? plan.authorityIdentity : authorityBasis,
                 knowledgeBasis: deficitBasis,
                 owner: nameof(AutonomousHomeMapComponent));
-            CABehaviorDecision decision = CABehaviorGate.Evaluate(
+            CABehaviorDecision decision = CABehaviorGate.EvaluateForSelection(
                 expectedKey, context);
             CABehaviorIntentMapComponent.For(map)?.ObserveDecision(
                 planner, decision);
-            if (!decision.Allowed)
+            if (!decision.SelectionApproved)
             {
                 outcome = expectedKey + " blocked: "
                     + decision.PrimaryReason;
