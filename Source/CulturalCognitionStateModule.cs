@@ -292,7 +292,8 @@ namespace ColonistAwareness
             string worldIdentity, CACulture culture, string subgroupId,
             CACultureQuestionDistribution distribution,
             CAPsychologicalProfile psychology, float doctrinePressure,
-            string doctrineSource, int epoch, int tick)
+            string doctrineSource, string organizationIdentity, int epoch,
+            int tick)
         {
             float privateValue = CACultureDistributionKernel.Materialize(
                 distribution, worldIdentity, culture?.id, subgroupId,
@@ -320,8 +321,8 @@ namespace ColonistAwareness
                             psychology, distribution.questionKey),
                         EvidenceConfidenceFor(pawnId,
                             distribution.questionKey, culture),
-                        RepresentedEnforcementFor(pawnId,
-                            distribution.questionKey),
+                        RepresentedEnforcementFor(distribution.questionKey,
+                            organizationIdentity),
                         MoralExperienceFor(pawnId,
                             distribution.questionKey, culture)));
             return new CAPawnCulturalAttitude
@@ -501,8 +502,8 @@ namespace ColonistAwareness
             return 0.55f;
         }
 
-        internal static float RepresentedEnforcementFor(int pawnId,
-            string questionKey)
+        internal static float RepresentedEnforcementFor(string questionKey,
+            string organizationIdentity)
         {
             CACultureQuestionDef definition =
                 CACultureQuestionRegistry.Find(questionKey);
@@ -511,9 +512,9 @@ namespace ColonistAwareness
                 return 0f;
             var subjects = new HashSet<string>(
                 definition.SocialSubjectAdapters, StringComparer.Ordinal);
-            CAOrganization organization = CAOrganizationWorldComponent.Current
-                ?.Organizations.FirstOrDefault(value => value != null
-                    && value.memberPawnIds?.Contains(pawnId) == true);
+            CAOrganization organization = organizationIdentity.NullOrEmpty()
+                ? null : CAOrganizationWorldComponent.Current
+                    ?.ByKey(organizationIdentity);
             List<CAInstitutionSanctionAppraisal> evidence = organization
                 ?.sanctionAppraisals?.Where(value => value != null
                     && subjects.Contains(value.subjectKey))
@@ -821,13 +822,16 @@ namespace ColonistAwareness
             string questionKey)
         {
             if (pawn == null || questionKey.NullOrEmpty()) return null;
-            CACulture culture = CASocialReactionWorldComponent.CultureFor(
-                pawn, out string subgroup, out _);
-            return AttitudeFor(pawn, questionKey, culture, subgroup);
+            CACultureRuntimeContext context = CASocialReactionWorldComponent
+                .ContextFor(pawn);
+            return AttitudeFor(pawn, questionKey, context?.Culture,
+                context?.PopulationIdentity,
+                context?.InstitutionalOrganizationIdentity);
         }
 
         private CAPawnCulturalAttitude AttitudeFor(Pawn pawn,
-            string questionKey, CACulture culture, string subgroup)
+            string questionKey, CACulture culture, string subgroup,
+            string organizationIdentity)
         {
             if (pawn == null || questionKey.NullOrEmpty() || culture == null)
                 return null;
@@ -858,13 +862,15 @@ namespace ColonistAwareness
                 RefreshAttitude(existing, culture, distribution,
                     ProfileFor(pawn), doctrine, doctrineSource,
                     distributionSignature,
-                    doctrineSignature, Find.TickManager?.TicksGame ?? 0);
+                    doctrineSignature, organizationIdentity,
+                    Find.TickManager?.TicksGame ?? 0);
                 return existing;
             }
             existing = CACulturalAttitudeKernel.Materialize(
                 pawn.thingIDNumber,
                 CAPlayerFoundingSession.WorldIdentity(), culture, subgroup,
                 distribution, ProfileFor(pawn), doctrine, doctrineSource,
+                organizationIdentity,
                 epoch: CAPendingAuthoringDataEpoch.Current,
                 Find.TickManager?.TicksGame ?? 0);
             culturalAttitudes.Add(existing);
@@ -974,7 +980,7 @@ namespace ColonistAwareness
             CACulture culture, CACultureQuestionDistribution distribution,
             CAPsychologicalProfile psychology, float doctrine,
             string doctrineSource, string distributionSignature,
-            string doctrineSignature, int tick)
+            string doctrineSignature, string organizationIdentity, int tick)
         {
             psychology = psychology ?? new CAPsychologicalProfile();
             CAAttitudeMaterializationResult result =
@@ -999,7 +1005,8 @@ namespace ColonistAwareness
                             target.pawnId, distribution.questionKey,
                             culture),
                         CACulturalAttitudeKernel.RepresentedEnforcementFor(
-                            target.pawnId, distribution.questionKey),
+                            distribution.questionKey,
+                            organizationIdentity),
                         CACulturalAttitudeKernel.MoralExperienceFor(
                             target.pawnId, distribution.questionKey,
                             culture)));
@@ -1025,12 +1032,14 @@ namespace ColonistAwareness
         }
 
         internal CACulturalMeaningResolution ResolveFor(Pawn pawn,
-            CACulture culture, string subjectKey, string populationScope)
+            CACulture culture, string subjectKey, string populationScope,
+            string institutionalOrganizationIdentity)
         {
             string questionKey = CACultureQuestionRegistry
                 .QuestionForSocialSubject(subjectKey);
             CAPawnCulturalAttitude attitude = AttitudeFor(pawn, questionKey,
-                culture, populationScope);
+                culture, populationScope,
+                institutionalOrganizationIdentity);
             if (attitude == null)
                 return CACultureModel.Resolve(culture, subjectKey,
                     populationScope);
@@ -1076,13 +1085,18 @@ namespace ColonistAwareness
         {
             string questionKey = CAQuestionConsumerMap.ForBehavior(
                 behaviorKey);
-            CAPawnCulturalAttitude attitude = AttitudeFor(pawn, questionKey);
+            CACultureRuntimeContext culturalContext =
+                CASocialReactionWorldComponent.ContextFor(pawn);
+            CAPawnCulturalAttitude attitude = AttitudeFor(pawn, questionKey,
+                culturalContext?.Culture, culturalContext?.PopulationIdentity,
+                culturalContext?.InstitutionalOrganizationIdentity);
             if (attitude == null) return null;
             CAPsychologicalProfile profile = ProfileFor(pawn);
             float perceivedNorm = Mathf.Clamp(
                 attitude.perceivedDescriptiveNorm * 0.45f
                     + attitude.perceivedInjunctiveNorm * 0.55f, -1f, 1f);
-            float legitimacy = InstitutionLegitimacyFor(pawn);
+            float legitimacy = InstitutionLegitimacyFor(
+                culturalContext?.InstitutionalOrganizationIdentity);
             float knowledgeConfidence = Mathf.Clamp01(
                 attitude.knowledgeConfidence * 0.55f
                     + context.KnowledgeConfidence * 0.45f);
@@ -1122,12 +1136,12 @@ namespace ColonistAwareness
             };
         }
 
-        private static float InstitutionLegitimacyFor(Pawn pawn)
+        private static float InstitutionLegitimacyFor(
+            string organizationIdentity)
         {
-            CAOrganization organization = CAOrganizationWorldComponent.Current
-                ?.Organizations.FirstOrDefault(value => value != null
-                    && value.memberPawnIds?.Contains(
-                        pawn?.thingIDNumber ?? -1) == true);
+            CAOrganization organization = organizationIdentity.NullOrEmpty()
+                ? null : CAOrganizationWorldComponent.Current
+                    ?.ByKey(organizationIdentity);
             CAInstitutionLegitimacyAppraisal appraisal = organization
                 ?.legitimacyAppraisals?.Where(value => value != null)
                 .OrderByDescending(value => value.lastUpdatedTick)
@@ -1215,8 +1229,10 @@ namespace ColonistAwareness
             var currentIdentities = new HashSet<string>(StringComparer.Ordinal);
             foreach (Pawn pawn in livePawns)
             {
-                CACulture culture = CASocialReactionWorldComponent.CultureFor(
-                    pawn, out string subgroup, out _);
+                CACultureRuntimeContext context = CASocialReactionWorldComponent
+                    .ContextFor(pawn);
+                CACulture culture = context?.Culture;
+                string subgroup = context?.PopulationIdentity;
                 if (culture == null) continue;
                 foreach (CACultureQuestionDef question in
                     CACultureQuestionRegistry.All)
@@ -1345,16 +1361,21 @@ namespace ColonistAwareness
         // evidence. It does not resample the pawn or reset socially learned
         // descriptive and injunctive norms.
         internal void RefreshRepresentedEvidence(Pawn pawn,
-            string questionKey, int tick, CACulture culture = null)
+            string questionKey, int tick, CACulture culture = null,
+            string institutionalOrganizationIdentity = null)
         {
             if (pawn == null
                 || CACultureQuestionRegistry.Find(questionKey) == null)
                 return;
-            CACulture resolved = CASocialReactionWorldComponent.CultureFor(
-                pawn, out string subgroup, out _);
-            culture = culture ?? resolved;
+            CACultureRuntimeContext context = CASocialReactionWorldComponent
+                .ContextFor(pawn);
+            culture = culture ?? context?.Culture;
+            string subgroup = context?.PopulationIdentity;
+            institutionalOrganizationIdentity =
+                institutionalOrganizationIdentity
+                ?? context?.InstitutionalOrganizationIdentity;
             CAPawnCulturalAttitude attitude = AttitudeFor(pawn, questionKey,
-                culture, subgroup);
+                culture, subgroup, institutionalOrganizationIdentity);
             if (attitude == null) return;
             CAPsychologicalProfile psychology = ProfileFor(pawn)
                 ?? new CAPsychologicalProfile();
@@ -1364,7 +1385,8 @@ namespace ColonistAwareness
                 .MoralExperienceFor(pawn.thingIDNumber, questionKey,
                     culture);
             float enforcement = CACulturalAttitudeKernel
-                .RepresentedEnforcementFor(pawn.thingIDNumber, questionKey);
+                .RepresentedEnforcementFor(questionKey,
+                    institutionalOrganizationIdentity);
             float doctrine = CACultureIdeoligionAdapter.Pressure(pawn.Ideo,
                 questionKey, out _);
             float psychologicalUncertainty = CAPsychologyRuntime

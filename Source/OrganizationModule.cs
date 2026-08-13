@@ -1031,7 +1031,7 @@ namespace ColonistAwareness
     internal static class CAInstitutionSanctionRuntime
     {
         internal static void Observe(CASocialFactContext fact, Pawn pawn,
-            string populationScope, string organizationIdentity,
+            string populationScope, string institutionalOrganizationIdentity,
             CAPersistedSocialReaction reaction)
         {
             if (fact == null || pawn == null || reaction == null
@@ -1039,11 +1039,9 @@ namespace ColonistAwareness
                 return;
             CAOrganizationWorldComponent owner =
                 CAOrganizationWorldComponent.Current;
-            CAOrganization organization = !organizationIdentity.NullOrEmpty()
-                ? owner?.ByKey(organizationIdentity) : null;
-            if (organization == null)
-                organization = owner?.Organizations.FirstOrDefault(value =>
-                    value?.memberPawnIds?.Contains(pawn.thingIDNumber) == true);
+            CAOrganization organization =
+                !institutionalOrganizationIdentity.NullOrEmpty()
+                    ? owner?.ByKey(institutionalOrganizationIdentity) : null;
             if (organization == null) return;
             CAInstitutionLegitimacyAppraisal legitimacy = organization
                 .legitimacyAppraisals?.Where(value => value != null)

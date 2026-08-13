@@ -684,13 +684,10 @@ namespace ColonistAwareness
                     AddGroupAndOfficeContributions(pawn, contributions);
                     AddMemoryContribution(pawn, contributions);
                 }
-                string populationIdentity;
-                string organizationIdentity;
-                CACulture culture = CASocialReactionWorldComponent.CultureFor(
-                    pawn, out populationIdentity, out organizationIdentity);
+                CACultureRuntimeContext context =
+                    CASocialReactionWorldComponent.ContextFor(pawn);
                 CASocialReactionWorldComponent.Current?.RecordAct(e, pawn,
-                    culture, populationIdentity, organizationIdentity,
-                    contributions);
+                    context, contributions);
             }
         }
 

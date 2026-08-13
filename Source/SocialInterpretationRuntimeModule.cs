@@ -65,6 +65,14 @@ namespace ColonistAwareness
         }
     }
 
+    internal sealed class CACultureRuntimeContext
+    {
+        internal CACulture Culture;
+        internal string PopulationIdentity;
+        internal string ReactionScopeIdentity;
+        internal string InstitutionalOrganizationIdentity;
+    }
+
     // This world component persists interpretations of facts already owned by
     // authoritative ledgers. It is not a second act ledger and cannot create
     // knowledge. Reactions are keyed by existing act identity and informed pawn.
@@ -78,6 +86,8 @@ namespace ColonistAwareness
             CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private List<CASocialReactionRecord> reactions =
             new List<CASocialReactionRecord>();
+        private Dictionary<int, List<CASocialReactionRecord>> reactionsByPawn;
+        private bool reactionIndexDirty = true;
 
         public CASocialReactionWorldComponent(World world) : base(world) { }
 
@@ -87,9 +97,11 @@ namespace ColonistAwareness
         internal IReadOnlyList<CASocialReactionRecord> ReactionsForPawn(
             int pawnId)
         {
-            return (reactions ?? new List<CASocialReactionRecord>())
-                .Where(value => value != null && value.pawnId == pawnId)
-                .OrderByDescending(value => value.tick).ToList();
+            EnsureReactionIndex();
+            return reactionsByPawn.TryGetValue(pawnId,
+                out List<CASocialReactionRecord> indexed)
+                ? indexed : (IReadOnlyList<CASocialReactionRecord>)
+                    System.Array.Empty<CASocialReactionRecord>();
         }
 
         public override void ExposeData()
@@ -110,6 +122,7 @@ namespace ColonistAwareness
                 CACampaignCompatibility.CompleteOwnerLoad(
                     "world.social-reactions", ref campaignSchemaVersion,
                     legacyAuthoringDataEpoch, ValidateCampaignState);
+                reactionIndexDirty = true;
             }
             base.ExposeData();
         }
@@ -134,8 +147,7 @@ namespace ColonistAwareness
         }
 
         internal void RecordAct(CAActRecord act, Pawn pawn,
-            CACulture culture, string populationIdentity,
-            string organizationIdentity,
+            CACultureRuntimeContext context,
             IEnumerable<CASocialContribution> otherContributions)
         {
             if (act == null || pawn == null || !act.Knows(pawn.thingIDNumber))
@@ -151,8 +163,11 @@ namespace ColonistAwareness
                     pawn.thingIDNumber, sourcePawnId);
                 if (sourcePawnId >= 0)
                     fact.EpistemicSourceIdentity = sourcePawnId.ToString();
-                RecordFact(fact, pawn, culture, populationIdentity,
-                    organizationIdentity, otherContributions);
+                RecordFact(fact, pawn, context?.Culture,
+                    context?.PopulationIdentity,
+                    context?.ReactionScopeIdentity,
+                    context?.InstitutionalOrganizationIdentity,
+                    otherContributions);
                 act.MarkKnowledgeSourceAnswered(pawn.thingIDNumber,
                     sourcePawnId);
             }
@@ -164,7 +179,8 @@ namespace ColonistAwareness
         // the social-subject universe.
         public bool RecordFact(CASocialFactContext fact, Pawn pawn,
             CACulture culture, string populationIdentity,
-            string organizationIdentity,
+            string reactionScopeIdentity,
+            string institutionalOrganizationIdentity,
             IEnumerable<CASocialContribution> otherContributions)
         {
             using (CAModuleProfiler.Measure(
@@ -193,7 +209,7 @@ namespace ColonistAwareness
                 ? CACultureModel.Resolve(culture, fact?.SubjectKey,
                     populationIdentity)
                 : cognition.ResolveFor(pawn, culture, fact?.SubjectKey,
-                    populationIdentity);
+                    populationIdentity, institutionalOrganizationIdentity);
             string reactionIdentity = fact?.FactIdentity;
             bool alreadyReacted = reactions.Any(value => value != null
                 && value.factIdentity == reactionIdentity
@@ -201,7 +217,7 @@ namespace ColonistAwareness
             CAPersistedSocialReaction response =
                 CASocialReactionPersistenceKernel.Record(
                     fact, pawn.thingIDNumber.ToString(), populationIdentity,
-                    organizationIdentity, InfluenceOf(pawn),
+                    reactionScopeIdentity, InfluenceOf(pawn),
                     culturalMeaning, otherContributions,
                     reactions.Where(value => value != null).Select(value =>
                         value.factIdentity + "|" + value.pawnId));
@@ -212,7 +228,7 @@ namespace ColonistAwareness
                 return true;
             }
             if (response == null) return false;
-            reactions.Add(new CASocialReactionRecord
+            var recorded = new CASocialReactionRecord
             {
                 subjectKey = response.SubjectKey,
                 factIdentity = response.FactIdentity,
@@ -228,7 +244,9 @@ namespace ColonistAwareness
                 influenceWeight = response.InfluenceWeight,
                 internalContradiction = response.InternalContradiction,
                 contributions = response.Contributions
-            });
+            };
+            reactions.Add(recorded);
+            IndexReaction(recorded);
             string exposedQuestion = CACultureQuestionRegistry
                 .QuestionForSocialSubject(fact.SubjectKey);
             if (!exposedQuestion.NullOrEmpty()
@@ -242,10 +260,12 @@ namespace ColonistAwareness
                         axis, fact.Tick);
             }
             CAInstitutionSanctionRuntime.Observe(fact, pawn,
-                populationIdentity, organizationIdentity, response);
+                populationIdentity, institutionalOrganizationIdentity,
+                response);
             if (!exposedQuestion.NullOrEmpty())
                 cognition?.RefreshRepresentedEvidence(pawn,
-                    exposedQuestion, fact.Tick);
+                    exposedQuestion, fact.Tick, null,
+                    institutionalOrganizationIdentity);
             CAModuleProfiler.Observe(
                 CAModuleProfileKey.SocialInterpretation,
                 objectsExamined: 1, candidatesAccepted: 1);
@@ -259,8 +279,9 @@ namespace ColonistAwareness
             using (CAModuleProfiler.Measure(
                 CAModuleProfileKey.SocialAggregation))
             {
-            reactions.RemoveAll(value => value == null || (value.tick >= 0
-                && now - value.tick > RetainTicks));
+            int removed = reactions.RemoveAll(value => value == null
+                || (value.tick >= 0 && now - value.tick > RetainTicks));
+            if (removed > 0) reactionIndexDirty = true;
             var currentRuns = new List<CASocialReactionRecord>();
             foreach (IGrouping<string, CASocialReactionRecord> group in reactions
                 .Where(value => value.organizationIdentity
@@ -312,11 +333,34 @@ namespace ColonistAwareness
             return weight;
         }
 
-        internal static CACulture CultureFor(Pawn pawn,
-            out string populationIdentity, out string organizationIdentity)
+        private void EnsureReactionIndex()
         {
-            populationIdentity = null;
-            organizationIdentity = null;
+            if (!reactionIndexDirty && reactionsByPawn != null) return;
+            reactionsByPawn = (reactions ?? new List<CASocialReactionRecord>())
+                .Where(value => value != null && value.pawnId >= 0)
+                .GroupBy(value => value.pawnId)
+                .ToDictionary(group => group.Key, group => group
+                    .OrderByDescending(value => value.tick).ToList());
+            reactionIndexDirty = false;
+        }
+
+        private void IndexReaction(CASocialReactionRecord reaction)
+        {
+            if (reaction == null || reactionIndexDirty
+                || reactionsByPawn == null) return;
+            if (!reactionsByPawn.TryGetValue(reaction.pawnId,
+                    out List<CASocialReactionRecord> indexed))
+            {
+                indexed = new List<CASocialReactionRecord>();
+                reactionsByPawn.Add(reaction.pawnId, indexed);
+            }
+            int insert = indexed.FindIndex(value => value.tick < reaction.tick);
+            if (insert < 0) indexed.Add(reaction);
+            else indexed.Insert(insert, reaction);
+        }
+
+        internal static CACultureRuntimeContext ContextFor(Pawn pawn)
+        {
             if (pawn == null) return null;
             Map map = pawn.MapHeld;
             if (pawn.Faction?.IsPlayer == true)
@@ -326,14 +370,21 @@ namespace ColonistAwareness
                 CACulture local = CACultureLongitudinalMapComponent.For(map)
                     ?.PlayerLocalCulture;
                 CACulture culture = local ?? inherited;
-                populationIdentity = inherited?.id ?? culture?.id ?? "player";
+                string populationIdentity = inherited?.id ?? culture?.id
+                    ?? "player";
                 // Social history belongs to the settlement that experienced
                 // it. A faction-wide key would let one colony rewrite every
                 // other colony's local Culture.
-                organizationIdentity = local?.localityKey
+                string reactionScopeIdentity = local?.localityKey
                     ?? (map == null ? "player"
                         : "player-settlement:" + map.uniqueID);
-                return culture;
+                return new CACultureRuntimeContext
+                {
+                    Culture = culture,
+                    PopulationIdentity = populationIdentity,
+                    ReactionScopeIdentity = reactionScopeIdentity,
+                    InstitutionalOrganizationIdentity = "player"
+                };
             }
 
             CARegionalWorldComponent regional = CARegionalWorldComponent.Current;
@@ -350,20 +401,34 @@ namespace ColonistAwareness
                             && value.key == key);
                     int factionKey = group?.factionKey >= 0
                         ? group.factionKey : record.factionKey;
-                    populationIdentity = plan.FactionPlan(factionKey)
+                    string populationIdentity = plan.FactionPlan(factionKey)
                         ?.culture?.id ?? record.culture?.id
                         ?? "population:" + key;
-                    organizationIdentity = record.regionalId + "#" + record.slot;
-                    return record.culture ?? plan.FactionPlan(factionKey)?.culture;
+                    string organizationIdentity = record.regionalId + "#"
+                        + record.slot;
+                    return new CACultureRuntimeContext
+                    {
+                        Culture = record.culture
+                            ?? plan.FactionPlan(factionKey)?.culture,
+                        PopulationIdentity = populationIdentity,
+                        ReactionScopeIdentity = organizationIdentity,
+                        InstitutionalOrganizationIdentity = organizationIdentity
+                    };
                 }
 
             CACulture factionCulture = CAFactionStateWorldComponent.Current
                 ?.Find(pawn.Faction)?.culture;
-            populationIdentity = factionCulture?.id
+            string fallbackPopulationIdentity = factionCulture?.id
                 ?? "faction:" + (pawn.Faction?.loadID ?? -1);
-            organizationIdentity = CAViolenceSite.OrgKeyOf(pawn)
-                ?? populationIdentity;
-            return factionCulture;
+            string fallbackOrganizationIdentity = CAViolenceSite.OrgKeyOf(pawn)
+                ?? fallbackPopulationIdentity;
+            return new CACultureRuntimeContext
+            {
+                Culture = factionCulture,
+                PopulationIdentity = fallbackPopulationIdentity,
+                ReactionScopeIdentity = fallbackOrganizationIdentity,
+                InstitutionalOrganizationIdentity = fallbackOrganizationIdentity
+            };
         }
     }
 

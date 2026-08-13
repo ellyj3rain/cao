@@ -418,6 +418,51 @@ internal static class Program
             !oneGender && unsupportedRestriction == 0f
                 && mixedOffice && broadAccess == 0.70f,
             "single-gender holders yield no access evidence; represented mixed holders yield broad-access evidence");
+
+        string socialRuntime = S(
+            "Source/SocialInterpretationRuntimeModule.cs");
+        string cognitionRuntime = S(
+            "Source/CulturalCognitionStateModule.cs");
+        string enforcementResolver = Between(cognitionRuntime,
+            "internal static float RepresentedEnforcementFor",
+            "public sealed class CACulturalCognitionWorldComponent");
+        string legitimacyResolver = Between(cognitionRuntime,
+            "private static float InstitutionLegitimacyFor",
+            "private static float DynamicCapacity");
+        Add("pawn cognition retains exact institutional jurisdiction",
+            socialRuntime.Contains("class CACultureRuntimeContext",
+                    StringComparison.Ordinal)
+                && socialRuntime.Contains(
+                    "InstitutionalOrganizationIdentity = organizationIdentity",
+                    StringComparison.Ordinal)
+                && cognitionRuntime.Contains(
+                    "context?.InstitutionalOrganizationIdentity",
+                    StringComparison.Ordinal)
+                && enforcementResolver.Contains("ByKey(organizationIdentity)",
+                    StringComparison.Ordinal)
+                && !enforcementResolver.Contains("memberPawnIds",
+                    StringComparison.Ordinal)
+                && legitimacyResolver.Contains("ByKey(organizationIdentity)",
+                    StringComparison.Ordinal)
+                && !legitimacyResolver.Contains("memberPawnIds",
+                    StringComparison.Ordinal),
+            "regional Culture, sanction, and legitimacy consumers share the resolved settlement organization key; player locality remains distinct from the player institution");
+        string reactionLookup = Between(socialRuntime,
+            "internal IReadOnlyList<CASocialReactionRecord> ReactionsForPawn",
+            "public override void ExposeData");
+        Add("pawn reaction lookup uses a maintained runtime index",
+            socialRuntime.Contains(
+                    "Dictionary<int, List<CASocialReactionRecord>> reactionsByPawn",
+                    StringComparison.Ordinal)
+                && socialRuntime.Contains("EnsureReactionIndex()",
+                    StringComparison.Ordinal)
+                && socialRuntime.Contains("IndexReaction(recorded)",
+                    StringComparison.Ordinal)
+                && reactionLookup.Contains("reactionsByPawn.TryGetValue",
+                    StringComparison.Ordinal)
+                && !reactionLookup.Contains(".Where(",
+                    StringComparison.Ordinal),
+            "daily seven-question refresh reuses one indexed pawn reaction list instead of rescanning and sorting the retained global ledger per question");
     }
 
     private static void ConsumerAndHistoryReceipts()
