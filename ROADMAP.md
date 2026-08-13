@@ -1,7 +1,7 @@
 # Colonist Awareness - roadmap
 
-The A sequence is closed at `A102`; the chronology is complete through `B11`,
-and `B12` is the next development batch after the operator campaign-start test.
+The A sequence is closed at `A102`; the chronology is complete through `B12`,
+and `B13` is the next development batch after the operator runtime test.
 Historical batch identifiers below use the current sequence. Thematic `T-*`
 identifiers link continuing work across nonadjacent batches. The chronological
 catalog is [`BATCH_LOG.md`](BATCH_LOG.md); thematic links are in
@@ -1619,7 +1619,30 @@ facts. The governed fixture advances to pending epoch 11, regional-plan schema
 11, and Culture/Political Beliefs schema 9 while retaining its current identity,
 3 factions, 4 settlements, 9 population groups, and 19 established operations.
 
-The next action is to start and retain the RimWorld campaign, inspect the
-authoring flow and generated state, save it, and use that campaign as the first
-live proof of the durable update boundary. `B12` remains the next ordinary batch;
-no further feature batch precedes that operator test.
+That B11 boundary remains the durable regression floor for B12.
+
+## Cultural Cognition, Political Emergence, and Proposition Knowledge - B12 / T-001, T-002, T-004-T-006, T-019, T-022-T-025, T-028, T-030
+
+B12 makes Culture a population distribution over thirteen explicit questions.
+Pawns persist private and public attitudes, perceived descriptive and injunctive
+norms, confidence, moral conviction, uncertainty, and sparse represented
+influence. Traits supply explicit psychology evidence; unsupported backstory and
+gene effects remain evidence, and skills affect situated efficacy rather than
+personality.
+
+Political cognition, proposition knowledge, and cultural cognition have separate
+world owners. Organizations retain legitimacy and sanction appraisals. Political
+positions emerge from represented Culture, psychology, Ideoligion, material,
+institutional, threat, knowledge, and influence facts. Proposition records retain
+source, trust, access, confidence, transmission, research, custody, and decay.
+Culture affects appraisal and discretionary CA action selection without changing
+native legality or direct player authority.
+
+Culture schema 10 maps B11 meanings only through exact ordered-question adapters
+and preserves all dimensions and unmatched subjects as evidence. The epoch-12,
+regional-plan-schema-11 fixture keeps the same identity, 3 factions, 4
+settlements, 9 population groups, and 19 established operations while adding 22
+question distributions and 26 legacy evidence records. The 104-case B12 suite,
+retained regressions, five review lenses, clean build, publication, and
+byte-verified deployment close static acceptance. The next action is the
+operator's RimWorld runtime test; `B13` remains next.

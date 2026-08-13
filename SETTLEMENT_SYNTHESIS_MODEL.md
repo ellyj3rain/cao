@@ -64,8 +64,9 @@ Generation consumes one confirmed candidate in this order:
    real household, communal, or authority operators.
 7. Derive material capability from faction era and local supports.
 8. Establish each existing settlement's directly authored local Culture
-   baseline: constituents, current meanings, current practices, plurality, and
-   disagreement. Do not fabricate transition history.
+   baseline: constituents, inherited/local question distributions, current
+   practices, plurality, legacy evidence, and disagreement. Do not fabricate
+   transition history.
 9. Materialize settlements, holdings, residents, organizations, program assets,
    provisions, faction relations, and map geography from saved results.
 
@@ -74,41 +75,45 @@ advance Culture.
 
 ## Culture
 
-Culture is durable social meaning and practice, not a native `CultureDef`, visual
-style, political profile, or prose summary of settlement variables.
+Culture is a durable population distribution over explicit social questions plus
+concrete practice and history. It is not a native `CultureDef`, visual style,
+political profile, factual-subject list, or prose summary of settlement variables.
 
 Every Culture saves:
 
 - stable inherited and local identity;
 - constituent Cultures and population shares;
-- inherited and current cultural meanings;
+- inherited and local question distributions;
+- exact legacy evidence from compatible former meaning records;
 - inherited and lived practices;
 - observations and transition history;
 - predecessor and evidence signatures;
 - maturity and temporal basis;
 - optional native visual tradition, labeled separately.
 
-A cultural meaning concerns one namespaced registered social subject. It stores
-approval, normality, prestige, salience, population scope, provenance, source
+A question distribution stores question and population scope, center, spread,
+descriptive-norm prior, prestige signal, salience, norm strength, visibility,
+source confidence, divergence tolerance, optional subgroups, provenance, source
 identity, evidence signature, and historical ticks. A cultural practice records
 durable repeated conduct with actors, target, trigger or cadence, operator,
 authority, setting, material conditions, evidence, consumer, provenance, and
-implicated subjects. Selecting a meaning does not create a practice.
+implicated subjects. A factual subject does not become a question or practice.
 
-The production vocabulary contains 45 social referents and 30 concrete practices
-derived from the active mechanics inventory. Every entry identifies its factual
-source and real consumer. An open registration contract remains representational
-capacity, not evidence that unsupported future content already exists. Unknown
-valid keys survive persistence; inert unregistered strings do not enter ordinary
-editors.
+The production vocabulary contains 13 Culture questions, 45 factual social
+referents, and 30 concrete practices derived from the active mechanics inventory.
+Every Culture question identifies a coherent construct, direct authoring fact,
+constraints, migration rule, and real consumer. Every referent and practice has a
+factual source and consumer. An open registration contract remains
+representational capacity, not evidence that unsupported future content exists.
 
 The same Culture composer serves player founding, established factions, and
-settlements at their different temporal scopes. It exposes constituents, social
-meanings, inherited and current concrete practices, disagreements, continuity,
+settlements at their different temporal scopes. It exposes constituents, five
+descriptive anchors and optional fine controls for each question, inherited and
+current concrete practices, legacy evidence, disagreements, continuity,
 transitions, optional visual tradition, and causal preview. A founding Culture
-must contain at least one substantive meaning or inherited practice. Saved
-Culture profiles copy inherited meanings, practices, and optional visual
-tradition without locality,
+must contain at least one substantive question distribution or inherited
+practice. Saved Culture profiles copy inherited distributions, practices, and
+optional visual tradition without locality,
 observations, transitions, evidence, or a live profile pointer.
 
 ## Political Beliefs and realized order
@@ -131,7 +136,7 @@ NPC generation derives one axis only from:
 
 - the same subject in realized current order;
 - an explicit axis-specific observed fact; or
-- a non-neutral cultural meaning that scores that axis.
+- the corresponding non-neutral Culture question distribution where one exists.
 
 Every resolved axis records the causal evidence and stable tie-break. Unsupported
 axes remain unset. Technology, hostility, raids, trade reach, leader presence,
@@ -150,27 +155,30 @@ retain separate contributions from Culture, Political Beliefs, native
 Ideoligion where relevant, personal state, institutions, and relationships.
 Contradictions remain visible.
 
-Recorded pawn reactions aggregate per subject into weighted response,
-dispersion, polarization, participation, influential minority presence, group
-alignment, and cross-group dissonance. Actual social structure determines
-influence. Culture transition considers prior meaning and practice, pawn and
-group response, institutional response, population composition, material and
-spatial conditions, and elapsed historical time.
+Pawn cultural state persists private position, public expression, perceived
+descriptive and injunctive norms, confidence, moral conviction, identity
+centrality, enforcement expectation, visibility, prestige, uncertainty, and
+provenance. Actual social structure supplies sparse influence edges weighted by
+contact, trust, prestige, conformity, visibility, and repeated exposure. Culture
+transition considers prior distribution and practice, pawn and group response,
+institutional response, population composition, material and spatial conditions,
+and elapsed historical time.
 
-Qualified evidence across at least two historical periods may change meaning or
-practice and records predecessor, evidence, changed subjects and dimensions,
+Qualified evidence across at least two historical periods may change a question
+distribution or practice and records predecessor, evidence, changed questions,
 population scope, successor signature, tick, and cause. One isolated event,
 unchanged evidence, or a broken evidence run does not rewrite Culture. Plural
 constituent meanings and unresolved conflict may persist.
 
 ## Generic consumption
 
-The generic meaning resolver returns aggregate meaning, constituent
-contributions, dissonance, provenance, and confidence for one subject and scope.
-Spatial, social, institutional, political, and settlement-development consumers
-use that result to rank or interpret otherwise available possibilities. Culture
-does not create permission, authority, knowledge, technology, labor, material,
-land, treasury, office, or execution capability.
+The generic Culture resolver returns a population distribution, constituent
+contributions, provenance, and confidence for one admitted question and scope.
+Social, institutional, political, relationship, knowledge, and discretionary
+behavior consumers use that state to appraise or rank otherwise valid
+possibilities. Culture does not create permission, authority, knowledge,
+technology, labor, material, land, treasury, office, relationship, institution,
+research result, or execution capability.
 
 ## Settlement state and capability
 
@@ -217,12 +225,12 @@ supports.
 
 ## Persistence
 
-The current pending-authoring data epoch is `11`. The pending-plan schema is `11`; the
+The current pending-authoring data epoch is `12`. The pending-plan schema is `11`; the
 materialized settlement record uses schema `8`; settlement programs and entries
 use schema `4`; operational facts use schema `3`; program-asset receipts use
 schema `1`; provision arrangements use schema `5`; domestic units and residence
-use schema `1`; capability assessments use schema `2`; Culture and Political
-Beliefs use schema `9`; player founding remains schema `3`. The plan writes
+use schema `1`; capability assessments use schema `2`; Culture uses schema `10`;
+Political Beliefs uses schema `9`; player founding remains schema `3`. The plan writes
 factions, settlements, population groups, programs, provision arrangements,
 local Culture, Political Beliefs, current order, settlement authority, relations, holdings, patterns, scales,
 realization state, and the player-founding object directly.
@@ -230,12 +238,13 @@ realization state, and the player-founding object directly.
 Pending authoring remains pre-release and an epoch mismatch may reject an
 unconfirmed regional draft, founding draft, or reusable set with one diagnostic.
 It cannot clear realized Culture, Political Beliefs, current order, social
-interpretation, or campaign history. Live B11 state follows the durable campaign
-manifest and explicit compatibility contract. The governed B11 fixture contains
+interpretation, or campaign history. Live B12 state follows the durable campaign
+manifest and explicit compatibility contract. The governed B12 fixture contains
 intentional world, region, candidate, arrival, scale, faction, settlement,
 population, and 19 explicitly established operational facts. On load it enters
 the same production realization path as an operator-authored draft; the fixture
 generator calls the production authoring kernel and contains no parallel causal
 model. Its active and keyed surfaces preserve three factions, four settlements,
-nine population groups, and nineteen established operations under epoch 11 and
-regional-plan schema 11.
+nine population groups, nineteen established operations, 22 exact Culture
+question distributions, and 26 preserved legacy evidence records under epoch 12
+and regional-plan schema 11.

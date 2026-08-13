@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Governance |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.3.0.5-alpha` · closed batch tip `B11` · next `B12` |
+| Version | `1.4.0.0-alpha` · closed batch tip `B12` · next `B13` |
 <!-- cao:generated:version END -->
 | Design authority | ellyj3rain |
 | Repository | `GOVERNANCE.md` |
@@ -99,7 +99,7 @@ substrate; the other three are what make the mod a framework.
   evidence. Local Git commits are supporting engineering evidence when retained.
 - Batch identifiers share one namespace across letter eras. The A sequence is
   closed at `A102`; development continues with `[B#]` in the same directory and
-  log. `B11` is closed and `B12` is next after the operator campaign-start boundary. A new letter does not create another
+  log. `B12` is closed and `B13` is next after the operator runtime-test boundary. A new letter does not create another
   history tree, generator, catalog, or projection layer.
 - The records now under `Batches/` establish this append-only contract. The
   immediately preceding generated history tree was a regulatory projection, not
@@ -136,7 +136,7 @@ not expose those objects.
 ## Batch, thread, and version discipline
 
 - **Batch** is the atomic chronological development record. The closed history is
-  `A1` through `A102`, followed by `B1` through `B11`; `B12` is the next identifier.
+  `A1` through `A102`, followed by `B1` through `B12`; `B13` is the next identifier.
 - **Thread and family** are permanent, series-neutral semantic classifications.
   `T-*` and `TF-*` may connect nonadjacent batches across any letter sequence, and
   one batch may participate in several threads.
@@ -157,11 +157,11 @@ Maturity advances independently through `pre-alpha`, `alpha`, `beta`, `rc`, and
 GA.
 
 `tools/version-model.mjs` is the executable replay source. It derives `VERSION`,
-the generated version stamps, and `VERSION_MAP.md`; validates exact A1-B11
+the generated version stamps, and `VERSION_MAP.md`; validates exact A1-B12
 coverage; checks the thematic namespace; and fails if the declared next batch has
 already been consumed. Mechanically derived version facts are generated and
-gated, not hand-typed. Thirty-eight evidenced version units derive
-`1.3.0.5-alpha`.
+gated, not hand-typed. Thirty-nine evidenced version units derive
+`1.4.0.0-alpha`.
 
 When new development begins, the first batch opens the next contiguous version
 unit. Immediately following batches may share that version only when they form one
@@ -224,8 +224,35 @@ seed or describe state but cannot replace its independent facts. Shared layout
 primitives do not justify duplicate semantic records or duplicate authoring
 surfaces.
 
-B11 closes only after retained B10 regressions, the complete mechanics coverage
+B11 closed after retained B10 regressions, the complete mechanics coverage
 matrix, five-lens review with no unresolved Critical or High finding, a clean
 build, normal publication, and byte-identical closed-process deployment. Static
-closure does not establish gameplay quality. `B12` remains next; the immediate
-action is the operator's campaign start and retention test.
+closure did not establish gameplay quality.
+
+## B12 Cultural Cognition Contract
+
+Culture owns population distributions over explicit questions. Social subjects
+remain factual referents, and practices remain concrete repeated conduct.
+Schema-10 migration creates a distribution only for an exact ordered construct
+and preserves every former dimension and unmatched subject as evidence. A
+convenient substitute is not a compatible migration.
+
+Persistent psychology, dynamic condition, Culture, native Ideoligion, Political
+Beliefs, current order, institutions, proposition knowledge, actions, and
+practices are distinct causes. Cultural cognition, political cognition, and
+proposition knowledge have separate durable world owners. Organizations own
+legitimacy and sanction history. Each owner has one cadence, validator, profiler
+key, migration path, and downstream contract.
+
+Culture changes appraisal and the selection of discretionary CA-originated
+action. It never revokes native legality, capability, material conditions,
+authorization, or direct, relayed, or save-restored operator intent. Direct
+observation is knowledge regardless of access norms. Novelty affects attention
+and transmission, not truth, discovery, or native research completion.
+
+B12 closes only after 113/113 causal receipts, current-schema fixture agreement,
+retained B10/B11 regressions, causal, psychometric/statistical, structural,
+correctness, and surface review, a clean build, normal publication, and
+byte-identical closed-process deployment. Static evidence does not establish
+psychometric validity, empirical calibration, or gameplay quality. `B13` is
+next; the immediate action is the operator's RimWorld runtime test.

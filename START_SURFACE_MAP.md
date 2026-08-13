@@ -94,8 +94,9 @@ the active mirror carries the same plan. Regional schema 11 writes factions,
 settlements, relations, population groups, explicit operational facts,
 settlement-program schema 4 entries, program-asset identities, provision
 arrangements, substantive local Culture, and the regional copy of
-`playerFounding`. Culture and Political Beliefs schema 9 stores substantive
-inherited and current state. A world component owns the same confirmed founding state for
+`playerFounding`. Culture schema 10 stores inherited/local question distributions,
+practices, and migration evidence; Political Beliefs schema 9 stores normative
+mechanisms. A world component owns the same confirmed founding state for
 regional, ordinary, and forced-map starts. It records Culture, Political
 Beliefs, the exact Founding Arrangement and its provenance, the native player
 Ideoligion content-and-revision receipt, and the tick at which the arrangement

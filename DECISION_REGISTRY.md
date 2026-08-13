@@ -2410,3 +2410,64 @@
   unless a recorded information-architecture need warrants otherwise; top-level
   navigation requires several substantial human-relevant groups. Shared layout
   primitives do not justify duplicate semantic authoring surfaces.
+
+- **DR-156** (2026-08-13) - **Culture owns population distributions over
+  explicit questions.** A Culture question names one intelligible normative
+  construct and persists its center, spread, descriptive-norm prior, prestige,
+  salience, tightness, visibility, confidence, divergence tolerance, subgroup
+  mixture, provenance, and evidence. Factual social subjects and concrete
+  practices remain different semantic kinds.
+
+- **DR-157** (2026-08-13) - **Stable psychology, dynamic condition, Culture,
+  Ideoligion, political state, institutions, knowledge, and action are separate
+  causes.** Traits may supply explicit psychology evidence. Unsupported
+  backstory or gene effects are retained as evidence rather than converted into
+  invented personality. Skills affect situated efficacy and competence, not
+  stable personality.
+
+- **DR-158** (2026-08-13) - **Cultural influence is represented, sparse, and
+  bounded.** An influence edge requires actual source and target pawns and keeps
+  the questions actually observed, contact weight, trust, prestige, conformity,
+  payoff visibility, and time. Proximity may establish a possible contact edge,
+  but it cannot transmit a question before a represented exposure.
+  Bounded confidence and repeated exposure may alter an attitude; global faction
+  averages are not a substitute for represented contact.
+
+- **DR-159** (2026-08-13) - **Political cognition emerges in its own durable
+  owner.** Pawn issue positions derive from Culture, psychology, native
+  Ideoligion, material interest, institutional experience, threat, proposition
+  knowledge, learned issue-network support, and represented perceived majority.
+  Issue links require cross-pawn variation and changed evidence. Coalitions are
+  faction-bounded alignments over strong positions and may retain internal
+  disagreement. Political Beliefs and current order remain separate sources.
+
+- **DR-160** (2026-08-13) - **Organizations own institutional legitimacy and
+  sanction history.** Procedure, performance, representation, competence,
+  coercion, Culture, political fit, treatment, trust, and public support are
+  represented separately. Law/custom fit, corruption, and Ideoligion fit remain
+  neutral until comparable facts exist; evidence confidence attenuates the
+  estimate. Enforced order, compelled work or transfer, confiscation, taxation,
+  and custody punishment create persisted bounded sanction appraisals.
+
+- **DR-161** (2026-08-13) - **Proposition knowledge owns claims and research
+  receipts.** A proposition retains holders, sources, channels, contradiction,
+  trust, reliability, expertise, motive, corroboration, plausibility, method,
+  conflicts, access, confidence, transmission, custody, and decay. Direct
+  observation bypasses access norms. Novelty changes attention and transmission,
+  not truth, discovery, or native research completion. Contradiction is an
+  explicit incompatibility relation, not merely two unequal claims on one topic.
+
+- **DR-162** (2026-08-13) - **Culture changes appraisal, not permission.** It
+  may affect public expression, legitimacy, sanction response, relationship
+  approach, knowledge access and transmission, political formation, and the
+  selection of discretionary CA-originated action. Native legality, capability,
+  material conditions, authorization, and direct, relayed, or save-restored
+  operator intent remain authoritative.
+
+- **DR-163** (2026-08-13) - **B12 is a minor capability boundary with explicit
+  evidence limits.** Catalog-2 owners separately persist cultural cognition,
+  political cognition, proposition knowledge, and organization appraisals;
+  schema-10 Culture migration is exact and evidence-preserving. Fixed-seed
+  receipts establish executable causality and isolation, not psychometric
+  validity, empirical calibration, clinical interpretation, predictive accuracy,
+  or operator gameplay acceptance.

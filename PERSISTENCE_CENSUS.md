@@ -1,11 +1,11 @@
 # Persistence census
 
-Date: 2026-08-12
+Date: 2026-08-13
 
 This report is generated from production C# source, independently of the campaign schema catalog. It discovers declarations that directly write through `Scribe`, call a nested `Expose` writer, or inherit a native persisted job/lord/need/thought/world/scenario owner. Every discovered carrier must resolve to an executable catalog schema or a narrow, stated non-campaign exclusion.
 
-- Discovered persistence carriers: **229**
-- Catalog schemas reached from source carriers: **83**
+- Discovered persistence carriers: **250**
+- Catalog schemas reached from source carriers: **86**
 - Explicit non-campaign exclusions: **4**
 - Unclassified or invalid routes: **0**
 - Result: **PASS**
@@ -71,6 +71,22 @@ This report is generated from production C# source, independently of the campaig
 | `ColonistAwareness.CACombatTopologyReferenceCellState` in `Source/CombatTopologyModule.cs` | direct Scribe/nested Expose writer | `game.combat-topology` | **PASS** |
 | `ColonistAwareness.CACombatTopologyReferenceChange` in `Source/CombatTopologyModule.cs` | direct Scribe/nested Expose writer | `game.combat-topology` | **PASS** |
 | `ColonistAwareness.CACombatTopologyThingState` in `Source/CombatTopologyModule.cs` | direct Scribe/nested Expose writer | `game.combat-topology` | **PASS** |
+| `ColonistAwareness.CACultureLegacyEvidence` in `Source/CulturalCognitionKernel.cs` | direct Scribe/nested Expose writer | `model.culture` | **PASS** |
+| `ColonistAwareness.CACultureQuestionDistribution` in `Source/CulturalCognitionKernel.cs` | direct Scribe/nested Expose writer | `model.culture` | **PASS** |
+| `ColonistAwareness.CACultureSubgroupDistribution` in `Source/CulturalCognitionKernel.cs` | direct Scribe/nested Expose writer | `model.culture` | **PASS** |
+| `ColonistAwareness.CACulturalCognitionWorldComponent` in `Source/CulturalCognitionStateModule.cs` | direct Scribe/nested Expose writer | `world.cultural-cognition` | **PASS** |
+| `ColonistAwareness.CAInfluenceExposureRecord` in `Source/CulturalCognitionStateModule.cs` | direct Scribe/nested Expose writer | `world.cultural-cognition` | **PASS** |
+| `ColonistAwareness.CAPawnCulturalAttitude` in `Source/CulturalCognitionStateModule.cs` | direct Scribe/nested Expose writer | `world.cultural-cognition` | **PASS** |
+| `ColonistAwareness.CAPsychologicalDynamicState` in `Source/CulturalCognitionStateModule.cs` | direct Scribe/nested Expose writer | `world.cultural-cognition` | **PASS** |
+| `ColonistAwareness.CAPsychologicalProfile` in `Source/CulturalCognitionStateModule.cs` | direct Scribe/nested Expose writer | `world.cultural-cognition` | **PASS** |
+| `ColonistAwareness.CAPsychologyConstructUncertainty` in `Source/CulturalCognitionStateModule.cs` | direct Scribe/nested Expose writer | `world.cultural-cognition` | **PASS** |
+| `ColonistAwareness.CAPsychologyEvidenceRecord` in `Source/CulturalCognitionStateModule.cs` | direct Scribe/nested Expose writer | `world.cultural-cognition` | **PASS** |
+| `ColonistAwareness.CASocialInfluenceEdge` in `Source/CulturalCognitionStateModule.cs` | direct Scribe/nested Expose writer | `world.cultural-cognition` | **PASS** |
+| `ColonistAwareness.CAPawnPoliticalAttitude` in `Source/CulturalPoliticsStateModule.cs` | direct Scribe/nested Expose writer | `world.political-cognition` | **PASS** |
+| `ColonistAwareness.CAPoliticalCoalitionRecord` in `Source/CulturalPoliticsStateModule.cs` | direct Scribe/nested Expose writer | `world.political-cognition` | **PASS** |
+| `ColonistAwareness.CAPoliticalCognitionWorldComponent` in `Source/CulturalPoliticsStateModule.cs` | direct Scribe/nested Expose writer | `world.political-cognition` | **PASS** |
+| `ColonistAwareness.CAPoliticalIssueLink` in `Source/CulturalPoliticsStateModule.cs` | direct Scribe/nested Expose writer | `world.political-cognition` | **PASS** |
+| `ColonistAwareness.CAPoliticalOptionSupport` in `Source/CulturalPoliticsStateModule.cs` | direct Scribe/nested Expose writer | `world.political-cognition` | **PASS** |
 | `ColonistAwareness.CACultureLongitudinalMapComponent` in `Source/CultureLongitudinalModule.cs` | direct Scribe/nested Expose writer | `map.culture-longitudinal` | **PASS** |
 | `ColonistAwareness.CAAgentDebugBridge` in `Source/DevTestModule.cs` | direct Scribe/nested Expose writer | Excluded: developer-only diagnostic state with no campaign causal authority | **PASS** |
 | `ColonistAwareness.CADomesticMembership` in `Source/DomesticUnitModule.cs` | direct Scribe/nested Expose writer | `model.domestic-unit` | **PASS** |
@@ -127,6 +143,8 @@ This report is generated from production C# source, independently of the campaig
 | `ColonistAwareness.CAClaim` in `Source/OrganizationModule.cs` | direct Scribe/nested Expose writer | `world.organization` | **PASS** |
 | `ColonistAwareness.CADecisionEntry` in `Source/OrganizationModule.cs` | direct Scribe/nested Expose writer | `world.organization` | **PASS** |
 | `ColonistAwareness.CAHostileActRecord` in `Source/OrganizationModule.cs` | direct Scribe/nested Expose writer | `world.organization` | **PASS** |
+| `ColonistAwareness.CAInstitutionLegitimacyAppraisal` in `Source/OrganizationModule.cs` | direct Scribe/nested Expose writer | `world.organization` | **PASS** |
+| `ColonistAwareness.CAInstitutionSanctionAppraisal` in `Source/OrganizationModule.cs` | direct Scribe/nested Expose writer | `world.organization` | **PASS** |
 | `ColonistAwareness.CAOffice` in `Source/OrganizationModule.cs` | direct Scribe/nested Expose writer | `world.organization` | **PASS** |
 | `ColonistAwareness.CAOrganization` in `Source/OrganizationModule.cs` | direct Scribe/nested Expose writer | `world.organization` | **PASS** |
 | `ColonistAwareness.CAOrganizationCustom` in `Source/OrganizationModule.cs` | direct Scribe/nested Expose writer | `world.organization` | **PASS** |
@@ -148,6 +166,9 @@ This report is generated from production C# source, independently of the campaig
 | `ColonistAwareness.CAPlayerFoundingPlan` in `Source/PlayerFoundingStateModule.cs` | direct Scribe/nested Expose writer | `model.player-founding-plan` | **PASS** |
 | `ColonistAwareness.CAPlayerFoundingWorldComponent` in `Source/PlayerFoundingStateModule.cs` | direct Scribe/nested Expose writer | `world.player-founding` | **PASS** |
 | `ColonistAwareness.ScenPart_CAEstablishedPlayerSettlement` in `Source/PlayerFoundingStateModule.cs` | direct Scribe/nested Expose writer | `scenario.established-player-settlement` | **PASS** |
+| `ColonistAwareness.CAKnowledgePropositionRecord` in `Source/PropositionKnowledgeModule.cs` | direct Scribe/nested Expose writer | `world.proposition-knowledge` | **PASS** |
+| `ColonistAwareness.CAPropositionKnowledgeWorldComponent` in `Source/PropositionKnowledgeModule.cs` | direct Scribe/nested Expose writer | `world.proposition-knowledge` | **PASS** |
+| `ColonistAwareness.CAResearchProgramReceipt` in `Source/PropositionKnowledgeModule.cs` | direct Scribe/nested Expose writer | `world.proposition-knowledge` | **PASS** |
 | `ColonistAwareness.JobDriver_CAShelter` in `Source/RaidResponseModule.cs` | native persisted owner (`JobDriver`) | `native.ca-job-drivers` | **PASS** |
 | `ColonistAwareness.RaidResponseMapComponent` in `Source/RaidResponseModule.cs` | direct Scribe/nested Expose writer | `map.raid-response` | **PASS** |
 | `ColonistAwareness.CompRainCatch` in `Source/RainCatchModule.cs` | direct Scribe/nested Expose writer | `thing.water-state` | **PASS** |

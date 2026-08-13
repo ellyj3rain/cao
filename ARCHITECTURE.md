@@ -356,42 +356,55 @@ derived from those facts; it is not a separately authored source of truth.
 
 Local Culture is longitudinal social-historical state, not a profile reconstructed
 from the current settlement summary. It records inherited origin, local identity,
-constituent populations, inherited and current meanings, inherited and lived
-practices, typed observations, successive transitions, and complete provenance.
-Each meaning concerns one registered namespaced social subject and separately
-records approval, normality, prestige, and salience. Social subjects are
-interpretive referents, not practices. A practice records concrete repeated
-conduct, participants, operator, trigger or cadence, authority, setting, material
-conditions, evidence, consumer, and implicated subjects. Production subjects and
-practices require a real factual source and consumer; unknown valid keys survive
-persistence.
+constituent populations, inherited and local question distributions, inherited
+and lived practices, typed observations, successive transitions, legacy evidence,
+and complete provenance. Each question distribution owns a population scope,
+center, spread, descriptive-norm prior, prestige signal, salience, norm strength,
+visibility, confidence, divergence tolerance, optional subgroups, source identity,
+and evidence signature. Social subjects remain factual interpretive referents and
+practices remain concrete repeated conduct with participants, conditions,
+authority, materials, evidence, and consumers. Neither substitutes for a
+question distribution.
 
-Pawn-held knowledge gates individual interpretation. Culture, Political Beliefs,
-native Ideoligion where it overlaps, personal state, institutions, and relations
-contribute without being forced to agree. Actual reactions aggregate by subject
-into participation, mean response, dispersion, polarization, influential
-minorities, group alignment, and cross-group dissonance. A bounded
-world-simulation behavior evaluates qualified evidence across historical periods.
-One isolated event or unchanged evidence cannot rewrite Culture; repeated
-qualified evidence may deterministically produce a successor state. Two
-settlements with the same inherited origin may therefore diverge, while plural
-constituents remain represented rather than collapsing arbitrarily.
+Pawn cultural cognition persists private attitude, public expression, perceived
+descriptive and injunctive norms, confidence, moral conviction, identity
+centrality, enforcement expectation, visibility, prestige, uncertainty, and
+provenance. Its psychological evidence is a separate stable profile with dynamic
+condition kept distinct. Native Ideoligion contributes doctrine pressure without
+rewriting Culture. Sparse influence edges record represented source and target
+pawns, separately timestamped Culture-question and political-axis exposures,
+weight, trust, prestige, conformity, visibility, and contact time.
+Bounded-confidence and repeated-exposure updates may therefore produce
+private/public, perceived/actual, faction, and settlement differences without a
+global opinion reroll.
 
-Cultural expression is a read-only contextual interpretation of current Culture
-in relation to Ideoligion, Political Beliefs, population, institutions, founding
-or realized order, material conditions, geography, relations, and observed
-practice. Its status, summary, facets, facts, and signature remain stable under
-the same saved inputs. It does not define Culture by reverse-summarizing transport,
-services, public works, facilities, or provisioning. Starting Region, faction
-summaries, loaded maps, and world markers consume the same nonmutating reading.
+Political cognition is a separate world owner. A pawn's issue position derives
+from the relevant Culture distribution, psychology, native Ideoligion, material
+interest, institutional experience, threat, held proposition knowledge, and a
+majority perceived only through represented exposure. Strong compatible
+positions may form
+faction-bounded coalitions while retaining internal disagreement. Political
+Beliefs remain normative authoring state and current order remains instituted
+fact.
 
-Culture ranks otherwise valid social, spatial, institutional, political, and
-settlement-development choices. Current practices can favor shared public life,
-spatial continuity, defensive boundaries, institutional acceptance or friction,
-political normalization or durable contradiction, and development paths that
-fit lived local history. Each consumer still requires its own authority,
-knowledge, land, technology, labor, materials, treasury, and execution lane.
-Culture never manufactures those causes.
+Organizations own institutional legitimacy and sanction history. Procedure,
+performance, representation, competence, coercion, Culture, political fit,
+treatment, trust, and public support remain independently inspectable inputs.
+Law/custom fit, corruption, and Ideoligion fit remain neutral until comparable
+facts are represented; evidence confidence attenuates the estimate. Enforcement,
+compelled work or transfer, confiscation, taxation, and custody punishment create
+bounded persisted sanction appraisals rather than silently changing Culture.
+
+Proposition knowledge is another world owner. Claims retain holders, source,
+channel, contradictions, trust, reliability, expertise, motive, corroboration,
+plausibility, method, conflict, access, confidence, transmission, custody, decay,
+and research receipts. Direct observation remains available regardless of access
+norms; reports and testimony require represented standing. Novelty affects
+attention and transmission rather than truth or discovery. Culture changes
+appraisal and the selection of otherwise valid discretionary CA-originated
+action. Native execution, direct or relayed operator intent, authorization,
+knowledge, land, technology, labor, materials, treasury, and office remain
+separate causes.
 
 An existing faction's current order is realized state from a society with history.
 An established settlement begins with an explicit temporal basis and may retain
@@ -423,7 +436,7 @@ or defense mechanisms on that same subject. Partial belief and current-order set
 copy only listed mechanisms and preserve unrelated authored facts. They create no
 political identity and are never shared mutable world owners. NPC generation
 derives a belief only from same-subject current order, an explicit observed fact,
-or a scored cultural meaning and records the causal evidence used; unsupported
+or the matching Culture question distribution and records the causal evidence used; unsupported
 subjects remain unset. Settlement authority records what a faction's settlements
 decide and provide together. Offices, votes, delegation, emergency powers,
 succession, trade, mobilization, negotiation, surrender, and agreements use
@@ -636,11 +649,12 @@ read models or generation pressures and cannot feed the reality they summarize.
 
 Political Beliefs remain normative positions. Current order, offices, policies,
 ownership, taxation, work, and provision are separately persisted facts that
-change through represented decisions and transitions. Culture resolves one
-namespaced subject for one population and may affect demand, legitimacy,
+change through represented decisions and transitions. Culture owns population
+distributions over admitted questions and may affect appraisal, legitimacy,
 participation, prestige, stigma, funding willingness, maintenance, siting, form,
-or resistance. It cannot grant authority, knowledge, labor, technology,
-materials, land, treasury, office, or execution capability.
+resistance, and discretionary CA action selection. It cannot grant authority,
+knowledge, labor, technology, materials, land, treasury, office, execution
+capability, or permission.
 
 Native rooms and things are typed as material, work, storage, access,
 communication, symbolic, or spatial nodes. An institution exists only when its
@@ -663,9 +677,17 @@ history.
 partial-set, category-cardinality, and control-contract registries. It does not
 own Culture, political, faction, settlement, or world state. The current
 production inventory contains 45 social referents, 30 concrete practices, 52
-political mechanisms, 12 belief sets, 10 current-order sets, and 33 explicit
-control contracts. `AUTHORING_ONTOLOGY_COVERAGE.md` maps the active mechanics,
+political mechanisms, 12 belief sets, 10 current-order sets, 33 explicit
+control contracts, and 13 Culture questions. `AUTHORING_ONTOLOGY_COVERAGE.md`
+maps the active mechanics,
 sources, consumers, category counts, duplicate-surface audit, and exclusions.
+
+`CACulturalCognitionWorldComponent`, `CAPoliticalCognitionWorldComponent`, and
+`CAPropositionKnowledgeWorldComponent` separately own psychology/attitudes/
+influence, political attitudes/issue links/coalitions, and proposition/research
+state. `CAOrganizationWorldComponent` owns legitimacy and sanction records.
+Their bounded cadences and validators are catalogued in `MODULE_OWNERSHIP.md`
+and `SCHEMA_REGISTRY.md`; no coordinator or UI surface is a second owner.
 
 `CAModuleProfiler` is runtime-only, disabled by default, bounded to a fixed key
 set, resettable, and excluded from save causality. The module and mutation graphs,

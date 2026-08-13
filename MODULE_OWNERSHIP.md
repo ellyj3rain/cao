@@ -1,7 +1,7 @@
 # Module ownership
 
-Status: canonical for `1.3.0.5-alpha` / B11
-Scope: active CAO source at the closed B11 durable-campaign boundary
+Status: canonical for `1.4.0.0-alpha` / B12
+Scope: active CAO source at the closed B12 cultural-cognition boundary
 
 CAO modules are semantic owners. A source file, namespace, coordinator, screen,
 or engine patch is not an additional owner merely because it can see the same
@@ -32,13 +32,16 @@ screen is not a simulation mutation path.
 | `behavior.authorization` | Pure permission decision from behavior catalog and supplied context | No persistent state; `CABehaviorGate` is the only authorization decision path | At action origination and native-execution validation | settings, intent context, knowledge, authority → all behavior originators | `BehaviorAuthorization`; new behavior definitions are additive, new authority domains are subordinate context owners |
 | `behavior.intent` | Owned job intent and recent decision observations | `CABehaviorIntentMapComponent`; register, observe, unregister, prune | Engine job events; bounded 250-tick prune | authorization + native jobs → combat, home, settlement work, support | behavior census and B10 receipts; intent lifecycle changes stay here |
 | `knowledge.contacts` | Session contact facts and durable welfare accountability by pawn, evidence path, age and uncertainty | `KnowledgeMapComponent`; contacts are session-only, while `CA_accountability` is the saved `map.welfare-knowledge` payload | observation 30 ticks; relay 60; expiry on relay pass; accountability on represented welfare events | battlefield perception/comms → behavior and social interpretation | `KnowledgeObservation`, `KnowledgePropagation`; observation partitions candidates by faction, caps expensive pair checks and defers overflow |
-| `authoring.ontology` | Semantic-kind contracts, production social-referent and concrete-practice vocabulary, political/current-order partial patches, category cardinality policy, and control-to-consumer contracts | No persistent state; immutable production registries and pure copy-on-apply kernels | Authoring projection, validation, and explicit preset application | represented mechanics + model owners → Culture/political composers, coverage, and receipts | `AuthoringOntologyProjection`; additions require a production source, consumer, distinct conduct or mechanism, and coverage receipt |
-| `social.meaning` | Production subject registry and pure cultural meaning resolution | No persistent state | Invoked on represented facts | culture + fact context → reaction persistence and Culture history | B11 ontology coverage; subjects are interpretive referents and never practice identities |
+| `authoring.ontology` | Semantic-kind contracts, production social-referent, Culture-question and concrete-practice vocabulary, political/current-order partial patches, category cardinality policy, and control-to-consumer contracts | No persistent state; immutable production registries and pure copy-on-apply kernels | Authoring projection, validation, and explicit preset application | represented mechanics + model owners → Culture/political composers, coverage, and receipts | `AuthoringOntologyProjection`; additions require a coherent construct, production source, consumer, distinct conduct or mechanism, and coverage receipt |
+| `social.meaning` | Production factual-subject registry and exact B11-to-B12 question adapters | No persistent state; unmatched former values remain Culture-owned legacy evidence | Invoked on represented facts and supported migration | factual context + exact adapter → reactions, question evidence and Culture history | Subjects are factual referents, never question or practice identities |
 | `social.reactions` | Per-pawn/population/organization reactions | `CASocialReactionWorldComponent`; `RecordFact` and retention/aggregation preparation | Event ingress; bounded retention before aggregation | meaning kernel + acts → Culture longitudinal owner | `SocialInterpretation`, `SocialAggregation`; new fact adapters may not write the list directly |
-| `culture.longitudinal` | Local lived Culture and transition history | `CACultureLongitudinalMapComponent`; transition kernels invoked only from its evaluation | Daily, map-staggered | reactions, population, programs, organizations → cultural expression and political effects | `CultureLongitudinalUpdate`; new evidence adapters remain pure |
+| `culture.longitudinal` | Local lived Culture question distributions, concrete practices, observations, legacy evidence and transition history | `CACultureLongitudinalMapComponent`; transition kernels invoked only from its evaluation | Daily, map-staggered | reactions, population, programs, organizations → cultural cognition and history | `CultureLongitudinalUpdate`; new evidence adapters remain pure |
+| `cultural.cognition` | Persistent pawn psychology, cultural attitudes, subject-specific sparse influence edges and their bounded schedules | `CACulturalCognitionWorldComponent`; materialization, radius-bounded contact lookup, target-edge indexes and owning social/cleanup/long ticks | On-demand materialization; 2,500-tick social; 60,000-tick edge expiry; 600,000-tick stale-identity cleanup | Culture + Ideoligion + represented pawn/network facts → behavior appraisal plus narrow cultural-fit and observed-contact projections | `CulturalCognition`; no legitimacy, political, or proposition collection or cadence belongs here |
+| `political.cognition` | Pawn political attitudes, family-controlled issue links and faction-bounded coalitions | `CAPoliticalCognitionWorldComponent`; political and coalition kernels plus transient pawn/attitude/faction/issue/organization indexes | 2,500-tick bounded position update; 60,000-tick coalition update | Culture, psychology, Ideoligion, material interest, institutions, threat, indexed propositions and influence → politics/organizations | `PoliticalCognition`, `PoliticalCoalition`; Political Beliefs and current order remain separate owners |
+| `proposition.knowledge` | Propositions, holders, sources, channels, contradictions, access, confidence, transmission, custody, decay and research receipts | `CAPropositionKnowledgeWorldComponent`; observation/report/research ingress and owning knowledge ticks | Event ingress; 60,000-tick native/institution sync; 600,000-tick decay | direct observation, testimony, native research, settlement research, organizations → cognition, politics and behavior | `PropositionKnowledge`; direct observation bypasses access norms and novelty never determines truth |
 | `faction.state` | Established faction Culture, normative political beliefs, and instituted current order | `CAFactionStateWorldComponent`; ensure/find and explicit authoring/materialization paths | World creation/load and represented changes | faction authoring + native factions → regional settlements, Culture, politics | compatibility owner receipt; beliefs and current order retain separate writes and consumers |
 | `player.founding` | Confirmed founders' inherited Culture, Ideoligion link, political beliefs, and adopted founding arrangement | `CAPlayerFoundingWorldComponent`; confirmation/materialization only | Colony creation, one founding application, then historical runtime state | creation flow → faction state and organization | founding receipts; later institutional history does not rewrite the founding plan |
-| `organization.state` | Organizations, offices, membership, customs, security practice, agreements, cases, offers, gatherings, frontier holdings | `CAOrganizationWorldComponent`; named ensure/agreement/record/membership operations | 2,500-tick world pulse plus explicit events | faction/regional/relations → politics, settlement programs, transactions | `OrganizationLookup`, `FullWorldScan`; additions sharing this world ledger remain additive, independent ledgers do not |
+| `organization.state` | Organizations, offices, membership, customs, security practice, agreements, cases, offers, gatherings, frontier holdings, legitimacy and sanction history | `CAOrganizationWorldComponent`; named ensure/agreement/record/membership/sanction operations | 2,500-tick world pulse, 60,000-tick legitimacy sync, plus explicit events | faction/regional/relations/cognition → politics, settlement programs, transactions and behavior appraisal | `OrganizationLookup`, `InstitutionalLegitimacy`; additions sharing this world ledger remain additive, independent ledgers do not |
 | `organization.relations` | Typed organization relations and facility holdings | `CAOrganizationRelationsWorldComponent`; typed relation/holding operations | Explicit formation/change/dissolution events | organizations + settlement facts → political effects, roads, programs | compatibility receipt; consumers never mutate relation collections |
 | `transactions` | Parties, credit terms, transactions, debts | `CATransactionLedger`; named transaction/debt operations | Economic events and settlement materialization | organizations + exchange → commerce capability, political/economic consumers | transaction receipts; new financial lifecycles become subordinate models |
 
@@ -114,11 +117,14 @@ lookup.
 | Campaign manifest and migration receipts | `CACampaignCompatibilityWorldComponent` | preflight/load owner migrations |
 | Behavior intents | `CABehaviorIntentMapComponent` | behavior gate observations and native job lifecycle adapters |
 | Known facts | `KnowledgeMapComponent` | perception, communication, welfare fact adapters |
+| Cultural psychology, attitudes and influence | `CACulturalCognitionWorldComponent` | materialization, represented social contact and its owning cadences |
+| Political attitudes, issue links and coalitions | `CAPoliticalCognitionWorldComponent` | political formation and coalition cadences |
+| Propositions and research receipts | `CAPropositionKnowledgeWorldComponent` | direct observation, qualified reports, native research and settlement research completion/failure |
 | Social reactions | `CASocialReactionWorldComponent.RecordFact` | registered fact adapters |
 | Local Culture history | `CACultureLongitudinalMapComponent` through `CACultureHistory` | its daily evidence evaluation only |
 | Faction state | `CAFactionStateWorldComponent` | creation/materialization and represented changes |
 | Founding state | `CAPlayerFoundingWorldComponent` | confirmed creation flow |
-| Organizations | `CAOrganizationWorldComponent` named operations | formation, explicit events, owner cadence |
+| Organizations, legitimacy and sanctions | `CAOrganizationWorldComponent` named operations | formation, explicit events, sanction ingress and owner cadence |
 | Organization relations/holdings | `CAOrganizationRelationsWorldComponent` | typed relation/holding operations |
 | Regions and settlements | `CARegionalWorldComponent` | confirmed creation, engine materialization, explicit runtime reconciliation |
 | Regional reservation registry | `CARegionalWorldComponent` from authoritative plan footprints | load/register reconciliation; subordinate WorldObjects never originate ownership |
@@ -145,10 +151,17 @@ flowchart LR
   Reconcile --> Capability["settlement.capability"]
   Knowledge["knowledge.contacts"] --> Gate["behavior.authorization"]
   Org --> Gate
-  Gate --> Intent["behavior.intent"]
+  Gate --> Selection["discretionary CA action selection"]
+  Selection --> Intent["behavior.intent"]
   Knowledge --> Reactions["social.reactions"]
   Reactions --> Culture["culture.longitudinal"]
-  Culture --> Faction
+  Culture --> Cognition["cultural.cognition"]
+  Cognition --> Selection
+  Knowledge --> Proposition["proposition.knowledge"]
+  Proposition --> Political["political.cognition"]
+  Cognition --> Political
+  Org --> Political
+  Political --> Org
 ```
 
 ```mermaid
@@ -198,6 +211,10 @@ collect evidence for any later index decision.
 | Colony context | 120 ticks | player colonists and live jobs | derived context snapshot | none |
 | Corpse discipline | 1,800 ticks | unburied humanlike corpses | forbiddance/response work | none |
 | Culture history | 60,000 + map stagger | player and regional settlements | Culture transitions | `CultureLongitudinalUpdate` |
+| Cultural cognition | materialize on demand; social 2,500; long 600,000 | at most twelve represented pawns per social pass and at most eight saved question-specific influence neighbors per pawn | psychology, attitudes, influence edges; read-only evidence for organization appraisal | `CulturalCognition` |
+| Organization legitimacy | 60,000 | represented organizations and read-only cognition evidence | organization-owned legitimacy appraisals | `InstitutionalLegitimacy` |
+| Political cognition | political 2,500; coalition 60,000 | bounded represented pawns, issue registry and faction partitions | political attitudes, issue links, coalitions | `PoliticalCognition`, `PoliticalCoalition` |
+| Proposition knowledge | event ingress; knowledge 60,000; long 600,000 | represented propositions, native research, organizations and bounded decay | propositions and research receipts | `PropositionKnowledge` |
 | Enemy restraint | 250 ticks | live hostile humanlikes when enabled | native restraint jobs | none |
 | Equipment transition | 30 ticks | enabled transition records/pawns | transition state | none |
 | Fire response | 120 ticks | current fires and eligible pawns | authorized jobs | none |
@@ -244,7 +261,7 @@ invokes authoritative reconciliation.
 
 ## Future batch impact record
 
-Every post-B11 implementation batch records:
+Every post-B12 implementation batch records:
 
 | Record | Required fields |
 |---|---|

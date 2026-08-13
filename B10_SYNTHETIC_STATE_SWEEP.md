@@ -16,7 +16,7 @@ None.
 
 | Source | Category | Causal basis | Occurrence |
 |---|---|---|---|
-| `Source/AnimalCareModule.cs:240` | bounded represented-event uncertainty | native health event chance | `if (ModsConfig.AnomalyActive && Rand.Chance(0.3f)` |
+| `Source/AnimalCareModule.cs:241` | bounded represented-event uncertainty | native health event chance | `if (ModsConfig.AnomalyActive && Rand.Chance(0.3f)` |
 | `Source/AnimalReactionModule.cs:62` | bounded represented-event uncertainty | bounded reaction chance after a real cue | `int seed = Gen.HashCombineInt(pawn.thingIDNumber, cue.EventId,` |
 | `Source/AnimalReactionModule.cs:65` | bounded represented-event uncertainty | bounded reaction chance after a real cue | `if (!Rand.ChanceSeeded(reactionChance, seed))` |
 | `Source/AnimalReactionModule.cs:175` | bounded represented-event uncertainty | bounded reaction chance after a real cue | `return CellFinder.TryRandomClosewalkCellNear(anchor.Position,` |
@@ -42,22 +42,22 @@ None.
 | `Source/CombatTopologyModule.cs:3846` | transient technical identity or documentation | native battle-log replay and diagnostics | `Rand.PopState();` |
 | `Source/DragModule.cs:62` | bounded represented-event uncertainty | represented injury chance during an actual drag | `if (victim != null && !victim.Dead && med < 4 && Rand.Chance(0.25f))` |
 | `Source/DragModule.cs:63` | bounded represented-event uncertainty | represented injury chance during an actual drag | `victim.TakeDamage(new DamageInfo(DamageDefOf.Blunt, Rand.RangeInclusive(1, 3)));` |
-| `Source/EnemyRestraintModule.cs:152` | bounded represented-event uncertainty | bounded actor response after eligibility | `return Rand.ChanceSeeded(UnityEngine.Mathf.Clamp01(0.5f - cf),` |
-| `Source/EnemyRestraintModule.cs:167` | bounded represented-event uncertainty | bounded actor response after eligibility | `return Rand.ChanceSeeded(rareChance,` |
-| `Source/EnemyRestraintModule.cs:174` | bounded represented-event uncertainty | bounded actor response after eligibility | `return Rand.ChanceSeeded(UnityEngine.Mathf.Clamp01(1f - f),` |
-| `Source/EnemyRestraintModule.cs:221` | bounded represented-event uncertainty | bounded actor response after eligibility | `return Gen.HashCombineInt(shooter.thingIDNumber,` |
+| `Source/EnemyRestraintModule.cs:153` | bounded represented-event uncertainty | bounded actor response after eligibility | `return Rand.ChanceSeeded(UnityEngine.Mathf.Clamp01(0.5f - cf),` |
+| `Source/EnemyRestraintModule.cs:168` | bounded represented-event uncertainty | bounded actor response after eligibility | `return Rand.ChanceSeeded(rareChance,` |
+| `Source/EnemyRestraintModule.cs:175` | bounded represented-event uncertainty | bounded actor response after eligibility | `return Rand.ChanceSeeded(UnityEngine.Mathf.Clamp01(1f - f),` |
+| `Source/EnemyRestraintModule.cs:222` | bounded represented-event uncertainty | bounded actor response after eligibility | `return Gen.HashCombineInt(shooter.thingIDNumber,` |
 | `Source/FrontierModule.cs:133` | physical, spatial, or presentation variation | site placement after factual holding eligibility | `int siteSeed = Gen.HashCombineInt(map.uniqueID,` |
 | `Source/FrontierModule.cs:136` | physical, spatial, or presentation variation | site placement after factual holding eligibility | `Rand.PushState(siteSeed);` |
 | `Source/FrontierModule.cs:141` | physical, spatial, or presentation variation | site placement after factual holding eligibility | `finally { Rand.PopState(); }` |
 | `Source/GossipModule.cs:83` | bounded represented-event uncertainty | bounded transmission attempt between actual actors | `return Rand.Value < UnityEngine.Mathf.Clamp(p, 0.05f, 0.9f);` |
-| `Source/OrganizationModule.cs:1479` | physical, spatial, or presentation variation | frontier physical-plan receipt after eligibility | `int seed = Gen.HashCombineInt(worldSeed, tileId,` |
-| `Source/OrganizationModule.cs:1493` | physical, spatial, or presentation variation | frontier physical-plan receipt after eligibility | `.HashCombineInt(seed,` |
+| `Source/OrganizationModule.cs:1767` | physical, spatial, or presentation variation | frontier physical-plan receipt after eligibility | `int seed = Gen.HashCombineInt(worldSeed, tileId,` |
+| `Source/OrganizationModule.cs:1781` | physical, spatial, or presentation variation | frontier physical-plan receipt after eligibility | `.HashCombineInt(seed,` |
 | `Source/PatrolSystemModule.cs:255` | bounded scheduling or equivalent route ordering | patrol staggering and equivalent route geometry | `return GenText.StableStringHash(key ?? "") & 0x7fffffff;` |
 | `Source/PatrolSystemModule.cs:325` | bounded scheduling or equivalent route ordering | patrol staggering and equivalent route geometry | `int seed = Gen.HashCombineInt(map.uniqueID, c.x, c.z,` |
 | `Source/PatrolSystemModule.cs:431` | bounded scheduling or equivalent route ordering | patrol staggering and equivalent route geometry | `return Gen.HashCombineInt(GenText.StableStringHash(key ?? ""),` |
-| `Source/PlayerFoundingPageModule.cs:778` | physical, spatial, or presentation variation | native Ideoligion detail generation after explicit preset choice | `int seed = GenText.StableStringHash(CAPlayerFoundingModel.Seed` |
-| `Source/PlayerFoundingPageModule.cs:780` | physical, spatial, or presentation variation | native Ideoligion detail generation after explicit preset choice | `Rand.PushState(seed);` |
-| `Source/PlayerFoundingPageModule.cs:812` | physical, spatial, or presentation variation | native Ideoligion detail generation after explicit preset choice | `finally { Rand.PopState(); }` |
+| `Source/PlayerFoundingPageModule.cs:789` | physical, spatial, or presentation variation | native Ideoligion detail generation after explicit preset choice | `int seed = GenText.StableStringHash(CAPlayerFoundingModel.Seed` |
+| `Source/PlayerFoundingPageModule.cs:791` | physical, spatial, or presentation variation | native Ideoligion detail generation after explicit preset choice | `Rand.PushState(seed);` |
+| `Source/PlayerFoundingPageModule.cs:823` | physical, spatial, or presentation variation | native Ideoligion detail generation after explicit preset choice | `finally { Rand.PopState(); }` |
 | `Source/RaidResponseModule.cs:468` | bounded represented-event uncertainty | bounded response chance for an eligible actor | `&& Rand.Chance(0.2f * (0.4f - courage)))` |
 | `Source/RegionalConstituentFrameModule.cs:251` | physical, spatial, or presentation variation | regional projection frame geometry | `int seed = Gen.HashCombineInt(CandidateId.GetHashCode(),` |
 | `Source/RegionalConstituentFrameModule.cs:253` | physical, spatial, or presentation variation | regional projection frame geometry | `seed = Gen.HashCombineInt(seed, DefName.GetHashCode());` |
@@ -127,24 +127,24 @@ None.
 | `Source/RegionalSetupModule.cs:237` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `int seed = Gen.HashCombineInt(Verse.Find.World.info.Seed,` |
 | `Source/RegionalSetupModule.cs:1880` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `int seed = Gen.HashCombineInt(Gen.HashCombineInt(` |
 | `Source/RegionalSetupModule.cs:1883` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `int automaticCandidateSeed = Gen.HashCombineInt(seed,` |
-| `Source/RegionalSetupModule.cs:4673` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `// Rand.Range(0, 360) at genstep time. Per tile here, and the fallback` |
-| `Source/RegionalSetupModule.cs:4683` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `// Native falls back to Rand.Range(0, 360) on the ambient,` |
-| `Source/RegionalSetupModule.cs:4688` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `float degrees = Rand.Range(0, 360);` |
-| `Source/RegionalSetupModule.cs:5359` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `return Gen.HashCombineInt(` |
-| `Source/RegionalSetupModule.cs:5360` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `Gen.HashCombineInt(Verse.Find.World.info.Seed,` |
-| `Source/RegionalSetupModule.cs:5361` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `Gen.HashCombineInt(Math.Min(link.From.tileId,` |
-| `Source/RegionalSetupModule.cs:5364` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `GenText.StableStringHash(link.River.defName));` |
-| `Source/RegionalSetupModule.cs:5395` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `Gen.HashCombineInt(linkSeed, 82171)) * 2f - 1f;` |
-| `Source/RegionalSetupModule.cs:5398` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `Gen.HashCombineInt(linkSeed, 99277)) * 2f - 1f;` |
-| `Source/RegionalSetupModule.cs:5442` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `int seed = Gen.HashCombineInt(linkSeed, segment++);` |
-| `Source/RegionalSetupModule.cs:5444` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `Rand.PushState(seed);` |
-| `Source/RegionalSetupModule.cs:5457` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `Rand.PopState();` |
-| `Source/RegionalSetupModule.cs:6482` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `// root, and each RockNoise draws Rand.Range in iteration order, so the` |
-| `Source/RegionalSetupModule.cs:6511` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `6, Rand.Range(0, int.MaxValue), QualityMode.Medium)` |
-| `Source/RegionalWorldModule.cs:2785` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `float angle = attempt * 137.50776f + Rand.Range(-12f, 12f);` |
-| `Source/RegionalWorldModule.cs:2883` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `GenText.StableStringHash(record.regionalId),` |
-| `Source/RegionalWorldModule.cs:2902` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `seed = Gen.HashCombineInt(` |
-| `Source/RegionalWorldModule.cs:2903` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `GenText.StableStringHash(record.regionalId),` |
+| `Source/RegionalSetupModule.cs:4674` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `// Rand.Range(0, 360) at genstep time. Per tile here, and the fallback` |
+| `Source/RegionalSetupModule.cs:4684` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `// Native falls back to Rand.Range(0, 360) on the ambient,` |
+| `Source/RegionalSetupModule.cs:4689` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `float degrees = Rand.Range(0, 360);` |
+| `Source/RegionalSetupModule.cs:5360` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `return Gen.HashCombineInt(` |
+| `Source/RegionalSetupModule.cs:5361` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `Gen.HashCombineInt(Verse.Find.World.info.Seed,` |
+| `Source/RegionalSetupModule.cs:5362` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `Gen.HashCombineInt(Math.Min(link.From.tileId,` |
+| `Source/RegionalSetupModule.cs:5365` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `GenText.StableStringHash(link.River.defName));` |
+| `Source/RegionalSetupModule.cs:5396` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `Gen.HashCombineInt(linkSeed, 82171)) * 2f - 1f;` |
+| `Source/RegionalSetupModule.cs:5399` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `Gen.HashCombineInt(linkSeed, 99277)) * 2f - 1f;` |
+| `Source/RegionalSetupModule.cs:5443` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `int seed = Gen.HashCombineInt(linkSeed, segment++);` |
+| `Source/RegionalSetupModule.cs:5445` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `Rand.PushState(seed);` |
+| `Source/RegionalSetupModule.cs:5458` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `Rand.PopState();` |
+| `Source/RegionalSetupModule.cs:6483` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `// root, and each RockNoise draws Rand.Range in iteration order, so the` |
+| `Source/RegionalSetupModule.cs:6512` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `6, Rand.Range(0, int.MaxValue), QualityMode.Medium)` |
+| `Source/RegionalWorldModule.cs:2793` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `float angle = attempt * 137.50776f + Rand.Range(-12f, 12f);` |
+| `Source/RegionalWorldModule.cs:2891` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `GenText.StableStringHash(record.regionalId),` |
+| `Source/RegionalWorldModule.cs:2910` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `seed = Gen.HashCombineInt(` |
+| `Source/RegionalWorldModule.cs:2911` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `GenText.StableStringHash(record.regionalId),` |
 | `Source/SettlementCapabilityAssessmentKernel.cs:46` | readback signature or post-eligibility choice | capability evidence signature | `CASettlementProgramCausalKernel.StableStringHash(facts))` |
 | `Source/SettlementCompositionModule.cs:571` | physical, spatial, or presentation variation | native pawn generation for an authored population group | `seed = Gen.HashCombineInt(` |
 | `Source/SettlementCompositionModule.cs:572` | physical, spatial, or presentation variation | native pawn generation for an authored population group | `GenText.StableStringHash(record.regionalId),` |

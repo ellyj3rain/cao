@@ -76,8 +76,8 @@ def main():
 
     doc = Document()
     section = doc.sections[0]
-    section.top_margin = Inches(0.65)
-    section.bottom_margin = Inches(0.65)
+    section.top_margin = Inches(0.52)
+    section.bottom_margin = Inches(0.52)
     section.left_margin = Inches(0.72)
     section.right_margin = Inches(0.72)
     content_width_twips = round(
@@ -91,8 +91,8 @@ def main():
 
     styles = doc.styles
     styles["Normal"].font.name = "Aptos"
-    styles["Normal"].font.size = Pt(9.5)
-    styles["Normal"].paragraph_format.space_after = Pt(5)
+    styles["Normal"].font.size = Pt(9.25)
+    styles["Normal"].paragraph_format.space_after = Pt(3.5)
     styles["Heading 1"].font.name = "Aptos Display"
     styles["Heading 1"].font.size = Pt(17)
     styles["Heading 1"].font.color.rgb = RGBColor(49, 98, 115)
@@ -159,7 +159,7 @@ def main():
                     for paragraph in cell.paragraphs:
                         for run in paragraph.runs:
                             run.font.name = "Aptos"
-                            run.font.size = Pt(8.25)
+                            run.font.size = Pt(8)
                             if r_index == 0:
                                 run.bold = True
                                 run.font.color.rgb = RGBColor(255, 255, 255)
@@ -189,7 +189,7 @@ def main():
     footer = section.footer.paragraphs[0]
     footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
     footer.add_run(
-        f"Colonist Awareness Overhaul · {version} · {closed_batch}"
+        f"Colonist Awareness Overhaul | {version} | {closed_batch}"
     ).font.size = Pt(8)
     doc.core_properties.title = "Colonist Awareness Overhaul"
     doc.core_properties.subject = "Current project README"

@@ -3338,3 +3338,49 @@
   evidence is recorded in the B11 evidence files and append-only batch record.
   Look, interaction, campaign start, save, and later update remain operator
   runtime evidence rather than static claims.
+
+- **F-162** (2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT) - **The B11 Culture
+  surface had representational breadth but not the integrated causal cognition
+  required by the supplied design package.** Its social meanings could preserve
+  approval, normality, prestige, and salience, but they did not own a coherent
+  population distribution, pawn-private/public attitude, sparse social network,
+  emergent political cognition, institution appraisal, or proposition-knowledge
+  lifecycle. Treating those absent systems as documentation-only work would have
+  left the declared ontology without runtime owners.
+
+  B12 replaces former meaning rows as current normative authority with thirteen
+  explicit Culture questions and population distributions. Twenty-one former
+  social-subject records map through exact adapters to eight questions. Only
+  weighted approval and salience acquire new question semantics; all former
+  dimensions and unmatched subjects remain `CACultureLegacyEvidence`.
+  The governed fixture demonstrates 22 distributions and 26 evidence records
+  across eight Culture instances without changing its world, region, candidate,
+  arrival, scale, 3-faction, 4-settlement, 9-group, or 19-operation identity.
+
+  `world.cultural-cognition` owns stable psychology evidence, dynamic condition,
+  private/public attitudes, perceived norms, and sparse influence. A separate
+  `world.political-cognition` owner forms issue positions, links, perceived
+  majorities, and faction-bounded coalitions. `world.proposition-knowledge` owns
+  claims, sources, access, confidence, transmission, research receipts, custody,
+  and decay. Organization schema 2 owns legitimacy and sanction appraisals.
+  Culture influences appraisal and discretionary CA action selection without
+  changing native legality or direct operator authority.
+
+  The expanded fixed-seed suite passes 113/113 assertions spanning distribution,
+  semantics, psychology, networks, behavior, politics, institutions, knowledge,
+  migration, history, fixture round trip, and performance bounds. That evidence
+  establishes implementation contracts and causal isolation. Psychometric
+  validity, empirical calibration, visual quality, and gameplay acceptance remain
+  outside the static claim and await operator runtime evidence.
+
+- **F-163** (2026-08-13 UTC / 2026-08-13 PDT) - **Independent report evidence
+  requires a different reporter and holder.** Final causal review found that the
+  first B12 report fan-out could route an organization member's already-known
+  claim back to that same member. The route was delivered once, but proposition
+  knowledge would have counted the holder as a second source after the holder had
+  learned only from somebody else. Production ingress now rejects every reported
+  route where reporter and holder are the same pawn, both at the act-record
+  authority boundary and at organization fan-out. The executable knowledge
+  receipt demonstrates two distinct reporters reaching one holder while the
+  holder's self-route is rejected; all 113 B12 receipts and the retained B10/B11
+  regression suites pass after the correction.

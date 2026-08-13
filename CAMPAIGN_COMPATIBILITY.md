@@ -1,7 +1,8 @@
 # Campaign compatibility
 
-Status: canonical for `1.3.0.5-alpha` / B11
+Status: canonical for `1.4.0.0-alpha` / B12
 Current campaign boundary: `1`
+Current schema catalog: `2`
 
 B11 is CAO's first durable campaign boundary. A world confirmed under this
 boundary is historical state. Later code may govern future events differently,
@@ -15,7 +16,7 @@ of four outcomes:
 
 | Outcome | Evidence | Result |
 |---|---|---|
-| Current | boundary 1, complete known manifest, compatible versions, exact owner/component scope and cardinality, valid nested payloads, terminal SHA-256 seal | load; validate owners; add no migration |
+| Current | boundary 1, complete manifest for the saved catalog, compatible versions, exact owner/component scope and cardinality, valid nested payloads, terminal SHA-256 seal | load; validate owners; owner-specific compatible upgrades may publish the next catalog only after success |
 | Controlled B10 migration | no boundary, all legacy live-owner epochs are 10 | load existing represented state; add boundary/owner/catalog receipts on the next successful save |
 | Additive bootstrap | no prior CA campaign state | initialize current owners through normal new-world/current-fact paths; record no earlier history |
 | Unsupported | future/unknown boundary or key, incompatible version, conflicting/unknown legacy state, malformed manifest | abort load visibly before owner mutation; refuse save while blocked |
@@ -29,6 +30,15 @@ a truncated sibling. Owner migrations validate semantic state
 before and after change, publish the owner/catalog version only after success,
 are additive and idempotent, and are recorded once. The runtime profiler is
 excluded from the save and no simulation branch reads it.
+
+Catalog 2 is B12's additive extension of the B11 boundary. A valid catalog-1
+save is not required to contain catalog-2 owners. Culture and the affected
+existing owners validate and migrate their own compatible payloads; cultural
+cognition, political cognition, and proposition knowledge initialize only from
+facts represented at the upgrade tick. The compatibility component publishes
+catalog 2 only after every current owner validates and each new family has an
+initialization receipt. No B12 owner backdates pawn attitudes, coalitions,
+institutional appraisals, propositions, or research history.
 
 The same streaming validator runs on the closed XML candidate after
 `ScribeSaver.FinalizeSaving` and before SafeSaver replaces the prior file. Only
@@ -58,9 +68,9 @@ native-class validator.
 
 Pending authoring is an unconfirmed proposal. The active/mirror Starting Region
 plan, unconfirmed founding draft, preset files, and preview caches may be
-regenerated or rejected according to pending-authoring epoch 11 and their own
-current schema. The governed regional plan is schema 11; Culture and Political
-Beliefs are schema 9.
+regenerated or rejected according to pending-authoring epoch 12 and their own
+current schema. The governed regional plan is schema 11; Culture is schema 10;
+Political Beliefs remains schema 9.
 
 A realized campaign begins when the world and founding state are confirmed and
 materialized. Its regions, settlements, residents, domestic units, Culture and
@@ -74,10 +84,14 @@ pending authoring surfaces. Live owners recognize epoch 10 only as B10 upgrade
 evidence. B11 saves do not write the legacy epoch and never discard realized
 state because it differs.
 
-Culture schema 9 separates a social referent from a concrete repeated practice.
-An old subject-shaped practice is converted only when saved longitudinal evidence
-identifies the corresponding conduct; otherwise it is invalid pending state, not
-a durable practice preserved through an alias. Political schema 9 converts old
+Culture schema 10 replaces former meaning rows as current normative authority
+with population distributions over explicit questions. Schema-9 meanings map
+only through exact ordered-question adapters; every former dimension and every
+unmatched subject remains explicit legacy evidence. No convenient substitute is
+invented. The B11 rule also remains in force: an old subject-shaped practice is
+converted only when saved longitudinal evidence identifies the corresponding
+conduct; otherwise it is invalid pending state, not a durable practice preserved
+through an alias. Political schema 9 converts old
 ownership and economy `mixed` values into every mechanism their B10 descriptions
 explicitly named. B10 `mixed support` did not identify which systems coexisted;
 preflight rejects that ambiguous record before owner load rather than inventing
@@ -94,7 +108,7 @@ Stable semantic IDs survive source reorganization and compatible updates:
 - faction and organization keys;
 - population-group keys and residence pawn IDs;
 - domestic-unit identity and continuity pawn;
-- Culture ID/locality and transition revisions;
+- Culture ID/locality, question keys/population scopes and transition revisions;
 - program signature, operator identity and asset/thing/zone IDs;
 - provision operator/node IDs;
 - behavior episode/job IDs and social fact identity.
@@ -160,12 +174,15 @@ A future destructive live-state migration is exceptional and requires all of:
 
 ## Remaining live proof
 
-B11's non-interactive evidence uses the current authored regional fixture and a
-controlled B10 compatibility envelope. It proves preflight decisions, exact
+B12's non-interactive evidence uses the current authored regional fixture, the
+catalog-1 B11 upgrade envelope, and the retained controlled B10 envelope. It
+proves preflight decisions, exact
 component scope/cardinality, repeated-record validation, digest corruption
 rejection, stable IDs, deterministic additive metadata, idempotence,
-source-input immutability, no creation rerun, no invented social/Culture
-history, B10 receipt regression, and build/deployment identity.
+source-input immutability, exact Culture evidence migration, independently
+owned cultural cognition, political cognition, proposition knowledge and
+organization appraisals, no creation rerun, no invented prior history, retained
+B10/B11 regression, and build/deployment identity.
 
 It does not pretend to automate a true RimWorld save round trip. The operator's
 first retained campaign is the live proof: create and save the campaign, close
@@ -184,4 +201,5 @@ Every later implementation batch states:
 - performance impact: operations/cadence, bounded work, scans, index/cache
   effects and profiler keys.
 
-The next action after B11 is to start and retain the RimWorld campaign.
+The next action after B12 is the operator's RimWorld runtime test and, once
+accepted, the first retained campaign save.

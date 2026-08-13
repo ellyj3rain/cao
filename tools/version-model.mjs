@@ -19,8 +19,8 @@ export const KOHAI_HARD_CAP = 16;
 export const PATCH_HARD_CAP = 24;
 export const MATURITY_LADDER = Object.freeze(["pre-alpha", "alpha", "beta", "rc"]);
 export const ROOT_REPLAY_START_VERSION = "0.1.0.0-pre-alpha";
-export const CLOSED_BATCH_TIP = "B11";
-export const NEXT_BATCH = "B12";
+export const CLOSED_BATCH_TIP = "B12";
+export const NEXT_BATCH = "B13";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_REPO_ROOT = resolve(here, "..");
@@ -417,6 +417,17 @@ export const VERSION_UNITS = Object.freeze([
     threads: ["T-001", "T-002", "T-004", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
     rationale: "B11 establishes the first durable campaign boundary over the B10 causal model: one executable schema catalog, preflight and idempotent migration receipts, explicit module and cadence ownership, and disabled-by-default bounded profiling. Its authoring addendum closes the same boundary by distinguishing social subjects, meanings, and concrete repeated practices; expanding the production vocabulary from actual mechanics; making Political Beliefs and current order independently compositional; and enforcing partial copy-on-apply sets and content-driven authoring. These are structural and corrective closures of the existing capability rather than a new gameplay capability, so the unit carries the patch tier.",
   },
+  {
+    id: "VU-039",
+    series: "B",
+    first: 12,
+    last: 12,
+    dates: "2026-08-13",
+    tier: "minor",
+    name: "Cultural cognition, political emergence, and proposition knowledge",
+    threads: ["T-001", "T-002", "T-004", "T-005", "T-006", "T-019", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
+    rationale: "B12 adds a new simulation capability across authoring and runtime: Culture becomes population distributions over explicit questions; pawns retain private and public attitudes, sparse influence, and bounded psychology; political positions and coalitions emerge from represented evidence; organizations own legitimacy and sanction history; and proposition knowledge owns claims, access, transmission, research receipts, and decay. Separate durable owners, exact B11 migration evidence, direct consumers, fixed-seed causal receipts, and a current-schema fixture make this a minor capability boundary rather than another corrective patch.",
+  },
 ]);
 
 function parseVersion(version) {
@@ -662,9 +673,10 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     "B9",
     "B10",
     "B11",
+    "B12",
   ];
   if (JSON.stringify(covered) !== JSON.stringify(expected)) {
-    errors.push("version units must cover A1-B11 exactly once, contiguously, and in order");
+    errors.push("version units must cover A1-B12 exactly once, contiguously, and in order");
   }
   VERSION_UNITS.forEach((unit, index) => {
     const expectedId = `VU-${String(index + 1).padStart(3, "0")}`;
@@ -679,19 +691,19 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     .sort((left, right) => left[0].localeCompare(right[0])
       || Number(left.slice(1)) - Number(right.slice(1)));
   if (JSON.stringify(closedIds) !== JSON.stringify(expected)) {
-    errors.push("Batches/ must contain exactly the closed A001-A102 and B001-B010 record set");
+    errors.push("Batches/ must contain exactly the closed A001-A102 and B001-B012 record set");
   }
-  if (batchFiles.some((name) => /^B0*12-.*\.md$/.test(name))) {
-    errors.push("B12 must remain unconsumed until the next development batch");
+  if (batchFiles.some((name) => /^B0*13-.*\.md$/.test(name))) {
+    errors.push("B13 must remain unconsumed until the next development batch");
   }
 
   const batchLog = readFileSync(join(repoRoot, "BATCH_LOG.md"), "utf8");
   const logIds = [...batchLog.matchAll(/^\| \[([A-Z])(\d+)\]/gm)]
     .map((match) => `${match[1]}${Number(match[2])}`);
   if (JSON.stringify(logIds) !== JSON.stringify(closedIds)) {
-    errors.push("BATCH_LOG.md must index A1-B11 exactly once and in order");
+    errors.push("BATCH_LOG.md must index A1-B12 exactly once and in order");
   }
-  if (/^\| \[B12\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B12 record yet");
+  if (/^\| \[B13\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B13 record yet");
 
   const threads = readFileSync(join(repoRoot, "Batches", "THREADS.md"), "utf8");
   const declaredThreads = new Set([...threads.matchAll(/<a id="t-(\d{3})"><\/a>T-(\d{3})/g)].map((match) => `T-${match[1]}`));
@@ -776,7 +788,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (args.has("--write")) writeGenerated(DEFAULT_REPO_ROOT);
   const result = validateRepository(DEFAULT_REPO_ROOT);
   if (args.has("--json")) console.log(JSON.stringify(result, null, 2));
-  else if (result.ok) console.log(`version-model: OK — ${result.currentVersion}; ${result.unitCount} units cover A1-B11; ${result.nextBatch} remains next`);
+  else if (result.ok) console.log(`version-model: OK — ${result.currentVersion}; ${result.unitCount} units cover A1-${CLOSED_BATCH_TIP}; ${result.nextBatch} remains next`);
   else result.errors.forEach((error) => console.error(`version-model: ${error}`));
   process.exit(result.ok ? 0 : 1);
 }
