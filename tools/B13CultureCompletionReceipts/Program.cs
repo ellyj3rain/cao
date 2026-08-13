@@ -445,8 +445,17 @@ internal static class Program
                 && legitimacyResolver.Contains("ByKey(organizationIdentity)",
                     StringComparison.Ordinal)
                 && !legitimacyResolver.Contains("memberPawnIds",
+                    StringComparison.Ordinal)
+                && cognitionRuntime.Contains(
+                    "RefreshInstitutionalContext(existing, ProfileFor(pawn)",
+                    StringComparison.Ordinal)
+                && cognitionRuntime.Contains(
+                    "target.publicExpression = expression",
+                    StringComparison.Ordinal)
+                && Compact(socialRuntime).Contains(
+                    "RecordFact(CASocialFactContextfact,Pawnpawn,CACultureRuntimeContextcontext",
                     StringComparison.Ordinal),
-            "regional Culture, sanction, and legitimacy consumers share the resolved settlement organization key; player locality remains distinct from the player institution");
+            "regional Culture, sanction, legitimacy, and cached public-expression consumers share the current settlement organization key; player locality remains distinct from the player institution; generic ingress accepts the typed context intact");
         string reactionLookup = Between(socialRuntime,
             "internal IReadOnlyList<CASocialReactionRecord> ReactionsForPawn",
             "public override void ExposeData");

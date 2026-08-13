@@ -856,7 +856,12 @@ namespace ColonistAwareness
                 && existing.sourceDistributionSignature
                     == distributionSignature
                 && existing.sourceIdeoligionSignature == doctrineSignature)
+            {
+                RefreshInstitutionalContext(existing, ProfileFor(pawn),
+                    organizationIdentity,
+                    Find.TickManager?.TicksGame ?? 0);
                 return existing;
+            }
             if (existing != null)
             {
                 RefreshAttitude(existing, culture, distribution,
@@ -876,6 +881,28 @@ namespace ColonistAwareness
             culturalAttitudes.Add(existing);
             attitudeByIdentity[attitudeIdentity] = existing;
             return existing;
+        }
+
+        private static void RefreshInstitutionalContext(
+            CAPawnCulturalAttitude target, CAPsychologicalProfile psychology,
+            string organizationIdentity, int tick)
+        {
+            if (target == null) return;
+            psychology = psychology ?? new CAPsychologicalProfile();
+            float enforcement = CACulturalAttitudeKernel
+                .RepresentedEnforcementFor(target.questionKey,
+                    organizationIdentity);
+            float expression = CACulturalCognitionPureKernel.PublicExpression(
+                target.privateAttitude, target.perceivedInjunctiveNorm,
+                target.perceivedSocialPressure, enforcement,
+                psychology.agreeableness, psychology.groupIdentification,
+                psychology.reactance);
+            if (Mathf.Abs(target.expectedEnforcement - enforcement) < 0.0001f
+                && Mathf.Abs(target.publicExpression - expression) < 0.0001f)
+                return;
+            target.expectedEnforcement = enforcement;
+            target.publicExpression = expression;
+            target.lastUpdatedTick = tick;
         }
 
         private static string AttitudeIdentity(int pawnId,

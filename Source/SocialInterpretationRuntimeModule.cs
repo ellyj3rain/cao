@@ -163,11 +163,7 @@ namespace ColonistAwareness
                     pawn.thingIDNumber, sourcePawnId);
                 if (sourcePawnId >= 0)
                     fact.EpistemicSourceIdentity = sourcePawnId.ToString();
-                RecordFact(fact, pawn, context?.Culture,
-                    context?.PopulationIdentity,
-                    context?.ReactionScopeIdentity,
-                    context?.InstitutionalOrganizationIdentity,
-                    otherContributions);
+                RecordFact(fact, pawn, context, otherContributions);
                 act.MarkKnowledgeSourceAnswered(pawn.thingIDNumber,
                     sourcePawnId);
             }
@@ -177,16 +173,19 @@ namespace ColonistAwareness
         // subject and supplies a known factual event; this component persists
         // only the resulting interpretation. CAActRecord is one adapter, not
         // the social-subject universe.
-        public bool RecordFact(CASocialFactContext fact, Pawn pawn,
-            CACulture culture, string populationIdentity,
-            string reactionScopeIdentity,
-            string institutionalOrganizationIdentity,
+        internal bool RecordFact(CASocialFactContext fact, Pawn pawn,
+            CACultureRuntimeContext context,
             IEnumerable<CASocialContribution> otherContributions)
         {
             using (CAModuleProfiler.Measure(
                 CAModuleProfileKey.SocialInterpretation))
             {
             if (pawn == null) return false;
+            CACulture culture = context?.Culture;
+            string populationIdentity = context?.PopulationIdentity;
+            string reactionScopeIdentity = context?.ReactionScopeIdentity;
+            string institutionalOrganizationIdentity =
+                context?.InstitutionalOrganizationIdentity;
             string sourceWords = fact?.KnowledgeSource ?? "";
             bool directKnowledge = sourceWords.IndexOf("direct",
                     System.StringComparison.OrdinalIgnoreCase) >= 0
