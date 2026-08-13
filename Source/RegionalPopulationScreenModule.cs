@@ -1113,7 +1113,7 @@ namespace ColonistAwareness
                     + "remain in force."
                 : "The faction type supplies world integration, knowledge, "
                 + "and settlement rules. Culture, Ideoligion, political "
-                    + "beliefs, and faction structure "
+                    + "beliefs, and current order "
                     + "remain separate.");
             y += Row + Gap;
 
@@ -1164,12 +1164,12 @@ namespace ColonistAwareness
             Note(ref y, width, CAPoliticalBeliefsModel.Summary(
                 group.politicalBeliefs) + ". "
                 + (institutionalTensions.Count == 0
-                    ? "Current institutions align with every set belief."
+                    ? "Current order aligns with every set belief."
                     : institutionalTensions.Count
-                        + " preferred positions differ from current practice."));
+                        + " preferred positions differ from current order."));
             Rect beliefsEdit = new Rect(0f, y, width, 28f);
             if (Widgets.ButtonText(beliefsEdit,
-                    "Compare and edit beliefs and practice..."))
+                    "Compare beliefs and current order..."))
                 Verse.Find.WindowStack.Add(Dialog_CAAxisEditor.ForStructure(
                     group.factionStructure, group.politicalBeliefs,
                     (plan.candidateId ?? "ca") + ":faction:" + group.key,
@@ -1595,17 +1595,17 @@ namespace ColonistAwareness
             }
             options.Add(new CACreationChoice
             {
-                Key = "faction-structure",
-                Name = "Follow faction structure",
+                Key = "current-order",
+                Name = "Follow current order",
                 Summary = "Derive settlement authority from the faction's "
                     + "current structure.",
                 Traits = hasCurrent ? "Current result: "
                     + CARegionalSettlements.SettlementAuthorityWords(current)
-                    : "Current result: faction structure is incomplete",
-                Badge = "Faction structure",
+                    : "Current result: current order is incomplete",
+                Badge = "Current order",
                 Accent = CACreationUI.Generated,
                 Selected = !group.settlementAuthorityExplicit,
-                ConfirmLabel = "Follow faction structure",
+                ConfirmLabel = "Follow current order",
                 Choose = delegate
                 {
                     group.settlementAuthorityExplicit = false;
@@ -1988,7 +1988,7 @@ namespace ColonistAwareness
             }
 
             int populationGroupsFilled = 0;
-            // Faction structure can change factual settlement context.
+            // Current order can change factual settlement context.
             // Recompute the still-unconfirmed realization; the fixed candidate
             // seed keeps every unrelated fact stable.
             CARegionalSettlements.Invalidate(plan);
@@ -2140,8 +2140,8 @@ namespace ColonistAwareness
             var parts = new List<string>();
             parts.Add(beliefOpen == 0 ? "political beliefs set"
                 : beliefOpen + " political fields unset");
-            parts.Add(structureOpen == 0 ? "faction structure set"
-                : structureOpen + " structure fields unset");
+            parts.Add(structureOpen == 0 ? "current order set"
+                : structureOpen + " current-order subjects unset");
             return string.Join(" · ", parts.ToArray());
         }
 
@@ -2151,7 +2151,10 @@ namespace ColonistAwareness
         private static string AxisWord(CARegionalFactionPlan group,
             string axisKey)
         {
-            return CAFactionAxes.OptionOf(group.factionStructure, axisKey)?.Label;
+            IReadOnlyList<CAAxisOption> options = CAFactionAxes.OptionsOf(
+                group.factionStructure, axisKey);
+            return options.Count == 0 ? null : string.Join(" + ",
+                options.Select(option => option.Label));
         }
 
         private string FactionScopePhrase(CARegionalFactionPlan group,
@@ -2784,7 +2787,7 @@ namespace ColonistAwareness
 
         private void FactionSettingsChanged(CARegionalFactionPlan faction)
         {
-            // Political beliefs and current structure can change generated
+            // Political beliefs and current order can change generated
             // programs for this faction's settlements. Refresh the saved
             // realization at the edit boundary, then reconcile its provisions.
             plan.confirmed = false;

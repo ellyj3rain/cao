@@ -58,24 +58,6 @@ namespace ColonistAwareness
             Scribe_Collections.Look(ref approaches, "approaches",
                 LookMode.Value);
             Scribe_Values.Look(ref builtTick, "builtTick", -1);
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-            {
-                if (gates == null) gates = new List<IntVec3>();
-                if (gateWidths == null) gateWidths = new List<int>();
-                if (ways == null) ways = new List<IntVec3>();
-                if (facilityKinds == null)
-                    facilityKinds = new List<string>();
-                if (facilityCells == null)
-                    facilityCells = new List<IntVec3>();
-                if (roads == null) roads = new List<IntVec3>();
-                if (roomCells == null) roomCells = new List<IntVec3>();
-                if (roomRoles == null) roomRoles = new List<string>();
-                if (utilities == null) utilities = new List<IntVec3>();
-                if (utilityKinds == null)
-                    utilityKinds = new List<string>();
-                if (approaches == null)
-                    approaches = new List<IntVec3>();
-            }
         }
 
         public IntVec3 FacilityCell(string kind)

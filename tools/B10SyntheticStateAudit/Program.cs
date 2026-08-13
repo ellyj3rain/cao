@@ -350,7 +350,9 @@ internal static class Program
             && materializer.Contains(
                 "string assetRole = \"arrangement:")
             && materializer.Contains("for (int role = 0; role < nodeThings.Count")
-            && materializer.Contains("record.programAssets.RemoveRange"),
+            && materializer.Contains(
+                "CASettlementProgramAssets.RollbackToCount(")
+            && programAssets.Contains("record.programAssets.RemoveRange"),
             "program material-node lifecycle",
             "program asset roles lack persistent exact receipts, live validation, all-role provision holdings, or rollback/rebind");
         Critical(findings, provision.Contains(

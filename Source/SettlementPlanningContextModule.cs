@@ -544,14 +544,14 @@ namespace ColonistAwareness
                 CASettlementProgramRegistry.Research);
             bool qualifiedResearcher = residents.Any(pawn =>
                 pawn.skills?.GetSkill(SkillDefOf.Intellectual)?.Level > 0);
-            bool researchBench = research != null && HasPlacedAsset(map,
+            bool researchBench = research != null && HasPlacedAsset(record, map,
                 research, thing => thing is Building
                     && thing.def?.defName == "SimpleResearchBench"
                     && thing.Faction == record.faction);
             CASettlementProgramEntry agriculture = OperationalProgram(record,
                 CASettlementProgramRegistry.Agriculture);
             bool cultivation = agriculture != null
-                && HasPlacedCultivation(map, agriculture);
+                && HasPlacedCultivation(record, map, agriculture);
             CASettlementProgramEntry transport = OperationalProgram(record,
                 CASettlementProgramRegistry.Transport);
 
@@ -617,21 +617,24 @@ namespace ColonistAwareness
                             == "present in saved geography"));
         }
 
-        private static bool HasPlacedAsset(Map map,
+        private static bool HasPlacedAsset(CARegionalSettlementRecord record,
+            Map map,
             CASettlementProgramEntry entry, Func<Thing, bool> predicate)
         {
-            var ids = new HashSet<string>(entry?.placedThingIds
-                ?? new List<string>(), StringComparer.Ordinal);
+            var ids = new HashSet<string>(
+                CASettlementProgramAssets.AssetIds(record, entry),
+                StringComparer.Ordinal);
             return ids.Count > 0 && map.listerThings.AllThings.Any(thing =>
                 thing != null && ids.Contains(thing.ThingID)
                     && predicate(thing));
         }
 
-        private static bool HasPlacedCultivation(Map map,
+        private static bool HasPlacedCultivation(
+            CARegionalSettlementRecord record, Map map,
             CASettlementProgramEntry entry)
         {
-            var ids = new HashSet<int>((entry?.placedThingIds
-                    ?? new List<string>()).Where(value => value != null
+            var ids = new HashSet<int>(CASettlementProgramAssets
+                .AssetIds(record, entry).Where(value => value != null
                         && value.StartsWith("zone:",
                             StringComparison.Ordinal))
                 .Select(value => int.TryParse(value.Substring(5),
@@ -646,8 +649,8 @@ namespace ColonistAwareness
             var represented = new HashSet<string>((record.settlementProgram
                     ?.entries ?? new List<CASettlementProgramEntry>())
                 .Where(entry => entry != null)
-                .SelectMany(entry => entry.placedThingIds
-                    ?? new List<string>()).Where(value => value != null
+                .SelectMany(entry => CASettlementProgramAssets.AssetIds(
+                    record, entry)).Where(value => value != null
                     && !value.StartsWith("zone:",
                         StringComparison.Ordinal)), StringComparer.Ordinal);
             int damaged = map.listerThings.AllThings.OfType<Building>().Count(

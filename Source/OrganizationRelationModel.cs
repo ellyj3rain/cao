@@ -361,13 +361,6 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref sunsetTick, "sunsetTick", -1);
             origin.Expose("origin");
             termsOrigin.Expose("termsOrigin");
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-            {
-                if (delegatedResponsibilities == null)
-                    delegatedResponsibilities = new List<string>();
-                if (retainedResponsibilities == null)
-                    retainedResponsibilities = new List<string>();
-            }
         }
     }
 
@@ -476,9 +469,6 @@ namespace ColonistAwareness
             Scribe_Collections.Look(ref beneficiaries, "beneficiaries",
                 LookMode.Value);
             origin.Expose("origin");
-            if (Scribe.mode == LoadSaveMode.PostLoadInit
-                && beneficiaries == null)
-                beneficiaries = new List<string>();
         }
     }
 }

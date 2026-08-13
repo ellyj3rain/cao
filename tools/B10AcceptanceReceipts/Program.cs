@@ -46,6 +46,8 @@ internal static class Program
             + S("Source/SettlementOperationalFactAuthoringKernel.cs");
         string programAssets = S(
             "Source/SettlementProgramAssetModule.cs");
+        string organizationRelations = S(
+            "Source/OrganizationRelationsModule.cs");
         string materializer = S(
             "Source/SettlementProgramMaterializerModule.cs");
         string provision = S("Source/ProvisionCausalKernel.cs");
@@ -70,13 +72,16 @@ internal static class Program
         string securityFacts = S("Source/SettlementSecurityFactsModule.cs");
         string securityAssignments = S(
             "Source/SettlementSecurityAssignmentModule.cs");
-        string axisMaterialization = S("Source/AxisMaterializationModule.cs");
+        string politicalEffects = S(
+            "Source/PoliticalBeliefEffectsModule.cs");
         string culture = S("Source/SocialMeaningKernel.cs")
             + S("Source/CulturalExpressionModule.cs")
             + S("Source/FactionCultureBeliefsModule.cs");
         string politics = S("Source/FactionCultureBeliefsModule.cs")
-            + S("Source/PoliticalBeliefEffectsModule.cs")
-            + axisMaterialization;
+            + politicalEffects;
+        string institutionalChange = S(
+                "Source/FactionCultureBeliefsModule.cs")
+            + S("Source/OrganizationModule.cs");
         string ui = S("Source/RegionalPopulationScreenModule.cs");
         string fixtureTool = S("tools/B10FixtureGenerator/Program.cs");
         string sweep = S("B10_SYNTHETIC_STATE_SWEEP.md");
@@ -208,7 +213,8 @@ internal static class Program
         C(16, "Civic capacity requires administration",
             capabilityAdapters.Contains("offices.Count == 0")
                 && capabilityAdapters.Contains("decisions.Count == 0")
-                && capabilityAdapters.Contains("placedThingIds.Count == 0"),
+                && capabilityAdapters.Contains(
+                    "CASettlementProgramAssets.AssetIds"),
             "occupied offices, decisions, members, and site are constitutive");
         C(17, "Security requires actors and organization",
             capabilityAdapters.Contains("securityPractices")
@@ -287,7 +293,8 @@ internal static class Program
                 && materializer.Contains("selectedCandidates"),
             "materializer reads saved entries and candidate choices");
         C(32, "Repair and rebuilding consume placed assets",
-            materializer.Contains("placedThingIds")
+            materializer.Contains("CASettlementProgramAssets")
+                && materializer.Contains("AssetIds(record, program)")
                 && materializer.Contains("repairWork")
                 && materializer.Contains("rebuildWork"),
             "later work targets actual placed program assets");
@@ -333,15 +340,18 @@ internal static class Program
             "meaning ranks valid forms without supplying execution facts");
         C(40, "Political Belief change does not rewrite institutions",
             !operational.Contains("politicalBeliefs")
-                && axisMaterialization.Contains(
-                    "Faction structure describes current order"),
+                && politicalEffects.Contains(
+                    "Political beliefs remain unchanged")
+                && !politicalEffects.Contains("factionStructure ="),
             "normative belief and current structure remain separate inputs");
         C(41, "Institutional change requires a transition",
-            politics.Contains("decision") && politics.Contains("transition")
-                && politics.Contains("current order"),
+            institutionalChange.Contains(
+                "Current order is an established fact")
+                && institutionalChange.Contains(
+                    "Changes are recorded in the decision history"),
             "institutional effects route through represented decisions/events");
         C(42, "Belief/current-order tension remains visible",
-            axisMaterialization.Contains("openBeliefConflicts")
+            politicalEffects.Contains("openBeliefConflicts")
                 && politics.Contains("belief-rule tension"),
             "comparison persists and presents disagreement without rewriting");
 
@@ -422,8 +432,8 @@ internal static class Program
                 && sweep.Contains("Classified occurrences: **"),
             "second repository-wide pass has no unresolved Critical/High");
         C(58, "Creation reaches corrected map-generation boundary",
-            Value(root, "authoringDataEpoch") == "10"
-                && Value(plan, "schemaVersion") == "10"
+            Value(root, "authoringDataEpoch") == "11"
+                && Value(plan, "schemaVersion") == "11"
                 && Value(plan, "confirmed") == "False"
                 && Items(plan, "factions").Count() == 3
                 && settlements.Length == 4
@@ -568,8 +578,10 @@ internal static class Program
                 && materializer.Contains(
                     "CASettlementProgramAssets.Rebind")
                 && programAssets.Contains(
-                    "entry.placedThingIds[index] = rebuilt.ThingID")
-                && programAssets.Contains(
+                    "receipt.thingId = rebuilt.ThingID")
+                && programAssets.Contains("SyncEntryView(record, entry)")
+                && programAssets.Contains("TryRebindProgramAsset")
+                && organizationRelations.Contains(
                     "holding.thingId = rebuilt.thingIDNumber"),
             "the rebuilt Thing replaces the old receipt, program ID, and provision holding under one exact saved work contract");
         C(72, "Observed provision stock is exclusive and reachable",

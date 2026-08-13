@@ -12,11 +12,17 @@ namespace ColonistAwareness
             Map map)
         {
             if (record == null || map == null) return;
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.ProvisionResolution))
+            {
+            int examined = 0;
+            int operating = 0;
             foreach (CAProvisionArrangement arrangement in
                 record.provisionArrangements
                     ?? new List<CAProvisionArrangement>())
             {
                 if (arrangement == null || !arrangement.active) continue;
+                examined++;
                 CAResolvedProvisionOperator resolved =
                     CAProvisionOperatorResolver.Resolve(record, map,
                         arrangement);
@@ -33,6 +39,7 @@ namespace ColonistAwareness
                 arrangement.inactiveReason = arrangement.operational ? null
                     : resolved.Failure ?? fundingFailure ?? material.Failure
                         ?? accessFailure;
+                if (arrangement.operational) operating++;
             }
 
             foreach (string key in new[]
@@ -56,9 +63,19 @@ namespace ColonistAwareness
                                 item.operatorKind) == key).ToList();
                     bool complete = arrangements.Count > 0
                         && arrangements.All(item => item.operational);
-                    program.runtimeState = complete
+                    bool requireAssets = program.materializationState
+                        == "materialized" || program.materializationState
+                        == "present in saved geography";
+                    bool baseResolved =
+                        CASettlementProgramRuntimeContract.TryResolve(record,
+                            map, program, requireAssets,
+                            out CASettlementProgramRuntimeResolution
+                                programResolution);
+                    program.runtimeState = baseResolved && complete
                         ? "operating" : "suspended";
-                    program.runtimeFailure = complete ? null : (
+                    program.runtimeFailure = !baseResolved
+                        ? programResolution.Failure
+                        : complete ? null : (
                             arrangements.Count == 0
                                 ? "no active provision arrangement exists for the recorded operator"
                                 : arrangements.Select(item =>
@@ -69,6 +86,12 @@ namespace ColonistAwareness
                     program.lastRuntimeValidationTick =
                         Find.TickManager?.TicksGame ?? -1;
                 }
+            }
+            CAModuleProfiler.Observe(
+                CAModuleProfileKey.ProvisionResolution,
+                objectsExamined: examined,
+                candidatesAccepted: operating,
+                workSkippedOrDeferred: examined - operating);
             }
         }
     }

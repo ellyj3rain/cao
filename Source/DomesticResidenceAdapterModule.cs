@@ -12,8 +12,18 @@ namespace ColonistAwareness
         internal static List<Pawn> AssignedResidents(
             CARegionalSettlementRecord record, Map map)
         {
-            if (record == null || map == null) return new List<Pawn>();
-            return CAPopulationProjection.Residents(record, map);
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.DomesticUnitLookup))
+            {
+                if (record == null || map == null) return new List<Pawn>();
+                List<Pawn> residents = CAPopulationProjection.Residents(
+                    record, map);
+                CAModuleProfiler.Observe(
+                    CAModuleProfileKey.DomesticUnitLookup,
+                    objectsExamined: residents.Count,
+                    candidatesAccepted: residents.Count);
+                return residents;
+            }
         }
 
         internal static List<Pawn> Consumers(

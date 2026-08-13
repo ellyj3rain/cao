@@ -812,6 +812,9 @@ namespace ColonistAwareness
             CABehaviorDefinition definition, CABehaviorContext context,
             bool permitNativeExecution)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.BehaviorAuthorization))
+            {
             bool feature = CABehaviorSettings.IsEnabled(definition,
                 AwarenessMod.Settings);
             if (!definition.AuthorizesOrigination
@@ -918,12 +921,18 @@ namespace ColonistAwareness
                     CABehaviorBlockReason.CurrentIntent);
             return Decision(true, definition.Key, context,
                 definition.MinimumInitiative, true, CABehaviorBlockReason.None);
+            }
         }
 
         private static CABehaviorDecision Decision(bool allowed, string key,
             CABehaviorContext context, CAInitiativeTier required, bool feature,
             CABehaviorBlockReason block)
         {
+            CAModuleProfiler.Observe(
+                CAModuleProfileKey.BehaviorAuthorization,
+                objectsExamined: 1,
+                candidatesAccepted: allowed ? 1 : 0,
+                workSkippedOrDeferred: allowed ? 0 : 1);
             var decision = new CABehaviorDecision(allowed, key,
                 context.Initiative,
                 required, feature, context.KnowledgeSatisfied,

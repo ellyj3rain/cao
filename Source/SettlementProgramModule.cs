@@ -82,8 +82,12 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref extent, "extent", 1);
             Scribe_Values.Look(ref materializationState,
                 "materializationState", "pending");
-            Scribe_Collections.Look(ref placedThingIds,
-                "placedThingIds", LookMode.Value);
+            // B10 wrote this derived ID view. Read it once for compatibility;
+            // B11 saves only authoritative programAssets receipts and rebuilds
+            // this view from them after the settlement record loads.
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+                Scribe_Collections.Look(ref placedThingIds,
+                    "placedThingIds", LookMode.Value);
             Scribe_Values.Look(ref blocker, "blocker");
             Scribe_Values.Look(ref fallback, "fallback");
             Scribe_Values.Look(ref signature, "signature");
@@ -92,12 +96,6 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref runtimeFailure, "runtimeFailure");
             Scribe_Values.Look(ref lastRuntimeValidationTick,
                 "lastRuntimeValidationTick", -1);
-            if (selectedCandidates == null)
-                selectedCandidates = new List<string>();
-            if (placedThingIds == null)
-                placedThingIds = new List<string>();
-            if (culturalSubjects == null)
-                culturalSubjects = new List<string>();
         }
 
         internal CASettlementProgramEntry Copy()
@@ -133,8 +131,7 @@ namespace ColonistAwareness
                 count = count,
                 extent = extent,
                 materializationState = materializationState,
-                placedThingIds = (placedThingIds
-                    ?? new List<string>()).ToList(),
+                placedThingIds = new List<string>(),
                 blocker = blocker,
                 fallback = fallback,
                 signature = signature,
@@ -161,7 +158,6 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
             Scribe_Values.Look(ref sourceSignature, "sourceSignature");
             Scribe_Collections.Look(ref entries, "entries", LookMode.Deep);
-            if (entries == null) entries = new List<CASettlementProgramEntry>();
         }
 
         internal CASettlementProgramEntry Entry(string key,
@@ -280,8 +276,6 @@ namespace ColonistAwareness
                 "culturalSubjects", LookMode.Value);
             Scribe_Values.Look(ref active, "active", true);
             Scribe_Values.Look(ref provenance, "provenance");
-            if (culturalSubjects == null)
-                culturalSubjects = new List<string>();
         }
 
         internal CASettlementOperationalFact Copy()

@@ -7,7 +7,7 @@ using Verse;
 namespace ColonistAwareness
 {
     // CA state attached directly to a native RimWorld faction. Inherited
-    // Culture, political beliefs, and current faction structure remain
+    // Culture, political beliefs, and the current order remain
     // separate from the faction's native Ideoligion.
     public sealed class CAFactionState : IExposable
     {
@@ -38,11 +38,6 @@ namespace ColonistAwareness
                 "institutionalStateIncomplete", false);
             origin.Expose("origin");
             Scribe_Values.Look(ref generatedAtTick, "generatedAtTick", -1);
-            if (culture == null) culture = new CACulture();
-            if (politicalBeliefs == null)
-                politicalBeliefs = new CAPoliticalBeliefs();
-            if (factionStructure == null)
-                factionStructure = new List<CAAxisEntry>();
         }
 
         internal Faction Faction
@@ -77,7 +72,10 @@ namespace ColonistAwareness
 
     public sealed class CAFactionStateWorldComponent : WorldComponent
     {
-        private int authoringDataEpoch = CAAuthoringDataEpoch.Current;
+        private int campaignSchemaVersion =
+            CACampaignCompatibilityKernel.CurrentBoundaryVersion;
+        private int legacyAuthoringDataEpoch =
+            CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private List<CAFactionState> factionStates =
             new List<CAFactionState>();
 
@@ -96,22 +94,129 @@ namespace ColonistAwareness
 
         public override void ExposeData()
         {
-            Scribe_Values.Look(ref authoringDataEpoch,
-                "CA_authoringDataEpoch", 0);
-            bool current = Scribe.mode == LoadSaveMode.Saving
-                || CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch);
-            if (current)
+            Scribe_Values.Look(ref campaignSchemaVersion,
+                "CA_factionStateSchemaVersion", 0);
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+                Scribe_Values.Look(ref legacyAuthoringDataEpoch,
+                    "CA_authoringDataEpoch", 0);
+            bool readable = CACampaignCompatibility.ShouldReadLiveState(
+                "world.faction-state", campaignSchemaVersion,
+                legacyAuthoringDataEpoch);
+            if (readable)
                 Scribe_Collections.Look(ref factionStates,
                     "CA_factionStates", LookMode.Deep);
-            if (Scribe.mode == LoadSaveMode.PostLoadInit && !current)
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && readable)
             {
-                factionStates = new List<CAFactionState>();
-                authoringDataEpoch = CAAuthoringDataEpoch.Current;
-                CAAuthoringDataEpoch.RecordDiscard("faction authoring");
+                CACampaignCompatibility.CompleteOwnerLoad(
+                    "world.faction-state", ref campaignSchemaVersion,
+                    legacyAuthoringDataEpoch, ValidateCampaignState,
+                    MigrateB10State);
             }
-            if (factionStates == null)
-                factionStates = new List<CAFactionState>();
             base.ExposeData();
+        }
+
+        private string ValidateCampaignState()
+        {
+            string identityFailure = ValidateOwnerIdentities();
+            if (!identityFailure.NullOrEmpty()) return identityFailure;
+            for (int i = 0; i < factionStates.Count; i++)
+            {
+                CAFactionState state = factionStates[i];
+                if (state.culture == null || state.politicalBeliefs == null
+                    || state.factionStructure == null)
+                    return "native faction " + state.factionLoadId
+                        + " has incomplete social state";
+                if (state.culture.schemaVersion != CACulture.CurrentSchemaVersion)
+                    return "native faction " + state.factionLoadId
+                        + " has Culture schema " + state.culture.schemaVersion;
+                string cultureFailure = CACultureModel.ValidationFailure(
+                    state.culture, requireSubstantive: true);
+                if (!cultureFailure.NullOrEmpty())
+                    return "native faction " + state.factionLoadId
+                        + " has invalid Culture: " + cultureFailure;
+                if (state.politicalBeliefs.schemaVersion
+                    != CAPoliticalBeliefs.CurrentSchemaVersion)
+                    return "native faction " + state.factionLoadId
+                        + " has political-belief schema "
+                        + state.politicalBeliefs.schemaVersion;
+                string beliefFailure = CAPoliticalBeliefsModel
+                    .ValidationFailure(state.politicalBeliefs,
+                        allowExactLegacy: false);
+                if (!beliefFailure.NullOrEmpty())
+                    return "native faction " + state.factionLoadId
+                        + " has unsupported political beliefs: "
+                        + beliefFailure;
+                string orderFailure = CAPoliticalBeliefsModel
+                    .ValidationFailure(state.factionStructure);
+                if (!orderFailure.NullOrEmpty())
+                    return "native faction " + state.factionLoadId
+                        + " has unsupported current order: " + orderFailure;
+            }
+            return null;
+        }
+
+        private string ValidateOwnerIdentities()
+        {
+            if (factionStates == null)
+                return "faction-state owner collection is missing";
+            var ids = new HashSet<int>();
+            for (int i = 0; i < factionStates.Count; i++)
+            {
+                CAFactionState state = factionStates[i];
+                if (state == null) return "faction state " + i + " is null";
+                if (state.factionLoadId < 0)
+                    return "faction state " + i + " has no native faction id";
+                if (!ids.Add(state.factionLoadId))
+                    return "native faction " + state.factionLoadId
+                        + " has duplicate CA state";
+            }
+            return null;
+        }
+
+        private string MigrateB10State()
+        {
+            string identityFailure = ValidateOwnerIdentities();
+            if (!identityFailure.NullOrEmpty()) return identityFailure;
+            var candidates = new List<CAFactionState>();
+            for (int i = 0; i < factionStates.Count; i++)
+            {
+                CAFactionState state = factionStates[i];
+                if (state == null) return "faction state " + i + " is null";
+                if (!CACultureModel.TryUpgradeFromB10(state.culture,
+                        out CACulture culture, out string cultureFailure))
+                    return "faction " + state.factionLoadId + " Culture: "
+                        + cultureFailure;
+                if (!CAPoliticalBeliefsModel.TryUpgradeFromB10(
+                        state.politicalBeliefs, out CAPoliticalBeliefs beliefs,
+                        out string beliefFailure))
+                    return "faction " + state.factionLoadId
+                        + " political beliefs: " + beliefFailure;
+                if (!CAPoliticalBeliefsModel.TryUpgradeMechanismsFromB10(
+                        state.factionStructure, out List<CAAxisEntry> order,
+                        out string orderFailure))
+                    return "faction " + state.factionLoadId
+                        + " current order: " + orderFailure;
+                candidates.Add(new CAFactionState
+                {
+                    factionLoadId = state.factionLoadId,
+                    factionName = state.factionName,
+                    engineTemplateDefName = state.engineTemplateDefName,
+                    culture = culture,
+                    politicalBeliefs = beliefs,
+                    factionStructure = order,
+                    institutionalStateIncomplete =
+                        state.institutionalStateIncomplete,
+                    origin = state.origin,
+                    generatedAtTick = state.generatedAtTick
+                });
+            }
+            List<CAFactionState> prior = factionStates;
+            factionStates = candidates;
+            string candidateFailure = ValidateCampaignState();
+            factionStates = prior;
+            if (!candidateFailure.NullOrEmpty()) return candidateFailure;
+            factionStates = candidates;
+            return null;
         }
 
         internal CAFactionState Find(Faction faction)
@@ -154,7 +259,7 @@ namespace ColonistAwareness
     }
 
     // Establishes evidence-backed inherited Culture, derives only political
-    // positions with real scored causes, and completes current structure for
+    // positions with real scored causes, and completes the current order for
     // every humanlike faction. Native Ideoligion remains untouched.
     internal static class CAFactionStateGenerator
     {
@@ -225,7 +330,7 @@ namespace ColonistAwareness
                 + cultures + " Cultures, " + beliefSets
                 + " political-belief sets, " + beliefFields
                 + " political-belief fields, " + structureFields
-                + " faction-structure fields generated; " + skipped
+                + " current-order mechanisms generated; " + skipped
                 + " non-humanlike factions skipped; unsupported political "
                 + "fields remain unset; Ideoligions unchanged";
         }

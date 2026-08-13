@@ -347,7 +347,7 @@ namespace ColonistAwareness
 
             AddReading(result, "Belief and instituted order",
                 tensions.Count > 0
-                    ? tensions.Count + " preferred positions differ from current practice."
+                    ? tensions.Count + " preferred positions differ from current order."
                     : input.Founding
                         ? "The founders carry beliefs; only the landing arrangement is adopted."
                         : "Recorded political beliefs and institutions are aligned.",
@@ -471,8 +471,8 @@ namespace ColonistAwareness
             foreach (CACulturePractice practice in (culture.practices
                     ?? new List<CACulturePractice>()).Where(item => item != null)
                 .OrderByDescending(item => item.strength)
-                .ThenBy(item => item.subjectKey))
-                result.Add("culture practice " + (practice.subjectKey ?? "unrecorded")
+                .ThenBy(item => item.practiceKey))
+                result.Add("culture practice " + (practice.practiceKey ?? "unrecorded")
                     + ": " + practice.strength + "/100 - "
                     + (practice.sourceSignature ?? "unrecorded source"));
             return result;
@@ -501,7 +501,7 @@ namespace ColonistAwareness
                 .Where(item => item != null && item.strength > 0)
                 .Select(item => new CACulturalPracticeState
                 {
-                    Key = item.subjectKey,
+                    Key = item.practiceKey,
                     Summary = item.summary,
                     Strength = item.strength,
                     SourceSignature = item.sourceSignature
@@ -554,10 +554,12 @@ namespace ColonistAwareness
 
         private static string Axis(Inputs input, string key)
         {
-            string current = CAFactionAxes.KeyOf(input.Institutions, key);
-            if (current.NullOrEmpty())
-                current = CAFactionAxes.KeyOf(input.Beliefs, key);
-            return OptionLabel(key, current);
+            IReadOnlyList<string> current = CAFactionAxes.KeysOf(
+                input.Institutions, key);
+            if (current.Count == 0)
+                current = CAFactionAxes.KeysOf(input.Beliefs, key);
+            return current.Count == 0 ? "not recorded" : string.Join(" + ",
+                current.Select(value => OptionLabel(key, value)));
         }
 
         private static string PreferredAxis(Inputs input, string key)
@@ -566,14 +568,20 @@ namespace ColonistAwareness
                 StringComparer.Ordinal);
             foreach (WeightedBeliefSource source in input.PopulationBeliefs)
             {
-                string option = CAFactionAxes.KeyOf(source.Positions, key);
-                if (option.NullOrEmpty()) continue;
-                weighted[option] = weighted.TryGetValue(option,
-                    out int current) ? current + source.Share : source.Share;
+                foreach (string option in CAFactionAxes.KeysOf(
+                    source.Positions, key))
+                    weighted[option] = weighted.TryGetValue(option,
+                        out int current) ? current + source.Share
+                            : source.Share;
             }
             if (weighted.Count == 0)
-                return OptionLabel(key, CAFactionAxes.KeyOf(
-                    input.Beliefs, key));
+            {
+                IReadOnlyList<string> fallback = CAFactionAxes.KeysOf(
+                    input.Beliefs, key);
+                return fallback.Count == 0 ? "not recorded"
+                    : string.Join(" + ", fallback.Select(option =>
+                        OptionLabel(key, option)));
+            }
             if (weighted.Count == 1)
                 return OptionLabel(key, weighted.Keys.First());
             return string.Join(", ", weighted.OrderByDescending(item =>

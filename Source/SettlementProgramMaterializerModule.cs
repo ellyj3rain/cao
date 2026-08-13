@@ -317,7 +317,8 @@ namespace ColonistAwareness
                     }
                     bool completeProgram = required > 0 && laid == required;
                     if (completeProgram && ProgramRequiresPower(entry))
-                        completeProgram = HasWorkingPowerContract(map, entry);
+                        completeProgram = HasWorkingPowerContract(record, map,
+                            entry);
                     entry.materializationState = completeProgram
                         ? "materialized" : "blocked";
                     if (!completeProgram && entry.blocker.NullOrEmpty())
@@ -436,8 +437,6 @@ namespace ColonistAwareness
                         programEntry, assetRole, t,
                         provisionArrangementKey,
                         provisionNodeIndex);
-                else
-                    programEntry?.placedThingIds.Add(t.ThingID);
                 placedAt?.Invoke(cell);
                 placedThing?.Invoke(t);
                 return 1;
@@ -497,7 +496,6 @@ namespace ColonistAwareness
             if (record.startingStock == null)
                 record.startingStock = new List<CAStartingStockRecord>();
             int seededStart = record.seededAssets.Count;
-            int placedStart = entry.placedThingIds.Count;
             int receiptStart = record.programAssets?.Count ?? 0;
             int stockStart = record.startingStock.Count;
             var spawned = new List<Thing>();
@@ -647,13 +645,8 @@ namespace ColonistAwareness
                 if (record.seededAssets.Count > seededStart)
                     record.seededAssets.RemoveRange(seededStart,
                         record.seededAssets.Count - seededStart);
-                if (entry.placedThingIds.Count > placedStart)
-                    entry.placedThingIds.RemoveRange(placedStart,
-                        entry.placedThingIds.Count - placedStart);
-                if (record.programAssets != null
-                    && record.programAssets.Count > receiptStart)
-                    record.programAssets.RemoveRange(receiptStart,
-                        record.programAssets.Count - receiptStart);
+                CASettlementProgramAssets.RollbackToCount(record,
+                    receiptStart);
                 foreach (Thing thing in spawned.Where(thing => thing != null
                     && !thing.Destroyed).Reverse())
                     thing.Destroy(DestroyMode.Vanish);
@@ -694,12 +687,14 @@ namespace ColonistAwareness
                     == CASettlementProgramRegistry.Communications;
         }
 
-        private static bool HasWorkingPowerContract(Map map,
+        private static bool HasWorkingPowerContract(
+            CARegionalSettlementRecord record, Map map,
             CASettlementProgramEntry entry)
         {
-            if (map == null || entry?.placedThingIds == null) return false;
+            if (map == null || entry == null) return false;
             map.powerNetManager.UpdatePowerNetsAndConnections_First();
-            List<Thing> placed = entry.placedThingIds
+            List<Thing> placed = CASettlementProgramAssets
+                .AssetIds(record, entry)
                 .Select(id => map.listerThings.AllThings.FirstOrDefault(
                     thing => thing != null && thing.ThingID == id))
                 .Where(thing => thing != null).ToList();
@@ -1024,8 +1019,8 @@ namespace ColonistAwareness
             Pawn worker = FindWorker(record, program,
                 requireMaterializedAssets: true);
             if (worker == null) continue;
-            var zoneIds = new HashSet<int>((program?.placedThingIds
-                    ?? new List<string>()).Where(value => value != null
+            var zoneIds = new HashSet<int>(CASettlementProgramAssets
+                .AssetIds(record, program).Where(value => value != null
                         && value.StartsWith("zone:",
                             StringComparison.Ordinal))
                 .Select(value => int.TryParse(value.Substring(5),
@@ -1066,6 +1061,9 @@ namespace ColonistAwareness
         private bool TryRepair(CARegionalSettlementRecord record,
             CAOrganization org)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.SettlementRepair))
+            {
             string settlementKey = record.regionalId + "#" + record.slot;
             foreach (CASettlementProgramEntry program in record
                 .settlementProgram?.entries
@@ -1126,11 +1124,15 @@ namespace ColonistAwareness
                 }
             }
             return false;
+            }
         }
 
         private bool TryRebuild(CARegionalSettlementRecord record,
             CAOrganization org)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.SettlementRebuilding))
+            {
             if (record.programAssets == null) return false;
             string settlementKey = record.regionalId + "#" + record.slot;
             foreach (CASettlementProgramEntry program in record
@@ -1235,6 +1237,8 @@ namespace ColonistAwareness
                 }
                 catch
                 {
+                    CAModuleProfiler.RecordFailure(
+                        CAModuleProfileKey.SettlementRebuilding);
                     if (approach != null)
                         CABehaviorIntentMapComponent.For(map)?.Unregister(
                             worker, approach);
@@ -1242,11 +1246,15 @@ namespace ColonistAwareness
                 }
             }
             return false;
+            }
         }
 
         private bool TryResearch(CARegionalSettlementRecord record,
             CAOrganization org)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.SettlementResearch))
+            {
             if (org == null) return false;
             string settlementKey = record.regionalId + "#" + record.slot;
             foreach (CASettlementProgramEntry program in record
@@ -1331,6 +1339,7 @@ namespace ColonistAwareness
             return true;
             }
             return false;
+            }
         }
 
         // The native job tracker owns repair and research completion truth.

@@ -72,7 +72,10 @@ namespace ColonistAwareness
     {
         private const int EvidenceRunGap = 2 * 60000;
         private const int RetainTicks = 30 * 60000;
-        private int authoringDataEpoch = CAAuthoringDataEpoch.Current;
+        private int campaignSchemaVersion =
+            CACampaignCompatibilityKernel.CurrentBoundaryVersion;
+        private int legacyAuthoringDataEpoch =
+            CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private List<CASocialReactionRecord> reactions =
             new List<CASocialReactionRecord>();
 
@@ -83,22 +86,43 @@ namespace ColonistAwareness
 
         public override void ExposeData()
         {
-            Scribe_Values.Look(ref authoringDataEpoch,
-                "CA_authoringDataEpoch", 0);
-            bool current = Scribe.mode == LoadSaveMode.Saving
-                || CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch);
-            if (current)
+            Scribe_Values.Look(ref campaignSchemaVersion,
+                "CA_socialReactionSchemaVersion", 0);
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+                Scribe_Values.Look(ref legacyAuthoringDataEpoch,
+                    "CA_authoringDataEpoch", 0);
+            bool readable = CACampaignCompatibility.ShouldReadLiveState(
+                "world.social-reactions", campaignSchemaVersion,
+                legacyAuthoringDataEpoch);
+            if (readable)
                 Scribe_Collections.Look(ref reactions, "CA_socialReactions",
                     LookMode.Deep);
-            if (Scribe.mode == LoadSaveMode.PostLoadInit && !current)
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && readable)
             {
-                reactions = new List<CASocialReactionRecord>();
-                authoringDataEpoch = CAAuthoringDataEpoch.Current;
-                CAAuthoringDataEpoch.RecordDiscard("social interpretations");
+                CACampaignCompatibility.CompleteOwnerLoad(
+                    "world.social-reactions", ref campaignSchemaVersion,
+                    legacyAuthoringDataEpoch, ValidateCampaignState);
             }
-            if (reactions == null)
-                reactions = new List<CASocialReactionRecord>();
             base.ExposeData();
+        }
+
+        private string ValidateCampaignState()
+        {
+            if (reactions == null)
+                return "social-reaction owner collection is missing";
+            var identities = new HashSet<string>(System.StringComparer.Ordinal);
+            for (int i = 0; i < reactions.Count; i++)
+            {
+                CASocialReactionRecord reaction = reactions[i];
+                if (reaction == null)
+                    return "social reaction " + i + " is null";
+                if (reaction.factIdentity.NullOrEmpty() || reaction.pawnId < 0)
+                    return "social reaction " + i + " has no fact or pawn";
+                string key = reaction.factIdentity + "|" + reaction.pawnId;
+                if (!identities.Add(key))
+                    return "social reaction " + key + " is duplicated";
+            }
+            return null;
         }
 
         internal void RecordAct(CAActRecord act, Pawn pawn,
@@ -124,6 +148,9 @@ namespace ColonistAwareness
             string organizationIdentity,
             IEnumerable<CASocialContribution> otherContributions)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.SocialInterpretation))
+            {
             if (pawn == null) return false;
             CAPersistedSocialReaction response =
                 CASocialReactionPersistenceKernel.Record(
@@ -133,7 +160,13 @@ namespace ColonistAwareness
                         populationIdentity), otherContributions,
                     reactions.Where(value => value != null).Select(value =>
                         value.factIdentity + "|" + value.pawnId));
-            if (response == null) return false;
+            if (response == null)
+            {
+                CAModuleProfiler.Observe(
+                    CAModuleProfileKey.SocialInterpretation,
+                    objectsExamined: 1, workSkippedOrDeferred: 1);
+                return false;
+            }
             reactions.Add(new CASocialReactionRecord
             {
                 subjectKey = response.SubjectKey,
@@ -151,12 +184,19 @@ namespace ColonistAwareness
                 internalContradiction = response.InternalContradiction,
                 contributions = response.Contributions
             });
+            CAModuleProfiler.Observe(
+                CAModuleProfileKey.SocialInterpretation,
+                objectsExamined: 1, candidatesAccepted: 1);
             return true;
+            }
         }
 
         internal List<CASocialGroupPattern> PatternsFor(
             string organizationIdentity, int eligiblePopulation, int now)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.SocialAggregation))
+            {
             reactions.RemoveAll(value => value == null || (value.tick >= 0
                 && now - value.tick > RetainTicks));
             var currentRuns = new List<CASocialReactionRecord>();
@@ -176,8 +216,15 @@ namespace ColonistAwareness
                         > EvidenceRunGap) runStart = index;
                 currentRuns.AddRange(ordered.Skip(runStart));
             }
-            return CASocialPatternKernel.Aggregate(currentRuns.Select(value =>
-                value.ToInterpretation()), eligiblePopulation);
+            List<CASocialGroupPattern> patterns = CASocialPatternKernel
+                .Aggregate(currentRuns.Select(value =>
+                    value.ToInterpretation()), eligiblePopulation);
+            CAModuleProfiler.Observe(
+                CAModuleProfileKey.SocialAggregation,
+                objectsExamined: reactions.Count,
+                candidatesAccepted: patterns.Count);
+            return patterns;
+            }
         }
 
         private static int InfluenceOf(Pawn pawn)

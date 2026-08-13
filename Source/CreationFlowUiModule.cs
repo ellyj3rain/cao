@@ -297,9 +297,18 @@ namespace ColonistAwareness
 
         private float DrawGroups(Rect inRect, float y)
         {
-            List<string> groups = choices.Select(item => item.Group)
-                .Where(item => !item.NullOrEmpty()).Distinct().ToList();
-            if (groups.Count <= 1) return y;
+            List<string> groups = CAAuthoringCategoryPolicy.NavigableGroups(
+                choices.Where(item => !item.Group.NullOrEmpty())
+                    .GroupBy(item => item.Group, StringComparer.Ordinal)
+                    .Select(items => new KeyValuePair<string, int>(
+                        items.Key, items.Count()))).ToList();
+            if (groups.Count == 0)
+            {
+                group = null;
+                return y;
+            }
+            if (!group.NullOrEmpty() && !groups.Contains(group))
+                group = null;
             groups.Insert(0, "All");
             int selected = group.NullOrEmpty() ? 0
                 : Mathf.Max(0, groups.IndexOf(group));

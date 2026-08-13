@@ -119,10 +119,21 @@ namespace ColonistAwareness
         {
             if (record?.settlementProgram?.entries == null || map == null)
                 return;
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.SettlementProgramMaintenance))
+            {
             int tick = Find.TickManager?.TicksGame ?? -1;
+            int examined = 0;
+            int operating = 0;
             foreach (CASettlementProgramEntry entry in
                 record.settlementProgram.entries.Where(item => item != null))
             {
+                // Provision owns the combined operator/funding/material/access
+                // commit for its three program kinds. It consumes TryResolve
+                // below, but this generic cadence does not write the same status.
+                if (CASettlementProgramOperationalResolver.IsProvisionProgram(
+                        entry.programKey)) continue;
+                examined++;
                 bool requireAssets = entry.materializationState
                     == "materialized" || entry.materializationState
                     == "present in saved geography";
@@ -132,6 +143,13 @@ namespace ColonistAwareness
                 entry.runtimeState = resolved ? "operating" : "suspended";
                 entry.runtimeFailure = result.Failure;
                 entry.lastRuntimeValidationTick = tick;
+                if (resolved) operating++;
+            }
+            CAModuleProfiler.Observe(
+                CAModuleProfileKey.SettlementProgramMaintenance,
+                objectsExamined: examined,
+                candidatesAccepted: operating,
+                workSkippedOrDeferred: examined - operating);
             }
         }
 

@@ -452,6 +452,9 @@ namespace ColonistAwareness
 
         private bool TryPlanNow(out string outcome)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.AutonomousHomePlanning))
+            {
             outcome = "no plan";
             AwarenessSettings settings = AwarenessMod.Settings;
             if (settings == null)
@@ -636,6 +639,7 @@ namespace ColonistAwareness
             return Finish(blocker.NullOrEmpty()
                 ? "the claimed home already has this slice's furnishings"
                 : blocker, out outcome);
+            }
         }
 
         private bool Finish(string text, out string outcome)
@@ -1798,6 +1802,9 @@ namespace ColonistAwareness
             out IntVec3 bestCell, out Rot4 bestRot,
             out string placementEvidence)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.SpatialSearch))
+            {
             bestCell = IntVec3.Invalid;
             bestRot = Rot4.Invalid;
             placementEvidence = null;
@@ -1966,11 +1973,15 @@ namespace ColonistAwareness
             else if (bestCell.IsValid)
                 placementEvidence = fengShuiEvidence;
             return bestCell.IsValid;
+            }
         }
 
         private bool TryFindSeatPlacement(Pawn planner, ThingDef def, ThingDef stuff,
             out IntVec3 bestCell, out Rot4 bestRot)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.SpatialSearch))
+            {
             bestCell = IntVec3.Invalid;
             bestRot = Rot4.Invalid;
             float bestScore = float.MinValue;
@@ -2017,11 +2028,15 @@ namespace ColonistAwareness
                 }
             }
             return bestCell.IsValid;
+            }
         }
 
         private bool TryFindSeatBeside(Pawn planner, ThingDef def, ThingDef stuff,
             Building target, out IntVec3 bestCell, out Rot4 bestRot)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.SpatialSearch))
+            {
             bestCell = IntVec3.Invalid;
             bestRot = Rot4.Invalid;
             CASpaceProgram program = PlannedUseMapComponent.For(map)
@@ -2050,12 +2065,16 @@ namespace ColonistAwareness
                 return true;
             }
             return false;
+            }
         }
 
         private bool TryFindOutdoorPlacement(Pawn planner, ThingDef def,
             ThingDef stuff, CASpaceProgram program,
             out IntVec3 bestCell, out Rot4 bestRot)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.SpatialSearch))
+            {
             bestCell = IntVec3.Invalid;
             bestRot = def.defaultPlacingRot;
             float bestScore = float.MinValue;
@@ -2078,6 +2097,7 @@ namespace ColonistAwareness
                 }
             }
             return bestCell.IsValid;
+            }
         }
 
         private bool EligibleHomeRoom(Room room)

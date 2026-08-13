@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using RimWorld;
 using Verse;
 using Verse.AI;
@@ -152,10 +153,17 @@ namespace ColonistAwareness
             public ContactEvidence evidence;
         }
 
+        private sealed class ObservationLane
+        {
+            public Pawn Observer;
+            public List<Pawn> Candidates;
+        }
+
         // knower pawnId -> known contacts
         private readonly Dictionary<int, List<Contact>> known = new Dictionary<int, List<Contact>>();
         private int observeCooldown;
         private int relayCooldown;
+        private int observationPairCursor;
         private bool contactObserveFailureReported;
         private bool welfareObserveFailureReported;
         private bool contactRelayFailureReported;
@@ -166,6 +174,7 @@ namespace ColonistAwareness
 
         private const float ShoutRange = 11.9f;
         private const int StaleTicks = 7500;
+        private const int MaximumObservationPairsPerPass = 2048;
 
         public KnowledgeMapComponent(Map map) : base(map) { }
 
@@ -606,6 +615,8 @@ namespace ColonistAwareness
                     try { Propagate(); }
                     catch (System.Exception ex)
                     {
+                        CAModuleProfiler.RecordFailure(
+                            CAModuleProfileKey.KnowledgePropagation);
                         ReportKnowledgeFailure("contact relay", ex,
                             ref contactRelayFailureReported, 104923743);
                     }
@@ -656,7 +667,20 @@ namespace ColonistAwareness
         // actually hostile to them. No faction receives privileged map truth.
         private void Observe()
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.KnowledgeObservation))
+            {
             var all = map.mapPawns.AllPawnsSpawned;
+            var potentialHostiles = new List<Pawn>();
+            for (int i = 0; i < all.Count; i++)
+            {
+                Pawn pawn = all[i];
+                if (pawn != null && pawn.Spawned && !pawn.Destroyed
+                    && !pawn.Dead && !pawn.Downed && !pawn.IsPrisoner)
+                    potentialHostiles.Add(pawn);
+            }
+            var lanes = new List<ObservationLane>();
+            int totalPairs = 0;
             for (int i = 0; i < all.Count; i++)
             {
                 var p = all[i];
@@ -666,18 +690,69 @@ namespace ColonistAwareness
                 List<Contact> facts;
                 if (known.TryGetValue(p.thingIDNumber, out facts))
                     RefreshObservedStates(p, facts, Find.TickManager.TicksGame);
-                for (int j = 0; j < all.Count; j++)
+                // Pawn.HostileTo is the canonical decision. Faction-only
+                // partitioning loses factionless hostiles and pawn-specific
+                // hostility inside nominally shared factions.
+                List<Pawn> candidates = potentialHostiles.Where(candidate =>
+                    candidate != p && candidate.HostileTo(p)).ToList();
+                lanes.Add(new ObservationLane
                 {
-                    var h = all[j];
-                    // Existing CA concealment remains an epistemic gate. Ordinary
-                    // battlefield perception is now independent of weapon range and
-                    // resolves hard structure, soft flora/cover, smoke, weather,
-                    // light, eyesight, and bounded skill contribution in one place.
-                    CAVisualPerception perception;
-                    if (!CABattlefieldPerception.TryObserveHostile(p, h,
-                            out perception)) continue;
-                    NoteVisualPerception(p, h, perception);
+                    Observer = p,
+                    Candidates = candidates
+                });
+                totalPairs += candidates.Count;
+            }
+
+            int processed = 0;
+            int accepted = 0;
+            if (totalPairs > 0)
+            {
+                int start = observationPairCursor % totalPairs;
+                int budget = System.Math.Min(MaximumObservationPairsPerPass,
+                    totalPairs);
+                int first = System.Math.Min(budget, totalPairs - start);
+                ProcessObservationRange(lanes, start, first, ref processed,
+                    ref accepted);
+                if (first < budget)
+                    ProcessObservationRange(lanes, 0, budget - first,
+                        ref processed, ref accepted);
+                observationPairCursor = (start + budget) % totalPairs;
+            }
+            CABattlefieldPerception.PruneAfterObservationPass();
+            CAModuleProfiler.Observe(CAModuleProfileKey.KnowledgeObservation,
+                objectsExamined: processed,
+                candidatesAccepted: accepted,
+                workSkippedOrDeferred: totalPairs - processed);
+            }
+        }
+
+        private void ProcessObservationRange(List<ObservationLane> lanes,
+            int start, int count, ref int processed, ref int accepted)
+        {
+            if (count <= 0) return;
+            int offset = 0;
+            int end = start + count;
+            for (int laneIndex = 0; laneIndex < lanes.Count; laneIndex++)
+            {
+                ObservationLane lane = lanes[laneIndex];
+                int laneEnd = offset + lane.Candidates.Count;
+                int from = System.Math.Max(start, offset);
+                int to = System.Math.Min(end, laneEnd);
+                for (int flat = from; flat < to; flat++)
+                {
+                    Pawn hostile = lane.Candidates[flat - offset];
+                    processed++;
+                    // Concealment and relevance remain inside the canonical
+                    // perception gate; the lane contains only pairs already
+                    // accepted by the canonical pawn-level hostility check.
+                    if (!CABattlefieldPerception.TryObserveHostile(
+                            lane.Observer, hostile,
+                            out CAVisualPerception perception)) continue;
+                    NoteVisualPerception(lane.Observer, hostile, perception);
+                    accepted++;
                 }
+                offset = laneEnd;
+                if (offset >= end) break;
             }
         }
 
@@ -686,6 +761,9 @@ namespace ColonistAwareness
         // Voice/Radio/Mental edge and reporter.
         private void Propagate()
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.KnowledgePropagation))
+            {
             var all = map.mapPawns.AllPawnsSpawned;
             int now = Find.TickManager.TicksGame;
             var deliveries = new List<ContactDelivery>();
@@ -750,6 +828,11 @@ namespace ColonistAwareness
                 NoteEvidence(delivery.listener, delivery.hostileId, delivery.cell,
                     delivery.sourceTick, delivery.evidence, "a contact",
                     delivery.weaponCategory);
+            }
+            CAModuleProfiler.Observe(
+                CAModuleProfileKey.KnowledgePropagation,
+                objectsExamined: (long)all.Count * all.Count,
+                candidatesAccepted: deliveries.Count);
             }
         }
 

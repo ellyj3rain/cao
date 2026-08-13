@@ -8,7 +8,7 @@ using Verse;
 namespace ColonistAwareness
 {
     // Developer receipt for the separation between native Ideoligion and CA
-    // inherited Culture, political beliefs, and faction structure.
+    // inherited Culture, political beliefs, and current order.
     internal static class CAFactionStateReceipt
     {
         internal static string Run()

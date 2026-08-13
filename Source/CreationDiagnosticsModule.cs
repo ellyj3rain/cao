@@ -100,7 +100,10 @@ namespace ColonistAwareness
                 .Append(CACultureHistory.StateSignature(culture))
                 .Append("; evidence=")
                 .Append(culture.lastEvidence?.signature ?? "not observed")
-                .Append("; data epoch=").Append(CAAuthoringDataEpoch.Current);
+                .Append("; pending-data epoch=")
+                .Append(CAPendingAuthoringDataEpoch.Current)
+                .Append("; campaign boundary=")
+                .Append(CACampaignCompatibilityKernel.CurrentBoundaryVersion);
             CACultureTransition transition = culture.transitions?
                 .Where(item => item != null)
                 .OrderByDescending(item => item.sequence).FirstOrDefault();
@@ -118,8 +121,8 @@ namespace ColonistAwareness
                     : string.Join(" | ", culture.practices
                         .Where(item => item != null)
                         .OrderByDescending(item => item.strength)
-                        .ThenBy(item => item.subjectKey)
-                        .Select(item => item.subjectKey + "=" + item.strength
+                        .ThenBy(item => item.practiceKey)
+                        .Select(item => item.practiceKey + "=" + item.strength
                             + " from "
                             + (item.sourcePeriod ?? "unrecorded period"))));
         }

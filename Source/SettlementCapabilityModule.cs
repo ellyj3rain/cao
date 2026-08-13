@@ -64,18 +64,6 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref evidenceSignature,
                 "evidenceSignature");
             Scribe_Values.Look(ref blocker, "blocker");
-            if (actorIdentities == null)
-                actorIdentities = new List<string>();
-            if (organizationIdentities == null)
-                organizationIdentities = new List<string>();
-            if (operationIdentities == null)
-                operationIdentities = new List<string>();
-            if (knowledgeEvidence == null)
-                knowledgeEvidence = new List<string>();
-            if (materialEvidence == null)
-                materialEvidence = new List<string>();
-            if (historicalEvidence == null)
-                historicalEvidence = new List<string>();
         }
     }
 

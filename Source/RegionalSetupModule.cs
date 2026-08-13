@@ -340,7 +340,7 @@ namespace ColonistAwareness
             }
 
             CARegionalPlanUtility.EnsureRelationRows(plan);
-            // Faction structure is an input to local services and settlement
+            // Current order is an input to local services and settlement
             // programs. Resolve it before settlement state so automatic
             // regions follow the same dependency order as Starting Region.
             foreach (CARegionalFactionPlan group in plan.factions
@@ -467,11 +467,11 @@ namespace ColonistAwareness
         public bool authored;
 
         // Current authority shared between this faction's settlements.
-        // Generated from faction structure unless explicitly set.
+        // Generated from current order unless explicitly set.
         public byte settlementAuthority; // CASettlementAuthority
         public bool settlementAuthorityExplicit;
 
-        // Current faction structure.
+        // Current order: instituted state, never normative Political Beliefs.
         public List<CAAxisEntry> factionStructure = new List<CAAxisEntry>();
         // Explicit evidence-only state for a faction whose institutions are
         // intentionally unknown. Established generated factions otherwise
@@ -520,17 +520,6 @@ namespace ColonistAwareness
             Scribe_Deep.Look(ref culture, "culture");
             Scribe_Deep.Look(ref politicalBeliefs,
                 "politicalBeliefs");
-            if (factionStructure == null)
-                factionStructure = new List<CAAxisEntry>();
-            if (culture == null) culture = new CACulture();
-            if (politicalBeliefs == null)
-                politicalBeliefs = new CAPoliticalBeliefs();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-            {
-                settlementAuthority = (byte)
-                    CARegionalSettlements.NormalizeAuthority(
-                        (CASettlementAuthority)settlementAuthority);
-            }
             Scribe_Values.Look(ref federationKey, "federationKey", -1);
             Scribe_Values.Look(ref federationKind, "federationKind");
         }
@@ -737,16 +726,6 @@ namespace ColonistAwareness
                 "operationalFacts", LookMode.Deep);
             Scribe_Deep.Look(ref settlementProgram, "settlementProgram");
             Scribe_Deep.Look(ref localCulture, "localCulture");
-            if (populationGroups == null) populationGroups = new List<CASettlementPopulationGroup>();
-            if (provisionArrangements == null)
-                provisionArrangements = new List<CAProvisionArrangement>();
-            if (domesticProvisionDemands == null)
-                domesticProvisionDemands =
-                    new List<CADomesticProvisionDemand>();
-            if (operationalFacts == null)
-                operationalFacts = new List<CASettlementOperationalFact>();
-            if (settlementProgram == null)
-                settlementProgram = new CASettlementProgram();
             Scribe_Values.Look(ref realizedRole, "realizedRole", (byte)0);
             Scribe_Values.Look(ref persistent, "persistent", true);
             Scribe_Values.Look(ref customName, "customName");
@@ -791,8 +770,6 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref site, "site", IntVec3.Invalid);
             Scribe_Collections.Look(ref residentPawnIds,
                 "residentPawnIds", LookMode.Value);
-            if (residentPawnIds == null)
-                residentPawnIds = new List<int>();
         }
     }
 
@@ -815,9 +792,9 @@ namespace ColonistAwareness
 
     public sealed class CARegionalPlan : IExposable
     {
-        internal const int CurrentSchemaVersion = 10;
+        internal const int CurrentSchemaVersion = 11;
 
-        // Schema 10 is the current causal-closure epoch. Domestic provision remains
+        // Schema 11 is the B11 authoring-ontology epoch. Domestic provision remains
         // unresolved until factual pawn relations exist; capabilities are
         // evidence-backed read models; programs and provision arrangements
         // carry their direct operational causes.
@@ -935,8 +912,6 @@ namespace ColonistAwareness
                 "frontierHoldings", LookMode.Deep);
             Scribe_Deep.Look(ref worldPolicy, "worldPolicy");
             Scribe_Deep.Look(ref groundwater, "groundwater");
-            if (groundwater == null)
-                groundwater = new CAGroundwaterTuning();
             Scribe_Deep.Look(ref playerFounding, "playerFounding");
             Scribe_Values.Look(ref operatorAuthored, "operatorAuthored", false);
             Scribe_Values.Look(ref candidateId, "candidateId");
@@ -956,31 +931,6 @@ namespace ColonistAwareness
                 "settlementRealizationSourceHash", 0);
             Scribe_Collections.Look(ref consumedSources,
                 "consumedSources", LookMode.Value);
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-            {
-                if (consumedSources == null)
-                    consumedSources = new List<string>();
-                if (memberTileIds == null) memberTileIds = new List<int>();
-                if (footprintTileIds == null)
-                    footprintTileIds = new List<int>();
-                if (factions == null)
-                    factions = new List<CARegionalFactionPlan>();
-                if (settlements == null)
-                    settlements = new List<CARegionalSettlementPlan>();
-                if (relations == null)
-                    relations = new List<CARegionalRelationPlan>();
-                if (frontierHoldings == null)
-                    frontierHoldings = new List<CAFrontierHoldingPlan>();
-                if (playerFounding == null)
-                    playerFounding = new CAPlayerFoundingPlan();
-                foreach (CARegionalFactionPlan faction in factions.Where(
-                    item => item != null))
-                    faction.EnsureCultureAndPolitics(this);
-                foreach (CARegionalSettlementPlan settlement in settlements
-                    .Where(item => item != null))
-                    CACultureHistory.EnsureSettlementCulture(this,
-                        settlement);
-            }
         }
 
         internal PlanetTile BundleRoot
@@ -1287,13 +1237,20 @@ namespace ColonistAwareness
         internal static bool TryValidateStableIdentities(CARegionalPlan plan,
             out string failure)
         {
+            return TryValidateStableIdentities(plan,
+                CARegionalPlan.CurrentSchemaVersion, out failure);
+        }
+
+        internal static bool TryValidateStableIdentities(CARegionalPlan plan,
+            int expectedSchemaVersion, out string failure)
+        {
             failure = null;
             if (plan == null)
             {
                 failure = "regional plan is unavailable";
                 return false;
             }
-            if (plan.schemaVersion != CARegionalPlan.CurrentSchemaVersion)
+            if (plan.schemaVersion != expectedSchemaVersion)
             {
                 failure = "regional plan uses an unsupported development schema";
                 return false;
@@ -1506,10 +1463,29 @@ namespace ColonistAwareness
                 if (group == null) continue;
                 string cultureFailure = CACultureModel.SubstantiveFailure(
                     group.culture);
-                if (cultureFailure.NullOrEmpty()) continue;
-                failure = "Culture for " + FactionName(group)
-                    + " cannot be used: " + cultureFailure;
-                return false;
+                if (!cultureFailure.NullOrEmpty())
+                {
+                    failure = "Culture for " + FactionName(group)
+                        + " cannot be used: " + cultureFailure;
+                    return false;
+                }
+                string beliefFailure = CAPoliticalBeliefsModel
+                    .ValidationFailure(group.politicalBeliefs,
+                        allowExactLegacy: false);
+                if (!beliefFailure.NullOrEmpty())
+                {
+                    failure = "Political beliefs for " + FactionName(group)
+                        + " cannot be used: " + beliefFailure;
+                    return false;
+                }
+                string orderFailure = CAPoliticalBeliefsModel
+                    .ValidationFailure(group.factionStructure);
+                if (!orderFailure.NullOrEmpty())
+                {
+                    failure = "Current order for " + FactionName(group)
+                        + " cannot be used: " + orderFailure;
+                    return false;
+                }
             }
 
             if (plan.playerFounding?.ArrangementChosen == true)
@@ -1802,7 +1778,7 @@ namespace ColonistAwareness
         }
 
         // The faction that owns a settlement. Research, technology, relations,
-        // political beliefs, and faction structure are resolved on this object.
+        // political beliefs, and current order are resolved on this object.
         internal static string FactionName(CARegionalFactionPlan group)
         {
             if (group == null) return "no owner";
@@ -2368,7 +2344,8 @@ namespace ColonistAwareness
                 try
                 {
                     CARegionalPlan plan = Pending;
-                    int authoringDataEpoch = CAAuthoringDataEpoch.Current;
+                    int authoringDataEpoch =
+                        CAPendingAuthoringDataEpoch.Current;
                     Scribe_Values.Look(ref authoringDataEpoch,
                         "authoringDataEpoch", 0);
                     Scribe_Values.Look(ref identity, "worldIdentity");
@@ -2404,9 +2381,11 @@ namespace ColonistAwareness
                 {
                     Scribe_Values.Look(ref authoringDataEpoch,
                         "authoringDataEpoch", 0);
-                    if (CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch))
+                    if (CAPendingAuthoringDataEpoch.IsCurrent(
+                            authoringDataEpoch))
                         Scribe_Values.Look(ref fileIdentity, "worldIdentity");
-                    if (CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch)
+                    if (CAPendingAuthoringDataEpoch.IsCurrent(
+                            authoringDataEpoch)
                         && IdentityMatchesWorld(fileIdentity, identity))
                         Scribe_Deep.Look(ref plan, "plan");
                 }
@@ -2414,9 +2393,10 @@ namespace ColonistAwareness
                 {
                     Scribe.loader.FinalizeLoading();
                 }
-                if (!CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch))
+                if (!CAPendingAuthoringDataEpoch.IsCurrent(
+                        authoringDataEpoch))
                 {
-                    CAAuthoringDataEpoch.RecordDiscard(
+                    CAPendingAuthoringDataEpoch.RecordDiscard(
                         "pending starting region");
                     try
                     {
@@ -3825,7 +3805,7 @@ namespace ColonistAwareness
                         pair.relation);
                 }
 
-            // Draft culture, political beliefs, and faction structure become
+            // Draft Culture, political beliefs, and current order become
             // durable faction state. Native Ideo remains separate.
             foreach (CARegionalFactionPlan group in plan.factions)
             {

@@ -7,8 +7,10 @@ using Verse;
 
 namespace ColonistAwareness
 {
-    // Questions shared by political beliefs and faction structure. Each
-    // answer is keyed and independently authored or generated.
+    // Questions shared by political beliefs and current order. Each entry is
+    // one mechanism. Several mechanisms may coexist on an axis unless the
+    // axis declares a genuine absence invariant (for example no standing
+    // defense cannot coexist with a professional force).
     // Leadership, decisions, participation, dissent, ownership, economy, work,
     // support, membership, status, local order, defense, and war conduct remain
     // separate because they produce different game state.
@@ -154,9 +156,7 @@ namespace ColonistAwareness
                     new CAAxisOption("common", "shared ownership",
                         "productive property is held in common"),
                     new CAAxisOption("state", "faction ownership",
-                        "the faction owns farms and workshops"),
-                    new CAAxisOption("mixed", "mixed ownership",
-                        "private, cooperative, and shared ownership coexist")
+                        "the faction owns farms and workshops")
                 }
             },
             new CAAxisDef
@@ -171,9 +171,7 @@ namespace ColonistAwareness
                     new CAAxisOption("planned", "planned distribution",
                         "leaders allocate goods and work"),
                     new CAAxisOption("communal", "shared stores",
-                        "goods are pooled and shared"),
-                    new CAAxisOption("mixed", "mixed economy",
-                        "trade, planning, and shared stores coexist")
+                        "goods are pooled and shared")
                 }
             },
             new CAAxisDef
@@ -207,9 +205,7 @@ namespace ColonistAwareness
                     new CAAxisOption("communal", "shared stores",
                         "common stores supply basic needs"),
                     new CAAxisOption("charitable", "charity",
-                        "religious and voluntary groups provide support"),
-                    new CAAxisOption("mixed", "mixed support",
-                        "several systems operate together")
+                        "religious and voluntary groups provide support")
                 }
             },
             new CAAxisDef
@@ -308,61 +304,113 @@ namespace ColonistAwareness
 
         // ---- keyed state access ----------------------------------------
 
-        internal static CAAxisEntry EntryOf(List<CAAxisEntry> axes,
+        internal static List<CAAxisEntry> EntriesOf(List<CAAxisEntry> axes,
             string axisKey)
         {
-            if (axes == null) return null;
-            for (int i = 0; i < axes.Count; i++)
-                if (axes[i] != null && axes[i].axisKey == axisKey)
-                    return axes[i];
-            return null;
+            return (axes ?? new List<CAAxisEntry>())
+                .Where(entry => entry != null && entry.axisKey == axisKey
+                    && entry.source != (byte)CAAxisSource.Unset
+                    && !entry.optionKey.NullOrEmpty())
+                .GroupBy(entry => entry.optionKey, StringComparer.Ordinal)
+                .Select(group => group.OrderByDescending(entry =>
+                    entry.source).First()).ToList();
         }
 
         internal static CAAxisSource StateOf(List<CAAxisEntry> axes,
             string axisKey)
         {
-            CAAxisEntry entry = EntryOf(axes, axisKey);
-            return entry == null ? CAAxisSource.Unset
-                : (CAAxisSource)entry.source;
+            List<CAAxisEntry> entries = EntriesOf(axes, axisKey);
+            if (entries.Count == 0) return CAAxisSource.Unset;
+            return entries.Any(entry => entry.source
+                    == (byte)CAAxisSource.Authored)
+                ? CAAxisSource.Authored : CAAxisSource.Generated;
         }
 
-        internal static string KeyOf(List<CAAxisEntry> axes,
+        internal static IReadOnlyList<string> KeysOf(List<CAAxisEntry> axes,
             string axisKey)
         {
-            CAAxisEntry entry = EntryOf(axes, axisKey);
-            return entry == null
-                || entry.source == (byte)CAAxisSource.Unset
-                ? null : entry.optionKey;
-        }
-
-        internal static CAAxisOption OptionOf(List<CAAxisEntry> axes,
-            string axisKey)
-        {
-            string key = KeyOf(axes, axisKey);
-            if (key == null) return null;
             CAAxisDef def = AxisDef(axisKey);
-            return def?.Options.FirstOrDefault(o => o.Key == key);
+            var keys = new HashSet<string>(EntriesOf(axes, axisKey)
+                .Select(entry => entry.optionKey), StringComparer.Ordinal);
+            return def == null ? keys.OrderBy(value => value,
+                    StringComparer.Ordinal).ToList()
+                : def.Options.Where(option => keys.Contains(option.Key))
+                    .Select(option => option.Key).ToList();
+        }
+
+        internal static IReadOnlyList<CAAxisOption> OptionsOf(
+            List<CAAxisEntry> axes, string axisKey)
+        {
+            CAAxisDef def = AxisDef(axisKey);
+            if (def == null) return new List<CAAxisOption>();
+            var keys = new HashSet<string>(KeysOf(axes, axisKey),
+                StringComparer.Ordinal);
+            return def.Options.Where(option => keys.Contains(option.Key))
+                .ToList();
+        }
+
+        internal static bool HasOption(List<CAAxisEntry> axes,
+            string axisKey, string optionKey)
+        {
+            return EntriesOf(axes, axisKey).Any(entry =>
+                entry.optionKey == optionKey);
         }
 
         internal static void Set(List<CAAxisEntry> axes, string axisKey,
             string optionKey, CAAxisSource source)
         {
-            CAAxisEntry entry = EntryOf(axes, axisKey);
-            if (entry == null)
-            {
-                entry = new CAAxisEntry { axisKey = axisKey };
-                axes.Add(entry);
-            }
-            entry.optionKey = optionKey;
-            entry.source = (byte)source;
+            if (axes == null) return;
+            axes.RemoveAll(entry => entry != null
+                && entry.axisKey == axisKey);
+            Add(axes, axisKey, optionKey, source);
+        }
+
+        internal static void Add(List<CAAxisEntry> axes, string axisKey,
+            string optionKey, CAAxisSource source)
+        {
+            if (axes == null || AxisDef(axisKey)?.Options.All(option =>
+                    option.Key != optionKey) != false) return;
+            if (IsAbsenceOption(axisKey, optionKey))
+                axes.RemoveAll(entry => entry != null
+                    && entry.axisKey == axisKey);
+            else
+                axes.RemoveAll(entry => entry != null
+                    && entry.axisKey == axisKey
+                    && IsAbsenceOption(axisKey, entry.optionKey));
+            CAAxisEntry existing = axes.FirstOrDefault(entry => entry != null
+                && entry.axisKey == axisKey
+                && entry.optionKey == optionKey);
+            if (existing == null)
+                axes.Add(new CAAxisEntry
+                {
+                    axisKey = axisKey,
+                    optionKey = optionKey,
+                    source = (byte)source
+                });
+            else if (source == CAAxisSource.Authored)
+                existing.source = (byte)source;
+        }
+
+        internal static void Remove(List<CAAxisEntry> axes, string axisKey,
+            string optionKey)
+        {
+            axes?.RemoveAll(entry => entry != null
+                && entry.axisKey == axisKey
+                && entry.optionKey == optionKey);
+        }
+
+        private static bool IsAbsenceOption(string axisKey,
+            string optionKey)
+        {
+            return optionKey == "none" && (axisKey == Leadership
+                || axisKey == LocalOrder || axisKey == Defense);
         }
 
         internal static void Release(List<CAAxisEntry> axes,
             string axisKey)
         {
-            CAAxisEntry entry = EntryOf(axes, axisKey);
-            if (entry != null)
-                entry.source = (byte)CAAxisSource.Unset;
+            axes?.RemoveAll(entry => entry != null
+                && entry.axisKey == axisKey);
         }
 
         internal static int CountByState(List<CAAxisEntry> axes,
@@ -406,14 +454,16 @@ namespace ColonistAwareness
         {
             int specified = Axes.Length
                 - CountByState(group.factionStructure, CAAxisSource.Unset);
-            if (specified == 0) return "Faction structure not set";
+            if (specified == 0) return "Current order not set";
             var parts = new List<string>();
-            CAAxisOption leadership = OptionOf(group.factionStructure, Leadership);
-            CAAxisOption ownership = OptionOf(group.factionStructure, Ownership);
-            CAAxisOption defense = OptionOf(group.factionStructure, Defense);
-            if (leadership != null) parts.Add(leadership.Label);
-            if (ownership != null) parts.Add(ownership.Label);
-            if (defense != null) parts.Add(defense.Label);
+            foreach (string axisKey in new[] { Leadership, Ownership, Defense })
+            {
+                IReadOnlyList<CAAxisOption> mechanisms = OptionsOf(
+                    group.factionStructure, axisKey);
+                if (mechanisms.Count > 0)
+                    parts.Add(string.Join(" + ", mechanisms.Select(option =>
+                        option.Label)));
+            }
 
             CASettlementAuthority authority =
                 CARegionalSettlements.SettlementAuthorityOf(plan, group);
@@ -426,80 +476,8 @@ namespace ColonistAwareness
                 parts.Add((Axes.Length - specified) + " fields unset");
 
             string joined = string.Join(", ", parts.ToArray());
-            return joined.NullOrEmpty() ? "Faction structure not set"
+            return joined.NullOrEmpty() ? "Current order not set"
                 : joined.CapitalizeFirst();
-        }
-
-        // Profiles are transparent convenience copies, not political
-        // identities. Every profile answers every question explicitly and the
-        // copied world state records only authored axis answers.
-        internal sealed class PoliticalProfile
-        {
-            internal string Key;
-            internal string Name;
-            internal string Description;
-            internal Dictionary<string, string> Positions =
-                new Dictionary<string, string>();
-        }
-
-        internal static readonly PoliticalProfile[] PoliticalProfiles =
-        {
-            Profile("civic_council", "Civic council",
-                "An elected council, open participation, mixed property, public support, and protected dissent.",
-                "council", "majority", "universal", "plural", "mixed",
-                "mixed", "organized", "public", "open", "equal",
-                "constabulary", "militia", "quarter"),
-            Profile("worker_federation", "Worker federation",
-                "Delegated councils coordinate cooperative production, shared support, and protected dissent.",
-                "federated", "consensus", "members", "plural",
-                "cooperative", "communal", "organized", "communal",
-                "open", "equal", "watch", "militia", "combatants"),
-            Profile("command_state", "Command state",
-                "A central ruler directs faction property, required service, internal order, and professional defense.",
-                "single", "decree", "members", "orthodoxy", "state",
-                "planned", "duty", "public", "vetted", "earned",
-                "rulers", "professional", "strength"),
-            Profile("landed_houses", "Landed houses",
-                "Hereditary houses govern through custom, household labor, charity, levies, and inherited rank.",
-                "single", "custom", "heads", "customary", "private",
-                "market", "household", "charitable", "hereditary",
-                "hereditary", "rulers", "levy", "quarter"),
-            Profile("free_commons", "Free commons",
-                "Residents decide by consensus, share stores and property, and organize local defense without permanent rulers.",
-                "none", "consensus", "universal", "plural", "common",
-                "communal", "organized", "communal", "open", "equal",
-                "watch", "levy", "combatants")
-        };
-
-        private static PoliticalProfile Profile(string key, string name,
-            string description, string leadership, string decisions,
-            string participation, string dissent, string ownership,
-            string economy, string work, string support, string membership,
-            string status, string localOrder, string defense,
-            string warConduct)
-        {
-            return new PoliticalProfile
-            {
-                Key = key,
-                Name = name,
-                Description = description,
-                Positions = new Dictionary<string, string>
-                {
-                    { Leadership, leadership }, { Decisions, decisions },
-                    { Participation, participation }, { Dissent, dissent },
-                    { Ownership, ownership }, { Economy, economy },
-                    { Work, work }, { Support, support },
-                    { Membership, membership }, { Status, status },
-                    { LocalOrder, localOrder }, { Defense, defense },
-                    { WarConduct, warConduct }
-                }
-            };
-        }
-
-        internal static PoliticalProfile PoliticalProfileByKey(string key)
-        {
-            return key.NullOrEmpty() ? null : PoliticalProfiles.FirstOrDefault(
-                item => item.Key == key);
         }
 
         // Political-belief and current-structure differences are preserved.

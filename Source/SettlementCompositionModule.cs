@@ -480,7 +480,7 @@ namespace ColonistAwareness
                 // [rights axis] How this faction treats difference decides
                 // what happens to distinct-Ideoligion population groups at projection -
                 // the axis' first behavioral consumer.
-                string rights = CAFactionAxes.KeyOf(
+                IReadOnlyList<string> rights = CAFactionAxes.KeysOf(
                     CAFactionStateWorldComponent.Current
                         ?.Find(record.faction)?.factionStructure, CAFactionAxes.Dissent);
 
@@ -614,7 +614,7 @@ namespace ColonistAwareness
         private static void ProjectWithin(
             CARegionalSettlementRecord record, Map map,
             CASettlementPopulationGroup populationGroup, List<Pawn> residents,
-            ref int cursor, string rights, int projectedTotal)
+            ref int cursor, IReadOnlyList<string> rights, int projectedTotal)
         {
             int count = Mathf.RoundToInt(projectedTotal
                 * populationGroup.share / 100f);
@@ -627,7 +627,8 @@ namespace ColonistAwareness
                     && populationGroup.ideoligionFactionKey < 0 ? null
                 : FactionForGroup(map, ideoligionFactionKey)?.ideos?.PrimaryIdeo;
             Ideo dominant = record.faction.ideos?.PrimaryIdeo;
-            bool suppress = rights == "orthodoxy"
+            bool suppress = rights.Contains("orthodoxy")
+                && !rights.Contains("plural")
                 && !populationGroup.ideoligionProtected
                 && target != null && dominant != null
                 && target != dominant;
@@ -657,10 +658,11 @@ namespace ColonistAwareness
                     && pawn.Ideo != target)
                 {
                     pawn.ideo.SetIdeo(target);
-                    if (rights == null || rights == "plural"
-                        || (rights == "customary"
+                    if (rights == null || rights.Count == 0
+                        || rights.Contains("plural")
+                        || (rights.Contains("customary")
                             && populationGroup.ideoligionProtected)
-                        || (rights == "orthodoxy"
+                        || (rights.Contains("orthodoxy")
                             && populationGroup.ideoligionProtected))
                         RegisterMinorIdeo(record.faction, target);
                 }
@@ -745,6 +747,9 @@ namespace ColonistAwareness
         internal static List<Pawn> Residents(CARegionalSettlementRecord record,
             Map map)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.PopulationResidentLookup))
+            {
             var result = new List<Pawn>();
             if (record == null || map?.mapPawns == null) return result;
             CASettlementResidenceState.Normalize(record);
@@ -762,7 +767,14 @@ namespace ColonistAwareness
                 if (assigned.Contains(pawn.thingIDNumber))
                     result.Add(pawn);
             }
-            return result.OrderBy(pawn => pawn.thingIDNumber).ToList();
+            List<Pawn> ordered = result.OrderBy(pawn =>
+                pawn.thingIDNumber).ToList();
+            CAModuleProfiler.Observe(
+                CAModuleProfileKey.PopulationResidentLookup,
+                objectsExamined: map.mapPawns.AllPawnsSpawned.Count,
+                candidatesAccepted: ordered.Count);
+            return ordered;
+            }
         }
 
         internal static List<Pawn> ResidentsInPopulationGroup(

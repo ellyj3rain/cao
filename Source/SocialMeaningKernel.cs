@@ -64,6 +64,57 @@ namespace ColonistAwareness
         public const string InheritedRank = "ca.status.inherited_rank";
         public const string HumaneCustody = "ca.custody.humane_treatment";
         public const string QuarterGiven = "ca.war.quarter_given";
+        public const string MedicalCare = "ca.care.medical_care";
+        public const string CustodyPunishment = "ca.custody.punishment";
+        public const string VoluntaryTrade = "ca.exchange.voluntary_trade";
+        public const string MealPreparation = "ca.food.meal_preparation";
+        public const string KnowledgeTransmission =
+            "ca.knowledge.knowledge_transmission";
+        public const string LongRangeCommunication =
+            "ca.knowledge.long_range_communication";
+        public const string FactionMembership =
+            "ca.membership.faction_membership";
+        public const string HouseholdMembership =
+            "ca.membership.household_membership";
+        public const string ArtAndRemembrance =
+            "ca.memory.art_and_remembrance";
+        public const string DelegatedAuthority =
+            "ca.politics.delegated_authority";
+        public const string OfficeGovernance =
+            "ca.politics.office_governance";
+        public const string AnimalTending = "ca.production.animal_tending";
+        public const string Cultivation = "ca.production.cultivation";
+        public const string GeneralCraft = "ca.production.general_craft";
+        public const string RepairAndRebuilding =
+            "ca.production.repair_rebuilding";
+        public const string SpecializedCraft =
+            "ca.production.specialized_craft";
+        public const string CommonOwnership =
+            "ca.property.common_ownership";
+        public const string Confiscation = "ca.property.confiscation";
+        public const string PrivateOwnership =
+            "ca.property.private_ownership";
+        public const string Taxation = "ca.property.taxation";
+        public const string SharedRecreation =
+            "ca.recreation.shared_recreation";
+        public const string VoluntaryAgreement =
+            "ca.relations.voluntary_agreement";
+        public const string ReligiousObservance =
+            "ca.ritual.religious_observance";
+        public const string SecurityService =
+            "ca.security.security_service";
+        public const string MaintainedHousing =
+            "ca.shelter.maintained_housing";
+        public const string PublicWorks = "ca.space.public_works";
+        public const string KinSuccession = "ca.status.kin_succession";
+        public const string OfficeHolding = "ca.status.office_holding";
+        public const string StoredReserves = "ca.stores.stored_reserves";
+        public const string AuthorityProvision =
+            "ca.support.authority_provision";
+        public const string HouseholdProvision =
+            "ca.support.household_provision";
+        public const string RouteUse = "ca.transport.route_use";
+        public const string CombatViolence = "ca.war.combat_violence";
 
         static CASocialSubjectRegistry()
         {
@@ -153,6 +204,210 @@ namespace ColonistAwareness
                 "combatants, witnesses, related groups, and informed residents",
                 "Culture may affect approval and prestige without controlling combat.",
                 "ordinary social interpretation", "political conflict");
+
+            // Production vocabulary follows concrete facts already owned by
+            // programs, organizations, relations, residence, and the act
+            // ledger. These are possible objects of cultural interpretation;
+            // registering one never asserts that the fact exists.
+            RegisterMechanic(MedicalCare, "Medical care",
+                "People provide represented treatment to sick or injured patients.",
+                "CASettlementOperationalFact medicine and live care work",
+                "a supported medical program and a caregiver treat a patient",
+                "Culture may shape the standing of care without supplying medicine or skill.",
+                "settlement programs", "ordinary social interpretation");
+            RegisterMechanic(CustodyPunishment, "Punishment in custody",
+                "Custodians impose represented punishment on a captive.",
+                "CAActRecord coercion and custody outcomes",
+                "a known captive is punished by a represented custodian",
+                "Culture may shape approval and stigma; it grants no custody authority.",
+                "ordinary social interpretation", "political conflict");
+            RegisterMechanic(VoluntaryTrade, "Voluntary trade",
+                "People exchange represented goods through a voluntary bargain.",
+                "trade programs, agreements, and exchange acts",
+                "named parties exchange goods under an active bargain",
+                "Culture may rank voluntary exchange without creating goods or a route.",
+                "settlement development", "ordinary social interpretation");
+            RegisterMechanic(MealPreparation, "Meal preparation",
+                "Cooks prepare represented food for a known population.",
+                "CASettlementOperationalFact food-preparation and live cooking",
+                "a supported kitchen operator prepares food for residents",
+                "Culture may shape participation and prestige without creating food.",
+                "settlement programs", "ordinary social interpretation");
+            RegisterMechanic(KnowledgeTransmission, "Knowledge transmission",
+                "People teach or preserve represented knowledge for others.",
+                "research milestones, instruction, and knowledge records",
+                "knowledge passes between represented actors or persists in an institution",
+                "Culture may value transmission without inventing knowledge.",
+                "knowledge development", "institutional development");
+            RegisterMechanic(LongRangeCommunication,
+                "Long-range communication",
+                "Operators exchange represented information over distance.",
+                "communications programs and known counterparties",
+                "a supported communications operator reaches a named counterparty",
+                "Culture may interpret outside communication without creating contact.",
+                "relations", "settlement development");
+            RegisterMechanic(FactionMembership, "Faction membership",
+                "A person belongs to a represented faction.",
+                "native faction membership and CA population affiliation",
+                "a represented person or population group has a faction identity",
+                "Culture may shape belonging without assigning membership.",
+                "population composition", "political development");
+            RegisterMechanic(HouseholdMembership, "Household membership",
+                "People belong to a represented domestic unit.",
+                "CADomesticUnit membership and residence assignments",
+                "partner, kin, residence, or explicit co-residence evidence links members",
+                "Culture may interpret household life without fabricating kinship or residence.",
+                "domestic provision", "ordinary social interpretation");
+            RegisterMechanic(ArtAndRemembrance, "Art and remembrance",
+                "People create, preserve, or gather around represented works of memory.",
+                "art-memory programs, assets, and recorded events",
+                "a supported maker or keeper maintains a work or memorial",
+                "Culture may shape prestige and salience without creating the work.",
+                "settlement development", "cultural expression");
+            RegisterMechanic(DelegatedAuthority, "Delegated authority",
+                "An officeholder grants limited represented authority to another actor.",
+                "CAOrganization offices, groups, and decision records",
+                "a current office or decision records a delegation",
+                "Culture may shape legitimacy without creating jurisdiction.",
+                "political development", "institutional legitimacy");
+            RegisterMechanic(OfficeGovernance, "Government by office",
+                "Current officeholders administer represented decisions and policies.",
+                "CAOrganization offices, policies, and decision history",
+                "a current officeholder acts within represented jurisdiction",
+                "Culture may shape legitimacy without creating an office.",
+                "political development", "institutional legitimacy");
+            RegisterMechanic(AnimalTending, "Animal tending",
+                "Handlers repeatedly care for represented domesticated animals.",
+                "animal programs, assigned workers, and live animal care",
+                "a supported operator and handler care for represented animals",
+                "Culture may rank the work without creating animals or skill.",
+                "settlement programs", "ordinary social interpretation");
+            RegisterMechanic(Cultivation, "Cultivation",
+                "Workers plant, tend, and harvest represented land.",
+                "agriculture programs, growing zones, and live work",
+                "a supported agricultural operator works accessible cultivable ground",
+                "Culture may rank cultivation without creating land, seed, or labor.",
+                "settlement programs", "ordinary social interpretation");
+            RegisterMechanic(GeneralCraft, "General craft",
+                "Workers make represented ordinary tools and goods.",
+                "production programs, workstations, materials, and completed work",
+                "a supported production operator completes general craft work",
+                "Culture may rank craft without creating material or skill.",
+                "settlement programs", "ordinary social interpretation");
+            RegisterMechanic(RepairAndRebuilding, "Repair and rebuilding",
+                "Workers restore represented damaged assets and places.",
+                "repair records, program assets, and rebuilding completion",
+                "assigned workers restore a damaged represented asset",
+                "Culture may rank rebuilding without creating labor or material.",
+                "settlement programs", "cultural history");
+            RegisterMechanic(SpecializedCraft, "Specialized craft",
+                "Skilled workers make represented specialized goods.",
+                "specialized-industry programs, assets, knowledge, and completed work",
+                "a supported specialist completes represented production",
+                "Culture may rank specialization without creating knowledge or material.",
+                "settlement programs", "ordinary social interpretation");
+            RegisterMechanic(CommonOwnership, "Common ownership",
+                "Represented productive property is held in common.",
+                "property claims, organizational rules, and operational funding",
+                "a named group currently holds a represented asset in common",
+                "Culture may legitimize the arrangement without creating title.",
+                "property acts", "institutional legitimacy");
+            RegisterMechanic(Confiscation, "Confiscation",
+                "Property is taken from a represented holder by force or authority.",
+                "CAActRecord confiscation and property claims",
+                "a named actor takes a represented asset without voluntary exchange",
+                "Culture may shape response without authorizing the taking.",
+                "ordinary social interpretation", "political conflict");
+            RegisterMechanic(PrivateOwnership, "Private ownership",
+                "A represented person or household holds productive property.",
+                "property claims, program assets, and organizational rules",
+                "a named private holder currently controls a represented asset",
+                "Culture may confer legitimacy without creating title.",
+                "property acts", "institutional legitimacy");
+            RegisterMechanic(Taxation, "Tax collection",
+                "A represented authority collects an assessed contribution.",
+                "CAActRecord taxation and CAOrganization treasury",
+                "a named authority collects from a named liable party",
+                "Culture may shape legitimacy without creating authority or debt.",
+                "ordinary social interpretation", "political conflict");
+            RegisterMechanic(SharedRecreation, "Shared recreation",
+                "Residents take recreation together in represented settings.",
+                "recreation programs, assets, and live participation",
+                "a supported activity occurs with represented participants",
+                "Culture may shape access and prestige without creating facilities.",
+                "settlement development", "ordinary social interpretation");
+            RegisterMechanic(VoluntaryAgreement, "Voluntary agreements",
+                "Represented parties accept and maintain reciprocal terms.",
+                "CAAgreementRecord parties, terms, contributions, and state",
+                "an active non-broken agreement binds named parties",
+                "Culture may shape legitimacy without inventing consent or terms.",
+                "relations", "political development");
+            RegisterMechanic(ReligiousObservance, "Religious observance",
+                "People perform represented observance under a native Ideoligion.",
+                "native Ideoligion precepts, rituals, roles, and religion programs",
+                "a supported observance occurs among represented believers",
+                "Culture may shape expression while Ideoligion owns doctrine.",
+                "native Ideoligion", "cultural expression");
+            RegisterMechanic(SecurityService, "Security service",
+                "Assigned residents perform represented watch or guard duty.",
+                "security practices, defense programs, and guard assignments",
+                "an eligible armed resident performs a current assignment",
+                "Culture may rank service without assigning guards or command.",
+                "security runtime", "ordinary social interpretation");
+            RegisterMechanic(MaintainedHousing, "Maintained housing",
+                "Residents maintain represented inhabited shelter.",
+                "housing programs, residence assignments, and repair work",
+                "a supported operator maintains occupied accessible housing",
+                "Culture may value upkeep without creating shelter or labor.",
+                "settlement programs", "domestic life");
+            RegisterMechanic(PublicWorks, "Public works",
+                "A represented operator builds or maintains shared infrastructure.",
+                "roads, facilities, program assets, and public-work records",
+                "assigned workers maintain a represented shared asset",
+                "Culture may rank the work without creating authority, labor, or material.",
+                "settlement development", "cultural history");
+            RegisterMechanic(KinSuccession, "Kin succession",
+                "A represented office or rank passes through family descent.",
+                "office succession, kin relations, and status assignments",
+                "a current succession record names kinship as its basis",
+                "Culture may confer prestige without creating kinship or office.",
+                "political development", "ordinary social interpretation");
+            RegisterMechanic(OfficeHolding, "Office holding",
+                "A represented person occupies a current office.",
+                "CAOrganization office records and native role assignment",
+                "a named actor currently holds a represented office",
+                "Culture may shape prestige without creating office or authority.",
+                "political development", "institutional legitimacy");
+            RegisterMechanic(StoredReserves, "Stored reserves",
+                "People keep represented goods for later need.",
+                "storage programs, stock records, and accessible assets",
+                "a supported storage operator maintains reachable stock",
+                "Culture may shape legitimacy and priority without creating goods.",
+                "settlement programs", "provision runtime");
+            RegisterMechanic(AuthorityProvision, "Provision by authority",
+                "A represented governing operator supplies necessities.",
+                "authority provision arrangements, stock, nodes, and access",
+                "a current authority operator distributes reachable stock to an eligible population",
+                "Culture may shape legitimacy without creating stock or authority.",
+                "provision runtime", "institutional legitimacy");
+            RegisterMechanic(HouseholdProvision, "Household provision",
+                "A represented domestic unit supplies necessities to its members.",
+                "domestic provision arrangements, membership, stock, and access",
+                "a current domestic unit distributes reachable stock to its factual members",
+                "Culture may shape meaning without creating a household or supplies.",
+                "provision runtime", "domestic life");
+            RegisterMechanic(RouteUse, "Route use",
+                "People move represented goods or travelers along known routes.",
+                "transport programs, roads, access, and completed journeys",
+                "a supported operator uses an accessible represented route",
+                "Culture may rank travel without creating a route or transport.",
+                "settlement development", "relations");
+            RegisterMechanic(CombatViolence, "Combat violence",
+                "A represented actor uses violence against another in combat.",
+                "CAActRecord violence and native combat outcomes",
+                "a named attacker harms a named target in represented combat",
+                "Culture may shape interpretation without selecting targets or granting force.",
+                "ordinary social interpretation", "political conflict");
         }
 
         public static bool ValidKey(string key)
@@ -223,6 +478,18 @@ namespace ColonistAwareness
                 CulturalEffect = culturalEffect,
                 Consumers = consumers.ToList()
             }, out ignored);
+        }
+
+        private static void RegisterMechanic(string key, string label,
+            string description, string authoritativeSource,
+            string factualCondition, string culturalEffect,
+            params string[] consumers)
+        {
+            string domain = key.Split('.')[1].Replace('_', ' ');
+            RegisterBuiltIn(key, label, description, domain,
+                authoritativeSource, factualCondition,
+                "represented actors and informed populations",
+                culturalEffect, consumers);
         }
     }
 

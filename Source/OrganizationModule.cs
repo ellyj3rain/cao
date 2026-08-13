@@ -63,8 +63,6 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref name, "name");
             Scribe_Collections.Look(ref memberIds, "memberIds", LookMode.Value);
             Scribe_Values.Look(ref standing, "standing", 0f);
-            if (Scribe.mode == LoadSaveMode.PostLoadInit && memberIds == null)
-                memberIds = new List<int>();
         }
     }
 
@@ -109,9 +107,6 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref programSignature, "programSignature");
             Scribe_Collections.Look(ref guardPawnIds, "guardPawnIds",
                 LookMode.Value);
-            if (Scribe.mode == LoadSaveMode.PostLoadInit
-                && guardPawnIds == null)
-                guardPawnIds = new List<int>();
         }
     }
 
@@ -1092,26 +1087,6 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref affiliatedWithPlayer,
                 "affiliatedWithPlayer", false);
             Scribe_Values.Look(ref sunsetTick, "sunsetTick", -1);
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-            {
-                if (offices == null) offices = new List<CAOffice>();
-                if (groups == null)
-                    groups = new List<CAOrganizationGroup>();
-                if (customs == null)
-                    customs = new List<CAOrganizationCustom>();
-                if (securityPractices == null)
-                    securityPractices = new List<CASecurityPractice>();
-                if (claims == null) claims = new List<CAClaim>();
-                if (policies == null) policies = new List<CAPolicyRecord>();
-                if (decisionHistory == null)
-                    decisionHistory = new List<CADecisionEntry>();
-                if (memberPawnIds == null)
-                    memberPawnIds = new List<int>();
-                if (openBeliefConflicts == null)
-                    openBeliefConflicts = new List<string>();
-                if (beliefConflictStartTicks == null)
-                    beliefConflictStartTicks = new List<int>();
-            }
         }
     }
 
@@ -1280,8 +1255,14 @@ namespace ColonistAwareness
 
     public sealed class CAOrganizationWorldComponent : WorldComponent
     {
-        private int authoringDataEpoch = CAAuthoringDataEpoch.Current;
+        private int campaignSchemaVersion =
+            CACampaignCompatibilityKernel.CurrentBoundaryVersion;
+        private int legacyAuthoringDataEpoch =
+            CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private List<CAOrganization> organizations = new List<CAOrganization>();
+        // Runtime-only owner index. The persisted list remains the single
+        // durable representation and this lookup is rebuilt after load.
+        private Dictionary<string, CAOrganization> organizationIndex;
         private List<CAFrontierMapPlan> frontierMapPlans =
             new List<CAFrontierMapPlan>();
         private List<CAAgreement> agreements = new List<CAAgreement>();
@@ -1586,13 +1567,12 @@ namespace ColonistAwareness
 
         public CAOrganization EnsureColony()
         {
-            for (int i = 0; i < organizations.Count; i++)
-                if (organizations[i].organizationKey == "player")
-                {
-                    organizations[i].organizationKind =
-                        CAOrganizationKind.Colony;
-                    return organizations[i];
-                }
+            CAOrganization existing = ByKey("player");
+            if (existing != null)
+            {
+                existing.organizationKind = CAOrganizationKind.Colony;
+                return existing;
+            }
             CAOrganization org = new CAOrganization
             {
                 organizationKey = "player",
@@ -1605,16 +1585,60 @@ namespace ColonistAwareness
             org.Record("organization record established - inherited from"
                 + " the colony's standing structure");
             organizations.Add(org);
+            AddToOrganizationIndex(org);
             CAOrganizationInheritance.SyncColony(org);
             return org;
         }
 
         public CAOrganization ByKey(string key)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.OrganizationLookup))
+            {
+                if (key.NullOrEmpty())
+                {
+                    CAModuleProfiler.Observe(
+                        CAModuleProfileKey.OrganizationLookup, 0, 1);
+                    return null;
+                }
+                EnsureOrganizationIndex();
+                bool found = organizationIndex.TryGetValue(key,
+                    out CAOrganization organization);
+                CAModuleProfiler.Observe(
+                    CAModuleProfileKey.OrganizationLookup,
+                    found ? 1 : 0, found ? 0 : 1);
+                return organization;
+            }
+        }
+
+        private void EnsureOrganizationIndex()
+        {
+            if (organizationIndex != null) return;
+            organizationIndex = new Dictionary<string, CAOrganization>(
+                StringComparer.Ordinal);
+            if (organizations == null) return;
             for (int i = 0; i < organizations.Count; i++)
-                if (organizations[i].organizationKey == key)
-                    return organizations[i];
-            return null;
+            {
+                CAOrganization organization = organizations[i];
+                if (organization?.organizationKey.NullOrEmpty() != false)
+                    continue;
+                if (!organizationIndex.ContainsKey(
+                        organization.organizationKey))
+                    organizationIndex.Add(organization.organizationKey,
+                        organization);
+            }
+        }
+
+        private void AddToOrganizationIndex(CAOrganization organization)
+        {
+            if (organization?.organizationKey.NullOrEmpty() != false) return;
+            EnsureOrganizationIndex();
+            organizationIndex[organization.organizationKey] = organization;
+        }
+
+        private void InvalidateOrganizationIndex()
+        {
+            organizationIndex = null;
         }
 
         public CAOrganization EnsureFor(string key, string name,
@@ -1634,6 +1658,7 @@ namespace ColonistAwareness
                 standingNote = standingNote
             };
             organizations.Add(org);
+            AddToOrganizationIndex(org);
             return org;
         }
 
@@ -1643,14 +1668,20 @@ namespace ColonistAwareness
             int now = Find.TickManager.TicksGame;
             if (now - lastSyncTick < 2500) return;
             lastSyncTick = now;
-            CAOrganization colony = EnsureColony();
-            CAOrganizationInheritance.SyncColony(colony);
-            CAOrganizationInheritance.ColonyPulse(colony);
-            CAOrganizationInheritance.SyncRegionalSettlements(this);
-            CAFrontier.EnsureHoldings(this);
-            ProcessAgreementsAndFederations(now);
-            TickGatherings(now);
-            PulsePoliticalBeliefsUnderBudget(now);
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.FullWorldScan))
+            {
+                CAModuleProfiler.Observe(CAModuleProfileKey.FullWorldScan,
+                    organizations?.Count ?? 0, 0);
+                CAOrganization colony = EnsureColony();
+                CAOrganizationInheritance.SyncColony(colony);
+                CAOrganizationInheritance.ColonyPulse(colony);
+                CAOrganizationInheritance.SyncRegionalSettlements(this);
+                CAFrontier.EnsureHoldings(this);
+                ProcessAgreementsAndFederations(now);
+                TickGatherings(now);
+                PulsePoliticalBeliefsUnderBudget(now);
+            }
         }
 
         // Player-facing and loaded organizations update every world pulse.
@@ -1735,6 +1766,7 @@ namespace ColonistAwareness
                                 + " at sunset - " + fed.name);
                     }
                     organizations.RemoveAt(i);
+                    InvalidateOrganizationIndex();
                     continue;
                 }
                 for (int m = 0; m < federationMembers.Count; m++)
@@ -2290,20 +2322,26 @@ namespace ColonistAwareness
         // carries the given prefix, so a receipt cannot touch real records.
         internal int RemoveOrganizationsWithPrefix(string prefix)
         {
-            return prefix.NullOrEmpty() ? 0
+            int removed = prefix.NullOrEmpty() ? 0
                 : organizations.RemoveAll(o => o != null
                     && o.organizationKey != null
                     && o.organizationKey.StartsWith(prefix));
+            if (removed > 0) InvalidateOrganizationIndex();
+            return removed;
         }
 
         public override void ExposeData()
         {
             base.ExposeData();
-            Scribe_Values.Look(ref authoringDataEpoch,
-                "CA_authoringDataEpoch", 0);
-            bool current = Scribe.mode == LoadSaveMode.Saving
-                || CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch);
-            if (current)
+            Scribe_Values.Look(ref campaignSchemaVersion,
+                "CA_organizationSchemaVersion", 0);
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+                Scribe_Values.Look(ref legacyAuthoringDataEpoch,
+                    "CA_authoringDataEpoch", 0);
+            bool readable = CACampaignCompatibility.ShouldReadLiveState(
+                "world.organization", campaignSchemaVersion,
+                legacyAuthoringDataEpoch);
+            if (readable)
             {
                 Scribe_Values.Look(ref arrivalLoud, "CA_arrivalLoud", false);
                 Scribe_Values.Look(ref arrivalTick, "CA_arrivalTick", -1);
@@ -2332,40 +2370,86 @@ namespace ColonistAwareness
                 Scribe_Values.Look(ref offMapActivityCursor,
                     "CA_offMapActivityCursor", 0);
             }
-            if (Scribe.mode == LoadSaveMode.PostLoadInit && !current)
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && readable)
             {
-                organizations = new List<CAOrganization>();
-                frontierMapPlans = new List<CAFrontierMapPlan>();
-                agreements = new List<CAAgreement>();
-                breachCases = new List<CABreachCase>();
-                hostileActs = new List<CAHostileActRecord>();
-                offers = new List<CAAgreementOffer>();
-                pendingGatherings = new List<CAPendingGathering>();
-                nextAgreementId = 1;
-                nextCaseId = 1;
-                nextOfferId = 1;
-                lastInitiativeTick = -999999;
-                offMapActivityCursor = 0;
-                arrivalLoud = false;
-                arrivalTick = -1;
-                arrivalCell = IntVec3.Invalid;
-                authoringDataEpoch = CAAuthoringDataEpoch.Current;
-                CAAuthoringDataEpoch.RecordDiscard("organization state");
-            }
-            if (organizations == null)
-                organizations = new List<CAOrganization>();
-            if (frontierMapPlans == null)
-                frontierMapPlans = new List<CAFrontierMapPlan>();
-            if (agreements == null)
-                agreements = new List<CAAgreement>();
-            if (breachCases == null) breachCases = new List<CABreachCase>();
-            if (hostileActs == null)
-                hostileActs = new List<CAHostileActRecord>();
-            if (offers == null) offers = new List<CAAgreementOffer>();
-            if (pendingGatherings == null)
-                pendingGatherings = new List<CAPendingGathering>();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit && current)
+                CACampaignCompatibility.CompleteOwnerLoad(
+                    "world.organization", ref campaignSchemaVersion,
+                    legacyAuthoringDataEpoch, ValidateCampaignState);
+                InvalidateOrganizationIndex();
+                EnsureOrganizationIndex();
                 CAMembershipValidation.Run(organizations);
+            }
+        }
+
+        private string ValidateCampaignState()
+        {
+            if (organizations == null || frontierMapPlans == null
+                || agreements == null || breachCases == null
+                || hostileActs == null || offers == null
+                || pendingGatherings == null)
+                return "organization owner collections are missing";
+            var organizationKeys = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < organizations.Count; i++)
+            {
+                CAOrganization organization = organizations[i];
+                if (organization == null)
+                    return "organization " + i + " is null";
+                if (organization.organizationKey.NullOrEmpty()
+                    || !organizationKeys.Add(organization.organizationKey))
+                    return "organization key "
+                        + (organization.organizationKey ?? "<missing>")
+                        + " is missing or duplicate";
+                if (organization.offices == null
+                    || organization.groups == null
+                    || organization.customs == null
+                    || organization.securityPractices == null
+                    || organization.claims == null
+                    || organization.policies == null
+                    || organization.decisionHistory == null
+                    || organization.memberPawnIds == null
+                    || organization.openBeliefConflicts == null
+                    || organization.beliefConflictStartTicks == null)
+                    return "organization " + organization.organizationKey
+                        + " has missing owned collections";
+                if (organization.offices.Any(item => item == null)
+                    || organization.groups.Any(item => item == null)
+                    || organization.customs.Any(item => item == null)
+                    || organization.securityPractices.Any(item => item == null)
+                    || organization.claims.Any(item => item == null)
+                    || organization.policies.Any(item => item == null)
+                    || organization.decisionHistory.Any(item => item == null))
+                    return "organization " + organization.organizationKey
+                        + " has a null owned record";
+                if (organization.groups.Any(group => group.memberIds == null))
+                    return "organization " + organization.organizationKey
+                        + " has a group without members state";
+                if (organization.securityPractices.Any(practice =>
+                        practice.guardPawnIds == null))
+                    return "organization " + organization.organizationKey
+                        + " has a security practice without guard state";
+            }
+            var agreementIds = new HashSet<int>();
+            int maxAgreementId = 0;
+            for (int i = 0; i < agreements.Count; i++)
+            {
+                CAAgreement agreement = agreements[i];
+                if (agreement == null)
+                    return "agreement " + i + " is null";
+                if (agreement.id <= 0 || !agreementIds.Add(agreement.id))
+                    return "agreement id " + agreement.id
+                        + " is invalid or duplicate";
+                maxAgreementId = Math.Max(maxAgreementId, agreement.id);
+            }
+            if (nextAgreementId <= maxAgreementId)
+                return "next agreement id " + nextAgreementId
+                    + " does not follow persisted id " + maxAgreementId;
+            if (frontierMapPlans.Any(item => item == null)
+                || breachCases.Any(item => item == null)
+                || hostileActs.Any(item => item == null)
+                || offers.Any(item => item == null)
+                || pendingGatherings.Any(item => item == null))
+                return "an organization-owned record is null";
+            return null;
         }
     }
 
@@ -2590,6 +2674,7 @@ namespace ColonistAwareness
                     org.Record("office changed hands - " + held.name + ": "
                         + (held.holderLabel ?? "vacant") + " -> "
                         + current.holderLabel);
+                    held.lastHolderId = held.holderId;
                     held.holderId = current.holderId;
                     authorityChanged = true;
                 }
@@ -4772,8 +4857,8 @@ namespace ColonistAwareness
                 "Payments travel by drop pod, caravan, or pack train. Travel "
                 + "time and interception depend on the delivery method and "
                 + "conditions at the destination." },
-            new[] { "Faction structure",
-                "Political beliefs and current faction structure are separate. "
+            new[] { "Current order",
+                "Political beliefs and current order are separate. "
                 + "The fields are leadership, decisions, participation, "
                 + "dissent, ownership, economy, work, support, membership, "
                 + "status, local order, defense, and war conduct. Settlement "

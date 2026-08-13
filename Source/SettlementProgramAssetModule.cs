@@ -82,10 +82,7 @@ namespace ColonistAwareness
                 source = "materialized:program:" + entry.signature
             };
             record.programAssets.Add(receipt);
-            if (entry.placedThingIds == null)
-                entry.placedThingIds = new List<string>();
-            if (!entry.placedThingIds.Contains(thing.ThingID))
-                entry.placedThingIds.Add(thing.ThingID);
+            SyncEntryView(record, entry);
             return receipt;
         }
 
@@ -117,10 +114,7 @@ namespace ColonistAwareness
                 source = "materialized:program:" + entry.signature
             };
             record.programAssets.Add(receipt);
-            if (entry.placedThingIds == null)
-                entry.placedThingIds = new List<string>();
-            if (!entry.placedThingIds.Contains(id))
-                entry.placedThingIds.Add(id);
+            SyncEntryView(record, entry);
             return receipt;
         }
 
@@ -144,6 +138,37 @@ namespace ColonistAwareness
                 .FirstOrDefault(item => item != null
                     && item.assetKind == "thing"
                     && item.thingId == thingId);
+        }
+
+        internal static IReadOnlyList<string> AssetIds(
+            CARegionalSettlementRecord record,
+            CASettlementProgramEntry entry)
+        {
+            return ReceiptsFor(record, entry)
+                .Select(item => item.thingId)
+                .Where(value => !value.NullOrEmpty())
+                .Distinct(StringComparer.Ordinal).ToList();
+        }
+
+        internal static void SyncDerivedViews(
+            CARegionalSettlementRecord record)
+        {
+            if (record?.settlementProgram?.entries == null) return;
+            foreach (CASettlementProgramEntry entry in
+                record.settlementProgram.entries.Where(item => item != null))
+                SyncEntryView(record, entry);
+        }
+
+        internal static void RollbackToCount(
+            CARegionalSettlementRecord record, int receiptCount)
+        {
+            Ensure(record);
+            int keep = Math.Max(0, Math.Min(receiptCount,
+                record.programAssets.Count));
+            if (record.programAssets.Count > keep)
+                record.programAssets.RemoveRange(keep,
+                    record.programAssets.Count - keep);
+            SyncDerivedViews(record);
         }
 
         internal static Thing LiveThing(
@@ -202,28 +227,18 @@ namespace ColonistAwareness
                 || receipt == null || rebuilt == null)
                 throw new ArgumentException(
                     "Rebuilding requires the exact saved program asset receipt.");
-            string previous = receipt.thingId;
+            CAOrganizationRelationsWorldComponent ledger =
+                CAOrganizationRelationsWorldComponent.Current;
+            if (ledger != null && !ledger.TryRebindProgramAsset(
+                    entry.signature, receipt.assetRole, rebuilt,
+                    out string holdingFailure))
+                throw new InvalidOperationException(holdingFailure);
             receipt.thingId = rebuilt.ThingID;
             receipt.defName = rebuilt.def?.defName;
             receipt.stuffDefName = rebuilt.Stuff?.defName;
             receipt.mapId = map.uniqueID;
             receipt.cell = rebuilt.Position;
-            int index = entry.placedThingIds?.IndexOf(previous) ?? -1;
-            if (index >= 0) entry.placedThingIds[index] = rebuilt.ThingID;
-            else if (entry.placedThingIds != null
-                && !entry.placedThingIds.Contains(rebuilt.ThingID))
-                entry.placedThingIds.Add(rebuilt.ThingID);
-            foreach (CAFacilityHolding holding in
-                CAOrganizationRelationsWorldComponent.Current?.Holdings
-                    ?? Array.Empty<CAFacilityHolding>())
-            {
-                if (holding == null
-                    || holding.programSignature != entry.signature
-                    || holding.assetRole != receipt.assetRole) continue;
-                holding.thingId = rebuilt.thingIDNumber;
-                holding.mapId = map.uniqueID;
-                holding.cell = rebuilt.Position;
-            }
+            SyncEntryView(record, entry);
         }
 
         private static void Ensure(CARegionalSettlementRecord record)
@@ -231,6 +246,13 @@ namespace ColonistAwareness
             if (record.programAssets == null)
                 record.programAssets =
                     new List<CASettlementProgramAssetReceipt>();
+        }
+
+        private static void SyncEntryView(CARegionalSettlementRecord record,
+            CASettlementProgramEntry entry)
+        {
+            if (entry == null) return;
+            entry.placedThingIds = AssetIds(record, entry).ToList();
         }
     }
 }

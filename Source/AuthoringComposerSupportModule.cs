@@ -93,57 +93,59 @@ namespace ColonistAwareness
         }
 
 
-        internal static List<CACreationChoice> PoliticalProfiles(
+        internal static List<CACreationChoice> PoliticalBeliefSets(
             CAPoliticalBeliefs beliefs, string seed, Action changed)
         {
             var choices = new List<CACreationChoice>();
-            foreach (CAFactionAxes.PoliticalProfile preset in
-                CAFactionAxes.PoliticalProfiles)
+            foreach (CAPoliticalPatchTemplate template in
+                CAPoliticalPatchTemplates.Beliefs)
             {
-                CAFactionAxes.PoliticalProfile local = preset;
+                CAPoliticalPatchTemplate local = template;
                 choices.Add(new CACreationChoice
                 {
                     Key = local.Key,
-                    Name = local.Name,
-                    Summary = local.Description,
-                    CompactSummary = CAPoliticalBeliefsModel.ProfileTraits(
-                        local, 2),
-                    Traits = CAPoliticalBeliefsModel.ProfileTraits(local, 4),
-                    Details = CAPoliticalBeliefsModel.ProfileDetails(local),
-                    Group = PoliticalFamily(local),
-                    Badge = "Built-in profile",
+                    Name = local.Label,
+                    Summary = local.Summary,
+                    CompactSummary = TemplateTraits(local, 2),
+                    Traits = TemplateTraits(local, 5),
+                    Details = TemplateDetails(local)
+                        + "\n\nThis is a partial patch. Applying it adds the "
+                        + "listed commitments and preserves every unlisted value.",
+                    Group = local.Domain,
+                    Badge = "Built-in belief set",
                     Accent = CACreationUI.Authored,
-                    Selected = CAPoliticalBeliefsModel.UsesProfile(
+                    Selected = CAPoliticalBeliefsModel.UsesTemplate(
                         beliefs, local),
-                    ConfirmLabel = "Apply these beliefs",
+                    ConfirmLabel = "Add these commitments",
                     Choose = delegate
                     {
-                        CAPoliticalBeliefsModel.ApplyProfile(beliefs, local);
+                        CAPoliticalBeliefsModel.ApplyTemplate(beliefs, local);
                         changed?.Invoke();
                     }
                 });
             }
-            foreach (CAUserPoliticalProfile profile in
-                CAAuthoringProfileLibrary.Politics.OrderBy(item =>
+            foreach (CAUserPoliticalBeliefSet profile in
+                CAAuthoringProfileLibrary.PoliticalBeliefSets.OrderBy(item =>
                     item.displayName))
             {
-                CAUserPoliticalProfile local = profile;
+                CAUserPoliticalBeliefSet local = profile;
                 choices.Add(new CACreationChoice
                 {
                     Key = local.key,
                     Name = local.displayName,
                     Summary = CAPoliticalBeliefsModel.Summary(local.values),
-                    CompactSummary = "Saved political profile",
+                    CompactSummary = "Saved political belief set",
                     Traits = CAPoliticalBeliefsModel.Summary(local.values),
                     Details = PoliticalDetails(local.values)
-                        + "\n\nApplying this profile copies its values into "
-                        + "the current world draft. Later edits do not change "
+                        + "\n\nApplying this set adds its listed commitments "
+                        + "to the current world draft and preserves other "
+                        + "values. Later edits do not change "
                         + "the saved library copy.",
                     Group = "Saved",
-                    Badge = "Saved profile",
+                    Badge = "Saved belief set",
                     Accent = CACreationUI.Authored,
                     Selected = false,
-                    ConfirmLabel = "Apply saved profile",
+                    ConfirmLabel = "Add saved commitments",
                     Choose = delegate
                     {
                         CAAuthoringProfileLibrary.Apply(local, beliefs);
@@ -158,9 +160,12 @@ namespace ColonistAwareness
             CAPoliticalBeliefs beliefs)
         {
             if (beliefs == null) return "Political beliefs not set";
-            return CAFactionAxes.CountByState(beliefs.positions,
-                    CAAxisSource.Unset) == 0
-                ? "Political positions set" : "Political positions incomplete";
+            int count = (beliefs.positions ?? new List<CAAxisEntry>())
+                .Count(item => item != null
+                    && item.source != (byte)CAAxisSource.Unset);
+            return count == 0 ? "Political beliefs remain open"
+                : count + " political mechanism"
+                    + (count == 1 ? "" : "s") + " recorded";
         }
 
         internal static string CultureDetails(CACulture culture)
@@ -198,26 +203,39 @@ namespace ColonistAwareness
             if (beliefs == null) return "No political positions recorded.";
             return string.Join("\n", CAFactionAxes.Axes.Select(axis =>
             {
-                CAAxisOption option = CAFactionAxes.OptionOf(
-                    beliefs.positions, axis.Key);
+                IReadOnlyList<CAAxisOption> options =
+                    CAFactionAxes.OptionsOf(beliefs.positions, axis.Key);
                 return axis.Label + ": "
-                    + (option?.Label ?? "No position chosen") + ". "
-                    + (option?.Words ?? "");
+                    + (options.Count == 0 ? "Open" : string.Join(" + ",
+                        options.Select(option => option.Label))) + ". "
+                    + string.Join("; ", options.Select(option =>
+                        option.Words));
             }).ToArray());
         }
 
-        private static string PoliticalFamily(
-            CAFactionAxes.PoliticalProfile preset)
+        private static string TemplateTraits(
+            CAPoliticalPatchTemplate template, int count)
         {
-            string leader = preset?.Positions.ContainsKey(
-                CAFactionAxes.Leadership) == true
-                    ? preset.Positions[CAFactionAxes.Leadership] : null;
-            if (leader == "single") return "Central rule";
-            if (leader == "none") return "No central rule";
-            if (preset?.Key == "worker_federation"
-                || preset?.Key == "free_commons")
-                return "Common and cooperative";
-            return "Councils and federations";
+            if (template == null) return "No commitments";
+            return string.Join(" · ", template.Mechanisms
+                .SelectMany(pair => pair.Value.Select(value =>
+                    CAFactionAxes.AxisDef(pair.Key)?.Options.FirstOrDefault(
+                        option => option.Key == value)?.Label ?? value))
+                .Take(Math.Max(1, count)).ToArray());
+        }
+
+        private static string TemplateDetails(
+            CAPoliticalPatchTemplate template)
+        {
+            if (template == null) return "No commitments recorded.";
+            return string.Join("\n", template.Mechanisms.Select(pair =>
+            {
+                CAAxisDef axis = CAFactionAxes.AxisDef(pair.Key);
+                string mechanisms = string.Join(" + ", pair.Value.Select(
+                    value => axis?.Options.FirstOrDefault(option =>
+                        option.Key == value)?.Label ?? value));
+                return (axis?.Label ?? pair.Key) + ": " + mechanisms + ".";
+            }).ToArray());
         }
     }
 
@@ -281,22 +299,31 @@ namespace ColonistAwareness
             Text.Font = GameFont.Medium;
             Widgets.Label(new Rect(0f, 0f, inRect.width, 34f),
                 cultures ? "Saved Cultures"
-                    : "Saved political profiles");
+                    : "Saved political belief sets");
             Text.Font = GameFont.Small;
             Widgets.Label(new Rect(0f, 38f, inRect.width, 42f),
-                "Saved profiles are global. Loading copies values into this "
-                + "draft; renaming or deleting the library copy does not alter a world.");
+                "Saved presets are global. Loading copies their listed values "
+                + "into this draft; renaming or deleting the library copy does not alter a world.");
             Rect outer = new Rect(0f, 88f, inRect.width,
                 inRect.height - 136f);
             int count = cultures ? CAAuthoringProfileLibrary.Cultures.Count
-                : CAAuthoringProfileLibrary.Politics.Count;
+                : CAAuthoringProfileLibrary.PoliticalBeliefSets.Count;
             bool compactRows = outer.width - 18f < 560f;
             Rect view = new Rect(0f, 0f, outer.width - 18f,
                 Mathf.Max(outer.height,
                     count * (compactRows ? 86f : 48f) + 8f));
             Widgets.BeginScrollView(outer, ref scroll, view);
             rowY = 0f;
-            if (cultures)
+            if (count == 0)
+            {
+                GUI.color = ColoredText.SubtleGrayColor;
+                Widgets.Label(new Rect(8f, 8f, view.width - 16f, 60f),
+                    cultures
+                        ? "No Cultures are saved. Save the current Culture from its editor first."
+                        : "No political belief sets are saved. Save the current beliefs from their editor first.");
+                GUI.color = Color.white;
+            }
+            else if (cultures)
             {
                 foreach (CAUserCultureProfile profile in
                     CAAuthoringProfileLibrary.Cultures.ToList())
@@ -304,8 +331,8 @@ namespace ColonistAwareness
             }
             else
             {
-                foreach (CAUserPoliticalProfile profile in
-                    CAAuthoringProfileLibrary.Politics.ToList())
+                foreach (CAUserPoliticalBeliefSet profile in
+                    CAAuthoringProfileLibrary.PoliticalBeliefSets.ToList())
                     DrawPoliticalRow(view.width, profile);
             }
             Widgets.EndScrollView();
@@ -331,14 +358,14 @@ namespace ColonistAwareness
         }
 
         private void DrawPoliticalRow(float width,
-            CAUserPoliticalProfile profile)
+            CAUserPoliticalBeliefSet profile)
         {
             DrawProfileRow(width, profile.displayName, delegate
                 {
                     CAAuthoringProfileLibrary.Apply(profile, beliefs);
                     changed?.Invoke();
                 }, () => Find.WindowStack.Add(new Dialog_CAProfileName(
-                    "Rename political profile", profile.displayName,
+                    "Rename political belief set", profile.displayName,
                     value => CAAuthoringProfileLibrary.Rename(profile, value))),
                 () => CAAuthoringProfileLibrary.Duplicate(profile),
                 () => Find.WindowStack.Add(

@@ -138,10 +138,6 @@ namespace ColonistAwareness
                 "sharedProvisionNodeKeys", LookMode.Value);
             Scribe_Collections.Look(ref memberships, "memberships",
                 LookMode.Deep);
-            if (sharedProvisionNodeKeys == null)
-                sharedProvisionNodeKeys = new List<string>();
-            if (memberships == null)
-                memberships = new List<CADomesticMembership>();
         }
 
         internal bool Contains(int pawnId)
@@ -166,6 +162,9 @@ namespace ColonistAwareness
             Map map)
         {
             if (record == null || map == null) return;
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.DomesticUnitTransition))
+            {
             CADomesticUnitState.Normalize(record);
             int transitionsBefore = record.domesticMembershipTransitions.Count;
 
@@ -344,6 +343,13 @@ namespace ColonistAwareness
                 if (successors.Length > 1)
                     RecordTransition(record, former.Key, -1, "split",
                         "successor units: " + string.Join(",", successors));
+            }
+            CAModuleProfiler.Observe(
+                CAModuleProfileKey.DomesticUnitTransition,
+                objectsExamined: residents.Count,
+                candidatesAccepted: Math.Max(0,
+                    record.domesticMembershipTransitions.Count
+                        - transitionsBefore));
             }
         }
 

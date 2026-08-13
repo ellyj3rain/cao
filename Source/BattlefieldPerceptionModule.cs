@@ -159,7 +159,7 @@ namespace ColonistAwareness
         private const float MinimumClearRange = 180f;
         private const float DetectionThreshold = 0.18f;
         private const float IdentificationThreshold = 0.42f;
-        private const int PairCacheTicks = 15;
+        private const int PairCacheTicks = 30;
         private const int ProfileCacheTicks = 30;
 
         private readonly struct CacheKey : IEquatable<CacheKey>
@@ -226,11 +226,13 @@ namespace ColonistAwareness
             new Dictionary<CacheKey, CacheEntry>();
         private static readonly Dictionary<int, ProfileCacheEntry> profileCache =
             new Dictionary<int, ProfileCacheEntry>();
+        private static int lastPruneTick = -1;
 
         internal static void ClearTransient()
         {
             cache.Clear();
             profileCache.Clear();
+            lastPruneTick = -1;
         }
 
         internal static float ClearRangeFor(Map map)
@@ -245,6 +247,7 @@ namespace ColonistAwareness
 
         internal static CAVisionProfile VisionProfileFor(Pawn pawn)
         {
+            PruneAfterObservationPass();
             if (pawn == null)
                 return new CAVisionProfile(false, 0f, 0f, 0f, 0f, 0f,
                     0, 0, "no pawn");
@@ -298,6 +301,7 @@ namespace ColonistAwareness
             Thing visible, Pawn representedPawn, float maximumRange,
             out CAVisualPerception result)
         {
+            PruneAfterObservationPass();
             result = default(CAVisualPerception);
             CAVisionProfile profile = VisionProfileFor(observer);
             if (!profile.CanUseVision || visible == null || !visible.Spawned
@@ -395,8 +399,15 @@ namespace ColonistAwareness
                 SubjectCell = targetCell,
                 Result = result
             };
-            if (cache.Count > 4096 || profileCache.Count > 512) Prune(now);
             return detected;
+        }
+
+        internal static void PruneAfterObservationPass()
+        {
+            int now = Find.TickManager?.TicksGame ?? 0;
+            if (now == lastPruneTick) return;
+            lastPruneTick = now;
+            if (cache.Count > 4096 || profileCache.Count > 512) Prune(now);
         }
 
         private static CAVisionProfile BuildVisionProfile(Pawn pawn)

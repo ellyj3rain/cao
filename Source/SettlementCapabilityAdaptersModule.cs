@@ -98,7 +98,8 @@ namespace ColonistAwareness
                 .Entry(CASettlementProgramRegistry.Governance);
             if (offices.Count == 0 || decisions.Count == 0
                 || (org?.memberPawnIds?.Count ?? 0) == 0 || program == null
-                || program.placedThingIds.Count == 0) return evidence;
+                || CASettlementProgramAssets.AssetIds(r, program).Count == 0)
+                return evidence;
             evidence.LevelHint = Math.Min(5, 1 + decisions.Count / 3);
             evidence.Actors.AddRange(offices.Select(value =>
                 "pawn:" + value.holderId));
@@ -107,7 +108,8 @@ namespace ColonistAwareness
                 "decision:" + value.tick + ":" + value.kind));
             evidence.Knowledge.AddRange(offices.Select(value =>
                 "office-standing:" + value.sourceKey));
-            evidence.Material.AddRange(program.placedThingIds);
+            evidence.Material.AddRange(
+                CASettlementProgramAssets.AssetIds(r, program));
             evidence.History.AddRange(decisions.Select(value =>
                 "decision:" + value.tick + ":" + value.kind));
             return evidence;

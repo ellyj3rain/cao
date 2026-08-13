@@ -73,9 +73,10 @@ internal static class Program
         Require(Value(plan, "candidateId") == "613b1fe44104",
             "unexpected candidate identity");
 
-        Set(root, "authoringDataEpoch", "10");
-        Set(plan, "schemaVersion", "10");
+        Set(root, "authoringDataEpoch", "11");
+        Set(plan, "schemaVersion", "11");
         Set(plan, "confirmed", "False");
+        UpgradeAuthoredSocialState(document);
 
         XElement policy = plan.Element("worldPolicy");
         Remove(policy, "unaffiliatedPopulationShare");
@@ -147,6 +148,101 @@ internal static class Program
         Console.WriteLine("3 factions; 4 settlements; 9 population groups");
         Console.WriteLine("19 established program facts; derived state deferred to production runtime");
         return 0;
+    }
+
+    private static void UpgradeAuthoredSocialState(XDocument document)
+    {
+        foreach (XElement culture in document.Descendants().Where(element =>
+            element.Name.LocalName == "culture"
+                || element.Name.LocalName == "localCulture"))
+        {
+            Set(culture, "schemaVersion", "9");
+            string owner = Value(culture, "id");
+            foreach (string collectionName in new[]
+                { "inheritedPractices", "practices" })
+            {
+                foreach (XElement practice in Items(culture,
+                    collectionName).ToArray())
+                {
+                    string oldSubject = Value(practice, "subjectKey");
+                    if (oldSubject.Length == 0) continue;
+                    string practiceKey = FixturePractice(oldSubject,
+                        Value(practice, "summary"));
+                    Require(practiceKey != null,
+                        "fixture practice has no current concrete equivalent: "
+                            + oldSubject);
+                    Remove(practice, "subjectKey");
+                    SetFirst(practice, "practiceKey", practiceKey);
+                    SetAfter(practice, "sourceOwner",
+                        owner.Length == 0 ? "governed-b11-fixture" : owner,
+                        "lastObservedTick");
+                }
+            }
+        }
+        foreach (XElement beliefs in document.Descendants(
+            "politicalBeliefs"))
+        {
+            Set(beliefs, "schemaVersion", "9");
+            ExpandFormerMixedMechanisms(beliefs.Element("positions"));
+        }
+        foreach (XElement order in document.Descendants(
+            "factionStructure"))
+            ExpandFormerMixedMechanisms(order);
+    }
+
+    private static string FixturePractice(string oldSubject, string summary)
+    {
+        switch (oldSubject)
+        {
+            case "ca.space.public_gathering":
+                return CACulturalPracticeRegistry.PublicDeliberation;
+            case "ca.support.shared_provision":
+                return CACulturalPracticeRegistry.CommunalProvision;
+            case "ca.exchange.outsider_contact":
+                return CACulturalPracticeRegistry.TradeExchange;
+            default:
+                return null;
+        }
+    }
+
+    private static void ExpandFormerMixedMechanisms(XElement collection)
+    {
+        if (collection == null) return;
+        foreach (XElement entry in collection.Elements("li").ToArray())
+        {
+            if (Value(entry, "option") != "mixed") continue;
+            string axis = Value(entry, "axis");
+            string[] replacements = CAPoliticalLegacyMechanisms.Expand(
+                axis, "mixed").ToArray();
+            string unsupported = CAPoliticalLegacyMechanisms
+                .UnsupportedReason(axis, "mixed");
+            Require(replacements.Length > 0,
+                unsupported ?? "unknown former mixed mechanism: " + axis);
+            foreach (string replacement in replacements)
+            {
+                XElement copy = new XElement(entry);
+                Set(copy, "option", replacement);
+                entry.AddBeforeSelf(copy);
+            }
+            entry.Remove();
+        }
+    }
+
+    private static void SetFirst(XElement parent, string name, string value)
+    {
+        XElement existing = parent.Element(name);
+        if (existing != null) existing.Value = value;
+        else parent.AddFirst(new XElement(name, value));
+    }
+
+    private static void SetAfter(XElement parent, string name, string value,
+        string predecessor)
+    {
+        XElement existing = parent.Element(name);
+        if (existing != null) { existing.Value = value; return; }
+        XElement before = parent.Element(predecessor);
+        if (before != null) before.AddAfterSelf(new XElement(name, value));
+        else parent.Add(new XElement(name, value));
     }
 
     private static XElement FactElement(CAEstablishedProgramFactSpec spec)

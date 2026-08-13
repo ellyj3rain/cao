@@ -45,7 +45,10 @@ namespace ColonistAwareness
         CentralWithLocalRule = 1,
         Shared = 2,
         IndependentWithSharedDefense = 3,
-        Independent = 4
+        Independent = 4,
+        // Read-only absence marker. Persisted authority continues to use the
+        // explicit flag plus one of the five concrete arrangements.
+        Unknown = byte.MaxValue
     }
 
     // A settlement's position within the realized regional hierarchy.
@@ -171,6 +174,8 @@ namespace ColonistAwareness
         internal static string SettlementAuthorityWords(
             CASettlementAuthority c)
         {
+            if (c == CASettlementAuthority.Unknown)
+                return "authority between settlements not set";
             c = NormalizeAuthority(c);
             return AuthorityLabel("CA_Authority_" + c,
                 SettlementAuthorityFallback(c));
@@ -1013,37 +1018,37 @@ namespace ColonistAwareness
                 return true;
             }
 
-            string leadership = CAFactionAxes.KeyOf(group.factionStructure,
+            IReadOnlyList<string> leadership = CAFactionAxes.KeysOf(
+                group.factionStructure,
                 CAFactionAxes.Leadership);
-            string participation = CAFactionAxes.KeyOf(group.factionStructure,
+            IReadOnlyList<string> participation = CAFactionAxes.KeysOf(
+                group.factionStructure,
                 CAFactionAxes.Participation);
-            if (leadership.NullOrEmpty() || participation.NullOrEmpty())
+            if (leadership.Count == 0 || participation.Count == 0)
                 return false;
 
-            switch (leadership)
+            bool universal = participation.Contains("universal");
+            if (leadership.Contains("federated"))
             {
-                case "none":
-                    authority = CASettlementAuthority.Independent;
-                    break;
-                case "federated":
-                    authority = CASettlementAuthority.IndependentWithSharedDefense;
-                    break;
-                case "whole":
-                    authority = CASettlementAuthority.Independent;
-                    break;
-                case "council":
-                    authority = participation == "universal"
-                        ? CASettlementAuthority.Shared
-                        : CASettlementAuthority.CentralWithLocalRule;
-                    break;
-                case "single":
-                    authority = participation == "universal"
-                        ? CASettlementAuthority.CentralWithLocalRule
-                        : CASettlementAuthority.Central;
-                    break;
-                default:
-                    return false;
+                authority = leadership.Contains("single")
+                    ? CASettlementAuthority.CentralWithLocalRule
+                    : CASettlementAuthority.IndependentWithSharedDefense;
             }
+            else if (leadership.Contains("single"))
+            {
+                authority = leadership.Contains("council") || universal
+                    ? CASettlementAuthority.CentralWithLocalRule
+                    : CASettlementAuthority.Central;
+            }
+            else if (leadership.Contains("council"))
+            {
+                authority = universal ? CASettlementAuthority.Shared
+                    : CASettlementAuthority.CentralWithLocalRule;
+            }
+            else if (leadership.Contains("whole")
+                || leadership.Contains("none"))
+                authority = CASettlementAuthority.Independent;
+            else return false;
             return true;
         }
 
@@ -1052,13 +1057,15 @@ namespace ColonistAwareness
         {
             CASettlementAuthority authority;
             return TrySettlementAuthorityOf(plan, group, out authority)
-                ? authority : CASettlementAuthority.Central;
+                ? authority : CASettlementAuthority.Unknown;
         }
 
         // Responsibilities shared by member settlements at faction level.
         internal static string[] SharedResponsibilities(
             CASettlementAuthority authority)
         {
+            if (authority == CASettlementAuthority.Unknown)
+                return new string[0];
             authority = NormalizeAuthority(authority);
             // Unknown responsibility keys are ignored.
             CASettlementAuthorityDef def =
@@ -1105,12 +1112,13 @@ namespace ColonistAwareness
             if (minority > 0)
                 text.Append(" · resident population in " + minority
                     + " more");
-            CASettlementAuthority authority =
-                SettlementAuthorityOf(plan, group);
-            if (held > 1)
-                text.Append(authority
+            CASettlementAuthority authority;
+            bool authorityKnown = TrySettlementAuthorityOf(plan, group,
+                out authority);
+            if (held > 1 && authorityKnown)
+                text.Append((authority
                         == CASettlementAuthority.IndependentWithSharedDefense
-                        || authority == CASettlementAuthority.Independent
+                        || authority == CASettlementAuthority.Independent)
                     ? " · no single capital"
                     : " · seat at its "
                         + (plan.settlements.FirstOrDefault(b => b != null
@@ -1121,18 +1129,21 @@ namespace ColonistAwareness
             return text.ToString();
         }
 
-        // A direct summary of current faction structure and settlement pattern.
+        // A direct summary of current order and settlement pattern.
         internal static string Characterize(CARegionalPlan plan,
             CARegionalFactionPlan group)
         {
             string structure = CAFactionAxes.Characterize(plan, group);
-            CASettlementAuthority authority =
-                SettlementAuthorityOf(plan, group);
+            CASettlementAuthority authority;
+            bool authorityKnown = TrySettlementAuthorityOf(plan, group,
+                out authority);
             int held = plan.settlements.Count(b => b != null
                 && b.factionKey == group.key);
             if (held == 0) return structure + " · no settlements";
             if (held == 1) return structure + " · one settlement";
-            return structure + " · " + SettlementAuthorityWords(authority)
+            return structure + " · " + (authorityKnown
+                    ? SettlementAuthorityWords(authority)
+                    : "authority between settlements not set")
                 + " · " + PatternWords(
                     (CASettlementPattern)plan.settlementPattern)
                 + " " + ScaleWords(

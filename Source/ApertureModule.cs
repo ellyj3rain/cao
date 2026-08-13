@@ -216,14 +216,16 @@ namespace ColonistAwareness
                 float climate = map.TileInfo.temperature;
                 CAFactionState factionState = CAFactionStateWorldComponent.Current
                     ?.Find(record.faction);
-                string localOrder = CAFactionAxes.KeyOf(factionState?.factionStructure,
-                    CAFactionAxes.LocalOrder);
-                string defense = CAFactionAxes.KeyOf(factionState?.factionStructure,
-                    CAFactionAxes.Defense);
-                string dissent = CAFactionAxes.KeyOf(factionState?.factionStructure,
-                    CAFactionAxes.Dissent);
-                bool militarized = defense == "professional"
-                    || defense == "caste";
+                List<CAAxisEntry> currentOrder =
+                    factionState?.factionStructure;
+                bool rulerGuard = CAFactionAxes.HasOption(currentOrder,
+                    CAFactionAxes.LocalOrder, "rulers");
+                bool pluralDissent = CAFactionAxes.HasOption(currentOrder,
+                    CAFactionAxes.Dissent, "plural");
+                bool militarized = CAFactionAxes.HasOption(currentOrder,
+                        CAFactionAxes.Defense, "professional")
+                    || CAFactionAxes.HasOption(currentOrder,
+                        CAFactionAxes.Defense, "caste");
                 bool cold = climate < 0f;
                 bool hot = climate > 28f;
                 int wealth = Math.Max(0, record.wealth);
@@ -295,7 +297,7 @@ namespace ColonistAwareness
                         int wallTier = Rand.Chance(oldFabric)
                             ? record.constructionEra : tier;
                         string kind = ChooseKind(wallTier, defensive,
-                            militarized, onChief, localOrder, dissent,
+                            militarized, onChief, rulerGuard, pluralDissent,
                             cold, hot, wealth);
                         ThingDef apertureDef = DefDatabase<ThingDef>
                             .GetNamedSilentFail(kind);
@@ -339,18 +341,18 @@ namespace ColonistAwareness
         // order and dissent affect the main hall. Wealth and climate affect
         // ordinary windows. Tier is the wall's own construction era.
         private static string ChooseKind(int tier, bool defensive,
-            bool militarized, bool onChief, string localOrder,
-            string dissent, bool cold, bool hot, int wealth)
+            bool militarized, bool onChief, bool rulerGuard,
+            bool pluralDissent, bool cold, bool hot, int wealth)
         {
             if (defensive) return "CA_ApertureSlit";
             if (militarized && Rand.Chance(0.5f))
                 return "CA_ApertureSlit";
             if (onChief)
             {
-                if (localOrder == "rulers" && Rand.Chance(0.7f))
+                if (rulerGuard && Rand.Chance(0.7f))
                     return "CA_ApertureSlit";
                 float glaze = tier >= 2 ? 1f
-                    : tier == 1 ? (dissent == "plural" ? 0.8f : 0.6f)
+                    : tier == 1 ? (pluralDissent ? 0.8f : 0.6f)
                     : 0f;
                 glaze += wealth * 0.1f;
                 if (Rand.Chance(glaze)) return "CA_WindowGlazed";

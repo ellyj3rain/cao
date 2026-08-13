@@ -9,7 +9,7 @@ namespace ColonistAwareness
 {
     public class AwarenessSettings : ModSettings
     {
-        private int authoringDataEpoch = CAAuthoringDataEpoch.Current;
+        private int authoringDataEpoch = CAPendingAuthoringDataEpoch.Current;
         public bool eatSmart = true;
         public bool criticalHauling = true;
         public bool lifeSafety = true;
@@ -50,8 +50,8 @@ namespace ColonistAwareness
         public int autonomousHomePlanningResetGeneration;
         public List<CAUserCultureProfile> cultureProfiles =
             new List<CAUserCultureProfile>();
-        public List<CAUserPoliticalProfile> politicalProfiles =
-            new List<CAUserPoliticalProfile>();
+        public List<CAUserPoliticalBeliefSet> politicalBeliefSets =
+            new List<CAUserPoliticalBeliefSet>();
         // A behavior system without its causal receipts cannot be evaluated during
         // ordinary play. Tracing is therefore the default operating posture; the
         // player may still disable it explicitly from the mod settings.
@@ -109,23 +109,25 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref autonomousHomePlanningResetGeneration,
                 "autonomousHomePlanningResetGeneration", 0);
             bool currentAuthoringData = Scribe.mode == LoadSaveMode.Saving
-                || CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch);
+                || CAPendingAuthoringDataEpoch.IsCurrent(authoringDataEpoch);
             if (currentAuthoringData)
             {
                 Scribe_Collections.Look(ref cultureProfiles,
                     "cultureProfiles", LookMode.Deep);
-                Scribe_Collections.Look(ref politicalProfiles,
-                    "politicalProfiles", LookMode.Deep);
+                Scribe_Collections.Look(ref politicalBeliefSets,
+                    "politicalBeliefSets", LookMode.Deep);
             }
             Scribe_Values.Look(ref traceBehavior, "traceBehavior", true);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
-                if (!CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch))
+                if (!CAPendingAuthoringDataEpoch.IsCurrent(authoringDataEpoch))
                 {
                     cultureProfiles = new List<CAUserCultureProfile>();
-                    politicalProfiles = new List<CAUserPoliticalProfile>();
-                    authoringDataEpoch = CAAuthoringDataEpoch.Current;
-                    CAAuthoringDataEpoch.RecordDiscard("saved profiles");
+                    politicalBeliefSets =
+                        new List<CAUserPoliticalBeliefSet>();
+                    authoringDataEpoch = CAPendingAuthoringDataEpoch.Current;
+                    CAPendingAuthoringDataEpoch.RecordDiscard(
+                        "saved profiles");
                 }
                 if (initiativeSchema
                     < AutonomyComponent.CurrentInitiativeSchema)

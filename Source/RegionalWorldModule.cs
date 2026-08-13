@@ -813,35 +813,6 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref constructionEra, "constructionEra", -1);
             Scribe_Collections.Look(ref statusAssignments,
                 "statusAssignments", LookMode.Value);
-            if (populationGroups == null) populationGroups = new List<CASettlementPopulationGroup>();
-            if (residenceAssignments == null)
-                residenceAssignments =
-                    new List<CASettlementResidenceAssignment>();
-            if (provisionArrangements == null)
-                provisionArrangements = new List<CAProvisionArrangement>();
-            if (domesticProvisionDemands == null)
-                domesticProvisionDemands =
-                    new List<CADomesticProvisionDemand>();
-            if (domesticUnits == null)
-                domesticUnits = new List<CADomesticUnit>();
-            if (domesticMembershipTransitions == null)
-                domesticMembershipTransitions =
-                    new List<CADomesticMembershipTransition>();
-            nextDomesticUnitSequence = Math.Max(nextDomesticUnitSequence,
-                domesticUnits.Count == 0 ? 1 : domesticUnits.Max(unit =>
-                    unit?.formationSequence ?? 0) + 1);
-            if (operationalFacts == null)
-                operationalFacts = new List<CASettlementOperationalFact>();
-            if (capabilities == null)
-                capabilities =
-                    new List<CASettlementCapabilityAssessment>();
-            if (settlementProgram == null)
-                settlementProgram = new CASettlementProgram();
-            if (populationAssignments == null)
-                populationAssignments = new List<string>();
-            CASettlementResidenceState.RebuildReadModel(this);
-            if (statusAssignments == null)
-                statusAssignments = new List<string>();
             Scribe_Values.Look(ref factionEra, "factionEra", -1);
             Scribe_Values.Look(ref settlementForm, "settlementForm", -1);
             Scribe_Values.Look(ref generationSummary, "generationSummary");
@@ -957,37 +928,6 @@ namespace ColonistAwareness
                 "developmentProposalSignature");
             Scribe_Values.Look(ref developmentBlocker,
                 "developmentBlocker");
-            if (Scribe.mode == LoadSaveMode.PostLoadInit && residentIds == null)
-                residentIds = new List<string>();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit
-                && seededAssets == null)
-                seededAssets = new List<string>();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit
-                && programAssets == null)
-                programAssets =
-                    new List<CASettlementProgramAssetReceipt>();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit
-                && startingStock == null)
-                startingStock = new List<CAStartingStockRecord>();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit
-                && developmentDemandKinds == null)
-                developmentDemandKinds = new List<int>();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit
-                && developmentAssetCandidates == null)
-                developmentAssetCandidates = new List<string>();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-            {
-                if (creationBeneficiaries == null)
-                    creationBeneficiaries = new List<string>();
-                if (developmentBeneficiaries == null)
-                    developmentBeneficiaries = new List<string>();
-                if (CASettlementAssetRegistry.ReconcileRecord(this,
-                        out string correction))
-                    Log.Warning("[CA][Regional] " + (regionalId ?? "settlement")
-                        + " readback correction: " + correction);
-                CACombatIntent.ObserveEpisode(creationEpisodeId);
-                CACombatIntent.ObserveEpisode(developmentEpisodeId);
-            }
         }
 
         internal string FactionEraLabel
@@ -1012,7 +952,16 @@ namespace ColonistAwareness
 
     public sealed class CARegionalWorldComponent : WorldComponent
     {
-        private int authoringDataEpoch = CAAuthoringDataEpoch.Current;
+        private sealed class ReservationClaim
+        {
+            internal CARegionalPlan Region;
+            internal int MemberIndex;
+        }
+
+        private int campaignSchemaVersion =
+            CACampaignCompatibilityKernel.CurrentBoundaryVersion;
+        private int legacyAuthoringDataEpoch =
+            CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private List<CARegionalSettlementRecord> records =
             new List<CARegionalSettlementRecord>();
         private List<CARegionalPlan> regions = new List<CARegionalPlan>();
@@ -1076,11 +1025,15 @@ namespace ColonistAwareness
 
         public override void ExposeData()
         {
-            Scribe_Values.Look(ref authoringDataEpoch,
-                "CA_authoringDataEpoch", 0);
-            bool current = Scribe.mode == LoadSaveMode.Saving
-                || CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch);
-            if (current)
+            Scribe_Values.Look(ref campaignSchemaVersion,
+                "CA_regionalSchemaVersion", 0);
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+                Scribe_Values.Look(ref legacyAuthoringDataEpoch,
+                    "CA_authoringDataEpoch", 0);
+            bool readable = CACampaignCompatibility.ShouldReadLiveState(
+                "world.regional", campaignSchemaVersion,
+                legacyAuthoringDataEpoch);
+            if (readable)
             {
                 Scribe_Collections.Look(ref records,
                     "CA_regionalSettlements", LookMode.Deep);
@@ -1089,25 +1042,439 @@ namespace ColonistAwareness
                 Scribe_Deep.Look(ref worldPolicy, "CA_regionalWorldPolicy");
                 Scribe_Deep.Look(ref groundwater, "CA_groundwaterTuning");
             }
-            if (Scribe.mode == LoadSaveMode.PostLoadInit && !current)
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && readable)
             {
-                records = new List<CARegionalSettlementRecord>();
-                regions = new List<CARegionalPlan>();
-                worldPolicy = new CARegionalWorldPolicy();
-                groundwater = new CAGroundwaterTuning();
-                transientDeveloperExerciseRegion = null;
-                authoringDataEpoch = CAAuthoringDataEpoch.Current;
-                CAAuthoringDataEpoch.RecordDiscard(
-                    "regional authoring state");
+                CACampaignCompatibility.CompleteOwnerLoad(
+                    "world.regional", ref campaignSchemaVersion,
+                    legacyAuthoringDataEpoch, ValidateCampaignState,
+                    MigrateB10State);
+                RebuildAcceptedReadModels();
             }
-            if (records == null) records = new List<CARegionalSettlementRecord>();
-            if (regions == null) regions = new List<CARegionalPlan>();
-            if (worldPolicy == null) worldPolicy = new CARegionalWorldPolicy();
-            // A world saved before this existed keeps the values that
-            // were in force when it was made, which are the defaults.
-            if (groundwater == null)
-                groundwater = new CAGroundwaterTuning();
             base.ExposeData();
+        }
+
+        private string ValidateCampaignState()
+        {
+            string structureFailure = ValidateOwnerStructure(
+                CARegionalPlan.CurrentSchemaVersion);
+            if (!structureFailure.NullOrEmpty()) return structureFailure;
+            for (int i = 0; i < regions.Count; i++)
+            {
+                CARegionalPlan region = regions[i];
+                for (int factionIndex = 0;
+                    factionIndex < region.factions.Count; factionIndex++)
+                {
+                    CARegionalFactionPlan faction =
+                        region.factions[factionIndex];
+                    if (faction == null)
+                        return "regional plan " + region.regionalId
+                            + " has null faction " + factionIndex;
+                    string cultureFailure = CACultureModel.ValidationFailure(
+                        faction.culture, requireSubstantive: true);
+                    if (!cultureFailure.NullOrEmpty())
+                        return "regional faction " + faction.key
+                            + " Culture: " + cultureFailure;
+                    if (faction.politicalBeliefs == null
+                        || faction.politicalBeliefs.schemaVersion
+                            != CAPoliticalBeliefs.CurrentSchemaVersion)
+                        return "regional faction " + faction.key
+                            + " has missing or incompatible political beliefs";
+                    string beliefFailure = CAPoliticalBeliefsModel
+                        .ValidationFailure(faction.politicalBeliefs,
+                            allowExactLegacy: false);
+                    if (!beliefFailure.NullOrEmpty())
+                        return "regional faction " + faction.key
+                            + " political beliefs: " + beliefFailure;
+                    string orderFailure = CAPoliticalBeliefsModel
+                        .ValidationFailure(faction.factionStructure);
+                    if (!orderFailure.NullOrEmpty())
+                        return "regional faction " + faction.key
+                            + " current order: " + orderFailure;
+                }
+                for (int settlementIndex = 0;
+                    settlementIndex < region.settlements.Count;
+                    settlementIndex++)
+                {
+                    CARegionalSettlementPlan settlement =
+                        region.settlements[settlementIndex];
+                    if (settlement == null)
+                        return "regional plan " + region.regionalId
+                            + " has null settlement " + settlementIndex;
+                    string cultureFailure = CACultureModel.ValidationFailure(
+                        settlement.localCulture,
+                        requireSubstantive: true);
+                    if (!cultureFailure.NullOrEmpty())
+                        return "regional settlement " + settlement.slot
+                            + " Culture: " + cultureFailure;
+                }
+                string foundingFailure = CAPlayerFoundingModel
+                    .ValidationFailure(region.playerFounding,
+                        requireConfirmed: true);
+                if (!foundingFailure.NullOrEmpty())
+                    return "regional plan " + region.regionalId
+                        + " founding copy: " + foundingFailure;
+            }
+            for (int i = 0; i < records.Count; i++)
+            {
+                CARegionalSettlementRecord record = records[i];
+                string key = (record.regionalId ?? "") + "#" + record.slot;
+                string cultureFailure = CACultureModel.ValidationFailure(
+                    record.culture, requireSubstantive: true);
+                if (!cultureFailure.NullOrEmpty())
+                    return "regional settlement " + key + " Culture: "
+                        + cultureFailure;
+            }
+            return null;
+        }
+
+        private string ValidateOwnerStructure(int expectedRegionSchema)
+        {
+            if (regions == null || records == null || worldPolicy == null
+                || groundwater == null)
+                return "regional owner collections are missing";
+            var regionIds = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < regions.Count; i++)
+            {
+                CARegionalPlan region = regions[i];
+                if (region == null) return "regional plan " + i + " is null";
+                if (region.regionalId.NullOrEmpty()
+                    || !regionIds.Add(region.regionalId))
+                    return "regional plan identity "
+                        + (region.regionalId ?? "<missing>")
+                        + " is missing or duplicate";
+                if (region.schemaVersion != expectedRegionSchema)
+                    return "regional plan " + region.regionalId + " schema is "
+                        + region.schemaVersion + ", expected "
+                        + expectedRegionSchema;
+                string collectionFailure = ValidatePlanCollections(region);
+                if (!collectionFailure.NullOrEmpty())
+                    return "regional plan " + region.regionalId + ": "
+                        + collectionFailure;
+                if (!CARegionalPlanUtility.TryValidateStableIdentities(region,
+                        expectedRegionSchema, out string identityFailure))
+                    return "regional plan " + region.regionalId + ": "
+                        + identityFailure;
+                if (region.playerFounding == null)
+                    return "regional plan " + region.regionalId
+                        + " founding copy is missing";
+                if (region.playerFounding.schemaVersion
+                    != CAPlayerFoundingPlan.CurrentSchemaVersion)
+                    return "regional founding-plan schema is "
+                        + region.playerFounding.schemaVersion;
+            }
+            var recordIds = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < records.Count; i++)
+            {
+                CARegionalSettlementRecord record = records[i];
+                if (record == null)
+                    return "regional settlement record " + i + " is null";
+                string key = (record.regionalId ?? "") + "#" + record.slot;
+                if (record.regionalId.NullOrEmpty() || !recordIds.Add(key))
+                    return "regional settlement identity " + key
+                        + " is missing or duplicate";
+                if (record.schemaVersion
+                    != CARegionalSettlementRecord.CurrentSchemaVersion)
+                    return "regional settlement " + key + " schema is "
+                        + record.schemaVersion + ", expected "
+                        + CARegionalSettlementRecord.CurrentSchemaVersion;
+                string collectionFailure = ValidateRecordCollections(record);
+                if (!collectionFailure.NullOrEmpty())
+                    return "regional settlement " + key + ": "
+                        + collectionFailure;
+            }
+            return null;
+        }
+
+        private static string ValidatePlanCollections(CARegionalPlan region)
+        {
+            if (region.memberTileIds == null
+                || region.footprintTileIds == null
+                || region.factions == null || region.settlements == null
+                || region.relations == null || region.frontierHoldings == null
+                || region.consumedSources == null || region.worldPolicy == null
+                || region.groundwater == null)
+                return "owned collections or policy state are missing";
+            if (region.relations.Any(item => item == null)
+                || region.frontierHoldings.Any(item => item == null))
+                return "a relation or frontier holding is null";
+            for (int i = 0; i < region.factions.Count; i++)
+            {
+                CARegionalFactionPlan faction = region.factions[i];
+                if (faction == null) return "faction " + i + " is null";
+                if (faction.factionStructure == null)
+                    return "faction " + faction.key
+                        + " current-order collection is missing";
+                CASettlementAuthority authority =
+                    (CASettlementAuthority)faction.settlementAuthority;
+                if (!CARegionalSettlements.ActiveSettlementAuthorities
+                        .Contains(authority))
+                    return "faction " + faction.key
+                        + " has invalid settlement authority "
+                        + faction.settlementAuthority;
+            }
+            for (int i = 0; i < region.settlements.Count; i++)
+            {
+                CARegionalSettlementPlan settlement = region.settlements[i];
+                if (settlement == null)
+                    return "settlement " + i + " is null";
+                string failure = ValidateSettlementPlanCollections(settlement);
+                if (!failure.NullOrEmpty())
+                    return "settlement " + settlement.slot + ": " + failure;
+            }
+            for (int i = 0; i < region.frontierHoldings.Count; i++)
+                if (region.frontierHoldings[i].residentPawnIds == null)
+                    return "frontier holding "
+                        + region.frontierHoldings[i].key
+                        + " resident collection is missing";
+            return null;
+        }
+
+        private static string ValidateSettlementPlanCollections(
+            CARegionalSettlementPlan settlement)
+        {
+            if (settlement.populationGroups == null
+                || settlement.provisionArrangements == null
+                || settlement.domesticProvisionDemands == null
+                || settlement.operationalFacts == null
+                || settlement.settlementProgram == null
+                || settlement.settlementProgram.entries == null)
+                return "owned composition or program state is missing";
+            if (settlement.populationGroups.Any(item => item == null)
+                || settlement.provisionArrangements.Any(item => item == null)
+                || settlement.domesticProvisionDemands.Any(item => item == null)
+                || settlement.operationalFacts.Any(item => item == null)
+                || settlement.settlementProgram.entries.Any(item => item == null))
+                return "an owned composition or program record is null";
+            foreach (CASettlementOperationalFact fact in
+                     settlement.operationalFacts)
+                if (fact.culturalSubjects == null)
+                    return "operational fact " + (fact.factKey ?? "<missing>")
+                        + " has no Culture-subject collection";
+            foreach (CASettlementProgramEntry entry in
+                     settlement.settlementProgram.entries)
+                if (entry.selectedCandidates == null
+                    || entry.culturalSubjects == null)
+                    return "program " + (entry.programKey ?? "<missing>")
+                        + " has missing authoritative collections";
+            return null;
+        }
+
+        private static string ValidateRecordCollections(
+            CARegionalSettlementRecord record)
+        {
+            if (record.capabilities == null || record.residentIds == null
+                || record.populationGroups == null
+                || record.residenceAssignments == null
+                || record.provisionArrangements == null
+                || record.domesticProvisionDemands == null
+                || record.domesticUnits == null
+                || record.domesticMembershipTransitions == null
+                || record.operationalFacts == null
+                || record.populationAssignments == null
+                || record.statusAssignments == null
+                || record.seededAssets == null || record.programAssets == null
+                || record.startingStock == null
+                || record.creationBeneficiaries == null
+                || record.developmentBeneficiaries == null
+                || record.developmentDemandKinds == null
+                || record.developmentAssetCandidates == null
+                || record.settlementProgram == null
+                || record.settlementProgram.entries == null)
+                return "owned collections or settlement program are missing";
+            if (record.capabilities.Any(item => item == null)
+                || record.populationGroups.Any(item => item == null)
+                || record.residenceAssignments.Any(item => item == null)
+                || record.provisionArrangements.Any(item => item == null)
+                || record.domesticProvisionDemands.Any(item => item == null)
+                || record.domesticUnits.Any(item => item == null)
+                || record.domesticMembershipTransitions.Any(item => item == null)
+                || record.operationalFacts.Any(item => item == null)
+                || record.programAssets.Any(item => item == null)
+                || record.startingStock.Any(item => item == null)
+                || record.settlementProgram.entries.Any(item => item == null))
+                return "an owned settlement record is null";
+            foreach (CASettlementCapabilityAssessment capability in
+                     record.capabilities)
+                if (capability.actorIdentities == null
+                    || capability.organizationIdentities == null
+                    || capability.operationIdentities == null
+                    || capability.knowledgeEvidence == null
+                    || capability.materialEvidence == null
+                    || capability.historicalEvidence == null)
+                    return "capability " + (capability.domain ?? "<missing>")
+                        + " has missing evidence collections";
+            foreach (CADomesticUnit unit in record.domesticUnits)
+            {
+                if (unit.sharedProvisionNodeKeys == null
+                    || unit.memberships == null)
+                    return "domestic unit "
+                        + (unit.unitIdentity ?? "<missing>")
+                        + " has missing owned collections";
+                if (unit.memberships.Any(item => item == null))
+                    return "domestic unit "
+                        + (unit.unitIdentity ?? "<missing>")
+                        + " has a null membership";
+            }
+            int maxFormationSequence = record.domesticUnits.Count == 0 ? 0
+                : record.domesticUnits.Max(unit => unit.formationSequence);
+            if (record.nextDomesticUnitSequence <= maxFormationSequence)
+                return "next domestic-unit sequence does not follow persisted "
+                    + "unit " + maxFormationSequence;
+            foreach (CASettlementOperationalFact fact in
+                     record.operationalFacts)
+                if (fact.culturalSubjects == null)
+                    return "operational fact " + (fact.factKey ?? "<missing>")
+                        + " has no Culture-subject collection";
+            foreach (CASettlementProgramEntry entry in
+                     record.settlementProgram.entries)
+                if (entry.selectedCandidates == null
+                    || entry.culturalSubjects == null)
+                    return "program " + (entry.programKey ?? "<missing>")
+                        + " has missing authoritative collections";
+            if (record.layout != null
+                && (record.layout.gates == null
+                    || record.layout.gateWidths == null
+                    || record.layout.ways == null
+                    || record.layout.facilityKinds == null
+                    || record.layout.facilityCells == null
+                    || record.layout.roads == null
+                    || record.layout.roomCells == null
+                    || record.layout.roomRoles == null
+                    || record.layout.utilities == null
+                    || record.layout.utilityKinds == null
+                    || record.layout.approaches == null))
+                return "settlement layout has missing owned collections";
+            return null;
+        }
+
+        // Derived views are rebuilt only after the complete persisted owner
+        // graph has passed compatibility migration and validation. No load-time
+        // path may manufacture missing authoritative campaign state.
+        private void RebuildAcceptedReadModels()
+        {
+            for (int i = 0; i < records.Count; i++)
+            {
+                CARegionalSettlementRecord record = records[i];
+                CASettlementResidenceState.RebuildReadModel(record);
+                CASettlementProgramAssets.SyncDerivedViews(record);
+                CACombatIntent.ObserveEpisode(record.creationEpisodeId);
+                CACombatIntent.ObserveEpisode(record.developmentEpisodeId);
+            }
+        }
+
+        private string MigrateB10State()
+        {
+            string structureFailure = ValidateOwnerStructure(10);
+            if (!structureFailure.NullOrEmpty()) return structureFailure;
+            var commits = new List<Action>();
+            for (int regionIndex = 0; regionIndex < regions.Count;
+                regionIndex++)
+            {
+                CARegionalPlan region = regions[regionIndex];
+                if (region == null)
+                    return "regional plan " + regionIndex + " is null";
+                if (region.schemaVersion != 10)
+                    return "regional plan " + region.regionalId + " schema is "
+                        + region.schemaVersion + ", expected 10";
+                if (region.factions == null || region.settlements == null)
+                    return "regional plan " + region.regionalId
+                        + " has missing social collections";
+                foreach (CARegionalFactionPlan faction in region.factions)
+                {
+                    if (faction == null)
+                        return "regional plan " + region.regionalId
+                            + " has a null faction";
+                    if (!CACultureModel.TryUpgradeFromB10(faction.culture,
+                            out CACulture culture,
+                            out string cultureFailure))
+                        return "regional faction " + faction.key
+                            + " Culture: " + cultureFailure;
+                    if (!CAPoliticalBeliefsModel.TryUpgradeFromB10(
+                            faction.politicalBeliefs,
+                            out CAPoliticalBeliefs beliefs,
+                            out string beliefFailure))
+                        return "regional faction " + faction.key
+                            + " political beliefs: " + beliefFailure;
+                    if (!CAPoliticalBeliefsModel
+                            .TryUpgradeMechanismsFromB10(
+                                faction.factionStructure,
+                                out List<CAAxisEntry> order,
+                                out string orderFailure))
+                        return "regional faction " + faction.key
+                            + " current order: " + orderFailure;
+                    CARegionalFactionPlan target = faction;
+                    commits.Add(() =>
+                    {
+                        target.culture = culture;
+                        target.politicalBeliefs = beliefs;
+                        target.factionStructure = order;
+                    });
+                }
+                foreach (CARegionalSettlementPlan settlement in
+                         region.settlements)
+                {
+                    if (settlement == null)
+                        return "regional plan " + region.regionalId
+                            + " has a null settlement";
+                    if (!CACultureModel.TryUpgradeFromB10(
+                            settlement.localCulture,
+                            out CACulture localCulture,
+                            out string localFailure))
+                        return "regional settlement " + settlement.slot
+                            + " Culture: " + localFailure;
+                    CARegionalSettlementPlan target = settlement;
+                    commits.Add(() => target.localCulture = localCulture);
+                }
+                if (region.playerFounding == null)
+                    return "regional plan " + region.regionalId
+                        + " founding copy is missing";
+                if (region.playerFounding.schemaVersion
+                    != CAPlayerFoundingPlan.CurrentSchemaVersion)
+                    return "regional founding-plan schema is "
+                        + region.playerFounding.schemaVersion;
+                if (!CACultureModel.TryUpgradeFromB10(
+                        region.playerFounding.culture,
+                        out CACulture foundingCulture,
+                        out string foundingCultureFailure))
+                    return "regional founding Culture: "
+                        + foundingCultureFailure;
+                if (!CAPoliticalBeliefsModel.TryUpgradeFromB10(
+                        region.playerFounding.politicalBeliefs,
+                        out CAPoliticalBeliefs foundingBeliefs,
+                        out string foundingBeliefFailure))
+                    return "regional founding political beliefs: "
+                        + foundingBeliefFailure;
+                CAPlayerFoundingPlan foundingCandidate =
+                    region.playerFounding.Copy();
+                foundingCandidate.culture = foundingCulture;
+                foundingCandidate.politicalBeliefs = foundingBeliefs;
+                string foundingFailure = CAPlayerFoundingModel
+                    .ValidationFailure(foundingCandidate,
+                        requireConfirmed: true);
+                if (!foundingFailure.NullOrEmpty())
+                    return "regional founding copy: " + foundingFailure;
+                CARegionalPlan targetRegion = region;
+                commits.Add(() =>
+                {
+                    targetRegion.playerFounding.culture = foundingCulture;
+                    targetRegion.playerFounding.politicalBeliefs =
+                        foundingBeliefs;
+                    targetRegion.schemaVersion =
+                        CARegionalPlan.CurrentSchemaVersion;
+                });
+            }
+            foreach (CARegionalSettlementRecord record in records)
+            {
+                if (record == null) return "regional settlement record is null";
+                if (!CACultureModel.TryUpgradeFromB10(record.culture,
+                        out CACulture culture, out string cultureFailure))
+                    return "regional settlement record " + record.regionalId
+                        + "#" + record.slot + " Culture: " + cultureFailure;
+                CARegionalSettlementRecord target = record;
+                commits.Add(() => target.culture = culture);
+            }
+            foreach (Action commit in commits) commit();
+            return null;
         }
 
         public override void FinalizeInit(bool fromLoad)
@@ -1119,18 +1486,10 @@ namespace ColonistAwareness
             // the once-per-subject guard would silence the second world played
             // in a session.
             CARegionalEngineRoot.ForgetAnnouncements();
-            if (!fromLoad || regions == null || regions.Count == 0) return;
-            foreach (CARegionalPlan region in regions.Where(item =>
-                item != null))
-            {
-                if (region.worldPolicy == null)
-                    region.worldPolicy = WorldPolicy.Copy();
-                string failure;
-                if (!TryReserveRegion(region, out failure, true))
-                    Log.Error("[CA][Regional] could not restore reservation "
-                        + "for " + (region.regionalId ?? "unknown") + ": "
-                        + failure);
-            }
+            if (!fromLoad || regions == null) return;
+            if (!ReconcileReservationRegistry(out string failure))
+                throw new InvalidOperationException(
+                    "Regional reservation registry is invalid: " + failure);
         }
 
         internal CARegionalPlan FindRegion(PlanetTile mapTile, int mapSize)
@@ -1300,6 +1659,70 @@ namespace ColonistAwareness
             return true;
         }
 
+        // Regional plans own the intended footprint. Reservation WorldObjects
+        // are the engine-bound subordinate registry and are reconciled to that
+        // exact set; they never become a second plan authority.
+        internal bool ReconcileReservationRegistry(out string failure)
+        {
+            failure = null;
+            if (Verse.Find.WorldObjects == null)
+            {
+                failure = "the world-object registry is unavailable";
+                return false;
+            }
+            var desired = new Dictionary<int, ReservationClaim>();
+            foreach (CARegionalPlan region in regions
+                ?? new List<CARegionalPlan>())
+            {
+                if (region?.ReservedTileIds == null) continue;
+                for (int i = 0; i < region.ReservedTileIds.Count; i++)
+                {
+                    int tileId = region.ReservedTileIds[i];
+                    if (tileId == region.startTileId) continue;
+                    if (desired.ContainsKey(tileId))
+                    {
+                        failure = "several durable regions claim member tile "
+                            + tileId;
+                        return false;
+                    }
+                    desired.Add(tileId, new ReservationClaim
+                    {
+                        Region = region,
+                        MemberIndex = i
+                    });
+                }
+            }
+
+            var kept = new HashSet<int>();
+            List<WorldObject_CARegionalMemberReservation> existing =
+                Verse.Find.WorldObjects.AllWorldObjects
+                    .OfType<WorldObject_CARegionalMemberReservation>()
+                    .ToList();
+            foreach (WorldObject_CARegionalMemberReservation reservation in
+                existing)
+            {
+                int tileId = reservation.Tile.tileId;
+                bool valid = desired.TryGetValue(tileId,
+                        out ReservationClaim claim)
+                    && reservation.regionalId == claim.Region.regionalId
+                    && reservation.anchorTileId == claim.Region.startTileId
+                    && reservation.mapSize == claim.Region.mapSize
+                    && kept.Add(tileId);
+                if (!valid)
+                {
+                    Verse.Find.WorldObjects.Remove(reservation);
+                    continue;
+                }
+                reservation.memberIndex = claim.MemberIndex;
+            }
+            foreach (CARegionalPlan region in regions
+                ?? new List<CARegionalPlan>())
+                if (region != null && !TryReserveRegion(region, out failure,
+                        restoration: true))
+                    return false;
+            return true;
+        }
+
         internal int ReservationCount(CARegionalPlan region)
         {
             if (region == null || Verse.Find.WorldObjects == null) return 0;
@@ -1379,6 +1802,10 @@ namespace ColonistAwareness
                     // this world is made of, once
                     if (region.groundwater != null)
                         groundwater = region.groundwater.Copy();
+                    if (!ReconcileReservationRegistry(out string failure))
+                        throw new InvalidOperationException(
+                            "Replacement regional footprint is invalid: "
+                            + failure);
                     return region;
                 }
                 ValidateDurableRegion(existing);
@@ -1819,10 +2246,54 @@ namespace ColonistAwareness
             if (reason != "interval")
                 CARegionalSettlementGenerationAudit.Audit(map, reason);
             int now = Find.TickManager.TicksGame;
-            foreach (CARegionalSettlementRecord record in world.ForMap(map))
+            List<CARegionalSettlementRecord> allRecords = world.ForMap(map)
+                .Where(record => record != null).ToList();
+            List<CARegionalSettlementRecord> records = allRecords
+                .Where(record => record != null
+                    && record.localRect != CellRect.Empty).ToList();
+            int[] buildings = new int[records.Count];
+            int[] infrastructure = new int[records.Count];
+            int[] cultivated = new int[records.Count];
+            int matched = 0;
+            List<Thing> all = map.listerThings.AllThings;
+            using (CAModuleProfiler.Measure(CAModuleProfileKey.FullMapScan))
             {
-                if (record.localRect == CellRect.Empty) continue;
-                ReconcileRecord(record, map);
+                for (int thingIndex = 0; thingIndex < all.Count; thingIndex++)
+                {
+                    Thing thing = all[thingIndex];
+                    if (thing == null || !thing.Spawned) continue;
+                    for (int recordIndex = 0; recordIndex < records.Count;
+                        recordIndex++)
+                    {
+                        CARegionalSettlementRecord record =
+                            records[recordIndex];
+                        if (!record.localRect.Contains(thing.Position))
+                            continue;
+                        matched++;
+                        Building building = thing as Building;
+                        if (building != null
+                            && building.Faction == record.faction)
+                        {
+                            buildings[recordIndex]++;
+                            if (building.TryGetComp<CompPower>() != null
+                                || building.def.IsDoor
+                                || building is Building_Bed)
+                                infrastructure[recordIndex]++;
+                        }
+                        Plant plant = thing as Plant;
+                        if (plant != null && plant.sown)
+                            cultivated[recordIndex]++;
+                    }
+                }
+                CAModuleProfiler.Observe(CAModuleProfileKey.FullMapScan,
+                    all.Count, matched);
+            }
+            for (int recordIndex = 0; recordIndex < records.Count;
+                recordIndex++)
+            {
+                CARegionalSettlementRecord record = records[recordIndex];
+                ReconcileRecord(record, map, buildings[recordIndex],
+                    infrastructure[recordIndex], cultivated[recordIndex]);
                 ReconcileCulturalExpression(record, map);
                 record.lastMapId = map.uniqueID;
                 record.lastReconciliationTick = now;
@@ -1835,7 +2306,7 @@ namespace ColonistAwareness
                         + record.infrastructureCount + ", cultivated plants "
                         + record.cultivatedPlantCount);
             }
-            CARegionalSettlementMarkers.Ensure(region, world.ForMap(map));
+            CARegionalSettlementMarkers.Ensure(region, allRecords);
             if (reason == "map-generated")
                 CARegionalSettlementGenerationAudit.Finish(map);
         }
@@ -1844,6 +2315,43 @@ namespace ColonistAwareness
             Map map)
         {
             if (record == null || map == null || record.faction == null) return;
+            int buildings = 0;
+            int infrastructure = 0;
+            int cultivated = 0;
+            int matched = 0;
+            List<Thing> all = map.listerThings.AllThings;
+            using (CAModuleProfiler.Measure(CAModuleProfileKey.FullMapScan))
+            {
+                for (int i = 0; i < all.Count; i++)
+                {
+                    Thing thing = all[i];
+                    if (thing == null || !thing.Spawned
+                        || !record.localRect.Contains(thing.Position))
+                        continue;
+                    matched++;
+                    Building building = thing as Building;
+                    if (building != null && building.Faction == record.faction)
+                    {
+                        buildings++;
+                        if (building.TryGetComp<CompPower>() != null
+                            || building.def.IsDoor
+                            || building is Building_Bed)
+                            infrastructure++;
+                    }
+                    Plant plant = thing as Plant;
+                    if (plant != null && plant.sown) cultivated++;
+                }
+                CAModuleProfiler.Observe(CAModuleProfileKey.FullMapScan,
+                    all.Count, matched);
+            }
+            ReconcileRecord(record, map, buildings, infrastructure,
+                cultivated);
+        }
+
+        private static void ReconcileRecord(
+            CARegionalSettlementRecord record, Map map, int buildings,
+            int infrastructure, int cultivated)
+        {
             CASettlementResidenceState.ReconcileNativeEvents(record, map);
             List<Pawn> residents = CAPopulationProjection.Residents(record,
                 map);
@@ -1851,27 +2359,6 @@ namespace ColonistAwareness
                 pawn.GetUniqueLoadID()).ToList();
             record.populationCurrent = residents.Count;
 
-            int buildings = 0;
-            int infrastructure = 0;
-            int cultivated = 0;
-            List<Thing> all = map.listerThings.AllThings;
-            for (int i = 0; i < all.Count; i++)
-            {
-                Thing thing = all[i];
-                if (thing == null || !thing.Spawned
-                    || !record.localRect.Contains(thing.Position)) continue;
-                Building building = thing as Building;
-                if (building != null && building.Faction == record.faction)
-                {
-                    buildings++;
-                    if (building.TryGetComp<CompPower>() != null
-                        || building.def.IsDoor
-                        || building is Building_Bed)
-                        infrastructure++;
-                }
-                Plant plant = thing as Plant;
-                if (plant != null && plant.sown) cultivated++;
-            }
             record.buildingCount = buildings;
             record.infrastructureCount = infrastructure;
             record.cultivatedPlantCount = cultivated;

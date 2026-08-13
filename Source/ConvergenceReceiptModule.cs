@@ -88,7 +88,7 @@ namespace ColonistAwareness
                 text.AppendLine("      political beliefs: "
                     + CAPoliticalBeliefsModel.Summary(
                         owner.politicalBeliefs));
-                text.AppendLine("      current structure: "
+                text.AppendLine("      current order: "
                     + CAFactionAxes.Characterize(plan, owner));
             }
 
@@ -132,7 +132,7 @@ namespace ColonistAwareness
                 text.AppendLine("      political beliefs: "
                     + CAPoliticalBeliefsModel.Summary(
                         owner.politicalBeliefs));
-                text.AppendLine("      faction structure: "
+                text.AppendLine("      current order: "
                     + CAFactionAxes.Characterize(plan, owner));
                 text.AppendLine("      settlement authority: "
                     + CARegionalSettlements.SettlementAuthorityWords(
@@ -337,7 +337,7 @@ namespace ColonistAwareness
                         + "acts as they occur");
             }
 
-            // [F] Current faction structure in generated settlement state:
+            // [F] Current order in generated settlement state:
             // named officeholders, membership, ownership, staffed posts, and
             // local order.
             CAOrganizationWorldComponent orgComp =

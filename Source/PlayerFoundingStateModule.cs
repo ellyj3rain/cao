@@ -78,11 +78,9 @@ namespace ColonistAwareness
                 "establishedStart", false);
             Scribe_Values.Look(ref temporalBasis, "temporalBasis");
             Scribe_Values.Look(ref confirmed, "confirmed", false);
-            if (culture == null) culture = new CACulture();
-            if (politicalBeliefs == null)
-                politicalBeliefs = new CAPoliticalBeliefs();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-                schemaVersion = CurrentSchemaVersion;
+            // The campaign owner validates and, when supported, migrates this
+            // complete nested record. Loading does not repair collections or
+            // stamp an unknown nested version current.
         }
 
         internal CAAxisSource ArrangementSource
@@ -128,7 +126,10 @@ namespace ColonistAwareness
     // institutions that subsequently develop through play.
     public sealed class CAPlayerFoundingWorldComponent : WorldComponent
     {
-        private int authoringDataEpoch = CAAuthoringDataEpoch.Current;
+        private int campaignSchemaVersion =
+            CACampaignCompatibilityKernel.CurrentBoundaryVersion;
+        private int legacyAuthoringDataEpoch =
+            CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private CAPlayerFoundingPlan founding =
             new CAPlayerFoundingPlan();
         private int appliedAtTick = -1;
@@ -168,25 +169,60 @@ namespace ColonistAwareness
 
         public override void ExposeData()
         {
-            Scribe_Values.Look(ref authoringDataEpoch,
-                "CA_authoringDataEpoch", 0);
-            bool current = Scribe.mode == LoadSaveMode.Saving
-                || CAAuthoringDataEpoch.IsCurrent(authoringDataEpoch);
-            if (current)
+            Scribe_Values.Look(ref campaignSchemaVersion,
+                "CA_playerFoundingSchemaVersion", 0);
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+                Scribe_Values.Look(ref legacyAuthoringDataEpoch,
+                    "CA_authoringDataEpoch", 0);
+            bool readable = CACampaignCompatibility.ShouldReadLiveState(
+                "world.player-founding", campaignSchemaVersion,
+                legacyAuthoringDataEpoch);
+            if (readable)
             {
                 Scribe_Deep.Look(ref founding, "CA_playerFounding");
                 Scribe_Values.Look(ref appliedAtTick,
                     "CA_playerFoundingAppliedAtTick", -1);
             }
-            if (Scribe.mode == LoadSaveMode.PostLoadInit && !current)
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && readable)
             {
-                founding = new CAPlayerFoundingPlan();
-                appliedAtTick = -1;
-                authoringDataEpoch = CAAuthoringDataEpoch.Current;
-                CAAuthoringDataEpoch.RecordDiscard("founding draft");
+                CACampaignCompatibility.CompleteOwnerLoad(
+                    "world.player-founding", ref campaignSchemaVersion,
+                    legacyAuthoringDataEpoch, ValidateCampaignState,
+                    MigrateB10State);
             }
-            if (founding == null) founding = new CAPlayerFoundingPlan();
             base.ExposeData();
+        }
+
+        private string ValidateCampaignState()
+        {
+            return CAPlayerFoundingModel.ValidationFailure(founding,
+                requireConfirmed: true);
+        }
+
+        private string MigrateB10State()
+        {
+            if (founding == null) return "founding plan is missing";
+            if (founding.schemaVersion
+                != CAPlayerFoundingPlan.CurrentSchemaVersion)
+                return "founding plan schema is " + founding.schemaVersion
+                    + ", expected " + CAPlayerFoundingPlan.CurrentSchemaVersion;
+            if (!CACultureModel.TryUpgradeFromB10(founding.culture,
+                    out CACulture culture, out string cultureFailure))
+                return "founding Culture: " + cultureFailure;
+            if (!CAPoliticalBeliefsModel.TryUpgradeFromB10(
+                    founding.politicalBeliefs,
+                    out CAPoliticalBeliefs beliefs,
+                    out string beliefFailure))
+                return "founding political beliefs: " + beliefFailure;
+            CAPlayerFoundingPlan candidate = founding.Copy();
+            candidate.culture = culture;
+            candidate.politicalBeliefs = beliefs;
+            string candidateFailure = CAPlayerFoundingModel.ValidationFailure(
+                candidate, requireConfirmed: true);
+            if (!candidateFailure.NullOrEmpty())
+                return candidateFailure;
+            founding = candidate;
+            return null;
         }
 
         internal void Stage(CAPlayerFoundingPlan draft)
@@ -303,6 +339,58 @@ namespace ColonistAwareness
 
     internal static class CAPlayerFoundingModel
     {
+        internal static string ValidationFailure(CAPlayerFoundingPlan draft,
+            bool requireConfirmed)
+        {
+            if (draft == null) return "founding plan is missing";
+            if (draft.schemaVersion != CAPlayerFoundingPlan.CurrentSchemaVersion)
+                return "founding plan schema is " + draft.schemaVersion
+                    + ", expected " + CAPlayerFoundingPlan.CurrentSchemaVersion;
+            string cultureFailure = CACultureModel.ValidationFailure(
+                draft.culture, requireSubstantive: true);
+            if (!cultureFailure.NullOrEmpty())
+                return "founding Culture: " + cultureFailure;
+            string beliefFailure = CAPoliticalBeliefsModel.ValidationFailure(
+                draft.politicalBeliefs, allowExactLegacy: false);
+            if (!beliefFailure.NullOrEmpty())
+                return "founding political beliefs: " + beliefFailure;
+            if (draft.arrangementSource > (byte)CAAxisSource.Authored)
+                return "founding arrangement source is invalid";
+            if (draft.arrangement == null)
+            {
+                if (draft.ArrangementSource != CAAxisSource.Unset)
+                    return "founding arrangement source has no arrangement";
+                if (requireConfirmed || draft.confirmed)
+                    return "confirmed founding arrangement is missing";
+            }
+            else
+            {
+                if (draft.ArrangementSource == CAAxisSource.Unset)
+                    return "founding arrangement has no source";
+                if (draft.arrangement.id.NullOrEmpty()
+                    || draft.arrangement.label.NullOrEmpty()
+                    || draft.arrangement.premise.NullOrEmpty())
+                    return "founding arrangement identity is incomplete";
+                if (draft.arrangement.leaderRule != "none"
+                    && draft.arrangement.leaderRule != "chosen")
+                    return "founding leadership rule is unsupported";
+                if (draft.arrangement.leaderRule == "none"
+                    && !draft.arrangement.foundersDecide)
+                    return "founding arrangement has no decision authority";
+                if (draft.arrangement.durationDays < -1)
+                    return "founding duration is invalid";
+            }
+            if (draft.temporalBasis.NullOrEmpty())
+                return "founding temporal basis is missing";
+            if (requireConfirmed && !draft.confirmed)
+                return "founding plan is not confirmed";
+            if (draft.nativeIdeoId >= 0
+                && (draft.nativeIdeoName.NullOrEmpty()
+                    || draft.nativeIdeoSignature.NullOrEmpty()))
+                return "native Ideoligion receipt is incomplete";
+            return null;
+        }
+
         internal static void Ensure(CAPlayerFoundingPlan draft)
         {
             if (draft == null) return;
@@ -584,13 +672,17 @@ namespace ColonistAwareness
                     + cultureFailure;
                 return false;
             }
-            if (draft.politicalBeliefs == null
-                || CAFactionAxes.CountByState(
-                    draft.politicalBeliefs.positions,
-                    CAAxisSource.Unset) > 0)
+            if (draft.politicalBeliefs == null)
             {
-                failure = "Answer every political-belief question or apply a "
-                    + "complete profile.";
+                failure = "The founders' political-belief record is unavailable.";
+                return false;
+            }
+            string beliefFailure = CAPoliticalBeliefsModel.ValidationFailure(
+                draft.politicalBeliefs, allowExactLegacy: false);
+            if (!beliefFailure.NullOrEmpty())
+            {
+                failure = "The founders' political beliefs cannot be used: "
+                    + beliefFailure;
                 return false;
             }
             CAFoundingArrangement arrangement = draft.arrangement;

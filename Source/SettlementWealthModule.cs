@@ -5,35 +5,6 @@ using Verse;
 
 namespace ColonistAwareness
 {
-    // Faction structure describes current order. This facade deliberately does
-    // not materialize coins, offices, membership, work relations, holdings,
-    // policies, or security bodies from those descriptive axes. Explicit
-    // institution/event owners may consume the structure when their own
-    // constitutive facts exist.
-    internal static class CAAxisMaterialization
-    {
-        internal static void Apply(CAOrganization organization,
-            CARegionalSettlementRecord record, Map map)
-        {
-            if (organization == null || record?.faction == null) return;
-            CAFactionState factionState = CAFactionStateWorldComponent.Current
-                ?.Find(record.faction);
-            if (factionState == null) return;
-
-            var currentOrder = new CARegionalFactionPlan
-            {
-                factionStructure = factionState.factionStructure,
-                politicalBeliefs = factionState.politicalBeliefs
-            };
-            foreach (string tension in CAFactionAxes.Conflicts(currentOrder))
-            {
-                if (!organization.openBeliefConflicts.Contains(tension))
-                    organization.openBeliefConflicts.Add(tension);
-                organization.Record("political-belief", tension);
-            }
-        }
-    }
-
     // Creation wealth and construction era summarize persisted operational
     // programs. They do not create those programs or their capabilities.
     internal static class CASettlementWealth

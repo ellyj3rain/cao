@@ -270,14 +270,20 @@ namespace ColonistAwareness
             DrawSummary(rect, ref y, null,
                 draft?.culture?.name ?? "Culture not set",
                 CACultureModel.Summary(draft?.culture), CultureStateWords());
-            DrawButtons(rect, ref y,
+            var actions = new List<CAFoundingAction>
+            {
                 new CAFoundingAction("Compose Culture", delegate
                 {
                     Find.WindowStack.Add(new Dialog_CACultureEditor(
                         draft.culture, "Founders", Changed));
-                }),
-                new CAFoundingAction("Load saved...", OpenCulturePresets),
-                new CAFoundingAction("Save Culture...", SaveCultureProfile));
+                })
+            };
+            if (CAAuthoringProfileLibrary.Cultures.Count > 0)
+                actions.Add(new CAFoundingAction("Load saved...",
+                    OpenCulturePresets));
+            actions.Add(new CAFoundingAction("Save Culture...",
+                SaveCultureProfile));
+            DrawButtons(rect, ref y, actions.ToArray());
         }
 
         private void DrawIdeoCard(Rect rect)
@@ -318,7 +324,7 @@ namespace ColonistAwareness
                             Changed();
                         }));
                 }),
-                new CAFoundingAction("Profiles...", OpenPoliticalPresets));
+                new CAFoundingAction("Belief sets...", OpenPoliticalPresets));
         }
 
         private void DrawArrangementCard(Rect rect)
@@ -638,6 +644,7 @@ namespace ColonistAwareness
 
         private void OpenCulturePresets()
         {
+            if (CAAuthoringProfileLibrary.Cultures.Count == 0) return;
             CACreationUI.OpenChoices("Saved Cultures",
                 "Use a saved Culture. Choose native RimWorld styles separately "
                     + "in the Culture editor under Visual tradition.",
@@ -666,17 +673,17 @@ namespace ColonistAwareness
         private void OpenPoliticalPresets()
         {
             List<CACreationChoice> options =
-                CAAuthoringChoices.PoliticalProfiles(
+                CAAuthoringChoices.PoliticalBeliefSets(
                     draft?.politicalBeliefs,
                     CAPlayerFoundingModel.Seed, delegate
                     {
                         RefreshSuggestedArrangement();
                         Changed();
                     });
-            CACreationUI.OpenChoices("Political profiles",
-                "Choose what the founders broadly consider proper. The "
-                + "individual positions remain editable, and these beliefs "
-                + "do not automatically become settlement rules.", options);
+            CACreationUI.OpenChoices("Political belief sets",
+                "Add partial commitments the founders consider proper. Each "
+                + "set preserves unlisted mechanisms, and beliefs do not "
+                + "automatically become settlement rules.", options);
         }
 
         private void OpenArrangementPresets()

@@ -200,8 +200,8 @@ namespace ColonistAwareness
             string scenario = Find.Scenario?.name ?? "unknown";
             int now = Find.TickManager.TicksGame;
 
-            // The founders carry culture and political beliefs. Their wider
-            // faction structure remains empty until institutions actually
+            // The founders carry Culture and political beliefs. Their wider
+            // current order remains empty until institutions actually
             // develop; only the exact arrangement below is instituted now.
             CAPlayerFoundingPlan founding = CAPlayerFoundingSession
                 .ConfirmedForRuntime();
