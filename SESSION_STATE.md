@@ -20,8 +20,8 @@ receipts, review, deployment, and operator runtime evidence remain separate.
 | Branch | `mallowfluff/b3-creation-flow-interaction` |
 | Exact B11 baseline | `bd7f757e4825a921c4449062d41df45e474805c1` |
 | B11 source closure | `d83fbadb4eec2625ba985fb7fd6f64365bd9c313` (`[B11] source: close durable campaign and compositional authoring`) |
-| B11 governance closure | Pending final governance commit containing the append-only B11 record, version projection, canonical documents, and evidence. |
-| B11 deployment receipt | Pending closed-process deployment after publication; recorded in `B11_DEPLOYMENT_RECEIPT.md`. |
+| B11 governance closure | `8abfd501a9887748b5ca78bd02bf7aa92bebc549` (`[B11] governance: ratify durable campaign and authoring closure`) |
+| B11 deployment receipt | PASS - `B11_DEPLOYMENT_RECEIPT.md` records closed-process replacement and an exact source/target byte comparison. |
 
 The portable chronology contains 113 closed batches: `A1-A102` and `B1-B11`.
 Thirty-eight contiguous version units cover that chronology exactly once. B11 is
@@ -68,11 +68,11 @@ round-trip, and agree byte for byte.
 | Ontology coverage | PASS - 36 mechanically observable fact families classified; 0 unclassified core mechanics; 45 subjects and 30 practices each have source and consumer |
 | B10 acceptance | PASS - 75/75 retained causal receipts |
 | B10 synthetic-state sweep | PASS - 152 active occurrences classified; 0 unresolved Critical/High |
-| B11 acceptance | **77/78 PASS**; only the deliberately ordered closed-process deployment receipt remains |
+| B11 acceptance | **78/78 PASS** |
 | Five-lens review | **PASS** - 0 Critical, 0 High, 0 Medium, 0 Low |
 | Release build | **PASS** - 0 warnings, 0 errors against source commit `d83fbad` |
 | Assembly | 3,670,528 bytes; SHA-256 `2848F2B481F672DD7F50C288D97A34FA77FC5DCB18778F9F463606793D8E70C1` |
-| Deployment | Pending publication and closed-process byte comparison; the currently loaded DLL remains the prior B10 build |
+| Deployment | **PASS** - RimWorld was closed; source and active target are byte-identical at 3,670,528 bytes and SHA-256 `2848F2B481F672DD7F50C288D97A34FA77FC5DCB18778F9F463606793D8E70C1` |
 
 Static evidence establishes the source, serialization, fixture, and deployment
 candidate. It does not select options, advance the game, or establish visual and
@@ -80,8 +80,8 @@ gameplay acceptance.
 
 ## Operator Runtime Boundary
 
-B11 ends at the durable campaign-start boundary. After publication and
-byte-verified deployment, the next action is the operator test. Codex does not
+B11 ends at the durable campaign-start boundary. Publication and byte-verified
+deployment are complete; the next runtime action is the operator test. Codex does not
 advance creation, choose authoring values, start the game, alter saves, or claim
 how the game looks and plays on the operator's behalf.
 
@@ -99,8 +99,8 @@ how the game looks and plays on the operator's behalf.
 ## Environment and Preserved Evidence
 
 - RimWorld target: 1.6.4871 rev590.
-- RimWorld is running as PID 19652 from 2026-08-12 19:28 PDT. Publication may
-  proceed, but assembly replacement remains prohibited until the process closes.
+- RimWorld was closed before B11 assembly replacement and remained closed for
+  the post-copy byte comparison.
 - `AUTHORING_ONTOLOGY_COVERAGE.md`, `MODULE_OWNERSHIP.md`,
   `SCHEMA_REGISTRY.md`, `PERSISTENCE_CENSUS.md`, and
   `CAMPAIGN_COMPATIBILITY.md` are current canonical
