@@ -20,8 +20,8 @@ receipts, review, deployment, and operator runtime evidence remain separate.
 | Branch | `mallowfluff/b3-creation-flow-interaction` |
 | Exact B12 baseline | `a4f8318b78082665c7b6c2110a7543960b0bcfa8` |
 | B12 source closure | `5e721c71e7b41c92ec69a5916cda45b431b067e9` (`[B12] source: close cultural cognition and political emergence`) |
-| B12 governance closure | Pending the coherent governance commit containing this record. |
-| B12 deployment receipt | Pending closed-process copy of the verified assembly. |
+| B12 governance closure | `57ba7907367a02a0f8b810f1edd394d0cae6ceb6` (`[B12] governance: ratify cultural cognition and political emergence`) |
+| B12 deployment receipt | **PASS** - `B12_DEPLOYMENT_RECEIPT.md` records closed-process replacement and exact source/target byte identity. |
 
 The portable chronology contains 114 closed batches: `A1-A102` and `B1-B12`.
 Thirty-nine contiguous version units cover that chronology exactly once. B12 is
@@ -72,7 +72,7 @@ the current fixture.
 | Five-lens review | **PASS** - 0 Critical, 0 High, 0 Medium, 0 Low |
 | Release build | **PASS** - 0 warnings, 0 errors against source commit `5e721c7` |
 | Assembly | 3,911,680 bytes; SHA-256 `577B814FB026E7903BF70C4499C4B47B1E029AB53C568AEA9464D9166FDFC251` |
-| Deployment | Pending closed-process copy and post-copy byte comparison. |
+| Deployment | **PASS** - RimWorld was closed; source and active target are byte-identical at 3,911,680 bytes and SHA-256 `577B814FB026E7903BF70C4499C4B47B1E029AB53C568AEA9464D9166FDFC251`. |
 
 Static evidence establishes the source, serialization, fixture, and deployment
 candidate. It does not select options, advance the game, or establish visual and
@@ -80,7 +80,8 @@ gameplay acceptance.
 
 ## Operator Runtime Boundary
 
-B12 ends at the operator runtime-test boundary after byte-verified deployment.
+B12 ends at the operator runtime-test boundary. Publication and byte-verified
+deployment are complete.
 Codex does not advance creation, choose authoring values, start the game, alter
 saves, or claim how the game looks and plays on the operator's behalf.
 
@@ -97,8 +98,8 @@ saves, or claim how the game looks and plays on the operator's behalf.
 ## Environment and Preserved Evidence
 
 - RimWorld target: 1.6.4871 rev590.
-- RimWorld remained closed throughout final verification and will remain closed
-  for assembly replacement.
+- RimWorld remained closed throughout final verification and assembly
+  replacement. Codex did not launch it afterward.
 - `AUTHORING_ONTOLOGY_COVERAGE.md`, `MODULE_OWNERSHIP.md`,
   `SCHEMA_REGISTRY.md`, `PERSISTENCE_CENSUS.md`, and
   `CAMPAIGN_COMPATIBILITY.md` are current canonical boundaries.
