@@ -1,6 +1,6 @@
 # B14 Society Preset Execution Receipt
 
-Generated: 2026-08-17 23:44:37 UTC / 2026-08-17 16:44:37 -07:00
+Generated: 2026-08-18 00:12:43 UTC / 2026-08-17 17:12:43 -07:00
 
 Assembly: `C:\Users\jleyv\Peanut Butter\AI Assisted Software Engineering Mass Repository\Projects\colonist-awareness\.claude\worktrees\rimworld-regional-multithreading-47e9ec\Assemblies\ColonistAwareness.dll`
 
