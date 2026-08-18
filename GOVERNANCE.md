@@ -153,7 +153,8 @@ The repository-owned CI contract lives in `tools/ci/`. GitHub Actions and GitLab
 CI call those same scripts rather than maintaining separate build definitions.
 Every pull request to `main` must pass the required `ci-verify` and
 `dependency-scan` checks. `ci-verify` replays the governed version model, rejects
-machine-local project references, restores the locked production dependency graph,
+machine-local project references and corpus-bearing reachable history, restores
+the locked production dependency graph,
 produces two byte-identical clean builds, proves the tracked shipping assembly is
 current, and compiles every support project declared in `tools/ci/projects.txt`.
 Historical fixture-conversion source that is retained only as provenance stays

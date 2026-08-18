@@ -122,8 +122,11 @@ that a shipped CAO build was trained from these rows.
 
 ## Maintenance contract
 
-`tools/ci/verify-repository.mjs` enforces the tracked whitelist, representative
-ignore paths, required governance records, aggregate-only public profile, and
-absence of corpus references from CI artifact packaging. The extractor defaults
-to ignored output and cache paths. A clean clone builds every declared project
-without the local corpus.
+`tools/ci/verify-repository.mjs` enforces the tracked whitelist across both the
+current tree and every commit reachable from `HEAD`, representative ignore
+paths, required governance records, the aggregate-only public profile, and the
+absence of corpus references from CI artifact packaging. Hosted verification
+uses a full-history checkout so a branch based on superseded corpus-bearing
+ancestry cannot republish those objects merely because its tip is clean. The
+extractor defaults to ignored output and cache paths. A clean clone builds every
+declared project without the local corpus.

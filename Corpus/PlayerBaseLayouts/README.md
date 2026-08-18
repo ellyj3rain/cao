@@ -10,6 +10,9 @@ non-reconstructive aggregate profile at
 accounting live in `DATASET_GOVERNANCE.md` and
 `PLAYER_BASE_PATTERN_CORPUS.md`.
 
+Repository verification applies this whitelist to the complete history
+reachable from `HEAD`, not only to the checked-out tree.
+
 `tools/PlayerBaseLayoutExtractor` writes to `local/generated/` by default and
 uses `.cache/real-ruins/raw/` for acquisition caching. Both locations are
 ignored. Explicit output paths remain available for controlled local work; do

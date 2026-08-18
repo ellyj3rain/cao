@@ -53,6 +53,23 @@ for (const file of trackedFiles) {
   }
 }
 
+const reachableCorpusFiles = new Set(
+  run(
+    "git",
+    ["log", "--format=", "--name-only", "HEAD", "--", "Corpus/PlayerBaseLayouts"],
+    { echo: false },
+  )
+    .split(/\r?\n/u)
+    .map((file) => file.trim())
+    .filter(Boolean),
+);
+
+for (const file of reachableCorpusFiles) {
+  if (!publicCorpusFiles.has(file)) {
+    fail(`${file} is substantive corpus state reachable from HEAD history`);
+  }
+}
+
 for (const requiredGovernanceFile of [
   "DATASET_GOVERNANCE.md",
   "PLAYER_BASE_PATTERN_CORPUS.md",
@@ -160,5 +177,5 @@ for (const [packageName, expectedVersion] of expectedDirectPackages) {
 }
 
 console.log(
-  `repository verification passed: version replay, corpus boundary, ${trackedProjects.length} tracked C# projects, ${declaredProjects.length} executable support projects, and locked production dependencies`,
+  `repository verification passed: version replay, current-tree and reachable-history corpus boundary, ${trackedProjects.length} tracked C# projects, ${declaredProjects.length} executable support projects, and locked production dependencies`,
 );
