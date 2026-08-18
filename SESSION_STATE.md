@@ -21,7 +21,7 @@ receipts, deployment, and operator runtime evidence remain separate.
 | Branch | `mallowfluff/repo-ci-foundation` |
 | B16 merged baseline | `788fcd1ed009010f3e12a7dfbfaccde003e456d1` (PR `#4`) |
 | Closed chronology | `A1-A102` and `B1-B16`; B16 is kohai capability unit `VU-043`; `B17` is next. |
-| Publication maintenance | CI foundation in progress; no runtime, schema, fixture, version, or deployment state changes. |
+| Publication maintenance | PR `#5` hosted checks pass (`ci-verify`, `dependency-scan`, and CodeQL); merge and `main` protection remain. No runtime, schema, fixture, version, or authored-state changes. |
 
 ## Current B16 contract
 
