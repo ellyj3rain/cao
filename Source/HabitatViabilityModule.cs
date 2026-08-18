@@ -7,8 +7,8 @@ using Verse;
 namespace ColonistAwareness
 {
     // Runtime bridge for the pure habitat kernel. It reads existing factual
-    // owners only: world terrain, saved settlement programs, and the native
-    // technology of an exact faction. It does not create a program, culture,
+    // owners only: world terrain, saved settlement programs, and the faction's
+    // authored technological knowledge. It does not create a program, culture,
     // institution, or settlement merely because the environment needs one.
     internal static class CAHabitatViability
     {
@@ -24,23 +24,17 @@ namespace ColonistAwareness
             };
         }
 
-        internal static int TechnologyTier(CARegionalFactionPlan faction)
+        internal static int KnowledgeCompatibilityTier(
+            CARegionalFactionPlan faction)
         {
-            return TechnologyTier(faction?.ResolvedFactionDef?.techLevel
-                ?? TechLevel.Neolithic);
+            return CATechnologicalKnowledgeModel.CompatibilityTier(
+                faction?.technologicalKnowledge);
         }
 
-        internal static int TechnologyTier(Faction faction)
+        internal static int KnowledgeCompatibilityTier(Faction faction)
         {
-            return TechnologyTier(faction?.def?.techLevel
-                ?? TechLevel.Neolithic);
-        }
-
-        internal static int TechnologyTier(TechLevel technology)
-        {
-            return (int)technology >= (int)TechLevel.Spacer ? 3
-                : (int)technology >= (int)TechLevel.Industrial ? 2
-                : (int)technology >= (int)TechLevel.Medieval ? 1 : 0;
+            return CATechnologicalKnowledgeRuntime
+                .CanonicalCompatibilityTier(faction);
         }
 
         // Placement may ask whether a population could establish the required
@@ -64,6 +58,36 @@ namespace ColonistAwareness
                     .SettlementPotentialCapability(technologyTier));
         }
 
+        internal static CAHabitatViabilityResult FrontierPotential(
+            CASettlementEnvironmentFacts facts,
+            CARegionalFactionPlan supporter)
+        {
+            CAHabitatViabilityResult result = FrontierPotential(facts,
+                supporter == null ? 0
+                    : KnowledgeCompatibilityTier(supporter));
+            if (result.Viable && !SatisfiesKnowledge(facts,
+                    supporter?.technologicalKnowledge
+                        ?? BaselineFrontierKnowledge(),
+                    false, null, out _))
+                result.Viable = false;
+            return result;
+        }
+
+        internal static CAHabitatViabilityResult FrontierPotential(
+            CASettlementEnvironmentFacts facts, Faction supporter)
+        {
+            CAHabitatViabilityResult result = FrontierPotential(facts,
+                supporter == null ? 0
+                    : KnowledgeCompatibilityTier(supporter));
+            CATechnologicalKnowledge knowledge = supporter == null
+                ? BaselineFrontierKnowledge()
+                : CATechnologicalKnowledgeRuntime.ForFaction(supporter);
+            if (result.Viable && !SatisfiesKnowledge(facts, knowledge,
+                    false, null, out _))
+                result.Viable = false;
+            return result;
+        }
+
         internal static bool CanPotentiallySettle(CARegionalPlan plan,
             int factionKey, int tileId, out string failure)
         {
@@ -81,17 +105,18 @@ namespace ColonistAwareness
                 failure = "choose a settlement-capable faction before assigning this ground";
                 return false;
             }
-            int tier = TechnologyTier(faction);
+            int tier = KnowledgeCompatibilityTier(faction);
             CAHabitatViabilityResult result = SettlementPotential(facts,
-                tier);
-            if (result.Viable) return true;
+                Math.Max(tier, facts.RequiredCapabilityTier));
+            bool knowsHow = SatisfiesKnowledge(facts,
+                faction.technologicalKnowledge, false, null,
+                out CATechnologyRequirement missingKnowledge);
+            if (result.Viable && knowsHow) return true;
             string missing = MissingWords(result.MissingRequirementMask);
             failure = "this population cannot establish a viable habitat "
-                + "here: missing " + missing
-                + (tier < facts.RequiredCapabilityTier
-                    ? "; the ground requires capability tier "
-                        + facts.RequiredCapabilityTier + " and this faction "
-                        + "provides tier " + tier : "");
+                + "here: " + (!knowsHow
+                    ? MissingKnowledgeWords(missingKnowledge)
+                    : "missing " + missing);
             return false;
         }
 
@@ -99,8 +124,9 @@ namespace ColonistAwareness
             CARegionalPlan plan, CARegionalSettlementPlan settlement,
             CASettlementEnvironmentFacts facts)
         {
-            int tier = TechnologyTier(plan?.FactionPlan(
-                settlement?.factionKey ?? -1));
+            CARegionalFactionPlan faction = plan?.FactionPlan(
+                settlement?.factionKey ?? -1);
+            int tier = KnowledgeCompatibilityTier(faction);
             HashSet<string> programs = CompletePrograms(plan, settlement);
             bool foodPreparation = programs.Contains(
                 CASettlementProgramRegistry.FoodPreparation)
@@ -136,7 +162,12 @@ namespace ColonistAwareness
                     CASettlementProgramRegistry.DomesticProvision);
 
             CAHabitatFoodRoute route = RealizedFoodRoute(facts, programs,
-                tier);
+                faction?.technologicalKnowledge);
+            bool protectedCultivationKnowledge =
+                CATechnologicalKnowledgeModel.Rank(
+                    faction?.technologicalKnowledge,
+                    CATechnologyDomains.Agriculture,
+                    CATechnologyCompetencies.Operate) >= 2;
             bool foodSource;
             switch (route)
             {
@@ -145,7 +176,8 @@ namespace ColonistAwareness
                     break;
                 case CAHabitatFoodRoute.ProtectedLowLightCultivation:
                 case CAHabitatFoodRoute.ProtectedCultivation:
-                    foodSource = agriculture && production && tier >= 2;
+                    foodSource = agriculture && production
+                        && protectedCultivationKnowledge;
                     break;
                 case CAHabitatFoodRoute.StoredAndSupported:
                     foodSource = trade && storage || provision && storage;
@@ -158,13 +190,18 @@ namespace ColonistAwareness
 
             var capability = new CAHabitatCapabilityInput
             {
-                TechnologyTier = tier,
+                // The pure kernel retains this compatibility projection for
+                // old causal receipts. Exact technological authority is the
+                // faction-owned domain gate applied below.
+                KnowledgeCompatibilityTier = Math.Max(tier,
+                    facts?.RequiredCapabilityTier ?? 0),
                 // Established-settlement morphology guarantees a roofed lot;
                 // a frontier site has a separate material proof below.
                 EnclosedShelter = settlement != null,
-                ThermalControl = tier >= 1 && (production || storage),
+                ThermalControl = (production || storage),
                 ReliableFood = foodPreparation && foodSource,
-                SecuredFoodSupply = agriculture && production && tier >= 2
+                SecuredFoodSupply = agriculture && production
+                        && protectedCultivationKnowledge
                     || trade && storage,
                 FoodReserve = storage,
                 MedicalCare = medicine,
@@ -173,11 +210,16 @@ namespace ColonistAwareness
                 // output is not merely a momentary recipe product.
                 WaterTreatment = foodPreparation && storage,
                 ArtificialLight = settlement != null,
-                HazardProtection = tier >= 2 && medicine && production,
-                BreathableInterior = tier >= 3 && production
+                HazardProtection = medicine && production,
+                BreathableInterior = production
             };
-            return CAHabitatViabilityCausalKernel.Evaluate(
+            CAHabitatViabilityResult result =
+                CAHabitatViabilityCausalKernel.Evaluate(
                 Requirements(facts), capability);
+            if (!SatisfiesKnowledge(facts, faction?.technologicalKnowledge,
+                    false, null, out _))
+                result.Viable = false;
+            return result;
         }
 
         internal static CAHabitatViabilityResult ApplySettlement(
@@ -197,13 +239,14 @@ namespace ColonistAwareness
             settlement.habitatFoodRoute = (byte)RealizedFoodRoute(plan,
                 settlement, facts);
             settlement.habitatViable = result.Viable;
+            SatisfiesKnowledge(facts, plan?.FactionPlan(
+                    settlement.factionKey)?.technologicalKnowledge,
+                false, null, out CATechnologyRequirement missingKnowledge);
             settlement.habitatBlocker = result.Viable ? null
-                : "Missing " + MissingWords(result.MissingRequirementMask)
-                    + (TechnologyTier(plan?.FactionPlan(
-                            settlement.factionKey))
-                        < facts.RequiredCapabilityTier
-                        ? "; this habitat requires capability tier "
-                            + facts.RequiredCapabilityTier : "");
+                : result.MissingRequirementMask != 0
+                    ? "Missing " + MissingWords(
+                        result.MissingRequirementMask)
+                    : MissingKnowledgeWords(missingKnowledge);
             return result;
         }
 
@@ -242,7 +285,8 @@ namespace ColonistAwareness
         }
 
         internal static bool ValidateFrontier(CAFrontierHoldingPlan holding,
-            CASettlementEnvironmentFacts facts, out string failure)
+            CASettlementEnvironmentFacts facts, out string failure,
+            CARegionalPlan region = null)
         {
             failure = null;
             if (holding == null || facts == null || !facts.Valid)
@@ -301,6 +345,22 @@ namespace ColonistAwareness
                     + MissingWords(expected.MissingRequirementMask);
                 return false;
             }
+            Faction supporter = ResolveSupporter(region, holding);
+            if ((regionalSupport || worldSupport) && supporter == null)
+            {
+                failure = "the supporting faction is unavailable";
+                return false;
+            }
+            CATechnologicalKnowledge knowledge = supporter == null
+                ? BaselineFrontierKnowledge()
+                : CATechnologicalKnowledgeRuntime.ForFaction(supporter);
+            if (!SatisfiesKnowledge(facts, knowledge,
+                    false, null,
+                    out CATechnologyRequirement missingKnowledge))
+            {
+                failure = MissingKnowledgeWords(missingKnowledge);
+                return false;
+            }
             return true;
         }
 
@@ -308,23 +368,24 @@ namespace ColonistAwareness
             CARegionalPlan plan, CASettlementEnvironmentFacts facts)
         {
             if (plan == null || facts == null) return null;
-            if (FrontierPotential(facts, 0).Viable) return null;
+            if (FrontierPotential(facts,
+                    (CARegionalFactionPlan)null).Viable) return null;
             HashSet<int> settled = new HashSet<int>((plan.settlements
                     ?? new List<CARegionalSettlementPlan>())
                 .Where(item => item != null)
                 .Select(item => item.factionKey));
             return (plan.factions ?? new List<CARegionalFactionPlan>())
                 .Where(item => item != null && settled.Contains(item.key))
-                .Where(item => FrontierPotential(facts,
-                    TechnologyTier(item)).Viable)
-                .OrderBy(item => TechnologyTier(item))
+                .Where(item => FrontierPotential(facts, item).Viable)
+                .OrderBy(item => KnowledgeCompatibilityTier(item))
                 .ThenBy(item => item.key).FirstOrDefault();
         }
 
         internal static Faction WorldSupporter(
             CASettlementEnvironmentFacts facts)
         {
-            if (facts == null || FrontierPotential(facts, 0).Viable)
+            if (facts == null || FrontierPotential(facts, (Faction)null)
+                    .Viable)
                 return null;
             try
             {
@@ -343,8 +404,8 @@ namespace ColonistAwareness
                         catch { return false; }
                     })
                     .Where(faction => FrontierPotential(facts,
-                        TechnologyTier(faction)).Viable)
-                    .OrderBy(faction => TechnologyTier(faction))
+                        faction).Viable)
+                    .OrderBy(faction => KnowledgeCompatibilityTier(faction))
                     .ThenBy(faction => faction.loadID).FirstOrDefault();
             }
             catch { return null; }
@@ -377,18 +438,40 @@ namespace ColonistAwareness
                 : string.Join(", ", words);
         }
 
+        internal static string MissingKnowledgeWords(
+            CATechnologyRequirement requirement)
+        {
+            if (requirement == null)
+                return "required practical knowledge is unavailable";
+            if (!requirement.ExplicitlyMapped
+                || CATechnologyDomains.Find(requirement.DomainKey) == null)
+                return "no technological knowledge mapping exists for "
+                    + (requirement.SourceKey ?? "this requirement");
+            string domain = CATechnologyDomains.Find(
+                requirement.DomainKey)?.Label ?? requirement.DomainKey;
+            string action = requirement.CompetencyKey
+                == CATechnologyCompetencies.Construct ? "build"
+                : requirement.CompetencyKey
+                    == CATechnologyCompetencies.Operate ? "operate"
+                : requirement.CompetencyKey
+                    == CATechnologyCompetencies.Maintain ? "maintain"
+                : "understand";
+            return domain + " knowledge is too limited to " + action
+                + " what this ground requires";
+        }
+
         internal static CAHabitatFoodRoute RealizedFoodRoute(
             CARegionalPlan plan, CARegionalSettlementPlan settlement,
             CASettlementEnvironmentFacts facts)
         {
             return RealizedFoodRoute(facts, CompletePrograms(plan,
-                settlement), TechnologyTier(plan?.FactionPlan(
-                    settlement?.factionKey ?? -1)));
+                settlement), plan?.FactionPlan(
+                    settlement?.factionKey ?? -1)?.technologicalKnowledge);
         }
 
         private static CAHabitatFoodRoute RealizedFoodRoute(
             CASettlementEnvironmentFacts facts, HashSet<string> programs,
-            int tier)
+            CATechnologicalKnowledge knowledge)
         {
             CAHabitatFoodRoute route = facts?.FoodRoute
                 ?? CAHabitatFoodRoute.OutdoorCultivation;
@@ -396,7 +479,10 @@ namespace ColonistAwareness
                     == CAHabitatFoodRoute.ProtectedCultivation
                 || route == CAHabitatFoodRoute.ProtectedLowLightCultivation;
             if (!protectedRoute) return route;
-            bool protectedCultivation = tier >= 2
+            bool protectedCultivation =
+                CATechnologicalKnowledgeModel.Rank(knowledge,
+                    CATechnologyDomains.Agriculture,
+                    CATechnologyCompetencies.Operate) >= 2
                 && programs.Contains(CASettlementProgramRegistry.Agriculture)
                 && (programs.Contains(
                         CASettlementProgramRegistry.Production)
@@ -408,6 +494,31 @@ namespace ColonistAwareness
                 && programs.Contains(CASettlementProgramRegistry.Storage);
             return outsideSupply ? CAHabitatFoodRoute.StoredAndSupported
                 : route;
+        }
+
+        private static bool SatisfiesKnowledge(
+            CASettlementEnvironmentFacts facts,
+            CATechnologicalKnowledge knowledge, bool distributed,
+            Func<int, bool> pawnAvailable,
+            out CATechnologyRequirement missing)
+        {
+            IEnumerable<CATechnologyRequirement> requirements =
+                CAHabitatViabilityCausalKernel.Enumerate(
+                    facts?.HabitatRequirementMask ?? 0)
+                .SelectMany(CATechnologyRequirementResolver.ForHabitat);
+            return CATechnologicalKnowledgeAvailability.Satisfies(knowledge,
+                requirements, distributed, pawnAvailable, out missing);
+        }
+
+        private static CATechnologicalKnowledge BaselineFrontierKnowledge()
+        {
+            var knowledge = new CATechnologicalKnowledge();
+            CATechnologicalKnowledgeModel.ApplyProfile(knowledge,
+                "subsistence", CAAxisSource.Generated,
+                "unaffiliated frontier subsistence");
+            CATechnologicalKnowledgeModel.Ensure(knowledge,
+                "frontier:subsistence", "subsistence");
+            return knowledge;
         }
 
         private static HashSet<string> CompletePrograms(CARegionalPlan plan,

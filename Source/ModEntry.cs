@@ -47,6 +47,7 @@ namespace ColonistAwareness
         public bool authorityObedience = true;
         public bool operationalAccess = true;
         public bool autonomousHomePlanning = false;
+        public bool experimentalDistributedKnowledge = false;
         public int autonomousHomePlanningResetGeneration;
         public List<CAUserCultureProfile> cultureProfiles =
             new List<CAUserCultureProfile>();
@@ -108,31 +109,28 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref authorityObedience, "authorityObedience", true);
             Scribe_Values.Look(ref operationalAccess, "operationalAccess", true);
             Scribe_Values.Look(ref autonomousHomePlanning, "autonomousHomePlanning", false);
+            Scribe_Values.Look(ref experimentalDistributedKnowledge,
+                "experimentalDistributedKnowledge", false);
             Scribe_Values.Look(ref autonomousHomePlanningResetGeneration,
                 "autonomousHomePlanningResetGeneration", 0);
-            bool currentAuthoringData = Scribe.mode == LoadSaveMode.Saving
+            Scribe_Collections.Look(ref cultureProfiles,
+                "cultureProfiles", LookMode.Deep);
+            Scribe_Collections.Look(ref politicalOrderProfiles,
+                "politicalOrderProfiles", LookMode.Deep);
+            bool currentSocietyProfiles = Scribe.mode == LoadSaveMode.Saving
                 || CAPendingAuthoringDataEpoch.IsCurrent(authoringDataEpoch);
-            if (currentAuthoringData)
-            {
-                Scribe_Collections.Look(ref cultureProfiles,
-                    "cultureProfiles", LookMode.Deep);
-                Scribe_Collections.Look(ref politicalOrderProfiles,
-                    "politicalOrderProfiles", LookMode.Deep);
+            if (currentSocietyProfiles)
                 Scribe_Collections.Look(ref societyProfiles,
                     "societyProfiles", LookMode.Deep);
-            }
             Scribe_Values.Look(ref traceBehavior, "traceBehavior", true);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 if (!CAPendingAuthoringDataEpoch.IsCurrent(authoringDataEpoch))
                 {
-                    cultureProfiles = new List<CAUserCultureProfile>();
-                    politicalOrderProfiles =
-                        new List<CAUserPoliticalOrderProfile>();
                     societyProfiles = new List<CAUserSocietyProfile>();
                     authoringDataEpoch = CAPendingAuthoringDataEpoch.Current;
                     CAPendingAuthoringDataEpoch.RecordDiscard(
-                        "saved profiles");
+                        "saved Society profiles");
                 }
                 if (initiativeSchema
                     < AutonomyComponent.CurrentInitiativeSchema)
@@ -213,6 +211,24 @@ namespace ColonistAwareness
             Rect listingRect = viewRect;
             listingRect.height = 99999f;
             listing.Begin(listingRect);
+
+            listing.Label("Technological knowledge");
+            bool distributed = Settings.experimentalDistributedKnowledge;
+            listing.CheckboxLabeled("Experimental distributed knowledge",
+                ref distributed,
+                "Store the faction's technological knowledge through living carriers and represented records. Loss or incapacity can make knowledge unavailable without erasing its history.");
+            if (distributed != Settings.experimentalDistributedKnowledge)
+            {
+                Settings.experimentalDistributedKnowledge = distributed;
+                WriteSettings();
+                if (distributed)
+                    CATechnologicalKnowledgeRuntime
+                        .InitializeCurrentFactionDistribution();
+            }
+            listing.Label(distributed
+                ? "Practical capability follows the knowledge currently available through the faction's pawns and retained records."
+                : "Faction knowledge is socially available. Individual carriers are not required.");
+            listing.GapLine(10f);
 
             listing.Label("Pawn initiative");
             Rect tierRow = listing.GetRect(34f);

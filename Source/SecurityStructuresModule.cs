@@ -29,7 +29,7 @@ namespace ColonistAwareness
                 int offZ = rect.minZ + (rect.Height - plan.h) / 2;
                 var variant = (CAOutpostVariant)plan.outpostVariant;
                 if (variant == CAOutpostVariant.TentCamp)
-                    PitchTents(map, plan, offX, offZ);
+                    PitchTents(map, plan, offX, offZ, faction);
                 else if (variant == CAOutpostVariant.Watchpost)
                     RaiseWatchPlatform(map, plan, offX, offZ,
                         faction, techTier);
@@ -49,7 +49,7 @@ namespace ColonistAwareness
         // the footprint gets loose tent parts instead - a camp
         // still reads as a camp from its kit on the ground.
         private static void PitchTents(Map map, CAMorphResult plan,
-            int offX, int offZ)
+            int offX, int offZ, Faction faction)
         {
             if (plan.tentSpots == null) return;
             for (int i = 0; i < plan.tentSpots.Count; i++)
@@ -59,14 +59,15 @@ namespace ColonistAwareness
                 if (!cell.InBounds(map)) continue;
                 try
                 {
-                    if (!TrySpawnPackedTent(map, cell))
-                        SpawnLooseTentKit(map, plan, i, offX, offZ);
+                    if (!TrySpawnPackedTent(map, cell, faction))
+                        SpawnLooseTentKit(map, plan, i, offX, offZ, faction);
                 }
                 catch { }
             }
         }
 
-        private static bool TrySpawnPackedTent(Map map, IntVec3 cell)
+        private static bool TrySpawnPackedTent(Map map, IntVec3 cell,
+            Faction faction)
         {
             try
             {
@@ -82,6 +83,13 @@ namespace ColonistAwareness
                     .GetNamedSilentFail("NCS_TentPart_Floor");
                 if (bagDef == null || miniDef == null
                     || coverDef == null || poleDef == null)
+                    return false;
+                if (!KnownConstruction(faction, bagDef)
+                    || !KnownConstruction(faction, miniDef)
+                    || !KnownConstruction(faction, coverDef)
+                    || !KnownConstruction(faction, poleDef)
+                    || (floorDef != null
+                        && !KnownConstruction(faction, floorDef)))
                     return false;
 
                 Camping_Stuff.NCS_Tent tent =
@@ -132,7 +140,8 @@ namespace ColonistAwareness
         // The parts path: pole, cover, mat laid out on the same
         // footprint's own cells - never a heap on one square.
         private static void SpawnLooseTentKit(Map map,
-            CAMorphResult plan, int footprint, int offX, int offZ)
+            CAMorphResult plan, int footprint, int offX, int offZ,
+            Faction faction)
         {
             if (plan.lots == null || footprint >= plan.lots.Count)
                 return;
@@ -147,7 +156,7 @@ namespace ColonistAwareness
             {
                 ThingDef pd = DefDatabase<ThingDef>
                     .GetNamedSilentFail(partDefs[i]);
-                if (pd == null) continue;
+                if (pd == null || !KnownConstruction(faction, pd)) continue;
                 IntVec3 pc = CellAt(plan,
                     cells[(i * 2) % cells.Count], offX, offZ);
                 if (!pc.InBounds(map)) continue;
@@ -218,6 +227,7 @@ namespace ColonistAwareness
             try
             {
                 if (def == null || !cell.InBounds(map)) return;
+                if (!KnownConstruction(faction, def)) return;
                 if (cell.GetEdifice(map) != null) return;
                 List<Thing> present = cell.GetThingList(map);
                 for (int i = 0; i < present.Count; i++)
@@ -233,6 +243,13 @@ namespace ColonistAwareness
                 if (fuel != null) fuel.Refuel(20f);
             }
             catch { }
+        }
+
+        private static bool KnownConstruction(Faction faction,
+            BuildableDef definition)
+        {
+            return CATechnologicalKnowledgeRuntime.CanConstructCanonical(
+                faction, definition, out _);
         }
 
         private static IntVec3 CellAt(CAMorphResult plan, int index,

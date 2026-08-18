@@ -762,7 +762,7 @@ namespace ColonistAwareness
 
     public sealed class CARegionalSettlementRecord : IExposable
     {
-        public const int CurrentSchemaVersion = 8;
+        public const int CurrentSchemaVersion = 9;
         public int schemaVersion = CurrentSchemaVersion;
         public string regionalId;
         public string name;
@@ -832,9 +832,11 @@ namespace ColonistAwareness
         public int constructionEra = -1;
         // Status assignments persist after their first materialization.
         public List<string> statusAssignments = new List<string>();
-        // The faction's era baseline and the settlement's physical form at
-        // materialization. Local capabilities remain separate fields.
-        public int factionEra = -1;
+        // Receipt of the faction-owned knowledge used at materialization.
+        // The faction remains the owner; the settlement stores no second copy.
+        public string factionKnowledgeId;
+        public int factionKnowledgeRevision = -1;
+        public int factionKnowledgeTier = -1;
         public int settlementForm = -1;
         public string generationSummary;
         // Receipt of the deterministic cultural read at materialization. The
@@ -980,7 +982,12 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref constructionEra, "constructionEra", -1);
             Scribe_Collections.Look(ref statusAssignments,
                 "statusAssignments", LookMode.Value);
-            Scribe_Values.Look(ref factionEra, "factionEra", -1);
+            Scribe_Values.Look(ref factionKnowledgeId,
+                "factionKnowledgeId");
+            Scribe_Values.Look(ref factionKnowledgeRevision,
+                "factionKnowledgeRevision", -1);
+            Scribe_Values.Look(ref factionKnowledgeTier,
+                "factionKnowledgeTier", -1);
             Scribe_Values.Look(ref settlementForm, "settlementForm", -1);
             Scribe_Values.Look(ref generationSummary, "generationSummary");
             Scribe_Values.Look(ref culturalExpressionSummary,
@@ -1097,12 +1104,12 @@ namespace ColonistAwareness
                 "developmentBlocker");
         }
 
-        internal string FactionEraLabel
+        internal string FactionKnowledgeLabel
         {
             get
             {
-                return factionEra > (int)TechLevel.Undefined
-                    ? ((TechLevel)factionEra).ToString() : "unknown";
+                return factionKnowledgeTier >= 0
+                    ? "knowledge tier " + factionKnowledgeTier : "unknown";
             }
         }
 
@@ -1125,7 +1132,7 @@ namespace ColonistAwareness
             internal int MemberIndex;
         }
 
-        private int campaignSchemaVersion = 2;
+        private int campaignSchemaVersion = 3;
         private int legacyAuthoringDataEpoch =
             CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private List<CARegionalSettlementRecord> records =
@@ -1213,7 +1220,7 @@ namespace ColonistAwareness
                 CACampaignCompatibility.CompleteOwnerLoad(
                     "world.regional", ref campaignSchemaVersion,
                     legacyAuthoringDataEpoch, ValidateCampaignState,
-                    MigrateB10State);
+                    MigrateSupportedState);
                 RebuildAcceptedReadModels();
             }
             base.ExposeData();
@@ -1251,6 +1258,12 @@ namespace ColonistAwareness
                     if (!beliefFailure.NullOrEmpty())
                         return "regional faction " + faction.key
                             + " Political Order: " + beliefFailure;
+                    string technologyFailure = CATechnologicalKnowledgeModel
+                        .ValidationFailure(faction.technologicalKnowledge);
+                    if (!technologyFailure.NullOrEmpty())
+                        return "regional faction " + faction.key
+                            + " Technological Knowledge: "
+                            + technologyFailure;
                     string orderFailure = CAPoliticalBeliefsModel
                         .ValidationFailure(faction.factionStructure);
                     if (!orderFailure.NullOrEmpty())
@@ -1289,11 +1302,20 @@ namespace ColonistAwareness
                 if (!cultureFailure.NullOrEmpty())
                     return "regional settlement " + key + " Culture: "
                         + cultureFailure;
+                if (record.factionKnowledgeId.NullOrEmpty()
+                    || record.factionKnowledgeRevision < 0
+                    || record.factionKnowledgeTier < 0)
+                    return "regional settlement " + key
+                        + " has no faction-owned knowledge receipt";
             }
             return null;
         }
 
-        private string ValidateOwnerStructure(int expectedRegionSchema)
+        private string ValidateOwnerStructure(int expectedRegionSchema,
+            int expectedFoundingSchema =
+                CAPlayerFoundingPlan.CurrentSchemaVersion,
+            int expectedRecordSchema =
+                CARegionalSettlementRecord.CurrentSchemaVersion)
         {
             if (regions == null || records == null || worldPolicy == null
                 || groundwater == null)
@@ -1324,7 +1346,7 @@ namespace ColonistAwareness
                     return "regional plan " + region.regionalId
                         + " founding copy is missing";
                 if (region.playerFounding.schemaVersion
-                    != CAPlayerFoundingPlan.CurrentSchemaVersion)
+                    != expectedFoundingSchema)
                     return "regional founding-plan schema is "
                         + region.playerFounding.schemaVersion;
             }
@@ -1339,10 +1361,10 @@ namespace ColonistAwareness
                     return "regional settlement identity " + key
                         + " is missing or duplicate";
                 if (record.schemaVersion
-                    != CARegionalSettlementRecord.CurrentSchemaVersion)
+                    != expectedRecordSchema)
                     return "regional settlement " + key + " schema is "
                         + record.schemaVersion + ", expected "
-                        + CARegionalSettlementRecord.CurrentSchemaVersion;
+                        + expectedRecordSchema;
                 string collectionFailure = ValidateRecordCollections(record);
                 if (!collectionFailure.NullOrEmpty())
                     return "regional settlement " + key + ": "
@@ -1528,19 +1550,25 @@ namespace ColonistAwareness
             }
         }
 
-        private string MigrateB10State()
+        private string MigrateSupportedState()
         {
+            if (campaignSchemaVersion != 2)
+                return "regional owner schema " + campaignSchemaVersion
+                    + " has no supported migration";
             int savedRegionSchema = regions.Count == 0
-                ? CARegionalPlan.CurrentSchemaVersion
+                ? 13
                 : regions[0]?.schemaVersion ?? -1;
-            if (savedRegionSchema != 10
-                && savedRegionSchema != CARegionalPlan.CurrentSchemaVersion)
+            if (savedRegionSchema != 13)
                 return "regional plan schema " + savedRegionSchema
-                    + " has no supported B12 migration";
+                    + " has no supported B15 migration";
             string structureFailure = ValidateOwnerStructure(
-                savedRegionSchema);
+                savedRegionSchema, expectedFoundingSchema: 3,
+                expectedRecordSchema: 8);
             if (!structureFailure.NullOrEmpty()) return structureFailure;
             var commits = new List<Action>();
+            var knowledgeByFaction =
+                new Dictionary<string, CATechnologicalKnowledge>(
+                    StringComparer.Ordinal);
             for (int regionIndex = 0; regionIndex < regions.Count;
                 regionIndex++)
             {
@@ -1577,11 +1605,31 @@ namespace ColonistAwareness
                                 out string orderFailure))
                         return "regional faction " + faction.key
                             + " represented institutions: " + orderFailure;
+                    CATechnologicalKnowledge technology =
+                        faction.technologicalKnowledge?.Copy()
+                            ?? new CATechnologicalKnowledge();
+                    CATechnologicalKnowledgeModel.SeedFromEngineTemplate(
+                        technology, faction.ResolvedFactionDef,
+                        "regional:" + region.regionalId + ":faction:"
+                            + faction.key + ":technology");
+                    CATechnologicalKnowledgeModel.Ensure(technology,
+                        "regional:" + region.regionalId + ":faction:"
+                            + faction.key + ":technology");
+                    string technologyFailure =
+                        CATechnologicalKnowledgeModel.ValidationFailure(
+                            technology);
+                    if (!technologyFailure.NullOrEmpty())
+                        return "regional faction " + faction.key
+                            + " Technological Knowledge: "
+                            + technologyFailure;
+                    knowledgeByFaction[(region.regionalId ?? "") + "#"
+                        + faction.key] = technology;
                     CARegionalFactionPlan target = faction;
                     commits.Add(() =>
                     {
                         target.culture = culture;
                         target.politicalBeliefs = beliefs;
+                        target.technologicalKnowledge = technology;
                         target.factionStructure = order;
                     });
                 }
@@ -1603,8 +1651,7 @@ namespace ColonistAwareness
                 if (region.playerFounding == null)
                     return "regional plan " + region.regionalId
                         + " founding copy is missing";
-                if (region.playerFounding.schemaVersion
-                    != CAPlayerFoundingPlan.CurrentSchemaVersion)
+                if (region.playerFounding.schemaVersion != 3)
                     return "regional founding-plan schema is "
                         + region.playerFounding.schemaVersion;
                 if (!CACultureModel.TryUpgradeFromB10(
@@ -1623,6 +1670,18 @@ namespace ColonistAwareness
                     region.playerFounding.Copy();
                 foundingCandidate.culture = foundingCulture;
                 foundingCandidate.politicalBeliefs = foundingBeliefs;
+                Faction player = Verse.Find.World?.factionManager?.OfPlayer;
+                CATechnologicalKnowledgeModel.SeedFromEngineTemplate(
+                    foundingCandidate.technologicalKnowledge,
+                    player?.def,
+                    "regional:" + region.regionalId
+                        + ":player-founding:technology");
+                CATechnologicalKnowledgeModel.Ensure(
+                    foundingCandidate.technologicalKnowledge,
+                    "regional:" + region.regionalId
+                        + ":player-founding:technology");
+                foundingCandidate.schemaVersion =
+                    CAPlayerFoundingPlan.CurrentSchemaVersion;
                 string foundingFailure = CAPlayerFoundingModel
                     .ValidationFailure(foundingCandidate,
                         requireConfirmed: true);
@@ -1631,9 +1690,7 @@ namespace ColonistAwareness
                 CARegionalPlan targetRegion = region;
                 commits.Add(() =>
                 {
-                    targetRegion.playerFounding.culture = foundingCulture;
-                    targetRegion.playerFounding.politicalBeliefs =
-                        foundingBeliefs;
+                    targetRegion.playerFounding = foundingCandidate;
                     targetRegion.schemaVersion =
                         CARegionalPlan.CurrentSchemaVersion;
                 });
@@ -1645,8 +1702,32 @@ namespace ColonistAwareness
                         out CACulture culture, out string cultureFailure))
                     return "regional settlement record " + record.regionalId
                         + "#" + record.slot + " Culture: " + cultureFailure;
+                CATechnologicalKnowledge technology = null;
+                CAFactionState liveState = record.faction == null ? null
+                    : CAFactionStateWorldComponent.Current?.Find(
+                        record.faction);
+                if (liveState?.technologicalKnowledge?.domains?.Count > 0)
+                    technology = liveState.technologicalKnowledge;
+                if (technology == null)
+                    knowledgeByFaction.TryGetValue(
+                        (record.regionalId ?? "") + "#" + record.factionKey,
+                        out technology);
+                if (technology == null)
+                    return "regional settlement record " + record.regionalId
+                        + "#" + record.slot
+                        + " cannot resolve its faction's Technological Knowledge";
                 CARegionalSettlementRecord target = record;
-                commits.Add(() => target.culture = culture);
+                commits.Add(() =>
+                {
+                    target.culture = culture;
+                    target.factionKnowledgeId = technology.id;
+                    target.factionKnowledgeRevision = technology.revision;
+                    target.factionKnowledgeTier =
+                        CATechnologicalKnowledgeModel.CompatibilityTier(
+                            technology);
+                    target.schemaVersion =
+                        CARegionalSettlementRecord.CurrentSchemaVersion;
+                });
             }
             foreach (Action commit in commits) commit();
             return null;
@@ -2327,13 +2408,21 @@ namespace ColonistAwareness
             // Knowledge and physical form are facts; capability is assessed
             // later from actual actors, operations, organizations, and
             // material state.
-            TechLevel knowledge = CASettlementAxes.TemplateEraPrior(faction);
+            CATechnologicalKnowledge knowledge =
+                CATechnologicalKnowledgeRuntime.ForFaction(faction);
+            int knowledgeTier = CATechnologicalKnowledgeRuntime
+                .CanonicalCompatibilityTier(faction);
+            TechLevel compatibilityLevel =
+                CATechnologicalKnowledgeRuntime.CanonicalBuildTechLevel(
+                    faction);
             bool roadLinked = settlement?.hasRoadAccess == true;
             bool coastal = settlement?.hasCoastalAccess == true;
-            record.factionEra = (int)knowledge;
+            record.factionKnowledgeId = knowledge?.id;
+            record.factionKnowledgeRevision = knowledge?.revision ?? -1;
+            record.factionKnowledgeTier = knowledgeTier;
             record.settlementForm = (int)CASettlementAxes.Form(
                 settlement?.authoredForm ?? CASettlementAxes.Derive,
-                knowledge);
+                compatibilityLevel);
             record.generationSummary = CASettlementAxes.Provenance(
                 settlement?.authoredForm ?? CASettlementAxes.Derive,
                 record.settlementProgram)
@@ -2344,7 +2433,7 @@ namespace ColonistAwareness
                 + (coastal ? "; coast present" : "; inland");
             CASettlementWealth.Derive(record.settlementProgram,
                 record.accessInfrastructure, record.serviceInfrastructure,
-                record.civicInfrastructure, knowledge,
+                record.civicInfrastructure, compatibilityLevel,
                 out record.wealth, out record.constructionEra);
             // Preserve an authored settlement name.
             record.name = settlement != null
@@ -3270,7 +3359,7 @@ namespace ColonistAwareness
                 + record.faction.Name + " at " + rect + "; native relation "
                 + record.relationAtMaterialization + " goodwill "
                 + record.goodwillAtMaterialization + "; tech "
-                + record.FactionEraLabel + "; " + record.CapabilityText()
+                + record.FactionKnowledgeLabel + "; " + record.CapabilityText()
                 + "; declared operational roles "
                 + record.OperationalRoleText()
                 + "; population " + record.populationCurrent + ", buildings "
@@ -3628,7 +3717,7 @@ namespace ColonistAwareness
                         + (record.faction?.Name ?? record.factionDefName)
                         + "; relation " + record.relationAtMaterialization
                         + " goodwill " + record.goodwillAtMaterialization
-                        + "; era " + record.FactionEraLabel + "; "
+                        + "; " + record.FactionKnowledgeLabel + "; "
                         + record.CapabilityText() + "; declared operational "
                         + "roles " + record.OperationalRoleText() + "; rect "
                         + record.localRect + "; population "

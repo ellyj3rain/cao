@@ -421,7 +421,7 @@ namespace ColonistAwareness
                 identity.Add(record.name);
                 identity.Add(record.factionDefName);
                 identity.Add(record.faction?.Name);
-                identity.Add(record.factionEra);
+                identity.Add(record.factionKnowledgeTier);
                 identity.Add(record.settlementForm);
                 identity.Add(record.settlementProgram?.sourceSignature);
                 identity.Add(record.populationBaseline);

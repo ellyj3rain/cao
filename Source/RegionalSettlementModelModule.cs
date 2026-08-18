@@ -762,8 +762,8 @@ namespace ColonistAwareness
                         CASettlementEnvironment.ForTile(id);
                     return environment.Valid
                         && (CAHabitatViability.FrontierPotential(
-                                environment, 0)
-                                .Viable
+                                environment,
+                                (CARegionalFactionPlan)null).Viable
                             || CAHabitatViability.RegionalSupporter(plan,
                                 environment) != null);
                 })
@@ -796,7 +796,8 @@ namespace ColonistAwareness
                 };
                 CAHabitatViability.ApplyFrontier(holding, environment,
                     supporter == null ? 0
-                        : CAHabitatViability.TechnologyTier(supporter),
+                        : CAHabitatViability.KnowledgeCompatibilityTier(
+                            supporter),
                     supporter?.key ?? -1);
                 result.Add(holding);
             }
@@ -953,11 +954,8 @@ namespace ColonistAwareness
 
         private static int TechTier(CARegionalFactionPlan group)
         {
-            TechLevel tech = group?.ResolvedFactionDef?.techLevel
-                ?? TechLevel.Neolithic;
-            return (int)tech >= (int)TechLevel.Spacer ? 3
-                : (int)tech >= (int)TechLevel.Industrial ? 2
-                : (int)tech >= (int)TechLevel.Medieval ? 1 : 0;
+            return CATechnologicalKnowledgeModel.CompatibilityTier(
+                group?.technologicalKnowledge);
         }
 
         private static int TradeConnectivity(CARegionalPlan plan,

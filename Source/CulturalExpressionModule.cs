@@ -129,8 +129,8 @@ namespace ColonistAwareness
                 return Missing("Settlement facts are unavailable.");
             CARegionalFactionPlan faction = plan?.FactionPlan(
                 settlement.factionKey);
-            TechLevel knowledge = CASettlementAxes.TemplateEraPrior(
-                faction?.ResolvedFactionDef);
+            TechLevel knowledge = CATechnologicalKnowledgeModel
+                .CompatibilityTechLevel(faction?.technologicalKnowledge);
             int access = CASettlementStartingState.Access(plan, settlement);
             int services = CASettlementStartingState.Services(plan, settlement);
             int civic = CASettlementStartingState.Civic(plan, settlement);

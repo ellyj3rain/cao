@@ -67,13 +67,15 @@ namespace ColonistAwareness
 
     public sealed class CAUserSocietyProfile : IExposable
     {
-        public const int CurrentSchemaVersion = 1;
+        public const int CurrentSchemaVersion = 2;
         public int schemaVersion = CurrentSchemaVersion;
         public string key;
         public string displayName;
         public CACulture cultureValues = new CACulture();
         public CAPoliticalBeliefs politicalOrderValues =
             new CAPoliticalBeliefs();
+        public CATechnologicalKnowledge technologicalKnowledgeValues =
+            new CATechnologicalKnowledge();
 
         public void ExposeData()
         {
@@ -83,9 +85,14 @@ namespace ColonistAwareness
             Scribe_Deep.Look(ref cultureValues, "cultureValues");
             Scribe_Deep.Look(ref politicalOrderValues,
                 "politicalOrderValues");
+            Scribe_Deep.Look(ref technologicalKnowledgeValues,
+                "technologicalKnowledgeValues");
             if (cultureValues == null) cultureValues = new CACulture();
             if (politicalOrderValues == null)
                 politicalOrderValues = new CAPoliticalBeliefs();
+            if (technologicalKnowledgeValues == null)
+                technologicalKnowledgeValues =
+                    new CATechnologicalKnowledge();
         }
 
         internal CAUserSocietyProfile CopyAs(string newKey, string newName)
@@ -99,7 +106,10 @@ namespace ColonistAwareness
                 displayName = newName,
                 cultureValues = cultureValues?.CopyAsInheritedTemplate()
                     ?? new CACulture(),
-                politicalOrderValues = political
+                politicalOrderValues = political,
+                technologicalKnowledgeValues =
+                    technologicalKnowledgeValues?.CopyAsPreset()
+                        ?? new CATechnologicalKnowledge()
             };
         }
     }
@@ -123,6 +133,9 @@ namespace ColonistAwareness
             : CACultureModel.Summary(profile.cultureValues);
         internal override string CultureSummary => profile == null
             ? null : CACultureModel.Summary(profile.cultureValues);
+        internal override string TechnologySummary => profile == null
+            ? null : CATechnologicalKnowledgeModel.Summary(
+                profile.technologicalKnowledgeValues);
         internal override bool Saved => true;
 
         internal override string ValidationFailure()
@@ -141,31 +154,52 @@ namespace ColonistAwareness
             if (!failure.NullOrEmpty()) return "Culture: " + failure;
             failure = CAPoliticalOrderModel.ValidationFailure(
                 profile.politicalOrderValues);
-            return failure.NullOrEmpty() ? null : "Political Order: " + failure;
+            if (!failure.NullOrEmpty())
+                return "Political Order: " + failure;
+            failure = CATechnologicalKnowledgeModel.ValidationFailure(
+                profile.technologicalKnowledgeValues,
+                requireComplete: false);
+            return failure.NullOrEmpty() ? null
+                : "Technological Knowledge: " + failure;
         }
 
         internal override void ApplyComponents(CACulture culture,
-            CAPoliticalBeliefs politicalOrder, string sourceIdentity)
+            CAPoliticalBeliefs politicalOrder,
+            CATechnologicalKnowledge technologicalKnowledge,
+            string sourceIdentity)
         {
             CAAuthoringProfileLibrary.ApplyCultureValues(
                 profile?.cultureValues, culture);
             CAAuthoringProfileLibrary.ApplyPoliticalValues(
                 profile?.politicalOrderValues, politicalOrder);
+            CAAuthoringProfileLibrary.ApplyTechnologyValues(
+                profile?.technologicalKnowledgeValues,
+                technologicalKnowledge, sourceIdentity);
         }
 
         internal override bool Matches(CACulture culture,
-            CAPoliticalBeliefs politicalOrder)
+            CAPoliticalBeliefs politicalOrder,
+            CATechnologicalKnowledge technologicalKnowledge)
         {
             return CAAuthoringProfileLibrary.MatchesCultureValues(culture,
                     profile?.cultureValues)
                 && CAPoliticalOrderModel.Matches(politicalOrder,
-                    profile?.politicalOrderValues);
+                    profile?.politicalOrderValues)
+                && CATechnologicalKnowledgeModel.Matches(
+                    technologicalKnowledge,
+                    profile?.technologicalKnowledgeValues);
         }
 
         internal override CAPoliticalBeliefs PoliticalPreview()
         {
             return profile?.politicalOrderValues?.Copy()
                 ?? new CAPoliticalBeliefs();
+        }
+
+        internal override CATechnologicalKnowledge TechnologyPreview()
+        {
+            return profile?.technologicalKnowledgeValues?.CopyAsPreset()
+                ?? new CATechnologicalKnowledge();
         }
     }
 
@@ -211,7 +245,9 @@ namespace ColonistAwareness
                 || item.cultureValues?.schemaVersion
                     != CACulture.CurrentSchemaVersion
                 || item.politicalOrderValues?.schemaVersion
-                    != CAPoliticalBeliefs.CurrentSchemaVersion);
+                    != CAPoliticalBeliefs.CurrentSchemaVersion
+                || item.technologicalKnowledgeValues?.schemaVersion
+                    != CATechnologicalKnowledge.CurrentSchemaVersion);
             foreach (CAUserCultureProfile item in settings.cultureProfiles)
             {
                 if (item.key.NullOrEmpty()) item.key = NewKey(CulturePrefix);
@@ -240,6 +276,10 @@ namespace ColonistAwareness
                     .CopyAsInheritedTemplate();
                 CAPoliticalBeliefsModel.Normalize(item.politicalOrderValues);
                 item.politicalOrderValues.id = null;
+                CATechnologicalKnowledgeModel.Normalize(
+                    item.technologicalKnowledgeValues);
+                item.technologicalKnowledgeValues =
+                    item.technologicalKnowledgeValues.CopyAsPreset();
                 item.schemaVersion = CAUserSocietyProfile.CurrentSchemaVersion;
             }
         }
@@ -287,13 +327,17 @@ namespace ColonistAwareness
         }
 
         internal static CAUserSocietyProfile SaveSociety(string name,
-            CACulture culture, CAPoliticalBeliefs politicalOrder)
+            CACulture culture, CAPoliticalBeliefs politicalOrder,
+            CATechnologicalKnowledge technologicalKnowledge)
         {
             AwarenessSettings settings = AwarenessMod.Settings;
             if (settings == null || culture == null || politicalOrder == null
+                || technologicalKnowledge == null
                 || CACultureModel.SubstantiveFailure(culture) != null
                 || CAPoliticalOrderModel.ValidationFailure(politicalOrder)
-                    != null)
+                    != null
+                || CATechnologicalKnowledgeModel.ValidationFailure(
+                    technologicalKnowledge) != null)
                 return null;
             Normalize(settings);
             var political = politicalOrder.Copy();
@@ -304,7 +348,9 @@ namespace ColonistAwareness
                 displayName = UniqueName(name, settings.societyProfiles
                     .Select(item => item.displayName)),
                 cultureValues = culture.CopyAsInheritedTemplate(),
-                politicalOrderValues = political
+                politicalOrderValues = political,
+                technologicalKnowledgeValues =
+                    technologicalKnowledge.CopyAsPreset()
             };
             settings.societyProfiles.Add(profile);
             AwarenessMod.SaveSettings();
@@ -343,6 +389,23 @@ namespace ColonistAwareness
                     ?? new List<CAPoliticalOptionShare>())
                     option.source = (byte)CAAxisSource.Authored;
             CAPoliticalBeliefsModel.Normalize(target);
+        }
+
+        internal static void ApplyTechnologyValues(
+            CATechnologicalKnowledge values,
+            CATechnologicalKnowledge target, string sourceIdentity)
+        {
+            if (values == null || target == null) return;
+            string ownerId = target.id;
+            target.CopyFrom(values, includeDistribution: false);
+            target.id = ownerId;
+            target.origin = CAOrigin.Authored(sourceIdentity
+                ?? "saved society");
+            foreach (CATechnologyDomainKnowledge domain in target.domains)
+            {
+                domain.source = (byte)CAAxisSource.Authored;
+                domain.provenance = sourceIdentity ?? "saved society";
+            }
         }
 
         internal static bool MatchesCultureValues(CACulture target,

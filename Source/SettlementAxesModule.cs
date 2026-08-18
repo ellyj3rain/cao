@@ -13,19 +13,9 @@ namespace ColonistAwareness
     {
         internal const int Derive = -1;
 
-        // Faction knowledge and local ability are separate. The faction
-        // template supplies an era baseline; facilities and infrastructure
-        // determine what a settlement can practice.
-        internal static TechLevel TemplateEraPrior(Faction faction)
-        {
-            return faction?.def?.techLevel ?? TechLevel.Neolithic;
-        }
-
-        internal static TechLevel TemplateEraPrior(FactionDef def)
-        {
-            return def?.techLevel ?? TechLevel.Neolithic;
-        }
-
+        // Faction knowledge and local ability are separate. The faction's
+        // authored knowledge supplies the broad compatibility projection;
+        // facilities and infrastructure determine what a settlement practices.
         // The three tiers everything physical keys off. Kept here so
         // there is exactly one definition of the boundary; it used to
         // be re-read independently by the morphology adapter.

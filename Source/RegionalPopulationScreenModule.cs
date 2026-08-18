@@ -1311,15 +1311,17 @@ namespace ColonistAwareness
             Rule(ref y, width);
             Title(ref y, width, "Society preset");
             CASocietyPreset society = CASocietyPresetLibrary.Match(
-                group.culture, group.politicalBeliefs);
+                group.culture, group.politicalBeliefs,
+                group.technologicalKnowledge);
             Readout(ref y, width, "Composition",
                 society == null ? "Custom society"
                     : "Matches " + society.Label);
             Note(ref y, width, society == null
-                ? "Culture and Political Order are a custom composition."
+                ? "Culture, Political Order, and Technological Knowledge are a custom composition."
                 : society.CultureSummary + " Political Order: "
                     + CAPoliticalOrderModel.Identity(
-                        society.PoliticalPreview()) + ".");
+                        society.PoliticalPreview()) + ". Knowledge: "
+                    + society.TechnologySummary + ".");
             Rect societyEdit = new Rect(0f, y, (width - 6f) * 0.5f, 28f);
             if (Widgets.ButtonText(societyEdit,
                     "Choose society preset..."))
@@ -1379,6 +1381,21 @@ namespace ColonistAwareness
                     group.politicalBeliefs, group.factionStructure,
                     (plan.candidateId ?? "ca") + ":faction:" + group.key,
                     () => FactionSettingsChanged(group)));
+            y += Row + Gap;
+
+            Rule(ref y, width);
+            Title(ref y, width, "Technological Knowledge");
+            Note(ref y, width, CATechnologicalKnowledgeModel.Summary(
+                group.technologicalKnowledge));
+            Rect knowledgeEdit = new Rect(0f, y, width, 28f);
+            if (Widgets.ButtonText(knowledgeEdit,
+                    "Set technological knowledge..."))
+                Verse.Find.WindowStack.Add(
+                    new Dialog_CATechnologicalKnowledgeEditor(
+                        group.technologicalKnowledge,
+                        (plan.candidateId ?? "ca") + ":faction:"
+                            + group.key + ":technology",
+                        () => FactionSettingsChanged(group)));
             y += Row + Gap;
 
             Rule(ref y, width);
@@ -1778,10 +1795,12 @@ namespace ColonistAwareness
         private void OpenSocietyPresets(CARegionalFactionPlan group)
         {
             CACreationUI.OpenChoices("Society presets",
-                "Choose one starting society. It sets Culture and Political "
-                    + "Order together. You can change either afterward.",
+                "Choose one starting society. It sets Culture, Political "
+                    + "Order, and Technological Knowledge together. You can "
+                    + "change any component afterward.",
                 CAAuthoringChoices.SocietyPresets(group?.culture,
                     group?.politicalBeliefs,
+                    group?.technologicalKnowledge,
                     (plan?.candidateId ?? "ca-region") + ":faction:"
                         + group?.key,
                     () => FactionSocietyChanged(group)));
@@ -1793,6 +1812,9 @@ namespace ColonistAwareness
             if (failure.NullOrEmpty())
                 failure = CAPoliticalOrderModel.ValidationFailure(
                     group?.politicalBeliefs);
+            if (failure.NullOrEmpty())
+                failure = CATechnologicalKnowledgeModel.ValidationFailure(
+                    group?.technologicalKnowledge);
             if (!failure.NullOrEmpty())
             {
                 Messages.Message(failure, MessageTypeDefOf.RejectInput,
@@ -1800,13 +1822,15 @@ namespace ColonistAwareness
                 return;
             }
             CASocietyPreset match = CASocietyPresetLibrary.Match(
-                group?.culture, group?.politicalBeliefs);
+                group?.culture, group?.politicalBeliefs,
+                group?.technologicalKnowledge);
             Find.WindowStack.Add(new Dialog_CAProfileName(
                 "Save society preset", match?.Label
                     ?? CARegionalPlanUtility.FactionName(group), value =>
                 {
                     CAAuthoringProfileLibrary.SaveSociety(value,
-                        group?.culture, group?.politicalBeliefs);
+                        group?.culture, group?.politicalBeliefs,
+                        group?.technologicalKnowledge);
                     CARegionalSetupSession.SavePending();
                 }));
         }
@@ -2360,7 +2384,8 @@ namespace ColonistAwareness
             {
                 CARegionalFactionPlan local = faction;
                 CASocietyPreset matched = CASocietyPresetLibrary.Match(
-                    local.culture, local.politicalBeliefs);
+                    local.culture, local.politicalBeliefs,
+                    local.technologicalKnowledge);
                 options.Add(new CACreationChoice
                 {
                     Key = "existing-faction:" + local.key,
@@ -2387,7 +2412,7 @@ namespace ColonistAwareness
                 Key = "new-custom-society",
                 Name = "Custom new society",
                 Summary = "Create a new local faction and one settlement.",
-                Traits = "Generated Culture and Political Order; fully editable",
+                Traits = "Generated Culture, Political Order, and Technological Knowledge; fully editable",
                 Details = "Creates an editable faction and settlement, then "
                     + "asks you to place it on the map.",
                 Group = "New society",
@@ -2478,6 +2503,7 @@ namespace ColonistAwareness
             {
                 if (!CASocietyPresetLibrary.TryApply(preset, faction.culture,
                         faction.politicalBeliefs,
+                        faction.technologicalKnowledge,
                         (plan.candidateId ?? "ca-region") + ":faction:" + key,
                         out string failure))
                 {
@@ -3191,10 +3217,7 @@ namespace ColonistAwareness
             else
             {
                 FactionDef def = CARegionalPlanUtility
-                    .EligibleNewFactionDefs().FirstOrDefault(item =>
-                        item.techLevel <= TechLevel.Industrial)
-                    ?? CARegionalPlanUtility.EligibleNewFactionDefs()
-                        .FirstOrDefault();
+                    .EligibleNewFactionDefs().FirstOrDefault();
                 group.customFactionDefName = def?.defName;
                 if (group.customName.NullOrEmpty())
                     group.customName = RollFactionName(group);
@@ -3354,8 +3377,9 @@ namespace ColonistAwareness
                     {
                         Key = "existing:" + local.loadID,
                         Name = local.Name,
-                        Summary = local.def.techLevel + " · "
-                            + local.def.LabelCap,
+                        Summary = CATechnologicalKnowledgeModel.Summary(
+                                CATechnologicalKnowledgeRuntime.ForFaction(
+                                    local)) + " · " + local.def.LabelCap,
                         Traits = local.PlayerRelationKind
                             + " toward the player",
                         Details = "Uses the existing faction's Ideoligion, "
@@ -3384,11 +3408,11 @@ namespace ColonistAwareness
                     {
                         Key = "new:" + local.defName,
                         Name = local.LabelCap.ToString(),
-                        Summary = local.techLevel + " faction type",
-                        Traits = "Culture, Political Order, represented institutions, and relations editable",
+                        Summary = "World faction type",
+                        Traits = "Culture, Political Order, technological knowledge, represented institutions, and relations editable",
                         Details = local.description.NullOrEmpty()
-                            ? "Creates a new local faction of this type."
-                            : local.description,
+                            ? "Sets the native faction type used for pawns and world integration. Society values are set separately."
+                            : local.description + "\n\nThis sets the native faction type used for pawns and world integration. Society values are set separately.",
                         Badge = "New faction type",
                         Icon = local.FactionIcon,
                         Accent = CARegionalWorldOverlay.FactionColor(group.key),

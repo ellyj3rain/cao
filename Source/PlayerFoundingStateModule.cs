@@ -37,15 +37,18 @@ namespace ColonistAwareness
     }
 
     // The player authors a founding population, not an already mature NPC
-    // faction. Culture, native Ideoligion, and Political Order arrive with
+    // faction. Culture, native Ideoligion, Political Order, and Technological
+    // Knowledge arrive with
     // the founders. The arrangement is what they establish at landing.
     public sealed class CAPlayerFoundingPlan : IExposable
     {
-        public const int CurrentSchemaVersion = 3;
+        public const int CurrentSchemaVersion = 4;
         public int schemaVersion = CurrentSchemaVersion;
         public CACulture culture = new CACulture();
         public CAPoliticalBeliefs politicalBeliefs =
             new CAPoliticalBeliefs();
+        public CATechnologicalKnowledge technologicalKnowledge =
+            new CATechnologicalKnowledge();
         public CAFoundingArrangement arrangement;
         public byte arrangementSource; // CAAxisSource
         public int nativeIdeoId = -1;
@@ -65,6 +68,8 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
             Scribe_Deep.Look(ref culture, "culture");
             Scribe_Deep.Look(ref politicalBeliefs, "politicalBeliefs");
+            Scribe_Deep.Look(ref technologicalKnowledge,
+                "technologicalKnowledge");
             Scribe_Deep.Look(ref arrangement, "arrangement");
             Scribe_Values.Look(ref arrangementSource, "arrangementSource",
                 (byte)CAAxisSource.Unset);
@@ -105,6 +110,8 @@ namespace ColonistAwareness
                 culture = culture?.Copy() ?? new CACulture(),
                 politicalBeliefs = politicalBeliefs?.Copy()
                     ?? new CAPoliticalBeliefs(),
+                technologicalKnowledge = technologicalKnowledge?.Copy()
+                    ?? new CATechnologicalKnowledge(),
                 arrangement = arrangement?.Copy(),
                 arrangementSource = arrangementSource,
                 nativeIdeoId = nativeIdeoId,
@@ -126,7 +133,7 @@ namespace ColonistAwareness
     // institutions that subsequently develop through play.
     public sealed class CAPlayerFoundingWorldComponent : WorldComponent
     {
-        private int campaignSchemaVersion = 2;
+        private int campaignSchemaVersion = 3;
         private int legacyAuthoringDataEpoch =
             CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private CAPlayerFoundingPlan founding =
@@ -187,7 +194,7 @@ namespace ColonistAwareness
                 CACampaignCompatibility.CompleteOwnerLoad(
                     "world.player-founding", ref campaignSchemaVersion,
                     legacyAuthoringDataEpoch, ValidateCampaignState,
-                    MigrateB10State);
+                    MigrateSupportedState);
             }
             base.ExposeData();
         }
@@ -198,13 +205,15 @@ namespace ColonistAwareness
                 requireConfirmed: true);
         }
 
-        private string MigrateB10State()
+        private string MigrateSupportedState()
         {
+            if (campaignSchemaVersion != 2)
+                return "player-founding owner schema "
+                    + campaignSchemaVersion + " has no supported migration";
             if (founding == null) return "founding plan is missing";
-            if (founding.schemaVersion
-                != CAPlayerFoundingPlan.CurrentSchemaVersion)
+            if (founding.schemaVersion != 3)
                 return "founding plan schema is " + founding.schemaVersion
-                    + ", expected " + CAPlayerFoundingPlan.CurrentSchemaVersion;
+                    + ", expected 3";
             if (!CACultureModel.TryUpgradeFromB10(founding.culture,
                     out CACulture culture, out string cultureFailure))
                 return "founding Culture: " + cultureFailure;
@@ -216,6 +225,15 @@ namespace ColonistAwareness
             CAPlayerFoundingPlan candidate = founding.Copy();
             candidate.culture = culture;
             candidate.politicalBeliefs = beliefs;
+            Faction player = Find.World?.factionManager?.OfPlayer;
+            CATechnologicalKnowledgeModel.SeedFromEngineTemplate(
+                candidate.technologicalKnowledge,
+                player?.def,
+                "player-founding:technology");
+            CATechnologicalKnowledgeModel.Ensure(
+                candidate.technologicalKnowledge,
+                "player-founding:technology");
+            candidate.schemaVersion = CAPlayerFoundingPlan.CurrentSchemaVersion;
             string candidateFailure = CAPlayerFoundingModel.ValidationFailure(
                 candidate, requireConfirmed: true);
             if (!candidateFailure.NullOrEmpty())
@@ -353,6 +371,11 @@ namespace ColonistAwareness
                 draft.politicalBeliefs, allowExactLegacy: false);
             if (!beliefFailure.NullOrEmpty())
                 return "founding Political Order: " + beliefFailure;
+            string technologyFailure = CATechnologicalKnowledgeModel
+                .ValidationFailure(draft.technologicalKnowledge);
+            if (!technologyFailure.NullOrEmpty())
+                return "founding Technological Knowledge: "
+                    + technologyFailure;
             if (draft.arrangementSource > (byte)CAAxisSource.Authored)
                 return "founding arrangement source is invalid";
             if (draft.arrangement == null)
@@ -396,6 +419,9 @@ namespace ColonistAwareness
             if (draft.culture == null) draft.culture = new CACulture();
             if (draft.politicalBeliefs == null)
                 draft.politicalBeliefs = new CAPoliticalBeliefs();
+            if (draft.technologicalKnowledge == null)
+                draft.technologicalKnowledge =
+                    new CATechnologicalKnowledge();
             draft.schemaVersion = CAPlayerFoundingPlan.CurrentSchemaVersion;
             if (draft.temporalBasis.NullOrEmpty())
                 DetermineTemporalBoundary(draft);
@@ -408,6 +434,12 @@ namespace ColonistAwareness
             CACultureModel.SynchronizeOwnIdentityLabel(draft.culture);
             CAPoliticalBeliefsModel.Ensure(draft.politicalBeliefs,
                 seed + ":politics");
+            CATechnologicalKnowledgeModel.SeedFromEngineTemplate(
+                draft.technologicalKnowledge,
+                Faction.OfPlayer?.def ?? FactionDefOf.PlayerColony,
+                seed + ":technology");
+            CATechnologicalKnowledgeModel.Ensure(
+                draft.technologicalKnowledge, seed + ":technology");
             if (draft.arrangement == null
                 || draft.ArrangementSource == CAAxisSource.Unset
                 || draft.ArrangementSource == CAAxisSource.Generated)
@@ -591,8 +623,9 @@ namespace ColonistAwareness
         {
             if (ArrivedViolently()) return false;
             return StartingPawnCount() >= 4
-                && (Faction.OfPlayer?.def?.techLevel
-                    ?? TechLevel.Industrial) <= TechLevel.Neolithic;
+                && CATechnologicalKnowledgeModel.CompatibilityTier(
+                    CAPlayerFoundingSession.Current
+                        ?.technologicalKnowledge) == 0;
         }
 
         private static void DetermineTemporalBoundary(
@@ -685,6 +718,14 @@ namespace ColonistAwareness
             {
                 failure = "The founders' Political Order cannot be used: "
                     + beliefFailure;
+                return false;
+            }
+            string knowledgeFailure = CATechnologicalKnowledgeModel
+                .ValidationFailure(draft.technologicalKnowledge);
+            if (!knowledgeFailure.NullOrEmpty())
+            {
+                failure = "The founders' Technological Knowledge cannot be "
+                    + "used: " + knowledgeFailure;
                 return false;
             }
             CAFoundingArrangement arrangement = draft.arrangement;
@@ -786,7 +827,7 @@ namespace ColonistAwareness
             return true;
         }
 
-        // Inherited Culture and Political Order are carried by the founders
+        // Culture, Political Order, and Technological Knowledge are carried by the founders
         // and may therefore be available to map generation. This deliberately
         // leaves factionStructure alone: it records realized institutions,
         // not the four narrower landing terms in the founding arrangement.
@@ -800,6 +841,9 @@ namespace ColonistAwareness
             record.culture = draft.culture?.Copy() ?? new CACulture();
             record.politicalBeliefs = draft.politicalBeliefs?.Copy()
                 ?? new CAPoliticalBeliefs();
+            record.technologicalKnowledge =
+                draft.technologicalKnowledge?.Copy()
+                    ?? new CATechnologicalKnowledge();
             if (record.factionStructure == null)
                 record.factionStructure = new List<CAAxisEntry>();
             record.origin = CAOrigin.Authored("player founding");

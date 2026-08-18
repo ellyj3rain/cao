@@ -52,7 +52,10 @@ namespace ColonistAwareness
                 // the ported machinery, no-op for every other form.
                 CASecurityStructures.MaterializeVariantExtras(map, plan,
                     rect, faction,
-                    CASettlementProgramMaterializer.TechTier(faction));
+                    Math.Max(0, Math.Min(3,
+                        CATechnologicalKnowledgeRuntime.CanonicalRank(faction,
+                            CATechnologyDomains.Weapons,
+                            CATechnologyCompetencies.Construct) - 1)));
                 GroundCulture(map, plan, body, palette, seed,
                     offX, offZ, receipt);
                 // Piers are DERIVED, not toggled. BuildPier already has to
@@ -96,7 +99,8 @@ namespace ColonistAwareness
         internal static CAMorphForm FormFor(Faction faction)
         {
             return CASettlementAxes.Form(CASettlementAxes.Derive,
-                faction?.def?.techLevel ?? TechLevel.Neolithic);
+                CATechnologicalKnowledgeRuntime.CanonicalBuildTechLevel(
+                    faction));
         }
 
         // A SETTLEMENT'S form, as resolved when it was created.
@@ -106,7 +110,8 @@ namespace ColonistAwareness
             if (record == null) return CAMorphForm.Tribal;
             if (record.settlementForm >= 0)
                 return CASettlementAxes.Form(record.settlementForm,
-                    (TechLevel)Mathf.Max(record.factionEra, 0));
+                    CATechnologicalKnowledgeRuntime.CanonicalBuildTechLevel(
+                        record.faction));
             return FormFor(record.faction);
         }
 
@@ -176,6 +181,9 @@ namespace ColonistAwareness
                                 break;
                             case CAMorphCell.Floor:
                                 if (palette.floor == null) continue;
+                                if (!CATechnologicalKnowledgeRuntime
+                                        .CanConstructCanonical(faction,
+                                            palette.floor, out _)) continue;
                                 ClearCover(map, c);
                                 map.terrainGrid.SetTerrain(c,
                                     palette.floor);
@@ -197,6 +205,9 @@ namespace ColonistAwareness
                                         plan.h, x, z, 4))
                                     laid = palette.streetOutside;
                                 if (laid == null) continue;
+                                if (!CATechnologicalKnowledgeRuntime
+                                        .CanConstructCanonical(faction, laid,
+                                            out _)) continue;
                                 ClearCover(map, c);
                                 map.terrainGrid.SetTerrain(c, laid);
                                 if (laid != palette.street)
@@ -205,7 +216,8 @@ namespace ColonistAwareness
                                 break;
                             }
                             case CAMorphCell.Field:
-                                built += SowField(map, c, palette.crop);
+                                built += SowField(map, c, palette.crop,
+                                    faction);
                                 break;
                         }
                     }
@@ -218,6 +230,8 @@ namespace ColonistAwareness
             ThingDef stuff, Faction faction)
         {
             if (def == null) return 0;
+            if (!CATechnologicalKnowledgeRuntime.CanConstructCanonical(
+                    faction, def, out _)) return 0;
             List<Thing> things = c.GetThingList(map);
             for (int i = 0; i < things.Count; i++)
             {
@@ -238,9 +252,12 @@ namespace ColonistAwareness
             return 1;
         }
 
-        private static int SowField(Map map, IntVec3 c, ThingDef crop)
+        private static int SowField(Map map, IntVec3 c, ThingDef crop,
+            Faction faction)
         {
             if (crop == null) return 0;
+            if (!CATechnologicalKnowledgeRuntime.CanGrowCanonical(
+                    faction, crop, out _)) return 0;
             ClearCover(map, c);
             if (!crop.CanEverPlantAt(c, map)) return 0;
             var plant = ThingMaker.MakeThing(crop) as Plant;
@@ -472,6 +489,8 @@ namespace ColonistAwareness
             try
             {
                 if (palette.pier == null) return;
+                if (!CATechnologicalKnowledgeRuntime.CanConstructCanonical(
+                        faction, palette.pier, out _)) return;
                 TerrainAffordanceDef needed =
                     palette.pier.terrainAffordanceNeeded;
                 var dirs = new[] { IntVec3.North, IntVec3.East,
@@ -694,7 +713,8 @@ namespace ColonistAwareness
 
         private static Palette PaletteFor(Map map, Faction faction)
         {
-            int tier = CASettlementProgramMaterializer.TechTier(faction);
+            int tier = CASettlementProgramMaterializer
+                .CanonicalTechTier(faction);
             // material coherence: every stone this adapter lays is
             // native to the tile. Walk the tile's own rock kinds
             // for one with cut blocks and a flagstone before any

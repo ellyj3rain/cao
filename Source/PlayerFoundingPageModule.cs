@@ -151,12 +151,14 @@ namespace ColonistAwareness
             float cultureHeight = MeasureCultureCard(cardWidth);
             float ideoHeight = MeasureIdeoCard(cardWidth);
             float politicalHeight = MeasurePoliticalCard(cardWidth);
+            float technologyHeight = MeasureTechnologyCard(cardWidth);
             float arrangementHeight = MeasureArrangementCard(cardWidth);
             float componentHeight = twoColumns
                 ? Mathf.Max(cultureHeight, ideoHeight) + gap
                     + Mathf.Max(politicalHeight, arrangementHeight)
+                    + gap + technologyHeight
                 : cultureHeight + ideoHeight + politicalHeight
-                    + arrangementHeight + gap * 3f;
+                    + arrangementHeight + technologyHeight + gap * 4f;
             float gridHeight = societyHeight + gap + componentHeight;
             Rect cardsView = new Rect(0f, 0f, gridWidth, gridHeight);
             Widgets.BeginScrollView(cardsOut, ref cardScroll, cardsView);
@@ -179,6 +181,9 @@ namespace ColonistAwareness
                         cardWidth, secondRow));
                     DrawArrangementCard(new Rect(cardWidth + gap,
                         componentY + firstRow + gap, cardWidth, secondRow));
+                    DrawTechnologyCard(new Rect(0f,
+                        componentY + firstRow + gap + secondRow + gap,
+                        gridWidth, technologyHeight));
                 }
                 else
                 {
@@ -193,6 +198,9 @@ namespace ColonistAwareness
                     cardY += politicalHeight + gap;
                     DrawArrangementCard(new Rect(0f, cardY, gridWidth,
                         arrangementHeight));
+                    cardY += arrangementHeight + gap;
+                    DrawTechnologyCard(new Rect(0f, cardY, gridWidth,
+                        technologyHeight));
                 }
             }
             finally { Widgets.EndScrollView(); }
@@ -214,7 +222,8 @@ namespace ColonistAwareness
         private string FoundingOverview()
         {
             CASocietyPreset society = CASocietyPresetLibrary.Match(
-                draft?.culture, draft?.politicalBeliefs);
+                draft?.culture, draft?.politicalBeliefs,
+                draft?.technologicalKnowledge);
             string compact = (society == null ? "Custom society"
                     : "Matches society preset: " + society.Label)
                 + " | Culture: "
@@ -241,15 +250,17 @@ namespace ColonistAwareness
         private void DrawSocietyCard(Rect rect)
         {
             CASocietyPreset preset = CASocietyPresetLibrary.Match(
-                draft?.culture, draft?.politicalBeliefs);
+                draft?.culture, draft?.politicalBeliefs,
+                draft?.technologicalKnowledge);
             float y = BeginCard(rect, "Society preset",
                 SocietyDescription());
             string title = preset?.Label ?? "Custom society";
             string detail = preset == null
-                ? "Culture and Political Order are a custom composition."
+                ? "Culture, Political Order, and Technological Knowledge are a custom composition."
                 : preset.CultureSummary + " Political Order: "
                     + CAPoliticalOrderModel.Identity(
-                        preset.PoliticalPreview()) + ".";
+                        preset.PoliticalPreview()) + ". Knowledge: "
+                    + preset.TechnologySummary + ".";
             DrawSummary(rect, ref y, null, title, detail,
                 preset == null ? "Customized" : "Preset");
             DrawButtons(rect, ref y,
@@ -367,6 +378,26 @@ namespace ColonistAwareness
                 }));
         }
 
+        private void DrawTechnologyCard(Rect rect)
+        {
+            float y = BeginCard(rect, "Technological knowledge",
+                TechnologyDescription());
+            DrawSummary(rect, ref y, null,
+                CATechnologicalKnowledgeModel.Summary(
+                    draft?.technologicalKnowledge),
+                "What the faction can understand, build, operate, and maintain.",
+                TechnologyStateWords());
+            DrawButtons(rect, ref y,
+                new CAFoundingAction("Set technological knowledge...", delegate
+                {
+                    Find.WindowStack.Add(
+                        new Dialog_CATechnologicalKnowledgeEditor(
+                            draft.technologicalKnowledge,
+                            CAPlayerFoundingModel.Seed + ":technology",
+                            Changed));
+                }));
+        }
+
         private void DrawArrangementCard(Rect rect)
         {
             float y = BeginCard(rect, "Rules at landing",
@@ -455,22 +486,31 @@ namespace ColonistAwareness
                 + "contradict the founders' Political Order.";
         }
 
+        private static string TechnologyDescription()
+        {
+            return "The practical knowledge the faction brings. Site needs, "
+                + "production, research, and construction use these same "
+                + "domain levels.";
+        }
+
         private static string SocietyDescription()
         {
-            return "Set Culture and Political Order together from one "
-                + "historical or social starting point. Edit either result "
-                + "below.";
+            return "Set Culture, Political Order, and Technological Knowledge "
+                + "together from one historical or social starting point. "
+                + "Edit any result below.";
         }
 
         private float MeasureSocietyCard(float width)
         {
             CASocietyPreset preset = CASocietyPresetLibrary.Match(
-                draft?.culture, draft?.politicalBeliefs);
+                draft?.culture, draft?.politicalBeliefs,
+                draft?.technologicalKnowledge);
             string detail = preset == null
-                ? "Culture and Political Order are a custom composition."
+                ? "Culture, Political Order, and Technological Knowledge are a custom composition."
                 : preset.CultureSummary + " Political Order: "
                     + CAPoliticalOrderModel.Identity(
-                        preset.PoliticalPreview()) + ".";
+                        preset.PoliticalPreview()) + ". Knowledge: "
+                    + preset.TechnologySummary + ".";
             return MeasureCard(width, SocietyDescription(),
                 preset?.Label ?? "Custom society", detail,
                 preset == null ? "Customized" : "Preset");
@@ -499,6 +539,15 @@ namespace ColonistAwareness
                     draft?.politicalBeliefs),
                 CAPoliticalBeliefsModel.Summary(draft?.politicalBeliefs),
                 PoliticalStateWords());
+        }
+
+        private float MeasureTechnologyCard(float width)
+        {
+            return MeasureCard(width, TechnologyDescription(),
+                CATechnologicalKnowledgeModel.Summary(
+                    draft?.technologicalKnowledge),
+                "What the faction can understand, build, operate, and maintain.",
+                TechnologyStateWords());
         }
 
         private float MeasureArrangementCard(float width)
@@ -696,6 +745,23 @@ namespace ColonistAwareness
                 .NullOrEmpty() ? "Generated" : "Incomplete";
         }
 
+        private string TechnologyStateWords()
+        {
+            CATechnologicalKnowledge knowledge = draft?.technologicalKnowledge;
+            if (!CATechnologicalKnowledgeModel.ValidationFailure(knowledge)
+                .NullOrEmpty()) return "Incomplete";
+            if (CASocietyPresetLibrary.All.Any(item =>
+                    item.Matches(draft?.culture, draft?.politicalBeliefs,
+                        knowledge)))
+                return "Preset";
+            if (knowledge.origin.source == CAProvenance.Authored
+                || (knowledge.domains ?? new List<CATechnologyDomainKnowledge>())
+                    .Any(item => item != null && item.source
+                        == (byte)CAAxisSource.Authored))
+                return "Edited";
+            return "Generated";
+        }
+
         private static Color StateColor(string words)
         {
             if (words == "Preset") return CACreationUI.Preset;
@@ -742,10 +808,13 @@ namespace ColonistAwareness
         private void OpenSocietyPresets()
         {
             CACreationUI.OpenChoices("Society presets",
-                "Choose one starting society. It sets Culture and Political "
-                    + "Order together. You can change either afterward.",
+                "Choose one starting society. It sets Culture, Political "
+                    + "Order, and Technological Knowledge together. You can "
+                    + "change any component afterward.",
                 CAAuthoringChoices.SocietyPresets(draft?.culture,
-                    draft?.politicalBeliefs, CAPlayerFoundingModel.Seed,
+                    draft?.politicalBeliefs,
+                    draft?.technologicalKnowledge,
+                    CAPlayerFoundingModel.Seed,
                     delegate
                     {
                         Changed();
@@ -777,6 +846,9 @@ namespace ColonistAwareness
             if (failure.NullOrEmpty())
                 failure = CAPoliticalOrderModel.ValidationFailure(
                     draft?.politicalBeliefs);
+            if (failure.NullOrEmpty())
+                failure = CATechnologicalKnowledgeModel.ValidationFailure(
+                    draft?.technologicalKnowledge);
             if (!failure.NullOrEmpty())
             {
                 Messages.Message(failure, MessageTypeDefOf.RejectInput,
@@ -784,12 +856,14 @@ namespace ColonistAwareness
                 return;
             }
             CASocietyPreset match = CASocietyPresetLibrary.Match(
-                draft?.culture, draft?.politicalBeliefs);
+                draft?.culture, draft?.politicalBeliefs,
+                draft?.technologicalKnowledge);
             Find.WindowStack.Add(new Dialog_CAProfileName(
                 "Save society preset", match?.Label ?? "Saved society", value =>
                 {
                     CAAuthoringProfileLibrary.SaveSociety(value,
-                        draft?.culture, draft?.politicalBeliefs);
+                        draft?.culture, draft?.politicalBeliefs,
+                        draft?.technologicalKnowledge);
                     Changed();
                 }));
         }
