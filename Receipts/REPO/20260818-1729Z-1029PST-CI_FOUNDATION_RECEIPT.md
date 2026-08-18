@@ -1,7 +1,7 @@
 # Repository CI Foundation Receipt
 
 Timestamp: 2026-08-18 17:29 UTC / 10:29 PST
-Updated: 2026-08-18 17:39 UTC / 10:39 PST
+Updated: 2026-08-18 17:51 UTC / 10:51 PST
 
 | Fact | Evidence |
 |---|---|
@@ -12,8 +12,9 @@ Updated: 2026-08-18 17:39 UTC / 10:39 PST
 | Support projects | All 18 projects declared by `tools/ci/projects.txt` compile with warnings treated as errors. Older conversion-only fixture generators remain historical provenance rather than being rewritten against the current ontology. |
 | Generated evidence | B10 synthetic-state audit reports 166 classified occurrences and 0 unresolved Critical/High findings; the 258-carrier persistence census reports 0 unclassified or invalid routes; both regenerate without governed-file drift. |
 | Dependencies | NuGet audit reports 0 direct or transitive vulnerabilities and 0 high or critical findings. |
-| GitHub | PR `#5` exercised the new workflows on commit `bf3d445764eddd49eedac42939ea4383a2e2e1d1`: `ci-verify` run `32166461257`, `dependency-scan` run `32166461292`, and `codeql-csharp` run `32166461236` all passed. Code scanning reports 0 open alerts. Dependabot, CODEOWNERS, and the pull-request contract are present. `main` protection follows the merge. |
+| GitHub execution | PR `#5` final head `7e87dca60bf6ec9193cc8824ae51a3c850dce7d4` passed `ci-verify` run `32167378903`, `dependency-scan` run `32167378889`, and `codeql-csharp` run `32167378883`. The final jobs carry 0 annotations and code scanning reports 0 open alerts. GitHub merged the signed squash as `f71c1dbc33b22a2550de0294ac7ded4962cdea68`. |
+| GitHub enforcement | `main` strictly requires `ci-verify` and `dependency-scan` through a pull request. Signed commits, linear history, conversation resolution, and admin enforcement are enabled; force pushes and deletion are disabled. Squash is the only merge method and merged branches delete automatically. Secret scanning, push protection, vulnerability alerts, automated security fixes, and Dependabot security updates are enabled. |
 | GitLab | `.gitlab-ci.yml` calls the same repository-owned verification contract. No CAO GitLab remote is configured in this checkout, and the configured private GitLab API was unreachable during this run. |
 | Runtime boundary | RimWorld is closed. CI did not launch or operate the game, edit a save, or claim visual/gameplay acceptance. The DLL change establishes a pinned-compiler binary baseline from unchanged B16 source. |
 
-Result: **LOCAL AND HOSTED CHECKS PASS / MAIN PROTECTION PENDING**
+Result: **PASS**

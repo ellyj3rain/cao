@@ -17,11 +17,12 @@ receipts, deployment, and operator runtime evidence remain separate.
 
 | Surface | State |
 |---|---|
-| Active checkout | B16 worktree carrying pure `[REPO]` CI maintenance |
-| Branch | `mallowfluff/repo-ci-foundation` |
+| Active checkout | B16 worktree carrying the records-only `[REPO]` CI closure |
+| Branch | `mallowfluff/repo-ci-closure` |
 | B16 merged baseline | `788fcd1ed009010f3e12a7dfbfaccde003e456d1` (PR `#4`) |
+| Published main | `f71c1dbc33b22a2550de0294ac7ded4962cdea68` (CI foundation PR `#5`) |
 | Closed chronology | `A1-A102` and `B1-B16`; B16 is kohai capability unit `VU-043`; `B17` is next. |
-| Publication maintenance | PR `#5` hosted checks pass (`ci-verify`, `dependency-scan`, and CodeQL); merge and `main` protection remain. No runtime, schema, fixture, version, or authored-state changes. |
+| Publication maintenance | **PASS** - final hosted `ci-verify`, `dependency-scan`, and CodeQL runs are clean; strict required checks, PR-only signed linear history, conversation resolution, admin enforcement, secret scanning, push protection, and protected `main` are active. No runtime, schema, fixture, version, or authored-state changes. |
 
 ## Current B16 contract
 
