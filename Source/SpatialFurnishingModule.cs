@@ -834,7 +834,7 @@ namespace ColonistAwareness
                     .Append(", research ready ")
                     .Append(YesNo(def.IsResearchFinished))
                     .Append(", colony tech ready ").Append(YesNo(
-                        TechAllows(def))).Append(", map resource-count "
+                        TechAllows(map, def))).Append(", map resource-count "
                         + "sufficient ")
                     .Append(YesNo(resourceCountSufficient))
                     .Append(" (reachability, forbiddance, and reservations not "
@@ -882,7 +882,7 @@ namespace ColonistAwareness
                 definitionIndex < definitions.Count; definitionIndex++)
             {
                 ThingDef def = definitions[definitionIndex];
-                if (!def.IsResearchFinished || !TechAllows(def)
+                if (!def.IsResearchFinished || !TechAllows(map, def)
                     || !CapableBuilder(planner, def)) continue;
                 researched++;
                 ThingDef stuff;
@@ -1148,7 +1148,7 @@ namespace ColonistAwareness
                         || !def.BuildableByPlayer || def.blueprintDef == null
                         || def.building == null) continue;
                     positiveDefinitions++;
-                    if (!def.IsResearchFinished || !TechAllows(def)
+                    if (!def.IsResearchFinished || !TechAllows(map, def)
                         || !CapableBuilder(planner, def)) continue;
                     researchedDefinitions++;
                     ThingDef stuff;
@@ -2046,7 +2046,7 @@ namespace ColonistAwareness
         private static string CapabilityReceipt(Map map, ThingDef def,
             IntVec3 cell)
         {
-            bool tech = TechAllows(def);
+            bool tech = TechAllows(map, def);
             List<Pawn> builders = map.mapPawns.FreeColonistsSpawned
                 .Where(pawn => CapableBuilder(pawn, def)).ToList();
             int reachable = cell.IsValid ? builders.Count(pawn =>
@@ -2148,14 +2148,11 @@ namespace ColonistAwareness
                 candidate.defName).FirstOrDefault();
         }
 
-        private static bool TechAllows(ThingDef def)
+        private static bool TechAllows(Map map, ThingDef def)
         {
-            if (Faction.OfPlayer?.def == null) return false;
-            TechLevel tech = Faction.OfPlayer.def.techLevel;
-            return (def.minTechLevelToBuild == TechLevel.Undefined
-                    || tech >= def.minTechLevelToBuild)
-                && (def.maxTechLevelToBuild == TechLevel.Undefined
-                    || tech <= def.maxTechLevelToBuild);
+            return Faction.OfPlayer != null
+                && CATechnologicalKnowledgeRuntime.CanConstruct(
+                    Faction.OfPlayer, def, out _, map);
         }
 
         private static bool CapableBuilder(Pawn pawn, ThingDef def)

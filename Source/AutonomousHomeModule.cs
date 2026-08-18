@@ -1619,18 +1619,12 @@ namespace ColonistAwareness
                 blocker = "building definition is unavailable";
                 return false;
             }
-            if (!def.IsResearchFinished)
+            if (!CATechnologicalKnowledgeRuntime.CanConstruct(
+                    Faction.OfPlayer, def,
+                    out CATechnologyRequirement missingKnowledge, map))
             {
-                blocker = def.label + " research is unfinished";
-                return false;
-            }
-            TechLevel tech = Faction.OfPlayer.def.techLevel;
-            if ((def.minTechLevelToBuild != TechLevel.Undefined
-                    && tech < def.minTechLevelToBuild)
-                || (def.maxTechLevelToBuild != TechLevel.Undefined
-                    && tech > def.maxTechLevelToBuild))
-            {
-                blocker = def.label + " is outside the colony's technology";
+                blocker = CAHabitatViability.MissingKnowledgeWords(
+                    missingKnowledge);
                 return false;
             }
             if (!HasCapableBuilder(def))

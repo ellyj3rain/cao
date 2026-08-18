@@ -131,7 +131,7 @@ namespace ColonistAwareness
             CASettlementEnvironmentFacts environment =
                 CASettlementEnvironment.ForTile(holding.memberTileId);
             if (!CAHabitatViability.ValidateFrontier(holding, environment,
-                    out string habitatFailure))
+                    out string habitatFailure, region))
                 return BlockMaterialization(holding, habitatFailure);
 
             bool supportDeclared = holding.supportingFactionKey >= 0
@@ -142,7 +142,7 @@ namespace ColonistAwareness
                 return BlockMaterialization(holding,
                     "the saved supporting faction is unavailable");
             int resolvedTier = flag == null ? 0
-                : CAHabitatViability.TechnologyTier(flag);
+                : CAHabitatViability.KnowledgeCompatibilityTier(flag);
             if (resolvedTier != holding.capabilityTier)
                 return BlockMaterialization(holding,
                     "the saved supporting capability no longer matches its faction");
@@ -544,7 +544,14 @@ namespace ColonistAwareness
                 return false;
             }
 
-            string foodDef = holding.capabilityTier >= 2
+            // This is the realization of an already-established saved
+            // holding. Its initial material form is authorized by canonical
+            // faction knowledge; once residents exist, ordinary work queries
+            // local distributed availability.
+            int logistics = CATechnologicalKnowledgeRuntime.CanonicalRank(
+                faction, CATechnologyDomains.Logistics,
+                CATechnologyCompetencies.Maintain);
+            string foodDef = logistics >= 3
                 ? "MealSurvivalPack" : "Pemmican";
             int foodUnits = Math.Max(30, residents * (reserveRequired
                 ? 35 : 20));
@@ -559,7 +566,7 @@ namespace ColonistAwareness
                 holding.habitatFoodRoute;
             if (route == CAHabitatFoodRoute.OutdoorCultivation
                 && !TrySowFoodPatch(map, site, Math.Max(12,
-                    residents * 4), spawned))
+                    residents * 4), faction, spawned))
             {
                 RollBackHabitat(map, spawned, roofs);
                 failure = "the outdoor-cultivation route has no cultivable ground at the selected site";
@@ -729,6 +736,8 @@ namespace ColonistAwareness
             try
             {
                 if (def == null || !c.InBounds(map)) return false;
+                if (!CATechnologicalKnowledgeRuntime.CanConstructCanonical(
+                        faction, def, out _)) return false;
                 CellRect occupied = GenAdj.OccupiedRect(c, rotation,
                     def.Size);
                 foreach (IntVec3 cell in occupied)
@@ -793,11 +802,13 @@ namespace ColonistAwareness
         }
 
         private static bool TrySowFoodPatch(Map map, IntVec3 center,
-            int wanted, List<Thing> spawned)
+            int wanted, Faction faction, List<Thing> spawned)
         {
             ThingDef crop = DefDatabase<ThingDef>.GetNamedSilentFail(
                 "Plant_Potato");
-            if (crop == null) return false;
+            if (crop == null
+                || !CATechnologicalKnowledgeRuntime.CanGrowCanonical(
+                    faction, crop, out _)) return false;
             int planted = 0;
             int cells = GenRadial.NumCellsInRadius(13f);
             for (int i = 1; i < cells && planted < wanted; i++)

@@ -46,7 +46,7 @@ namespace ColonistAwareness
     // source reorganization does not change a schema; a persisted contract does.
     public static class CACampaignSchemaCatalog
     {
-        public const int CurrentCatalogVersion = 3;
+        public const int CurrentCatalogVersion = 4;
 
         public static readonly CACampaignSchemaDefinition[] All =
         {
@@ -64,11 +64,11 @@ namespace ColonistAwareness
             D("map.culture-longitudinal", 2, 1, 1),
             D("map.equipment-transition", 1),
             D("game.hidden-things", 1),
-            D("world.faction-state", 2, 1, 1),
-            D("world.player-founding", 2, 1, 1),
+            D("world.faction-state", 3, 2, 1),
+            D("world.player-founding", 3, 2, 1),
             D("world.organization", 2, 1, 1),
             D("world.organization-relations", 1),
-            D("world.regional", 2, 1, 1),
+            D("world.regional", 3, 2, 1),
             D("world.cultural-cognition", 2, 2, 2),
             D("world.political-cognition", 1, 1, 2),
             D("world.proposition-knowledge", 1, 1, 2),
@@ -112,11 +112,12 @@ namespace ColonistAwareness
             D("world.regional-reservation", 1),
             D("model.culture", 10, 9, 1),
             D("model.political-order", 10),
+            D("model.technological-knowledge", 1, 1, 4),
             D("model.represented-institutions", 1),
             D("model.founding-arrangement", 1),
-            D("model.player-founding-plan", 3),
-            D("model.regional-plan", 13),
-            D("model.regional-settlement-record", 8),
+            D("model.player-founding-plan", 4, 3, 1),
+            D("model.regional-plan", 14, 13, 1),
+            D("model.regional-settlement-record", 9, 8, 1),
             D("model.settlement-population-group", 1),
             D("model.domestic-unit", 1),
             D("model.domestic-provision-demand", 1),

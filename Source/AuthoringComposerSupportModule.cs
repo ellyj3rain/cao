@@ -132,6 +132,7 @@ namespace ColonistAwareness
 
         internal static List<CACreationChoice> SocietyPresets(
             CACulture culture, CAPoliticalBeliefs politicalOrder,
+            CATechnologicalKnowledge technologicalKnowledge,
             string sourceIdentity, Action changed)
         {
             var choices = new List<CACreationChoice>();
@@ -142,12 +143,14 @@ namespace ColonistAwareness
                 .ThenBy(item => item.Label, StringComparer.Ordinal))
             {
                 CASocietyPreset local = preset;
-                bool selected = local.Matches(culture, politicalOrder);
+                bool selected = local.Matches(culture, politicalOrder,
+                    technologicalKnowledge);
                 choices.Add(SocietyPresetChoice(local, selected,
                     "Use society preset", null, delegate
                     {
                         if (!CASocietyPresetLibrary.TryApply(local, culture,
-                                politicalOrder, sourceIdentity,
+                                politicalOrder, technologicalKnowledge,
+                                sourceIdentity,
                                 out string failure))
                         {
                             Messages.Message("Could not apply " + local.Label
@@ -157,7 +160,8 @@ namespace ColonistAwareness
                         }
                         changed?.Invoke();
                         Messages.Message(local.Label
-                                + " set Culture and Political Order.",
+                                + " set Culture, Political Order, and "
+                                + "Technological Knowledge.",
                             MessageTypeDefOf.NeutralEvent, false);
                         return true;
                     }));
@@ -195,11 +199,15 @@ namespace ColonistAwareness
         {
             CAPoliticalBeliefs politicalPreview =
                 preset.PoliticalPreview();
+            CATechnologicalKnowledge technologyPreview =
+                preset.TechnologyPreview();
             string details = "Culture\n" + preset.CultureSummary
                 + "\n\nPolitical Order\n"
                 + CAPoliticalOrderModel.Description(politicalPreview)
-                + "\n\nThis sets Culture and Political Order together. "
-                + "You can change either afterward.";
+                + "\n\nTechnological Knowledge\n"
+                + CATechnologicalKnowledgeModel.Summary(technologyPreview)
+                + "\n\nThis sets all three faction components together. "
+                + "You can change any component afterward.";
             if (!actionDetails.NullOrEmpty())
                 details += "\n\n" + actionDetails;
             return new CACreationChoice

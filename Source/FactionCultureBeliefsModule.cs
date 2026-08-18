@@ -3006,6 +3006,9 @@ namespace ColonistAwareness
                 group.culture = new CACulture();
             if (group.politicalBeliefs == null)
                 group.politicalBeliefs = new CAPoliticalBeliefs();
+            if (group.technologicalKnowledge == null)
+                group.technologicalKnowledge =
+                    new CATechnologicalKnowledge();
             string seed = (plan?.candidateId ?? "ca-region") + ":faction:"
                 + group.key;
             CACultureModel.EnsureIdentity(group.culture, seed);
@@ -3016,11 +3019,32 @@ namespace ColonistAwareness
                 CAPoliticalContext.ForFaction(plan, group);
             CAPoliticalBeliefsModel.DeriveUnset(group.politicalBeliefs,
                 seed + ":beliefs", context);
+            if (group.technologicalKnowledge.domains == null
+                || group.technologicalKnowledge.domains.Count == 0)
+            {
+                Faction existing = group.source
+                    == CARegionalFactionSource.ExistingWorldFaction
+                    ? CARegionalPlanUtility.FactionByLoadId(
+                        group.existingFactionLoadId) : null;
+                CATechnologicalKnowledge live = existing == null ? null
+                    : CAFactionStateWorldComponent.Current?.Find(existing)
+                        ?.technologicalKnowledge;
+                if (live?.domains?.Count > 0)
+                    group.technologicalKnowledge = live.Copy();
+                else
+                    CATechnologicalKnowledgeModel.SeedFromEngineTemplate(
+                        group.technologicalKnowledge,
+                        group.ResolvedFactionDef, seed + ":technology");
+            }
+            CATechnologicalKnowledgeModel.Ensure(
+                group.technologicalKnowledge, seed + ":technology");
         }
 
         internal static void ApplyPlan(Faction faction,
             CACulture culture,
-            CAPoliticalBeliefs beliefs, List<CAAxisEntry> structure,
+            CAPoliticalBeliefs beliefs,
+            CATechnologicalKnowledge technologicalKnowledge,
+            List<CAAxisEntry> structure,
             bool institutionalStateIncomplete = false)
         {
             CAFactionState record = CAFactionStateWorldComponent.Current
@@ -3031,6 +3055,9 @@ namespace ColonistAwareness
             if (culture != null) record.culture = culture.Copy();
             if (beliefs != null)
                 record.politicalBeliefs = beliefs.Copy();
+            if (technologicalKnowledge != null)
+                record.technologicalKnowledge =
+                    technologicalKnowledge.Copy();
             if (structure != null)
             {
                 foreach (IGrouping<string, CAAxisEntry> subject in structure

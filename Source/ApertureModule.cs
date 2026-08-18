@@ -194,7 +194,12 @@ namespace ColonistAwareness
                     || record.localRect == CellRect.Empty
                     || record.faction == null) return;
                 ThingDef wall = ThingDefOf.Wall;
-                int tier = CASettlementProgramMaterializer.TechTier(record);
+                // Initial settlement fabric is realized before its residents
+                // exist on the map. Use the faction's canonical authored
+                // capability here; local distributed availability governs
+                // later operation and maintenance after carriers exist.
+                int tier = CASettlementProgramMaterializer
+                    .CanonicalTechTier(record.faction);
                 CAMorphForm form = CAMorphologyAdapter.FormFor(record);
                 bool defensive = form == CAMorphForm.Outpost;
 

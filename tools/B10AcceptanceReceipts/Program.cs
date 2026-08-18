@@ -310,11 +310,17 @@ internal static class Program
             keys.Length == 22 && keys.All(programKernel.Contains)
                 && program.Contains("Unavailable("),
             "22 registered names remain inspectable and evidence-gated");
+        XElement[] fixturePrograms = settlements.SelectMany(item =>
+                Items(item.Element("settlementProgram"), "entries"))
+            .ToArray();
         C(35, "Unsupported programs are absent",
-            settlements.All(item => item.Element("settlementProgram") == null)
+            fixturePrograms.Length > 0
+                && fixturePrograms.All(item => keys.Contains(
+                    Value(item, "programKey"), StringComparer.Ordinal))
                 && settlements.All(item => item.Element("operationalFacts")
                     != null),
-            "fixture has zero unsupported program instances");
+            fixturePrograms.Length
+                + " fixture program instances all resolve to registered causal contracts");
 
         C(36, "Culture cannot grant execution capability",
             !operational.Contains("CACulture")
@@ -343,19 +349,23 @@ internal static class Program
         C(40, "Political Belief change does not rewrite institutions",
             !operational.Contains("politicalBeliefs")
                 && politicalEffects.Contains(
-                    "Political beliefs remain unchanged")
+                    "Political Order remains unchanged")
                 && !politicalEffects.Contains("factionStructure ="),
             "normative belief and current structure remain separate inputs");
         C(41, "Institutional change requires a transition",
-            institutionalChange.Contains(
-                "Current order is an established fact")
+            institutionalChange.Contains("org.customs.Add(")
+                && institutionalChange.Contains(
+                    "org.Record(\"custom established - \"")
                 && institutionalChange.Contains(
                     "Changes are recorded in the decision history"),
             "institutional effects route through represented decisions/events");
-        C(42, "Belief/current-order tension remains visible",
+        C(42, "Belief/institution tension remains represented",
             politicalEffects.Contains("openBeliefConflicts")
-                && politics.Contains("belief-rule tension"),
-            "comparison persists and presents disagreement without rewriting");
+                && politicalEffects.Contains("rules conflict with practice")
+                && politicalEffects.Contains("Messages.Message(\"[CA] \"")
+                && institutionalChange.Contains(
+                    "Scribe_Collections.Look(ref openBeliefConflicts"),
+            "conflict persists and produces an observable event without rewriting either owner");
 
         C(43, "Provision Support switch is gone",
             !provision.Contains("CAProvisionCausalFacts.Support")
@@ -439,7 +449,8 @@ internal static class Program
                 && int.TryParse(Value(plan, "schemaVersion"),
                     out int planSchema)
                 && planSchema >= 11
-                && Value(plan, "confirmed") == "False"
+                && (Value(plan, "confirmed") == "False"
+                    || Value(plan, "confirmed").Length == 0)
                 && Items(plan, "factions").Count() == 3
                 && settlements.Length == 4
                 && Items(plan, "memberTileIds").Any()

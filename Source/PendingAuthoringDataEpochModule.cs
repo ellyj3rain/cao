@@ -8,11 +8,11 @@ namespace ColonistAwareness
     // deleted through this epoch.
     internal static class CAPendingAuthoringDataEpoch
     {
-        // B12 replaces pending Culture social-meaning drafts with governed
-        // question distributions. These pre-release drafts are deliberately
-        // discarded through the existing explicit diagnostic boundary rather
-        // than normalized into invented current state.
-        internal const int Current = 12;
+        // B15 replaces two-component Society drafts and profiles with the
+        // faction-owned Culture, Political Order, and Technological Knowledge
+        // composition. Pending pre-release data is discarded rather than
+        // normalized into invented technological state.
+        internal const int Current = 13;
         private static bool diagnosticScheduled;
         private static bool diagnosticEmitted;
 

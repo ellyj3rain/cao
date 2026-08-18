@@ -184,7 +184,7 @@ namespace ColonistAwareness
                 string detail = faction?.Name ?? group?.Summary
                     ?? "unresolved faction";
                 if (record != null)
-                    detail += " · " + record.FactionEraLabel
+                    detail += " · " + record.FactionKnowledgeLabel
                         + " · population " + record.populationCurrent;
                 if ((settlement.operationalRoleMask
                         & CARegionalOperationalRoles.KnownMask) != 0)

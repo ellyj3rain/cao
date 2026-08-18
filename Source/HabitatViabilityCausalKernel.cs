@@ -56,7 +56,7 @@ namespace ColonistAwareness
 
     public sealed class CAHabitatCapabilityInput
     {
-        public int TechnologyTier;
+        public int KnowledgeCompatibilityTier;
         public bool EnclosedShelter;
         public bool ThermalControl;
         public bool ReliableFood;
@@ -185,7 +185,7 @@ namespace ColonistAwareness
                 CapabilityMask = available,
                 MissingRequirementMask = missing,
                 Viable = missing == 0 && capability != null
-                    && capability.TechnologyTier
+                    && capability.KnowledgeCompatibilityTier
                         >= requirements.RequiredCapabilityTier
             };
         }
@@ -198,7 +198,7 @@ namespace ColonistAwareness
             int value = Clamp(tier, 0, 3);
             return new CAHabitatCapabilityInput
             {
-                TechnologyTier = value,
+                KnowledgeCompatibilityTier = value,
                 EnclosedShelter = true,
                 ThermalControl = value >= 1,
                 ReliableFood = true,
@@ -232,17 +232,22 @@ namespace ColonistAwareness
             int value = Clamp(tier, 0, 3);
             return new CAHabitatCapabilityInput
             {
-                TechnologyTier = value,
+                KnowledgeCompatibilityTier = value,
+                // This is authoring potential, not a claim that any facility
+                // already exists. The environment's required tier decides
+                // whether this population can establish the necessary
+                // functions. Confirmation separately requires the saved
+                // settlement programs that actually provide them.
                 EnclosedShelter = true,
-                ThermalControl = value >= 1,
+                ThermalControl = true,
                 ReliableFood = true,
-                SecuredFoodSupply = value >= 2,
+                SecuredFoodSupply = true,
                 FoodReserve = true,
-                MedicalCare = value >= 1,
-                WaterTreatment = value >= 2,
+                MedicalCare = true,
+                WaterTreatment = true,
                 ArtificialLight = true,
-                HazardProtection = value >= 2,
-                BreathableInterior = value >= 3
+                HazardProtection = true,
+                BreathableInterior = true
             };
         }
 

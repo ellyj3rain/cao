@@ -1770,10 +1770,10 @@ namespace ColonistAwareness
             Faction supporter = CAHabitatViability.WorldSupporter(
                 environment);
             int capabilityTier = supporter == null ? 0
-                : CAHabitatViability.TechnologyTier(supporter);
+                : CAHabitatViability.KnowledgeCompatibilityTier(supporter);
             bool viableSite = environment.Valid
                 && CAHabitatViability.FrontierPotential(environment,
-                    capabilityTier).Viable;
+                    supporter).Viable;
             int suitableCapacity = Mathf.Clamp(
                 map.Size.x * map.Size.z / 40000, 2, 8);
             if (!viableSite) suitableCapacity = 0;
@@ -1839,10 +1839,10 @@ namespace ColonistAwareness
                     first.supportingFactionLoadId)
                 : CAHabitatViability.WorldSupporter(environment);
             int capabilityTier = supporter == null ? 0
-                : CAHabitatViability.TechnologyTier(supporter);
+                : CAHabitatViability.KnowledgeCompatibilityTier(supporter);
             bool viableSite = environment.Valid
                 && CAHabitatViability.FrontierPotential(environment,
-                    capabilityTier).Viable;
+                    supporter).Viable;
             int suitableCapacity = Mathf.Clamp(
                 map.Size.x * map.Size.z / 40000, 2, 8);
             if (!viableSite) suitableCapacity = 0;
@@ -2827,17 +2827,21 @@ namespace ColonistAwareness
                 pc.resolvedTick = now;
                 pc.resolution = "excused - partial from a thin treasury";
             }
-            TechLevel tech = TechLevel.Neolithic;
+            int logistics = 1;
             try
             {
                 Faction f = FactionOfKey(npcKey);
-                if (f != null) tech = f.def.techLevel;
+                if (f != null)
+                    logistics = CATechnologicalKnowledgeRuntime.EffectiveRank(
+                        f, CATechnologyDomains.Logistics,
+                        CATechnologyCompetencies.Operate);
             }
             catch { }
             string dispatchForm;
             int transit;
-            if ((int)tech >= 5) { dispatchForm = "drop pods"; transit = 2500; }
-            else if ((int)tech >= 4)
+            if (logistics >= 4)
+            { dispatchForm = "drop pods"; transit = 2500; }
+            else if (logistics >= 3)
             { dispatchForm = "supply caravan"; transit = 15000; }
             else { dispatchForm = "pack train"; transit = 25000; }
             comp.pendingAmount = affordable;

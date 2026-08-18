@@ -256,10 +256,7 @@ namespace ColonistAwareness
                     visibleInWorld = true
                 };
                 FactionDef template = CARegionalPlanUtility
-                    .EligibleNewFactionDefs().FirstOrDefault(def =>
-                        def.techLevel <= TechLevel.Industrial)
-                    ?? CARegionalPlanUtility.EligibleNewFactionDefs()
-                        .FirstOrDefault();
+                    .EligibleNewFactionDefs().FirstOrDefault();
                 councilFaction.customFactionDefName = template?.defName;
                 tradeFaction.customFactionDefName = template?.defName;
                 plan.factions.Add(councilFaction);

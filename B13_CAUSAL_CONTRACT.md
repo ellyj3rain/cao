@@ -2,12 +2,19 @@
 
 Status: canonical for B13
 
-Culture is a population distribution over twenty-four explicit questions. It
+Culture's current admitted registry is a population distribution over
+twenty-four explicit questions. It
 does not own doctrine, political rules, institutions, concrete practices, or
-historical events. Those facts remain with Ideoligion, Political Beliefs,
+historical events. Those facts remain with Ideoligion, Political Order,
 adopted order and organizations, practice history, and their respective event
 owners. Culture receives represented evidence from those owners and changes
 how pawns appraise and respond to it.
+
+The registry is internally complete for these twenty-four constructs. That
+closure is not an exhaustive audit of every culturally variable Core, DLC, or
+supported-mod mechanic. A native precept can remain explicit Ideoligion
+doctrine while Culture separately records the population's appraisal and
+practice history separately records repeated conduct.
 
 ## Registry shape
 

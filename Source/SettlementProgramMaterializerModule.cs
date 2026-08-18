@@ -148,19 +148,53 @@ namespace ColonistAwareness
     // assets for repair, rebuilding, and supported research work.
     internal static class CASettlementProgramMaterializer
     {
-        internal static int TechTier(Faction faction)
+        internal static int TechTier(Faction faction, Map map = null)
         {
-            return CASettlementAxes.Tier(
-                faction?.def?.techLevel ?? TechLevel.Neolithic);
+            int construction = Math.Min(
+                CATechnologicalKnowledgeRuntime.EffectiveRank(faction,
+                    CATechnologyDomains.Construction,
+                    CATechnologyCompetencies.Construct, map),
+                CATechnologicalKnowledgeRuntime.EffectiveRank(faction,
+                    CATechnologyDomains.Construction,
+                    CATechnologyCompetencies.Maintain, map));
+            int materials = Math.Min(
+                CATechnologicalKnowledgeRuntime.EffectiveRank(faction,
+                    CATechnologyDomains.Metallurgy,
+                    CATechnologyCompetencies.Construct, map),
+                CATechnologicalKnowledgeRuntime.EffectiveRank(faction,
+                    CATechnologyDomains.Metallurgy,
+                    CATechnologyCompetencies.Maintain, map));
+            if (construction >= 3 && materials >= 3) return 2;
+            return construction >= 2 ? 1 : 0;
         }
 
-        internal static int TechTier(CARegionalSettlementRecord record)
+        internal static int CanonicalTechTier(Faction faction)
+        {
+            int construction = Math.Min(
+                CATechnologicalKnowledgeRuntime.CanonicalRank(faction,
+                    CATechnologyDomains.Construction,
+                    CATechnologyCompetencies.Construct),
+                CATechnologicalKnowledgeRuntime.CanonicalRank(faction,
+                    CATechnologyDomains.Construction,
+                    CATechnologyCompetencies.Maintain));
+            int materials = Math.Min(
+                CATechnologicalKnowledgeRuntime.CanonicalRank(faction,
+                    CATechnologyDomains.Metallurgy,
+                    CATechnologyCompetencies.Construct),
+                CATechnologicalKnowledgeRuntime.CanonicalRank(faction,
+                    CATechnologyDomains.Metallurgy,
+                    CATechnologyCompetencies.Maintain));
+            if (construction >= 3 && materials >= 3) return 2;
+            return construction >= 2 ? 1 : 0;
+        }
+
+        internal static int TechTier(CARegionalSettlementRecord record,
+            Map map = null)
         {
             if (record == null) return 0;
-            if (record.factionEra > (int)TechLevel.Undefined)
-                return CASettlementAxes.Tier(
-                    (TechLevel)record.factionEra);
-            return 0;
+            // The saved tier is a creation receipt. Live construction queries
+            // use the faction-owned knowledge currently available here.
+            return record.faction != null ? TechTier(record.faction, map) : 0;
         }
 
         internal static void Materialize(CAOrganization org,
@@ -374,6 +408,21 @@ namespace ColonistAwareness
                         + " is not a valid loaded buildable definition";
                     record.creationBlocker = blocker;
                     org?.Record("works", "starting asset blocked - " + blocker);
+                    if (reportFailure)
+                        throw new InvalidOperationException(blocker);
+                    return 0;
+                }
+                if (!CATechnologicalKnowledgeRuntime.CanConstructCanonical(
+                        record.faction, def,
+                        out CATechnologyRequirement missingKnowledge))
+                {
+                    string blocker = "explicit starting asset " + defName
+                        + " exceeds the faction's authored technological "
+                        + "knowledge: " + CAHabitatViability
+                            .MissingKnowledgeWords(missingKnowledge);
+                    record.creationBlocker = blocker;
+                    org?.Record("works", "starting asset blocked - "
+                        + blocker);
                     if (reportFailure)
                         throw new InvalidOperationException(blocker);
                     return 0;
@@ -1734,31 +1783,32 @@ namespace ColonistAwareness
         private void MaterializeMilestone(CARegionalSettlementRecord record,
             CAOrganization org)
         {
-            int tier = CASettlementProgramMaterializer.TechTier(record);
-            string thing;
+            ThingDef def;
             string story;
             switch (record.researchMilestones)
             {
                 case 1:
-                    thing = tier >= 2 ? "Gun_BoltActionRifle"
-                        : "MeleeWeapon_LongSword";
+                    def = FirstKnownManufacturedWeapon(record.faction,
+                        "Gun_BoltActionRifle", "MeleeWeapon_LongSword");
+                    if (def == null) return;
                     story = "their study bears arms - finer weapons join"
                         + " the armory";
                     break;
                 case 2:
-                    thing = tier >= 2 ? "MedicineIndustrial"
-                        : "MedicineHerbal";
+                    def = FirstKnownMedicalSupply(record.faction,
+                        "MedicineIndustrial", "MedicineHerbal");
+                    if (def == null) return;
                     story = "their study bears healing - the infirmary"
                         + " stocks deeper";
                     break;
                 default:
-                    thing = tier >= 2 ? "StandingLamp" : "TorchLamp";
+                    def = FirstKnownMaintainableBuilding(record.faction,
+                        "StandingLamp", "TorchLamp");
+                    if (def == null) return;
                     story = "their study bears light - the halls glow"
                         + " longer into the night";
                     break;
             }
-            ThingDef def = DefDatabase<ThingDef>.GetNamedSilentFail(thing);
-            if (def == null) return;
             IntVec3 cell = record.localRect.CenterCell;
             if (!cell.InBounds(map) || !cell.Standable(map))
                 cell = record.localRect.Cells.FirstOrDefault(c =>
@@ -1781,6 +1831,54 @@ namespace ColonistAwareness
                     + ": " + story);
             }
             catch { }
+        }
+
+        private ThingDef FirstKnownManufacturedWeapon(Faction faction,
+            params string[] candidates)
+        {
+            foreach (string candidate in candidates)
+            {
+                ThingDef def = DefDatabase<ThingDef>
+                    .GetNamedSilentFail(candidate);
+                if (def?.IsWeapon != true) continue;
+                if (!CATechnologicalKnowledgeRuntime.CanManufacture(
+                        faction, def, out _, map)) continue;
+                if (CATechnologicalKnowledgeRuntime.CanUseWeapon(
+                        faction, def, out _, map)) return def;
+            }
+            return null;
+        }
+
+        private ThingDef FirstKnownMedicalSupply(Faction faction,
+            params string[] candidates)
+        {
+            if (!CATechnologicalKnowledgeRuntime.CanProvideMedicalCare(
+                    faction, out _, map)) return null;
+            foreach (string candidate in candidates)
+            {
+                ThingDef def = DefDatabase<ThingDef>
+                    .GetNamedSilentFail(candidate);
+                if (def?.IsMedicine != true) continue;
+                if (CATechnologicalKnowledgeRuntime.CanManufacture(
+                        faction, def, out _, map)) return def;
+            }
+            return null;
+        }
+
+        private ThingDef FirstKnownMaintainableBuilding(Faction faction,
+            params string[] candidates)
+        {
+            foreach (string candidate in candidates)
+            {
+                ThingDef def = DefDatabase<ThingDef>
+                    .GetNamedSilentFail(candidate);
+                if (def?.category != ThingCategory.Building) continue;
+                if (!CATechnologicalKnowledgeRuntime.CanConstruct(
+                        faction, def, out _, map)) continue;
+                if (CATechnologicalKnowledgeRuntime.CanMaintain(
+                        faction, def, out _, map)) return def;
+            }
+            return null;
         }
     }
 

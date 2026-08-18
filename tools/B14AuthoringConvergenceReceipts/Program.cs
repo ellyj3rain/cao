@@ -266,6 +266,7 @@ internal static class Program
                 && societyPresets.Contains("PresetKey")
                 && societyPresets.Contains("CulturePresetKey")
                 && societyPresets.Contains("PoliticalOrderValues")
+                && societyPresets.Contains("TechnologicalKnowledgeValues")
                 && societyPresets.Contains("a society preset reuses a Culture preset key")
                 && !societyPresets.Contains(
                     "Definitions.Length != CACulturePresetLibrary.All.Count")
@@ -276,6 +277,8 @@ internal static class Program
                     "CACulture cultureCandidate = culture.Copy()")
                 && societyPresets.Contains(
                     "CAPoliticalBeliefs politicalCandidate = politicalOrder.Copy()")
+                && societyPresets.Contains(
+                    "CATechnologicalKnowledge technologyCandidate")
                 && societyPresets.Contains("preset.ApplyComponents(")
                 && societyPresets.Contains("CAPoliticalOrderModel.ApplyPreset(")
                 && societyPresets.Contains(
@@ -284,6 +287,8 @@ internal static class Program
                     "CACultureModel.ValidationFailure(cultureCandidate")
                 && societyPresets.Contains(
                     "CAPoliticalOrderModel.ValidationFailure(")
+                && societyPresets.Contains(
+                    "CATechnologicalKnowledgeModel.ValidationFailure(")
                 && societyPresets.Contains("preset.Matches(")
                 && societyPresets.Contains("PoliticalOverrides")
                 && societyPresets.Contains("ApplyPoliticalOrder(")
@@ -292,9 +297,13 @@ internal static class Program
                 && societyPresets.Contains(
                     "politicalOrder.CopyFrom(politicalCandidate)")
                 && societyPresets.Contains(
+                    "technologicalKnowledge.CopyFrom(technologyCandidate")
+                && societyPresets.Contains(
                     "culture.CopyFrom(cultureBefore)")
                 && societyPresets.Contains(
                     "politicalOrder.CopyFrom(politicalBefore)")
+                && societyPresets.Contains(
+                    "technologicalKnowledge.CopyFrom(technologyBefore)")
                 && culture.Contains("MatchesInheritedTemplate(")
                 && cultureAuthoring.Contains("MatchesInheritedTemplate(")
                 && political.Contains("O(\"coerced\", \"coerced labor\"")
@@ -311,11 +320,12 @@ internal static class Program
                     "CAAuthoringChoices\\.SocietyPresets[\\s\\S]{0,300}"
                         + "RefreshSuggestedArrangement")
                 && regionalScreen.Contains("OpenSocietyPresets(group)"),
-            "22 independently identified Society recipes atomically copy complete sibling Culture and Political Order state; no one-to-one catalog validator remains");
+            "22 independently identified Society recipes atomically copy complete faction-owned Culture, Political Order, and Technological Knowledge state; no one-to-one catalog validator remains");
         C("Saved Society presets use the same existing interaction path",
             presentation.Contains("class CAUserSocietyProfile")
                 && presentation.Contains("cultureValues")
                 && presentation.Contains("politicalOrderValues")
+                && presentation.Contains("technologicalKnowledgeValues")
                 && presentation.Contains("CAUserSocietyPresetAdapter")
                 && presentation.Contains("SaveSociety(")
                 && settings.Contains("societyProfiles")
@@ -327,7 +337,7 @@ internal static class Program
                 && regionalScreen.Contains("Save society preset...")
                 && !allSource.Contains("Page_CASociety")
                 && !allSource.Contains("Dialog_CASociety"),
-            "ModSettings stores deep two-component snapshots; founding and faction Society sections apply and save them without another page or persistent world ownership");
+            "ModSettings stores deep three-component snapshots; founding and faction Society sections apply and save them without another page or persistent world ownership");
         C("Culture and Political Order remain independent substitutions",
             authoringChoices.Contains("CulturePresets(")
                 && authoringChoices.Contains("CultureProfiles(")
@@ -367,9 +377,9 @@ internal static class Program
                 && culture.Contains("A later explicit rename sets NameField"),
             "the faction owns applied Culture; each settlement's explicit local-history record references that parent and refreshes inherited baselines until a local field is authored");
         C("Region authoring remains the current schema",
-            Value(plan, "schemaVersion") == "13"
-                && regional.Contains("CurrentSchemaVersion = 13"),
-            "regional plan schema 13 retains the existing geography and composition");
+            Value(plan, "schemaVersion") == "14"
+                && regional.Contains("CurrentSchemaVersion = 14"),
+            "regional plan schema 14 retains the existing geography and composition while adding faction-owned technological knowledge");
 
         string receiptPath = Path.Combine(repo, "Receipts", "B14",
             "B14_AUTHORING_CONVERGENCE_STATIC_RECEIPT.md");

@@ -469,12 +469,15 @@ namespace ColonistAwareness
         // realize every institutional axis at initialization.
         public bool institutionalStateIncomplete;
 
-        // Default population Culture and Political Order. Ideoligion remains
+        // Faction-owned Culture, Political Order, and Technological Knowledge.
+        // Ideoligion remains
         // native faction state. Population groups may carry different
         // Ideoligions, beliefs, and faction affiliation.
         public CACulture culture = new CACulture();
         public CAPoliticalBeliefs politicalBeliefs =
             new CAPoliticalBeliefs();
+        public CATechnologicalKnowledge technologicalKnowledge =
+            new CATechnologicalKnowledge();
 
         // Independent factions with the same key belong to one federation.
         public int federationKey = -1;
@@ -511,6 +514,8 @@ namespace ColonistAwareness
             Scribe_Deep.Look(ref culture, "culture");
             Scribe_Deep.Look(ref politicalBeliefs,
                 "politicalBeliefs");
+            Scribe_Deep.Look(ref technologicalKnowledge,
+                "technologicalKnowledge");
             Scribe_Values.Look(ref federationKey, "federationKey", -1);
             Scribe_Values.Look(ref federationKind, "federationKind");
         }
@@ -545,7 +550,7 @@ namespace ColonistAwareness
                         existingFactionLoadId);
                     return !CARegionalPlanUtility.IsEligibleExistingFaction(
                             faction) ? "Choose existing faction"
-                        : faction.Name + " · " + faction.def.techLevel;
+                        : faction.Name + " · " + TechnologySummary;
                 }
                 FactionDef def = CARegionalPlanUtility.FactionDefByName(
                     customFactionDefName);
@@ -554,7 +559,7 @@ namespace ColonistAwareness
                 string name = customName.NullOrEmpty()
                     ? "New " + def.LabelCap.ToString()
                     : customName;
-                return name + " · " + def.techLevel;
+                return name + " · " + TechnologySummary;
             }
         }
 
@@ -583,18 +588,11 @@ namespace ColonistAwareness
         {
             get
             {
-                if (source == CARegionalFactionSource.ExistingWorldFaction)
-                {
-                    Faction faction = CARegionalPlanUtility.FactionByLoadId(
-                        existingFactionLoadId);
-                    return CARegionalPlanUtility.IsEligibleExistingFaction(
-                            faction) ? faction.def.techLevel.ToString()
-                        : "choose faction";
-                }
-                FactionDef def = CARegionalPlanUtility.FactionDefByName(
-                    customFactionDefName);
-                return CARegionalPlanUtility.CanMaterializeSettlement(def)
-                    ? def.techLevel.ToString() : "choose template";
+                if (technologicalKnowledge?.domains?.Count > 0)
+                    return CATechnologicalKnowledgeModel.Summary(
+                        technologicalKnowledge);
+                return ResolvedFactionDef == null
+                    ? "choose faction" : "knowledge not set";
             }
         }
     }
@@ -848,12 +846,11 @@ namespace ColonistAwareness
 
     public sealed class CARegionalPlan : IExposable
     {
-        internal const int CurrentSchemaVersion = 13;
+        internal const int CurrentSchemaVersion = 14;
 
-        // Schema 13 keeps the schema-12 relation provenance and adds one saved
-        // habitat requirement/capability result for every settlement and
-        // frontier holding. A viable label can no longer stand in for missing
-        // food, shelter, medicine, water, climate, or hazard functions.
+        // Schema 14 adds faction-owned Technological Knowledge to the staged
+        // regional composition. Schema 13 remains the supported B14 source for
+        // the additive B15 campaign migration.
         // Earlier development schemas are deliberately unsupported.
         public int schemaVersion = CurrentSchemaVersion;
         public string regionalId;
@@ -1278,8 +1275,9 @@ namespace ColonistAwareness
 
         internal static Faction FactionByLoadId(int loadId)
         {
-            if (loadId < 0 || Verse.Find.FactionManager == null) return null;
-            return Verse.Find.FactionManager.AllFactionsListForReading
+            FactionManager manager = Verse.Find.World?.factionManager;
+            if (loadId < 0 || manager == null) return null;
+            return manager.AllFactionsListForReading
                 .FirstOrDefault(faction => faction != null
                     && faction.loadID == loadId);
         }
@@ -1418,8 +1416,7 @@ namespace ColonistAwareness
             if (Verse.Find.FactionManager == null) return new List<Faction>();
             return Verse.Find.FactionManager.AllFactionsVisible
                 .Where(IsEligibleExistingFaction)
-                .OrderBy(faction => faction.def.techLevel)
-                .ThenBy(faction => faction.Name).ToList();
+                .OrderBy(faction => faction.Name).ToList();
         }
 
         internal static List<FactionDef> EligibleNewFactionDefs()
@@ -1427,7 +1424,7 @@ namespace ColonistAwareness
             return FactionGenerator.ConfigurableFactions
                 .Where(def => def != null && !def.isPlayer
                     && CanMaterializeSettlement(def))
-                .OrderBy(def => def.techLevel).ThenBy(def => def.label)
+                .OrderBy(def => def.label)
                 .ToList();
         }
 
@@ -1532,6 +1529,15 @@ namespace ColonistAwareness
                 {
                     failure = "Political Order for " + FactionName(group)
                         + " cannot be used: " + beliefFailure;
+                    return false;
+                }
+                string technologyFailure = CATechnologicalKnowledgeModel
+                    .ValidationFailure(group.technologicalKnowledge);
+                if (!technologyFailure.NullOrEmpty())
+                {
+                    failure = "Technological Knowledge for "
+                        + FactionName(group) + " cannot be used: "
+                        + technologyFailure;
                     return false;
                 }
                 string orderFailure = CAPoliticalBeliefsModel
@@ -4050,7 +4056,8 @@ namespace ColonistAwareness
                         pair.relation);
                 }
 
-            // Draft Culture, Political Order, and represented institutions become
+            // Draft Culture, Political Order, Technological Knowledge, and
+            // represented institutions become
             // durable faction state. Native Ideo remains separate.
             foreach (CARegionalFactionPlan group in plan.factions)
             {
@@ -4059,6 +4066,7 @@ namespace ColonistAwareness
                 CAFactionAxes.Derive(plan, group);
                 CAFactionStartingState.ApplyPlan(group.resolvedFaction,
                     group.culture, group.politicalBeliefs,
+                    group.technologicalKnowledge,
                     group.factionStructure,
                     group.institutionalStateIncomplete);
             }

@@ -19,8 +19,8 @@ export const KOHAI_HARD_CAP = 16;
 export const PATCH_HARD_CAP = 24;
 export const MATURITY_LADDER = Object.freeze(["pre-alpha", "alpha", "beta", "rc"]);
 export const ROOT_REPLAY_START_VERSION = "0.1.0.0-pre-alpha";
-export const CLOSED_BATCH_TIP = "B14";
-export const NEXT_BATCH = "B15";
+export const CLOSED_BATCH_TIP = "B15";
+export const NEXT_BATCH = "B16";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_REPO_ROOT = resolve(here, "..");
@@ -450,6 +450,17 @@ export const VERSION_UNITS = Object.freeze([
     threads: ["T-001", "T-002", "T-013", "T-014", "T-015", "T-019", "T-020", "T-021", "T-022", "T-023", "T-024", "T-025", "T-026", "T-027", "T-028", "T-029", "T-030"],
     rationale: "B14 establishes a new end-to-end creation capability across regional geography, settlement viability, and coherent Society authoring. Preview, confirmation, and generation now share one exact geography composition; hostile environments derive concrete habitat requirements; and autonomous construction ranks task-owned spatial evidence. Culture and Political Order remain canonical sibling owners while an independent Society recipe atomically initializes both, supports reusable saved snapshots, and leaves no persistent preset ownership. Starting Region placement, current-schema persistence, startup integration, offline creator tooling, fixed-cause receipts, reproducible builds, and byte-verified deployment close the capability as one minor unit.",
   },
+  {
+    id: "VU-042",
+    series: "B",
+    first: 15,
+    last: 15,
+    dates: "2026-08-17 to 2026-08-18",
+    tier: "minor",
+    name: "Faction technological knowledge and distributed availability",
+    threads: ["T-001", "T-004", "T-005", "T-015", "T-016", "T-019", "T-021", "T-023", "T-024", "T-025", "T-028", "T-030"],
+    rationale: "B15 adds Technological Knowledge as a third canonical component owned by authored faction state beside Culture and Political Order. The existing Society surface composes all three and reusable Society presets atomically snapshot and apply all three without becoming runtime owners. One explicit native translation layer maps research, construction, production, plants, habitat viability, and autonomous development onto domain competencies. Standard mode reads faction capability directly; the experimental distributed mode projects that same ontology through living pawns and persistent institutional or recorded custody, making redundancy and isolated loss causally meaningful without creating another technology system. Current-schema persistence, fixture conversion, executable causal receipts, retained regression suites, reproducible builds, and byte-verified deployment close a new simulation and authoring capability, so the unit carries the minor tier.",
+  },
 ]);
 
 function parseVersion(version) {
@@ -698,9 +709,10 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     "B12",
     "B13",
     "B14",
+    "B15",
   ];
   if (JSON.stringify(covered) !== JSON.stringify(expected)) {
-    errors.push("version units must cover A1-B14 exactly once, contiguously, and in order");
+    errors.push("version units must cover A1-B15 exactly once, contiguously, and in order");
   }
   VERSION_UNITS.forEach((unit, index) => {
     const expectedId = `VU-${String(index + 1).padStart(3, "0")}`;
@@ -715,19 +727,19 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     .sort((left, right) => left[0].localeCompare(right[0])
       || Number(left.slice(1)) - Number(right.slice(1)));
   if (JSON.stringify(closedIds) !== JSON.stringify(expected)) {
-    errors.push("Batches/ must contain exactly the closed A001-A102 and B001-B014 record set");
+    errors.push("Batches/ must contain exactly the closed A001-A102 and B001-B015 record set");
   }
-  if (batchFiles.some((name) => /^B0*15-.*\.md$/.test(name))) {
-    errors.push("B15 must remain unconsumed until the next development batch");
+  if (batchFiles.some((name) => /^B0*16-.*\.md$/.test(name))) {
+    errors.push("B16 must remain unconsumed until the next development batch");
   }
 
   const batchLog = readFileSync(join(repoRoot, "BATCH_LOG.md"), "utf8");
   const logIds = [...batchLog.matchAll(/^\| \[([A-Z])(\d+)\]/gm)]
     .map((match) => `${match[1]}${Number(match[2])}`);
   if (JSON.stringify(logIds) !== JSON.stringify(closedIds)) {
-    errors.push("BATCH_LOG.md must index A1-B14 exactly once and in order");
+    errors.push("BATCH_LOG.md must index A1-B15 exactly once and in order");
   }
-  if (/^\| \[B15\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B15 record yet");
+  if (/^\| \[B16\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B16 record yet");
 
   const threads = readFileSync(join(repoRoot, "Batches", "THREADS.md"), "utf8");
   const declaredThreads = new Set([...threads.matchAll(/<a id="t-(\d{3})"><\/a>T-(\d{3})/g)].map((match) => `T-${match[1]}`));

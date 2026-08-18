@@ -4,8 +4,8 @@ Date: 2026-08-17
 
 This report is generated from production C# source, independently of the campaign schema catalog. It discovers declarations that directly write through `Scribe`, call a nested `Expose` writer, or inherit a native persisted job/lord/need/thought/world/scenario owner. Every discovered carrier must resolve to an executable catalog schema or a narrow, stated non-campaign exclusion.
 
-- Discovered persistence carriers: **253**
-- Catalog schemas reached from source carriers: **86**
+- Discovered persistence carriers: **257**
+- Catalog schemas reached from source carriers: **87**
 - Explicit non-campaign exclusions: **5**
 - Unclassified or invalid routes: **0**
 - Result: **PASS**
@@ -228,6 +228,10 @@ This report is generated from production C# source, independently of the campaig
 | `ColonistAwareness.CAOverlayMapComponent` in `Source/TacticalOverlayModule.cs` | direct Scribe/nested Expose writer | `map.tactical-overlay` | **PASS** |
 | `ColonistAwareness.CATaskForce` in `Source/TaskForceModule.cs` | direct Scribe/nested Expose writer | `map.task-force` | **PASS** |
 | `ColonistAwareness.CATaskForceMapComponent` in `Source/TaskForceModule.cs` | direct Scribe/nested Expose writer | `map.task-force` | **PASS** |
+| `ColonistAwareness.CATechnologicalKnowledge` in `Source/TechnologicalKnowledgeModule.cs` | direct Scribe/nested Expose writer | `model.technological-knowledge` | **PASS** |
+| `ColonistAwareness.CATechnologyAvailabilityReceipt` in `Source/TechnologicalKnowledgeModule.cs` | direct Scribe/nested Expose writer | `model.technological-knowledge` | **PASS** |
+| `ColonistAwareness.CATechnologyCustodyRecord` in `Source/TechnologicalKnowledgeModule.cs` | direct Scribe/nested Expose writer | `model.technological-knowledge` | **PASS** |
+| `ColonistAwareness.CATechnologyDomainKnowledge` in `Source/TechnologicalKnowledgeModule.cs` | direct Scribe/nested Expose writer | `model.technological-knowledge` | **PASS** |
 | `ColonistAwareness.CAToxicWasteAuthorizedSourceRecord` in `Source/ToxicWasteLifecycleModule.cs` | direct Scribe/nested Expose writer | `map.toxic-waste` | **PASS** |
 | `ColonistAwareness.CAToxicWasteCapacityRecord` in `Source/ToxicWasteLifecycleModule.cs` | direct Scribe/nested Expose writer | `map.toxic-waste` | **PASS** |
 | `ColonistAwareness.CAToxicWasteConsequenceRecord` in `Source/ToxicWasteLifecycleModule.cs` | direct Scribe/nested Expose writer | `map.toxic-waste` | **PASS** |

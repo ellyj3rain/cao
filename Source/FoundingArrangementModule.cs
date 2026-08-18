@@ -207,6 +207,17 @@ namespace ColonistAwareness
                 .ConfirmedForRuntime();
             CAPlayerFoundingModel.ApplyCarriedState(founding,
                 Faction.OfPlayer);
+            // Vanilla scenarios may finish starting research before this
+            // callback. Reapply those native project facts through the same
+            // exact knowledge recorder after the authored state replaces the
+            // engine seed, then distribute the resulting canonical state.
+            CATechnologicalKnowledgeRuntime.SynchronizeFinishedResearch(
+                Faction.OfPlayer);
+            // All starting pawns now exist and the authored knowledge has
+            // replaced any engine seed. Distributed custody is projected once
+            // from this final founding state, never from the first pawn spawn.
+            CATechnologicalKnowledgeRuntime
+                .InitializeCurrentFactionDistribution();
             CACultureLongitudinalMapComponent.For(map)
                 ?.EstablishPlayerCulture(founding, now);
 
@@ -214,8 +225,8 @@ namespace ColonistAwareness
             bool fellFromSky = ArrivedViolently();
             bool alone = founders.Count == 1;
             bool ancestral = !fellFromSky && founders.Count >= 4
-                && (Faction.OfPlayer?.def?.techLevel
-                    ?? TechLevel.Industrial) <= TechLevel.Neolithic;
+                && CATechnologicalKnowledgeRuntime.CompatibilityTier(
+                    Faction.OfPlayer, map) == 0;
 
             // Use the authored arrangement when present. Otherwise adjust the
             // scenario default using the current faction state.

@@ -22,6 +22,7 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 - [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 - [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
+- [B15 - Faction Technological Knowledge and Distributed Availability](B015-2026-08-18-faction-technological-knowledge-and-distributed-availability.md) - 2026-08-17 to 2026-08-18 UTC / 2026-08-17 PDT
 
 ### <a id="t-002"></a>T-002 - Builds, deployment, reproducibility, and receipts
 
@@ -154,6 +155,7 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 - [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
+- [B15 - Faction Technological Knowledge and Distributed Availability](B015-2026-08-18-faction-technological-knowledge-and-distributed-availability.md) - 2026-08-17 to 2026-08-18 UTC / 2026-08-17 PDT
 
 ## TF-02 - Pawn cognition and authority
 
@@ -189,6 +191,7 @@ Disposition, knowledge, communication, command, and accountability.
 - [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 - [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 - [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
+- [B15 - Faction Technological Knowledge and Distributed Availability](B015-2026-08-18-faction-technological-knowledge-and-distributed-availability.md) - 2026-08-17 to 2026-08-18 UTC / 2026-08-17 PDT
 
 ### <a id="t-005"></a>T-005 - Communications and command authority
 
@@ -200,6 +203,7 @@ Disposition, knowledge, communication, command, and accountability.
 
 - [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 - [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B15 - Faction Technological Knowledge and Distributed Availability](B015-2026-08-18-faction-technological-knowledge-and-distributed-availability.md) - 2026-08-17 to 2026-08-18 UTC / 2026-08-17 PDT
 
 ## TF-03 - Combat doctrine
 
@@ -354,6 +358,7 @@ Home planning, space programs, residents, furnishing, and facility siting.
 - [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 - [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
+- [B15 - Faction Technological Knowledge and Distributed Availability](B015-2026-08-18-faction-technological-knowledge-and-distributed-availability.md) - 2026-08-17 to 2026-08-18 UTC / 2026-08-17 PDT
 
 ## TF-07 - Logistics, waste, and economy
 
@@ -382,6 +387,7 @@ Materials, storage, inventory, toxic waste, transactions, and obligations.
 - [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 - [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+- [B15 - Faction Technological Knowledge and Distributed Availability](B015-2026-08-18-faction-technological-knowledge-and-distributed-availability.md) - 2026-08-17 to 2026-08-18 UTC / 2026-08-17 PDT
 
 ### <a id="t-017"></a>T-017 - Toxic-waste lifecycle
 
@@ -432,6 +438,7 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 - [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
+- [B15 - Faction Technological Knowledge and Distributed Availability](B015-2026-08-18-faction-technological-knowledge-and-distributed-availability.md) - 2026-08-17 to 2026-08-18 UTC / 2026-08-17 PDT
 
 ### <a id="t-020"></a>T-020 - Regional geometry, projection, and scatter
 
@@ -487,6 +494,7 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 - [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
+- [B15 - Faction Technological Knowledge and Distributed Availability](B015-2026-08-18-faction-technological-knowledge-and-distributed-availability.md) - 2026-08-17 to 2026-08-18 UTC / 2026-08-17 PDT
 
 ### <a id="t-026"></a>T-026 - World tendencies and geography
 
@@ -578,6 +586,7 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 - [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 - [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
+- [B15 - Faction Technological Knowledge and Distributed Availability](B015-2026-08-18-faction-technological-knowledge-and-distributed-availability.md) - 2026-08-17 to 2026-08-18 UTC / 2026-08-17 PDT
 
 ## TF-10 - Onboarding and authoring
 
@@ -617,6 +626,7 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 - [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
+- [B15 - Faction Technological Knowledge and Distributed Availability](B015-2026-08-18-faction-technological-knowledge-and-distributed-availability.md) - 2026-08-17 to 2026-08-18 UTC / 2026-08-17 PDT
 
 ### <a id="t-025"></a>T-025 - Authoring surfaces and UI grammar
 
@@ -662,6 +672,7 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 - [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
+- [B15 - Faction Technological Knowledge and Distributed Availability](B015-2026-08-18-faction-technological-knowledge-and-distributed-availability.md) - 2026-08-17 to 2026-08-18 UTC / 2026-08-17 PDT
 
 ## TF-11 - Runtime tooling and controls
 
@@ -733,3 +744,4 @@ Canonical vocabulary, model convergence, copy register, and product truthfulness
 - [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 - [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 - [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
+- [B15 - Faction Technological Knowledge and Distributed Availability](B015-2026-08-18-faction-technological-knowledge-and-distributed-availability.md) - 2026-08-17 to 2026-08-18 UTC / 2026-08-17 PDT

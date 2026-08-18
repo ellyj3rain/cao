@@ -465,7 +465,7 @@ internal static class Program
         C(28, "B10 synthetic-state invariants remain passing",
             synthetic.Contains("Unresolved Critical/High: **0**")
             && synthetic.Contains("Result: **PASS**"),
-            "existing sweep reports 152 classified occurrences and zero unresolved Critical/High");
+            "current sweep reports zero unresolved Critical/High occurrences");
 
         // B11 addendum receipts 1-50. These begin at 29 so the original B11
         // durability/ownership sequence remains stable and auditable.
@@ -790,15 +790,18 @@ internal static class Program
             results.Where(item => item.Number <= 26).All(item => item.Passed),
             "all original ownership, profiler, schema, migration, and rollback receipts pass");
         C(75, "Schema transition is deterministic and explicit",
-            V(activeDoc.Root, "authoringDataEpoch") == "12"
-            && V(activePlan, "schemaVersion") == "13"
+            V(activeDoc.Root, "authoringDataEpoch") == "13"
+            && V(activePlan, "schemaVersion") == "14"
             && cultures.All(item => V(item, "schemaVersion") == "10")
             && politicalBeliefs.All(item => V(item, "schemaVersion") == "10")
+            && activeDoc.Descendants("technologicalKnowledge").Count() == 4
+            && activeDoc.Descendants("technologicalKnowledge").All(item =>
+                V(item, "schemaVersion") == "1")
             && culturePractices.All(item => !V(item, "practiceKey").Equals("")
                 && !V(item, "sourceOwner").Equals("")
                 && item.Element("subjectKey") == null)
             && ontologyKernel.Contains("FromB10LongitudinalEvidence"),
-            "pending epoch 12, regional plan 13, Culture 10, Political Order 10, and explicit B10 evidence gate");
+            "pending epoch 13, regional plan 14, Culture 10, Political Order 10, four technological-knowledge schema-1 owners, and explicit B10 evidence gate");
         C(76, "Clean Release build completed with zero errors",
             buildReceipt.Contains("Warnings: **0**")
             && buildReceipt.Contains("Errors: **0**")
@@ -1264,6 +1267,8 @@ internal static class Program
             case "TacticalLord.cs": return Route("native.tactical-lord");
             case "TacticalOverlayModule.cs": return Route("map.tactical-overlay");
             case "TaskForceModule.cs": return Route("map.task-force");
+            case "TechnologicalKnowledgeModule.cs":
+                return Route("model.technological-knowledge");
             case "ToxicWasteLifecycleModule.cs": return Route("map.toxic-waste");
             case "TransactionLedgerModule.cs": return Route("world.transaction-ledger");
             case "TrapAwarenessModule.cs": return Route("map.trap-memory");

@@ -183,6 +183,31 @@ possibilities. Culture does not create permission, authority, knowledge,
 technology, labor, material, land, treasury, office, relationship, institution,
 research result, or execution capability.
 
+## Technological knowledge
+
+The faction owns Technological Knowledge as a sibling of Culture and Political
+Order. Society authoring composes the three values together, and a Society
+preset snapshots them together, but neither becomes a runtime owner. Founding
+and regional plans stage the value only until faction realization. A settlement
+reads current faction knowledge unless an explicit local divergence is modeled;
+its saved knowledge tier and revision explain the conditions under which it was
+realized and never replace the faction owner.
+
+Nine practical domains separately record understanding, construction,
+operation, and maintenance. One requirement resolver translates native
+research, construction, production, agriculture, medicine, logistics, and
+defense definitions into those domains. `FactionDef.techLevel` may seed a new
+otherwise unauthored faction and provide native metadata, but it is not runtime
+authority. Standard mode reads the faction state directly. Experimental
+Distributed Knowledge derives the same requirements from accessible pawn,
+institution, and record custody at the requesting map or settlement scope.
+
+Settlement viability first derives environmental requirements, then asks
+whether the faction's current effective knowledge satisfies them, and finally
+asks whether represented labor, materials, access, and programs can act on that
+knowledge. These remain separate facts: knowing how to build a greenhouse does
+not supply its materials, and a hostile biome does not author knowledge.
+
 ## Settlement state and capability
 
 Population groups record share, affiliation, Ideoligion source and certainty,
@@ -228,21 +253,23 @@ supports.
 
 ## Persistence
 
-The current pending-authoring data epoch is `12`. The pending-plan schema is `11`; the
-materialized settlement record uses schema `8`; settlement programs and entries
+The current pending-authoring data epoch is `13`. The pending-plan schema is `14`; the
+materialized settlement record uses schema `9`; settlement programs and entries
 use schema `4`; operational facts use schema `3`; program-asset receipts use
 schema `1`; provision arrangements use schema `5`; domestic units and residence
 use schema `1`; capability assessments use schema `2`; Culture uses schema `10`;
-Political Beliefs uses schema `9`; player founding remains schema `3`. The plan writes
+Political Order uses schema `10`; Technological Knowledge uses schema `1`;
+player founding uses schema `4`. The plan writes
 factions, settlements, population groups, programs, provision arrangements,
-local Culture, Political Beliefs, current order, settlement authority, relations, holdings, patterns, scales,
+local Culture, Political Order, Technological Knowledge, represented institutions, settlement authority, relations, holdings, patterns, scales,
 realization state, and the player-founding object directly.
 
 Pending authoring remains pre-release and an epoch mismatch may reject an
 unconfirmed regional draft, founding draft, or reusable set with one diagnostic.
-It cannot clear realized Culture, Political Beliefs, current order, social
-interpretation, or campaign history. Live B13 state follows the durable campaign
-manifest and explicit compatibility contract. The governed B13 fixture contains
+It cannot clear realized Culture, Political Order, Technological Knowledge,
+represented institutions, social interpretation, or campaign history. Live B15
+state follows the durable campaign manifest and explicit compatibility contract.
+The governed B15 fixture contains
 intentional world, region, candidate, arrival, scale, faction, settlement,
 population, and 19 explicitly established operational facts. On load it enters
 the same production realization path as an operator-authored draft; the fixture
@@ -250,5 +277,5 @@ generator calls the production authoring kernel and contains no parallel causal
 model. Its active and keyed surfaces preserve three factions, four settlements,
 nine population groups, nineteen established operations, 192 complete root
 Culture question distributions, 2 authored local distributions, and 26
-preserved evidence records under epoch 12, regional-plan schema 11, and Culture
+preserved evidence records under epoch 13, regional-plan schema 14, and Culture
 registry 2.

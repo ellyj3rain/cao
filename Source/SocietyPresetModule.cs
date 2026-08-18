@@ -6,7 +6,8 @@ namespace ColonistAwareness
 {
     // Society presets are authoring inputs, never world-owned state. Built-in
     // recipes and saved snapshots implement this same contract so every
-    // interaction reaches one atomic Culture + Political Order application.
+    // interaction reaches one atomic Culture + Political Order +
+    // Technological Knowledge application.
     internal abstract class CASocietyPreset
     {
         internal abstract string Key { get; }
@@ -16,14 +17,19 @@ namespace ColonistAwareness
         internal abstract string ApproximatePeriod { get; }
         internal abstract string Summary { get; }
         internal abstract string CultureSummary { get; }
+        internal abstract string TechnologySummary { get; }
         internal abstract bool Saved { get; }
 
         internal abstract string ValidationFailure();
         internal abstract void ApplyComponents(CACulture culture,
-            CAPoliticalBeliefs politicalOrder, string sourceIdentity);
+            CAPoliticalBeliefs politicalOrder,
+            CATechnologicalKnowledge technologicalKnowledge,
+            string sourceIdentity);
         internal abstract bool Matches(CACulture culture,
-            CAPoliticalBeliefs politicalOrder);
+            CAPoliticalBeliefs politicalOrder,
+            CATechnologicalKnowledge technologicalKnowledge);
         internal abstract CAPoliticalBeliefs PoliticalPreview();
+        internal abstract CATechnologicalKnowledge TechnologyPreview();
     }
 
     // A built-in society preset owns its identity and catalog metadata. Its
@@ -44,6 +50,8 @@ namespace ColonistAwareness
         internal readonly string PoliticalOrderPresetKey;
         internal readonly CASocietyPoliticalOverride[] PoliticalOverrides;
         internal readonly CAPoliticalBeliefs PoliticalOrderValues;
+        internal readonly string TechnologyProfileKey;
+        internal readonly CATechnologicalKnowledge TechnologicalKnowledgeValues;
 
         internal CASocietyPresetDef(string key, string label,
             string catalogGroup, string referenceRegion,
@@ -63,6 +71,9 @@ namespace ColonistAwareness
                 ?? Array.Empty<CASocietyPoliticalOverride>();
             PoliticalOrderValues = BuildPoliticalOrder(
                 PoliticalOrderPresetKey, PoliticalOverrides);
+            TechnologyProfileKey = TechnologyProfileFor(PresetKey);
+            TechnologicalKnowledgeValues = BuildTechnologicalKnowledge(
+                TechnologyProfileKey, PresetKey);
         }
 
         internal CACulturePresetDef Culture =>
@@ -76,6 +87,9 @@ namespace ColonistAwareness
             PresetApproximatePeriod;
         internal override string Summary => PresetSummary;
         internal override string CultureSummary => Culture?.Summary;
+        internal override string TechnologySummary =>
+            CATechnologicalKnowledgeModel.Summary(
+                TechnologicalKnowledgeValues);
         internal override bool Saved => false;
 
         internal void ApplyPoliticalOrder(CAPoliticalBeliefs politicalOrder,
@@ -97,6 +111,12 @@ namespace ColonistAwareness
         internal override CAPoliticalBeliefs PoliticalPreview()
         {
             return PoliticalOrderValues?.Copy() ?? new CAPoliticalBeliefs();
+        }
+
+        internal override CATechnologicalKnowledge TechnologyPreview()
+        {
+            return TechnologicalKnowledgeValues?.CopyAsPreset()
+                ?? new CATechnologicalKnowledge();
         }
 
         internal override string ValidationFailure()
@@ -125,8 +145,13 @@ namespace ColonistAwareness
             if (overrideFailure != null) return overrideFailure;
             string politicalFailure = CAPoliticalOrderModel.ValidationFailure(
                 PoliticalPreview());
-            return politicalFailure == null ? null
-                : "Political Order: " + politicalFailure;
+            if (politicalFailure != null)
+                return "Political Order: " + politicalFailure;
+            string technologyFailure = CATechnologicalKnowledgeModel
+                .ValidationFailure(TechnologyPreview(),
+                    requireComplete: false);
+            return technologyFailure == null ? null
+                : "Technological Knowledge: " + technologyFailure;
         }
 
         private static CAPoliticalBeliefs BuildPoliticalOrder(string baseKey,
@@ -151,20 +176,86 @@ namespace ColonistAwareness
         }
 
         internal override void ApplyComponents(CACulture culture,
-            CAPoliticalBeliefs politicalOrder, string sourceIdentity)
+            CAPoliticalBeliefs politicalOrder,
+            CATechnologicalKnowledge technologicalKnowledge,
+            string sourceIdentity)
         {
             CACulturePresetLibrary.Apply(culture, Culture,
                 sourceIdentity ?? "society:" + Key);
             ApplyPoliticalOrder(politicalOrder, CAAxisSource.Authored);
+            if (technologicalKnowledge != null)
+            {
+                string ownerId = technologicalKnowledge.id;
+                technologicalKnowledge.CopyFrom(
+                    TechnologicalKnowledgeValues,
+                    includeDistribution: false);
+                technologicalKnowledge.id = ownerId;
+                technologicalKnowledge.origin = CAOrigin.Authored(
+                    sourceIdentity ?? "society:" + Key);
+                foreach (CATechnologyDomainKnowledge domain in
+                    technologicalKnowledge.domains)
+                {
+                    domain.source = (byte)CAAxisSource.Authored;
+                    domain.provenance = "society preset " + Key;
+                }
+            }
         }
 
         internal override bool Matches(CACulture culture,
-            CAPoliticalBeliefs politicalOrder)
+            CAPoliticalBeliefs politicalOrder,
+            CATechnologicalKnowledge technologicalKnowledge)
         {
             return CACulturePresetLibrary.Matches(culture, Culture)
                 && string.Equals(culture?.name, Culture?.Label,
                     StringComparison.Ordinal)
-                && MatchesPoliticalOrder(politicalOrder);
+                && MatchesPoliticalOrder(politicalOrder)
+                && CATechnologicalKnowledgeModel.Matches(
+                    technologicalKnowledge, TechnologicalKnowledgeValues);
+        }
+
+        private static CATechnologicalKnowledge BuildTechnologicalKnowledge(
+            string profileKey, string presetKey)
+        {
+            var result = new CATechnologicalKnowledge();
+            CATechnologicalKnowledgeModel.ApplyProfile(result, profileKey,
+                CAAxisSource.Generated,
+                "built-in society preset " + presetKey);
+            result.id = null;
+            return result;
+        }
+
+        private static string TechnologyProfileFor(string presetKey)
+        {
+            switch (presetKey)
+            {
+                case "society-mobile-kin": return "subsistence";
+                case "society-ranked-agrarian": return "agrarian";
+                case "society-civic-market-town":
+                case "society-central-court":
+                case "society-english-colonies":
+                case "society-first-french-empire":
+                case "society-late-tokugawa-japan":
+                case "society-late-qing-china":
+                case "society-mughal-empire":
+                    return "early-modern";
+                case "society-frontier-mutual-aid":
+                case "society-industrial-civic":
+                case "society-civil-war-union":
+                case "society-confederate-states":
+                case "society-freedpeople-emancipation":
+                case "society-second-french-empire":
+                case "society-meiji-japan":
+                case "society-tanzimat-ottoman-empire":
+                    return "industrial";
+                case "society-weimar-republic":
+                case "society-nazi-germany":
+                    return "electrified-industrial";
+                case "society-us-postwar":
+                case "society-us-millennium":
+                case "society-us-contemporary":
+                    return "advanced-industrial";
+                default: return "agrarian";
+            }
         }
     }
 
@@ -531,6 +622,7 @@ namespace ColonistAwareness
 
         internal static bool TryApply(CASocietyPreset preset,
             CACulture culture, CAPoliticalBeliefs politicalOrder,
+            CATechnologicalKnowledge technologicalKnowledge,
             string sourceIdentity, out string failure)
         {
             failure = null;
@@ -539,24 +631,30 @@ namespace ColonistAwareness
                 failure = "No society preset was selected.";
                 return false;
             }
-            if (culture == null || politicalOrder == null)
+            if (culture == null || politicalOrder == null
+                || technologicalKnowledge == null)
             {
-                failure = "This society has no Culture or Political Order to edit.";
+                failure = "This faction does not have all three Society components to edit.";
                 return false;
             }
             failure = preset.ValidationFailure();
             if (!string.IsNullOrWhiteSpace(failure)) return false;
 
-            // Apply into copies first. A preset is one action over two sibling
-            // records; either both complete records change or neither does.
+            // Apply into copies first. A preset is one action over the three
+            // faction-owned components; all complete records change or none do.
             CACulture cultureCandidate = culture.Copy();
             CAPoliticalBeliefs politicalCandidate = politicalOrder.Copy();
+            CATechnologicalKnowledge technologyCandidate =
+                technologicalKnowledge.Copy(includeDistribution: false);
             string owner = sourceIdentity ?? "society:" + preset.Key;
             preset.ApplyComponents(cultureCandidate, politicalCandidate,
-                owner);
+                technologyCandidate, owner);
             CACultureModel.EnsureIdentity(cultureCandidate, owner);
             CACultureModel.SynchronizeOwnIdentityLabel(cultureCandidate);
             politicalCandidate.id = politicalOrder.id;
+            technologyCandidate.id = technologicalKnowledge.id;
+            CATechnologicalKnowledgeModel.Ensure(technologyCandidate,
+                owner + ":technology");
 
             failure = CACultureModel.ValidationFailure(cultureCandidate,
                 requireSubstantive: true);
@@ -572,7 +670,15 @@ namespace ColonistAwareness
                 failure = "Political Order: " + failure;
                 return false;
             }
-            if (!preset.Matches(cultureCandidate, politicalCandidate))
+            failure = CATechnologicalKnowledgeModel.ValidationFailure(
+                technologyCandidate);
+            if (!string.IsNullOrWhiteSpace(failure))
+            {
+                failure = "Technological Knowledge: " + failure;
+                return false;
+            }
+            if (!preset.Matches(cultureCandidate, politicalCandidate,
+                    technologyCandidate))
             {
                 failure = "The selected preset did not survive application.";
                 return false;
@@ -580,21 +686,27 @@ namespace ColonistAwareness
 
             CACulture cultureBefore = culture.Copy();
             CAPoliticalBeliefs politicalBefore = politicalOrder.Copy();
+            CATechnologicalKnowledge technologyBefore =
+                technologicalKnowledge.Copy();
             try
             {
                 culture.CopyFrom(cultureCandidate);
                 politicalOrder.CopyFrom(politicalCandidate);
+                technologicalKnowledge.CopyFrom(technologyCandidate,
+                    includeDistribution: false);
                 failure = null;
                 return true;
             }
             catch (Exception exception)
             {
                 // CopyFrom is intentionally deterministic, but this boundary
-                // still guarantees that an exceptional second commit cannot
-                // leave the two canonical siblings in different revisions.
+                // still guarantees that an exceptional commit cannot leave
+                // the three faction-owned components in different revisions.
                 try { culture.CopyFrom(cultureBefore); }
                 catch { }
                 try { politicalOrder.CopyFrom(politicalBefore); }
+                catch { }
+                try { technologicalKnowledge.CopyFrom(technologyBefore); }
                 catch { }
                 failure = "The society preset could not be committed: "
                     + exception.Message;
@@ -603,10 +715,11 @@ namespace ColonistAwareness
         }
 
         internal static CASocietyPreset Match(CACulture culture,
-            CAPoliticalBeliefs politicalOrder)
+            CAPoliticalBeliefs politicalOrder,
+            CATechnologicalKnowledge technologicalKnowledge)
         {
             return Available.FirstOrDefault(item => item.Matches(culture,
-                politicalOrder));
+                politicalOrder, technologicalKnowledge));
         }
 
         private static CASocietyPresetDef S(string key, string label,

@@ -7,8 +7,8 @@ using Verse;
 namespace ColonistAwareness
 {
     // CA state attached directly to a native RimWorld faction. Inherited
-    // Culture, Political Order, and represented institutions remain
-    // separate from the faction's native Ideoligion.
+    // Culture, Political Order, Technological Knowledge, and represented
+    // institutions remain separate from the faction's native Ideoligion.
     public sealed class CAFactionState : IExposable
     {
         public int factionLoadId = -1;
@@ -17,6 +17,8 @@ namespace ColonistAwareness
         public CACulture culture = new CACulture();
         public CAPoliticalBeliefs politicalBeliefs =
             new CAPoliticalBeliefs();
+        public CATechnologicalKnowledge technologicalKnowledge =
+            new CATechnologicalKnowledge();
         public List<CAAxisEntry> factionStructure = new List<CAAxisEntry>();
         // An explicit unknown-institution boundary is itself durable state.
         // Later setup passes must not turn missing evidence into institutions.
@@ -32,6 +34,8 @@ namespace ColonistAwareness
                 "engineTemplateDefName");
             Scribe_Deep.Look(ref culture, "culture");
             Scribe_Deep.Look(ref politicalBeliefs, "politicalBeliefs");
+            Scribe_Deep.Look(ref technologicalKnowledge,
+                "technologicalKnowledge");
             Scribe_Collections.Look(ref factionStructure, "factionStructure",
                 LookMode.Deep);
             Scribe_Values.Look(ref institutionalStateIncomplete,
@@ -44,9 +48,10 @@ namespace ColonistAwareness
         {
             get
             {
-                if (factionLoadId < 0 || Find.FactionManager == null)
+                FactionManager manager = Find.World?.factionManager;
+                if (factionLoadId < 0 || manager == null)
                     return null;
-                foreach (Faction faction in Find.FactionManager
+                foreach (Faction faction in manager
                              .AllFactionsListForReading)
                     if (faction != null && faction.loadID == factionLoadId)
                         return faction;
@@ -63,6 +68,12 @@ namespace ColonistAwareness
                     && politicalBeliefs.positions.Any(entry => entry != null
                         && entry.source
                             == (byte)CAAxisSource.Authored)) return true;
+                if (technologicalKnowledge?.origin.source
+                    == CAProvenance.Authored) return true;
+                if (technologicalKnowledge?.domains != null
+                    && technologicalKnowledge.domains.Any(entry =>
+                        entry != null && entry.source
+                            == (byte)CAAxisSource.Authored)) return true;
                 return factionStructure != null
                     && factionStructure.Any(entry => entry != null
                         && entry.source == (byte)CAAxisSource.Authored);
@@ -72,7 +83,7 @@ namespace ColonistAwareness
 
     public sealed class CAFactionStateWorldComponent : WorldComponent
     {
-        private int campaignSchemaVersion = 2;
+        private int campaignSchemaVersion = 3;
         private int legacyAuthoringDataEpoch =
             CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private List<CAFactionState> factionStates =
@@ -109,7 +120,7 @@ namespace ColonistAwareness
                 CACampaignCompatibility.CompleteOwnerLoad(
                     "world.faction-state", ref campaignSchemaVersion,
                     legacyAuthoringDataEpoch, ValidateCampaignState,
-                    MigrateB10State);
+                    MigrateSupportedState);
             }
             base.ExposeData();
         }
@@ -122,6 +133,7 @@ namespace ColonistAwareness
             {
                 CAFactionState state = factionStates[i];
                 if (state.culture == null || state.politicalBeliefs == null
+                    || state.technologicalKnowledge == null
                     || state.factionStructure == null)
                     return "native faction " + state.factionLoadId
                         + " has incomplete social state";
@@ -145,6 +157,12 @@ namespace ColonistAwareness
                     return "native faction " + state.factionLoadId
                         + " has an unsupported Political Order: "
                         + beliefFailure;
+                string technologyFailure = CATechnologicalKnowledgeModel
+                    .ValidationFailure(state.technologicalKnowledge);
+                if (!technologyFailure.NullOrEmpty())
+                    return "native faction " + state.factionLoadId
+                        + " has invalid Technological Knowledge: "
+                        + technologyFailure;
                 string orderFailure = CAPoliticalBeliefsModel
                     .ValidationFailure(state.factionStructure);
                 if (!orderFailure.NullOrEmpty())
@@ -172,8 +190,11 @@ namespace ColonistAwareness
             return null;
         }
 
-        private string MigrateB10State()
+        private string MigrateSupportedState()
         {
+            if (campaignSchemaVersion != 2)
+                return "faction-state owner schema " + campaignSchemaVersion
+                    + " has no supported migration";
             string identityFailure = ValidateOwnerIdentities();
             if (!identityFailure.NullOrEmpty()) return identityFailure;
             var candidates = new List<CAFactionState>();
@@ -195,6 +216,20 @@ namespace ColonistAwareness
                         out string orderFailure))
                     return "faction " + state.factionLoadId
                         + " represented institutions: " + orderFailure;
+                CATechnologicalKnowledge technology =
+                    state.technologicalKnowledge?.Copy()
+                        ?? new CATechnologicalKnowledge();
+                Faction native = state.Faction;
+                FactionDef template = native?.def;
+                if (template == null
+                    && !state.engineTemplateDefName.NullOrEmpty())
+                    template = DefDatabase<FactionDef>.GetNamedSilentFail(
+                        state.engineTemplateDefName);
+                CATechnologicalKnowledgeModel.SeedFromEngineTemplate(
+                    technology, template,
+                    "faction:" + state.factionLoadId);
+                CATechnologicalKnowledgeModel.Ensure(technology,
+                    "faction:" + state.factionLoadId);
                 candidates.Add(new CAFactionState
                 {
                     factionLoadId = state.factionLoadId,
@@ -202,6 +237,7 @@ namespace ColonistAwareness
                     engineTemplateDefName = state.engineTemplateDefName,
                     culture = culture,
                     politicalBeliefs = beliefs,
+                    technologicalKnowledge = technology,
                     factionStructure = order,
                     institutionalStateIncomplete =
                         state.institutionalStateIncomplete,
@@ -227,12 +263,16 @@ namespace ColonistAwareness
 
         internal CAFactionState EnsureFor(Faction faction)
         {
-            if (faction == null) return null;
+            if (!CAFactionStateGenerator.UsesFactionState(faction))
+                return null;
             CAFactionState found = Find(faction);
             if (found != null)
             {
                 found.factionName = faction.Name;
                 found.engineTemplateDefName = faction.def?.defName;
+                if (found.technologicalKnowledge == null)
+                    found.technologicalKnowledge =
+                        new CATechnologicalKnowledge();
                 return found;
             }
             var record = new CAFactionState
@@ -272,7 +312,7 @@ namespace ColonistAwareness
 
             store.PruneOrphans();
             int cultures = 0, cultureQuestions = 0, beliefSets = 0,
-                beliefFields = 0;
+                beliefFields = 0, knowledgeSets = 0;
             int structureFields = 0, skipped = 0;
 
             foreach (Faction faction in Find.FactionManager
@@ -309,6 +349,21 @@ namespace ColonistAwareness
                 if (beliefsMissing) beliefSets++;
                 beliefFields += filled;
 
+                if (record.technologicalKnowledge == null)
+                    record.technologicalKnowledge =
+                        new CATechnologicalKnowledge();
+                bool knowledgeMissing = record.technologicalKnowledge.domains
+                    == null || record.technologicalKnowledge.domains.Count == 0;
+                CATechnologicalKnowledgeModel.SeedFromEngineTemplate(
+                    record.technologicalKnowledge, faction.def,
+                    seed + ":technology");
+                CATechnologicalKnowledgeModel.Ensure(
+                    record.technologicalKnowledge, seed + ":technology");
+                if (knowledgeMissing) knowledgeSets++;
+                if (CATechnologicalKnowledgeRuntime.DistributedEnabled)
+                    CATechnologicalKnowledgeRuntime.EnsurePawnDistribution(
+                        faction, record.technologicalKnowledge);
+
                 // An established faction begins with a realized structure.
                 // The player faction begins with only the arrangement adopted
                 // at founding; its remaining institutions emerge through play.
@@ -333,7 +388,8 @@ namespace ColonistAwareness
                 + cultures + " Culture identities, " + cultureQuestions
                 + " Culture questions, " + beliefSets
                 + " political-belief sets, " + beliefFields
-                + " political-belief fields, " + structureFields
+                + " political-belief fields, " + knowledgeSets
+                + " technological-knowledge sets, " + structureFields
                 + " represented institutional mechanisms generated; " + skipped
                 + " non-humanlike factions skipped; unsupported political "
                 + "fields remain unset; Ideoligions unchanged";

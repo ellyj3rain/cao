@@ -1,6 +1,6 @@
 # Colony-creation surface map
 
-Updated 2026-08-12. This is the current onboarding contract.
+Updated 2026-08-17. This is the current onboarding contract.
 
 ## Current flow
 
@@ -10,8 +10,8 @@ Updated 2026-08-12. This is the current onboarding contract.
 | Storyteller | RimWorld | storyteller, difficulty, permadeath |
 | World | RimWorld + CA | seed, coverage, climate, population, faction roster, and CA world tendencies |
 | Landing | RimWorld + CA | landing tile, selected regional land, visual geography, and arrival area |
-| Starting Region | CA | existing factions, settlements, relations, substantive Culture, Ideoligion, Political Beliefs, current order, population groups, placement, settlement programs, and provision arrangements |
-| Founding society | CA + RimWorld | founders' cultural background, native Ideoligion, Political Beliefs, and the Founding Arrangement adopted at landing |
+| Starting Region | CA | existing factions, settlements, relations, Culture, Ideoligion, Political Order, Technological Knowledge, represented institutions, population groups, placement, settlement programs, and provision arrangements |
+| Founding society | CA + RimWorld | founders' Culture, native Ideoligion, Political Order, Technological Knowledge, and the Founding Arrangement adopted at landing |
 | Starting pawns | RimWorld | founders, skills, traits, relationships, xenotypes, and backstories |
 | Game start | RimWorld + CA | map generation, scenario arrival, materialization of the saved Founding Arrangement, and the beginning of the colony's institutional history |
 
@@ -43,8 +43,10 @@ selection remains spatial and offers `View Details`. Compact settlement Details
 keeps the selected settlement visible and supports previous/next comparison in
 the same order as the object rail without regenerating state.
 
-Factions own Culture, Ideoligion, Political Beliefs, realized structure,
-Settlement Authority, relations, and technology. Settlements own identity,
+Factions own Culture, Political Order, Technological Knowledge, realized
+structure, Settlement Authority, relations, and their native Ideoligion
+reference. The Society surface composes the first three together but creates no
+second owner. Settlements own identity,
 population, local Culture, location, realized material state, explicitly
 established operational facts, the programs derived from those facts, and
 causal provision arrangements. Settlement Details can establish or remove one
@@ -61,7 +63,7 @@ security, agreements, policies, claims, relations, and decisions.
 ### Established societies
 
 Starting Region describes societies whose histories precede the player's
-arrival. Their cultural background, contextual expression, Ideoligion, Political Beliefs, social order,
+arrival. Their cultural background, contextual expression, Ideoligion, Political Order, Technological Knowledge, social order,
 institutions, faction relations, and any conflict between belief and practice
 are current facts. The faction and settlement editors write those realized
 facts directly.
@@ -69,14 +71,14 @@ facts directly.
 ### Player founding
 
 `Page_CAPlayerFounding` follows RimWorld's native Ideoligion chooser. It uses the
-same cultural-background and Political Beliefs models and editors as existing
+same Culture, Political Order, and Technological Knowledge models and editors as existing
 factions while retaining the founders' draft through native preset, load, fixed,
 fluid, customize, Back, and Continue paths. RimWorld's native `Ideo` remains the
 authority for Ideoligion.
 
-The player authors a founding moment, not an established society. Cultural background,
-Ideoligion, and Political Beliefs are what the founders bring. Political
-Beliefs describe what they consider proper. The Founding Arrangement records
+The player authors a founding moment, not an established society. Culture,
+Ideoligion, Political Order, and Technological Knowledge are what the founders
+bring. Political Order describes what they consider proper. The Founding Arrangement records
 the authority, work, voice, supplies, and duration rules they institute at
 landing. Agreement or disagreement between belief and the adopted arrangement
 is saved state.
@@ -90,26 +92,30 @@ appropriate to societies with prior histories.
 ## Persistence and validation
 
 One keyed pending file per world identity stores the current regional candidate;
-the active mirror carries the same plan. Regional schema 11 writes factions,
+the active mirror carries the same plan. Regional schema 14 writes factions,
 settlements, relations, population groups, explicit operational facts,
 settlement-program schema 4 entries, program-asset identities, provision
-arrangements, substantive local Culture, and the regional copy of
-`playerFounding`. Culture schema 10 stores inherited/local question distributions,
-practices, and migration evidence; Political Beliefs schema 9 stores normative
-mechanisms. A world component owns the same confirmed founding state for
-regional, ordinary, and forced-map starts. It records Culture, Political
-Beliefs, the exact Founding Arrangement and its provenance, the native player
-Ideoligion content-and-revision receipt, and the tick at which the arrangement
-was applied. Same-ID native edits invalidate the prior notification. There is
-no load alias or migration path for abandoned pre-release schemas.
+arrangements, substantive local Culture, faction Technological Knowledge, and
+the regional copy of `playerFounding`. Culture schema 10 stores inherited/local
+question distributions, practices, and migration evidence; Political Order
+schema 10 stores complete normative compositions; Technological Knowledge
+schema 1 stores nine practical domains, known research, provenance, and optional
+distributed custody. A world component owns the same confirmed founding state
+for regional, ordinary, and forced-map starts. It records Culture, Political
+Order, Technological Knowledge, the exact Founding Arrangement and its
+provenance, the native player Ideoligion content-and-revision receipt, and the
+tick at which the arrangement was applied. Same-ID native edits invalidate the
+prior notification.
 
 The landing page validates the selected footprint. The Starting Region page
 validates the complete regional bundle, arrival area, factions, settlements,
-and confirmation. The Founding Society page validates all player layers before
+all three faction-owned composition components, and confirmation. The Founding
+Society page validates all player layers before
 Starting Pawns, including RimWorld's native Ideoligion checks for names,
 incompatible precepts, ritual targets, and consumable-building rituals.
 Generation uses the confirmed regional candidate and saved founding state; it
-does not reroll the player's chosen arrangement.
+does not reroll Culture, Political Order, Technological Knowledge, or the
+player's chosen arrangement.
 
 ## Runtime gate
 
@@ -122,4 +128,5 @@ tuning reopen without loss; that factual programs, exact operators, assets,
 provisions, and security assignments survive generation and save/load; and that
 the selected map generates. Visual hierarchy, copy fit, Faction Relations,
 geography, feature placement, settlement identifiers, cultural readings,
-program composition, residents, and provisions remain runtime judgments.
+program composition, residents, provisions, technological requirements, and
+standard/distributed knowledge availability remain runtime judgments.
