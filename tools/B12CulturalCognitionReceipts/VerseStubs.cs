@@ -24,3 +24,28 @@ namespace Verse
             string.IsNullOrEmpty(value);
     }
 }
+
+namespace ColonistAwareness
+{
+    internal sealed class CAIdeoligionSemanticAdapterDef
+    {
+        internal string QuestionKey = "";
+    }
+
+    internal static class CAIdeoligionSemanticAdapterRegistry
+    {
+        internal static IReadOnlyList<CAIdeoligionSemanticAdapterDef> All =>
+            Array.Empty<CAIdeoligionSemanticAdapterDef>();
+    }
+
+    internal static class CACultureLongitudinalMapComponent
+    {
+        internal static bool HasDirectQuestionRoute(string questionKey) =>
+            true;
+    }
+
+    internal static class CAQuestionConsumerMap
+    {
+        internal static bool HasQuestion(string questionKey) => true;
+    }
+}

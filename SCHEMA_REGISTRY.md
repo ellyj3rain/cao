@@ -1,9 +1,9 @@
 # Campaign schema registry
 
-Status: canonical for `1.6.0.0-alpha` / closed B15
+Status: canonical for `1.6.1.0-alpha` / closed B16
 Boundary version: `1`
 First durable CAO campaign baseline: B11
-Current catalog version: `4`
+Current catalog version: `5`
 
 This registry versions semantic state families, not filenames or C# layouts.
 Moving a type without changing its saved meaning does not create a schema.
@@ -30,7 +30,7 @@ route. Neither list is accepted as evidence for itself.
 For all registry rows unless an exception is stated:
 
 - current and minimum compatible versions are the values shown below;
-- a current save must preflight at campaign boundary `1`, catalog `4`, and carry a nonempty
+- a current save must preflight at campaign boundary `1`, catalog `5`, and carry a nonempty
   manifest;
 - unmanifested B10 state is accepted only when every discovered legacy
   `CA_authoringDataEpoch` is `10`;
@@ -51,6 +51,11 @@ For all registry rows unless an exception is stated:
   schemas may advance only through the exact B14-to-B15 migration described
   below; the migration seeds represented capability without inventing custody or
   historical research;
+- catalog 5 requires Culture question registry 3, map Culture-longitudinal schema
+  3, and faction, founding, and regional owner schema 4. Compatible registry-2
+  Culture values are preserved and only missing B16 rows are added as neutral,
+  low-confidence, explicitly unobserved state; no doctrine, institution,
+  occurrence, or practice history is inferred;
 - every current save has exactly one instance of each world-level compatibility
   owner, while the map Culture owner may occur once per represented map;
 - every catalog-backed component occurs at its declared game/world/map scope,
@@ -82,14 +87,14 @@ evidence of realized campaign history.
 | `map.combat-aftermath` | 1 / 1 | `CAAftermathAccountabilityMapComponent` | execution accountability records |
 | `game.combat-spatial-log` | 1 / 1 | `CACombatSpatialLogComponent` | concern snapshots and battle-log-linked records |
 | `game.combat-topology` | 1 / 1 | combat-topology receipt owner | serialized topology incidents/reference artifacts used by governed diagnostic receipts; no gameplay mutation on readback |
-| `map.culture-longitudinal` | 2 / 1 | `CACultureLongitudinalMapComponent` | local Culture question distributions, practices, evidence, history and evaluation schedule; Culture model validates revision/history |
+| `map.culture-longitudinal` | 3 / 2 | `CACultureLongitudinalMapComponent` | local Culture question distributions, practices, evidence, history, exact native-event occurrence ledger and evaluation schedule; Culture model validates revision/history |
 | `map.equipment-transition` | 1 / 1 | `EquipTransitionMapComponent` | stowed/transition weapon identity and authority episodes |
 | `game.hidden-things` | 1 / 1 | `HiddenThingsComponent` | hidden stash identities and quality |
-| `world.faction-state` | 3 / 2 | `CAFactionStateWorldComponent` | faction state list; Culture, normative Political Order, Technological Knowledge, and represented-institution nested validation |
-| `world.player-founding` | 3 / 2 | `CAPlayerFoundingWorldComponent` | confirmed founding plan, including staged Technological Knowledge, application tick and source identity |
+| `world.faction-state` | 4 / 2 | `CAFactionStateWorldComponent` | faction state list; Culture registry 3, normative Political Order, Technological Knowledge, and represented-institution nested validation |
+| `world.player-founding` | 4 / 2 | `CAPlayerFoundingWorldComponent` | confirmed founding plan, including Culture registry 3, staged Technological Knowledge, application tick and source identity |
 | `world.organization` | 2 / 1 | `CAOrganizationWorldComponent` | organizations, offices, membership, customs, agreements, cases, offers, gatherings, frontier plans, legitimacy and sanction appraisals |
 | `world.organization-relations` | 1 / 1 | `CAOrganizationRelationsWorldComponent` | typed relations and facility holdings; unique IDs/signatures and next-ID continuity |
-| `world.regional` | 3 / 2 | `CARegionalWorldComponent` | realized regions, settlements, staged/realized faction Technological Knowledge, world policy and groundwater tuning; stable region/settlement identities and nested schema validation |
+| `world.regional` | 4 / 2 | `CARegionalWorldComponent` | realized regions, settlements, Culture registry 3, staged/realized faction Technological Knowledge, world policy and groundwater tuning; stable region/settlement identities and nested schema validation |
 | `world.cultural-cognition` | 2 / 2 | `CACulturalCognitionWorldComponent` | persistent psychology evidence, dynamic condition, private/public attitudes, attention, inherited-prior strength, perceived social pressure, observation likelihood, confidence, conviction, uncertainty, sparse influence edges, cursors and cadence state; introduced in catalog 2, current separated semantics published in catalog 3 |
 | `world.political-cognition` | 1 / 1 | `CAPoliticalCognitionWorldComponent` | pawn political attitudes, issue links, faction-bounded coalitions, cursors and cadence state; introduced in catalog 2 |
 | `world.proposition-knowledge` | 1 / 1 | `CAPropositionKnowledgeWorldComponent` | propositions, holders/sources/access/confidence/transmission/custody/decay and research receipts; introduced in catalog 2 |
@@ -136,13 +141,13 @@ evidence of realized campaign history.
 
 | Schema key | Current / minimum | Owner | Identity and validation |
 |---|---:|---|---|
-| `model.culture` | 10 / 9 | faction, settlement or local Culture owner | stable Culture ID/locality, constituents, inherited/local question distributions, legacy evidence, concrete repeated practices, direct-question observations with measured position/spread/population/continuity/source identity, and transition history; a subject key is neither a question nor a practice identity |
+| `model.culture` | 11 / 9 | faction, settlement or local Culture owner | question registry 3; stable Culture ID/locality, constituents, inherited/local question distributions, legacy evidence, concrete repeated practices, direct-question observations with measured position/spread/population/continuity/source identity, and transition history; a subject key is neither a question nor a practice identity |
 | `model.political-order` | 10 / 10 | faction/founding population owner | complete normative composition over registered political questions; every blendable question totals 100, exclusive questions select one position, and generated identity/account remain projections of these variables |
 | `model.technological-knowledge` | 1 / 1 | faction owner; founding and regional plans stage a copy before realization | nine practical domains with understand/construct/operate/maintain ranks, known native research, provenance, optional distributed custody and availability history; introduced in catalog 4 |
 | `model.represented-institutions` | 1 / 1 | established faction/region owner | represented authority, labour, voice, property, security, and related instituted mechanisms; scenario and historical facts remain separate from Political Order |
 | `model.founding-arrangement` | 1 / 1 | player founding owner | adopted founding order and agreement/tension with professed beliefs |
 | `model.player-founding-plan` | 4 / 3 | player founding owner | plan identity, Culture, Ideoligion reference, Political Order, Technological Knowledge, and arrangement |
-| `model.regional-plan` | 14 / 13 | regional world owner | region ID, candidate/arrival/member tiles, faction/settlement/relation plans, staged faction Technological Knowledge, authoritative geography composition, and one persisted environment/requirement/capability/viability result per settlement and frontier holding |
+| `model.regional-plan` | 15 / 13 | regional world owner | region ID, candidate/arrival/member tiles, faction/settlement/relation plans, staged faction Technological Knowledge, authoritative geography composition, and one persisted environment/requirement/capability/viability result per settlement and frontier holding |
 | `model.regional-settlement-record` | 9 / 8 | regional world owner | stable `regionalId + slot`, faction, local rect, population, program, provision, capability and history-bearing fields; knowledge tier/revision are realization receipts, never current authority |
 | `model.settlement-population-group` | 1 / 1 | settlement composition owner | stable group key, kind, share, faction and Ideoligion relationships |
 | `model.domestic-unit` | 1 / 1 | domestic state owner | settlement-scoped stable unit identity, continuity pawn, memberships and transitions |
@@ -176,13 +181,13 @@ outside realized campaign history:
 
 | Surface | Owner / version | Reset or conversion rule |
 |---|---|---|
-| Runtime-keyed Starting Region plan and governed mirror XML | `CARegionalPlan` schema 14 plus `CAPendingAuthoringDataEpoch` 13 | The per-world keyed file is the runtime authority and the standalone file is its governed test mirror; supported schema-13 state is converted through the explicit B14-to-B15 path, incompatible pending state may be rejected, and confirmation copies staged faction composition into `world.regional` facts once |
-| User Culture, Political Order, and Society profiles | `CAUserCultureProfile` 9 containing `CACulture` 10; `CAUserPoliticalOrderProfile` 10 containing `CAPoliticalBeliefs` 10; `CAUserSocietyProfile` 2 containing Culture, complete Political Order, and complete Technological Knowledge snapshots | Invalid global-setting entries may be pruned. Component profiles copy only their owner. A Society profile validates three deep copies and atomically replaces all three canonical faction components; no profile key is written into campaign state. Compatible independent component profiles survive the Society schema change |
+| Runtime-keyed Starting Region plan and governed mirror XML | `CARegionalPlan` schema 15 plus `CAPendingAuthoringDataEpoch` 14 | The per-world keyed file is the runtime authority and the standalone file is its governed test mirror; supported schema-13/14 state advances only through the explicit adjacent B14-to-B15 and B15-to-B16 paths, incompatible pending state may be rejected, and confirmation copies staged faction composition into `world.regional` facts once |
+| User Culture, Political Order, and Society profiles | `CAUserCultureProfile` 9 containing `CACulture` 11; `CAUserPoliticalOrderProfile` 10 containing `CAPoliticalBeliefs` 10; `CAUserSocietyProfile` 2 containing Culture, complete Political Order, and complete Technological Knowledge snapshots | Invalid global-setting entries may be pruned. Component profiles copy only their owner. A Society profile validates three deep copies and atomically replaces all three canonical faction components; no profile key is written into campaign state. Compatible independent component profiles survive the Society schema change |
 | Unconfirmed player founding draft | `CAPlayerFoundingPlan` 4 in session state | May be replaced until confirmation; confirmation validates all three staged faction components and the arrangement, then copies the composition into the realized faction |
 | Creation preview/projection caches | creation-page/session owners | Recomputed freely; never treated as campaign history |
 
 `CAPendingAuthoringDataEpoch` is named and scoped accordingly. Its current
-pending-authoring value is `13`. Live owners read legacy epoch `10` only to
+pending-authoring value is `14`. Live owners read legacy epoch `10` only to
 recognize the controlled B10 envelope; they no longer write the epoch and never
 use it to erase live state. B12 Culture migration converts schema 9 meaning
 records only through exact ordered-question adapters. It retains every former
@@ -199,12 +204,13 @@ pair. The governed pending fixture already stores explicit current mechanisms.
 
 | Situation | Path | Provenance / mutation rule |
 |---|---|---|
-| New B15 campaign | owners form state through ordinary creation/materialization; compatibility component writes boundary 1 and catalog 4 | `new campaign initialization`; no invented prior history |
+| New B16 campaign | owners form state through ordinary creation/materialization; compatibility component writes boundary 1 and catalog 5 | `new campaign initialization`; no invented prior history |
 | B10 controlled state | streaming preflight validates uniform epoch 10 before Scribe load; current fields are read unchanged; seven former blanket-reset owners adopt owner version 1 | one idempotent B10-to-B11 receipt per owner plus boundary/catalog receipts |
 | B11 catalog-1 save | preflight validates every catalog-1 owner; upgraded Culture and catalog-2 owners initialize from represented upgrade-time facts; owner-specific validation precedes catalog-2 publication | exact B11-to-B12 receipts; no backdated psychology, politics, coalition, institution or proposition history |
 | B12 catalog-2 save with cultural-cognition schema 1 | preflight rejects the incompatible owner version before load mutation | no synthetic conversion into B13's separated causal fields; source save remains unchanged |
 | B14 catalog-3 save or pending authoring state | owner migrations add Technological Knowledge from represented faction and authored source facts, validate all three components, then publish owner schema 3, plan schemas 4/14/9, epoch 13 and catalog 4 | exact B14-to-B15 receipts; no invented custody, teaching, loss, institutional retention, or research history |
-| Current B15 save | preflight validates boundary, catalog 4, Culture registry 2, Technological Knowledge schema 1, every manifest entry and each owner payload before load | no migration; current schema validation only |
+| B15 catalog-4 save or pending authoring epoch 13 / regional schema 14 | affected owners preserve all compatible Culture registry-2 rows, add only missing registry-3 rows as neutral and explicitly unobserved, validate complete nested state, then publish map Culture schema 3, faction/founding/regional owner schema 4, pending epoch 14, and regional schema 15 before catalog 5; incomplete or orphaned scopes fail generic migration | exact B15-to-B16 receipts; the governed fixture's one proven non-constituent sparse row is separately retained as legacy evidence; no invented doctrine, institution, occurrence, or practice history |
+| Current B16 save | preflight validates boundary, catalog 5, Culture registry 3, Technological Knowledge schema 1, every manifest entry and each owner payload before load | no migration; current schema validation only |
 | New additive subsystem | owner initializes from facts represented at the upgrade tick after preflight | receipt explicitly says initialized at upgrade; no backdated event/history |
 | Supported future model revision | owner-specific pure/idempotent migration, registered compatible range, validation, then receipt | stable semantic IDs preserved; changed algorithms apply to future formation/transitions |
 | Unsupported state | preflight blocks before load mutation and save guard refuses writes | operator-visible reason; source save remains unchanged |

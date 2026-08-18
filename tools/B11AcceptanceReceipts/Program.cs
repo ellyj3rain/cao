@@ -709,8 +709,8 @@ internal static class Program
             && cultureSource.Contains("NormalizeMechanisms")
             && cultureSource.Contains("ExpandReceipt")
             && cultureSource.Contains("ValidationFailure")
-            && factionStateSource.Contains("TryUpgradeFromB10(")
-            && regional.Contains("TryUpgradeFromB10(")
+            && factionStateSource.Contains("TryUpgradeToCurrent(")
+            && regional.Contains("TryUpgradeToCurrent(")
             && compatRuntime.Contains("migrateState")
             && !factionStateSource.Contains(
                 "NormalizeMechanisms(state.politicalBeliefs.positions)"),
@@ -754,10 +754,10 @@ internal static class Program
             && ontologyCoverage.Contains(practiceCount
                 + " concrete practice definitions**")
             && ontologyCoverage.Contains("B12 admitted the first 13 explicit questions")
-            && ontologyCoverage.Contains("**24 Culture questions in eight categories**"),
+            && ontologyCoverage.Contains("**48 Culture questions in 12 categories**"),
             "the coverage report preserves the former twelve-example boundary and reports "
                 + subjectCount + " social subjects, " + practiceCount
-                + " concrete practices, the B12 13-question boundary, and 24 current Culture questions");
+                + " concrete practices, the B12 13-question boundary, and 48 current Culture questions");
         C(68, "Visible category cardinalities are reported",
             ontologyCoverage.Contains("Category cardinalities")
             && ontologyCoverage.Contains("top-level", StringComparison.OrdinalIgnoreCase),
@@ -790,9 +790,9 @@ internal static class Program
             results.Where(item => item.Number <= 26).All(item => item.Passed),
             "all original ownership, profiler, schema, migration, and rollback receipts pass");
         C(75, "Schema transition is deterministic and explicit",
-            V(activeDoc.Root, "authoringDataEpoch") == "13"
-            && V(activePlan, "schemaVersion") == "14"
-            && cultures.All(item => V(item, "schemaVersion") == "10")
+            V(activeDoc.Root, "authoringDataEpoch") == "14"
+            && V(activePlan, "schemaVersion") == "15"
+            && cultures.All(item => V(item, "schemaVersion") == "11")
             && politicalBeliefs.All(item => V(item, "schemaVersion") == "10")
             && activeDoc.Descendants("technologicalKnowledge").Count() == 4
             && activeDoc.Descendants("technologicalKnowledge").All(item =>
@@ -801,7 +801,7 @@ internal static class Program
                 && !V(item, "sourceOwner").Equals("")
                 && item.Element("subjectKey") == null)
             && ontologyKernel.Contains("FromB10LongitudinalEvidence"),
-            "pending epoch 13, regional plan 14, Culture 10, Political Order 10, four technological-knowledge schema-1 owners, and explicit B10 evidence gate");
+            "pending epoch 14, regional plan 15, Culture 11, Political Order 10, four technological-knowledge schema-1 owners, and explicit B10 evidence gate");
         C(76, "Clean Release build completed with zero errors",
             buildReceipt.Contains("Warnings: **0**")
             && buildReceipt.Contains("Errors: **0**")
@@ -860,7 +860,7 @@ internal static class Program
         var text = new StringBuilder();
         text.AppendLine("# Persistence census")
             .AppendLine()
-            .AppendLine("Date: 2026-08-17")
+            .AppendLine("Date: 2026-08-18")
             .AppendLine()
             .AppendLine("This report is generated from production C# source, independently of the campaign schema catalog. It discovers declarations that directly write through `Scribe`, call a nested `Expose` writer, or inherit a native persisted job/lord/need/thought/world/scenario owner. Every discovered carrier must resolve to an executable catalog schema or a narrow, stated non-campaign exclusion.")
             .AppendLine()
@@ -1171,6 +1171,7 @@ internal static class Program
             case "CombatSpatialLogModule.cs": return Route("game.combat-spatial-log");
             case "CombatTopologyModule.cs": return Route("game.combat-topology");
             case "CultureLongitudinalModule.cs": return Route("map.culture-longitudinal");
+            case "CultureNativePracticeModule.cs": return Route("map.culture-longitudinal");
             case "CulturalCognitionKernel.cs": return Route("model.culture");
             case "CulturalCognitionStateModule.cs":
                 if (carrier.Name is "CAPoliticalOptionSupport"
@@ -1518,16 +1519,22 @@ internal static class Program
 
     private static XElement SyntheticCulture()
     {
+        IEnumerable<XElement> questions = CACultureQuestionRegistry.All
+            .Select(question => new XElement("li",
+                new XElement("schemaVersion", 1),
+                new XElement("questionKey", question.Key),
+                new XElement("populationScope", "*"),
+                new XElement("subgroups")));
         return new XElement("culture",
             new XElement("schemaVersion",
                 CACampaignSchemaCatalog.All.First(item =>
                     item.Key == "model.culture").CurrentVersion),
             new XElement("id", "culture.synthetic"),
             new XElement("constituents"),
-            new XElement("questionRegistryVersion", 2),
+            new XElement("questionRegistryVersion", 3),
             new XElement("withinGroupSpread", 2),
             new XElement("subgroupSeparation", 2),
-            new XElement("inheritedQuestions"),
+            new XElement("inheritedQuestions", questions),
             new XElement("localQuestions"),
             new XElement("legacyEvidence"),
             new XElement("inheritedMeanings"),
@@ -1926,7 +1933,7 @@ internal static class Program
         var text = new StringBuilder();
         text.AppendLine("# Authoring Ontology Coverage")
             .AppendLine()
-            .AppendLine("Date: 2026-08-16")
+            .AppendLine("Date: 2026-08-18")
             .AppendLine()
             .AppendLine("This is the current production inventory for CAO's world and founding authoring. It separates what the architecture can represent from what the current build actually knows, realizes, persists, consumes, and exposes. Extensibility is not production breadth. An open registry is capacity, not completion; demonstration records are not production content unless they have a real source and consumer.")
             .AppendLine()
@@ -1936,14 +1943,14 @@ internal static class Program
             .AppendLine("|---|---|---|---|---|")
             .AppendLine($"| Social meaning | Namespaced, population-scoped evaluative relations with approval, normality, prestige, salience, provenance, evidence, and contradiction | {subjectCount} mechanically grounded social-subject schemas | Source facts and known acts feed interpretation, reaction, expression, and longitudinal history | Add or edit a population's meaning of a concrete social referent; searchable list without source-domain tabs |")
             .AppendLine($"| Cultural practice | Repeated conduct with actor, target, trigger, cadence, operator, authority, setting, material, conditions, provenance, evidence, and consumer | {practiceCount} concrete practice schemas | Settlement programs, organizations, acts, agreements, provisions, and longitudinal evidence realize practice state | Add inherited or established local practice from the distinct concrete-practice vocabulary |")
-            .AppendLine("| Culture | Population distributions over 24 explicit questions, constituents, inherited and lived practices, observations, transitions, locality, and native visual tradition | Twenty-four questions in eight categories plus the complete subject/practice vocabularies below | Pawn appraisal and repeated represented evidence alter local Culture only at explicit transition boundaries | One Culture composer with categorized values, one overall-disagreement control, per-value disagreement under More, presets, randomization, constituents, read-only practices, continuity, and visual style |")
+            .AppendLine("| Culture | Population distributions over 48 explicit questions, constituents, inherited and lived practices, observations, transitions, locality, and native visual tradition | Forty-eight questions in 12 categories plus the complete subject/practice vocabularies below | Pawn appraisal and repeated represented evidence alter local Culture only at explicit transition boundaries | One Culture composer with categorized values, one overall-disagreement control, per-value disagreement under More, presets, randomization, constituents, read-only practices, continuity, and visual style |")
             .AppendLine($"| Political Order | Complete normative composition over {politicalQuestions} causal questions | {politicalOptions} supported positions and {politicalPresets} complete presets | Generated identity and account, belief-practice readings, legitimacy, reaction, ownership, provision, and founding suggestions consume the saved variables | Edit one concrete question at a time; blendable subjects total 100 and complete presets remain editable |")
             .AppendLine($"| Represented institutions | Independent instituted mechanisms over {representedInstitutionSubjects} comparison subjects | {politicalMechanisms} supported compatibility mechanisms | Offices, organizations, work, property, security, provisions, and tension reporting consume represented facts | Read-only comparison in Political Order authoring; institutions arise from scenario or historical evidence |")
             .AppendLine("| Factions, settlements, and populations | Relational and structured composition over native factions, owned places, population groups, relations, current institutions, and represented history | The control-contract inventory below names every active authoring degree of freedom | Starting-region realization persists facts once and generation consumes the saved result | Object list, ground map, details, and object-specific composers; no schema-shaped global mode |")
             .AppendLine("| Settlement habitat | Physical requirements derived from the exact selected terrain, biome, climate, ecology, water, light, pollution, hazards, and vacuum state | Shelter, thermal control, food route and reserve, medicine, water treatment, light, hazard protection, and breathable interior | Advanced capability can admit potential established-settlement ground; actual programs must satisfy it at confirmation, while frontier occupancy requires the compact materializer to prove every function | Read-only requirement and viability summary on the owning settlement; no biome personality or survival-style control |")
             .AppendLine("| World tendencies | Independent scalar propensities and bounded ranges plus read-only realized outcomes | Eight causal policy controls | Fixed-seed generation owns placement, extent, frontier count/form, urban threshold, source selection, and distant cadence | One direct-effect row per tendency; presets are copy-on-apply convenience compositions |")
             .AppendLine()
-            .AppendLine("The former Culture surface had 12 subject examples and no distinct concrete-practice vocabulary. The current production counts are **12 -> " + subjectCount + " social subjects** and **0 -> " + practiceCount + " concrete practice definitions**. B12 admitted the first 13 explicit questions; B13 retains that boundary as history and ships **24 Culture questions in eight categories**. The counts are receipts, not quotas: every row below has a source and consumer.")
+            .AppendLine("The former Culture surface had 12 subject examples and no distinct concrete-practice vocabulary. The current production counts are **12 -> " + subjectCount + " social subjects** and **0 -> " + practiceCount + " concrete practice definitions**. B12 admitted the first 13 explicit questions; B13 closed its historical 24-question boundary; B16's reverse mechanical audit ships **48 Culture questions in 12 categories**. The counts are receipts, not quotas: every row below has a source and consumer.")
             .AppendLine()
             .AppendLine("## Semantic-kind inventory and control contracts")
             .AppendLine()
@@ -2070,7 +2077,7 @@ internal static class Program
             .AppendLine()
             .AppendLine("## Closure statement")
             .AppendLine()
-            .AppendLine("The active B14 authoring convergence reaches its static boundary only when this inventory, the executable contracts, the fixture round trip, retained B10-B13 suites, B14 causal receipts, clean build, and byte-verified deployment agree. Operator runtime judgment remains separate.");
+            .AppendLine("The current authoring ontology reaches its static boundary only when this inventory, the executable contracts, the fixture round trip, retained B10-B15 suites, B16 causal receipts, clean build, and byte-verified deployment agree. Operator runtime judgment remains separate.");
         File.WriteAllText(P("AUTHORING_ONTOLOGY_COVERAGE.md"),
             text.ToString(), new UTF8Encoding(false));
     }

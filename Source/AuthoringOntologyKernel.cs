@@ -195,6 +195,8 @@ namespace ColonistAwareness
                 && !EvidenceSource.StartsWith("CAOrganization",
                     StringComparison.Ordinal)
                 && !EvidenceSource.StartsWith("CARegionalSettlementRecord",
+                    StringComparison.Ordinal)
+                && !EvidenceSource.StartsWith("HistoryEventsManager",
                     StringComparison.Ordinal))
                 failure = Key + " has no executable evidence adapter";
             return failure == null;
@@ -247,6 +249,45 @@ namespace ColonistAwareness
             "ca.practice.delegated_governance";
         public const string RepairAndRebuilding =
             "ca.practice.repair_and_rebuilding";
+        public const string HumanFleshConsumption =
+            "ca.practice.human_flesh_consumption";
+        public const string AnimalFoodConsumption =
+            "ca.practice.animal_food_consumption";
+        public const string UnfamiliarFoodConsumption =
+            "ca.practice.unfamiliar_food_consumption";
+        public const string HumanButchery = "ca.practice.human_butchery";
+        public const string CorpseExposure = "ca.practice.corpse_exposure";
+        public const string OrganExtraction = "ca.practice.organ_extraction";
+        public const string OrganTrade = "ca.practice.organ_trade";
+        public const string BodyModification =
+            "ca.practice.body_modification";
+        public const string RitualInjury = "ca.practice.ritual_injury";
+        public const string ExclusiveMarriage =
+            "ca.practice.exclusive_marriage";
+        public const string PluralMarriage = "ca.practice.plural_marriage";
+        public const string NonSpousalIntimacy =
+            "ca.practice.nonspousal_intimacy";
+        public const string DrugUse = "ca.practice.drug_use";
+        public const string DrugAdministration =
+            "ca.practice.drug_administration";
+        public const string DoctrinalChange =
+            "ca.practice.doctrinal_change";
+        public const string CrossIdeoligionObservance =
+            "ca.practice.cross_ideoligion_observance";
+        public const string AnimalSlaughter = "ca.practice.animal_slaughter";
+        public const string InnocentAnimalKilling =
+            "ca.practice.innocent_animal_killing";
+        public const string ResourceExtraction =
+            "ca.practice.resource_extraction";
+        public const string SettlementAbandonment =
+            "ca.practice.settlement_abandonment";
+        public const string Raiding = "ca.practice.raiding";
+        public const string DownedPersonStripping =
+            "ca.practice.downed_person_stripping";
+        public const string InterpersonalViolence =
+            "ca.practice.interpersonal_violence";
+        public const string Enslavement = "ca.practice.enslavement";
+        public const string Execution = "ca.practice.execution";
 
         public static IReadOnlyList<CACulturalPracticeDef> All => Values.Values
             .OrderBy(value => value.Label, StringComparer.Ordinal).ToList();
@@ -339,7 +380,13 @@ namespace ColonistAwareness
                     && !HasBoundaryPatrolEvidence(3, 7, 0, false))
                 || practice.Key == OfficeSuccession
                 || practice.Key == DelegatedGovernance
-                || practice.Key == RepairAndRebuilding;
+                || practice.Key == RepairAndRebuilding
+                || IsNativeEventPractice(practice.Key);
+        }
+
+        public static bool IsNativeEventPractice(string practiceKey)
+        {
+            return CANativeCultureEventAdapterRegistry.HasPractice(practiceKey);
         }
 
         // B10 longitudinal observations wrote one of four evidence-backed
@@ -663,6 +710,179 @@ namespace ColonistAwareness
                 "CARegionalSettlementRecord development receipts and settlement work history",
                 "CASettlementWorksMapComponent", "Work and exchange",
                 "ca.production.repair_rebuilding", "ca.space.public_works");
+            yield return Native(HumanFleshConsumption, "Eating human flesh",
+                "People repeatedly eat human flesh.",
+                "consume human flesh directly or as an ingredient",
+                "eaters", "human remains", "a represented meal is eaten",
+                "as exact native events recur", "Food and daily life",
+                CASocialSubjectRegistry.MealPreparation);
+            yield return Native(AnimalFoodConsumption, "Eating animal food",
+                "People repeatedly eat animal-derived food.",
+                "consume animal-derived food", "eaters", "prepared food",
+                "an exact native meal event occurs",
+                "as exact native events recur", "Animals and food",
+                CASocialSubjectRegistry.MealPreparation,
+                CASocialSubjectRegistry.AnimalTending);
+            yield return Native(UnfamiliarFoodConsumption,
+                "Eating unfamiliar foods",
+                "People repeatedly eat fungal, insect, or processed food.",
+                "consume fungal, insect, or processed food", "eaters",
+                "prepared food", "an exact native meal event occurs",
+                "as exact native events recur", "Food and daily life",
+                CASocialSubjectRegistry.MealPreparation);
+            yield return Native(HumanButchery, "Butchering human remains",
+                "People repeatedly butcher human remains.",
+                "butcher a human corpse", "butchers", "human remains",
+                "a human corpse is butchered", "as exact native events recur",
+                "Death and remembrance", CASocialSubjectRegistry.ArtAndRemembrance);
+            yield return Native(CorpseExposure, "Leaving human remains exposed",
+                "Residents repeatedly encounter human remains left exposed.",
+                "leave or encounter exposed human remains", "residents",
+                "human remains", "a corpse remains in lived space",
+                "as exact native events recur", "Death and remembrance",
+                CASocialSubjectRegistry.ArtAndRemembrance);
+            yield return Native(OrganExtraction, "Extracting human organs",
+                "People repeatedly extract human organs.",
+                "extract a human organ", "medical actors",
+                "patients or captives", "an exact organ-extraction event occurs",
+                "as exact native events recur", "Body and care",
+                CASocialSubjectRegistry.MedicalCare,
+                CASocialSubjectRegistry.HumaneCustody);
+            yield return Native(OrganTrade, "Trading human organs",
+                "People repeatedly buy or sell human organs.",
+                "buy or sell a human organ", "traders", "human organs",
+                "an exact organ-trade event occurs",
+                "as exact native events recur", "Body and exchange",
+                CASocialSubjectRegistry.VoluntaryTrade,
+                CASocialSubjectRegistry.MedicalCare);
+            yield return Native(BodyModification, "Altering bodies",
+                "People repeatedly alter bodies through implants or biosculpting.",
+                "deliberately alter a body", "medical actors and recipients",
+                "living bodies", "a represented alteration occurs",
+                "as exact native events recur", "Body and care",
+                CASocialSubjectRegistry.MedicalCare);
+            yield return Native(RitualInjury, "Ritual bodily injury",
+                "People repeatedly undergo scarification or blinding.",
+                "scarify or blind a participant", "participants and operators",
+                "living bodies", "a represented injury is completed",
+                "as exact native events recur", "Body and ritual",
+                CASocialSubjectRegistry.ReligiousObservance,
+                CASocialSubjectRegistry.MedicalCare);
+            yield return Native(ExclusiveMarriage, "Exclusive marriage",
+                "People repeatedly form marriages with one spouse.",
+                "form a marriage with one spouse", "spouses", "households",
+                "an exact native marriage event records one spouse",
+                "as exact native events recur", "Relationships and family",
+                CASocialSubjectRegistry.HouseholdMembership);
+            yield return Native(PluralMarriage, "Plural marriage",
+                "People repeatedly form marriages with multiple spouses.",
+                "form a marriage with multiple spouses", "spouses",
+                "households",
+                "an exact native marriage event records multiple spouses",
+                "as exact native events recur", "Relationships and family",
+                CASocialSubjectRegistry.HouseholdMembership);
+            yield return Native(NonSpousalIntimacy, "Intimacy outside marriage",
+                "People repeatedly form intimate relationships outside marriage.",
+                "begin or share consensual intimacy outside marriage",
+                "partners", "partners", "an exact native relationship event occurs",
+                "as exact native events recur", "Relationships and family",
+                CASocialSubjectRegistry.HouseholdMembership);
+            yield return Native(DrugUse, "Recreational drug use",
+                "People repeatedly ingest recreational drugs.",
+                "ingest a recreational drug", "users",
+                "living people", "an exact native drug event occurs",
+                "as exact native events recur", "Food and daily life",
+                CASocialSubjectRegistry.MedicalCare,
+                CASocialSubjectRegistry.VoluntaryTrade);
+            yield return Native(DrugAdministration,
+                "Administering recreational drugs",
+                "People repeatedly administer recreational drugs to others.",
+                "administer a recreational drug", "medical actors",
+                "living people", "an exact native administration event occurs",
+                "as exact native events recur", "Body and care",
+                CASocialSubjectRegistry.MedicalCare);
+            yield return Native(DoctrinalChange, "Changing Ideoligion",
+                "People repeatedly change Ideoligion.",
+                "change Ideoligion", "believers", "Ideoligion communities",
+                "an exact native doctrinal event occurs",
+                "as exact native events recur", "Belief and membership",
+                CASocialSubjectRegistry.ReligiousObservance,
+                CASocialSubjectRegistry.FactionMembership);
+            yield return Native(CrossIdeoligionObservance,
+                "Joining another Ideoligion's ritual",
+                "People repeatedly participate in another Ideoligion's ritual.",
+                "participate in another Ideoligion's ritual", "participants",
+                "another Ideoligion community",
+                "an exact native cross-Ideoligion ritual event occurs",
+                "as exact native events recur", "Belief and membership",
+                CASocialSubjectRegistry.ReligiousObservance,
+                CASocialSubjectRegistry.OutsiderContact);
+            yield return Native(AnimalSlaughter, "Slaughtering animals",
+                "People repeatedly slaughter animals for represented use.",
+                "slaughter an animal for food or use", "handlers",
+                "animals", "an exact native slaughter event occurs",
+                "as exact native events recur", "Animals and food",
+                CASocialSubjectRegistry.AnimalTending,
+                CASocialSubjectRegistry.MealPreparation);
+            yield return Native(InnocentAnimalKilling,
+                "Killing non-hostile animals",
+                "People repeatedly kill animals that were not hostile.",
+                "kill a non-hostile animal", "attackers", "animals",
+                "an exact native innocent-animal event occurs",
+                "as exact native events recur", "Animals and violence",
+                CASocialSubjectRegistry.AnimalTending,
+                CASocialSubjectRegistry.CombatViolence);
+            yield return Native(ResourceExtraction, "Extracting local resources",
+                "People repeatedly cut trees or mine local ground.",
+                "cut trees or mine material", "workers", "local land",
+                "an exact native extraction event occurs",
+                "as exact native events recur", "Land and resources",
+                CASocialSubjectRegistry.Cultivation,
+                CASocialSubjectRegistry.GeneralCraft);
+            yield return Native(SettlementAbandonment,
+                "Abandoning settlements",
+                "Communities repeatedly abandon established settlements.",
+                "abandon an established settlement", "resident communities",
+                "settled places", "an exact native abandonment event occurs",
+                "as exact native events recur", "Settlement and migration",
+                CASocialSubjectRegistry.HouseholdMembership);
+            yield return Native(Raiding, "Raiding other settlements",
+                "People repeatedly raid other settlements.",
+                "raid an outside settlement", "raiders",
+                "outside people and property", "an exact native raid occurs",
+                "as exact native events recur", "Violence and property",
+                CASocialSubjectRegistry.CombatViolence,
+                CASocialSubjectRegistry.Confiscation);
+            yield return Native(DownedPersonStripping,
+                "Stripping downed people",
+                "People repeatedly strip possessions from downed people.",
+                "strip a downed person", "takers", "downed people",
+                "an exact native downed-person stripping event occurs",
+                "as exact native events recur", "Violence and property",
+                CASocialSubjectRegistry.Confiscation,
+                CASocialSubjectRegistry.HumaneCustody);
+            yield return Native(InterpersonalViolence,
+                "Interpersonal violence",
+                "People repeatedly attack other or non-hostile people.",
+                "attack another person", "attackers", "other people",
+                "an exact supported interpersonal-violence event occurs",
+                "as exact native events recur", "Violence and order",
+                CASocialSubjectRegistry.CombatViolence);
+            yield return Native(Enslavement, "Enslaving people",
+                "People repeatedly enslave or sell other people.",
+                "enslave or sell a person", "captors and traders", "captives",
+                "an exact native slavery event occurs",
+                "as exact native events recur", "Work and captivity",
+                CASocialSubjectRegistry.CompelledService,
+                CASocialSubjectRegistry.HumaneCustody);
+            yield return Native(Execution, "Executing captives",
+                "People repeatedly execute colonists, guests, or captives.",
+                "execute a person in custody", "executioners and authorities",
+                "condemned people", "an exact native execution event occurs",
+                "as exact native events recur", "Violence and captivity",
+                CASocialSubjectRegistry.HumaneCustody,
+                CASocialSubjectRegistry.CustodyPunishment,
+                CASocialSubjectRegistry.CombatViolence);
         }
 
         private static CACulturalPracticeDef Program(string key, string label,
@@ -701,6 +921,22 @@ namespace ColonistAwareness
             return Def(key, label, summary, activity, actor, target, trigger,
                 cadence, op, authority, setting, material, conditions,
                 evidence, consumer, facet, subjects, null, null);
+        }
+
+        private static CACulturalPracticeDef Native(string key, string label,
+            string summary, string activity, string actor, string target,
+            string trigger, string cadence, string facet,
+            params string[] subjects)
+        {
+            return Def(key, label, summary, activity, actor, target, trigger,
+                cadence, "the people who perform the recorded act",
+                "native Ideoligion, institutions, and Culture remain separate",
+                "the exact map where the event occurred",
+                "the native action and its actual material requirements",
+                "HistoryEventsManager recorded the exact supported event",
+                "HistoryEventsManager exact semantic adapter registry",
+                "Culture history and social interpretation", facet, subjects,
+                null, null);
         }
 
         private static CACulturalPracticeDef Def(string key, string label,

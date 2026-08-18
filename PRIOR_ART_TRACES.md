@@ -16,6 +16,23 @@ code ported · code integrated · runtime verified. **No entry below has reached
 
 ---
 
+## Ideology: More Precepts
+
+`llunak.MorePrecepts` — Luboš Luňák (llunak),
+`github.com/llunak/rimworld-moreprecepts`. **Evidence basis: source verified at
+commit `33eab9398d7acc608e11dd7390476fefc4f433f5`.** The source defines native
+precepts and their RimWorld execution patches around age, newcomer treatment,
+violence, incapacitated people, drugs, nomadism, and comfort.
+
+**Status: semantic compatibility audited and implemented; zero upstream code or
+assets incorporated.** CA matches selected identities by exact package, Def
+kind, and `defName`, then records bounded Culture evidence while the upstream
+mod remains the executor. Unknown identities remain native-only. The installed
+mod version is not runtime-fingerprinted; same-identity semantic changes require
+re-audit.
+
+---
+
 ## Simple Warrants
 
 `pb3n.SimpleWarrants` — pb3n and Taranchuk. Installed at Steam workshop

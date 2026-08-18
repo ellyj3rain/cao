@@ -1,14 +1,14 @@
 | Document | Colonist Awareness Overhaul Session State |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.6.0.0-alpha` · closed batch tip `B15` · next `B16` |
+| Version | `1.6.1.0-alpha` · closed batch tip `B16` · next `B17` |
 <!-- cao:generated:version END -->
 | Repository | `SESSION_STATE.md` |
-| Status | CLOSING - B15 implementation, real-fixture conversion, retained verification, reproducible build, and closed-process deployment pass; final review and publication are in progress. |
+| Status | CLOSED - B16 is built, verified, and deployed; the next action is the operator runtime test. |
 
 # Session State
 
-Updated 2026-08-18 UTC / 2026-08-17 PDT.
+Updated 2026-08-18 UTC / 2026-08-18 PDT.
 
 Read this before claiming where creation or gameplay testing stands. Compile,
 receipts, deployment, and operator runtime evidence remain separate.
@@ -17,24 +17,24 @@ receipts, deployment, and operator runtime evidence remain separate.
 
 | Surface | State |
 |---|---|
-| Active worktree | `.claude/worktrees/rimworld-regional-multithreading-47e9ec` |
-| Branch | `mallowfluff/b14-generation-political-audit` |
-| B15 baseline HEAD | `e1156de15dd91605f6d27190d770d118ed3c8624` |
-| Closed chronology | `A1-A102` and `B1-B15`; B15 is minor capability unit `VU-042`; `B16` is next. |
+| Active checkout | repository root on the B16 branch |
+| Branch | `mallowfluff/b16-ideoligion-culture-semantic-coverage` |
+| B15 merged baseline | `e7bf427a734815b3589b2be94c114028e2514328` (PR `#3`) |
+| Closed chronology | `A1-A102` and `B1-B16`; B16 is kohai capability unit `VU-043`; `B17` is next. |
 
-## Current B15 contract
+## Current B16 contract
 
 | Surface | Current state |
 |---|---|
-| Canonical ownership | `CAFactionState` owns Culture, Political Order, and Technological Knowledge. Society is their joint control surface; a Society preset is a reusable snapshot. Neither becomes a campaign owner. |
-| Authoring flow | Founding and regional plans stage all three values before faction realization. Confirmation validates them together and copies them once into the realized faction. Settlements reference faction knowledge unless an explicit local divergence is represented. |
-| Society presets | The shared 22-entry catalog and reusable user profiles snapshot all three components. Apply validates deep copies, commits atomically, restores all three on failure, and writes no preset ownership. Culture and Political Order component presets remain independent substitutions. |
-| Technological Knowledge | Nine domains separately record understand, construct, operate, and maintain ranks from zero through five, exact known native research, origin, revision, and optional custody/availability history. |
-| Native authority | `FactionDef.techLevel` may seed otherwise unauthored factions and provide compatibility metadata. Effective research, construction, production, agriculture, habitat, frontier, and autonomous-development capability comes from faction knowledge through one exact requirement translator. Native project completion remains factual. |
-| Standard availability | Faction knowledge is effective social capability and does not depend on individual pawn custody. Death, incapacity, departure, or faction change cannot transfer or erase canonical ranks. |
-| Experimental distribution | The same domain state is projected through accessible pawn, institution, and record custody at the requesting map or settlement. Redundancy, isolated-carrier loss, incapacity, recovery, and transfer alter practical availability without creating another owner or technology system. |
-| Viability | Environment requirements, technological knowledge, and represented labor/material/program ability remain separate. A selected capable Society can satisfy the knowledge requirement without being granted missing facilities or supplies. |
-| B14 continuity | Regional composition, Starting Region navigation, Political Order, represented institutions, and the current authored three-faction/four-settlement fixture remain the B14 floor. |
+| Ideoligion | Native Ideoligion owns and executes explicit doctrine, sacred or prohibited conduct, ritual, memes, precepts, roles, and religious or social prescriptions. |
+| Culture | Population-level appraisal, normative distribution, disagreement, confidence, and historical drift are owned independently from doctrine and conduct. Registry 3 contains 48 questions in 12 player decision categories. |
+| Political Order | Faction-owned beliefs about legitimate political and economic arrangements remain independent from represented institutions. |
+| Represented institutions | Rules and mechanisms actually in force remain factual state rather than duplicate Political Order controls. |
+| Practice | Native events remain occurrences with exact provenance. Only repeated represented conduct can become practice evidence, and neither occurrence nor practice proves Culture approval. |
+| Semantic adapters | Known definitions map only through exact package ID, definition kind, and `defName`. Unknown or target-specific doctrine remains native-only until its semantics are explicitly represented. Names never manufacture mappings. |
+| Native events | Exact HistoryEvent adapters observe native execution afterward. Occurrence identity preserves participant or target provenance; retention is bounded by distinct occurrence within map, faction, locality, and practice. |
+| Ownership | `CAFactionState` owns Culture, Political Order, and Technological Knowledge. Society composes them; Society presets snapshot and copy them without becoming runtime owners. |
+| Supported extension | Audited `Ideology: More Precepts` definitions use the same exact registry seam. Unsupported or unknown mod definitions remain native Ideoligion facts. |
 
 ## Governed runtime fixture
 
@@ -42,54 +42,57 @@ receipts, deployment, and operator runtime evidence remain separate.
 |---|---|
 | Runtime keyed plan | `%USERPROFILE%\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlans\regional-plan-9bcbba2fdcd1e7f334711a69635242a2.xml` |
 | Governed mirror | `%USERPROFILE%\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlan.xml` |
-| Pair identity | 407,892 byte-identical bytes; SHA-256 `A0FF1B43CF3A5AFAFE72DA34360B247B7D06CB03DE903AEA251F8FD5D5297C82` |
-| Schema | pending authoring epoch 13; regional plan 14; nested player founding 4; settlement record 9; Culture 10 / registry 2; Political Order 10; Technological Knowledge 1; campaign catalog 4 |
+| Pair identity | 530,039 byte-identical bytes; SHA-256 `004C5A0F2505594D36E89CBD0F02A4BBE46C1B044965E6A5F29AFD27AFC521AF` |
+| Pending-plan schema | pending authoring epoch 14; regional plan 15; faction/founding/regional Culture owners 4; map-longitudinal owner 3; Culture 11 / registry 3; Political Order 10; Technological Knowledge 1 |
+| Realized-campaign boundary | campaign catalog 5 binds the current owner schemas after realization; it is not serialized into the pending-plan XML |
+| Culture content | 8 Culture owners; 12 valid owner/scope pairs each contain all 48 registry-3 questions; 577 live rows total; 289 compatible pre-B16 rows remain exact and the one non-constituent sparse row is preserved only as legacy evidence |
 | Identity | world `alysaliu|1|Algorab Markab`; region `CA-RG-EB596A12`; candidate `613b1fe44104`; arrival tile `389638`; map scale 350 |
-| Composition | 3 factions; 4 settlements; 4 current population assignments; 19 explicit established-program facts; four staged faction/founding knowledge compositions |
+| Composition | 3 factions; 4 settlements; 3 faction relations; current populations, Ideoligion links, Political Orders, Technological Knowledge, and established programs preserved |
 
 ## Verification and deployment
 
 | Gate | Result |
 |---|---|
-| Technological Knowledge execution | **PASS** - 22/22 three-component Society presets; atomic rollback; user-profile readback; standard/distributed availability; local custody; redundancy; isolated loss; incapacity/recovery; persistent retention; placement/realization separation; base consumers; supported migrations; fixture readback; settlement receipt-only realization |
-| Native mapping | **PASS** - 122/122 installed native research projects have exact domain mappings; unknown projects fail closed |
-| Ownership and consumer review | **PASS after correction** - no Society owner, synthetic project completion, hidden runtime `FactionDef` authority, stale settlement capability authority, query-time custody initialization, or standard-mode pawn transfer remains |
-| Retained suites | **PASS** - B10 synthetic 166 classified / 0 unresolved Critical/High; B10 75/75; B11 78/78; B12 113/113; B13 67/67; B14 24/24; B15 executable suite passes |
-| Persistence census | **PASS** - 257 source-derived carriers; 87 catalog schemas; 5 explicit non-campaign exclusions; 0 unclassified or invalid routes |
-| Final review panel | **PASS** - independent build validation, cross-file coherence review, and final code/static review found no remaining B15 source defect after correction; see `Receipts/B15/B15_FINAL_REVIEW_RECEIPT.md` |
-| Reproducible Release build | **PASS** - two clean Release rebuilds, 0 warnings and 0 errors, emitted byte-identical 4,233,216-byte assemblies at SHA-256 `DE6312FF9CF2F4B052AACDE82E93C113AF231D36494F93667266FB2D415F0764` |
-| Deployment | **PASS** - RimWorld closed; verified candidate, worktree assembly, and installed junction view are byte-identical at the build identity above |
+| B16 semantic acceptance | **PASS** - 54/54 exact doctrine, Culture appraisal, native-event, occurrence, locality, migration, rollback, and current-fixture checks |
+| Playable ontology census | **PASS** - every loaded audited precept and meme definition is individually adapted or explicitly native-only; no family member can conceal an unresolved sibling |
+| Culture migration | **PASS** - every compatible registry-2 row preserves its exact prior value and 24 new rows enter every valid represented scope as neutral, low-confidence, explicitly unobserved state; the governed fixture's one sparse row for a population no longer present in its settlement is removed from live coverage and retained as exact legacy evidence |
+| Owner migration and rollback | **PASS** - faction, founding, regional, and map-longitudinal owners survive Scribe readback and publish no partial state after invalid nested Culture |
+| Native practice retention | **PASS** - duplicate participant or observer emissions remain attached to one occurrence; 64 distinct occurrences are retained per map/faction/locality/practice without cross-settlement eviction |
+| Retained suites | **PASS** - B10 synthetic 166 classified / 0 unresolved Critical or High; B10 75/75; B11 78/78; B12 113/113; B13 67/67; B14 24/24 plus Society execution; B15 full execution |
+| Persistence census | **PASS** - 258 source-derived carriers; 87 catalog schemas; 5 explicit non-campaign exclusions; 0 unclassified or invalid routes |
+| Reproducible Release build | **PASS** - two clean Release rebuilds, 0 warnings and 0 errors, emitted byte-identical 4,369,920-byte assemblies at SHA-256 `EF56D9BADAAF82DB5E8269A3996F2F56A565BC8E564DB9A970C97F5B72C94342` |
+| Deployment | **PASS** - RimWorld closed; both clean candidates, worktree assembly, and installed junction view are byte-identical at the build identity above |
 
-Current executable receipts in `Receipts/B15` establish source and causal data
-behavior. They do not establish how the flow looks or plays.
+Current executable receipts in `Receipts/B16` establish source, persistence,
+and causal data behavior. They do not establish how the flow looks or plays.
 
 ## Operator runtime boundary
 
 After final deployment, a fresh operator launch is the next evidence boundary.
 Codex does not choose values, advance creation, start the game, alter saves, or
-claim visual/gameplay acceptance for the operator.
+claim visual or gameplay acceptance for the operator.
 
 | Runtime focus | Operator check |
 |---|---|
-| Society composition | Apply a historical Society and confirm Culture, Political Order, and Technological Knowledge change together while Ideoligion, founding arrangement, and represented institutions remain unchanged. Edit one component and confirm the others remain stable. |
-| Technology editor | Confirm the nine domains and four competencies are intelligible, directly editable, and summarized without exposing backend ownership or serialization language. |
-| Selected-society viability | Place a more capable Society in difficult terrain and confirm the UI distinguishes missing knowledge from missing labor, materials, facilities, and supplies. |
-| Standard mode | Confirm construction, production, crops, medicine, research, frontier, and autonomous choices follow faction knowledge without changing because one pawn dies or leaves. |
-| Experimental mode | Enable Distributed Knowledge in a disposable test and inspect redundancy, isolated knowledge, incapacity/recovery, recruitment, departure, and settlement-local availability. |
-| Authored fixture | Confirm the selected region loads with the same world, region, arrival, scale, 3 factions, 4 settlements, relations, populations, and programs. |
-| B14 regressions | Confirm Regional preview/placement, Society flow, Culture identity, Political Order, represented institutions, frontier habitats, and generation remain intact. |
+| Ownership separation | Confirm native Ideoligion remains intact while Culture separately shows population appraisal; changing one does not silently rewrite the other. |
+| Cannibalism example | Confirm doctrine, Culture appraisal, and actual eating or butchery can agree or conflict and remain separately inspectable. |
+| Culture authoring | Confirm all 12 decision categories are comprehensible, the 48-question expansion does not expose registry language, and generated or preset state remains editable. |
+| Society continuity | Apply a Society and confirm Culture, Political Order, and Technological Knowledge change together while Ideoligion and represented institutions remain independent. |
+| Current fixture | Confirm the selected region loads with the same world, region, arrival, scale, 3 factions, 4 settlements, relations, populations, programs, and Ideoligion links. |
+| B14-B15 regressions | Confirm regional placement, Society flow, Political Order, represented institutions, difficult-biome viability, and technological availability remain intact. |
 
 ## Environment and preserved evidence
 
 - RimWorld target: 1.6.4871 rev591.
-- No RimWorld process was running during fixture conversion or deployment, and
-  Codex did not launch the game afterward.
-- `B15_TECHNOLOGICAL_KNOWLEDGE_CONTRACT.md`,
+- RimWorld was closed during fixture conversion, clean builds, and deployment;
+  Codex did not launch or manipulate the game afterward.
+- `B16_PLAYABLE_SOCIAL_ONTOLOGY_AUDIT.md`,
   `AUTHORING_ONTOLOGY_COVERAGE.md`, `MODULE_OWNERSHIP.md`,
   `SCHEMA_REGISTRY.md`, `PERSISTENCE_CENSUS.md`, and
   `CAMPAIGN_COMPATIBILITY.md` are the current canonical boundaries.
-- `Receipts/B14` remains the regional/Society floor. `Receipts/B15` contains
-  technological execution, exact mapping, migration, fixture, retained-suite,
-  review, build, and deployment evidence.
+- `Receipts/B14` remains the regional and Society floor.
+  `Receipts/B15` remains the Technological Knowledge floor.
+  `Receipts/B16` contains semantic coverage, migration, fixture,
+  retained-suite, review, build, and deployment evidence.
 - Operator control of time, pawn orders, windows, saves, and autosave remains
   unchanged unless explicitly requested.

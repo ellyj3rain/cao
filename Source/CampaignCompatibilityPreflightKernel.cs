@@ -172,7 +172,7 @@ namespace ColonistAwareness
         public const string PayloadDigestSuffix = " -->";
         public const int MaxBufferedElementsPerRecord = 1000000;
         public const long MaxBufferedTextCharactersPerRecord = 67108864;
-        private static readonly HashSet<string> CulturalQuestionKeys =
+        private static readonly HashSet<string> LegacyCulturalQuestionKeys =
             new HashSet<string>(new[]
             {
                 "relationships.sameSexAcceptance",
@@ -200,6 +200,34 @@ namespace ColonistAwareness
                 "knowledge.noveltyAcceptance",
                 "knowledge.expertiseDeference"
             }, StringComparer.Ordinal);
+        private static readonly HashSet<string> CulturalQuestionKeys =
+            new HashSet<string>(LegacyCulturalQuestionKeys.Concat(new[]
+            {
+                "relationships.sexualConduct",
+                "relationships.marriageNaming",
+                "relationships.childhoodProtection",
+                "status.ageStanding",
+                "groups.doctrinalPluralism",
+                "groups.xenotypeHierarchy",
+                "labor.workExpectation",
+                "property.predatoryAcquisition",
+                "war.violenceAcceptance",
+                "body.maleExposure",
+                "body.femaleExposure",
+                "body.alteration",
+                "body.integrity",
+                "body.painMeaning",
+                "death.humanRemainsTreatment",
+                "food.humanFleshAcceptance",
+                "food.animalFoodAcceptance",
+                "food.adaptability",
+                "substances.recreationalUse",
+                "animals.moralStanding",
+                "environment.resourceStewardship",
+                "settlement.permanence",
+                "daily.comfortExpectation",
+                "technology.machineDelegation"
+            }), StringComparer.Ordinal);
         private static readonly HashSet<string> PoliticalAxisKeys =
             new HashSet<string>(new[]
             {
@@ -582,7 +610,8 @@ namespace ColonistAwareness
                 K(), "CA_socialReactions"),
             PA(CACampaignPayloadScope.PerMap,
                 "ColonistAwareness.CACultureLongitudinalMapComponent",
-                K(), K("CA_playerLocalCulture")),
+                K(), K("CA_playerLocalCulture"),
+                "CA_nativeCultureEvents"),
             P(CACampaignPayloadScope.WorldOnce,
                 "ColonistAwareness.CAActLedger",
                 K("world.act-ledger"), "CA_actRecords"),
@@ -1405,10 +1434,20 @@ namespace ColonistAwareness
             if (frame.Path.Length == 0
                 && TryFindPayload(componentType,
                     out CACampaignPayloadDefinition definition))
+            {
+                IReadOnlyList<string> requiredNonNull =
+                    definition.RequiredNonNullPaths;
+                if (string.Equals(componentType,
+                        "ColonistAwareness.CACultureLongitudinalMapComponent",
+                        StringComparison.Ordinal)
+                    && SavedOwnerVersion(componentType, frame) == 2)
+                    requiredNonNull = requiredNonNull.Where(value =>
+                        value != "CA_nativeCultureEvents").ToArray();
                 ValidateRequiredChildren(frame,
-                    definition.RequiredNonNullPaths,
+                    requiredNonNull,
                     definition.RequiredAllowNullPaths, Array.Empty<string>(),
                     failures);
+            }
 
             for (int index = 0; index < PayloadRules.Length; index++)
             {
@@ -1627,6 +1666,83 @@ namespace ColonistAwareness
             else if (componentType ==
                 "ColonistAwareness.CAOrganizationWorldComponent")
                 ValidateOrganizationLegitimacyPayload(root, failures);
+            else if (componentType ==
+                "ColonistAwareness.CACultureLongitudinalMapComponent")
+                ValidateCultureLongitudinalPayload(root, failures);
+        }
+
+        private static void ValidateCultureLongitudinalPayload(
+            PayloadElementFrame root, List<string> failures)
+        {
+            PayloadElementFrame collection = root.Children.FirstOrDefault(
+                value => value.Name == "CA_nativeCultureEvents");
+            if (collection == null || IsNullValue(collection)) return;
+            var bucketOccurrences = new Dictionary<string, HashSet<string>>(
+                StringComparer.Ordinal);
+            foreach (PayloadElementFrame record in collection.Children.Where(
+                value => value.Name == "li"))
+            {
+                if (IsNullValue(record)) continue;
+                ValidateRequiredChildren(record,
+                    K("schemaVersion", "packageId", "eventDefName",
+                        "practiceKey", "occurrenceKey", "tick", "pawnId",
+                        "factionLoadId", "mapId", "localityKey", "cellX",
+                        "cellZ"),
+                    K(), K(), failures);
+                RequireInteger(record, "schemaVersion",
+                    CANativeCultureEventPersistenceContract
+                        .CurrentRecordSchemaVersion,
+                    CANativeCultureEventPersistenceContract
+                        .CurrentRecordSchemaVersion,
+                    failures);
+                string packageId = RequireText(record, "packageId", failures);
+                string eventDefName = RequireText(record, "eventDefName",
+                    failures);
+                string practiceKey = RequireText(record, "practiceKey",
+                    failures);
+                string occurrenceKey = RequireText(record, "occurrenceKey",
+                    failures);
+                RequireInteger(record, "tick", 0, int.MaxValue, failures);
+                RequireInteger(record, "pawnId", 0, int.MaxValue, failures);
+                int factionId = RequireInteger(record, "factionLoadId", 0,
+                    int.MaxValue, failures);
+                int mapId = RequireInteger(record, "mapId", 0,
+                    int.MaxValue, failures);
+                string localityKey = RequireText(record, "localityKey",
+                    failures);
+                RequireInteger(record, "cellX", 0, int.MaxValue, failures);
+                RequireInteger(record, "cellZ", 0, int.MaxValue, failures);
+
+                CANativeCultureEventAdapterDef adapter =
+                    CANativeCultureEventAdapterRegistry.Find(packageId,
+                        eventDefName);
+                if (adapter == null || adapter.PracticeKey != practiceKey)
+                    failures.Add(record.Path
+                        + " has no exact supported native Culture adapter");
+                else if (adapter.OccurrenceScope ==
+                        CANativeCultureOccurrenceScope.SharedTargetAtTick
+                    && string.IsNullOrWhiteSpace(OptionalText(record,
+                        "targetIdentity")))
+                    failures.Add(DisplayPath(record, "targetIdentity")
+                        + " is required for an observer-shared occurrence");
+
+                string bucket = mapId + "\0" + factionId + "\0"
+                    + (localityKey ?? "") + "\0"
+                    + (practiceKey ?? "");
+                if (!bucketOccurrences.TryGetValue(bucket,
+                        out HashSet<string> occurrences))
+                {
+                    occurrences = new HashSet<string>(StringComparer.Ordinal);
+                    bucketOccurrences.Add(bucket, occurrences);
+                }
+                if (!string.IsNullOrWhiteSpace(occurrenceKey)
+                    && occurrences.Add(occurrenceKey)
+                    && occurrences.Count > 64)
+                    failures.Add(collection.Path
+                        + " exceeds 64 distinct occurrences for map/faction/locality/practice "
+                        + mapId + "/" + factionId + "/" + localityKey + "/"
+                        + practiceKey);
+            }
         }
 
         private static void ValidateOptionalParallel(PayloadElementFrame parent,
@@ -1653,6 +1769,8 @@ namespace ColonistAwareness
         private static void ValidateNestedSchemaBindings(string componentType,
             PayloadElementFrame root, List<string> failures)
         {
+            int exactCultureSchema = ExactCultureSchemaForOwner(
+                componentType, root);
             for (int index = 0; index < NestedSchemaBindings.Length; index++)
             {
                 NestedSchemaBinding binding = NestedSchemaBindings[index];
@@ -1690,6 +1808,12 @@ namespace ColonistAwareness
                     }
                     if (binding.SchemaKey == "model.culture")
                     {
+                        if (exactCultureSchema > 0
+                            && savedVersion != exactCultureSchema)
+                            failures.Add(binding.ParentPath
+                                + " model.culture schema " + savedVersion
+                                + " does not match owner generation; expected "
+                                + exactCultureSchema);
                         if (savedVersion >= 10)
                         {
                             ValidateRequiredChildren(frame,
@@ -1701,7 +1825,8 @@ namespace ColonistAwareness
                                     "inheritedPractices", "practices",
                                     "observations"), K("lastEvidence"), K(),
                                 failures);
-                            ValidateCultureQuestionPayload(frame, failures);
+                            ValidateCultureQuestionPayload(frame, savedVersion,
+                                failures);
                         }
                         else
                             ValidateRequiredChildren(frame,
@@ -1722,11 +1847,48 @@ namespace ColonistAwareness
             }
         }
 
-        private static void ValidateCultureQuestionPayload(
-            PayloadElementFrame culture, List<string> failures)
+        // Current owners must contain current Culture state. The one supported
+        // predecessor owner generation is the only place registry-2 Culture is
+        // admitted for its atomic registry-3 migration. Older B10 inputs keep
+        // their separately governed compatibility path.
+        private static int ExactCultureSchemaForOwner(string componentType,
+            PayloadElementFrame root)
         {
-            RequireInteger(culture, "questionRegistryVersion", 2, 2,
-                failures);
+            int savedOwnerVersion = SavedOwnerVersion(componentType, root);
+            if (savedOwnerVersion < 0) return -1;
+            CACampaignOwnerVersionDefinition owner = OwnerVersionDefinitions
+                .FirstOrDefault(value => string.Equals(value.ComponentType,
+                    componentType, StringComparison.Ordinal));
+            if (string.IsNullOrEmpty(owner.ComponentType)) return -1;
+            CACampaignSchemaDefinition schema = CACampaignSchemaCatalog.All
+                .First(value => value.Key == owner.SchemaKey);
+            if (savedOwnerVersion == schema.CurrentVersion) return 11;
+            if (savedOwnerVersion == schema.CurrentVersion - 1) return 10;
+            return -1;
+        }
+
+        private static int SavedOwnerVersion(string componentType,
+            PayloadElementFrame root)
+        {
+            CACampaignOwnerVersionDefinition owner = OwnerVersionDefinitions
+                .FirstOrDefault(value => string.Equals(value.ComponentType,
+                    componentType, StringComparison.Ordinal));
+            if (string.IsNullOrEmpty(owner.ComponentType)) return -1;
+            PayloadElementFrame version = root.Children.FirstOrDefault(value =>
+                value.Name == owner.XmlTag);
+            return version != null && int.TryParse(version.Text.ToString(),
+                out int savedOwnerVersion) ? savedOwnerVersion : -1;
+        }
+
+        private static void ValidateCultureQuestionPayload(
+            PayloadElementFrame culture, int savedSchemaVersion,
+            List<string> failures)
+        {
+            int requiredRegistry = savedSchemaVersion == 10 ? 2 : 3;
+            RequireInteger(culture, "questionRegistryVersion",
+                requiredRegistry, requiredRegistry, failures);
+            var questionsByScope = new Dictionary<string, HashSet<string>>(
+                StringComparer.Ordinal);
             foreach (string collectionName in new[]
                 { "inheritedQuestions", "localQuestions" })
             {
@@ -1750,6 +1912,15 @@ namespace ColonistAwareness
                             + " is not registered");
                     string scope = OptionalText(question, "populationScope")
                         ?? "*";
+                    if (!questionsByScope.TryGetValue(scope,
+                            out HashSet<string> present))
+                    {
+                        present = new HashSet<string>(StringComparer.Ordinal);
+                        questionsByScope.Add(scope, present);
+                    }
+                    if (!string.IsNullOrEmpty(key)
+                        && CulturalQuestionKeys.Contains(key))
+                        present.Add(key);
                     if (!identities.Add((key ?? "") + "\0" + scope))
                         failures.Add(question.Path
                             + " duplicates a question and population scope");
@@ -1772,6 +1943,25 @@ namespace ColonistAwareness
                         0.50f, failures);
                     ValidateSubgroupMixture(question, failures);
                 }
+            }
+            if (questionsByScope.Count == 0)
+            {
+                failures.Add(culture.Path
+                    + " has no represented Culture population scope");
+                return;
+            }
+            HashSet<string> requiredQuestions = savedSchemaVersion == 10
+                ? LegacyCulturalQuestionKeys : CulturalQuestionKeys;
+            foreach (KeyValuePair<string, HashSet<string>> represented in
+                questionsByScope)
+            {
+                string[] missing = requiredQuestions.Where(key =>
+                        !represented.Value.Contains(key))
+                    .OrderBy(key => key, StringComparer.Ordinal).ToArray();
+                if (missing.Length > 0)
+                    failures.Add(culture.Path + " population scope "
+                        + represented.Key + " is missing " + missing.Length
+                        + " Culture questions: " + string.Join(", ", missing));
             }
         }
 
@@ -2982,8 +3172,8 @@ namespace ColonistAwareness
             foreach (KeyValuePair<string, int> entry in document.Manifest)
             {
                 CACampaignCompatibilityDecision schemaDecision =
-                    CACampaignCompatibilityKernel.EvaluateSchema(
-                        entry.Key, entry.Value);
+                    CACampaignCompatibilityKernel.EvaluateCatalogSchema(
+                        document.CatalogVersion, entry.Key, entry.Value);
                 if (!schemaDecision.CanLoad) return schemaDecision;
             }
             for (int i = 0; i < CACampaignSchemaCatalog.All.Length; i++)
@@ -2998,8 +3188,9 @@ namespace ColonistAwareness
                         + document.CatalogVersion + " is missing required "
                         + "schema " + definition.Key);
                 CACampaignCompatibilityDecision schemaDecision =
-                    CACampaignCompatibilityKernel.EvaluateSchema(
-                        definition.Key, savedVersion);
+                    CACampaignCompatibilityKernel.EvaluateCatalogSchema(
+                        document.CatalogVersion, definition.Key,
+                        savedVersion);
                 if (!schemaDecision.CanLoad) return schemaDecision;
             }
             for (int i = 0; i < document.OwnerVersions.Count; i++)

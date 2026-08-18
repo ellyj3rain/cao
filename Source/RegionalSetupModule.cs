@@ -846,11 +846,12 @@ namespace ColonistAwareness
 
     public sealed class CARegionalPlan : IExposable
     {
-        internal const int CurrentSchemaVersion = 14;
+        internal const int CurrentSchemaVersion = 15;
 
-        // Schema 14 adds faction-owned Technological Knowledge to the staged
-        // regional composition. Schema 13 remains the supported B14 source for
-        // the additive B15 campaign migration.
+        // Schema 15 requires registry-3 Culture on every faction, settlement,
+        // and player-founding owner in the staged composition. Schema 14 at
+        // authoring epoch 13 is the one supported adjacent pending-draft
+        // source and is upgraded atomically by CAPendingAuthoringDataEpoch.
         // Earlier development schemas are deliberately unsupported.
         public int schemaVersion = CurrentSchemaVersion;
         public string regionalId;
@@ -2592,10 +2593,10 @@ namespace ColonistAwareness
                 {
                     Scribe_Values.Look(ref authoringDataEpoch,
                         "authoringDataEpoch", 0);
-                    if (CAPendingAuthoringDataEpoch.IsCurrent(
+                    if (CAPendingAuthoringDataEpoch.CanRead(
                             authoringDataEpoch))
                         Scribe_Values.Look(ref fileIdentity, "worldIdentity");
-                    if (CAPendingAuthoringDataEpoch.IsCurrent(
+                    if (CAPendingAuthoringDataEpoch.CanRead(
                             authoringDataEpoch)
                         && IdentityMatchesWorld(fileIdentity, identity))
                         Scribe_Deep.Look(ref plan, "plan");
@@ -2604,7 +2605,7 @@ namespace ColonistAwareness
                 {
                     Scribe.loader.FinalizeLoading();
                 }
-                if (!CAPendingAuthoringDataEpoch.IsCurrent(
+                if (!CAPendingAuthoringDataEpoch.CanRead(
                         authoringDataEpoch))
                 {
                     CAPendingAuthoringDataEpoch.RecordDiscard(
@@ -2624,12 +2625,11 @@ namespace ColonistAwareness
                     return;
                 }
                 if (plan == null) return;
-                if (plan.schemaVersion != CARegionalPlan.CurrentSchemaVersion)
+                if (!CAPendingAuthoringDataEpoch.TryUpgradeRegionalPlan(
+                        authoringDataEpoch, plan, out string upgradeFailure))
                 {
                     Log.Warning("[CA][Regional] refused pending plan from "
-                        + path + ": unsupported development schema "
-                        + plan.schemaVersion + "; current schema is "
-                        + CARegionalPlan.CurrentSchemaVersion + ".");
+                        + path + ": " + upgradeFailure + ".");
                     return;
                 }
 
@@ -2680,6 +2680,10 @@ namespace ColonistAwareness
                     + string.Join(",", plan.memberTileIds)
                     + "; factions " + plan.factions.Count
                     + "; settlements " + plan.settlements.Count);
+                // Persist a successfully upgraded adjacent draft immediately,
+                // so the disk owner and the in-memory owner cannot diverge.
+                if (authoringDataEpoch != CAPendingAuthoringDataEpoch.Current)
+                    SavePending();
             }
             catch (Exception e)
             {

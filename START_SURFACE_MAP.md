@@ -92,11 +92,11 @@ appropriate to societies with prior histories.
 ## Persistence and validation
 
 One keyed pending file per world identity stores the current regional candidate;
-the active mirror carries the same plan. Regional schema 14 writes factions,
+the active mirror carries the same plan. Regional schema 15 writes factions,
 settlements, relations, population groups, explicit operational facts,
 settlement-program schema 4 entries, program-asset identities, provision
 arrangements, substantive local Culture, faction Technological Knowledge, and
-the regional copy of `playerFounding`. Culture schema 10 stores inherited/local
+the regional copy of `playerFounding`. Culture schema 11 stores inherited/local
 question distributions, practices, and migration evidence; Political Order
 schema 10 stores complete normative compositions; Technological Knowledge
 schema 1 stores nine practical domains, known research, provenance, and optional

@@ -19,8 +19,8 @@ export const KOHAI_HARD_CAP = 16;
 export const PATCH_HARD_CAP = 24;
 export const MATURITY_LADDER = Object.freeze(["pre-alpha", "alpha", "beta", "rc"]);
 export const ROOT_REPLAY_START_VERSION = "0.1.0.0-pre-alpha";
-export const CLOSED_BATCH_TIP = "B15";
-export const NEXT_BATCH = "B16";
+export const CLOSED_BATCH_TIP = "B16";
+export const NEXT_BATCH = "B17";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_REPO_ROOT = resolve(here, "..");
@@ -461,6 +461,17 @@ export const VERSION_UNITS = Object.freeze([
     threads: ["T-001", "T-004", "T-005", "T-015", "T-016", "T-019", "T-021", "T-023", "T-024", "T-025", "T-028", "T-030"],
     rationale: "B15 adds Technological Knowledge as a third canonical component owned by authored faction state beside Culture and Political Order. The existing Society surface composes all three and reusable Society presets atomically snapshot and apply all three without becoming runtime owners. One explicit native translation layer maps research, construction, production, plants, habitat viability, and autonomous development onto domain competencies. Standard mode reads faction capability directly; the experimental distributed mode projects that same ontology through living pawns and persistent institutional or recorded custody, making redundancy and isolated loss causally meaningful without creating another technology system. Current-schema persistence, fixture conversion, executable causal receipts, retained regression suites, reproducible builds, and byte-verified deployment close a new simulation and authoring capability, so the unit carries the minor tier.",
   },
+  {
+    id: "VU-043",
+    series: "B",
+    first: 16,
+    last: 16,
+    dates: "2026-08-18",
+    tier: "kohai",
+    name: "Playable social ontology and Ideoligion semantics",
+    threads: ["T-001", "T-002", "T-004", "T-006", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
+    rationale: "B16 matures the existing Culture capability through a reverse audit from playable Core, DLC, CA, and explicitly supported-mod mechanics. It separates native Ideoligion doctrine, population Culture appraisal, Political Order, represented institutions, and repeated practice; expands Culture from the historical B13 boundary to forty-eight questions in twelve categories; and adds exact package-kind-definition and native-event adapter registries that fail closed on unknown content while RimWorld remains the executor. Additive registry-2-to-3 migration preserves every compatible existing Culture row, introduces only neutral explicitly unobserved state, and carries exact occurrence provenance through the existing longitudinal owner. The governed fixture's one non-constituent sparse row is retained as exact legacy evidence without weakening generic migration. Current-fixture conversion, catalog-5 owner validation, retained regression suites, reproducible builds, and byte-verified deployment complete the existing Culture line as a coherent integration unit, so the unit carries the kohai tier.",
+  },
 ]);
 
 function parseVersion(version) {
@@ -691,28 +702,20 @@ function markdownFilesForLegacyIdScan(repoRoot) {
 export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
   const errors = [];
   const replay = computeVersionReplay();
+  const closedBMatch = /^B(\d+)$/.exec(CLOSED_BATCH_TIP);
+  const nextBatchMatch = /^([A-Z])(\d+)$/.exec(NEXT_BATCH);
+  if (!closedBMatch || !nextBatchMatch) {
+    throw new Error("closed and next batch identifiers must be canonical letter-ordinal IDs");
+  }
+  const closedBTip = Number(closedBMatch[1]);
 
   const covered = VERSION_UNITS.flatMap(expandBatchSpan);
   const expected = [
     ...Array.from({ length: 102 }, (_, index) => `A${index + 1}`),
-    "B1",
-    "B2",
-    "B3",
-    "B4",
-    "B5",
-    "B6",
-    "B7",
-    "B8",
-    "B9",
-    "B10",
-    "B11",
-    "B12",
-    "B13",
-    "B14",
-    "B15",
+    ...Array.from({ length: closedBTip }, (_, index) => `B${index + 1}`),
   ];
   if (JSON.stringify(covered) !== JSON.stringify(expected)) {
-    errors.push("version units must cover A1-B15 exactly once, contiguously, and in order");
+    errors.push(`version units must cover A1-${CLOSED_BATCH_TIP} exactly once, contiguously, and in order`);
   }
   VERSION_UNITS.forEach((unit, index) => {
     const expectedId = `VU-${String(index + 1).padStart(3, "0")}`;
@@ -727,19 +730,23 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     .sort((left, right) => left[0].localeCompare(right[0])
       || Number(left.slice(1)) - Number(right.slice(1)));
   if (JSON.stringify(closedIds) !== JSON.stringify(expected)) {
-    errors.push("Batches/ must contain exactly the closed A001-A102 and B001-B015 record set");
+    errors.push(`Batches/ must contain exactly the closed A001-A102 and B001-B${String(closedBTip).padStart(3, "0")} record set`);
   }
-  if (batchFiles.some((name) => /^B0*16-.*\.md$/.test(name))) {
-    errors.push("B16 must remain unconsumed until the next development batch");
+  const nextBatchFilePattern = new RegExp(`^${nextBatchMatch[1]}0*${Number(nextBatchMatch[2])}-.*\\.md$`);
+  if (batchFiles.some((name) => nextBatchFilePattern.test(name))) {
+    errors.push(`${NEXT_BATCH} must remain unconsumed until the next development batch`);
   }
 
   const batchLog = readFileSync(join(repoRoot, "BATCH_LOG.md"), "utf8");
   const logIds = [...batchLog.matchAll(/^\| \[([A-Z])(\d+)\]/gm)]
     .map((match) => `${match[1]}${Number(match[2])}`);
   if (JSON.stringify(logIds) !== JSON.stringify(closedIds)) {
-    errors.push("BATCH_LOG.md must index A1-B15 exactly once and in order");
+    errors.push(`BATCH_LOG.md must index A1-${CLOSED_BATCH_TIP} exactly once and in order`);
   }
-  if (/^\| \[B16\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B16 record yet");
+  const nextBatchLogPattern = new RegExp(`^\\| \\[${NEXT_BATCH}\\]`, "m");
+  if (nextBatchLogPattern.test(batchLog)) {
+    errors.push(`BATCH_LOG.md must not contain a ${NEXT_BATCH} record yet`);
+  }
 
   const threads = readFileSync(join(repoRoot, "Batches", "THREADS.md"), "utf8");
   const declaredThreads = new Set([...threads.matchAll(/<a id="t-(\d{3})"><\/a>T-(\d{3})/g)].map((match) => `T-${match[1]}`));

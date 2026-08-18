@@ -234,27 +234,31 @@ namespace ColonistAwareness
             if (settings.societyProfiles == null)
                 settings.societyProfiles = new List<CAUserSocietyProfile>();
             settings.cultureProfiles.RemoveAll(item => item == null
-                || item.schemaVersion != CAUserCultureProfile.CurrentSchemaVersion
-                || item.values?.schemaVersion != CACulture.CurrentSchemaVersion);
+                || item.schemaVersion
+                    != CAUserCultureProfile.CurrentSchemaVersion);
             settings.politicalOrderProfiles.RemoveAll(item => item == null
                 || item.schemaVersion != CAUserPoliticalOrderProfile.CurrentSchemaVersion
                 || item.values?.schemaVersion
                     != CAPoliticalBeliefs.CurrentSchemaVersion);
             settings.societyProfiles.RemoveAll(item => item == null
                 || item.schemaVersion != CAUserSocietyProfile.CurrentSchemaVersion
-                || item.cultureValues?.schemaVersion
-                    != CACulture.CurrentSchemaVersion
                 || item.politicalOrderValues?.schemaVersion
                     != CAPoliticalBeliefs.CurrentSchemaVersion
                 || item.technologicalKnowledgeValues?.schemaVersion
                     != CATechnologicalKnowledge.CurrentSchemaVersion);
-            foreach (CAUserCultureProfile item in settings.cultureProfiles)
+            for (int index = settings.cultureProfiles.Count - 1;
+                index >= 0; index--)
             {
+                CAUserCultureProfile item = settings.cultureProfiles[index];
+                if (!TryNormalizeCulture(item.values,
+                        out CACulture normalized))
+                {
+                    settings.cultureProfiles.RemoveAt(index);
+                    continue;
+                }
                 if (item.key.NullOrEmpty()) item.key = NewKey(CulturePrefix);
                 if (item.displayName.NullOrEmpty()) item.displayName = "Saved background";
-                if (item.values == null) item.values = new CACulture();
-                CACultureModel.Normalize(item.values);
-                item.values = item.values.CopyAsInheritedTemplate();
+                item.values = normalized;
                 item.schemaVersion = CAUserCultureProfile.CurrentSchemaVersion;
             }
             foreach (CAUserPoliticalOrderProfile item in
@@ -266,14 +270,20 @@ namespace ColonistAwareness
                 if (item.values == null) item.values = new CAPoliticalBeliefs();
                 CAPoliticalBeliefsModel.Normalize(item.values);
             }
-            foreach (CAUserSocietyProfile item in settings.societyProfiles)
+            for (int index = settings.societyProfiles.Count - 1;
+                index >= 0; index--)
             {
+                CAUserSocietyProfile item = settings.societyProfiles[index];
+                if (!TryNormalizeCulture(item.cultureValues,
+                        out CACulture normalized))
+                {
+                    settings.societyProfiles.RemoveAt(index);
+                    continue;
+                }
                 if (item.key.NullOrEmpty()) item.key = NewKey(SocietyPrefix);
                 if (item.displayName.NullOrEmpty())
                     item.displayName = "Saved society";
-                CACultureModel.Normalize(item.cultureValues);
-                item.cultureValues = item.cultureValues
-                    .CopyAsInheritedTemplate();
+                item.cultureValues = normalized;
                 CAPoliticalBeliefsModel.Normalize(item.politicalOrderValues);
                 item.politicalOrderValues.id = null;
                 CATechnologicalKnowledgeModel.Normalize(
@@ -282,6 +292,17 @@ namespace ColonistAwareness
                     item.technologicalKnowledgeValues.CopyAsPreset();
                 item.schemaVersion = CAUserSocietyProfile.CurrentSchemaVersion;
             }
+        }
+
+        private static bool TryNormalizeCulture(CACulture source,
+            out CACulture normalized)
+        {
+            normalized = null;
+            if (!CACultureModel.TryUpgradeToCurrent(source,
+                    out CACulture upgraded, out _))
+                return false;
+            normalized = upgraded.CopyAsInheritedTemplate();
+            return true;
         }
 
         internal static CAUserCultureProfile SaveCulture(string name,

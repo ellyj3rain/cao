@@ -373,7 +373,7 @@ namespace ColonistAwareness
     // historical transition boundaries.
     public sealed class CACulture : IExposable
     {
-        public const int CurrentSchemaVersion = 10;
+        public const int CurrentSchemaVersion = 11;
         public const int NameField = 1;
         public const int SourceCultureField = 2;
         public const int QuestionStateField = 4;
@@ -898,6 +898,26 @@ namespace ColonistAwareness
                     || culture.localQuestions.GroupBy(QuestionIdentity,
                             StringComparer.Ordinal).Any(group => group.Count() > 1))
                     return "a Culture question identity is duplicated";
+                string[] representedScopes = questions.Where(item =>
+                        item != null).Select(item => item.populationScope
+                            .NullOrEmpty() ? "*" : item.populationScope)
+                    .Distinct(StringComparer.Ordinal).ToArray();
+                if (representedScopes.Length == 0)
+                    return "Culture has no represented population scope";
+                foreach (string representedScope in representedScopes)
+                {
+                    var present = new HashSet<string>(questions.Where(item =>
+                            item != null && string.Equals(
+                                item.populationScope.NullOrEmpty()
+                                    ? "*" : item.populationScope,
+                                representedScope, StringComparison.Ordinal))
+                        .Select(item => item.questionKey),
+                        StringComparer.Ordinal);
+                    if (CACultureQuestionRegistry.All.Any(definition =>
+                            !present.Contains(definition.Key)))
+                        return "Culture population scope " + representedScope
+                            + " does not contain the complete question registry";
+                }
                 if (culture.legacyEvidence.Any(item => item == null
                         || item.sourceKey.NullOrEmpty()
                         || item.sourceLayer.NullOrEmpty()
@@ -1019,10 +1039,29 @@ namespace ColonistAwareness
             }
             if (source.schemaVersion == CACulture.CurrentSchemaVersion)
             {
+                if (source.questionRegistryVersion
+                    != CACultureQuestionRegistry.CurrentVersion)
+                {
+                    failure = "Culture question registry "
+                        + source.questionRegistryVersion
+                        + " has no supported migration to "
+                        + CACultureQuestionRegistry.CurrentVersion;
+                    return false;
+                }
                 failure = ValidationFailure(source, requireSubstantive: true);
                 if (!failure.NullOrEmpty()) return false;
                 upgraded = source.Copy();
                 return true;
+            }
+            if (source.schemaVersion == 10)
+            {
+                if (source.questionRegistryVersion != 2)
+                {
+                    failure = "Culture schema 10 requires question registry 2";
+                    return false;
+                }
+                return TryUpgradeQuestionRegistry(source, out upgraded,
+                    out failure);
             }
             if (source.schemaVersion != 8 && source.schemaVersion != 9)
             {
@@ -1096,6 +1135,12 @@ namespace ColonistAwareness
                 localKeys.Contains(QuestionIdentity(value)));
             candidate.inheritedMeanings = new List<CACulturalMeaning>();
             candidate.localMeanings = new List<CACulturalMeaning>();
+            AddMissingRegistryQuestions(candidate,
+                candidate.inheritedQuestions.Concat(candidate.localQuestions)
+                    .Where(item => item != null)
+                    .Select(item => item.populationScope.NullOrEmpty()
+                        ? "*" : item.populationScope)
+                    .Distinct(StringComparer.Ordinal).DefaultIfEmpty("*"));
             candidate.questionRegistryVersion =
                 CACultureQuestionRegistry.CurrentVersion;
             candidate.withinGroupSpread = 2;
@@ -1107,10 +1152,150 @@ namespace ColonistAwareness
             return true;
         }
 
-        internal static bool TryUpgradeFromB10(CACulture source,
+        // B16 extends the existing distribution model. Registry-2 positions
+        // remain exact; newly admitted constructs begin neutral and
+        // low-confidence for each represented population scope. This records
+        // absence of evidence without inventing a historical opinion.
+        internal static bool TryUpgradeQuestionRegistry(CACulture source,
             out CACulture upgraded, out string failure)
         {
-            return TryUpgradeToCurrent(source, out upgraded, out failure);
+            upgraded = null;
+            if (source == null)
+            {
+                failure = "Culture is missing";
+                return false;
+            }
+            if (source.schemaVersion != 10
+                || source.questionRegistryVersion != 2)
+            {
+                failure = "Culture is not a schema-10 registry-2 record";
+                return false;
+            }
+            if (source.inheritedQuestions == null
+                || source.localQuestions == null
+                || source.legacyEvidence == null)
+            {
+                failure = "Culture question state is incomplete";
+                return false;
+            }
+
+            var legacyKeys = new HashSet<string>(
+                CACultureQuestionRegistry.All.Take(
+                    CACultureQuestionRegistry.LegacyQuestionCount)
+                    .Select(item => item.Key), StringComparer.Ordinal);
+            List<CACultureQuestionDistribution> all = source
+                .inheritedQuestions.Concat(source.localQuestions)
+                .Where(item => item != null).ToList();
+            if (all.Any(item => !legacyKeys.Contains(item.questionKey)))
+            {
+                failure = "registry-2 Culture contains a non-legacy question";
+                return false;
+            }
+            foreach (CACultureQuestionDistribution item in all)
+            {
+                string itemFailure = CACultureDistributionKernel
+                    .ValidationFailure(item);
+                if (!itemFailure.NullOrEmpty())
+                {
+                    failure = "Culture question " + item.questionKey + ": "
+                        + itemFailure;
+                    return false;
+                }
+            }
+            if (source.inheritedQuestions.GroupBy(QuestionIdentity,
+                        StringComparer.Ordinal).Any(group => group.Count() > 1)
+                || source.localQuestions.GroupBy(QuestionIdentity,
+                        StringComparer.Ordinal).Any(group => group.Count() > 1))
+            {
+                failure = "a registry-2 Culture question identity is duplicated";
+                return false;
+            }
+
+            string[] representedScopes = all.Select(item =>
+                    item.populationScope.NullOrEmpty()
+                        ? "*" : item.populationScope)
+                .Distinct(StringComparer.Ordinal).ToArray();
+            if (representedScopes.Length == 0)
+            {
+                failure = "registry-2 Culture has no represented population scope";
+                return false;
+            }
+            foreach (string scope in representedScopes)
+            {
+                var present = new HashSet<string>(all.Where(item =>
+                        string.Equals(item.populationScope.NullOrEmpty()
+                                ? "*" : item.populationScope,
+                            scope, StringComparison.Ordinal))
+                    .Select(item => item.questionKey), StringComparer.Ordinal);
+                if (legacyKeys.SetEquals(present)) continue;
+                failure = "registry-2 Culture scope " + scope
+                    + " is missing legacy questions: "
+                    + string.Join(", ", legacyKeys.Except(present)
+                        .OrderBy(value => value, StringComparer.Ordinal));
+                return false;
+            }
+
+            CACulture candidate = source.Copy();
+            AddMissingRegistryQuestions(candidate, representedScopes);
+            candidate.questionRegistryVersion =
+                CACultureQuestionRegistry.CurrentVersion;
+            candidate.schemaVersion = CACulture.CurrentSchemaVersion;
+            failure = ValidationFailure(candidate, requireSubstantive: true);
+            if (!failure.NullOrEmpty()) return false;
+            upgraded = candidate;
+            return true;
+        }
+
+        private static void AddMissingRegistryQuestions(CACulture culture,
+            IEnumerable<string> representedScopes)
+        {
+            string[] scopes = (representedScopes
+                    ?? Enumerable.Empty<string>()).Distinct(
+                        StringComparer.Ordinal).ToArray();
+            foreach (string scope in scopes)
+            {
+                var present = new HashSet<string>(culture
+                    .inheritedQuestions.Concat(culture.localQuestions)
+                    .Where(item => item != null && string.Equals(
+                        item.populationScope.NullOrEmpty()
+                            ? "*" : item.populationScope,
+                        scope, StringComparison.Ordinal))
+                    .Select(item => item.questionKey), StringComparer.Ordinal);
+                foreach (CACultureQuestionDef definition in
+                    CACultureQuestionRegistry.All)
+                {
+                    if (present.Contains(definition.Key)) continue;
+                    CACultureQuestionDistribution added =
+                        NewRegistryUpgradeQuestion(culture, scope,
+                            definition);
+                    added.spread = PopulationSpread(
+                        culture.withinGroupSpread);
+                    culture.inheritedQuestions.Add(added);
+                    SyncSubgroups(culture, added);
+                }
+            }
+        }
+
+        // This is the one production projection used by live migration and
+        // the governed pending-plan converter. It owns the exact default,
+        // provenance, source identity, and evidence identity for every newly
+        // admitted Culture question.
+        internal static CACultureQuestionDistribution
+            NewRegistryUpgradeQuestion(CACulture culture, string scope,
+                CACultureQuestionDef definition)
+        {
+            CACultureQuestionDistribution added =
+                CACultureDistributionKernel.NewQuestion(definition, scope);
+            added.salience = Math.Min(0.18f, definition.DefaultSalience);
+            added.sourceConfidence = 0.20f;
+            added.provenance = "B16 playable-ontology coverage; neutral "
+                + "because no authored or historical evidence establishes "
+                + "this population's position";
+            added.sourceIdentity = scope == "*" ? culture?.id : scope;
+            added.evidenceSignature = CASocialPatternKernel.StableHash(
+                (culture?.id ?? "Culture") + "|" + scope + "|"
+                    + definition.Key);
+            return added;
         }
 
         private static List<CACultureQuestionDistribution> MigrateQuestions(
@@ -1118,52 +1303,57 @@ namespace ColonistAwareness
             string sourceIdentity, List<CACultureLegacyEvidence> evidence)
         {
             var mapped = new List<CACultureQuestionDistribution>();
-            foreach (IGrouping<string, CACulturalMeaning> group in (source
+            List<CACulturalMeaning> sourceValues = (source
                     ?? Enumerable.Empty<CACulturalMeaning>())
-                .Where(value => value != null)
-                .GroupBy(value => (CACultureQuestionRegistry
-                        .QuestionForSocialSubject(value.subjectKey) ?? "")
-                    + "\0" + (value.populationScope.NullOrEmpty()
-                        ? "*" : value.populationScope),
+                .Where(value => value != null).ToList();
+            foreach (CACulturalMeaning meaning in sourceValues)
+            {
+                bool hasAdapters = CACultureQuestionRegistry
+                    .AdaptersForSocialSubject(meaning.subjectKey).Count > 0;
+                evidence.Add(new CACultureLegacyEvidence
+                {
+                    sourceKey = meaning.subjectKey,
+                    sourceLayer = "B11 " + layer + " social meaning",
+                    populationScope = meaning.populationScope.NullOrEmpty()
+                        ? "*" : meaning.populationScope,
+                    disposition = !hasAdapters
+                        ? "preserved as evidence; no exact current question"
+                        : "approval and salience mapped through every exact "
+                            + "signed subject adapter; other dimensions remain "
+                            + "evidence",
+                    summary = "approval=" + meaning.approval
+                        + "; normality=" + meaning.normality
+                        + "; prestige=" + meaning.prestige
+                        + "; salience=" + meaning.salience
+                        + "; weight=" + meaning.weight
+                        + "; firstRecordedTick="
+                        + meaning.firstRecordedTick
+                        + "; lastChangedTick="
+                        + meaning.lastChangedTick,
+                    sourceIdentity = meaning.sourceIdentity
+                        ?? sourceIdentity ?? "B11 Culture",
+                    evidenceSignature = meaning.evidenceSignature,
+                    firstRecordedTick = meaning.firstRecordedTick,
+                    lastChangedTick = meaning.lastChangedTick
+                });
+            }
+            foreach (var group in sourceValues.SelectMany(meaning =>
+                    CACultureQuestionRegistry.AdaptersForSocialSubject(
+                            meaning.subjectKey)
+                        .Select(adapter => new { Meaning = meaning, Adapter = adapter }))
+                .GroupBy(value => value.Adapter.QuestionKey + "\0"
+                    + (value.Meaning.populationScope.NullOrEmpty()
+                        ? "*" : value.Meaning.populationScope),
                     StringComparer.Ordinal))
             {
-                foreach (CACulturalMeaning meaning in group)
-                    evidence.Add(new CACultureLegacyEvidence
-                    {
-                        sourceKey = meaning.subjectKey,
-                        sourceLayer = "B11 " + layer + " social meaning",
-                        populationScope = meaning.populationScope.NullOrEmpty()
-                            ? "*" : meaning.populationScope,
-                        disposition = group.Key.StartsWith("\0",
-                            StringComparison.Ordinal)
-                            ? "preserved as evidence; no exact B12 question"
-                            : "approval and salience mapped through exact "
-                                + "subject adapter; other dimensions remain "
-                                + "evidence",
-                        summary = "approval=" + meaning.approval
-                            + "; normality=" + meaning.normality
-                            + "; prestige=" + meaning.prestige
-                            + "; salience=" + meaning.salience
-                            + "; weight=" + meaning.weight
-                            + "; firstRecordedTick="
-                            + meaning.firstRecordedTick
-                            + "; lastChangedTick="
-                            + meaning.lastChangedTick,
-                        sourceIdentity = meaning.sourceIdentity
-                            ?? sourceIdentity ?? "B11 Culture",
-                        evidenceSignature = meaning.evidenceSignature,
-                        firstRecordedTick = meaning.firstRecordedTick,
-                        lastChangedTick = meaning.lastChangedTick
-                    });
                 string[] identity = group.Key.Split('\0');
                 string questionKey = identity[0];
-                if (questionKey.NullOrEmpty()) continue;
                 CALegacyCultureQuestionAdapterResult adapted =
                     CALegacyCultureQuestionAdapter.Adapt(group.Select(value =>
-                        new CALegacyCultureMeaningAdapterInput(value.approval,
-                            value.salience, value.weight,
-                            CACultureQuestionRegistry
-                                .DirectionForSocialSubject(value.subjectKey))));
+                        new CALegacyCultureMeaningAdapterInput(
+                            value.Meaning.approval,
+                            value.Meaning.salience, value.Meaning.weight,
+                            value.Adapter.Direction)));
                 mapped.Add(new CACultureQuestionDistribution
                 {
                     questionKey = questionKey,
@@ -1180,21 +1370,26 @@ namespace ColonistAwareness
                     sourceConfidence = 0.55f,
                     toleranceForDivergence = 0.50f,
                     provenance = "B12 exact adapter from B11 " + layer
-                        + " approval and salience; other dimensions retained "
-                        + "as evidence",
+                        + " approval and salience through every signed "
+                        + "question mapping; other dimensions retained as evidence",
                     sourceIdentity = sourceIdentity ?? "B11 Culture",
                     evidenceSignature = CASocialPatternKernel.StableHash(
                         string.Join("|", group.Select(value =>
-                            value.subjectKey + ":" + value.approval + ":"
-                            + value.normality + ":" + value.prestige + ":"
-                            + value.salience + ":" + value.weight))),
+                            value.Meaning.subjectKey + ":"
+                            + value.Meaning.approval + ":"
+                            + value.Meaning.normality + ":"
+                            + value.Meaning.prestige + ":"
+                            + value.Meaning.salience + ":"
+                            + value.Meaning.weight + ":"
+                            + value.Adapter.QuestionKey + ":"
+                            + value.Adapter.Direction))),
                     firstRecordedTick = group.Where(value =>
-                            value.firstRecordedTick >= 0)
-                        .Select(value => value.firstRecordedTick)
+                            value.Meaning.firstRecordedTick >= 0)
+                        .Select(value => value.Meaning.firstRecordedTick)
                         .DefaultIfEmpty(-1).Min(),
                     lastChangedTick = group.Where(value =>
-                            value.lastChangedTick >= 0)
-                        .Select(value => value.lastChangedTick)
+                            value.Meaning.lastChangedTick >= 0)
+                        .Select(value => value.Meaning.lastChangedTick)
                         .DefaultIfEmpty(-1).Max()
                 });
             }
@@ -1633,55 +1828,101 @@ namespace ColonistAwareness
             if (culture == null)
                 return CACulturalMeaningResolver.Resolve(null, subjectKey,
                     populationScope);
-            string questionKey = CACultureQuestionRegistry
-                .QuestionForSocialSubject(subjectKey);
-            if (questionKey.NullOrEmpty())
+            IReadOnlyList<CACultureQuestionSubjectAdapterDef> adapters =
+                CACultureQuestionRegistry.AdaptersForSocialSubject(subjectKey);
+            if (adapters.Count == 0)
                 return CACulturalMeaningResolver.Resolve(null, subjectKey,
                     populationScope);
-            CACultureQuestionDistribution applicable = DistributionFor(culture,
-                questionKey, populationScope);
-            if (applicable == null)
+            var values = adapters.Select(adapter => new
+                {
+                    Adapter = adapter,
+                    Distribution = DistributionFor(culture,
+                        adapter.QuestionKey, populationScope)
+                }).Where(value => value.Distribution != null).Select(value =>
+                {
+                    CACultureSubgroupDistribution subgroup = value.Distribution
+                        .subgroups?.FirstOrDefault(item => item != null
+                            && item.subgroupKey == populationScope);
+                    float mean = Mathf.Clamp(value.Distribution.mean
+                        + (subgroup?.meanOffset ?? 0f), -1f, 1f)
+                        * value.Adapter.Direction;
+                    float descriptive = (value.Distribution
+                        .hasDescriptiveNormPrior
+                            ? value.Distribution.descriptiveNormPrior
+                            : value.Distribution.mean)
+                        * value.Adapter.Direction;
+                    float spread = value.Distribution.spread
+                        * (subgroup?.spreadMultiplier ?? 1f);
+                    float weight = Mathf.Max(0.01f,
+                        value.Distribution.salience
+                            * value.Distribution.sourceConfidence);
+                    return new
+                    {
+                        value.Adapter,
+                        value.Distribution,
+                        Mean = mean,
+                        Descriptive = descriptive,
+                        Spread = spread,
+                        Weight = weight
+                    };
+                }).ToList();
+            if (values.Count == 0)
                 return CACulturalMeaningResolver.Resolve(null, subjectKey,
                     populationScope);
-            int direction = CACultureQuestionRegistry
-                .DirectionForSocialSubject(subjectKey);
-            CACultureSubgroupDistribution subgroup = applicable.subgroups?
-                .FirstOrDefault(value => value != null
-                    && value.subgroupKey == populationScope);
-            float mean = Mathf.Clamp(applicable.mean
-                + (subgroup?.meanOffset ?? 0f), -1f, 1f) * direction;
-            float salience = applicable.salience;
-            float confidence = applicable.sourceConfidence;
-            float spread = applicable.spread
-                * (subgroup?.spreadMultiplier ?? 1f);
+            float total = values.Sum(value => value.Weight);
+            float mean = values.Sum(value => value.Mean * value.Weight)
+                / total;
+            float descriptive = values.Sum(value => value.Descriptive
+                    * value.Weight) / total;
+            float prestige = values.Sum(value => value.Distribution
+                    .prestigeSignal * value.Adapter.Direction * value.Weight)
+                / total;
+            float salience = values.Sum(value => value.Distribution.salience
+                    * value.Weight) / total;
+            float confidence = values.Sum(value => value.Distribution
+                    .sourceConfidence * value.Weight) / total;
+            float withinSpread = values.Sum(value => value.Spread
+                    * value.Weight) / total;
+            float crossQuestion = Mathf.Sqrt(values.Sum(value =>
+                    (value.Mean - mean) * (value.Mean - mean) * value.Weight)
+                / total);
             var result = new CACulturalMeaningResolution
             {
                 SubjectKey = subjectKey,
                 Approval = Mathf.RoundToInt(mean * 100f),
-                Normality = Mathf.RoundToInt(((applicable
-                    .hasDescriptiveNormPrior
-                        ? applicable.descriptiveNormPrior : applicable.mean)
-                    * direction + 1f) * 50f),
-                Prestige = Mathf.RoundToInt(applicable.prestigeSignal
-                    * direction * 100f),
+                Normality = Mathf.RoundToInt((descriptive + 1f) * 50f),
+                Prestige = Mathf.RoundToInt(prestige * 100f),
                 Salience = Mathf.RoundToInt(salience * 100f),
-                Dissonance = Mathf.Clamp01(spread),
+                Dissonance = Mathf.Clamp01(Mathf.Max(withinSpread,
+                    crossQuestion)),
                 Confidence = Mathf.Clamp01(confidence * salience)
             };
-            result.Contributions.Add(new CACulturalMeaningContribution
+            foreach (var value in values)
             {
-                PopulationScope = populationScope ?? applicable.populationScope,
-                Provenance = applicable.provenance,
-                SourceIdentity = applicable.sourceIdentity,
-                Weight = Mathf.Max(1,
-                    Mathf.RoundToInt(applicable.sourceConfidence * 100f)),
-                Approval = Mathf.RoundToInt(mean * 100f),
-                Normality = result.Normality,
-                Prestige = result.Prestige,
-                Salience = result.Salience
-            });
-            result.Provenance.Add((applicable.provenance ?? "recorded")
-                + ":" + (applicable.sourceIdentity ?? "unrecorded"));
+                result.Contributions.Add(new CACulturalMeaningContribution
+                {
+                    PopulationScope = populationScope
+                        ?? value.Distribution.populationScope,
+                    Provenance = value.Adapter.QuestionKey + "; "
+                        + value.Distribution.provenance,
+                    SourceIdentity = value.Distribution.sourceIdentity,
+                    Weight = Mathf.Max(1,
+                        Mathf.RoundToInt(value.Weight * 100f)),
+                    Approval = Mathf.RoundToInt(value.Mean * 100f),
+                    Normality = Mathf.RoundToInt(
+                        (value.Descriptive + 1f) * 50f),
+                    Prestige = Mathf.RoundToInt(value.Distribution
+                        .prestigeSignal * value.Adapter.Direction * 100f),
+                    Salience = Mathf.RoundToInt(value.Distribution.salience
+                        * 100f)
+                });
+                string provenance = (value.Distribution.provenance
+                        ?? "recorded") + ":"
+                    + (value.Distribution.sourceIdentity ?? "unrecorded")
+                    + ":" + value.Adapter.QuestionKey;
+                if (!result.Provenance.Contains(provenance))
+                    result.Provenance.Add(provenance);
+            }
             return result;
         }
 
@@ -2022,7 +2263,7 @@ namespace ColonistAwareness
             var changedDimensions = new HashSet<string>(StringComparer.Ordinal);
             var changedScopes = new HashSet<string>(StringComparer.Ordinal);
             var evidenceSignatures = new List<string>();
-            foreach (IGrouping<string, CASocialGroupPattern> group in (patterns
+            foreach (var group in (patterns
                     ?? Enumerable.Empty<CASocialGroupPattern>())
                 .Where(value => value != null
                     && value.EvidenceCount >= 2
@@ -2032,49 +2273,62 @@ namespace ColonistAwareness
                     && value.EvidenceStartTick >= 0
                     && value.LastEvidenceTick - value.EvidenceStartTick
                         >= CACulturalMeaningTransitionKernel.HistoricalPeriod)
-                .Select(value => new
-                {
-                    Pattern = value,
-                    QuestionKey = !value.QuestionKey.NullOrEmpty()
-                        ? value.QuestionKey : CACultureQuestionRegistry
-                            .QuestionForSocialSubject(value.SubjectKey)
-                })
+                .SelectMany(value => !value.QuestionKey.NullOrEmpty()
+                    ? new[] { new { Pattern = value,
+                        QuestionKey = value.QuestionKey, Direction = 1 } }
+                    : CACultureQuestionRegistry.AdaptersForSocialSubject(
+                            value.SubjectKey)
+                        .Select(adapter => new { Pattern = value,
+                            QuestionKey = adapter.QuestionKey,
+                            Direction = adapter.Direction }))
                 .Where(value => !value.QuestionKey.NullOrEmpty())
                 .GroupBy(value => value.QuestionKey + "\0"
                     + (value.Pattern.PopulationIdentity ?? "*"),
-                    value => value.Pattern, StringComparer.Ordinal))
+                    StringComparer.Ordinal))
             {
                 string[] identity = group.Key.Split('\0');
                 string questionKey = identity[0];
                 string population = identity.Length > 1 ? identity[1] : "*";
                 int totalWeight = group.Sum(value => Math.Max(1,
-                    value.ObservedPawnCount));
-                float observedMean = group.Sum(value =>
-                        value.WeightedApproval / 100f
-                        * (value.QuestionKey.NullOrEmpty()
-                            ? CACultureQuestionRegistry
-                                .DirectionForSocialSubject(value.SubjectKey)
-                            : 1)
-                        * Math.Max(1, value.ObservedPawnCount))
+                    value.Pattern.ObservedPawnCount));
+                bool hasAppraisal = group.Any(value =>
+                    value.Pattern.AppraisalEvidence);
+                int appraisalWeight = group.Where(value =>
+                        value.Pattern.AppraisalEvidence)
+                    .Sum(value => Math.Max(1,
+                        value.Pattern.ObservedPawnCount));
+                float observedPosition = group.Sum(value =>
+                        value.Pattern.WeightedPosition / 100f
+                        * value.Direction
+                        * Math.Max(1, value.Pattern.ObservedPawnCount))
                     / Math.Max(1, totalWeight);
-                float coverage = group.Sum(value => value.Participation
-                        * Math.Max(1, value.ObservedPawnCount))
+                float observedAppraisal = hasAppraisal ? group.Where(value =>
+                        value.Pattern.AppraisalEvidence).Sum(value =>
+                            value.Pattern.WeightedPosition / 100f
+                            * value.Direction * Math.Max(1,
+                                value.Pattern.ObservedPawnCount))
+                        / Math.Max(1, appraisalWeight) : 0f;
+                float coverage = group.Sum(value => value.Pattern.Participation
+                        * Math.Max(1, value.Pattern.ObservedPawnCount))
                     / Math.Max(1, totalWeight);
-                float dispersion = group.Sum(value => value.Dispersion
-                        * Math.Max(1, value.ObservedPawnCount))
+                float dispersion = group.Sum(value => value.Pattern.Dispersion
+                        * Math.Max(1, value.Pattern.ObservedPawnCount))
                     / Math.Max(1, totalWeight);
-                float alignment = group.Sum(value => value.GroupAlignment
-                        * Math.Max(1, value.ObservedPawnCount))
+                float alignment = group.Sum(value => value.Pattern.GroupAlignment
+                        * Math.Max(1, value.Pattern.ObservedPawnCount))
                     / Math.Max(1, totalWeight);
-                float observedNorm = Mathf.Clamp(observedMean
+                float observedNorm = Mathf.Clamp(observedPosition
                     * (0.5f + coverage * 0.5f), -1f, 1f);
                 float observedSalience = Mathf.Clamp01(dispersion + coverage);
                 float observedNormStrength = Mathf.Clamp01(
                     alignment * coverage);
                 string evidenceSignature = CASocialPatternKernel.StableHash(
-                    string.Join("|", group.OrderBy(value => value.SubjectKey,
+                    string.Join("|", group.OrderBy(value => value.Pattern.SubjectKey,
                         StringComparer.Ordinal).Select(value =>
-                        value.SubjectKey + ":" + value.EvidenceSignature)));
+                        value.Pattern.SubjectKey + ":"
+                            + value.Pattern.EvidenceSignature + ":"
+                            + value.QuestionKey + ":" + value.Direction
+                            + ":" + value.Pattern.AppraisalEvidence)));
                 evidenceSignatures.Add(questionKey + ":" + evidenceSignature);
 
                 CACultureQuestionDistribution current = culture.localQuestions
@@ -2089,9 +2343,12 @@ namespace ColonistAwareness
                 if (basis != null && string.Equals(basis.evidenceSignature,
                         evidenceSignature, StringComparison.Ordinal))
                     continue;
-                float nextMean = basis == null ? observedMean
-                    : Mathf.Lerp(basis.mean, observedMean, 0.25f);
-                float nextSpread = basis == null
+                float nextMean = !hasAppraisal ? basis?.mean ?? 0f
+                    : basis == null ? observedAppraisal
+                    : Mathf.Lerp(basis.mean, observedAppraisal, 0.25f);
+                float nextSpread = !hasAppraisal ? basis?.spread
+                        ?? CACultureDistributionKernel.VarianceFloor
+                    : basis == null
                     ? Mathf.Max(CACultureDistributionKernel.VarianceFloor,
                         dispersion)
                     : Mathf.Lerp(basis.spread, Mathf.Max(
@@ -2101,9 +2358,11 @@ namespace ColonistAwareness
                     : Mathf.Lerp(basis.hasDescriptiveNormPrior
                         ? basis.descriptiveNormPrior : basis.mean,
                         observedNorm, 0.35f);
-                float nextSalience = basis == null ? observedSalience
+                float nextSalience = !hasAppraisal ? basis?.salience ?? 0f
+                    : basis == null ? observedSalience
                     : Mathf.Lerp(basis.salience, observedSalience, 0.25f);
-                float nextNormStrength = basis == null
+                float nextNormStrength = !hasAppraisal
+                    ? basis?.normStrength ?? 0f : basis == null
                     ? observedNormStrength : Mathf.Lerp(basis.normStrength,
                         observedNormStrength, 0.25f);
                 bool substantive = basis == null
@@ -2127,7 +2386,8 @@ namespace ColonistAwareness
                             questionKey = questionKey,
                             populationScope = population,
                             visibility = 0.65f,
-                            sourceConfidence = Mathf.Clamp01(coverage),
+                            sourceConfidence = hasAppraisal
+                                ? Mathf.Clamp01(coverage) : 0.20f,
                             toleranceForDivergence = 0.50f
                         };
                     culture.localQuestions.Add(current);
@@ -2151,9 +2411,12 @@ namespace ColonistAwareness
                 current.descriptiveNormPrior = Mathf.Clamp(nextNorm, -1f, 1f);
                 current.salience = Mathf.Clamp01(nextSalience);
                 current.normStrength = Mathf.Clamp01(nextNormStrength);
-                current.sourceConfidence = Mathf.Clamp01(Mathf.Max(
-                    current.sourceConfidence, coverage));
-                current.provenance = "sustained represented social response";
+                if (hasAppraisal)
+                    current.sourceConfidence = Mathf.Clamp01(Mathf.Max(
+                        current.sourceConfidence, coverage));
+                current.provenance = hasAppraisal
+                    ? "sustained represented social response"
+                    : "sustained represented state";
                 current.sourceIdentity = scope ?? "represented population";
                 current.evidenceSignature = evidenceSignature;
                 if (current.firstRecordedTick < 0)
@@ -2171,7 +2434,9 @@ namespace ColonistAwareness
                 value => value, StringComparer.Ordinal));
             string populationScopes = string.Join(", ", changedScopes.OrderBy(
                 value => value, StringComparer.Ordinal));
-            Record(culture, "sustained represented social response",
+            Record(culture, changedDimensions.Any(value => value == "mean")
+                    ? "sustained represented social response"
+                    : "sustained represented state",
                 "Recorded change in " + subjects + ": " + dimensions + ".",
                 successor, tick, predecessor, CASocialPatternKernel.StableHash(
                     string.Join("|", evidenceSignatures.OrderBy(value => value,
@@ -3379,6 +3644,14 @@ namespace ColonistAwareness
                     "Violence, captivity, and punishment",
                 CACultureQuestionLayer.KnowledgeTradition =>
                     "Knowledge and tradition",
+                CACultureQuestionLayer.BodyHealthDeath =>
+                    "Body, health, and death",
+                CACultureQuestionLayer.FoodSubstances =>
+                    "Food and substances",
+                CACultureQuestionLayer.AnimalsEnvironment =>
+                    "Animals and the environment",
+                CACultureQuestionLayer.DailyLifeTechnology =>
+                    "Daily life and technology",
                 _ => "Culture"
             };
         }
@@ -3718,8 +3991,8 @@ namespace ColonistAwareness
             if (ideoligionComparison
                     != CACultureIdeoligionComparison.Single
                 || ideoligion == null) return null;
-            if (definition.IdeoligionAdapters == null
-                || definition.IdeoligionAdapters.Length == 0)
+            if (!CAIdeoligionSemanticAdapterRegistry.HasQuestion(
+                    definition.Key))
                 return "No related Ideoligion precept";
             float pressure = CACultureIdeoligionAdapter.Pressure(
                 ideoligion, definition.Key, out string source);
@@ -3766,23 +4039,7 @@ namespace ColonistAwareness
 
         private static string IdeoligionSourceLabel(string source)
         {
-            string key = source?.Replace("precept:", "")
-                .Replace("meme:", "")
-                .Replace("precepts:", "");
-            if (key.NullOrEmpty()) return "Ideoligion";
-            string[] parts = key.Split(new[] { '+' },
-                StringSplitOptions.None);
-            var labels = new List<string>();
-            foreach (string part in parts)
-            {
-                PreceptDef precept = DefDatabase<PreceptDef>.GetNamedSilentFail(
-                    part);
-                MemeDef meme = DefDatabase<MemeDef>.GetNamedSilentFail(part);
-                labels.Add(precept?.LabelCap.ToString()
-                    ?? meme?.LabelCap.ToString()
-                    ?? "a related Ideoligion rule");
-            }
-            return string.Join(" and ", labels.Distinct());
+            return CAIdeoligionSemanticAdapterRegistry.SourceLabel(source);
         }
 
         private static float FloatSlider(ref float y, float width,
@@ -3855,10 +4112,14 @@ namespace ColonistAwareness
 
         private static string LegacyEvidenceLabel(CACultureLegacyEvidence value)
         {
-            string question = CACultureQuestionRegistry.QuestionForSocialSubject(
-                value?.sourceKey);
-            return CACultureQuestionRegistry.Find(question)?.Label
-                ?? "unmapped historical evidence";
+            string[] labels = CACultureQuestionRegistry
+                .AdaptersForSocialSubject(value?.sourceKey)
+                .Select(adapter => CACultureQuestionRegistry
+                    .Find(adapter.QuestionKey)?.Label)
+                .Where(label => !label.NullOrEmpty())
+                .Distinct(StringComparer.Ordinal).ToArray();
+            return labels.Length == 0 ? "unmapped historical evidence"
+                : string.Join("; ", labels);
         }
 
         private static string LegacyEvidenceDisposition(
@@ -4145,14 +4406,8 @@ namespace ColonistAwareness
                 CACultureDistributionSummary summary =
                     CACultureDistributionKernel.Summarize(distribution,
                         culture.id ?? distribution.questionKey);
-                string consumers = string.Join(", ", new[]
-                    {
-                        definition?.BehaviorConsumers,
-                        definition?.PoliticalConsumers,
-                        definition?.InstitutionConsumers,
-                        definition?.KnowledgeConsumers
-                    }.Where(items => items != null)
-                    .SelectMany(items => items).Distinct());
+                string consumers = CACultureQuestionExecutionRoutes
+                    .PlayerSummary(distribution.questionKey);
                 string detail = "Most people favor "
                     + (definition == null ? Signed(distribution.mean)
                         : definition.Anchors[CACultureDistributionKernel
@@ -4164,8 +4419,8 @@ namespace ColonistAwareness
                     + ToleranceWords(distribution.toleranceForDivergence)
                     + ". Pressure to conform is "
                     + PressureWords(distribution.normStrength)
-                    + ".\nAffects: "
-                    + (consumers.NullOrEmpty() ? "nothing yet"
+                    + ".\nObserved through: "
+                    + (consumers.NullOrEmpty() ? "no represented evidence yet"
                         : consumers) + ".\nChange during play: "
                     + HistoricalDrift(culture, distribution.questionKey)
                     + ".";
@@ -4262,10 +4517,14 @@ namespace ColonistAwareness
 
         private static string LegacyEvidenceLabel(CACultureLegacyEvidence value)
         {
-            string question = CACultureQuestionRegistry.QuestionForSocialSubject(
-                value?.sourceKey);
-            return CACultureQuestionRegistry.Find(question)?.Label
-                ?? "unmapped historical evidence";
+            string[] labels = CACultureQuestionRegistry
+                .AdaptersForSocialSubject(value?.sourceKey)
+                .Select(adapter => CACultureQuestionRegistry
+                    .Find(adapter.QuestionKey)?.Label)
+                .Where(label => !label.NullOrEmpty())
+                .Distinct(StringComparer.Ordinal).ToArray();
+            return labels.Length == 0 ? "unmapped historical evidence"
+                : string.Join("; ", labels);
         }
 
         private static string LegacyEvidenceDisposition(

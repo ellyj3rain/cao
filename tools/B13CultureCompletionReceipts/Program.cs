@@ -14,7 +14,8 @@ internal static class Program
 
     private static int Main(string[] args)
     {
-        if (args.Length != 3)
+        bool verifyOnly = args.Length == 4 && args[3] == "--verify-only";
+        if (args.Length != 3 && !verifyOnly)
         {
             Console.Error.WriteLine(
                 "usage: B13CultureCompletionReceipts <repo> <active> <mirror>");
@@ -32,7 +33,7 @@ internal static class Program
         PersistenceReceipts();
         FixtureReceipts(active, mirror);
         ResearchReceipts();
-        WriteReceipts(active, mirror);
+        if (!verifyOnly) WriteReceipts(active, mirror);
 
         int passed = Results.Count(value => value.Passed);
         foreach (Result result in Results)
@@ -49,14 +50,17 @@ internal static class Program
         Add("Culture registry validates",
             CACultureQuestionRegistry.ValidationFailure() == null,
             CACultureQuestionRegistry.ValidationFailure() ?? "no failure");
-        Add("twenty-four stable questions",
-            all.Count == 24 && all.Select(value => value.Key).Distinct(
-                StringComparer.Ordinal).Count() == 24,
+        Add("stable Culture questions",
+            all.Count == CACultureQuestionRegistry.FixedQuestionCount
+                && all.Select(value => value.Key).Distinct(
+                    StringComparer.Ordinal).Count()
+                    == CACultureQuestionRegistry.FixedQuestionCount,
             $"count={all.Count}; registry={CACultureQuestionRegistry.CurrentVersion}");
-        Add("eight categories contain three questions each",
-            all.GroupBy(value => value.Layer).Count() == 8
-                && all.GroupBy(value => value.Layer)
-                    .All(group => group.Count() == 3),
+        Add("every current Culture category is represented",
+            all.GroupBy(value => value.Layer).Count()
+                == Enum.GetValues<CACultureQuestionLayer>().Length
+                && Enum.GetValues<CACultureQuestionLayer>().All(layer =>
+                    all.Any(value => value.Layer == layer)),
             string.Join("; ", all.GroupBy(value => value.Layer).Select(
                 group => group.Key + "=" + group.Count())));
         Add("every question has five ordered anchors",
@@ -64,12 +68,12 @@ internal static class Program
                 && value.AnchorCenters.Length == 5
                 && value.AnchorCenters.Zip(value.AnchorCenters.Skip(1))
                     .All(pair => pair.First < pair.Second)),
-            "24/24 use centered, strictly ordered five-anchor scales");
+            $"{all.Count}/{all.Count} use centered, strictly ordered five-anchor scales");
         Add("every question names evidence, research, and a consumer",
             all.All(value => value.HistoricalSources.Length > 0
                 && value.ResearchProvenance.Length > 0
                 && ConsumerCount(value) > 0),
-            "24/24 definitions carry causal and research provenance");
+            $"{all.Count}/{all.Count} definitions carry causal and research provenance");
     }
 
     private static void AuthoringReceipts()
@@ -103,12 +107,13 @@ internal static class Program
             CACulturePresetLibrary.ValidationFailure()
                 ?? "22 complete component presets use one social-or-historical Culture catalog axis");
         Add("every preset specifies the full registry",
-            CACulturePresetLibrary.All.All(preset => preset.Values.Count == 24
+            CACulturePresetLibrary.All.All(preset => preset.Values.Count
+                    == CACultureQuestionRegistry.FixedQuestionCount
                 && preset.Values.Select(value => value.QuestionKey)
                     .ToHashSet(StringComparer.Ordinal).SetEquals(
                         CACultureQuestionRegistry.All.Select(value =>
                             value.Key))),
-            "22/22 presets specify 24 unique question values");
+            $"22/22 presets specify {CACultureQuestionRegistry.FixedQuestionCount} unique question values");
         Add("preset profiles are substantively distinct",
             CACulturePresetLibrary.All.Select(preset => string.Join(",",
                     preset.Values.Select(value => value.Mean.ToString("0.00"))))
@@ -136,9 +141,11 @@ internal static class Program
             CACulturePresetLibrary.All[1], "receipt:preset-two");
         Add("preset application writes the same Culture object",
             ReferenceEquals(reference, sameObject)
-                && sameObject.inheritedQuestions.Count == 24
-                && sameObject.questionRegistryVersion == 2,
-            "second preset replaces the same 24 question distributions; no mode object");
+                && sameObject.inheritedQuestions.Count
+                    == CACultureQuestionRegistry.FixedQuestionCount
+                && sameObject.questionRegistryVersion
+                    == CACultureQuestionRegistry.CurrentVersion,
+            $"second preset replaces the same {CACultureQuestionRegistry.FixedQuestionCount} question distributions; no mode object");
         var authoredRandom = new CACulture();
         CACultureAuthoringKernel.Randomize(authoredRandom,
             "receipt:authorship");
@@ -169,7 +176,8 @@ internal static class Program
         CACultureAuthoringKernel.Randomize(randomA, "b13-fixed-seed");
         CACultureAuthoringKernel.Randomize(randomB, "b13-fixed-seed");
         Add("Culture randomization is complete and deterministic",
-            randomA.inheritedQuestions.Count == 24
+            randomA.inheritedQuestions.Count
+                == CACultureQuestionRegistry.FixedQuestionCount
                 && CACultureDistributionKernel.Fingerprint(
                     randomA.inheritedQuestions)
                     == CACultureDistributionKernel.Fingerprint(
@@ -177,7 +185,7 @@ internal static class Program
                 && randomA.inheritedQuestions.All(value =>
                     CACultureDistributionKernel.ValidationFailure(value)
                         == null),
-            "fixed seed produced 24 valid distributions with one fingerprint");
+            $"fixed seed produced {CACultureQuestionRegistry.FixedQuestionCount} valid distributions with one fingerprint");
 
         var reopened = new CACulture();
         string identity = "receipt:reopened-editor";
@@ -202,11 +210,13 @@ internal static class Program
         int added = CACultureAuthoringKernel.CompleteMissing(authored,
             "completion-seed", "receipt:completion");
         Add("completion preserves authored Culture state",
-            added == 23 && authored.inheritedQuestions.Count == 24
+            added == CACultureQuestionRegistry.FixedQuestionCount - 1
+                && authored.inheritedQuestions.Count
+                    == CACultureQuestionRegistry.FixedQuestionCount
                 && authoredBefore == CACultureDistributionKernel.Fingerprint(
                     authored.inheritedQuestions.Single(value =>
                         value.questionKey == CACultureQuestionRegistry.All[0].Key)),
-            "23 absent rows added; authored row and provenance unchanged");
+            $"{CACultureQuestionRegistry.FixedQuestionCount - 1} absent rows added; authored row and provenance unchanged");
 
         CACulture stableA = CultureWithQuestion(0, 0.2f, "a");
         CACulture stableB = CultureWithQuestion(1, -0.2f, "b");
@@ -517,7 +527,8 @@ internal static class Program
                 "Source/PropositionKnowledgeModule.cs"
         };
         foreach (CACultureQuestionDef definition in
-            CACultureQuestionRegistry.All)
+            CACultureQuestionRegistry.All.Take(
+                CACultureQuestionRegistry.LegacyQuestionCount))
             if (!expectedRoutes.ContainsKey(definition.Key))
                 expectedRoutes[definition.Key] =
                     "Source/CulturalPoliticsStateModule.cs";
@@ -527,7 +538,7 @@ internal static class Program
         Add("every Culture question reaches its designated production consumer",
             missing.Length == 0,
             missing.Length == 0
-                ? "24/24 exact question constants occur in designated relationship, political, office, or knowledge consumers"
+                ? $"{CACultureQuestionRegistry.LegacyQuestionCount}/{CACultureQuestionRegistry.LegacyQuestionCount} B13 question constants remain in designated relationship, political, office, or knowledge consumers"
                 : "missing: " + string.Join(", ", missing));
 
         var direct = new HashSet<string>(StringComparer.Ordinal)
@@ -542,8 +553,10 @@ internal static class Program
         };
         Add("all questions have a historical feedback route",
             CACultureQuestionRegistry.All.All(value => direct.Contains(
-                    value.Key) || value.SocialSubjectAdapters.Length > 0),
-            "7 direct represented-fact routes plus 17 exact social-subject adapters");
+                    value.Key) || value.SocialSubjectAdapters.Length > 0
+                || value.PracticeEvidenceAdapters.Length > 0
+                || value.IdeoligionAdapters.Length > 0),
+            "every question names a direct, subject, practice, or doctrine evidence route");
 
         string longitudinal = S("Source/CultureLongitudinalModule.cs");
         string culture = S("Source/FactionCultureBeliefsModule.cs");
@@ -687,7 +700,7 @@ internal static class Program
         string state = S("Source/CulturalCognitionStateModule.cs");
         string preflight = S("Source/CampaignCompatibilityPreflightKernel.cs");
         Add("campaign catalog records the B13 cognition schema",
-            CACampaignSchemaCatalog.CurrentCatalogVersion == 4
+            CACampaignSchemaCatalog.CurrentCatalogVersion == 5
                 && CACampaignSchemaCatalog.TryFind(
                     "world.cultural-cognition", out var cognition)
                 && cognition.CurrentVersion == 2
@@ -698,7 +711,7 @@ internal static class Program
                     StringComparison.Ordinal)
                 && state.Contains("CA_culturalCognitionOwnerVersion",
                     StringComparison.Ordinal),
-            "catalog=4 retains the cultural-cognition schema-2 owner introduced in 2 and admits no schema-1 payload");
+            "catalog=5 retains the cultural-cognition schema-2 owner introduced in 2 and admits no schema-1 payload");
         Add("durable attitudes persist the separated causal facts",
             state.Contains("CurrentSchemaVersion = 2",
                     StringComparison.Ordinal)
@@ -732,24 +745,29 @@ internal static class Program
             validFailures.Count == 0
                 ? "explicit zero values pass; an omitted observationLikelihood fails"
                 : "valid payload failures: " + string.Join("; ", validFailures));
-        Add("preflight requires Culture registry two",
+        Add("preflight requires the schema-owned Culture registry",
             preflight.Contains(
-                "RequireInteger(culture, \"questionRegistryVersion\", 2, 2",
-                StringComparison.Ordinal),
-            "nested Culture payload validation admits only registry 2");
+                "int requiredRegistry = savedSchemaVersion == 10 ? 2 : 3;",
+                StringComparison.Ordinal)
+                && preflight.Contains(
+                    "RequireInteger(culture, \"questionRegistryVersion\",",
+                    StringComparison.Ordinal),
+            "schema 10 admits registry 2 for supported migration; current schema 11 admits only registry 3");
         string uncertaintyMap = Between(state,
             "internal static float UncertaintyForQuestion",
             "// Versioned, conservative question loadings");
         string directionMap = Between(state,
             "internal static float PositionShiftForQuestion",
             "private static float Center");
-        string[] directionalKeys = CACultureQuestionRegistry.All
+        string[] directionalKeys = CACultureQuestionRegistry.All.Take(
+                CACultureQuestionRegistry.LegacyQuestionCount)
             .Where(value => value.Key
                 != CACultureQuestionRegistry.GenderDistribution)
             .Select(value => value.Key).ToArray();
         Add("psychology supplies explicit question-specific detail",
             state.Contains("mappingVersion", StringComparison.Ordinal)
-                && CACultureQuestionRegistry.All.All(definition =>
+                && CACultureQuestionRegistry.All.Take(
+                    CACultureQuestionRegistry.LegacyQuestionCount).All(definition =>
                     uncertaintyMap.Contains("\"" + definition.Key + "\"",
                         StringComparison.Ordinal))
                 && directionalKeys.All(key => directionMap.Contains(
@@ -757,7 +775,7 @@ internal static class Program
                 && directionMap.Contains(
                     "\"authority.genderDistribution\" => 0f",
                     StringComparison.Ordinal),
-            "24/24 questions have uncertainty mappings; 23 have bounded directional loadings; gender authority has no personality-derived sex preference");
+            $"the original {CACultureQuestionRegistry.LegacyQuestionCount} questions retain explicit psychology mappings; gender authority has no personality-derived sex preference");
 
         string knowledge = S("Source/PropositionKnowledgeModule.cs");
         string compactKnowledge = Compact(knowledge);
@@ -824,7 +842,7 @@ internal static class Program
             activeBytes.SequenceEqual(mirrorBytes),
             "SHA-256=" + Sha(activeBytes));
         Add("fixture preserves authored identity and composition",
-            Value(document.Root, "authoringDataEpoch") == "13"
+            Value(document.Root, "authoringDataEpoch") == "14"
                 && Value(plan, "regionalId") == "CA-RG-EB596A12"
                 && Value(plan, "candidateId") == "613b1fe44104"
                 && Value(plan, "startTileId") == "389638"
@@ -860,9 +878,9 @@ internal static class Program
             List<XElement> roots = Items(culture, "inheritedQuestions")
                 .Concat(Items(culture, "localQuestions")).Where(value =>
                     Scope(value) == "*").ToList();
-            return Value(culture, "schemaVersion") == "10"
-                && Value(culture, "questionRegistryVersion") == "2"
-                && roots.Count == 24
+            return Value(culture, "schemaVersion") == "11"
+                && Value(culture, "questionRegistryVersion") == "3"
+                && roots.Count == CACultureQuestionRegistry.FixedQuestionCount
                 && roots.Select(value => Value(value, "questionKey"))
                     .ToHashSet(StringComparer.Ordinal).SetEquals(
                         CACultureQuestionRegistry.All.Select(value =>
@@ -870,19 +888,28 @@ internal static class Program
         });
         Add("fixture carries complete current Culture state",
             complete,
-            "8 schema-10 registry-2 records each contain 24 root distributions");
+            $"8 schema-11 registry-3 records each contain {CACultureQuestionRegistry.FixedQuestionCount} root distributions");
         int questionCount = cultures.Sum(value =>
             Items(value, "inheritedQuestions").Count()
                 + Items(value, "localQuestions").Count());
         int evidenceCount = cultures.Sum(value =>
             Items(value, "legacyEvidence").Count());
+        int quarantinedCount = cultures.SelectMany(value =>
+                Items(value, "legacyEvidence"))
+            .Count(value => Value(value, "sourceLayer")
+                    == "B16 governed fixture repair"
+                && Value(value, "disposition").Contains(
+                    "not a constituent", StringComparison.Ordinal));
         Add("prior authored and migration evidence remains intact",
-            questionCount == 290 && evidenceCount == 25
+            questionCount >= cultures.Length
+                    * CACultureQuestionRegistry.FixedQuestionCount
+                && quarantinedCount == 1
+                && evidenceCount == 26
                 && cultures.SelectMany(value => Items(value,
                     "legacyEvidence")).Any(value =>
                     Value(value, "sourceKey")
                         == "ca.property.compulsory_transfer"),
-            $"290 distributions include 192 complete roots and 98 represented population or local facts; {evidenceCount} evidence records retained");
+            $"{questionCount} current distributions retain 289 live pre-B16 distributions, add registry-3 coverage to represented scopes, and preserve one orphaned former distribution among {evidenceCount} evidence records");
         string roundTrip = document.ToString(SaveOptions.DisableFormatting);
         XDocument readback = XDocument.Parse(roundTrip);
         XElement[] readbackCultures = readback.Descendants().Where(value =>
@@ -948,11 +975,11 @@ internal static class Program
 | SHA-256 | `{Sha(bytes)}` on both files |
 | Identity | `{Value(plan, "regionalId")}` / `{Value(plan, "candidateId")}` / arrival `{Value(plan, "startTileId")}` / map `{Value(plan, "mapSize")}` |
 | Composition | {Items(plan, "factions").Count()} factions / {settlements.Length} settlements / {settlements.SelectMany(value => Items(value, "populationGroups")).Count()} population groups / {settlements.SelectMany(value => Items(value, "operationalFacts")).Count()} established program facts |
-| Culture | {cultures.Length} schema-10 registry-2 records / {cultures.Sum(value => Items(value, "inheritedQuestions").Count() + Items(value, "localQuestions").Count())} distributions / {cultures.Sum(value => Items(value, "legacyEvidence").Count())} preserved source records |
-| Completeness | Every Culture contains the same 24 root question identities as `CACultureQuestionRegistry`; the 2 constituent-scoped local distributions remain separate. |
+| Culture | {cultures.Length} schema-11 registry-{CACultureQuestionRegistry.CurrentVersion} records / {cultures.Sum(value => Items(value, "inheritedQuestions").Count() + Items(value, "localQuestions").Count())} distributions / {cultures.Sum(value => Items(value, "legacyEvidence").Count())} preserved source records |
+| Completeness | Every Culture contains the same {CACultureQuestionRegistry.FixedQuestionCount} root question identities as `CACultureQuestionRegistry`; constituent-scoped distributions remain separate. |
 | Readback | Faction ownership resolves, settlement population shares total 100, and all Culture state survives XML serialization/readback. |
 
-The current runtime fixture retains 290 Culture distributions and 25 source-evidence records, preserves the current plan identity and 3-faction/4-settlement composition, and is byte-identical to its governed mirror.
+The current runtime fixture retains {cultures.Sum(value => Items(value, "inheritedQuestions").Count() + Items(value, "localQuestions").Count())} Culture distributions and {cultures.Sum(value => Items(value, "legacyEvidence").Count())} source-evidence records, preserves the current plan identity and 3-faction/4-settlement composition, and is byte-identical to its governed mirror.
 """;
         File.WriteAllText(Path.Combine(repo, "B13_FIXTURE_RECEIPT.md"),
             fixture, new UTF8Encoding(false));

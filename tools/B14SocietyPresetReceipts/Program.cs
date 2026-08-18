@@ -15,7 +15,12 @@ internal static class Program
 
     private static int Main(string[] args)
     {
-        if (args.Length != 2)
+        bool verifyOnly = args.Length >= 3
+            && args[^1] == "--verify-only";
+        bool explicitAssembly = args.Length >= 3
+            && args[2] != "--verify-only";
+        if (args.Length < 2 || args.Length > 4
+            || (args.Length == 4 && !verifyOnly))
         {
             Console.Error.WriteLine("usage: B14SocietyPresetReceipts "
                 + "<repo> <rimworld-managed-directory>");
@@ -32,7 +37,8 @@ internal static class Program
         })
             Assembly.LoadFrom(Path.Combine(managed, file));
 
-        string dll = Path.Combine(repo, "Assemblies", "ColonistAwareness.dll");
+        string dll = explicitAssembly ? Path.GetFullPath(args[2])
+            : Path.Combine(repo, "Assemblies", "ColonistAwareness.dll");
         Assembly assembly = Assembly.LoadFrom(dll);
         Type societyLibrary = RequiredType(assembly,
             "ColonistAwareness.CASocietyPresetLibrary");
@@ -43,6 +49,8 @@ internal static class Program
         Type cultureType = RequiredType(assembly, "ColonistAwareness.CACulture");
         Type politicalType = RequiredType(assembly,
             "ColonistAwareness.CAPoliticalBeliefs");
+        Type knowledgeType = RequiredType(assembly,
+            "ColonistAwareness.CATechnologicalKnowledge");
         Type userProfileType = RequiredType(assembly,
             "ColonistAwareness.CAUserSocietyProfile");
         Type userAdapterType = RequiredType(assembly,
@@ -72,30 +80,36 @@ internal static class Program
             object preset = presets[index];
             object culture = Activator.CreateInstance(cultureType)!;
             object political = Activator.CreateInstance(politicalType)!;
-            Apply(tryApply, preset, culture, political, "receipt:" + index);
+            object knowledge = Activator.CreateInstance(knowledgeType)!;
+            Apply(tryApply, preset, culture, political, knowledge,
+                "receipt:" + index);
 
             string key = StringProperty(preset, "Key");
             string cultureName = StringField(culture, "name");
             Require(!string.IsNullOrWhiteSpace(cultureName),
                 key + " did not create a Culture name");
-            Require(ListCount(culture, "inheritedQuestions") == 24,
-                key + " did not set 24 Culture values");
+            Require(ListCount(culture, "inheritedQuestions") == 48,
+                key + " did not set 48 Culture values");
             Require(ListCount(political, "questions") == 26,
                 key + " did not set 26 Political Order questions");
+            Require(ListCount(knowledge, "domains") == 9,
+                key + " did not set nine Technological Knowledge domains");
             object ownedPolitical = RequiredField(preset.GetType(),
                 "PoliticalOrderValues").GetValue(preset)!;
             Require(ListCount(ownedPolitical, "questions") == 26,
                 key + " does not own a complete Political Order snapshot");
             Require(StringProperty(match.Invoke(null,
-                    new[] { culture, political }), "Key") == key,
+                    new[] { culture, political, knowledge }), "Key") == key,
                 key + " did not match after application");
 
             object cultureCopy = RequiredMethod(cultureType, "Copy")
                 .Invoke(culture, Array.Empty<object>())!;
             object politicalCopy = RequiredMethod(politicalType, "Copy")
                 .Invoke(political, Array.Empty<object>())!;
+            object knowledgeCopy = CopyKnowledge(knowledgeType, knowledge);
             Require(StringProperty(match.Invoke(null,
-                    new[] { cultureCopy, politicalCopy }), "Key") == key,
+                    new[] { cultureCopy, politicalCopy, knowledgeCopy }),
+                    "Key") == key,
                 key + " did not match after deep copy");
             rows.Add(new Row(key, StringProperty(preset, "Label"),
                 StringProperty(preset, "CatalogGroup"),
@@ -103,7 +117,7 @@ internal static class Program
                 StringProperty(preset, "ApproximatePeriod"),
                 StringField(preset, "CulturePresetKey"), cultureName,
                 StringField(preset, "PoliticalOrderPresetKey"),
-                PairHash(culture, political)));
+                CompositionHash(culture, political, knowledge)));
         }
 
         // The type itself must permit multiple independently named Society
@@ -117,15 +131,17 @@ internal static class Program
             "a second Society identity could not reuse a Culture component");
         object alternateCulture = Activator.CreateInstance(cultureType)!;
         object alternatePolitical = Activator.CreateInstance(politicalType)!;
+        object alternateKnowledge = Activator.CreateInstance(knowledgeType)!;
         Apply(tryApply, alternate, alternateCulture, alternatePolitical,
-            "receipt:independent");
+            alternateKnowledge, "receipt:independent");
 
         // Matching must cover every causal inherited-Culture field. Changing
         // a less prominent field must end the derived preset match.
         object matchCulture = Activator.CreateInstance(cultureType)!;
         object matchPolitical = Activator.CreateInstance(politicalType)!;
+        object matchKnowledge = Activator.CreateInstance(knowledgeType)!;
         Apply(tryApply, presets[0], matchCulture, matchPolitical,
-            "receipt:match-negative");
+            matchKnowledge, "receipt:match-negative");
         IList inheritedQuestions = (IList)RequiredField(cultureType,
             "inheritedQuestions").GetValue(matchCulture)!;
         object firstQuestion = inheritedQuestions[0]!;
@@ -134,7 +150,7 @@ internal static class Program
         confidence.SetValue(firstQuestion,
             (float)confidence.GetValue(firstQuestion)! - 0.01f);
         object afterCultureMutation = match.Invoke(null,
-            new[] { matchCulture, matchPolitical });
+            new[] { matchCulture, matchPolitical, matchKnowledge });
         Require(afterCultureMutation == null
                 || StringProperty(afterCultureMutation, "Key")
                     != StringProperty(presets[0], "Key"),
@@ -142,43 +158,51 @@ internal static class Program
 
         object retainedCulture = Activator.CreateInstance(cultureType)!;
         object retainedPolitical = Activator.CreateInstance(politicalType)!;
+        object retainedKnowledge = Activator.CreateInstance(knowledgeType)!;
         Apply(tryApply, presets[0], retainedCulture, retainedPolitical,
-            "receipt:retained");
-        string beforeReject = PairHash(retainedCulture, retainedPolitical);
+            retainedKnowledge, "receipt:retained");
+        string beforeReject = CompositionHash(retainedCulture,
+            retainedPolitical, retainedKnowledge);
         object invalid = NewBuiltIn(presets[0], "receipt-invalid",
             "Invalid society", "missing-culture-preset");
         object[] rejected = { invalid, retainedCulture, retainedPolitical,
-            "receipt:invalid", null };
+            retainedKnowledge, "receipt:invalid", null };
         bool accepted = (bool)tryApply.Invoke(null, rejected)!;
-        Require(!accepted && !string.IsNullOrWhiteSpace(rejected[4] as string),
+        Require(!accepted && !string.IsNullOrWhiteSpace(rejected[5] as string),
             "invalid preset was not visibly rejected");
-        Require(PairHash(retainedCulture, retainedPolitical) == beforeReject,
-            "rejected preset changed one or both target models");
+        Require(CompositionHash(retainedCulture, retainedPolitical,
+                retainedKnowledge) == beforeReject,
+            "rejected preset changed one or more target models");
 
         Apply(tryApply, presets[1], retainedCulture, retainedPolitical,
-            "receipt:replacement");
+            retainedKnowledge, "receipt:replacement");
         Require(StringProperty(match.Invoke(null,
-                new[] { retainedCulture, retainedPolitical }), "Key")
+                new[] { retainedCulture, retainedPolitical,
+                    retainedKnowledge }), "Key")
             == StringProperty(presets[1], "Key"),
-            "a second preset did not replace both prior components");
+            "a second preset did not replace all prior components");
 
-        // Culture-only and Political-Order-only substitutions must leave the
-        // sibling component byte-for-byte equivalent at the data level.
+        // Component substitutions must leave both sibling components
+        // byte-for-byte equivalent at the data level.
         Apply(tryApply, presets[0], retainedCulture, retainedPolitical,
-            "receipt:isolation");
+            retainedKnowledge, "receipt:isolation");
         string politicalBeforeCulture = ObjectHash(retainedPolitical);
+        string knowledgeBeforeCulture = ObjectHash(retainedKnowledge);
         string cultureBeforeCulture = ObjectHash(retainedCulture);
         MethodInfo applyCulture = RequiredMethod(cultureLibrary, "Apply");
         applyCulture.Invoke(null, new[] { retainedCulture, culturePresets[1],
             "receipt:culture-only" });
         Require(ObjectHash(retainedPolitical) == politicalBeforeCulture,
             "Culture substitution changed Political Order");
+        Require(ObjectHash(retainedKnowledge) == knowledgeBeforeCulture,
+            "Culture substitution changed Technological Knowledge");
         Require(ObjectHash(retainedCulture) != cultureBeforeCulture,
             "Culture substitution did not change Culture");
 
         Apply(tryApply, presets[0], retainedCulture, retainedPolitical,
-            "receipt:isolation-reset");
+            retainedKnowledge, "receipt:isolation-reset");
         string cultureBeforePolitics = ObjectHash(retainedCulture);
+        string knowledgeBeforePolitics = ObjectHash(retainedKnowledge);
         string politicalBeforePolitics = ObjectHash(retainedPolitical);
         IList politicalPresets = ((IEnumerable)RequiredField(politicalModel,
             "Presets").GetValue(null)!).Cast<object>().ToList();
@@ -192,13 +216,15 @@ internal static class Program
                 Enum.Parse(axisSource, "Authored") });
         Require(ObjectHash(retainedCulture) == cultureBeforePolitics,
             "Political Order substitution changed Culture");
+        Require(ObjectHash(retainedKnowledge) == knowledgeBeforePolitics,
+            "Political Order substitution changed Technological Knowledge");
         Require(ObjectHash(retainedPolitical) != politicalBeforePolitics,
             "Political Order substitution did not change Political Order");
 
-        // A saved Society is a deep two-component snapshot. Applying an
+        // A saved Society is a deep three-component snapshot. Applying an
         // independently copied representation reaches the same atomic path.
         Apply(tryApply, presets[2], retainedCulture, retainedPolitical,
-            "receipt:saved-source");
+            retainedKnowledge, "receipt:saved-source");
         object userProfile = Activator.CreateInstance(userProfileType)!;
         RequiredField(userProfileType, "key").SetValue(userProfile,
             "user-society:receipt");
@@ -214,6 +240,12 @@ internal static class Program
             cultureTemplate);
         RequiredField(userProfileType, "politicalOrderValues").SetValue(
             userProfile, politicalTemplate);
+        object technologyTemplate = CopyKnowledge(knowledgeType,
+            retainedKnowledge);
+        RequiredField(knowledgeType, "id").SetValue(technologyTemplate, null);
+        RequiredField(userProfileType,
+            "technologicalKnowledgeValues").SetValue(userProfile,
+                technologyTemplate);
         object copiedProfile = RequiredMethod(userProfileType, "CopyAs")
             .Invoke(userProfile, new object[] { "user-society:readback",
                 "Receipt society readback" })!;
@@ -225,30 +257,34 @@ internal static class Program
             new[] { readProfile }, CultureInfo.InvariantCulture)!;
         object savedCulture = Activator.CreateInstance(cultureType)!;
         object savedPolitical = Activator.CreateInstance(politicalType)!;
+        object savedKnowledge = Activator.CreateInstance(knowledgeType)!;
         Apply(tryApply, adapter, savedCulture, savedPolitical,
-            "receipt:saved-readback");
+            savedKnowledge, "receipt:saved-readback");
         Require((bool)RequiredMethod(userAdapterType, "Matches").Invoke(adapter,
-                new[] { savedCulture, savedPolitical })!,
+                new[] { savedCulture, savedPolitical, savedKnowledge })!,
             "saved Society snapshot did not match after Scribe readback");
 
         Require(!cultureType.GetFields(All).Any(field => field.Name
                 .Contains("societyPreset", StringComparison.OrdinalIgnoreCase))
             && !politicalType.GetFields(All).Any(field => field.Name
+                .Contains("societyPreset", StringComparison.OrdinalIgnoreCase))
+            && !knowledgeType.GetFields(All).Any(field => field.Name
                 .Contains("societyPreset", StringComparison.OrdinalIgnoreCase)),
             "canonical world state retains Society preset ownership");
 
         string receipt = Path.Combine(repo, "Receipts", "B14",
             "B14_SOCIETY_PRESET_EXECUTION_RECEIPT.md");
         Directory.CreateDirectory(Path.GetDirectoryName(receipt)!);
-        File.WriteAllText(receipt, Render(rows, rejected[4] as string, dll),
+        if (!verifyOnly) File.WriteAllText(receipt,
+            Render(rows, rejected[5] as string, dll),
             new UTF8Encoding(false));
         Console.WriteLine("PASS " + rows.Count + "/" + presets.Count
             + " built-in Society presets applied and matched after deep copy");
         Console.WriteLine("PASS every built-in Society owns a complete Political Order snapshot");
         Console.WriteLine("PASS causal Culture mutation ends the derived Society match");
         Console.WriteLine("PASS independent Society identity can reuse a Culture reference");
-        Console.WriteLine("PASS invalid application rolled back both component states");
-        Console.WriteLine("PASS Culture-only and Political-Order-only substitutions are isolated");
+        Console.WriteLine("PASS invalid application rolled back all component states");
+        Console.WriteLine("PASS Culture-only and Political-Order-only substitutions are isolated from sibling components");
         Console.WriteLine("PASS saved Society snapshot applied after Scribe serialization and readback");
         Console.WriteLine(receipt);
         return 0;
@@ -320,15 +356,23 @@ internal static class Program
     }
 
     private static void Apply(MethodInfo method, object preset, object culture,
-        object political, string source)
+        object political, object knowledge, string source)
     {
-        object[] values = { preset, culture, political, source, null };
+        object[] values = { preset, culture, political, knowledge, source,
+            null };
         bool applied = (bool)method.Invoke(null, values)!;
-        Require(applied, StringProperty(preset, "Key") + ": " + values[4]);
+        Require(applied, StringProperty(preset, "Key") + ": " + values[5]);
     }
 
-    private static string PairHash(object culture, object political) =>
-        ObjectHash(culture) + ":" + ObjectHash(political);
+    private static object CopyKnowledge(Type knowledgeType, object value)
+    {
+        return RequiredMethod(knowledgeType, "Copy").Invoke(value,
+            new object[] { false })!;
+    }
+
+    private static string CompositionHash(object culture, object political,
+        object knowledge) => ObjectHash(culture) + ":" + ObjectHash(political)
+            + ":" + ObjectHash(knowledge);
 
     private static string ObjectHash(object value)
     {
@@ -366,7 +410,7 @@ internal static class Program
                 "yyyy-MM-dd HH:mm:ss 'UTC'") + " / "
                 + now.ToString("yyyy-MM-dd HH:mm:ss zzz"))
             .AppendLine()
-            .AppendLine("Assembly: `" + dll + "`")
+            .AppendLine("Assembly: `" + PortableAssemblyPath(dll) + "`")
             .AppendLine()
             .AppendLine("This executable reflection receipt loads the built assembly "
                 + "against RimWorld's managed references. It does not claim operator "
@@ -377,14 +421,14 @@ internal static class Program
             .AppendLine("| Catalog validation | PASS |")
             .AppendLine("| Independent catalog identity | PASS - Society keys are distinct from Culture keys; a second Society identity can reuse one Culture reference |")
             .AppendLine("| Complete owned composition | PASS - " + rows.Count
-                + " presets each own and apply 24 Culture values and a frozen 26-question Political Order snapshot |")
+                + " presets each own and apply 48 Culture values and a frozen 26-question Political Order snapshot |")
             .AppendLine("| Deep-copy match | PASS - every independently copied pair matches its applied preset |")
             .AppendLine("| Mutation-negative match | PASS - changing a causal inherited-Culture field ends the derived Society match |")
             .AppendLine("| Saved Society snapshot | PASS - the schema-1 profile survives Scribe serialization/readback and its copied Culture and Political Order apply together through the same atomic path |")
             .AppendLine("| Component isolation | PASS - Culture-only and Political-Order-only substitutions leave the sibling component unchanged |")
             .AppendLine("| Atomic rejection | PASS - `" + rejected
                 + "`; before/after state fingerprints agree |")
-            .AppendLine("| Replacement | PASS - applying a second Society preset replaced both components |")
+            .AppendLine("| Replacement | PASS - applying a second Society preset replaced all three components |")
             .AppendLine("| Runtime ownership | PASS - canonical Culture and Political Order carry no Society-preset ownership field |")
             .AppendLine()
             .AppendLine("## Built-in catalog crosswalk")
@@ -417,6 +461,11 @@ internal static class Program
         RequiredField(value.GetType(), name).GetValue(value) as string ?? "";
     private static int ListCount(object value, string name) =>
         ((ICollection)RequiredField(value.GetType(), name).GetValue(value)!).Count;
+    private static string PortableAssemblyPath(string dll) =>
+        string.Equals(Path.GetFileName(dll), "ColonistAwareness.dll",
+            StringComparison.OrdinalIgnoreCase)
+            ? "Assemblies/ColonistAwareness.dll"
+            : Path.GetFileName(dll);
     private static void Require(bool condition, string failure)
     {
         if (!condition) throw new InvalidOperationException(failure);

@@ -333,7 +333,8 @@ internal static class Program
             .AppendLine(mutators.Count + " defs: `"
                 + string.Join("`, `", mutators) + "`.")
             .AppendLine()
-            .AppendLine("Verified compile: `" + compiled + "`; SHA-256 `"
+            .AppendLine("Verified compile: `"
+                + PortableAssemblyPath(compiled) + "`; SHA-256 `"
                 + Hash(compiled) + "`.")
             .AppendLine()
             .AppendLine("Overall: **"
@@ -344,4 +345,10 @@ internal static class Program
 
     private static string Escape(string value) => value.Replace("|", "\\|")
         .Replace("\r", " ").Replace("\n", " ");
+
+    private static string PortableAssemblyPath(string dll) =>
+        string.Equals(Path.GetFileName(dll), "ColonistAwareness.dll",
+            StringComparison.OrdinalIgnoreCase)
+            ? "Assemblies/ColonistAwareness.dll"
+            : Path.GetFileName(dll);
 }

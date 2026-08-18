@@ -1,8 +1,8 @@
 # Campaign compatibility
 
-Status: canonical for `1.6.0.0-alpha` / closed B15
+Status: canonical for `1.6.1.0-alpha` / closed B16
 Current campaign boundary: `1`
-Current schema catalog: `4`
+Current schema catalog: `5`
 
 B11 is CAO's first durable campaign boundary. A world confirmed under this
 boundary is historical state. Later code may govern future events differently,
@@ -59,6 +59,18 @@ prior research history. Current creation plans migrate separately through their
 explicit schema-13-to-14, founding-plan-3-to-4, and settlement-record-8-to-9
 paths.
 
+Catalog 5 is B16's playable social-ontology boundary. It raises Culture question
+registry 2 to 3, the map Culture-longitudinal owner to schema 3, and the
+faction, player-founding, and regional owners to schema 4. A supported catalog-4
+owner preserves every compatible Culture question row and adds only the missing
+B16 questions to each represented population scope at neutral, low-confidence,
+explicitly unobserved state. An incomplete or orphaned scope fails the generic
+migration; the governed development fixture's single proven non-constituent row
+is preserved as legacy evidence by its explicit fixture repair rather than by
+weakening that rule. The map owner also adds a bounded exact native-event ledger.
+Every affected owner validates before catalog 5 is published. No native doctrine,
+institution, prior occurrence, or historical practice is inferred.
+
 The same streaming validator runs on the closed XML candidate after
 `ScribeSaver.FinalizeSaving` and before SafeSaver replaces the prior file. Only
 a complete current-boundary candidate receives the exact terminal SHA-256 seal.
@@ -87,9 +99,10 @@ native-class validator.
 
 Pending authoring is an unconfirmed proposal. The active/mirror Starting Region
 plan, unconfirmed founding draft, preset files, and preview caches may be
-regenerated or rejected according to pending-authoring epoch 13 and their own
-current schema. The governed regional plan is schema 14; Culture is schema 10;
-Political Order is schema 10; Technological Knowledge is schema 1.
+regenerated or rejected according to pending-authoring epoch 14 and their own
+current schema. The governed regional plan is schema 15; Culture is schema 11
+with question registry 3; Political Order is schema 10; Technological Knowledge
+is schema 1.
 
 A realized campaign begins when the world and founding state are confirmed and
 materialized. Its regions, settlements, residents, domestic units, Culture,
@@ -104,7 +117,7 @@ pending authoring surfaces. Live owners recognize epoch 10 only as B10 upgrade
 evidence. B11 saves do not write the legacy epoch and never discard realized
 state because it differs.
 
-Culture schema 10 replaces former meaning rows as current normative authority
+Culture schema 11 carries current normative authority
 with population distributions over explicit questions. Schema-9 meanings map
 only through exact ordered-question adapters; every former dimension and every
 unmatched subject remains explicit legacy evidence. No convenient substitute is
@@ -224,5 +237,5 @@ Every later implementation batch states:
 - performance impact: operations/cadence, bounded work, scans, index/cache
   effects and profiler keys.
 
-The next action after B15 is the operator's RimWorld runtime test and, once
+The next action after B16 is the operator's RimWorld runtime test and, once
 accepted, the first retained campaign save.
