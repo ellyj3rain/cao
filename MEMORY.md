@@ -81,6 +81,11 @@ derive the current root version through the Neo four-coordinate odometer.
 | `CREDITS.md` | CANONICAL | Public attribution and per-source how-and-why. Carries a corrected Processor Framework entry: the design is described, nothing is ported. |
 | `UPSTREAM_SOURCES.md` | CANONICAL | Machine-checkable provenance — upstream URLs, licences, what was taken, incorporation state. Records that commit hashes are not recoverable from the local archive. |
 | `AGENTS.md` | SHIM | Points at `GOVERNANCE.md`. |
+| `.gitlab-ci.yml` | CANONICAL | GitLab publication adapter for the repository-owned verification and dependency-audit scripts. It does not define a second build contract. |
+| `.github/` | CANONICAL | GitHub workflows, dependency update policy, ownership, pull-request template, and CI operating guide. |
+| `tools/ci/` | CANONICAL | Forge-neutral version, portability, reproducible-build, tracked-assembly, support-project, and dependency-audit gates. |
+| `Receipts/REPO/` | RECORD | Repository-maintenance evidence that does not consume a development batch or version unit. |
+| `global.json` | CANONICAL | Exact .NET SDK selection for local and forge-reproducible builds. |
 
 ## Audits and synthesis
 

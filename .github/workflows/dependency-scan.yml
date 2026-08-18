@@ -1,0 +1,52 @@
+name: Dependency Scan
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 11 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: dependency-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-scan:
+    name: dependency-scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out the project
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          dotnet-version: 8.0.423
+          cache: true
+          cache-dependency-path: Source/packages.lock.json
+
+      - name: Restore locked dependencies with NuGet auditing
+        run: dotnet restore Source/ColonistAwareness.csproj --locked-mode --nologo
+
+      - name: Produce and enforce the dependency vulnerability report
+        run: node tools/ci/verify-dependencies.mjs
+
+      - name: Upload dependency evidence
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: nuget-vulnerabilities-${{ github.sha }}
+          path: nuget-vulnerabilities.json
+          if-no-files-found: error
+          retention-days: 30

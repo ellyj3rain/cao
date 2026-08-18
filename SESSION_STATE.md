@@ -17,10 +17,11 @@ receipts, deployment, and operator runtime evidence remain separate.
 
 | Surface | State |
 |---|---|
-| Active checkout | repository root on the B16 branch |
-| Branch | `mallowfluff/b16-ideoligion-culture-semantic-coverage` |
-| B15 merged baseline | `e7bf427a734815b3589b2be94c114028e2514328` (PR `#3`) |
+| Active checkout | B16 worktree carrying pure `[REPO]` CI maintenance |
+| Branch | `mallowfluff/repo-ci-foundation` |
+| B16 merged baseline | `788fcd1ed009010f3e12a7dfbfaccde003e456d1` (PR `#4`) |
 | Closed chronology | `A1-A102` and `B1-B16`; B16 is kohai capability unit `VU-043`; `B17` is next. |
+| Publication maintenance | CI foundation in progress; no runtime, schema, fixture, version, or deployment state changes. |
 
 ## Current B16 contract
 
@@ -60,11 +61,13 @@ receipts, deployment, and operator runtime evidence remain separate.
 | Native practice retention | **PASS** - duplicate participant or observer emissions remain attached to one occurrence; 64 distinct occurrences are retained per map/faction/locality/practice without cross-settlement eviction |
 | Retained suites | **PASS** - B10 synthetic 166 classified / 0 unresolved Critical or High; B10 75/75; B11 78/78; B12 113/113; B13 67/67; B14 24/24 plus Society execution; B15 full execution |
 | Persistence census | **PASS** - 258 source-derived carriers; 87 catalog schemas; 5 explicit non-campaign exclusions; 0 unclassified or invalid routes |
-| Reproducible Release build | **PASS** - two clean Release rebuilds, 0 warnings and 0 errors, emitted byte-identical 4,369,920-byte assemblies at SHA-256 `EF56D9BADAAF82DB5E8269A3996F2F56A565BC8E564DB9A970C97F5B72C94342` |
-| Deployment | **PASS** - RimWorld closed; both clean candidates, worktree assembly, and installed junction view are byte-identical at the build identity above |
+| Reproducible Release build | **PASS** - the `[REPO]` compiler baseline pins .NET SDK 8.0.423 and the complete production dependency graph; two clean Release rebuilds, 0 warnings and 0 errors, emitted byte-identical 4,368,384-byte assemblies at SHA-256 `2710DDDAC506B4BA6910456F4EF965207C54431EA2D25E53CAFAA78E20047545`; 18 declared support projects compile and both portable generated censuses reproduce without drift |
+| Deployment | **PASS** - RimWorld closed; both clean candidates, worktree assembly, and installed junction view are byte-identical at the current build identity above; B16 source behavior is unchanged |
 
 Current executable receipts in `Receipts/B16` establish source, persistence,
 and causal data behavior. They do not establish how the flow looks or plays.
+`Receipts/REPO/20260818-1729Z-1029PST-CI_FOUNDATION_RECEIPT.md` records the
+compiler, dependency, reproducibility, executable-tool, security, and forge gates.
 
 ## Operator runtime boundary
 

@@ -1,0 +1,63 @@
+name: CI Verify
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci-verify:
+    name: ci-verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out the project
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          dotnet-version: 8.0.423
+          cache: true
+          cache-dependency-path: Source/packages.lock.json
+
+      - name: Check committed diff hygiene
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git diff --check "origin/${{ github.base_ref }}"...HEAD
+          else
+            git show --check --format=fuller HEAD
+          fi
+
+      - name: Verify governed repository state
+        run: node tools/ci/verify-repository.mjs
+
+      - name: Build and verify every C# project
+        env:
+          CAO_CI_ARTIFACT_DIR: ${{ runner.temp }}/cao-artifact
+        run: bash tools/ci/verify-dotnet.sh
+
+      - name: Upload verified assembly and receipt
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: colonist-awareness-verified-${{ github.sha }}
+          path: ${{ runner.temp }}/cao-artifact
+          if-no-files-found: error
+          retention-days: 30

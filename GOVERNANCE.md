@@ -141,6 +141,27 @@ host changes publication history, not the governed project history. Commit hashe
 recorded in batch files remain local engineering provenance even when a forge does
 not expose those objects.
 
+## Continuous integration and publication gates
+
+The repository-owned CI contract lives in `tools/ci/`. GitHub Actions and GitLab
+CI call those same scripts rather than maintaining separate build definitions.
+Every pull request to `main` must pass the required `ci-verify` and
+`dependency-scan` checks. `ci-verify` replays the governed version model, rejects
+machine-local project references, restores the locked production dependency graph,
+produces two byte-identical clean builds, proves the tracked shipping assembly is
+current, and compiles every support project declared in `tools/ci/projects.txt`.
+Historical fixture-conversion source that is retained only as provenance stays
+outside that current executable manifest. The portable synthetic-state and
+persistence censuses must also regenerate without changing their governed
+projections. `dependency-scan` rejects
+high or critical direct or transitive NuGet findings. CodeQL supplies an additional
+security signal without replacing either deterministic required check.
+
+`main` accepts changes through a pull request with required checks, signed commits,
+linear history, conversation resolution, and force-push and deletion protection.
+CI may publish verification artifacts. It does not deploy into RimWorld, launch or
+operate the game, edit saves, or establish operator visual or gameplay acceptance.
+
 ## Batch, thread, and version discipline
 
 - **Batch** is the atomic chronological development record. The closed history is
