@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UpdateLog>
+  <!-- Runtime record required by the bundled Vehicle Framework update handler. -->
+  <currentVersion>1.6.2399</currentVersion>
+  <updateOn>Startup</updateOn>
+  <description></description>
+  <actionOnUpdate></actionOnUpdate>
+  <update>false</update>
+  <!-- Keep the compatibility record inert; the bundled handler must not rewrite CA's source tree. -->
+  <testing>true</testing>
+</UpdateLog>

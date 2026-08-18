@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <MainButtonDef>
+    <defName>CA_Squads</defName>
+    <label>squads</label>
+    <description>Squad structure: drag colonists between squads, star the leader.</description>
+    <tabWindowClass>ColonistAwareness.MainTabWindow_Squads</tabWindowClass>
+    <order>48</order>
+  </MainButtonDef>
+
+  <MainButtonDef>
+    <defName>CA_Organization</defName>
+    <label>organization</label>
+    <description>Review the colony's offices, groups, customs, security, agreements, policies, and decisions.</description>
+    <tabWindowClass>ColonistAwareness.MainTabWindow_CAOrganization</tabWindowClass>
+    <order>50</order>
+  </MainButtonDef>
+
+  <MainButtonDef>
+    <defName>CA_RegionalOverview</defName>
+    <label>region</label>
+    <description>Open a scalable strategic overview of the active regional map.</description>
+    <workerClass>ColonistAwareness.MainButtonWorker_CARegionalOverview</workerClass>
+    <tabWindowClass>ColonistAwareness.MainTabWindow_CARegionalOverview</tabWindowClass>
+    <order>49</order>
+  </MainButtonDef>
+
+</Defs>

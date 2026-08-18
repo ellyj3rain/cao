@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <TerrainDef ParentName="BridgeBase">
+    <defName>CA_MakeshiftBridge</defName>
+    <label>makeshift bridge</label>
+    <description>A hasty crossing of scavenged planks lashed over the water. Costs almost nothing and goes up fast, but it rots away over a couple of seasons and collapses under serious damage. For patrol routes and flanking paths, not for bearing your base.</description>
+    <texturePath>Terrain/Surfaces/WoodFloor</texturePath>
+    <bridgePropsPath>Terrain/Misc/BridgeProps</bridgePropsPath>
+    <spaceBridgePropsPath>Terrain/Misc/BridgeSpaceProps</spaceBridgePropsPath>
+    <color>(96,70,50)</color>
+    <uiIconPath>Terrain/Surfaces/Bridge_MenuIcon</uiIconPath>
+    <affordances>
+      <li>Light</li>
+    </affordances>
+    <constructEffect>ConstructWood</constructEffect>
+    <statBases>
+      <WorkToBuild>350</WorkToBuild>
+      <Flammability>1.0</Flammability>
+    </statBases>
+    <costList>
+      <WoodLog>2</WoodLog>
+    </costList>
+    <destroyOnBombDamageThreshold>20</destroyOnBombDamageThreshold>
+  </TerrainDef>
+
+</Defs>

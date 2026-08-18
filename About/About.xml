@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <packageId>ellyj3rain.colonistawareness</packageId>
+  <name>Colonist Awareness Overhaul: A Living World Framework</name>
+  <author>ellyj3rain</author>
+  <modVersion>1.4.1.0-alpha</modVersion>
+  <supportedVersions>
+    <li>1.6</li>
+  </supportedVersions>
+  <modDependencies>
+    <li>
+      <packageId>brrainz.harmony</packageId>
+      <displayName>Harmony</displayName>
+      <steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+    </li>
+    <li>
+      <packageId>ludeon.rimworld.biotech</packageId>
+      <displayName>Biotech</displayName>
+    </li>
+    <li>
+      <packageId>ludeon.rimworld.ideology</packageId>
+      <displayName>Ideology</displayName>
+    </li>
+  </modDependencies>
+  <loadAfter>
+    <li>brrainz.harmony</li>
+    <li>ludeon.rimworld.biotech</li>
+    <li>ludeon.rimworld.ideology</li>
+  </loadAfter>
+  <description>A systemic RimWorld overhaul integrating persistent settlements, material logistics, institutions, politics, economics, and conflict into one living-world framework.
+
+This is both a playable overhaul and an integration framework. Mechanics are not bundled side by side - they are adapted into one common ontology: real assets, limited knowledge, organizations, authority, intent, and persistent consequences. That is why pickling, sanitation, banking, research, labour and combat belong in the same mod. They all resolve through the same living-world structure.
+
+Colonists act on what they and their trusted contacts know, rather than on global omniscience or oblivion. Settlements around you are real places with their own institutions, technology, beliefs, and material means - and they persist whether or not you are looking at them.
+
+Licensed GPL-3.0. Ported and adapted work is credited in CREDITS.</description>
+</ModMetaData>

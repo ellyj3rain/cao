@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+<!-- Ported from Dubs Bad Hygiene by Dubwise56.
+     See CREDITS.md. Only the thought the bladder need itself grants is
+     here; the ones earned by washing, bathing and drinking arrive with
+     the fixtures that make those acts possible. -->
+
+  <ThoughtDef>
+    <defName>CA_SoiledSelf</defName>
+    <durationDays>1</durationDays>
+    <stackLimit>3</stackLimit>
+    <stages>
+      <li>
+        <label>soiled myself</label>
+        <description>I couldn't hold it in any longer and soiled myself.</description>
+        <baseMoodEffect>-8</baseMoodEffect>
+      </li>
+    </stages>
+    <showBubble>true</showBubble>
+  </ThoughtDef>
+
+  <ThoughtDef>
+    <defName>CA_OpenDefecation</defName>
+    <durationDays>0.15</durationDays>
+    <stackLimit>1</stackLimit>
+    <stages>
+      <li>
+        <label>open defecation</label>
+        <description>I had to relieve myself outside in the open.</description>
+        <baseMoodEffect>-3</baseMoodEffect>
+      </li>
+    </stages>
+    <showBubble>true</showBubble>
+  </ThoughtDef>
+
+  <ThoughtDef>
+    <defName>CA_ColdWater</defName>
+    <durationDays>0.1</durationDays>
+    <stackLimit>1</stackLimit>
+    <stages>
+      <li>
+        <label>cold water</label>
+        <description>There was no hot water!</description>
+        <baseMoodEffect>-3</baseMoodEffect>
+      </li>
+    </stages>
+    <showBubble>true</showBubble>
+  </ThoughtDef>
+
+</Defs>

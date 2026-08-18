@@ -1,0 +1,11 @@
+# Repository documentation uses repository-owned LF.
+README.md text eol=lf
+README.docx -text -diff
+BATCH_LOG.md text eol=lf
+Batches/*.md text eol=lf
+.github/**/*.yml text eol=lf
+.github/*.md text eol=lf
+.gitlab-ci.yml text eol=lf
+global.json text eol=lf
+Source/packages.lock.json text eol=lf
+tools/ci/* text eol=lf

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <!-- Facility identity through the native room-role system: a room
+       qualifies the way vanilla qualifies a lab or kitchen - by contents.
+       These score for ANY faction's rooms, so generated settlement
+       interiors self-identify exactly like player rooms. -->
+
+  <RoomRoleDef>
+    <defName>CA_CommandPost</defName>
+    <label>command post</label>
+    <workerClass>ColonistAwareness.RoomRoleWorker_CACommandPost</workerClass>
+  </RoomRoleDef>
+
+  <RoomRoleDef>
+    <defName>CA_Armory</defName>
+    <label>armory</label>
+    <workerClass>ColonistAwareness.RoomRoleWorker_CAArmory</workerClass>
+  </RoomRoleDef>
+
+</Defs>

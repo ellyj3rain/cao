@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+<!-- Water bottle art ported from Dubs Bad Hygiene by Dubwise56. See CREDITS.md.
+
+     WATER HAS TWO PROPERTIES, NOT ONE. Salinity and contamination are
+     different problems with different answers, and collapsing them
+     into "clean or dirty" produces the absurdity of a colonist walking
+     to the sea and drinking it.
+
+       contamination  is biological. Boiling kills it. A fire is
+                      enough, so every people has always had the
+                      answer.
+       salinity       is dissolved salt. Boiling CONCENTRATES it.
+                      Removing it means evaporating the water away
+                      from the salt and catching it again, which costs
+                      fuel, time and most of the volume.
+
+     So the four states of water that matter:
+       potable       fresh, safe. What you want.
+       contaminated  fresh, foul. Drinkable at a price; boil it.
+       brackish      part salt. Not drinkable. Still it.
+       saline        the sea. Not drinkable at any price. Still it,
+                     badly.
+
+     All raw surface water is contaminated - a running stream is
+     cleaner than a marsh but neither is safe, which is why boiling is
+     the baseline habit rather than a technology. The sea is saline and
+     no amount of boiling changes that.
+
+     Mass is one kilogram a unit, because a litre of water weighs a
+     kilogram. That fact is the whole reason water is a logistics
+     problem. -->
+
+  <ThingDef Name="CA_WaterBase" ParentName="ResourceBase" Abstract="True">
+    <graphicData>
+      <texPath>BadHygiene/Things/Resource/WaterBottles</texPath>
+      <graphicClass>Graphic_StackCount</graphicClass>
+      <drawSize>0.8</drawSize>
+    </graphicData>
+    <stackLimit>25</stackLimit>
+    <statBases>
+      <MaxHitPoints>60</MaxHitPoints>
+      <Flammability>0</Flammability>
+      <Mass>1.0</Mass>
+      <DeteriorationRate>2</DeteriorationRate>
+    </statBases>
+    <thingCategories>
+      <li>Foods</li>
+    </thingCategories>
+    <resourceReadoutPriority>Middle</resourceReadoutPriority>
+    <socialPropernessMatters>false</socialPropernessMatters>
+    <comps>
+      <li Class="CompProperties_Forbiddable" />
+    </comps>
+  </ThingDef>
+
+  <ThingDef ParentName="CA_WaterBase">
+    <defName>CA_WaterPotable</defName>
+    <label>water</label>
+    <description>Water fit to drink. Taken from a clean source, or boiled until whatever was living in it is not.</description>
+    <ingestible>
+      <foodType>Processed</foodType>
+      <preferability>NeverForNutrition</preferability>
+      <baseIngestTicks>90</baseIngestTicks>
+      <chairSearchRadius>0</chairSearchRadius>
+      <ingestSound>Meal_Eat</ingestSound>
+      <outcomeDoers>
+        <li Class="RimWorld.IngestionOutcomeDoer_OffsetNeed">
+          <need>CA_Thirst</need>
+          <offset>0.35</offset>
+        </li>
+      </outcomeDoers>
+    </ingestible>
+  </ThingDef>
+
+  <ThingDef ParentName="CA_WaterBase">
+    <defName>CA_WaterContaminated</defName>
+    <label>untreated water</label>
+    <description>Fresh water taken straight from the ground. It will keep a body alive, and it is how dysentery and cholera get into one. Boiling fixes it.</description>
+    <graphicData>
+      <texPath>BadHygiene/Things/Resource/WaterBottles</texPath>
+      <graphicClass>Graphic_StackCount</graphicClass>
+      <drawSize>0.8</drawSize>
+      <color>(0.62,0.58,0.40)</color>
+    </graphicData>
+    <ingestible>
+      <foodType>Processed</foodType>
+      <preferability>NeverForNutrition</preferability>
+      <baseIngestTicks>90</baseIngestTicks>
+      <chairSearchRadius>0</chairSearchRadius>
+      <ingestSound>Meal_Eat</ingestSound>
+      <outcomeDoers>
+        <!-- it hydrates exactly as well, which is why people drink it
+             when there is nothing else -->
+        <li Class="RimWorld.IngestionOutcomeDoer_OffsetNeed">
+          <need>CA_Thirst</need>
+          <offset>0.35</offset>
+        </li>
+        <li Class="RimWorld.IngestionOutcomeDoer_GiveHediff">
+          <hediffDef>CA_Dysentery</hediffDef>
+          <severity>0.15</severity>
+          <chance>0.12</chance>
+        </li>
+        <li Class="RimWorld.IngestionOutcomeDoer_GiveHediff">
+          <hediffDef>CA_Cholera</hediffDef>
+          <severity>0.10</severity>
+          <chance>0.02</chance>
+        </li>
+      </outcomeDoers>
+    </ingestible>
+  </ThingDef>
+
+  <!-- Neither of these is ingestible AT ALL. That is deliberate: a
+       body cannot make use of them, so nothing in the game should ever
+       offer them to a thirsty pawn as though they were a poor option.
+       They are raw material for a still and nothing else. -->
+
+  <ThingDef ParentName="CA_WaterBase">
+    <defName>CA_WaterBrackish</defName>
+    <label>brackish water</label>
+    <description>Water carrying enough salt to be no use to a body. Common in coastal ground and shallow wells near the sea. Distilling recovers drinkable water from it, at a cost.</description>
+    <graphicData>
+      <texPath>BadHygiene/Things/Resource/WaterBottles</texPath>
+      <graphicClass>Graphic_StackCount</graphicClass>
+      <drawSize>0.8</drawSize>
+      <color>(0.55,0.66,0.62)</color>
+    </graphicData>
+  </ThingDef>
+
+  <ThingDef ParentName="CA_WaterBase">
+    <defName>CA_WaterSaline</defName>
+    <label>sea water</label>
+    <description>The sea. Drinking it takes more water out of a body than it puts in, and boiling it only concentrates the salt. The only way to get water out of it is to evaporate the water away from the salt and catch it again.</description>
+    <graphicData>
+      <texPath>BadHygiene/Things/Resource/WaterBottles</texPath>
+      <graphicClass>Graphic_StackCount</graphicClass>
+      <drawSize>0.8</drawSize>
+      <color>(0.42,0.60,0.72)</color>
+    </graphicData>
+  </ThingDef>
+
+</Defs>

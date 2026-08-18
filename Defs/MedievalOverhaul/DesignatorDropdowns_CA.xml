@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- [CA port] Architect dropdown groups: variants collapse
+       under one button instead of crowding the tab. Assets by
+       SirLalaPyon (Medieval Overhaul). -->
+  <DesignatorDropdownGroupDef>
+    <defName>DankPyon_Beverages</defName>
+    <label>beverages</label>
+  </DesignatorDropdownGroupDef>
+  <DesignatorDropdownGroupDef>
+    <defName>DankPyon_ScribeTools</defName>
+    <label>scribe tools</label>
+  </DesignatorDropdownGroupDef>
+  <DesignatorDropdownGroupDef>
+    <defName>DankPyon_ResearchTools</defName>
+    <label>research tools</label>
+  </DesignatorDropdownGroupDef>
+</Defs>

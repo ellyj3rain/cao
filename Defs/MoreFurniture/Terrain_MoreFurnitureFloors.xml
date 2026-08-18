@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <TerrainDef Name="Anon2FloorBase" Abstract="True">
+    <layerable>true</layerable>
+    <affordances>
+      <li>Light</li>
+      <li>Medium</li>
+      <li>Heavy</li>
+    </affordances>
+    <statBases>
+      <WorkToBuild>135</WorkToBuild>
+    </statBases>
+    <designationCategory>Floors</designationCategory>
+    <fertility>0</fertility>
+    <constructEffect>ConstructDirt</constructEffect>
+    <filthAcceptanceMask>Unnatural</filthAcceptanceMask>
+    <terrainAffordanceNeeded>Heavy</terrainAffordanceNeeded>
+  </TerrainDef>
+  <!-- ================= Carpets ================= -->
+  <TerrainDef Name="Anon2CarpetBase" ParentName="Anon2FloorBase" Abstract="True">
+    <texturePath>Terrain/Surfaces/Carpet</texturePath>
+    <researchPrerequisites>
+      <li>CarpetMaking</li>
+    </researchPrerequisites>
+    <burnedDef>BurnedCarpet</burnedDef>
+    <costList>
+      <Cloth>7</Cloth>
+    </costList>
+    <tags>
+      <li>Floor</li>
+    </tags>
+    <statBases>
+      <Beauty>2</Beauty>
+      <Flammability>0.32</Flammability>
+      <CleaningTimeFactor>2</CleaningTimeFactor>
+    </statBases>
+  </TerrainDef>
+  <!-- ================= Carpets Bed Green ================= -->
+  <TerrainDef ParentName="Anon2CarpetBase">
+    <defName>CarpetBedGreen</defName>
+    <label>bed green carpet</label>
+    <renderPrecedence>195</renderPrecedence>
+    <description>A faded green carpet to match a bed.</description>
+    <color>(76,114,90)</color>
+  </TerrainDef>
+  <!-- ================= Carpets Bed Orange ================= -->
+  <TerrainDef ParentName="Anon2CarpetBase">
+    <defName>CarpetBedOrange</defName>
+    <label>bed orange carpet</label>
+    <renderPrecedence>194</renderPrecedence>
+    <description>A dull orange carpet to match a bed.</description>
+    <color>(145,94,0)</color>
+  </TerrainDef>
+  <!-- ================= Carpets Bed Blue ================= -->
+  <TerrainDef ParentName="Anon2CarpetBase">
+    <defName>CarpetBedBlue</defName>
+    <label>bed blue carpet</label>
+    <renderPrecedence>193</renderPrecedence>
+    <description>A relaxing blue carpet to match a bed.</description>
+    <color>(41,82,129)</color>
+  </TerrainDef>
+  <!-- ================= Carpets Bed Maroon ================= -->
+  <TerrainDef ParentName="Anon2CarpetBase">
+    <defName>CarpetBedMaroon</defName>
+    <label>bed maroon carpet</label>
+    <renderPrecedence>192</renderPrecedence>
+    <description>A maroon carpet to match a bed.</description>
+    <color>(94,45,9)</color>
+  </TerrainDef>
+</Defs>

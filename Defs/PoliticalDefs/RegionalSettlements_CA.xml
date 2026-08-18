@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <ColonistAwareness.CASettlementPatternDef>
+    <defName>CA_Pattern_Isolated</defName>
+    <label>isolated</label>
+    <description>One settlement, far from the others.</description>
+  </ColonistAwareness.CASettlementPatternDef>
+  <ColonistAwareness.CASettlementPatternDef>
+    <defName>CA_Pattern_Dispersed</defName>
+    <label>dispersed</label>
+    <description>Settlements spread with no dominant center.</description>
+  </ColonistAwareness.CASettlementPatternDef>
+  <ColonistAwareness.CASettlementPatternDef>
+    <defName>CA_Pattern_Corridor</defName>
+    <label>corridor</label>
+    <description>Settlements strung along a road or river.</description>
+  </ColonistAwareness.CASettlementPatternDef>
+  <ColonistAwareness.CASettlementPatternDef>
+    <defName>CA_Pattern_Clustered</defName>
+    <label>clustered</label>
+    <description>Grouped settlements with no single dominant center.</description>
+  </ColonistAwareness.CASettlementPatternDef>
+  <ColonistAwareness.CASettlementPatternDef>
+    <defName>CA_Pattern_DominantCenter</defName>
+    <label>one main settlement</label>
+    <description>One large settlement with smaller settlements around it.</description>
+  </ColonistAwareness.CASettlementPatternDef>
+  <ColonistAwareness.CASettlementPatternDef>
+    <defName>CA_Pattern_ComparableCenters</defName>
+    <label>several main settlements</label>
+    <description>Several large settlements of similar importance.</description>
+  </ColonistAwareness.CASettlementPatternDef>
+  <ColonistAwareness.CASettlementPatternDef>
+    <defName>CA_Pattern_FrontierHinterland</defName>
+    <label>frontier</label>
+    <description>Scattered holdings beyond firm settlement control.</description>
+  </ColonistAwareness.CASettlementPatternDef>
+  <ColonistAwareness.CASettlementPatternDef>
+    <defName>CA_Pattern_ContestedMixed</defName>
+    <label>contested</label>
+    <description>Settlements and populations controlled by competing factions.</description>
+  </ColonistAwareness.CASettlementPatternDef>
+
+  <ColonistAwareness.CASettlementScaleDef>
+    <defName>CA_Scale_DispersedSettlement</defName>
+    <label>dispersed settlement</label>
+  </ColonistAwareness.CASettlementScaleDef>
+  <ColonistAwareness.CASettlementScaleDef>
+    <defName>CA_Scale_HamletNetwork</defName>
+    <label>hamlet network</label>
+  </ColonistAwareness.CASettlementScaleDef>
+  <ColonistAwareness.CASettlementScaleDef>
+    <defName>CA_Scale_LocalCenter</defName>
+    <label>local center</label>
+  </ColonistAwareness.CASettlementScaleDef>
+  <ColonistAwareness.CASettlementScaleDef>
+    <defName>CA_Scale_RegionalCenter</defName>
+    <label>regional center</label>
+  </ColonistAwareness.CASettlementScaleDef>
+  <ColonistAwareness.CASettlementScaleDef>
+    <defName>CA_Scale_UrbanCenter</defName>
+    <label>urban center</label>
+  </ColonistAwareness.CASettlementScaleDef>
+  <ColonistAwareness.CASettlementScaleDef>
+    <defName>CA_Scale_LargeUrbanRegion</defName>
+    <label>large urban region</label>
+    <description>A large settlement with specialized facilities and nearby dependent settlements.</description>
+  </ColonistAwareness.CASettlementScaleDef>
+
+  <ColonistAwareness.CASettlementAuthorityDef>
+    <defName>CA_Authority_Central</defName>
+    <label>central authority</label>
+    <sharedResponsibilities><li>defense</li><li>diplomacy</li><li>taxes</li><li>decisions</li><li>disputes</li></sharedResponsibilities>
+  </ColonistAwareness.CASettlementAuthorityDef>
+  <ColonistAwareness.CASettlementAuthorityDef>
+    <defName>CA_Authority_CentralWithLocalRule</defName>
+    <label>central rule with local authority</label>
+    <sharedResponsibilities><li>defense</li><li>diplomacy</li><li>taxes</li></sharedResponsibilities>
+  </ColonistAwareness.CASettlementAuthorityDef>
+  <ColonistAwareness.CASettlementAuthorityDef>
+    <defName>CA_Authority_Shared</defName>
+    <label>shared central and local authority</label>
+    <sharedResponsibilities><li>defense</li><li>diplomacy</li></sharedResponsibilities>
+  </ColonistAwareness.CASettlementAuthorityDef>
+  <ColonistAwareness.CASettlementAuthorityDef>
+    <defName>CA_Authority_IndependentWithSharedDefense</defName>
+    <label>independent settlements, shared defense</label>
+    <sharedResponsibilities><li>defense</li></sharedResponsibilities>
+  </ColonistAwareness.CASettlementAuthorityDef>
+  <ColonistAwareness.CASettlementAuthorityDef>
+    <defName>CA_Authority_Independent</defName>
+    <label>independent settlements</label>
+    <sharedResponsibilities />
+  </ColonistAwareness.CASettlementAuthorityDef>
+</Defs>

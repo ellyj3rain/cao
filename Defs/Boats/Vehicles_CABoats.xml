@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <!-- CA BOATS: water travel on the regional map. Hull art from the
+       Boats mod (MIT, (c) 2019 Smash Phil); the machinery is Vehicle
+       Framework (MIT, SmashPhil). Three hulls answer three needs: a
+       canoe anyone can carve, a fishing boat that works the water,
+       and a galleon that moves a settlement's worth of cargo. They
+       build on shallow water - which is what the piers our
+       settlements now grow are for. -->
+
+  <!-- ============ CANOE ============ -->
+  <Vehicles.VehicleDef ParentName="BaseSeaVehicle">
+    <defName>CA_Canoe</defName>
+    <label>canoe</label>
+    <description>A narrow hull cut from a single trunk. Two people
+paddle it; a third is cargo. Any people who live beside water learn
+to make one.</description>
+    <vehicleCategory>Transport</vehicleCategory>
+    <combatPower>40</combatPower>
+    <buildDef>CA_Canoe_Blueprint</buildDef>
+    <size>(1,3)</size>
+    <graphicData>
+      <texPath>Boats/Ships/rowboat/Canoe</texPath>
+      <graphicClass>Vehicles.Graphic_Vehicle</graphicClass>
+      <drawSize>(1.6,3.4)</drawSize>
+    </graphicData>
+    <properties>
+      <worldSpeedMultiplier>2.0</worldSpeedMultiplier>
+      <roles>
+        <li>
+          <key>paddler</key>
+          <label>paddler</label>
+          <handlingTypes>Movement</handlingTypes>
+          <slots>2</slots>
+          <slotsToOperate>1</slotsToOperate>
+        </li>
+        <li>
+          <key>passenger</key>
+          <label>passenger</label>
+          <handlingTypes>None</handlingTypes>
+          <slots>1</slots>
+        </li>
+      </roles>
+    </properties>
+    <components>
+      <li>
+        <key>hull</key>
+        <label>hull</label>
+        <health>120</health>
+        <depth>External</depth>
+        <categories>
+          <li>BodyIntegrity</li>
+          <li>MoveSpeed</li>
+        </categories>
+      </li>
+    </components>
+    <vehicleStats>
+      <MoveSpeed>3.2</MoveSpeed>
+      <CargoCapacity>110</CargoCapacity>
+      <RepairRate>1</RepairRate>
+      <Mass>60</Mass>
+    </vehicleStats>
+  </Vehicles.VehicleDef>
+
+  <Vehicles.VehicleBuildDef ParentName="VehicleBoatBaseBuildable">
+    <defName>CA_Canoe_Blueprint</defName>
+    <label>canoe</label>
+    <description>A narrow hull cut from a single trunk.</description>
+    <thingToSpawn>CA_Canoe</thingToSpawn>
+    <size>(1,3)</size>
+    <graphicData>
+      <texPath>Boats/Ships/rowboat/Canoe</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawSize>(1.6,3.4)</drawSize>
+    </graphicData>
+    <costList>
+      <WoodLog>90</WoodLog>
+    </costList>
+    <statBases>
+      <MaxHitPoints>120</MaxHitPoints>
+      <WorkToBuild>3500</WorkToBuild>
+      <Mass>60</Mass>
+    </statBases>
+  </Vehicles.VehicleBuildDef>
+
+  <!-- ============ FISHING BOAT ============ -->
+  <Vehicles.VehicleDef ParentName="BaseSeaVehicle">
+    <defName>CA_FishingBoat</defName>
+    <label>fishing boat</label>
+    <description>A working hull with a wide deck. It carries a crew
+out to the water and their catch back again.</description>
+    <vehicleCategory>Work</vehicleCategory>
+    <combatPower>80</combatPower>
+    <buildDef>CA_FishingBoat_Blueprint</buildDef>
+    <size>(2,4)</size>
+    <graphicData>
+      <texPath>Boats/Ships/fishingboat/FishingBoat</texPath>
+      <graphicClass>Vehicles.Graphic_Vehicle</graphicClass>
+      <drawSize>(2.6,4.6)</drawSize>
+    </graphicData>
+    <properties>
+      <canFish>true</canFish>
+      <worldSpeedMultiplier>2.4</worldSpeedMultiplier>
+      <roles>
+        <li>
+          <key>helmsman</key>
+          <label>helmsman</label>
+          <handlingTypes>Movement</handlingTypes>
+          <slots>2</slots>
+          <slotsToOperate>1</slotsToOperate>
+        </li>
+        <li>
+          <key>crew</key>
+          <label>crew</label>
+          <handlingTypes>None</handlingTypes>
+          <slots>3</slots>
+        </li>
+      </roles>
+    </properties>
+    <components>
+      <li>
+        <key>hull</key>
+        <label>hull</label>
+        <health>260</health>
+        <depth>External</depth>
+        <categories>
+          <li>BodyIntegrity</li>
+          <li>MoveSpeed</li>
+        </categories>
+      </li>
+      <li>
+        <key>deck</key>
+        <label>deck</label>
+        <health>140</health>
+        <depth>External</depth>
+        <categories>
+          <li>CargoCapacity</li>
+        </categories>
+      </li>
+    </components>
+    <vehicleStats>
+      <MoveSpeed>3.6</MoveSpeed>
+      <CargoCapacity>320</CargoCapacity>
+      <RepairRate>1</RepairRate>
+      <Mass>180</Mass>
+    </vehicleStats>
+  </Vehicles.VehicleDef>
+
+  <Vehicles.VehicleBuildDef ParentName="VehicleBoatBaseBuildable">
+    <defName>CA_FishingBoat_Blueprint</defName>
+    <label>fishing boat</label>
+    <description>A working hull with a wide deck.</description>
+    <thingToSpawn>CA_FishingBoat</thingToSpawn>
+    <size>(2,4)</size>
+    <graphicData>
+      <texPath>Boats/Ships/fishingboat/FishingBoat</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawSize>(2.6,4.6)</drawSize>
+    </graphicData>
+    <costList>
+      <WoodLog>200</WoodLog>
+      <Cloth>40</Cloth>
+    </costList>
+    <statBases>
+      <MaxHitPoints>260</MaxHitPoints>
+      <WorkToBuild>9000</WorkToBuild>
+      <Mass>180</Mass>
+    </statBases>
+  </Vehicles.VehicleBuildDef>
+
+  <!-- ============ GALLEON ============ -->
+  <Vehicles.VehicleDef ParentName="BaseSeaVehicle">
+    <defName>CA_Galleon</defName>
+    <label>galleon</label>
+    <description>A deep-hulled ship built to carry a settlement's
+worth of goods across open water. It takes a crew to sail and a dock
+to load.</description>
+    <vehicleCategory>Trader</vehicleCategory>
+    <combatPower>240</combatPower>
+    <buildDef>CA_Galleon_Blueprint</buildDef>
+    <size>(4,7)</size>
+    <graphicData>
+      <texPath>Boats/Ships/galleon/Galleon</texPath>
+      <graphicClass>Vehicles.Graphic_Vehicle</graphicClass>
+      <drawSize>(4.8,7.8)</drawSize>
+    </graphicData>
+    <properties>
+      <worldSpeedMultiplier>3.0</worldSpeedMultiplier>
+      <roles>
+        <li>
+          <key>sailor</key>
+          <label>sailor</label>
+          <handlingTypes>Movement</handlingTypes>
+          <slots>4</slots>
+          <slotsToOperate>2</slotsToOperate>
+        </li>
+        <li>
+          <key>passenger</key>
+          <label>passenger</label>
+          <handlingTypes>None</handlingTypes>
+          <slots>8</slots>
+        </li>
+      </roles>
+    </properties>
+    <components>
+      <li>
+        <key>hull</key>
+        <label>hull</label>
+        <health>700</health>
+        <depth>External</depth>
+        <categories>
+          <li>BodyIntegrity</li>
+        </categories>
+      </li>
+      <li>
+        <key>masts</key>
+        <label>masts</label>
+        <health>300</health>
+        <depth>External</depth>
+        <categories>
+          <li>MoveSpeed</li>
+        </categories>
+      </li>
+      <li>
+        <key>hold</key>
+        <label>hold</label>
+        <health>400</health>
+        <depth>Internal</depth>
+        <categories>
+          <li>CargoCapacity</li>
+        </categories>
+      </li>
+    </components>
+    <vehicleStats>
+      <MoveSpeed>3.0</MoveSpeed>
+      <CargoCapacity>1400</CargoCapacity>
+      <RepairRate>1</RepairRate>
+      <Mass>800</Mass>
+    </vehicleStats>
+  </Vehicles.VehicleDef>
+
+  <Vehicles.VehicleBuildDef ParentName="VehicleBoatBaseBuildable">
+    <defName>CA_Galleon_Blueprint</defName>
+    <label>galleon</label>
+    <description>A deep-hulled ship built to carry cargo across open
+water.</description>
+    <thingToSpawn>CA_Galleon</thingToSpawn>
+    <size>(4,7)</size>
+    <graphicData>
+      <texPath>Boats/Ships/galleon/Galleon</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawSize>(4.8,7.8)</drawSize>
+    </graphicData>
+    <costList>
+      <WoodLog>620</WoodLog>
+      <Cloth>150</Cloth>
+      <Steel>120</Steel>
+    </costList>
+    <statBases>
+      <MaxHitPoints>700</MaxHitPoints>
+      <WorkToBuild>32000</WorkToBuild>
+      <Mass>900</Mass>
+    </statBases>
+  </Vehicles.VehicleBuildDef>
+
+</Defs>

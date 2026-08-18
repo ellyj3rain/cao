@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+  <!-- Planned functional use is a cell-painting concern, so it joins RimWorld's
+       native Zone designator category and uses the ordinary area draw styles. -->
+  <Operation Class="PatchOperationAdd">
+    <xpath>Defs/DesignationCategoryDef[defName="Zone"]/specialDesignatorClasses</xpath>
+    <value>
+      <li>ColonistAwareness.Designator_CAPlannedUse</li>
+    </value>
+  </Operation>
+</Patch>

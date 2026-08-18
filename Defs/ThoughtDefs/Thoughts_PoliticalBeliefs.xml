@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+<!-- Political-belief reactions merge repeated instances of one event while
+     preserving reactions to different events. Vanilla diminishing returns
+     bound repeated reactions to the same belief. -->
+
+  <ThoughtDef>
+    <defName>CA_PoliticalBeliefViolated</defName>
+    <thoughtClass>ColonistAwareness.Thought_CAPoliticalBelief</thoughtClass>
+    <durationDays>3</durationDays>
+    <stackLimit>-1</stackLimit>
+    <stackedEffectMultiplier>0.75</stackedEffectMultiplier>
+    <stages>
+      <li>
+        <label>political belief violated</label>
+        <description>Someone acted against one of my political beliefs.</description>
+        <baseMoodEffect>-3</baseMoodEffect>
+      </li>
+    </stages>
+  </ThoughtDef>
+
+  <ThoughtDef>
+    <defName>CA_PoliticalBeliefUpheld</defName>
+    <thoughtClass>ColonistAwareness.Thought_CAPoliticalBelief</thoughtClass>
+    <durationDays>3</durationDays>
+    <stackLimit>-1</stackLimit>
+    <stackedEffectMultiplier>0.75</stackedEffectMultiplier>
+    <stages>
+      <li>
+        <label>political belief upheld</label>
+        <description>Someone acted according to one of my political beliefs.</description>
+        <baseMoodEffect>2</baseMoodEffect>
+      </li>
+    </stages>
+  </ThoughtDef>
+
+</Defs>

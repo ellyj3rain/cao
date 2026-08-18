@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <!-- Exact generic AssaultColony replacement. Visible combat retains vanilla's
+       native attack-position behavior; deliberate movement below it reasons from
+       remembered contacts and visible colony structures instead of map-wide pawn
+       truth or randomized vandalism. The existing global CA combat reaction node
+       supplies the 30-tick constant reaction lane. -->
+  <DutyDef>
+    <defName>CA_AssaultAware</defName>
+    <alwaysShowWeapon>true</alwaysShowWeapon>
+    <thinkNode Class="ThinkNode_Priority">
+      <subNodes>
+        <li Class="JobGiver_TakeCombatEnhancingDrug" />
+        <li Class="ThinkNode_Subtree">
+          <treeDef>Abilities_Aggressive</treeDef>
+        </li>
+        <li Class="JobGiver_AIFightEnemies">
+          <targetAcquireRadius>65</targetAcquireRadius>
+          <targetKeepRadius>72</targetKeepRadius>
+        </li>
+        <li Class="ColonistAwareness.JobGiver_CAAssaultDecision" />
+      </subNodes>
+    </thinkNode>
+    <constantThinkNode Class="ThinkNode_ConditionalCanPickupOpportunisticWeapon">
+      <subNodes>
+        <li Class="JobGiver_PickUpOpportunisticWeapon" />
+      </subNodes>
+    </constantThinkNode>
+  </DutyDef>
+
+  <!-- Finite search of copied last-known cells. The driver never follows a hidden
+       pawn's live position and records completion for the exact source fact. -->
+  <JobDef>
+    <defName>CA_SearchKnownContact</defName>
+    <driverClass>ColonistAwareness.JobDriver_CASearchKnownContact</driverClass>
+    <reportString>searching the last known contact area.</reportString>
+    <collideWithPawns>true</collideWithPawns>
+    <suspendable>false</suspendable>
+    <checkOverrideOnDamage>Always</checkOverrideOnDamage>
+  </JobDef>
+
+  <!-- Compound sabotage job: target, exact touch cell, and open-air egress are
+       selected as one validated path before commitment, then executed under the
+       pawn's existing assault Lord. -->
+  <JobDef>
+    <defName>CA_SafeIgnite</defName>
+    <driverClass>ColonistAwareness.JobDriver_CASafeIgnite</driverClass>
+    <reportString>igniting TargetA, then withdrawing.</reportString>
+    <collideWithPawns>true</collideWithPawns>
+    <checkOverrideOnDamage>Always</checkOverrideOnDamage>
+  </JobDef>
+
+</Defs>

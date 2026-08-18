@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+
+  <!-- The patrol base is a native zone: its designator joins the game's
+       own Zone architect category beside stockpiles and growing zones. -->
+  <Operation Class="PatchOperationAdd">
+    <xpath>Defs/DesignationCategoryDef[defName="Zone"]/specialDesignatorClasses</xpath>
+    <value>
+      <li>ColonistAwareness.Designator_ZoneAdd_CAPatrolBase</li>
+    </value>
+  </Operation>
+
+</Patch>

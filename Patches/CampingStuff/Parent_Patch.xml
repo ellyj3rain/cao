@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Patch>
+	<Operation Class="PatchOperationAttributeAdd">
+		<xpath>Defs/ThingDef[defName="Campfire"]</xpath>
+		<attribute>Name</attribute>
+		<value>Campfire</value>
+	</Operation>
+	
+	<Operation Class="PatchOperationAttributeAdd">
+		<xpath>Defs/TerrainTemplateDef[defName="Carpet"]</xpath>
+		<attribute>Name</attribute>
+		<value>CarpetBase</value>
+	</Operation>
+	
+	<Operation Class="PatchOperationFindMod">
+		<mods>
+			<li>Royalty</li>
+		</mods>
+		<match Class="PatchOperationAttributeAdd">
+			<xpath>Defs/TerrainTemplateDef[defName="CarpetFine"]</xpath>
+			<attribute>Name</attribute>
+			<value>FineCarpetBase</value>
+		</match>
+	</Operation>
+</Patch>

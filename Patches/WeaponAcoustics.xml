@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+  <!-- Core and conventional mod firearms inherit BaseGun. This is a CA balance
+       calibration matching vanilla's ordinary 70-cell world-audio maximum, not
+       an engine-provided AI hearing radius. Concrete weapons may replace it. -->
+  <Operation Class="PatchOperationAddModExtension">
+    <xpath>Defs/ThingDef[@Name="BaseGun"]</xpath>
+    <value>
+      <li Class="ColonistAwareness.CAWeaponAcoustics">
+        <radius>70</radius>
+        <acousticClass>Ordinary</acousticClass>
+      </li>
+    </value>
+  </Operation>
+</Patch>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- [CA port] One tab for the whole medieval category, rather than
+       the source mod's several. Assets by SirLalaPyon (Medieval
+       Overhaul). -->
+  <DesignationCategoryDef>
+    <defName>CA_Medieval</defName>
+    <label>medieval</label>
+    <description>Medieval furnishings, banners, rugs and art.</description>
+    <order>310</order>
+  </DesignationCategoryDef>
+</Defs>

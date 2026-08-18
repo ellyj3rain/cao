@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!--============================== Bedroom Facilities ==============================-->
+  <!--====================== dresser ======================-->
+  <ThingDef ParentName="Anon2FurnitureWithQualityBase">
+    <defName>Anon2Dresser</defName>
+    <label>dresser</label>
+    <description>A place for colonist to store personal belongings. When placed with a bed it will increase comfort slightly.</description>
+    <graphicData>
+      <texPath>MoreFurniture/BedroomStuff/Anon2Dresser</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawSize>(4,3)</drawSize>
+      <damageData>
+        <cornerTL>Damage/Corner</cornerTL>
+        <cornerTR>Damage/Corner</cornerTR>
+        <cornerBL>Damage/Corner</cornerBL>
+        <cornerBR>Damage/Corner</cornerBR>
+      </damageData>
+    </graphicData>
+    <size>(2,1)</size>
+    <passability>PassThroughOnly</passability>
+    <castEdgeShadows>true</castEdgeShadows>
+    <fillPercent>0.7</fillPercent>
+    <minifiedDef>MinifiedThing</minifiedDef>
+    <statBases>
+      <MaxHitPoints>150</MaxHitPoints>
+      <WorkToBuild>900</WorkToBuild>
+      <Flammability>1.0</Flammability>
+      <Beauty>10</Beauty>
+      <Mass>40</Mass>
+    </statBases>
+    <stuffCategories>
+      <li>Metallic</li>
+      <li>Woody</li>
+      <li>Stony</li>
+    </stuffCategories>
+    <costStuffCount>50</costStuffCount>
+    <comps>
+      <li Class="CompProperties_Facility">
+        <statOffsets>
+          <Comfort>0.1</Comfort>
+        </statOffsets>
+        <maxSimultaneous>1</maxSimultaneous>
+        <maxDistance>6</maxDistance>
+      </li>
+    </comps>
+    <pathCost>80</pathCost>
+    <placeWorkers>
+      <li>PlaceWorker_ShowFacilitiesConnections</li>
+    </placeWorkers>
+    <designationCategory>ANON2MF</designationCategory>
+    <surfaceType>Item</surfaceType>
+    <defaultPlacingRot>South</defaultPlacingRot>
+    <techLevel>Medieval</techLevel>
+    <researchPrerequisites>
+      <li>ComplexFurniture</li>
+    </researchPrerequisites>
+  </ThingDef>
+  <!--====================== end table ======================-->
+  <ThingDef ParentName="Anon2FurnitureWithQualityBase">
+    <defName>Anon2EndTable</defName>
+    <label>end table</label>
+    <description>This small table goes well with a bed. When placed with a bed it will increase comfort slightly.</description>
+    <graphicData>
+      <texPath>MoreFurniture/BedroomStuff/Anon2EndTable</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawSize>(3,3)</drawSize>
+      <damageData>
+        <rect>(0.15,0.15,1.7,1.7)</rect>
+      </damageData>
+    </graphicData>
+    <size>(1,1)</size>
+    <passability>PassThroughOnly</passability>
+    <castEdgeShadows>true</castEdgeShadows>
+    <fillPercent>0.6</fillPercent>
+    <minifiedDef>MinifiedThing</minifiedDef>
+    <statBases>
+      <MaxHitPoints>75</MaxHitPoints>
+      <WorkToBuild>500</WorkToBuild>
+      <Flammability>1.0</Flammability>
+      <Beauty>7</Beauty>
+      <Mass>20</Mass>
+    </statBases>
+    <stuffCategories>
+      <li>Metallic</li>
+      <li>Woody</li>
+      <li>Stony</li>
+    </stuffCategories>
+    <costStuffCount>30</costStuffCount>
+    <comps>
+      <li Class="CompProperties_Facility">
+        <statOffsets>
+          <Comfort>0.05</Comfort>
+        </statOffsets>
+        <maxSimultaneous>1</maxSimultaneous>
+        <mustBePlacedAdjacentCardinalToBedHead>true</mustBePlacedAdjacentCardinalToBedHead>
+      </li>
+    </comps>
+    <pathCost>70</pathCost>
+    <placeWorkers>
+      <li>PlaceWorker_ShowFacilitiesConnections</li>
+    </placeWorkers>
+    <designationCategory>ANON2MF</designationCategory>
+    <defaultPlacingRot>South</defaultPlacingRot>
+    <techLevel>Medieval</techLevel>
+    <researchPrerequisites>
+      <li>ComplexFurniture</li>
+    </researchPrerequisites>
+  </ThingDef>
+  <!--====================== royal end table ======================-->
+  <ThingDef ParentName="Anon2ArtableFurnitureBase">
+    <defName>Anon2RoyalEndTable</defName>
+    <label>royal end table</label>
+    <description>This small table goes well with a royal bed. When placed with a bed it will increase comfort.</description>
+    <graphicData>
+      <texPath>MoreFurniture/BedroomStuff/Anon2RoyalEndTable</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <shaderType>CutoutComplex</shaderType>
+      <drawSize>(3,3)</drawSize>
+      <damageData>
+        <rect>(0.15,0.15,1.7,1.7)</rect>
+      </damageData>
+    </graphicData>
+    <size>(1,1)</size>
+    <passability>PassThroughOnly</passability>
+    <castEdgeShadows>true</castEdgeShadows>
+    <fillPercent>0.6</fillPercent>
+    <minifiedDef>MinifiedThing</minifiedDef>
+    <statBases>
+      <MaxHitPoints>75</MaxHitPoints>
+      <WorkToBuild>2000</WorkToBuild>
+      <Flammability>1.0</Flammability>
+      <Beauty>30</Beauty>
+      <Mass>25</Mass>
+    </statBases>
+    <stuffCategories>
+      <li>Metallic</li>
+      <li>Woody</li>
+      <li>Stony</li>
+    </stuffCategories>
+    <costStuffCount>30</costStuffCount>
+    <costList>
+      <Gold>20</Gold>
+    </costList>
+    <comps>
+      <li Class="CompProperties_Facility">
+        <statOffsets>
+          <Comfort>0.05</Comfort>
+        </statOffsets>
+        <maxSimultaneous>1</maxSimultaneous>
+        <mustBePlacedAdjacentCardinalToBedHead>true</mustBePlacedAdjacentCardinalToBedHead>
+      </li>
+    </comps>
+    <pathCost>70</pathCost>
+    <placeWorkers>
+      <li>PlaceWorker_ShowFacilitiesConnections</li>
+    </placeWorkers>
+    <designationCategory>ANON2MF</designationCategory>
+    <defaultPlacingRot>South</defaultPlacingRot>
+    <techLevel>Medieval</techLevel>
+    <researchPrerequisites>
+      <li>ComplexFurniture</li>
+    </researchPrerequisites>
+  </ThingDef>
+</Defs>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- [CA port] These two bases live in a Medieval Overhaul file left
+       behind (it depends on frameworks we exclude), but decorations we
+       did take inherit from them. Re-pointed at their vanilla
+       equivalents so the chain resolves and they are real buildings.
+       Without these, RimWorld throws while generating construction
+       frames and disables every mod in self-defence. -->
+  <ThingDef Name="DankPyon_FurnitureWithQualityBase"
+            ParentName="FurnitureWithQualityBase" Abstract="True" />
+  <ThingDef Name="DankPyon_ArtableFurnitureBase"
+            ParentName="ArtableFurnitureBase" Abstract="True" />
+</Defs>

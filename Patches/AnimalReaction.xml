@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+  <!-- The animal constant trees have no insertion tag. Let vanilla
+       immediate-danger fleeing win first, then consume CA's direct, ambiguous
+       gunfire facts on the same native 30-tick interrupt lane. -->
+  <Operation Class="PatchOperationInsert">
+    <xpath>Defs/ThinkTreeDef[defName="AnimalConstant"]/thinkRoot/subNodes/li[@Class="ThinkNode_ConditionalCanDoConstantThinkTreeJobNow"]/subNodes/li[@Class="JobGiver_AnimalFlee"]</xpath>
+    <order>Append</order>
+    <value>
+      <li Class="ColonistAwareness.JobGiver_CAAnimalGunfireReaction" />
+    </value>
+  </Operation>
+  <Operation Class="PatchOperationInsert">
+    <xpath>Defs/ThinkTreeDef[defName="InsectConstant"]/thinkRoot/subNodes/li[@Class="ThinkNode_ConditionalCanDoConstantThinkTreeJobNow"]/subNodes/li[@Class="JobGiver_AnimalFlee"]</xpath>
+    <order>Append</order>
+    <value>
+      <li Class="ColonistAwareness.JobGiver_CAAnimalGunfireReaction" />
+    </value>
+  </Operation>
+</Patch>

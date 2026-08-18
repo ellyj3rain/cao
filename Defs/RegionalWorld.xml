@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <WorldObjectDef>
+    <defName>CA_RegionalMemberReservation</defName>
+    <label>regional map member</label>
+    <description>A saved, invisible ownership marker for a world tile represented inside one larger regional map.</description>
+    <worldObjectClass>ColonistAwareness.WorldObject_CARegionalMemberReservation</worldObjectClass>
+    <canHaveFaction>false</canHaveFaction>
+    <canHaveMap>false</canHaveMap>
+    <validLaunchTarget>false</validLaunchTarget>
+    <selectable>false</selectable>
+    <neverMultiSelect>true</neverMultiSelect>
+    <useDynamicDrawer>true</useDynamicDrawer>
+    <expandingIcon>false</expandingIcon>
+    <saved>true</saved>
+  </WorldObjectDef>
+
+  <!-- THE WORLD-MAP FACE of an authored regional settlement: a visible,
+       selectable, faction-coloured marker on the member tile the place
+       stands on. The settlement's truth lives in its record and its map
+       presence; this is its native world presence, so the world map shows
+       WHO holds the region rather than an unmarked footprint. It is not a
+       vanilla Settlement (its ground is inside the player's own regional
+       map, so caravan/trade targeting would be a lie), and it never
+       carries a map of its own. -->
+  <WorldObjectDef>
+    <defName>CA_RegionalSettlementMarker</defName>
+    <label>regional settlement</label>
+    <description>A settlement standing inside this expanded region.</description>
+    <worldObjectClass>ColonistAwareness.WorldObject_CARegionalSettlement</worldObjectClass>
+    <texture>World/WorldObjects/DefaultSettlement</texture>
+    <expandingIcon>true</expandingIcon>
+    <expandingIconTexture>World/WorldObjects/Expanding/Town</expandingIconTexture>
+    <canHaveFaction>true</canHaveFaction>
+    <canHaveMap>false</canHaveMap>
+    <validLaunchTarget>false</validLaunchTarget>
+    <selectable>true</selectable>
+    <neverMultiSelect>true</neverMultiSelect>
+    <saved>true</saved>
+  </WorldObjectDef>
+
+  <StatDef>
+    <defName>CA_DarkVisionEfficiency</defName>
+    <label>dark-vision efficiency</label>
+    <description>How completely this person's equipment, traits, genes, and other resolved modifiers preserve visual awareness in darkness. This affects detection and identification, not weapon range.</description>
+    <category>PawnCombat</category>
+    <defaultBaseValue>0</defaultBaseValue>
+    <minValue>0</minValue>
+    <maxValue>1</maxValue>
+    <toStringStyle>PercentZero</toStringStyle>
+    <showOnPawns>true</showOnPawns>
+    <showOnAnimals>false</showOnAnimals>
+    <showOnMechanoids>false</showOnMechanoids>
+    <showOnDefaultValue>false</showOnDefaultValue>
+    <displayPriorityInCategory>3995</displayPriorityInCategory>
+  </StatDef>
+
+  <GenStepDef>
+    <defName>CA_RegionalProjection</defName>
+    <order>190</order>
+    <genStep Class="ColonistAwareness.GenStep_CARegionalProjection" />
+  </GenStepDef>
+
+  <GenStepDef>
+    <defName>CA_RegionalWorldLinks</defName>
+    <order>385</order>
+    <genStep Class="ColonistAwareness.GenStep_CARegionalWorldLinks" />
+    <preventsGenSteps>
+      <li>Roads</li>
+    </preventsGenSteps>
+  </GenStepDef>
+
+  <GenStepDef>
+    <defName>CA_RegionalSettlements</defName>
+    <order>405</order>
+    <genStep Class="ColonistAwareness.GenStep_CARegionalSettlements" />
+  </GenStepDef>
+
+  <GenStepDef>
+    <defName>CA_RegionalSettlementPower</defName>
+    <order>406</order>
+    <genStep Class="GenStep_Power" />
+  </GenStepDef>
+
+  <GenStepDef>
+    <defName>CA_RegionalPlayerStart</defName>
+    <order>840</order>
+    <genStep Class="ColonistAwareness.GenStep_CARegionalPlayerStart" />
+    <preventsGenSteps>
+      <li>FindPlayerStartSpot</li>
+    </preventsGenSteps>
+  </GenStepDef>
+
+</Defs>

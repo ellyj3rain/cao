@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- Native CA body-rate stats. Disease stages offset these from the
+       ordinary rate of 1; the Need implementations consume the resulting
+       pawn stats directly. -->
+  <StatDef>
+    <defName>CA_ThirstRateMultiplier</defName>
+    <label>thirst rate</label>
+    <description>A multiplier on how quickly this pawn becomes thirsty.</description>
+    <category>PawnHealth</category>
+    <defaultBaseValue>1</defaultBaseValue>
+    <toStringStyle>PercentZero</toStringStyle>
+    <showOnAnimals>false</showOnAnimals>
+    <showOnDrones>false</showOnDrones>
+    <hideAtValue>1</hideAtValue>
+    <minValue>0</minValue>
+    <displayPriorityInCategory>3490</displayPriorityInCategory>
+  </StatDef>
+
+  <StatDef>
+    <defName>CA_BladderRateMultiplier</defName>
+    <label>bladder fill rate</label>
+    <description>A multiplier on how quickly this pawn needs to relieve themself.</description>
+    <category>PawnHealth</category>
+    <defaultBaseValue>1</defaultBaseValue>
+    <toStringStyle>PercentZero</toStringStyle>
+    <showOnAnimals>false</showOnAnimals>
+    <showOnDrones>false</showOnDrones>
+    <hideAtValue>1</hideAtValue>
+    <minValue>0</minValue>
+    <displayPriorityInCategory>3489</displayPriorityInCategory>
+  </StatDef>
+</Defs>

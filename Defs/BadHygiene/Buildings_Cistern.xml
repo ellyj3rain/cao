@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+<!-- Cistern art ported from Dubs Bad Hygiene by Dubwise56. See CREDITS.md.
+
+     STORAGE WITH THE LID OFF. A cistern collects only while it is
+     actually raining, holds a fixed amount, and what it holds is open
+     water - contaminated on arrival and growing more so the longer it stands,
+     by the same stagnation that overtakes an open jug. Roof it and
+     it catches nothing.
+
+     In wet country it is a convenience. In dry country it is the
+     season: you fill it when it rains and you live out of it when it
+     does not. It is deliberately NOT a substitute for a well. -->
+
+  <ThingDef ParentName="BuildingBase">
+    <defName>CA_RainCistern</defName>
+    <label>rain cistern</label>
+    <description>An open butt fed by a catchment apron. It fills while it rains and not otherwise. What it collects is fresh but foul, and it wants boiling before anyone drinks it.</description>
+    <thingClass>Building</thingClass>
+    <graphicData>
+      <texPath>BadHygiene/Things/Building/Water/WaterButt</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>(2,2)</drawSize>
+    </graphicData>
+    <size>(2,2)</size>
+    <altitudeLayer>Building</altitudeLayer>
+    <passability>PassThroughOnly</passability>
+    <pathCost>50</pathCost>
+    <fillPercent>0.5</fillPercent>
+    <useHitPoints>true</useHitPoints>
+    <statBases>
+      <MaxHitPoints>150</MaxHitPoints>
+      <WorkToBuild>1200</WorkToBuild>
+      <Flammability>0.6</Flammability>
+    </statBases>
+    <costStuffCount>50</costStuffCount>
+    <stuffCategories>
+      <li>Woody</li>
+      <li>Stony</li>
+      <li>Metallic</li>
+    </stuffCategories>
+    <designationCategory>Production</designationCategory>
+    <comps>
+      <li Class="ColonistAwareness.CompProperties_WaterVessel">
+        <capacity>240</capacity>
+        <sealed_>false</sealed_>
+        <daysToStagnateOpen>6</daysToStagnateOpen>
+      </li>
+      <li Class="ColonistAwareness.CompProperties_RainCatch">
+        <catchmentFactor>0.02</catchmentFactor>
+        <apronCells>12</apronCells>
+      </li>
+    </comps>
+  </ThingDef>
+
+</Defs>

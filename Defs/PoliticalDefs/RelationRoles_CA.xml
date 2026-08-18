@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <!-- Relation roles used by structural runtime queries. -->
+
+  <ColonistAwareness.CARelationRoleDef>
+    <defName>CA_Role_FederationMember</defName>
+    <label>federation member</label>
+    <description>An organization that belongs to a federation.</description>
+  </ColonistAwareness.CARelationRoleDef>
+
+  <ColonistAwareness.CARelationRoleDef>
+    <defName>CA_Role_SettlementMember</defName>
+    <label>settlement member</label>
+    <description>A settlement that belongs to a faction organization. Delegated responsibilities define any shared authority.</description>
+  </ColonistAwareness.CARelationRoleDef>
+
+</Defs>

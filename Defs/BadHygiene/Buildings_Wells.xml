@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+<!-- Well art ported from Dubs Bad Hygiene by Dubwise56. See CREDITS.md.
+
+     Two wells, and the difference between them is REACH, not quality.
+     Neither purifies anything: a well brings up what the ground below
+     it holds, and whether that is drinkable is a fact about the
+     ground. A hand-dug shaft reaches a high water table; a bored well
+     follows the water down where a shaft cannot, which is what makes
+     dry country habitable at all.
+
+     Neither answers a salt coast. Digging beside the sea reaches sea
+     water, and that still has to be distilled. -->
+
+  <ThingDef ParentName="BuildingBase">
+    <defName>CA_WellDug</defName>
+    <label>dug well</label>
+    <description>A lined shaft sunk to the water table by hand. It reaches only water that lies close beneath the surface, and it brings up whatever is down there - including, near a coast, the sea.</description>
+    <thingClass>Building</thingClass>
+    <graphicData>
+      <texPath>BadHygiene/Things/Building/Water/PrimitiveWell</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>(2,2)</drawSize>
+    </graphicData>
+    <size>(2,2)</size>
+    <altitudeLayer>Building</altitudeLayer>
+    <passability>PassThroughOnly</passability>
+    <pathCost>60</pathCost>
+    <fillPercent>0.5</fillPercent>
+    <useHitPoints>true</useHitPoints>
+    <statBases>
+      <MaxHitPoints>180</MaxHitPoints>
+      <WorkToBuild>1800</WorkToBuild>
+      <Flammability>0.2</Flammability>
+    </statBases>
+    <costStuffCount>40</costStuffCount>
+    <stuffCategories>
+      <li>Stony</li>
+      <li>Woody</li>
+    </stuffCategories>
+    <designationCategory>Production</designationCategory>
+    <comps>
+      <!-- Five, not three: hand-dug wells historically go down tens of
+           metres. Only genuinely dry country puts water beyond a
+           shaft and a rope, and that is the case machinery answers. -->
+      <li Class="ColonistAwareness.CompProperties_Well">
+        <reach>5</reach>
+        <needsPower>false</needsPower>
+      </li>
+    </comps>
+  </ThingDef>
+
+  <ThingDef ParentName="BuildingBase">
+    <defName>CA_WellBored</defName>
+    <label>bored well</label>
+    <description>A drilled bore with a pump head, reaching water far below what a dug shaft can. It makes dry country habitable. It does not make salt water fresh.</description>
+    <thingClass>Building</thingClass>
+    <graphicData>
+      <texPath>BadHygiene/Things/Building/Water/DeepWaterWell</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>(2,2)</drawSize>
+    </graphicData>
+    <size>(2,2)</size>
+    <altitudeLayer>Building</altitudeLayer>
+    <passability>PassThroughOnly</passability>
+    <pathCost>60</pathCost>
+    <fillPercent>0.5</fillPercent>
+    <useHitPoints>true</useHitPoints>
+    <statBases>
+      <MaxHitPoints>240</MaxHitPoints>
+      <WorkToBuild>5200</WorkToBuild>
+      <Flammability>0.4</Flammability>
+    </statBases>
+    <costList>
+      <Steel>80</Steel>
+      <ComponentIndustrial>3</ComponentIndustrial>
+    </costList>
+    <researchPrerequisites>
+      <li>Electricity</li>
+    </researchPrerequisites>
+    <designationCategory>Production</designationCategory>
+    <constructEffect>ConstructMetal</constructEffect>
+    <comps>
+      <li Class="ColonistAwareness.CompProperties_Well">
+        <reach>9</reach>
+        <needsPower>false</needsPower>
+      </li>
+    </comps>
+  </ThingDef>
+
+</Defs>

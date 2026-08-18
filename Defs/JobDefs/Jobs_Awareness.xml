@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <JobDef>
+    <defName>CA_StackPosture</defName>
+    <driverClass>ColonistAwareness.JobDriver_CAStackPosture</driverClass>
+    <reportString>holding position.</reportString>
+    <alwaysShowWeapon>true</alwaysShowWeapon>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_CombatPosture</defName>
+    <driverClass>ColonistAwareness.JobDriver_CACombatPosture</driverClass>
+    <reportString>assessing a known contact.</reportString>
+    <alwaysShowWeapon>true</alwaysShowWeapon>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_CombatMove</defName>
+    <driverClass>ColonistAwareness.JobDriver_CACombatMove</driverClass>
+    <reportString>moving to a better combat position.</reportString>
+    <alwaysShowWeapon>true</alwaysShowWeapon>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_FightingWithdrawal</defName>
+    <driverClass>ColonistAwareness.JobDriver_CAWithdrawal</driverClass>
+    <reportString>executing a fighting withdrawal.</reportString>
+    <alwaysShowWeapon>true</alwaysShowWeapon>
+    <suspendable>false</suspendable>
+    <checkOverrideOnDamage>Never</checkOverrideOnDamage>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_Shelter</defName>
+    <driverClass>ColonistAwareness.JobDriver_CAShelter</driverClass>
+    <reportString>sheltering from an active raid or known threat.</reportString>
+    <casualInterruptible>false</casualInterruptible>
+    <suspendable>false</suspendable>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_CombatRecovery</defName>
+    <driverClass>ColonistAwareness.JobDriver_CACombatRecovery</driverClass>
+    <reportString>reorganizing after combat injury.</reportString>
+    <alwaysShowWeapon>true</alwaysShowWeapon>
+    <casualInterruptible>false</casualInterruptible>
+    <suspendable>false</suspendable>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_WaitForWelfareSupport</defName>
+    <driverClass>ColonistAwareness.JobDriver_CAWelfareSupportWait</driverClass>
+    <reportString>waiting for covered welfare egress.</reportString>
+    <alwaysShowWeapon>true</alwaysShowWeapon>
+    <casualInterruptible>false</casualInterruptible>
+    <suspendable>false</suspendable>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_BoundedMeleeDefense</defName>
+    <driverClass>ColonistAwareness.JobDriver_CABoundedMeleeDefense</driverClass>
+    <reportString>intercepting TargetA within a local combat envelope.</reportString>
+    <alwaysShowWeapon>true</alwaysShowWeapon>
+    <casualInterruptible>false</casualInterruptible>
+    <collideWithPawns>true</collideWithPawns>
+    <tryStartFlying>true</tryStartFlying>
+    <overrideFlyChance>1</overrideFlyChance>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_BoundedRangedDefense</defName>
+    <driverClass>ColonistAwareness.JobDriver_CABoundedRangedDefense</driverClass>
+    <reportString>engaging TargetA from the held position.</reportString>
+    <alwaysShowWeapon>true</alwaysShowWeapon>
+    <casualInterruptible>false</casualInterruptible>
+    <collideWithPawns>true</collideWithPawns>
+    <tryStartFlying>true</tryStartFlying>
+    <overrideFlyChance>1</overrideFlyChance>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_FeedDownedAnimal</defName>
+    <driverClass>ColonistAwareness.JobDriver_CAFeedDownedAnimal</driverClass>
+    <reportString>feeding TargetA to TargetB.</reportString>
+    <allowOpportunisticPrefix>true</allowOpportunisticPrefix>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_AssessCasualty</defName>
+    <driverClass>ColonistAwareness.JobDriver_CAAssessCasualty</driverClass>
+    <reportString>assessing a mission casualty.</reportString>
+    <casualInterruptible>false</casualInterruptible>
+    <suspendable>false</suspendable>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_CheckWelfare</defName>
+    <driverClass>ColonistAwareness.JobDriver_CACheckWelfare</driverClass>
+    <reportString>checking a last-known position.</reportString>
+    <casualInterruptible>false</casualInterruptible>
+    <suspendable>false</suspendable>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_EmergencySelfTend</defName>
+    <driverClass>ColonistAwareness.JobDriver_CAEmergencySelfTend</driverClass>
+    <reportString>stabilizing own injuries.</reportString>
+    <casualInterruptible>false</casualInterruptible>
+    <suspendable>false</suspendable>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_SecureEPW</defName>
+    <driverClass>ColonistAwareness.JobDriver_CASecureEPW</driverClass>
+    <reportString>securing TargetA under local cover.</reportString>
+    <alwaysShowWeapon>true</alwaysShowWeapon>
+    <casualInterruptible>false</casualInterruptible>
+    <suspendable>false</suspendable>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_InvestigateGunfire</defName>
+    <driverClass>ColonistAwareness.JobDriver_CAInvestigateGunfire</driverClass>
+    <reportString>investigating an unexplained weapon report.</reportString>
+    <alwaysShowWeapon>true</alwaysShowWeapon>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_AnimalGunfireResponse</defName>
+    <driverClass>ColonistAwareness.JobDriver_CAAnimalGunfireResponse</driverClass>
+    <reportString>reacting to unexplained gunfire.</reportString>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_HideCarried</defName>
+    <driverClass>ColonistAwareness.JobDriver_HideCarried</driverClass>
+    <reportString>hiding something away.</reportString>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_DragTo</defName>
+    <driverClass>ColonistAwareness.JobDriver_DragTo</driverClass>
+    <reportString>dragging a casualty clear.</reportString>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_EquipOffhand</defName>
+    <driverClass>ColonistAwareness.JobDriver_EquipOffhand</driverClass>
+    <reportString>taking up an offhand weapon.</reportString>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_WarGamesJob</defName>
+    <driverClass>ColonistAwareness.JobDriver_PracticeDrill</driverClass>
+    <reportString>playing war games.</reportString>
+  </JobDef>
+
+  <JobDef>
+    <defName>CA_PracticeHuntJob</defName>
+    <driverClass>ColonistAwareness.JobDriver_PracticeDrill</driverClass>
+    <reportString>on a practice hunt.</reportString>
+  </JobDef>
+
+</Defs>
