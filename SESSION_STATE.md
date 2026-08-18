@@ -1,113 +1,116 @@
 | Document | Colonist Awareness Overhaul Session State |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.4.1.0-alpha` · closed batch tip `B13` · next `B14` |
+| Version | `1.5.0.0-alpha` · closed batch tip `B14` · next `B15` |
 <!-- cao:generated:version END -->
 | Repository | `SESSION_STATE.md` |
-| Status | ACTIVE - current operational state. |
+| Status | READY - B14 is closed at the built, receipted, and byte-verified deployment boundary; RimWorld remains closed for the operator runtime test. |
 
 # Session State
 
-Updated 2026-08-13 23:42 UTC / 16:42 PST.
+Updated 2026-08-17 23:58 UTC / 16:58 PDT.
 
 Read this before claiming where creation or gameplay testing stands. Compile,
-receipts, review, deployment, and operator runtime evidence remain separate.
+receipts, deployment, and operator runtime evidence remain separate.
 
 ## Version control and governed history
 
 | Surface | State |
 |---|---|
-| Branch | `mallowfluff/b3-creation-flow-interaction` |
-| Exact B12 baseline | `e9ad9377186b79598a9ac15a21252d0dd2b132cd` |
-| B13 baseline audit | `96a9587` (`[B13] audit: establish B12 fidelity baseline`) |
-| B13 source closure | `e89d9367b83652c6250a62d2419d605c4e2f9b03` (`[B13] source: refresh cognition across jurisdiction changes`), following implementation `23dbd335d7054e37eeb12837b2e0ece307776242` and context/index correction `d55380ecac5064c73080d82ab7b55188ce70f92e` |
-| B13 governance closure | `959ab3e5dfee346388dbf0460c6a4df62145eb62` (`[B13] governance: ratify Culture completion and causal fidelity`) |
-| B13 deployment receipt | **PASS** - `B13_DEPLOYMENT_RECEIPT.md` records closed-process replacement, backup, and exact source/target byte identity. |
+| Active worktree | `.claude/worktrees/rimworld-regional-multithreading-47e9ec` |
+| Branch | `mallowfluff/b14-generation-political-audit` |
+| B14 baseline HEAD | `20ed6a3bf079fb4fc93f6735bed4cd926d7b552d` |
+| B14 closure | The governed B14 audit, source, integration, governance, and receipt commit sequence is frozen at the verified runtime-test boundary on this branch. |
+| Closed chronology | `A1-A102` and `B1-B14`; B14 is minor capability unit `VU-041`; `B15` is next. |
 
-The portable chronology contains 115 closed batches: `A1-A102` and `B1-B13`.
-Forty contiguous version units cover that chronology exactly once. B13 is
-`VU-040`, a kohai unit deriving `1.4.1.0-alpha`. Series-neutral `T-*` threads
-classify work without changing chronology. `B14` is the next ordinary batch.
-
-## Current B13 contract
+## Current B14 contract
 
 | Surface | Current state |
 |---|---|
-| Culture authoring | Twenty-four population questions in eight categories; five ordered anchors per question; one global diversity control; advanced per-question spread; complete editable presets; deterministic randomization; manual, preset, profile, and generated paths use one Culture object |
-| Causal cognition | Private position, public expression, attention, inherited-prior strength, perceived social pressure, observation likelihood, knowledge confidence, conviction, and uncertainty persist separately; question-specific psychology supplies only a bounded private deviation |
-| Historical feedback | Seven direct represented-fact observation routes persist position, spread, participation, represented population, continuity, and source identity before stable pawn appraisal; seventeen exact factual-subject adapters cover the remaining questions; absence of an event is not negative evidence |
-| Ideoligion | Native doctrine remains native and contributes pressure without rewriting Culture |
-| Political development | Pawn issue positions, represented majorities, qualified issue links, and faction-bounded coalitions persist separately from normative beliefs and instituted order |
-| Institutions | Organizations own legitimacy and sanctions assembled from represented procedure, performance, support, coercion, competence, fit, and treatment facts |
-| Institutional context | Population identity, local reaction scope, and institutional jurisdiction remain separate; regional cognition retains the exact settlement organization resolved from the pawn's population assignment |
-| Knowledge | Propositions retain holders, sources, per-route acquisition, provenance, contradictions, access, trust, confidence, transmission, custody, decay, and research receipts; every built-in factual subject maps expertise deference to demonstrated RimWorld skill domains |
-| Authority | Culture changes appraisal and bounded selection of discretionary CA action; native legality and direct, relayed, or restored operator intent remain authoritative |
-| Compatibility | Campaign catalog 3 carries cultural-cognition schema 2; Culture schema 10 requires question registry 2; other B12 owners retain their current schemas |
+| Regional geography | Preview, confirmation, and generation share one exact composition identity over scale, shape, arrival, biome, relief, water, links, stone, landmarks, and mutators. Base-game and open modded feature obligations fail closed when unresolved. |
+| Map Preview integration | The preview and toolbar dock within the creation page without rewriting Map Preview's saved global position. The former synthetic `A`, number, and diamond overlay is removed. |
+| Starting Region map | Region, Map, and Details are views of the same authored state. Visible labels resolve in reverse paint order. Arrival and settlement placement write the selected member tile, cannot occupy the same tile, and return to the compact map. The Region list and map invoke the same placement operation. |
+| Culture | A generated local Culture name follows its parent identity. An explicitly authored local name remains independent. A Culture's own constituent identity label follows the Culture name. Twenty-two complete historical and social presets fill the same 24 editable questions through one grouped, searchable browser at founding and established-society scope. Historical titles name the recognized society, regime, or population; exact date ranges remain separate, and each regional catalog is chronological. |
+| Political Order | One complete normative composition owns 26 causal questions and 110 supported positions. Blendable questions total 100; exclusive questions remain singular. Twelve ownership domains can differ independently. |
+| Political identity | Names, summaries, and the full political account are generated from saved variables. Rerolling changes the generated projection; an optional custom display name does not replace the causal account. |
+| Society presets | One shared grouped and searchable catalog exposes 22 independently identified starting recipes. Each owns a Culture reference and a frozen complete 26-question Political Order snapshot. Application validates copies, commits both canonical faction owners together, and restores both on exceptional commit failure. It writes no Society ownership, Ideoligion, founding arrangement, represented institution, or event history. |
+| Presets and profiles | Culture and Political Order presets remain independent component substitutions. Global settings persist reusable Culture, Political Order, and two-component Society snapshots; applying any profile copies values without shared mutable data or campaign preset ownership. |
+| Represented institutions | Existing offices, rules, ownership, security, and other instituted mechanisms remain separate realized facts and appear as read-only comparison evidence rather than a duplicate editor. |
+| Founding | Founders carry Culture, Ideoligion, and Political Order. Their adopted landing arrangement remains a separate factual choice; later institutions develop through play. |
+| Environment and habitat | Exact terrain, biome, growing period, ecology, temperature, water, light, pollution, hazards, and vacuum derive the physical functions a site requires. Advanced factions may consider hostile established-settlement ground, but confirmation evaluates actual saved programs. Frontier sites must materially close every requirement before residents appear. |
+| Autonomous construction | Existing construction owners rank valid candidates through task-owned terrain fit, adjacency, throughput, circulation, expansion, environmental buffering, defensive separation, material cost, visual order, and stable ordering. The player-base corpus supplies reusable evidence, not copied layouts, a universal style score, or a player-facing mode. |
 
 ## Governed runtime fixture
 
 | Fact | Value |
 |---|---|
-| Active plan | `%USERPROFILE%\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlan.xml` |
-| Keyed mirror | `%USERPROFILE%\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlans\regional-plan-9bcbba2fdcd1e7f334711a69635242a2.xml` |
-| Fixture SHA-256 | `27354E00647007BD54EC5D5E0B29E7E408E40CEEBE4A3CAAADE068D23BDCA101` on both files |
-| Schema | pending authoring epoch 12; regional plan 11; Culture 10 / registry 2; Political Beliefs 9; campaign catalog 3; act ledger 2; organization 2; cultural cognition 2 |
+| Runtime keyed plan | `%USERPROFILE%\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlans\regional-plan-9bcbba2fdcd1e7f334711a69635242a2.xml` |
+| Governed mirror | `%USERPROFILE%\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Config\CARegionalPendingPlan.xml` |
+| Pair identity | Byte-identical, 397,275 bytes, SHA-256 `6AE604BB8157FC5F12C58932A2476700A336F3C057F11D85441D09BFF151EF04` |
+| Schema | pending authoring epoch 12; regional plan 13; Culture 10 / registry 2; Political Order 10; represented institutions 1; campaign catalog 3 |
 | Identity | world `alysaliu|1|Algorab Markab`; region `CA-RG-EB596A12`; candidate `613b1fe44104`; arrival tile `389638`; map scale 350 |
-| Composition | 3 factions; 4 settlements; 9 population groups; 19 explicit established-program facts |
-| Culture state | Eight Culture records contain 192 complete root distributions, 2 retained authored local distributions, and 26 preserved evidence records |
-
-The B13 fixture generator uses the current schema, preserves the intended
-composition and current identity, completes only absent root questions,
-validates before atomic pair replacement, and verifies serialization readback.
-The active and keyed surfaces are byte-identical.
+| Composition | 3 factions; 4 settlements; 4 current population assignments; 19 explicit established-program facts |
+| Culture state | 8 Culture records retain 290 distributions and 25 evidence records. |
+| Political state | 4 complete Political Orders retain 26 normalized questions each; recovered mixtures and independent represented institutions survive serialization and readback. |
 
 ## Verification and deployment
 
 | Gate | Result |
 |---|---|
-| B10 acceptance | **75/75 PASS** |
-| B11 acceptance | **78/78 PASS** |
-| B12 acceptance | **113/113 PASS** |
-| B13 acceptance | **67/67 PASS** |
-| Fixture conversion | **PASS** - 8 Culture records; 194 distributions; 26 evidence records; active/mirror identity and composition preserved |
-| Version model | **4/4 PASS** - 40 units cover A1-B13; `1.4.1.0-alpha`; B14 next |
-| Independent review | **PASS** - causal, structural, and player-facing surface review close with 0 Critical/High/Medium/Low; `B13_REVIEW_RECEIPT.md` |
-| Release build | **PASS** - two no-incremental Release builds from source commit `e89d936` produced 0 warnings, 0 errors, and identical bytes |
-| Assembly | 3,973,120 bytes; SHA-256 `889F81BD696627359F6EFB096304303CAE3066D7870F001E1316DAD2D4324372` |
-| Deployment | **PASS** - RimWorld was closed; source and target are byte-identical at 3,973,120 bytes and SHA-256 `889F81BD696627359F6EFB096304303CAE3066D7870F001E1316DAD2D4324372`; the verified B12 target remains recoverable. |
+| Fixture conversion | **PASS** - schema 13; runtime/mirror byte identity; 3 factions; 4 settlements; 4 current population assignments; four complete Political Orders |
+| Authoring convergence | **24/24 PASS** - `Receipts/B14/B14_AUTHORING_CONVERGENCE_STATIC_RECEIPT.md` |
+| Society preset execution | **PASS** - 22/22 built-ins own and apply complete Culture plus frozen Political Order snapshots; causal Culture mutation ends a match; invalid apply rolls back; component substitutions remain isolated; saved Society schema survives Scribe serialization/readback |
+| Regional geography | **12/12 PASS** - `Receipts/B14/B14_REGIONAL_GEOGRAPHY_STATIC_RECEIPT.md` |
+| Generation | **12/12 PASS** - `Receipts/B14/B14_GENERATION_STATIC_RECEIPT.md` |
+| Settlement environment | **21/21 PASS** - `Receipts/B14/B14_SETTLEMENT_ENVIRONMENT_STATIC_RECEIPT.md` |
+| Culture completion | **67/67 PASS** - retained B13 suite against the schema-13 fixture |
+| Retained acceptance | **78/78 PASS** - current source and converted fixture |
+| Persistence census | **PASS** - 253 carriers; 86 catalog schemas; 5 explicit non-campaign exclusions; 0 invalid routes |
+| Review panel | **PASS** - correctness and cross-file coherence re-reviews report no remaining Critical or High Society-convergence findings; independent build validation passed |
+| Release build | **PASS** - two clean, no-incremental Release builds completed with 0 warnings and 0 errors and emitted byte-identical bytes |
+| Assembly | 4,149,248 bytes; SHA-256 `A5A3D89A516B08156D0163E1F49D8DEC97FCFFED799B60531715DB9C9D495FC9` |
+| Deployment | **PASS** - RimWorld was closed; the installed mod junction targets this worktree; worktree and installed DLL are byte-identical at the assembly identity above. The game was not launched. |
 
-Static evidence establishes the source, serialization, fixture, and deployment
-candidate. It does not select options, advance the game, or establish visual and
-gameplay acceptance.
+Static evidence establishes source, serialization, fixture, reproducible
+assembly, and deployed tree identity. It does not establish how the flow looks
+and plays.
 
 ## Operator runtime boundary
 
-B13 ends at the operator runtime-test boundary. Publication and byte-verified
-deployment are complete. Codex
-does not advance creation, choose authoring values, start the game, alter saves,
-or claim how the game looks and plays on the operator's behalf.
+Prior fresh runs exposed and isolated the Vehicle Framework bundle, shared
+resolver, and pre-`NeedDef` body-need faults. Their corrections and the current
+Society convergence now share one verified deployed assembly. RimWorld is
+closed. A fresh operator launch is the next evidence boundary. Codex does not
+choose values, advance creation, start the game, alter saves, or claim
+visual/gameplay acceptance for the operator.
 
-| Observation | Operator check |
+| Runtime focus | Operator check |
 |---|---|
-| Creation load | Open the current pending plan and confirm all 3 factions, 4 settlements, 9 population groups, and 19 established operations remain present. |
-| Culture composer | Confirm the twenty-four questions are grouped into eight categories; the global diversity control, complete presets, randomization, five anchors, advanced spread, evidence, and practice history are legible and editable at founding and established-society scope. |
-| Causal controls | Confirm ordinary controls state one direct cause and advanced fields remain optional; preset, random, and manual edits remain freely editable in one Culture object. |
-| Political development | Confirm normative Political Beliefs and instituted order remain separate while summaries expose realized tensions without inventing state. |
-| Ideoligion | Confirm none, pending, one, mixed, and unresolved states appear accurately and the native chooser preserves neighboring CA state. |
-| Starting Region | Confirm object selection, map placement, details, relations, programs, provisions, and authored composition remain usable. |
-| Generation and play | Start the selected campaign and inspect Culture materialization, persistence, relations, knowledge, organizations, jobs, and runtime health without rerolled or dropped composition. |
-| First retained save | After successful validation, retain the campaign as the first live B13 durability baseline. |
+| Political Order | Confirm variables are the primary controls; complete presets and generation produce a coherent editable order; the generated identity/account update from those variables; custom naming remains secondary. |
+| Society presets | Choose one named society and confirm Culture and Political Order both change together while Ideoligion, rules at landing, and represented institutions remain unchanged. Save and reload a Society recipe, then edit either component and confirm the other remains stable and the derived match disappears after a causal edit. |
+| Settlement placement | From either the Region list or Map view, choose an existing faction, a custom new society, or a catalog society. Confirm one ordinary settlement is created, the next map click assigns its broad area, and Culture, Political Order, population, faction, and settlement remain editable through their existing surfaces. |
+| Mixed economy | Confirm essential, industrial, trade, finance, and luxury ownership can take different public, cooperative, private, and common mixtures without collapsing into binary pseudo-options. |
+| Represented institutions | Confirm established institutional facts are visible for comparison but no duplicate institution grid is offered. |
+| Culture identity | Rename a parent Culture and confirm dependent generated local identities follow it while an explicitly authored local name does not. |
+| Historical Culture presets | Open Culture presets at founding and established-society scope; confirm the same grouped, searchable 22-preset library appears and each selection remains fully editable. |
+| Regional preview | Confirm the stray `A` and diamond are absent, labels do not clip, and preview/settings remain docked and controllable. |
+| Authored fixture | Confirm the selected region loads with 3 factions, 4 settlements, 4 current population assignments, and the recovered relationships intact. |
+| Environment and settlements | Confirm hostile biomes state their requirements; advanced established settlements are admitted only when their authored programs satisfy those requirements; unsupported populations fail visibly. |
+| Frontier habitats | Confirm frontier residents appear only after a liveable compact site exists with the required shelter, beds, food route, reserve, medicine, temperature, water, light, and protection for that ground. |
+| Autonomous building | Observe whether construction preserves survival closure first, then useful adjacency, short work chains, circulation, expansion room, environmental buffering, defensible access, and deliberate visual order without selecting a style mode. |
+| Generation | Start the selected campaign and inspect regional composition, Political Order, Culture, represented institutions, relations, settlements, and populations without reroll or loss. |
+| Startup closure | Confirm the load reaches the creation flow without the prior missing `Vehicles.*` types, missing CA thirst/bladder stats, aborted faction definitions, or the resulting cross-reference cascade. |
 
 ## Environment and preserved evidence
 
-- RimWorld target: 1.6.4871 rev590.
-- RimWorld remained closed through verification and assembly replacement.
-  Codex did not launch it afterward.
-- `B13_CAUSAL_CONTRACT.md`, `CULTURE_RESEARCH_CORPUS.md`,
-  `AUTHORING_ONTOLOGY_COVERAGE.md`, `MODULE_OWNERSHIP.md`,
+- RimWorld target: 1.6.4871 rev591.
+- PIDs `36604`, `11248`, `34064`, `5084`, and `16084` remain historical runtime
+  evidence for the startup convergence. No RimWorld process is currently
+  running; the deployed assembly is `A5A3D89A...`.
+- `AUTHORING_ONTOLOGY_COVERAGE.md`, `MODULE_OWNERSHIP.md`,
   `SCHEMA_REGISTRY.md`, `PERSISTENCE_CENSUS.md`, and
   `CAMPAIGN_COMPATIBILITY.md` are the current canonical boundaries.
-- `B13_ACCEPTANCE_RECEIPTS.md`, `B13_FIXTURE_RECEIPT.md`, and the final review,
-  build, and deployment receipts are the current capability evidence.
+- `Receipts/B14` contains the authoring, geography, generation, transition,
+  interaction, runtime, offline-authoring, and deployment evidence.
 - Operator control of time, pawn orders, windows, saves, and autosave remains
   unchanged unless explicitly requested.

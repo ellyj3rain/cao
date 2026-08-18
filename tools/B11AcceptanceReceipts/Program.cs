@@ -23,6 +23,16 @@ internal static class Program
 
     private static int Main(string[] args)
     {
+        if (args.Length == 2 && args[1] == "--coverage-only")
+        {
+            repo = Path.GetFullPath(args[0]);
+            WriteOntologyCoverage();
+            PersistenceCensusResult coverageCensus =
+                WritePersistenceCensus();
+            Console.WriteLine((coverageCensus.Passed ? "PASS" : "FAIL")
+                + " ontology coverage and persistence census refreshed");
+            return coverageCensus.Passed ? 0 : 2;
+        }
         if (args.Length == 2 && args[1] == "--census-only")
         {
             repo = Path.GetFullPath(args[0]);
@@ -47,10 +57,10 @@ internal static class Program
         byte[] mirrorBytes = File.ReadAllBytes(mirror);
         string activeHash = Sha(activeBytes);
         string mirrorHash = Sha(mirrorBytes);
-        XDocument activeDoc = XDocument.Parse(
-            Encoding.UTF8.GetString(activeBytes), LoadOptions.PreserveWhitespace);
-        XDocument mirrorDoc = XDocument.Parse(
-            Encoding.UTF8.GetString(mirrorBytes), LoadOptions.PreserveWhitespace);
+        XDocument activeDoc = XDocument.Load(active,
+            LoadOptions.PreserveWhitespace);
+        XDocument mirrorDoc = XDocument.Load(mirror,
+            LoadOptions.PreserveWhitespace);
         XElement activePlan = activeDoc.Root?.Element("plan")
             ?? throw new InvalidDataException("active plan missing");
         XElement mirrorPlan = mirrorDoc.Root?.Element("plan")
@@ -73,6 +83,7 @@ internal static class Program
         string authoringUi = S("Source/CreationFlowUiModule.cs")
             + cultureSource + S("Source/AuthoringComposerSupportModule.cs");
         string presentation = S("Source/AuthoringPresentationModule.cs");
+        string politicalOrder = S("Source/PoliticalOrderAuthoringModule.cs");
         string setupSource = S("Source/RegionalSetupModule.cs");
         string factionStateSource = S("Source/FactionStateModule.cs");
         string productionActSources = S("Source/ActRecordModule.cs")
@@ -542,7 +553,7 @@ internal static class Program
             && cultureSource.Contains("CACultureQuestionRegistry.All")
             && cultureSource.Contains("DrawQuestionAdvanced")
             && cultureSource.Contains("DrawPracticeHistory")
-            && cultureSource.Contains("Practice history"),
+            && cultureSource.Contains("are not settings here."),
             "questions write current distributions while practice history remains a distinct evidence surface");
 
         C(41, "Zero-item categories are omitted",
@@ -574,60 +585,57 @@ internal static class Program
             && ontologyKernel.Contains("MultiValuedSet"),
             "navigation facets are documented and implemented separately from state cardinality");
 
-        C(47, "Political Beliefs write normative state only",
+        C(47, "Political Order owns complete normative composition",
             CAAuthoringControlContracts.All.Any(item =>
-                item.Key == "politics.belief-mechanisms"
+                item.Key == "politics.order"
                     && item.TemporalStatus == CAAuthoringTemporalStatus.Normative
-                    && item.AuthoritativeOwner == "CAPoliticalBeliefs"),
-            "belief mechanisms are owned by the normative belief record");
-        C(48, "Current-order editors write realized state only",
+                    && item.AuthoritativeOwner == "CAPoliticalBeliefs"
+                    && item.SemanticKind
+                        == CAAuthoringSemanticKind.StructuredComposition),
+            "Political Order is one complete causal composition");
+        C(48, "Represented institutions remain separate realized facts",
             CAAuthoringControlContracts.All.Any(item =>
-                item.Key == "politics.current-order-mechanisms"
+                item.Key == "politics.represented-institutions"
                     && item.TemporalStatus == CAAuthoringTemporalStatus.Current
                     && item.AuthoritativeOwner == "CAFactionState"),
-            "current-order mechanisms are current instituted facts");
-        C(49, "Authority templates are labeled as current-order templates",
-            CAPoliticalPatchTemplates.CurrentOrder.All(item =>
-                item.Target == CAPoliticalPatchTarget.CurrentOrder)
-            && cultureSource.Contains("Current-order sets")
-            && !cultureSource.Contains("Political profiles"),
-            CAPoliticalPatchTemplates.CurrentOrder.Count
-                + " current-order partial templates");
-        C(50, "No composite archetype masquerades as a political type",
-            CAPoliticalPatchTemplates.Beliefs.Concat(
-                    CAPoliticalPatchTemplates.CurrentOrder)
-                .All(item => item.Target == CAPoliticalPatchTarget.NormativeBeliefs
-                    || item.Target == CAPoliticalPatchTarget.CurrentOrder)
-            && ontologyCoverage.Contains("Composite societal templates: **0**"),
-            "the current catalog contains scoped belief or current-order patches only");
-        C(51, "Political Profile is absent from active implementation",
-            !allSource.Contains("PoliticalProfile")
-            && !allSource.Contains("Political profiles"),
-            "active types, fields, and labels use beliefs, current order, and partial sets");
-        C(52, "Every preset declares its exact patch",
-            CAPoliticalPatchTemplates.Beliefs.Concat(
-                    CAPoliticalPatchTemplates.CurrentOrder)
-                .All(item => item.ExactWrites().Any()
-                    && item.MergeBehavior.Contains("preserve", StringComparison.OrdinalIgnoreCase)),
-            "all built-ins enumerate exact mechanisms and merge behavior");
-        string applyTemplate = Slice(cultureSource,
-            "internal static void ApplyTemplate", "internal static bool UsesTemplate");
-        C(53, "Preset application preserves unrelated authored facts",
-            applyTemplate.Contains("CAFactionAxes.Add")
-            && !applyTemplate.Contains("CAFactionAxes.Set")
-            && applyTemplate.Contains("template.Mechanisms")
-            && applyTemplate.Contains("RemoveReceipt"),
-            "partial application adds listed mechanisms without replacing unlisted subjects");
+            "instituted facts are not a duplicate setup editor");
+        C(49, "Obsolete duplicate political editor is removed",
+            !allSource.Contains("Dialog_CAAxisEditor")
+            && !allSource.Contains("CAPoliticalPatchTemplate")
+            && !allSource.Contains("Current-order sets"),
+            "one Political Order composer remains active");
+        C(50, "Political identity is generated from variables",
+            politicalOrder.Contains("GeneratedName(")
+            && politicalOrder.Contains("Description(")
+            && politicalOrder.Contains("PropertyAverage("),
+            "name and account are projections of the complete variable state");
+        C(51, "Political presets fill the complete order",
+            politicalOrder.Contains("foreach (string property in PropertyKeys)")
+            && politicalOrder.Contains("BuildPreset(")
+            && politicalOrder.Contains("Complete order"),
+            "complete presets replace partial mechanism patches");
+        C(52, "Political mixtures are normalized",
+            politicalOrder.Contains("100 - normalized.Sum")
+            && politicalOrder.Contains("does not total 100")
+            && politicalOrder.Contains("does not permit a mixture"),
+            "blendable subjects total 100 and exclusive subjects stay singular");
+        C(53, "Saved orders copy complete variables",
+            presentation.Contains("ApplyPoliticalValues(profile?.values, target)")
+            && presentation.Contains("target.CopyFrom(values)")
+            && presentation.Contains("target.questions")
+            && presentation.Contains("CAUserPoliticalOrderProfile"),
+            "saved orders copy the complete question model into the target owner");
         C(54, "Global preset edits cannot mutate authored worlds",
             presentation.Contains("values = beliefs.Copy()")
-            && presentation.Contains("target.ApplyInheritedTemplate")
-            && presentation.Contains("CAFactionAxes.Add(target.positions")
-            && presentation.Contains("RemoveReceipt(target"),
-            "settings own copies; application copies values into world-owned state");
+            && presentation.Contains("ApplyPoliticalValues(profile?.values, target)")
+            && presentation.Contains("target.CopyFrom(values)")
+            && presentation.Contains("string ownerId = target.id")
+            && presentation.Contains("option.source = (byte)CAAxisSource.Authored"),
+            "saved profiles own copies; application copies the complete order into world-owned state while preserving owner identity");
         C(55, "Self-identification is separate from structural state",
             setupSource.Contains("public string customName")
             && setupSource.Contains("public List<CAAxisEntry> factionStructure")
-            && ontologyCoverage.Contains("Self-identification"),
+            && ontologyCoverage.Contains("self-identification"),
             "faction name and instituted mechanisms have separate fields and controls");
         string characterize = Slice(compositionSource,
             "internal static string Characterize", "internal static List<string> Conflicts");
@@ -644,21 +652,25 @@ internal static class Program
                 .All(item => !string.IsNullOrWhiteSpace(
                     item.ExclusivityInvariant)),
             contractFailure57 ?? "all control contracts complete");
-        C(58, "Overlapping political concepts are compositional",
+        C(58, "Political positions compose within their owning question",
             CAAuthoringControlContracts.All.Any(item =>
-                item.Key == "politics.belief-mechanisms"
-                    && item.SemanticKind == CAAuthoringSemanticKind.MultiValuedSet)
-            && compositionSource.Contains("internal static void Add("),
-            "beliefs and current order store several mechanisms per subject");
-        bool authoredPair = activePlan.Descendants("positions").Any(value =>
-                HasPair(value, "ownership", "private", "cooperative"))
-            && activePlan.Descendants("positions").Any(value =>
-                HasPair(value, "economy", "market", "communal"));
+                item.Key == "politics.order"
+                    && item.SemanticKind
+                        == CAAuthoringSemanticKind.StructuredComposition)
+            && politicalOrder.Contains("definition.Blendable")
+            && politicalOrder.Contains("item.share * 100d / total"),
+            "each blendable political question stores a normalized composition instead of an unscoped mechanism bag");
+        bool authoredPair = activePlan.Descendants("questions").Any(value =>
+                HasPoliticalPair(value, "property.industry", "private",
+                    "cooperative"))
+            && activePlan.Descendants("questions").Any(value =>
+                HasPoliticalPair(value, "economy.exchange", "market",
+                    "communal"));
         bool orderPair = activePlan.Descendants("factionStructure").Any(value =>
             HasPair(value, "support", "private", "public"));
         C(59, "Valid pairwise combinations survive serialization",
             authoredPair && orderPair,
-            "fixture carries private+cooperative ownership, market+communal exchange, and private+public support combinations");
+            "fixture carries private+cooperative industry, market+communal exchange, and private+public represented support combinations");
         IReadOnlyList<CAPoliticalLegacyReceiptExpansion> ownershipExpansion =
             CAPoliticalLegacyMechanisms.ExpandReceipt("ownership", "mixed",
                 "private=2,common=2", "seed=fixed", tieBroken: true);
@@ -779,14 +791,14 @@ internal static class Program
             "all original ownership, profiler, schema, migration, and rollback receipts pass");
         C(75, "Schema transition is deterministic and explicit",
             V(activeDoc.Root, "authoringDataEpoch") == "12"
-            && V(activePlan, "schemaVersion") == "11"
+            && V(activePlan, "schemaVersion") == "13"
             && cultures.All(item => V(item, "schemaVersion") == "10")
-            && politicalBeliefs.All(item => V(item, "schemaVersion") == "9")
+            && politicalBeliefs.All(item => V(item, "schemaVersion") == "10")
             && culturePractices.All(item => !V(item, "practiceKey").Equals("")
                 && !V(item, "sourceOwner").Equals("")
                 && item.Element("subjectKey") == null)
             && ontologyKernel.Contains("FromB10LongitudinalEvidence"),
-            "pending epoch 12, regional plan 11, Culture 10, Political Beliefs 9, and explicit B10 evidence gate");
+            "pending epoch 12, regional plan 13, Culture 10, Political Order 10, and explicit B10 evidence gate");
         C(76, "Clean Release build completed with zero errors",
             buildReceipt.Contains("Warnings: **0**")
             && buildReceipt.Contains("Errors: **0**")
@@ -845,7 +857,7 @@ internal static class Program
         var text = new StringBuilder();
         text.AppendLine("# Persistence census")
             .AppendLine()
-            .AppendLine("Date: 2026-08-13")
+            .AppendLine("Date: 2026-08-17")
             .AppendLine()
             .AppendLine("This report is generated from production C# source, independently of the campaign schema catalog. It discovers declarations that directly write through `Scribe`, call a nested `Expose` writer, or inherit a native persisted job/lord/need/thought/world/scenario owner. Every discovered carrier must resolve to an executable catalog schema or a narrow, stated non-campaign exclusion.")
             .AppendLine()
@@ -1131,7 +1143,8 @@ internal static class Program
         if (direct.Count > 0) return Route(direct.ToArray());
 
         if (carrier.Name is "AwarenessSettings"
-            or "CAUserCultureProfile" or "CAUserPoliticalBeliefSet")
+            or "CAUserCultureProfile" or "CAUserPoliticalOrderProfile"
+            or "CAUserSocietyProfile")
             return Exclude("global mod settings or user preset outside a realized campaign save");
         if (carrier.Name is "CAAgentDebugBridge"
             or "CAConvergenceExerciseComponent")
@@ -1172,11 +1185,14 @@ internal static class Program
                     : "model.domestic-unit");
             case "EquipTransitionModule.cs": return Route("map.equipment-transition");
             case "FactionCompositionModule.cs":
-                return Route("model.political-beliefs", "model.current-order");
+                return Route("model.political-order",
+                    "model.represented-institutions");
             case "FactionCultureBeliefsModule.cs":
                 return Route(carrier.Name.StartsWith("CAPolitical",
                         StringComparison.Ordinal)
-                    ? "model.political-beliefs" : "model.culture");
+                    ? "model.political-order" : "model.culture");
+            case "PoliticalOrderAuthoringModule.cs":
+                return Route("model.political-order");
             case "FactionStateModule.cs": return Route("world.faction-state");
             case "FoundingArrangementModule.cs": return Route("model.founding-arrangement");
             case "FrontierModule.cs": return Route("model.frontier-map-plan");
@@ -1521,8 +1537,15 @@ internal static class Program
     private static XElement SyntheticPoliticalBeliefs()
     {
         return new XElement("politicalBeliefs",
-            new XElement("schemaVersion", 9),
+            new XElement("schemaVersion", CACampaignSchemaCatalog.All
+                .First(item => item.Key == "model.political-order")
+                .CurrentVersion),
             new XElement("id", "beliefs.synthetic"),
+            new XElement("name", new XAttribute("IsNull", "True")),
+            new XElement("nameAuthored", "False"),
+            new XElement("nameRoll", 0),
+            new XElement("generationRoll", 0),
+            new XElement("questions"),
             new XElement("positions"),
             new XElement("derivationReceipts"));
     }
@@ -1813,6 +1836,20 @@ internal static class Program
         return values.Contains(left) && values.Contains(right);
     }
 
+    private static bool HasPoliticalPair(XElement collection,
+        string question, string left, string right)
+    {
+        if (collection == null) return false;
+        XElement state = collection.Elements("li").FirstOrDefault(item =>
+            V(item, "questionKey") == question);
+        if (state == null) return false;
+        var represented = new HashSet<string>(Items(state, "options")
+            .Where(item => int.TryParse(V(item, "share"), out int share)
+                && share > 0)
+            .Select(item => V(item, "optionKey")), StringComparer.Ordinal);
+        return represented.Contains(left) && represented.Contains(right);
+    }
+
     private static string Canonical(XElement element)
     {
         return element?.ToString(SaveOptions.DisableFormatting) ?? "";
@@ -1866,10 +1903,25 @@ internal static class Program
         int subjectCount = CASocialSubjectRegistry.Authorable().Count;
         int practiceCount = CACulturalPracticeRegistry.All.Count;
         int politicalMechanisms = PoliticalMechanismCount();
+        string politicalOrderSource = S("Source/PoliticalOrderAuthoringModule.cs");
+        int propertyQuestions = Regex.Matches(politicalOrderSource,
+            "PropertyQuestion\\(\"property\\.").Count;
+        int politicalQuestions = Regex.Matches(politicalOrderSource,
+                "new CAPoliticalQuestionDef\\(").Count - 1
+            + propertyQuestions;
+        int declaredPoliticalOptions = Regex.Matches(politicalOrderSource,
+            "\\bO\\(\"").Count;
+        int politicalOptions = declaredPoliticalOptions - 4
+            + propertyQuestions * 4;
+        int politicalPresets = Regex.Matches(politicalOrderSource,
+            "new CAPoliticalOrderPreset\\(").Count;
+        int representedInstitutionSubjects = Regex.Matches(
+            S("Source/FactionCompositionModule.cs"),
+            "new CAAxisDef").Count;
         var text = new StringBuilder();
         text.AppendLine("# Authoring Ontology Coverage")
             .AppendLine()
-            .AppendLine("Date: 2026-08-13")
+            .AppendLine("Date: 2026-08-16")
             .AppendLine()
             .AppendLine("This is the current production inventory for CAO's world and founding authoring. It separates what the architecture can represent from what the current build actually knows, realizes, persists, consumes, and exposes. Extensibility is not production breadth. An open registry is capacity, not completion; demonstration records are not production content unless they have a real source and consumer.")
             .AppendLine()
@@ -1879,10 +1931,11 @@ internal static class Program
             .AppendLine("|---|---|---|---|---|")
             .AppendLine($"| Social meaning | Namespaced, population-scoped evaluative relations with approval, normality, prestige, salience, provenance, evidence, and contradiction | {subjectCount} mechanically grounded social-subject schemas | Source facts and known acts feed interpretation, reaction, expression, and longitudinal history | Add or edit a population's meaning of a concrete social referent; searchable list without source-domain tabs |")
             .AppendLine($"| Cultural practice | Repeated conduct with actor, target, trigger, cadence, operator, authority, setting, material, conditions, provenance, evidence, and consumer | {practiceCount} concrete practice schemas | Settlement programs, organizations, acts, agreements, provisions, and longitudinal evidence realize practice state | Add inherited or established local practice from the distinct concrete-practice vocabulary |")
-            .AppendLine("| Culture | Population distributions over 24 explicit questions, constituents, inherited and lived practices, observations, transitions, locality, and native visual tradition | Twenty-four questions in eight categories plus the complete subject/practice vocabularies below | Pawn appraisal and repeated represented evidence alter local Culture only at explicit transition boundaries | One Culture composer with categorized questions, one global diversity control, advanced local spread, presets, randomization, constituents, read-only practice history, continuity, and visual tradition |")
-            .AppendLine($"| Political Beliefs | Independent multi-valued normative mechanisms over 13 political subjects | {politicalMechanisms} supported mechanisms and {CAPoliticalPatchTemplates.Beliefs.Count} partial belief sets | Belief-practice readings, legitimacy, reaction, and founding suggestions consume normative state | Add or remove mechanisms per subject; partial sets add listed commitments and preserve everything else |")
-            .AppendLine($"| Current order | Independent instituted mechanisms over the same 13 comparison subjects | {politicalMechanisms} supported mechanisms and {CAPoliticalPatchTemplates.CurrentOrder.Count} partial current-order sets | Offices, organizations, work, property, security, provisions, and tension reporting consume instituted state | Established-society editor keeps beliefs and current order side by side with different labels and writes |")
+            .AppendLine("| Culture | Population distributions over 24 explicit questions, constituents, inherited and lived practices, observations, transitions, locality, and native visual tradition | Twenty-four questions in eight categories plus the complete subject/practice vocabularies below | Pawn appraisal and repeated represented evidence alter local Culture only at explicit transition boundaries | One Culture composer with categorized values, one overall-disagreement control, per-value disagreement under More, presets, randomization, constituents, read-only practices, continuity, and visual style |")
+            .AppendLine($"| Political Order | Complete normative composition over {politicalQuestions} causal questions | {politicalOptions} supported positions and {politicalPresets} complete presets | Generated identity and account, belief-practice readings, legitimacy, reaction, ownership, provision, and founding suggestions consume the saved variables | Edit one concrete question at a time; blendable subjects total 100 and complete presets remain editable |")
+            .AppendLine($"| Represented institutions | Independent instituted mechanisms over {representedInstitutionSubjects} comparison subjects | {politicalMechanisms} supported compatibility mechanisms | Offices, organizations, work, property, security, provisions, and tension reporting consume represented facts | Read-only comparison in Political Order authoring; institutions arise from scenario or historical evidence |")
             .AppendLine("| Factions, settlements, and populations | Relational and structured composition over native factions, owned places, population groups, relations, current institutions, and represented history | The control-contract inventory below names every active authoring degree of freedom | Starting-region realization persists facts once and generation consumes the saved result | Object list, ground map, details, and object-specific composers; no schema-shaped global mode |")
+            .AppendLine("| Settlement habitat | Physical requirements derived from the exact selected terrain, biome, climate, ecology, water, light, pollution, hazards, and vacuum state | Shelter, thermal control, food route and reserve, medicine, water treatment, light, hazard protection, and breathable interior | Advanced capability can admit potential established-settlement ground; actual programs must satisfy it at confirmation, while frontier occupancy requires the compact materializer to prove every function | Read-only requirement and viability summary on the owning settlement; no biome personality or survival-style control |")
             .AppendLine("| World tendencies | Independent scalar propensities and bounded ranges plus read-only realized outcomes | Eight causal policy controls | Fixed-seed generation owns placement, extent, frontier count/form, urban threshold, source selection, and distant cadence | One direct-effect row per tendency; presets are copy-on-apply convenience compositions |")
             .AppendLine()
             .AppendLine("The former Culture surface had 12 subject examples and no distinct concrete-practice vocabulary. The current production counts are **12 -> " + subjectCount + " social subjects** and **0 -> " + practiceCount + " concrete practice definitions**. B12 admitted the first 13 explicit questions; B13 retains that boundary as history and ships **24 Culture questions in eight categories**. The counts are receipts, not quotas: every row below has a source and consumer.")
@@ -1926,7 +1979,7 @@ internal static class Program
             .AppendLine()
             .AppendLine("### Explicit exclusions and unsupported future domains")
             .AppendLine()
-            .AppendLine("- Native Ideoligion doctrine, precepts, rituals, roles, and certainty remain native RimWorld facts. CAO may reference or interpret them; it does not duplicate them as Culture or Political Beliefs.")
+            .AppendLine("- Native Ideoligion doctrine, precepts, rituals, roles, and certainty remain native RimWorld facts. CAO may reference or interpret them; it does not duplicate them as Culture or Political Order.")
             .AppendLine("- A building without operator, participants, rules, work, authority, and lifecycle is material evidence, not an institution.")
             .AppendLine("- Faction self-identification is a name or description. It does not write structural mechanisms.")
             .AppendLine("- Hypothetical institutions, acts, relationships, practices, and categories with no current source and consumer are not implemented and are not player-facing.")
@@ -1965,35 +2018,20 @@ internal static class Program
                 + Escape(item.PrimaryFacet) + " |");
 
         text.AppendLine()
-            .AppendLine("## Political and current-order composition")
+            .AppendLine("## Political Order and represented institutions")
             .AppendLine()
-            .AppendLine("Political Beliefs are normative. Current order is instituted state. Economy, property, offices, membership, security, and institutions remain their own factual mechanisms. Self-identification is separate. Derived descriptions write nothing.")
+            .AppendLine("Political Order is normative. Represented institutions are instituted facts. The saved political variables are authoritative; generated names, summaries, and accounts write nothing back to them. Economy, property, offices, membership, security, and institutions remain factual consumers rather than prose-only labels.")
             .AppendLine()
-            .AppendLine("The active political model has **13 independent subjects** and **"
-                + politicalMechanisms + " supported mechanisms**. Several mechanisms may coexist on one subject. Only the explicit `none` mechanism on leadership, local order, or defense excludes a standing mechanism on that same subject. The former synthetic `mixed` options and first-value compatibility views are absent.")
+            .AppendLine("The active Political Order model has **" + politicalQuestions
+                + " causal questions** and **" + politicalOptions
+                + " supported positions**. Blendable questions allocate exactly 100 points within one intelligible subject; exclusive questions select exactly one position. Different ownership domains remain independent, so essential provision, land, workshops, finance, trade, and luxury enterprise can have genuinely different mixtures.")
             .AppendLine()
-            .AppendLine("Valid combinations include council plus executive leadership, private plus common/cooperative ownership, militia plus professional defense, broad participation plus executive authority, and federation membership plus local institutions. No named archetype prevents those combinations.")
+            .AppendLine("### Complete generated orders")
             .AppendLine()
-            .AppendLine("### Copy-on-apply partial sets")
+            .AppendLine("The **" + politicalPresets
+                + " complete presets** write every Political Order question and remain editable. Fixed-seed generation composes complete orders, then generates the political identity and account from the resulting variables. Saved orders copy the same complete state; a custom name never replaces its causal substrate.")
             .AppendLine()
-            .AppendLine("Every set adds its listed mechanisms, leaves every unlisted subject unchanged, preserves already-authored compatible mechanisms, and removes nothing implicitly. Global saved-set edits cannot mutate a world that previously copied the set.")
-            .AppendLine()
-            .AppendLine("| Set | Scope | Domain | Exact patch | Unchanged | Merge behavior |")
-            .AppendLine("|---|---|---|---|---|---|");
-        foreach (CAPoliticalPatchTemplate item in
-            CAPoliticalPatchTemplates.Beliefs.Concat(
-                CAPoliticalPatchTemplates.CurrentOrder))
-            text.AppendLine("| `" + item.Key + "` " + Escape(item.Label)
-                + " | " + item.Target + " | " + Escape(item.Domain) + " | "
-                + Escape(string.Join("; ", item.ExactWrites()))
-                + " | every field not listed | "
-                + Escape(item.MergeBehavior) + " |");
-        text.AppendLine()
-            .AppendLine("Authority/current-order templates: **"
-                + CAPoliticalPatchTemplates.CurrentOrder.Count
-                + "**. Normative political-belief sets: **"
-                + CAPoliticalPatchTemplates.Beliefs.Count
-                + "**. Composite societal templates: **0**. Historical archetypes: **0**. `Political Profile` is not an active type or label.")
+            .AppendLine("Represented institutions are shown as read-only comparison facts in the established-society composer. Rules adopted at landing remain a separate founding choice. Agreement or tension is derived from the two records; no duplicate institution editor remains.")
             .AppendLine()
             .AppendLine("## Category cardinalities")
             .AppendLine()
@@ -2008,16 +2046,8 @@ internal static class Program
                 .GroupBy(item => item.PrimaryFacet, StringComparer.Ordinal)
                 .Select(group => new KeyValuePair<string, int>(group.Key,
                     group.Count())));
-        AppendCategoryRows(text, "Political belief sets",
-            "CAPoliticalPatchTemplate", CAPoliticalPatchTemplates.Beliefs
-                .GroupBy(item => item.Domain, StringComparer.Ordinal)
-                .Select(group => new KeyValuePair<string, int>(group.Key,
-                    group.Count())));
-        AppendCategoryRows(text, "Current-order sets",
-            "CAPoliticalPatchTemplate", CAPoliticalPatchTemplates.CurrentOrder
-                .GroupBy(item => item.Domain, StringComparer.Ordinal)
-                .Select(group => new KeyValuePair<string, int>(group.Key,
-                    group.Count())));
+        text.AppendLine("| Political Order | `CAPoliticalQuestionDef` | Authority, civic life, property, economy, and security / "
+                + politicalQuestions + " questions | five causal sections; overview presents generated consequences |");
         text.AppendLine()
             .AppendLine("Removed one-item categories: **all former source-domain tabs**. The former one-subject-per-domain strip is no longer projected. Category rows wrap through the shared segment-row layout when they qualify.")
             .AppendLine()
@@ -2027,15 +2057,15 @@ internal static class Program
             .AppendLine("|---|---|---|---|---|")
             .AppendLine("| Add social meaning | Interpret a represented referent for a population | `CASocialSubjectRegistry` / `CASocialSubjectDef` | Writes population scope, approval, normality, prestige, salience, provenance | retained; distinct operation |")
             .AppendLine("| Add inherited/local practice | Record concrete repeated conduct and continuity | `CACulturalPracticeRegistry` / `CACulturalPracticeDef` | Writes practice identity, strength, owner, evidence signature, period, and observation boundary | retained; distinct operation |")
-            .AppendLine("| Political beliefs | Author legitimate or proper mechanisms | `CAFactionAxes` into `CAPoliticalBeliefs` | Adds/removes normative mechanisms | retained; distinct from current order |")
-            .AppendLine("| Current order | Author instituted mechanisms for an established society | `CAFactionAxes` into faction current order | Adds/removes current mechanisms | retained; distinct from beliefs |")
-            .AppendLine("| Set pickers | Copy an explicit partial patch | scoped `CAPoliticalPatchTemplate` catalog | Adds only listed mechanisms | optional convenience surface, not ontology |")
+            .AppendLine("| Political Order | Author concrete commitments about authority, civic life, ownership, exchange, work, provision, and security | `CAPoliticalQuestionDef` into `CAPoliticalBeliefs.questions` | Replaces one complete question composition | retained; causal authoring surface |")
+            .AppendLine("| Represented institutions | Inspect instituted mechanisms for an established society | `CAFactionState.factionStructure` | read-only comparison in the Political Order composer | retained; descriptive facts, not duplicate controls |")
+            .AppendLine("| Complete presets | Copy a complete Political Order | `CAPoliticalOrderPreset` through `CAPoliticalOrderModel` | Writes every registered question | retained; convenience generation over the same ontology |")
             .AppendLine()
             .AppendLine("Duplicate candidate universes: **0**. Shared layout code remains presentation infrastructure; candidate records, fields, commits, temporal status, and consumers differ.")
             .AppendLine()
             .AppendLine("## Closure statement")
             .AppendLine()
-            .AppendLine("The current production build is accepted at the B13 static boundary only when this inventory, the executable contracts, the fixture round trip, all 65 B13 receipts, the retained B10/B11/B12 suites, independent causal/structural/surface review, the clean build, and the byte-verified deployment agree.");
+            .AppendLine("The active B14 authoring convergence reaches its static boundary only when this inventory, the executable contracts, the fixture round trip, retained B10-B13 suites, B14 causal receipts, clean build, and byte-verified deployment agree. Operator runtime judgment remains separate.");
         File.WriteAllText(P("AUTHORING_ONTOLOGY_COVERAGE.md"),
             text.ToString(), new UTF8Encoding(false));
     }
@@ -2088,14 +2118,14 @@ internal static class Program
     {
         M("Known violence, coercion, confiscation, compelled work, refusal, and taxation acts", "culturally interpretable subject", "CAActLedger / CAActRecord", "combat violence, enforced order, compulsory transfer, compelled service, and taxation subjects; only repeated taxation and defeated-enemy conduct currently have concrete act-practice producers", "social interpretation, political belief effects, reaction, and Culture history", "meanings may be authored before play; concrete practices appear only where production evidence exists; runtime facts remain read-only"),
         M("Work obligation, consent, compensation, emergency, procedure, and force", "political or institutional fact", "CAActRecord independent factual flags and current work rules", "compelled-service and coercive-enforcement subjects; no production practice without repeated fact emission", "political belief comparison and stress response", "beliefs author legitimacy; current rules and observed facts remain distinct"),
-        M("Decisions and policies", "political or institutional fact", "CAOrganization decisionHistory and current policy records", "public voice, office governance, public deliberation", "organization behavior, settlement services, legitimacy, Culture history", "current-order mechanisms and established-program facts"),
-        M("Office existence, holder, jurisdiction, standing, and succession", "political or institutional fact", "CAOrganization offices and succession records", "office holding, office governance, delegated authority, kin succession", "authority, membership, institutional legitimacy, Culture", "current order; office facts are inspected rather than replaced by a political label"),
-        M("Organization membership and groups", "political or institutional fact", "CAOrganization membership and group records", "faction membership, delegated governance, public deliberation", "authority, reporting, work, agreements, and political response", "population/faction authoring plus current order"),
+        M("Decisions and policies", "political or institutional fact", "CAOrganization decisionHistory and current policy records", "public voice, office governance, public deliberation", "organization behavior, settlement services, legitimacy, Culture history", "represented institutions and established-program facts"),
+        M("Office existence, holder, jurisdiction, standing, and succession", "political or institutional fact", "CAOrganization offices and succession records", "office holding, office governance, delegated authority, kin succession", "authority, membership, institutional legitimacy, Culture", "represented institutions; office facts are inspected rather than replaced by a political label"),
+        M("Organization membership and groups", "political or institutional fact", "CAOrganization membership and group records", "faction membership, delegated governance, public deliberation", "authority, reporting, work, agreements, and political response", "population/faction authoring plus represented institutions"),
         M("Population group affiliation and share", "political or institutional fact", "CASettlementPopulationGroup", "faction membership and Culture constituents", "pawn realization, Culture weighting, beliefs, provisions", "direct structured settlement-population composition"),
-        M("Status, rank, caste, and standing", "political or institutional fact", "current-order mechanisms, offices, and membership records", "inherited rank, office holding, kin succession", "participation, succession, work, prestige, and conflict", "normative belief and current-order mechanisms remain independent"),
+        M("Status, rank, caste, and standing", "political or institutional fact", "represented institutions, offices, and membership records", "inherited rank, office holding, kin succession", "participation, succession, work, prestige, and conflict", "normative Political Order and represented institutions remain independent"),
         M("Domestic-unit membership and residence", "political or institutional fact", "CADomesticUnit and factual pawn relations/residence", "household membership and household provision", "domestic provision, housing, continuity", "population composition is authorable; factual units form from represented relationships"),
         M("Kinship and represented personal relationships", "culturally interpretable subject", "native pawn relations and domestic-unit evidence", "household membership and kin succession", "domestic formation, succession, Culture interpretation", "read-only realized relationship at this boundary"),
-        M("Property ownership and holdings", "political or institutional fact", "property claims, organization holdings, settlement assets", "private ownership, common ownership, stored reserves", "property acts, programs, provisions, legitimacy", "normative mechanisms, current order, and concrete established facts"),
+        M("Property ownership and holdings", "political or institutional fact", "property claims, organization holdings, settlement assets", "private ownership, common ownership, stored reserves", "property acts, programs, provisions, legitimacy", "Political Order, represented institutions, and concrete established facts"),
         M("Confiscation, requisition, and compulsory transfer", "culturally interpretable subject", "CAActRecord and property claims", "confiscation and compulsory-transfer meanings; property requisition is not a production practice until a real fact producer exists", "political response, grievances, Culture history", "pre-start meaning authoring; live transfer is read-only fact"),
         M("Voluntary exchange and trade", "concrete repeated practice", "trade programs, agreements, routes, and completed exchange", "voluntary trade and trade exchange", "settlement economy, relations, Culture", "established practice and operational-program authoring"),
         M("Agreements, hospitality, and outsider contact", "relational fact represented as culturally interpretable subject", "CAAgreementRecord and known counterparties", "outsider contact, voluntary agreement, external agreement", "relations, reporting, settlement development, Culture", "faction relations and inherited/established practice"),
@@ -2105,7 +2135,7 @@ internal static class Program
         M("Long-range communication", "concrete repeated practice", "communications program and represented counterparties", "long-range communication and communications practice", "relations, reporting, settlement development", "established operational/practice authoring"),
         M("Custody, treatment, punishment, and coercion", "culturally interpretable subject", "custody programs, captive state, CAActRecord", "humane custody, punishment, and custodial-care meanings/practices; coercion remains a subject until a production act producer exists", "political response, security, Culture", "established custody program and supported pre-start practice; live outcomes read-only"),
         M("Combat, surrender, quarter, and defeated-person outcome", "culturally interpretable subject", "native combat outcomes, parley/custody state, CAActRecord", "combat violence, quarter given, combat conduct", "combat behavior, aftermath, legitimacy, Culture", "beliefs and pre-start meanings/practices; combat result is not directly authored"),
-        M("Defense, patrol, watch, guards, and boundaries", "concrete repeated practice", "security practices, defense programs, assignments, built defenses", "defended boundary, security service, boundary defense, boundary patrol", "security runtime, settlement development, Culture", "current-order mechanisms plus established program/practice"),
+        M("Defense, patrol, watch, guards, and boundaries", "concrete repeated practice", "security practices, defense programs, assignments, built defenses", "defended boundary, security service, boundary defense, boundary patrol", "security runtime, settlement development, Culture", "represented institutions plus established program/practice"),
         M("Migration, regional arrival, and settlement placement", "political or institutional fact", "CARegionalPlan, settlement source, member tile, and arrival tile", "route use, faction membership, local Culture continuity", "world transfer, map generation, population and relations", "direct Starting Region map and object authoring"),
         M("Public gathering and participation", "concrete repeated practice", "gathering program, shared place, decision records, participants", "public gathering, public voice, public deliberation", "political development, settlement services, Culture", "meaning and concrete practice authoring remain distinct"),
         M("Native Ideoligion doctrine, roles, rituals, and certainty", "excluded with a specific reason", "RimWorld Ideo, precepts, roles, ritual and pawn certainty", "religious observance may be culturally interpreted", "native Ideology system and CA population/settlement integration", "native editor/reference only; CAO does not duplicate doctrine"),
@@ -2115,12 +2145,12 @@ internal static class Program
         M("Housing and inhabited shelter", "concrete repeated practice", "housing programs, residence assignments, occupied assets, repair", "maintained housing and housing upkeep", "domestic life, settlement services, Culture", "established program/practice; building alone is not an institution"),
         M("Public, communal, private, and institutional space", "culturally interpretable subject", "layout, holdings, access, program assets, operator identity", "public gathering, defended boundary, public works, ownership meanings", "spatial planning, programs, Culture", "location, operational facts, meaning; derived spatial description is read-only"),
         M("Art, memory, mourning, recreation, and performance where represented", "concrete repeated practice", "art-memory/recreation program, asset, participants, event evidence", "art and remembrance, shared recreation", "cultural expression and settlement life", "available only when represented program/evidence exists"),
-        M("Institution formation, change, and dissolution", "political or institutional fact", "organization office/group/policy lifecycle and history", "office governance, delegated governance, office succession", "authority, work, membership, Culture transition", "current order at start; later lifecycle develops through simulation"),
+        M("Institution formation, change, and dissolution", "political or institutional fact", "organization office/group/policy lifecycle and history", "office governance, delegated governance, office succession", "authority, work, membership, Culture transition", "represented institutions at start; later lifecycle develops through simulation"),
         M("Social reaction, disagreement, and cultural transition", "read-only realized state", "CASocialReaction patterns and CACultureTransition history", "population-scoped meaning resolution and tension summaries", "behavior, legitimacy, expression, longitudinal Culture", "inspect and author initial causes; runtime transition is not directly authored"),
         M("Settlement program operation", "political or institutional fact", "CASettlementOperationalFact complete causal contract", "program-specific subjects and concrete practices", "materializer, work, services, provisions, Culture evidence", "direct established-operation authoring; incomplete contracts are rejected"),
         M("Transport routes and completed route use", "concrete repeated practice", "saved access facts, transport program, roads, counterparties, journey evidence", "route use and transport service", "trade, relations, access, Culture", "location/access facts and established practice"),
         M("Settlement scale, role, pattern, and regional relation pattern", "derived summary only", "persisted realization from population, land, routes, services, history, placement, and relations", "read-only descriptions", "map generation, provision scale, summaries", "no direct label control; author causes and constrained propensities"),
-        M("Faction self-identification and descriptive structural fingerprint", "derived summary only", "custom/native faction name plus read-only current-order characterization", "none; names do not write mechanisms", "labels and operator summaries", "name is optional; structural description is read-only"),
+        M("Faction self-identification and descriptive structural fingerprint", "derived summary only", "custom/native faction name plus read-only institutional characterization", "none; names do not write mechanisms", "labels and operator summaries", "name is optional; structural description is read-only"),
         M("Hypothetical future institution or practice with no source/consumer", "not yet implemented and therefore not player-facing", "none", "none", "excluded until a real operator, participants, rules, resources, work, evidence, and consumer exist", "not shown")
     };
 

@@ -74,26 +74,50 @@ internal static class Program
 
     private static void AuthoringReceipts()
     {
-        Add("nine historical and social presets validate",
-            CACulturePresetLibrary.All.Count == 9
-                && CACulturePresetLibrary.ValidationFailure() == null,
+        string[] requiredHistoricalPresets =
+        {
+            "english-north-america-early-colonial",
+            "france-napoleonic-empire",
+            "france-second-empire",
+            "united-states-civil-war-union",
+            "confederate-slaveholding-dominant-culture",
+            "freedpeople-emancipation-communities",
+            "germany-weimar-republic",
+            "germany-national-socialist-dictatorship",
+            "japan-late-tokugawa",
+            "japan-meiji-transformation",
+            "qing-china-late-imperial",
+            "ottoman-empire-tanzimat",
+            "mughal-india-akbar"
+        };
+        Add("historical and social Culture presets validate",
+            CACulturePresetLibrary.All.Count == 22
+                && requiredHistoricalPresets.All(key =>
+                    CACulturePresetLibrary.Find(key) != null)
+                && CACulturePresetLibrary.ValidationFailure() == null
+                && CACulturePresetLibrary.All.Select(value =>
+                        value.CatalogGroup).ToHashSet(StringComparer.Ordinal)
+                    .SetEquals(new[] { "Social forms", "Historical cultures" })
+                && CACulturePresetLibrary.All.All(value =>
+                    !string.IsNullOrWhiteSpace(value.Label)),
             CACulturePresetLibrary.ValidationFailure()
-                ?? "9 complete presets with society, period, and sources");
+                ?? "22 complete component presets use one social-or-historical Culture catalog axis");
         Add("every preset specifies the full registry",
             CACulturePresetLibrary.All.All(preset => preset.Values.Count == 24
                 && preset.Values.Select(value => value.QuestionKey)
                     .ToHashSet(StringComparer.Ordinal).SetEquals(
                         CACultureQuestionRegistry.All.Select(value =>
                             value.Key))),
-            "9/9 presets specify 24 unique question values");
+            "22/22 presets specify 24 unique question values");
         Add("preset profiles are substantively distinct",
             CACulturePresetLibrary.All.Select(preset => string.Join(",",
                     preset.Values.Select(value => value.Mean.ToString("0.00"))))
-                .Distinct(StringComparer.Ordinal).Count() == 9,
-            "nine distinct mean profiles; no era-wide monoculture shortcut");
+                .Distinct(StringComparer.Ordinal).Count() == 22,
+            "22 distinct mean profiles; no era-wide monoculture shortcut");
         CACulturePresetDef[] unitedStates = CACulturePresetLibrary.All
-            .Where(value => value.Society == "United States").ToArray();
-        Add("one society has distinct period presets",
+            .Where(value => value.ReferenceContext == "United States")
+            .ToArray();
+        Add("one historical context has distinct period presets",
             unitedStates.Length == 3
                 && unitedStates.Select(value => value.ApproximatePeriod)
                     .Distinct(StringComparer.Ordinal).Count() == 3
@@ -102,7 +126,7 @@ internal static class Program
                     .Distinct(StringComparer.Ordinal).Count() == 3
                 && unitedStates.All(value => !string.IsNullOrWhiteSpace(
                     value.Sources)),
-            "United States has postwar, millennium, and contemporary sourced design priors");
+            "United States has postwar, millennium, and contemporary sourced Culture priors");
 
         var sameObject = new CACulture();
         CACulture reference = sameObject;
@@ -575,7 +599,7 @@ internal static class Program
     {
         string source = S("Source/FactionCultureBeliefsModule.cs");
         Add("one editor owns preset, random, and manual authoring",
-            source.Contains("Historical and social presets...",
+            source.Contains("Culture presets...",
                     StringComparison.Ordinal)
                 && source.Contains("Randomize Culture",
                     StringComparison.Ordinal)
@@ -586,16 +610,17 @@ internal static class Program
         string controls = Between(source,
             "private void DrawPopulationDistributionControls",
             "private static string CategoryLabel");
-        Add("one global diversity control is visible",
-            Count(controls, "Global diversity") == 1
+        Add("one overall disagreement control is visible",
+            Count(controls, "Overall disagreement") == 1
                 && !controls.Contains("Subgroup separation",
                     StringComparison.Ordinal),
-            "Questions page exposes one global control and no second population-wide spread control");
+            "Values page exposes one population-wide disagreement control and no duplicate subgroup control");
         Add("per-question spread remains advanced",
-            source.Contains("available under More", StringComparison.Ordinal)
+            source.Contains("Use More to adjust one value.",
+                    StringComparison.Ordinal)
                 && source.Contains("question.spreadOverride = true",
                     StringComparison.Ordinal)
-                && source.Contains("Use population spread",
+                && source.Contains("Use overall disagreement",
                     StringComparison.Ordinal),
             "expanded rows own explicit spread override and release");
         string[] headings =
@@ -622,8 +647,10 @@ internal static class Program
                     StringComparison.Ordinal),
             "preset identity is discarded after values reach the same Culture object");
         Add("practices remain observed history",
-            source.Contains("Practice history", StringComparison.Ordinal)
-                && source.Contains("Practices are observed conduct",
+            source.Contains("DrawPracticeHistory", StringComparison.Ordinal)
+                && source.Contains("These are customs people have repeatedly followed.",
+                    StringComparison.Ordinal)
+                && source.Contains("are not settings here.",
                     StringComparison.Ordinal)
                 && !source.Contains("void DrawPractices",
                     StringComparison.Ordinal),
@@ -786,8 +813,7 @@ internal static class Program
     {
         byte[] activeBytes = File.ReadAllBytes(active);
         byte[] mirrorBytes = File.ReadAllBytes(mirror);
-        XDocument document = XDocument.Parse(
-            Encoding.UTF8.GetString(activeBytes),
+        XDocument document = XDocument.Load(active,
             LoadOptions.PreserveWhitespace);
         XElement plan = document.Root?.Element("plan")
             ?? throw new InvalidDataException("active plan missing");
@@ -807,10 +833,10 @@ internal static class Program
                 && Items(plan, "factions").Count() == 3
                 && settlements.Length == 4
                 && settlements.SelectMany(value => Items(value,
-                    "populationGroups")).Count() == 9
+                    "populationGroups")).Count() == 4
                 && settlements.SelectMany(value => Items(value,
                     "operationalFacts")).Count() == 19,
-            "region/candidate/arrival/map; 3 factions; 4 settlements; 9 populations; 19 program facts");
+            "region/candidate/arrival/map; 3 factions; 4 settlements; 4 current population assignments; 19 program facts");
 
         HashSet<string> factionKeys = Items(plan, "factions")
             .Select(value => Value(value, "key"))
@@ -851,19 +877,23 @@ internal static class Program
         int evidenceCount = cultures.Sum(value =>
             Items(value, "legacyEvidence").Count());
         Add("prior authored and migration evidence remains intact",
-            questionCount == 194 && evidenceCount == 26
+            questionCount == 290 && evidenceCount == 25
                 && cultures.SelectMany(value => Items(value,
                     "legacyEvidence")).Any(value =>
                     Value(value, "sourceKey")
                         == "ca.property.compulsory_transfer"),
-            $"194 distributions include 192 complete roots and 2 local facts; {evidenceCount} evidence records retained");
+            $"290 distributions include 192 complete roots and 98 represented population or local facts; {evidenceCount} evidence records retained");
         string roundTrip = document.ToString(SaveOptions.DisableFormatting);
         XDocument readback = XDocument.Parse(roundTrip);
+        XElement[] readbackCultures = readback.Descendants().Where(value =>
+            value.Name.LocalName is "culture" or "localCulture").ToArray();
+        int readbackCultureQuestions = readbackCultures.Sum(value =>
+            Items(value, "inheritedQuestions").Count()
+                + Items(value, "localQuestions").Count());
         Add("fixture round-trips without dropping Culture",
-            readback.Descendants("questionKey").Count() == questionCount
-                && readback.Descendants().Count(value =>
-                    value.Name.LocalName is "culture" or "localCulture") == 8,
-            "XML serialization/readback retains all 194 distributions and 8 Culture records");
+            readbackCultureQuestions == questionCount
+                && readbackCultures.Length == 8,
+            $"XML serialization/readback retains all {questionCount} distributions and 8 Culture records");
     }
 
     private static void ResearchReceipts()
@@ -903,7 +933,7 @@ internal static class Program
             builder.ToString(), new UTF8Encoding(false));
 
         byte[] bytes = File.ReadAllBytes(active);
-        XDocument document = XDocument.Parse(Encoding.UTF8.GetString(bytes));
+        XDocument document = XDocument.Load(active);
         XElement plan = document.Root!.Element("plan")!;
         XElement[] settlements = Items(plan, "settlements").ToArray();
         XElement[] cultures = document.Descendants().Where(value =>
@@ -922,7 +952,7 @@ internal static class Program
 | Completeness | Every Culture contains the same 24 root question identities as `CACultureQuestionRegistry`; the 2 constituent-scoped local distributions remain separate. |
 | Readback | Faction ownership resolves, settlement population shares total 100, and all Culture state survives XML serialization/readback. |
 
-The B13 converter retained all 22 B12-authored distributions and 26 migration-evidence records, filled only absent root questions, preserved the current plan identity and 3-faction/4-settlement composition, and atomically wrote byte-identical active and mirror files.
+The current runtime fixture retains 290 Culture distributions and 25 source-evidence records, preserves the current plan identity and 3-faction/4-settlement composition, and is byte-identical to its governed mirror.
 """;
         File.WriteAllText(Path.Combine(repo, "B13_FIXTURE_RECEIPT.md"),
             fixture, new UTF8Encoding(false));

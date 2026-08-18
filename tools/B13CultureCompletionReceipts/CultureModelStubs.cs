@@ -10,12 +10,16 @@ namespace ColonistAwareness
     // separately against the built assembly and campaign preflight reader.
     public sealed class CACulture
     {
+        public const int NameField = 1;
         public const int QuestionStateField = 4;
         public const int DiversityField = 8;
 
+        public string name;
+        public string sourceCultureDefName;
         public int questionRegistryVersion =
             CACultureQuestionRegistry.CurrentVersion;
         public int withinGroupSpread = 2;
+        public int subgroupSeparation = 2;
         public int authoredMask;
         public List<CACultureQuestionDistribution> inheritedQuestions =
             new List<CACultureQuestionDistribution>();
@@ -25,6 +29,38 @@ namespace ColonistAwareness
 
     internal static class CACultureModel
     {
+        internal static bool SynchronizeOwnIdentityLabel(CACulture culture)
+        {
+            // The production model synchronizes self-referential constituent
+            // labels. This pure receipt subset has no constituent records.
+            return false;
+        }
+
+        internal static bool MatchesInheritedTemplate(CACulture target,
+            CACulture template)
+        {
+            if (target == null || template == null
+                || !string.Equals(target.name, template.name,
+                    StringComparison.Ordinal)
+                || !string.Equals(target.sourceCultureDefName,
+                    template.sourceCultureDefName, StringComparison.Ordinal)
+                || target.withinGroupSpread != template.withinGroupSpread
+                || target.subgroupSeparation != template.subgroupSeparation
+                || target.questionRegistryVersion
+                    != template.questionRegistryVersion)
+                return false;
+            List<CACultureQuestionDistribution> actual =
+                target.inheritedQuestions
+                    ?? new List<CACultureQuestionDistribution>();
+            List<CACultureQuestionDistribution> expected =
+                template.inheritedQuestions
+                    ?? new List<CACultureQuestionDistribution>();
+            return actual.Count == expected.Count && string.Equals(
+                CACultureDistributionKernel.Fingerprint(actual),
+                CACultureDistributionKernel.Fingerprint(expected),
+                StringComparison.Ordinal);
+        }
+
         internal static void Normalize(CACulture culture)
         {
             if (culture == null) return;

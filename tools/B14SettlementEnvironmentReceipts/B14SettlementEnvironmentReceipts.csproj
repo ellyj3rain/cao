@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RollForward>Major</RollForward>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Source\SettlementEnvironmentCausalKernel.cs"
+             Link="SettlementEnvironmentCausalKernel.cs" />
+    <Compile Include="..\..\Source\HabitatViabilityCausalKernel.cs"
+             Link="HabitatViabilityCausalKernel.cs" />
+    <Compile Include="..\..\Source\AutonomousBuildingPatternKernel.cs"
+             Link="AutonomousBuildingPatternKernel.cs" />
+  </ItemGroup>
+</Project>

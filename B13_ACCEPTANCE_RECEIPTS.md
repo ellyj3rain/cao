@@ -9,10 +9,10 @@ These fixed-seed and structural receipts verify the Culture registry, unified au
 | 3 | eight categories contain three questions each | **PASS** | RelationshipsFamilySexuality=3; GenderSocialAuthority=3; StatusHierarchy=3; MembershipOutsiders=3; PublicAuthoritySocialOrder=3; PropertyLaborProvision=3; ViolenceCaptivityPunishment=3; KnowledgeTradition=3 |
 | 4 | every question has five ordered anchors | **PASS** | 24/24 use centered, strictly ordered five-anchor scales |
 | 5 | every question names evidence, research, and a consumer | **PASS** | 24/24 definitions carry causal and research provenance |
-| 6 | nine historical and social presets validate | **PASS** | 9 complete presets with society, period, and sources |
-| 7 | every preset specifies the full registry | **PASS** | 9/9 presets specify 24 unique question values |
-| 8 | preset profiles are substantively distinct | **PASS** | nine distinct mean profiles; no era-wide monoculture shortcut |
-| 9 | one society has distinct period presets | **PASS** | United States has postwar, millennium, and contemporary sourced design priors |
+| 6 | historical and social Culture presets validate | **PASS** | 22 complete component presets use one social-or-historical Culture catalog axis |
+| 7 | every preset specifies the full registry | **PASS** | 22/22 presets specify 24 unique question values |
+| 8 | preset profiles are substantively distinct | **PASS** | 22 distinct mean profiles; no era-wide monoculture shortcut |
+| 9 | one historical context has distinct period presets | **PASS** | United States has postwar, millennium, and contemporary sourced Culture priors |
 | 10 | preset application writes the same Culture object | **PASS** | second preset replaces the same 24 question distributions; no mode object |
 | 11 | question authoring carries explicit provenance | **PASS** | preset and random Culture remain authored when faction origin is classified |
 | 12 | manual editing changes only the selected question | **PASS** | one position changed; adjacent distribution fingerprint stable |
@@ -47,7 +47,7 @@ These fixed-seed and structural receipts verify the Culture registry, unified au
 | 41 | starting-region generation completes missing Culture | **PASS** | Generate unspecified choices completes absent faction questions |
 | 42 | broader world generation completes non-player Culture | **PASS** | world faction initialization fills absent questions without overwriting player authorship |
 | 43 | one editor owns preset, random, and manual authoring | **PASS** | all authoring paths converge on the Culture question editor |
-| 44 | one global diversity control is visible | **PASS** | Questions page exposes one global control and no second population-wide spread control |
+| 44 | one overall disagreement control is visible | **PASS** | Values page exposes one population-wide disagreement control and no duplicate subgroup control |
 | 45 | per-question spread remains advanced | **PASS** | expanded rows own explicit spread override and release |
 | 46 | the editor exposes all eight Culture categories | **PASS** | 8/8 category headings present in canonical order |
 | 47 | Culture has no blend or custom mode | **PASS** | preset identity is discarded after values reach the same Culture object |
@@ -63,12 +63,12 @@ These fixed-seed and structural receipts verify the Culture registry, unified au
 | 57 | production knowledge retains expertise deference | **PASS** | acquisition passes the pawn appraisal; later reevaluation recovers holder Culture; the shared executed map supplies every subject's skill domains |
 | 58 | represented experience is wired into the event path | **PASS** | materialization and refresh consume the persisted direct-history record plus represented social reactions |
 | 59 | built assembly remains the Culture model authority | **PASS** | production DLL normalized Culture; mapped every built-in social subject to demonstrated expertise; and executed stable direct-question source and moral appraisals |
-| 60 | active and mirror fixtures are byte-identical | **PASS** | SHA-256=27354E00647007BD54EC5D5E0B29E7E408E40CEEBE4A3CAAADE068D23BDCA101 |
-| 61 | fixture preserves authored identity and composition | **PASS** | region/candidate/arrival/map; 3 factions; 4 settlements; 9 populations; 19 program facts |
+| 60 | active and mirror fixtures are byte-identical | **PASS** | SHA-256=6AE604BB8157FC5F12C58932A2476700A336F3C057F11D85441D09BFF151EF04 |
+| 61 | fixture preserves authored identity and composition | **PASS** | region/candidate/arrival/map; 3 factions; 4 settlements; 4 current population assignments; 19 program facts |
 | 62 | faction and population relationships survive readback | **PASS** | every settlement owner and affiliated population resolves to one of 3 factions; shares total 100 per settlement |
 | 63 | fixture carries complete current Culture state | **PASS** | 8 schema-10 registry-2 records each contain 24 root distributions |
-| 64 | prior authored and migration evidence remains intact | **PASS** | 194 distributions include 192 complete roots and 2 local facts; 26 evidence records retained |
-| 65 | fixture round-trips without dropping Culture | **PASS** | XML serialization/readback retains all 194 distributions and 8 Culture records |
+| 64 | prior authored and migration evidence remains intact | **PASS** | 290 distributions include 192 complete roots and 98 represented population or local facts; 25 evidence records retained |
+| 65 | fixture round-trips without dropping Culture | **PASS** | XML serialization/readback retains all 290 distributions and 8 Culture records |
 | 66 | research corpus names primary survey sources | **PASS** | WVS, ISSP, ESS, and GSS primary documentation linked |
 | 67 | research record states calibration limits | **PASS** | sources justify constructs and ordering without claiming fitted population estimates |
 

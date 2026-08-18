@@ -7,11 +7,11 @@ This is the strongest available non-interactive compatibility exercise. It uses 
 | Fact | Evidence |
 |---|---|
 | Active/mirror agreement | byte and logical match |
-| Input SHA-256 | `27354E00647007BD54EC5D5E0B29E7E408E40CEEBE4A3CAAADE068D23BDCA101` |
-| Composition | 3 factions; 4 settlements; 9 population groups; 19 established-program facts |
-| Stable identity digest | `1B14ED00CE93711BD2B9AA771630E0BB925AA9BFE69197F4B0E8825C431F46A3` before and after |
-| First upgrade envelope SHA-256 | `AA75AFBE20FA5EAAA5CADDB2E6FDD112FA73515A39C7534D926D8362FC77B044` |
-| Second upgrade envelope SHA-256 | `AA75AFBE20FA5EAAA5CADDB2E6FDD112FA73515A39C7534D926D8362FC77B044` |
+| Input SHA-256 | `6AE604BB8157FC5F12C58932A2476700A336F3C057F11D85441D09BFF151EF04` |
+| Composition | 3 factions; 4 settlements; 4 population groups; 19 established-program facts |
+| Stable identity digest | `DA1720BBC8F33025451EDCD944B179CFC58D09D78CAAD9F2BE40ACC9476F6490` before and after |
+| First upgrade envelope SHA-256 | `FB15161EDB8219084445AEF4CB4F3F437352A76EEEDB0822FD1A8CB588071E58` |
+| Second upgrade envelope SHA-256 | `FB15161EDB8219084445AEF4CB4F3F437352A76EEEDB0822FD1A8CB588071E58` |
 | Idempotence | PASS |
 | Historical-element count | 8 before; 8 after; no synthetic history added |
 | Profiler exercise | 1 enabled call(s); disabled path recorded zero; governed fingerprint identical |
