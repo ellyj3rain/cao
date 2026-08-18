@@ -687,7 +687,7 @@ internal static class Program
         string state = S("Source/CulturalCognitionStateModule.cs");
         string preflight = S("Source/CampaignCompatibilityPreflightKernel.cs");
         Add("campaign catalog records the B13 cognition schema",
-            CACampaignSchemaCatalog.CurrentCatalogVersion == 3
+            CACampaignSchemaCatalog.CurrentCatalogVersion == 4
                 && CACampaignSchemaCatalog.TryFind(
                     "world.cultural-cognition", out var cognition)
                 && cognition.CurrentVersion == 2
@@ -698,7 +698,7 @@ internal static class Program
                     StringComparison.Ordinal)
                 && state.Contains("CA_culturalCognitionOwnerVersion",
                     StringComparison.Ordinal),
-            "catalog=3; the cultural-cognition owner emits schema 2, was introduced in 2, and admits no schema-1 payload");
+            "catalog=4 retains the cultural-cognition schema-2 owner introduced in 2 and admits no schema-1 payload");
         Add("durable attitudes persist the separated causal facts",
             state.Contains("CurrentSchemaVersion = 2",
                     StringComparison.Ordinal)
@@ -824,7 +824,7 @@ internal static class Program
             activeBytes.SequenceEqual(mirrorBytes),
             "SHA-256=" + Sha(activeBytes));
         Add("fixture preserves authored identity and composition",
-            Value(document.Root, "authoringDataEpoch") == "12"
+            Value(document.Root, "authoringDataEpoch") == "13"
                 && Value(plan, "regionalId") == "CA-RG-EB596A12"
                 && Value(plan, "candidateId") == "613b1fe44104"
                 && Value(plan, "startTileId") == "389638"

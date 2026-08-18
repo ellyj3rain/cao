@@ -48,6 +48,7 @@ internal static class Program
             ["RegionalSetupModule.cs"] = Form("map geometry, river geometry, native pawn generation, or technical draft key"),
             ["RegionalWorldModule.cs"] = Form("equivalent spatial placement after saved settlement eligibility"),
             ["SettlementCapabilityAssessmentKernel.cs"] = Receipt("capability evidence signature"),
+            ["SettlementEnvironmentModule.cs"] = Receipt("environment fact and aggregate provenance signature"),
             ["SettlementCompositionModule.cs"] = Form("native pawn generation for an authored population group"),
             ["SettlementProgramCausalKernel.cs"] = Receipt("program evidence signature or equivalent functional-asset selection"),
             ["StackJobs.cs"] = Schedule("native combat-job recovery interval"),

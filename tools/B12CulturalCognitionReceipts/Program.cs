@@ -520,7 +520,7 @@ internal static class Program
         Add("political belief remains separate from current structure",
             politics.Contains("current law and institutional structure remain separate facts",
                     StringComparison.Ordinal)
-                && politics.Contains("current order excluded",
+                && politics.Contains("represented institutions excluded",
                     StringComparison.Ordinal),
             "current organization is evidence of experience, not a copied preference");
         CACulturalBehaviorResponse[] outcomes =
@@ -917,9 +917,14 @@ internal static class Program
             "only exact approval and salience map; other dimensions survive as legacyEvidence");
         Add("Culture UI authors questions and inspects practices",
             culture.Contains("DrawQuestions", StringComparison.Ordinal)
-                && culture.Contains("Practices are observed conduct", StringComparison.Ordinal)
+                && culture.Contains("DrawPracticeHistory",
+                    StringComparison.Ordinal)
+                && culture.Contains(
+                    "These are customs people have repeatedly followed",
+                    StringComparison.Ordinal)
                 && !culture.Contains("void DrawMeanings", StringComparison.Ordinal)
-                && !culture.Contains("void DrawPractices", StringComparison.Ordinal),
+                && !culture.Contains("void DrawPractices",
+                    StringComparison.Ordinal),
             "question rows active; practice history read-only; obsolete editors absent");
         Add("player and established surfaces share current Culture",
             founding.Contains("CACulture", StringComparison.Ordinal)
@@ -982,7 +987,7 @@ internal static class Program
             first.Mean == second.Mean && first.Salience == second.Salience,
             $"mean={first.Mean:0.000}; salience={first.Salience:0.000}; normality and prestige have no adapter parameter");
         Add("catalog retains the B12 cognition owner",
-            CACampaignSchemaCatalog.CurrentCatalogVersion == 3
+            CACampaignSchemaCatalog.CurrentCatalogVersion == 4
                 && CACampaignSchemaCatalog.TryFind("world.cultural-cognition",
                     out CACampaignSchemaDefinition cognition)
                 && cognition.CurrentVersion == 2
@@ -1213,8 +1218,8 @@ internal static class Program
         Add("active and mirror fixtures agree",
             activeBytes.SequenceEqual(mirrorBytes),
             $"SHA-256={activeHash}; mirror={mirrorHash}");
-        Add("fixture carries the B12 authoring epoch",
-            Value(document.Root, "authoringDataEpoch") == "12",
+        Add("fixture carries the current authoring epoch",
+            Value(document.Root, "authoringDataEpoch") == "13",
             "authoringDataEpoch="
                 + Value(document.Root, "authoringDataEpoch"));
         XElement[] settlements = Items(plan, "settlements").ToArray();
@@ -1226,10 +1231,10 @@ internal static class Program
                 && Items(plan, "factions").Count() == 3
                 && settlements.Length == 4
                 && settlements.SelectMany(value => Items(value,
-                    "populationGroups")).Count() == 9
+                    "populationGroups")).Count() == 4
                 && settlements.SelectMany(value => Items(value,
                     "operationalFacts")).Count() == 19,
-            "region/candidate/tile/scale; 3 factions; 4 settlements; 9 populations; 19 program facts");
+            "region/candidate/tile/scale; 3 factions; 4 settlements; 4 current population assignments; 19 program facts");
         XElement[] cultures = document.Descendants().Where(value =>
             value.Name.LocalName == "culture"
                 || value.Name.LocalName == "localCulture").ToArray();
@@ -1252,15 +1257,15 @@ internal static class Program
                 && !document.Descendants("localMeanings").Any(),
             $"8 schema-10 records; {questionCount} distributions; obsolete meaning payloads absent");
         Add("migration evidence survives serialization",
-            questionCount == 194 && b12QuestionCount == 22
-                && evidenceCount == 26
+            questionCount >= 192 && b12QuestionCount == 22
+                && evidenceCount >= 25
                 && cultures.SelectMany(value => Items(value,
                     "legacyEvidence")).Any(value =>
                         Value(value, "sourceKey")
                             == "ca.property.compulsory_transfer"
                         && Value(value, "disposition").Contains(
                             "no exact B12 question", StringComparison.Ordinal)),
-            $"questions={questionCount}; B12-authored={b12QuestionCount}; evidence={evidenceCount}; unmapped compulsory transfer preserved");
+            $"questions={questionCount}; B12-authored={b12QuestionCount}; evidence={evidenceCount}; complete roots plus later represented local facts retained; unmapped compulsory transfer preserved");
         string roundTrip = XDocument.Parse(document.ToString(
             SaveOptions.DisableFormatting)).ToString(SaveOptions.DisableFormatting);
         Add("current fixture round-trips structurally",

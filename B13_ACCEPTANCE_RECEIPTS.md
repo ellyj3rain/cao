@@ -55,7 +55,7 @@ These fixed-seed and structural receipts verify the Culture registry, unified au
 | 49 | player and established societies share the Culture editor | **PASS** | founding and established-society surfaces share the same question model |
 | 50 | Culture editor content remains scroll-measured | **PASS** | dynamic height accounts for categories, wrapped anchors, and advanced rows |
 | 51 | advanced rows reserve space only for visible controls | **PASS** | provenance badges fit with tooltips and released spread overrides leave no empty button row |
-| 52 | campaign catalog records the B13 cognition schema | **PASS** | catalog=3; the cultural-cognition owner emits schema 2, was introduced in 2, and admits no schema-1 payload |
+| 52 | campaign catalog records the B13 cognition schema | **PASS** | catalog=4 retains the cultural-cognition schema-2 owner introduced in 2 and admits no schema-1 payload |
 | 53 | durable attitudes persist the separated causal facts | **PASS** | schema-2 attitudes and preflight persist/validate attention, prior strength, social pressure, and observation likelihood |
 | 54 | preflight requires every schema-2 attitude cause | **PASS** | explicit zero values pass; an omitted observationLikelihood fails |
 | 55 | preflight requires Culture registry two | **PASS** | nested Culture payload validation admits only registry 2 |
@@ -63,7 +63,7 @@ These fixed-seed and structural receipts verify the Culture registry, unified au
 | 57 | production knowledge retains expertise deference | **PASS** | acquisition passes the pawn appraisal; later reevaluation recovers holder Culture; the shared executed map supplies every subject's skill domains |
 | 58 | represented experience is wired into the event path | **PASS** | materialization and refresh consume the persisted direct-history record plus represented social reactions |
 | 59 | built assembly remains the Culture model authority | **PASS** | production DLL normalized Culture; mapped every built-in social subject to demonstrated expertise; and executed stable direct-question source and moral appraisals |
-| 60 | active and mirror fixtures are byte-identical | **PASS** | SHA-256=6AE604BB8157FC5F12C58932A2476700A336F3C057F11D85441D09BFF151EF04 |
+| 60 | active and mirror fixtures are byte-identical | **PASS** | SHA-256=A0FF1B43CF3A5AFAFE72DA34360B247B7D06CB03DE903AEA251F8FD5D5297C82 |
 | 61 | fixture preserves authored identity and composition | **PASS** | region/candidate/arrival/map; 3 factions; 4 settlements; 4 current population assignments; 19 program facts |
 | 62 | faction and population relationships survive readback | **PASS** | every settlement owner and affiliated population resolves to one of 3 factions; shares total 100 per settlement |
 | 63 | fixture carries complete current Culture state | **PASS** | 8 schema-10 registry-2 records each contain 24 root distributions |

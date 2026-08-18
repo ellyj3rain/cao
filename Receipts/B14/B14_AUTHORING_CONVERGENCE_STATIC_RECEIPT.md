@@ -1,6 +1,6 @@
 # B14 Authoring Convergence Static Receipt
 
-Timestamp: 2026-08-18 00:12 UTC / 17:12 PST
+Timestamp: 2026-08-18 06:26 UTC / 23:26 PST
 
 This receipt verifies the current source and governed pending fixture. It does not claim operator visual or gameplay acceptance.
 
@@ -19,16 +19,16 @@ This receipt verifies the current source and governed pending fixture. It does n
 | 11 | Duplicate institution authoring is absent | **PASS** | one Political Order composer remains; represented institutions are comparison facts |
 | 12 | Saved Political Orders copy complete state | **PASS** | profiles copy all questions into the destination without shared mutable state |
 | 13 | Persistence and compatibility name the current model | **PASS** | schema 10 Political Order and schema 1 represented institutions have separate owners |
-| 14 | Active and mirror fixtures are byte-identical | **PASS** | 397275 bytes; SHA-256 6AE604BB8157FC5F12C58932A2476700A336F3C057F11D85441D09BFF151EF04 |
+| 14 | Active and mirror fixtures are byte-identical | **PASS** | 407892 bytes; SHA-256 A0FF1B43CF3A5AFAFE72DA34360B247B7D06CB03DE903AEA251F8FD5D5297C82 |
 | 15 | Authored composition survives the schema conversion | **PASS** | 3 factions; 4 settlements |
 | 16 | Every saved Political Order is complete | **PASS** | 4 records each retain 26 normalized questions after readback |
 | 17 | Recovered mixed relationships survive serialization | **PASS** | normative mixtures and independent represented support institutions coexist |
 | 18 | Historical Culture presets share one complete authoring path | **PASS** | 22 complete Culture presets have component-specific names and one social-or-historical catalog axis; period and region remain metadata |
-| 19 | Society presets own an independent coordinated catalog | **PASS** | 22 independently identified Society recipes atomically copy complete sibling Culture and Political Order state; no one-to-one catalog validator remains |
-| 20 | Saved Society presets use the same existing interaction path | **PASS** | ModSettings stores deep two-component snapshots; founding and faction Society sections apply and save them without another page or persistent world ownership |
+| 19 | Society presets own an independent coordinated catalog | **PASS** | 22 independently identified Society recipes atomically copy complete faction-owned Culture, Political Order, and Technological Knowledge state; no one-to-one catalog validator remains |
+| 20 | Saved Society presets use the same existing interaction path | **PASS** | ModSettings stores deep three-component snapshots; founding and faction Society sections apply and save them without another page or persistent world ownership |
 | 21 | Culture and Political Order remain independent substitutions | **PASS** | component loaders write only their owning state; preset identity is not serialized into faction, settlement, or founding records |
 | 22 | Settlement placement reuses the society catalog and map assignment | **PASS** | one copy-on-apply society catalog creates ordinary scenario settlement state and arms the existing broad-area map assignment; no settlement-preset mode is persisted |
 | 23 | Settlement Culture follows faction-owned state unless locally changed | **PASS** | the faction owns applied Culture; each settlement's explicit local-history record references that parent and refreshes inherited baselines until a local field is authored |
-| 24 | Region authoring remains the current schema | **PASS** | regional plan schema 13 retains the existing geography and composition |
+| 24 | Region authoring remains the current schema | **PASS** | regional plan schema 14 retains the existing geography and composition while adding faction-owned technological knowledge |
 
 Result: **PASS** - 24/24 checks passed.
