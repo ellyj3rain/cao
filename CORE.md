@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Core |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.5.0.0-alpha` · closed batch tip `B14` · next `B15` |
+| Version | `1.6.0.0-alpha` · closed batch tip `B15` · next `B16` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `CORE.md` |
@@ -100,6 +100,9 @@ referents and practices remain concrete repeated conduct with evidence and
 consumers. Exact B11 meanings migrate only where an ordered question exists;
 only weighted approval and salience acquire current question semantics, and
 every former dimension otherwise remains explicit legacy evidence.
+The admitted registry is internally complete for its current constructs; it is
+not an exhaustive claim over every culturally variable native or supported-mod
+mechanic.
 
 Pawns retain deterministic private and public attitudes, attention, inherited-
 prior strength, perceived norms and social pressure, observation likelihood,
@@ -113,26 +116,40 @@ native legality, direct player authority, knowledge, office, material capacity,
 or completed research. Native `CultureDef` is an optional visual tradition only.
 
 Existing societies and player founding use the same Culture, native Ideoligion,
-Political Order, and institutional concepts at different points in time.
+Political Order, Technological Knowledge, and institutional concepts at
+different points in time.
 Existing faction and settlement records describe a society already present:
-established Culture, realized institutions, material conditions, and an explicit
-temporal basis. Player authoring records the inherited Culture, Ideoligion, and
-Political Order the founders bring and the exact rules they adopt at landing.
+established Culture, faction-owned Technological Knowledge, realized
+institutions, material conditions, and an explicit temporal basis. Player
+authoring records the inherited Culture, Ideoligion, Political Order, and
+Technological Knowledge the founders bring and the exact rules they adopt at
+landing.
 Later local Culture, institutions, and practice must be produced by play rather
 than fabricated as pre-existing event history. Political Order records what the
 population considers proper; it does not become an organization custom or broader
 institution merely because the founders hold it.
 
-A society preset is an independently identified two-component recipe: one
-Culture reference and one frozen complete Political Order composition. One validated
-operation copies both into their canonical faction-owned objects. The recipe
-supplies a coherent starting point without merging component ownership or
-materializing Ideoligion, institutions, practice, or history, and its identity
-does not persist in the authored faction. Culture and Political Order presets
-remain independent component substitutions. Starting Region may use the same
-Society recipe while creating an ordinary local faction and settlement; the
-page separately owns its explicit scenario population and broad-area map
-assignment. The applied recipe does not survive as a settlement type or mode.
+The faction owns one canonical Culture, Political Order, and Technological
+Knowledge composition. Society is the joint control surface over those three
+owners. A Society preset is an independently identified reusable snapshot of
+all three, and one validated operation copies all three into the faction's
+canonical state. The preset supplies a coherent starting point without becoming
+a Society owner or materializing Ideoligion, institutions, practice, or history;
+its identity does not persist in the faction. Culture, Political Order, and
+Technological Knowledge presets remain independent component substitutions.
+Starting Region may use the same Society preset while creating an ordinary
+local faction and settlement; the page separately owns its explicit scenario
+population and broad-area map assignment. The applied preset does not survive
+as a settlement type or mode.
+
+Technological Knowledge records practical knowledge by domain and competency.
+The standard availability model reads faction knowledge directly. Experimental
+Distributed Knowledge projects the same state through living pawn carriers and
+persistent institutional or recorded custody, so redundancy and isolated loss
+can change effective capability without creating another technology authority.
+Native research remains the concrete project graph and completion record;
+`FactionDef.techLevel` is only a one-time initialization source or a pre-world
+compatibility fallback after authored faction state becomes authoritative.
 
 ## Governing constraints
 
@@ -154,12 +171,12 @@ assignment. The applied recipe does not survive as a settlement type or mode.
   founders retain their different temporal boundaries. Contextual explanation
   belongs to the owning decision, and Starting Region preserves its spatial map
   without universal detail, development-intensity, or facility-bundle controls.
-- **DR-116 through DR-119, as superseded by DR-148 through DR-168.** Culture at
+- **DR-116 through DR-119, as superseded by DR-148 through DR-173.** Culture at
   T0 contains substantive question distributions and concrete practices with
   real source-and-consumer contracts. Political Order is a complete composition
   over concrete questions; represented institutions remain separate factual
   state. Presets and deterministic generation fill the same complete variables
-  and remain editable. Pending-authoring epoch 12 may reject incompatible
+  and remain editable. Pending-authoring epoch 13 may reject incompatible
   unconfirmed drafts, while realized campaign state follows the durable B11
   boundary and current owner-specific compatibility rules. Manual, preset,
   profile, random, and generated Culture share one object; causal fields remain
@@ -208,7 +225,8 @@ values remain available as contextual fine tuning, not the default description
 of a population. Faction Relations remains the visual reference for relational
 authoring. The production vocabulary, question registry, category policy,
 political composition, and duplicate-surface constraints are inventoried in
-`AUTHORING_ONTOLOGY_COVERAGE.md`, `B13_CAUSAL_CONTRACT.md`, and
+`AUTHORING_ONTOLOGY_COVERAGE.md`, `B13_CAUSAL_CONTRACT.md`,
+`B15_TECHNOLOGICAL_KNOWLEDGE_CONTRACT.md`, and
 `CULTURE_RESEARCH_CORPUS.md`.
 
 ## Ownership

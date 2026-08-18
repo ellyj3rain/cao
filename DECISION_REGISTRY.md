@@ -2508,3 +2508,43 @@
   complete missing Culture through the same deterministic kernel; authored
   player state is never silently randomized. Experimental catalog-2 cognition
   schema 1 is rejected rather than converted into invented separated causes.
+
+- **DR-169** (2026-08-17) - **The faction owns the authored society
+  composition.** `CAFactionState` owns Culture, Political Order, and
+  Technological Knowledge as sibling canonical values. Society is the joint
+  control surface over those owners, and a Society preset is a reusable
+  three-component snapshot. Neither Society nor a preset becomes a realized
+  campaign owner. Founding and regional plans stage copies only until faction
+  realization; settlements reference faction state unless an explicit local
+  divergence is represented.
+
+- **DR-170** (2026-08-17) - **Technological capability is represented knowledge,
+  not a hidden `FactionDef` conclusion.** Nine practical domains separately
+  record understanding, construction, operation, and maintenance. Native
+  research and production definitions cross one exact translation boundary.
+  `FactionDef.techLevel` may seed an otherwise unauthored faction and supply
+  compatibility metadata, but current research, construction, production,
+  habitat, frontier, and autonomous-development consumers query the faction's
+  authored runtime knowledge.
+
+- **DR-171** (2026-08-17) - **Distributed Knowledge changes availability, not
+  ontology or ownership.** Standard mode treats faction knowledge as socially
+  available. Experimental Distributed Knowledge projects the same domain state
+  through accessible pawn, institution, and record custody at the requesting
+  settlement or map. Redundancy, loss, transfer, incapacity, and recovery alter
+  effective availability without creating pawn-owned technology or a second
+  canonical system. Queries cannot initialize or regenerate custody.
+
+- **DR-172** (2026-08-17) - **Research completion remains a native fact and
+  viability preserves causal layers.** Broad knowledge never marks a specific
+  native project complete. Definition requirements, current effective
+  knowledge, and represented labor/material/program capacity remain separate.
+  A biome supplies requirements; knowledge can satisfy their cognitive part;
+  neither fact supplies the settlement's missing material means.
+
+- **DR-173** (2026-08-17) - **B15 is a minor capability boundary.** Campaign
+  catalog 4 publishes faction-owned Technological Knowledge, three-component
+  Society application, exact definition translation, standard and distributed
+  availability, and supported B14-to-B15 owner and pending-plan migration.
+  Migration initializes only represented capability at the upgrade boundary and
+  invents no earlier carriers, teaching, loss, archives, or research history.

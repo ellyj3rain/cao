@@ -444,35 +444,60 @@ An existing faction's represented institutions are realized state from a society
 An established settlement begins with an explicit temporal basis and may retain
 mature institutions and local Culture, but authoring does not invent unobserved
 event history merely to make it established. The player founding state is
-intentionally earlier: it owns the inherited Culture and Political Order brought
-by the founders, a receipt for their native Ideoligion content and revision, and
-the Founding Arrangement adopted at landing. Native Ideoligion validity is checked
+intentionally earlier: it stages the inherited Culture, Political Order, and
+Technological Knowledge brought by the founders, a receipt for their native
+Ideoligion content and revision, and the Founding Arrangement adopted at
+landing. Confirmation copies the three authored components into the realized
+player faction, which becomes their canonical owner. Native Ideoligion validity is checked
 before the receipt may authorize scenario notification. That arrangement
 materializes once as exact, duration-aware founding relations. It is not expanded
 into broader represented institutions that the player did not choose. Player
 institutions and local historical Culture develop through simulation; the
 established-faction generator does not fill them at game start.
 
-The Society-preset library is the joint authoring surface shared by both
-creation contexts. Its twenty-two built-in entries have independent Society
-keys, names, catalog metadata, Culture references, and complete Political Order
-compositions, materialized at catalog construction rather than reapplied from a
-live component preset. User recipes persist the same two component snapshots in global
-settings. Applying any recipe validates both copies before atomically replacing
-the faction's canonical Culture and Political Order; no preset identity enters
-campaign state. Culture and Political Order preset libraries remain independent
-component substitutions over those same owners. Historical Society recipes use
-evidence-specific political compositions rather than a one-to-one alias of the
-Culture catalog. A Society preset never materializes an Ideoligion, founding
+The Society surface is the joint authoring surface shared by both creation
+contexts. It composes the faction's canonical Culture, Political Order, and
+Technological Knowledge without becoming another owner. Its twenty-two built-in
+presets have independent Society keys, names, catalog metadata, Culture
+references, complete Political Order compositions, and complete Technological
+Knowledge compositions, materialized at catalog construction rather than
+reapplied from a live component preset. User presets persist the same three
+component snapshots in global settings. Applying one validates all three copies
+before atomically replacing the faction's three canonical components; no preset
+identity enters campaign state. Culture, Political Order, and Technological
+Knowledge preset libraries remain independent component substitutions over
+those same owners. Historical Society presets use evidence-specific political
+and technological compositions rather than a one-to-one alias of the Culture
+catalog. A Society preset never materializes an Ideoligion, founding
 arrangement, office, policy, organization, or historical event.
 
 Starting Region reuses this library when the player places a new society. The
 page creates one ordinary local faction and settlement, explicitly records the
 scenario population, and arms the same broad-area assignment used by manual
-settlement placement. It copies both components once; settlement Culture then
+settlement placement. It copies all three components once; settlement Culture then
 references the faction-owned source until an explicit local divergence is
 authored. No catalog entry, placement mode, or settlement archetype is added to
 persistent state.
+
+Technological Knowledge is a faction-owned domain composition, not a settlement
+tier or a replacement research tree. Nine domains record four distinct
+competencies: understand, construct, operate, and maintain. One explicit
+translation layer maps native research, construction, recipes, crops, habitat
+requirements, and autonomous development onto those domains. Native research
+projects remain the concrete completion graph. `FactionDef.techLevel` may seed a
+new unauthored faction once or serve before a world owner exists, but active
+authoring and runtime consumers query faction state.
+
+Standard availability treats the faction's composition as socially available.
+Experimental Distributed Knowledge uses the same composition while requiring
+accessible pawn, institutional, or recorded custody for practical availability.
+Pawn death, departure, incapacity, recruitment, and research update or expose
+that custody; overlapping carriers supply redundancy and an isolated carrier's
+loss can remove capability. A settlement record may retain the faction knowledge
+identity, revision, and compatibility tier as a realization receipt, but it does
+not own a second knowledge composition. Environment requirements, effective
+knowledge, labor, materials, programs, and built systems remain separately
+validated causes.
 
 Individual observation becomes collective action only through an explicit causal
 chain: a pawn observes; a valid communication or reporting edge carries an

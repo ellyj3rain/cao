@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Governance |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.5.0.0-alpha` · closed batch tip `B14` · next `B15` |
+| Version | `1.6.0.0-alpha` · closed batch tip `B15` · next `B16` |
 <!-- cao:generated:version END -->
 | Design authority | ellyj3rain |
 | Repository | `GOVERNANCE.md` |
@@ -107,7 +107,7 @@ substrate; the other three are what make the mod a framework.
   evidence. Local Git commits are supporting engineering evidence when retained.
 - Batch identifiers share one namespace across letter eras. The A sequence is
   closed at `A102`; development continues with `[B#]` in the same directory and
-  log. `B13` is closed and `B14` is next after the operator runtime-test boundary. A new letter does not create another
+  log. `B15` is closed and `B16` is next after the operator runtime-test boundary. A new letter does not create another
   history tree, generator, catalog, or projection layer.
 - The records now under `Batches/` establish this append-only contract. The
   immediately preceding generated history tree was a regulatory projection, not
@@ -144,7 +144,7 @@ not expose those objects.
 ## Batch, thread, and version discipline
 
 - **Batch** is the atomic chronological development record. The closed history is
-  `A1` through `A102`, followed by `B1` through `B13`; `B14` is the next identifier.
+  `A1` through `A102`, followed by `B1` through `B15`; `B16` is the next identifier.
 - **Thread and family** are permanent, series-neutral semantic classifications.
   `T-*` and `TF-*` may connect nonadjacent batches across any letter sequence, and
   one batch may participate in several threads.
@@ -165,11 +165,11 @@ Maturity advances independently through `pre-alpha`, `alpha`, `beta`, `rc`, and
 GA.
 
 `tools/version-model.mjs` is the executable replay source. It derives `VERSION`,
-the generated version stamps, and `VERSION_MAP.md`; validates exact A1-B13
+the generated version stamps, and `VERSION_MAP.md`; validates exact A1-B15
 coverage; checks the thematic namespace; and fails if the declared next batch has
 already been consumed. Mechanically derived version facts are generated and
-gated, not hand-typed. Forty evidenced version units derive
-`1.4.1.0-alpha`.
+gated, not hand-typed. Forty-two evidenced version units derive
+`1.6.0.0-alpha`.
 
 When new development begins, the first batch opens the next contiguous version
 unit. Immediately following batches may share that version only when they form one
@@ -268,10 +268,11 @@ psychometric validity, empirical calibration, or gameplay quality.
 
 ## B13 Culture Completion Contract
 
-B13 retains B12's owners and completes Culture as twenty-four explicit
+B13 retains B12's owners and completes its bounded Culture registry as twenty-four explicit
 questions in eight categories. Every question has five ordered anchors,
 represented evidence, research provenance, pawn appraisal, a substantive
-consumer, and historical feedback. Manual editing, complete historical/social
+consumer, and historical feedback. That internal closure is not an exhaustive
+audit of every culturally variable Core, DLC, or supported-mod mechanic. Manual editing, complete historical/social
 presets, saved profiles, deterministic randomization, and generated completion
 all write the same Culture object. One global diversity control owns default
 population spread; per-question spread is advanced and local. Practices remain
@@ -287,5 +288,46 @@ silent player rerolls are invalid.
 B13 closes only after 67/67 B13 receipts, retained 75/78/113 B10-B12 suites,
 current-fixture agreement, independent causal/structural/surface review, a clean
 build, and byte-identical closed-process deployment. Static evidence does not
-establish empirical calibration or gameplay quality. `B14` is next; the
-immediate action is the operator's RimWorld runtime test.
+  establish empirical calibration or gameplay quality.
+
+## B14 Regional World and Society Creation Contract
+
+B14 makes regional selection, preview, confirmation, and generation consume one
+persisted geography composition. Starting Region's Region, Map, and Details
+views reference one selected object graph; settlement and arrival placement use
+actual region members. Political Order is one complete normative composition,
+while represented institutions remain distinct realized facts.
+
+Society is a joint control surface over faction-owned components rather than a
+world owner. A Society preset applies independent snapshots atomically and
+leaves no preset identity in realized state. Component editors remain available
+for direct substitution. Regional environment, settlement programs, frontier
+holdings, and autonomous construction consume represented facts without
+rerolling confirmed authoring.
+
+## B15 Technological Knowledge Contract
+
+The faction owns Culture, Political Order, and Technological Knowledge as three
+sibling canonical components. Society composes them; a Society preset snapshots
+them. Founding and regional plans may stage all three before realization, then
+copy them into the faction. Settlements reference faction state unless an
+explicit local divergence is modeled.
+
+Technological Knowledge records nine domains with separate understand,
+construct, operate, and maintain ranks. One exact translation boundary maps
+native research, buildables, manufactured items, recipes, plants, habitat requirements, and
+compatibility checks. `FactionDef.techLevel` may seed an otherwise unauthored
+faction and provide native metadata, but it is not effective runtime authority.
+Native research completion remains factual.
+
+Standard mode reads faction knowledge directly. Experimental Distributed
+Knowledge changes only availability through accessible pawn, institution, and
+record custody at the requesting map or settlement. Initial faction carriers
+and later usable humanlike members receive idempotent custody projections;
+teaching is not yet implemented. It cannot create a second owner or regenerate
+lost custody during a query. B15 closes only after supported
+B14-to-B15 migration, three-component atomic rollback, exact mapping,
+standard/distributed behavior, current-fixture preservation, retained
+regressions, independent review, reproducible build, and byte-identical
+closed-process deployment. `B16` is next; the immediate action is the operator's
+RimWorld runtime test.

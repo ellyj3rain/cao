@@ -3419,3 +3419,29 @@
   assertions and retained 75/78/113 B10-B12 suites establish static causal,
   persistence, generation, and serialization contracts. Operator runtime
   acceptance remains separate.
+
+- **F-165** (2026-08-18 UTC / 2026-08-17 PDT) - **Native faction tech level and
+  settlement realization receipts were occupying the place of authored social
+  knowledge.** Before B15, the creation surface could infer a society's
+  capability from a `FactionDef` or frozen settlement tier, while habitat
+  viability could reject an explicitly selected capable society without a
+  shared, inspectable knowledge owner. Production, research, construction,
+  agriculture, frontier, and autonomous-development paths did not all ask the
+  same question.
+
+  B15 makes Technological Knowledge the third faction-owned component beside
+  Culture and Political Order. Society authoring and presets compose all three
+  but own none of them after application. Nine domains and four competencies
+  cross one exact native-definition translation boundary. Research completion
+  remains native evidence; broad domain competence does not fabricate completed
+  projects. Current consumers resolve current faction knowledge rather than a
+  stale settlement projection.
+
+  Standard mode preserves knowledge as faction-level social capability.
+  Experimental Distributed Knowledge projects the same state through
+  map-accessible pawn, institution, and record custody. Deterministic receipts
+  demonstrate redundancy, isolated-carrier loss, transfer, recovery, and
+  unchanged standard-mode behavior. Supported B14 fixture and owner migrations
+  add only represented capability at the upgrade boundary; they do not invent
+  prior custody or history. Static evidence establishes the causal and
+  persistence contract, while operator runtime judgment remains separate.

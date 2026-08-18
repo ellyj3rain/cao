@@ -1,8 +1,8 @@
 # Campaign compatibility
 
-Status: canonical for `1.4.1.0-alpha` / active B14
+Status: canonical for `1.6.0.0-alpha` / closed B15
 Current campaign boundary: `1`
-Current schema catalog: `3`
+Current schema catalog: `4`
 
 B11 is CAO's first durable campaign boundary. A world confirmed under this
 boundary is historical state. Later code may govern future events differently,
@@ -40,14 +40,24 @@ catalog 2 only after every current owner validates and each new family has an
 initialization receipt. No B12 owner backdates pawn attitudes, coalitions,
 institutional appraisals, propositions, or research history.
 
-Catalog 3 is B13's current fidelity boundary. It retains the same durable owner
+Catalog 3 is B13's cultural-cognition fidelity boundary. It retains the same durable owner
 set and raises cultural cognition to schema 2 so attention, inherited-prior
 strength, perceived social pressure, and observation likelihood persist as
 separate facts. Nested Culture payloads require question registry 2. The
 experimental catalog-2/schema-1 cognition payload is below the compatible floor:
 preflight rejects it visibly instead of inventing values for the separated
 causes. The current pending authoring fixture is converted directly under its
-own schema and is not a realized campaign migration.
+  own schema and is not a realized campaign migration.
+
+Catalog 4 is B15's faction Technological Knowledge boundary. It adds one nested
+knowledge model to faction state and advances the faction, founding, and regional
+owner schemas. A supported catalog-3 B14 owner initializes the new component only
+from represented faction and authored source facts at the upgrade tick, validates
+the complete result, and publishes catalog 4 after every owner succeeds. The
+migration invents no pawn custody, teaching, loss, institutional retention, or
+prior research history. Current creation plans migrate separately through their
+explicit schema-13-to-14, founding-plan-3-to-4, and settlement-record-8-to-9
+paths.
 
 The same streaming validator runs on the closed XML candidate after
 `ScribeSaver.FinalizeSaving` and before SafeSaver replaces the prior file. Only
@@ -77,13 +87,14 @@ native-class validator.
 
 Pending authoring is an unconfirmed proposal. The active/mirror Starting Region
 plan, unconfirmed founding draft, preset files, and preview caches may be
-regenerated or rejected according to pending-authoring epoch 12 and their own
-current schema. The governed regional plan is schema 13; Culture is schema 10;
-Political Order is schema 10.
+regenerated or rejected according to pending-authoring epoch 13 and their own
+current schema. The governed regional plan is schema 14; Culture is schema 10;
+Political Order is schema 10; Technological Knowledge is schema 1.
 
 A realized campaign begins when the world and founding state are confirmed and
-materialized. Its regions, settlements, residents, domestic units, Culture and
-belief history, organizations, relations, offices, programs, provision,
+materialized. Its regions, settlements, residents, domestic units, Culture,
+Political Order, Technological Knowledge and belief history, organizations,
+relations, offices, programs, provision,
 capabilities, knowledge, reactions, behavior intents, work receipts and other
 registered facts are preserved. Creation derivation is not a repair path for
 those facts.
@@ -184,16 +195,17 @@ A future destructive live-state migration is exceptional and requires all of:
 
 ## Remaining live proof
 
-B13's non-interactive evidence uses the current authored regional fixture, the
+B15's non-interactive evidence uses the current authored regional fixture, the
 catalog-1 B11 upgrade envelope, and the retained controlled B10 envelope. It
 proves preflight decisions, exact
 component scope/cardinality, repeated-record validation, digest corruption
 rejection, stable IDs, deterministic additive metadata, idempotence,
 source-input immutability, exact Culture evidence migration, independently
 owned and causally separated cultural cognition, political cognition,
-proposition knowledge and organization appraisals, no creation rerun, no
-invented prior history, retained B10/B11/B12 regression, and build/deployment
-identity.
+proposition knowledge and organization appraisals, faction-owned Technological
+Knowledge, exact Society application, standard/distributed availability, no
+creation rerun, no invented prior history, retained B10-B14 regression, and
+build/deployment identity.
 
 It does not pretend to automate a true RimWorld save round trip. The operator's
 first retained campaign is the live proof: create and save the campaign, close
@@ -212,5 +224,5 @@ Every later implementation batch states:
 - performance impact: operations/cadence, bounded work, scans, index/cache
   effects and profiler keys.
 
-The next action after B13 is the operator's RimWorld runtime test and, once
+The next action after B15 is the operator's RimWorld runtime test and, once
 accepted, the first retained campaign save.

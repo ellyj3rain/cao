@@ -6,7 +6,7 @@ institutions, beliefs, and authority. Factions make decisions and carry their
 consequences forward instead of resetting to isolated game events.
 
 <!-- cao:generated:version BEGIN -->
-Current version: `1.5.0.0-alpha`. Implementation is complete through batch `B14`; `B15` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.
+Current version: `1.6.0.0-alpha`. Implementation is complete through batch `B15`; `B16` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.
 <!-- cao:generated:version END -->
 
 ## Framework
@@ -79,13 +79,15 @@ with a portable exact cohort manifest and lineage-safe experimental partitions;
 source-truncated fragments remain quarantined from complete-base evidence.
 
 Culture is persistent social history with substantive inherited state. Its
-current authoring authority is a population distribution over twenty-four
-explicit questions in eight categories: relationships and family, gender and
+current admitted authoring registry is a population distribution over
+twenty-four explicit questions in eight categories: relationships and family, gender and
 social authority, status and hierarchy, membership and outsiders, public
 authority and social order, property and provision, violence and punishment,
 and knowledge and tradition. Each question has five ordered anchors, a center,
 population spread, norm and evidence settings, provenance, historical feedback,
-and material consumers. Concrete social subjects remain factual referents;
+and material consumers. This is the current internally complete registry, not
+evidence that every culturally variable RimWorld mechanic has already been
+interpreted. Concrete social subjects remain factual referents;
 practices remain repeated conduct with actors, conditions, authority, materials,
 evidence, and consumers. Neither is silently promoted into a Culture question.
 
@@ -117,26 +119,45 @@ Regional pawn appraisal retains the exact settlement institution resolved from
 the pawn's represented population assignment; local social history and
 institutional jurisdiction are not reconstructed from faction membership.
 
+Each authored faction also owns one Technological Knowledge composition beside
+its Culture and Political Order. Nine practical domains separately record what
+the faction can understand, construct, operate, and maintain. Native research,
+buildings, recipes, crops, habitat requirements, and autonomous development use
+one explicit translation into those domains. `FactionDef.techLevel` may seed a
+new unauthored faction once and remains a pre-world compatibility fallback; it
+does not remain the authority after faction state exists. Environmental needs,
+available knowledge, labor, materials, and realized facilities remain separate
+causes. Current execution consumers and unused forward-capacity cells are
+enumerated separately in the B15 consumer matrix.
+
 The same concepts have different temporal meanings on the two creation sides:
 
 | Existing society | Player founding |
 |---|---|
 | Culture, Ideoligion, Political Order, represented institutions, material state, and established historical basis are facts about a society already present. | Founders bring inherited Culture, native Ideoligion, and Political Order, then choose the rules instituted at landing. Local institutions and historical Culture develop through play. |
 
-Society presets are the shared starting surface above the separate composers.
-Each independently named Society recipe carries one Culture reference and one
-frozen complete Political Order composition. Applying it validates and copies both
-components together into the faction's ordinary Culture and Political Order;
-the preset key is not retained. The resulting components remain independently
-editable, and their own preset browsers remain optional component-replacement
-actions rather than parallel Society workflows. The existing Society section
-also saves reusable two-component user recipes. Applying one to an established
-faction does not rewrite its represented institutions; applying one to the
-founders does not choose their Ideoligion or rules at landing. The same catalog
-can place a new local faction and settlement in Starting Region: the page
-records an explicit scenario population and arms its existing map-area
-assignment, while the recipe still writes only Culture and Political Order.
+Society is the shared control surface above the separate component composers.
+It edits the faction's Culture, Political Order, and Technological Knowledge
+together without becoming another state owner. Each independently named Society
+preset carries a complete reusable snapshot of those three components. Applying
+one validates all three copies, commits them atomically into the faction's
+ordinary state, and retains no preset key or Society ownership. Each component
+remains independently editable, and its own preset browser is an optional
+component-replacement action rather than a parallel Society workflow. The same
+surface saves reusable three-component user presets. Applying one to an
+established faction does not rewrite represented institutions; applying one to
+the founders does not choose Ideoligion or rules at landing. Starting Region may
+use the same preset while creating an ordinary local faction and settlement;
+the page separately records its scenario population and map-area assignment.
 No settlement type, catalog ownership, or preset mode is retained.
+
+Standard play reads the faction's Technological Knowledge directly. Experimental
+Distributed Knowledge changes only where that same knowledge is available:
+living pawns, institutions, and records carry domain competencies, redundancy
+protects them, and the loss or incapacity of an isolated carrier can remove a
+practical capability. Recruitment, departure, research, and represented custody
+changes operate on the same ontology; teaching is not yet a shipped transfer
+mechanism. The mode does not create a second technology system.
 
 Political Order is a complete normative composition over twenty-six concrete
 questions covering authority, civic life, ownership by economic domain,
@@ -201,10 +222,12 @@ changes require a full RimWorld restart.
 | `MODULE_OWNERSHIP.md` | Authoritative module, mutation, cadence, cache, and diagnostics ownership |
 | `SCHEMA_REGISTRY.md`, `PERSISTENCE_CENSUS.md`, `CAMPAIGN_COMPATIBILITY.md` | Durable campaign schema, independent source-writer census, preflight, migration, update, and rollback contracts |
 | `AUTHORING_ONTOLOGY_COVERAGE.md` | Production social/political vocabulary, mechanics coverage, control contracts, categories, and exclusions |
-| `B13_CAUSAL_CONTRACT.md`, `CULTURE_RESEARCH_CORPUS.md` | Current twenty-four-question Culture ownership, source basis, causal separations, consumers, feedback, and calibration limits |
+| `B13_CAUSAL_CONTRACT.md`, `CULTURE_RESEARCH_CORPUS.md` | Current admitted twenty-four-question Culture registry, source basis, causal separations, consumers, feedback, and calibration limits; not an exhaustive playable-mechanics audit |
+| `REGIONAL_GEOGRAPHY_CONTRACT.md` | Shared B14 preview and generation identity, supported geography combinations, and fail-closed realization rules |
+| `B15_TECHNOLOGICAL_KNOWLEDGE_CONTRACT.md` | Faction-owned technological domains, Society composition, native translation, and standard/distributed availability |
 | `PLAYER_BASE_PATTERN_CORPUS.md`, `Corpus/PlayerBaseLayouts/`, `tools/PlayerBaseLayoutExtractor/` | Full-save and structured-snapshot layouts, exact provenance and evidence limits, normalized spatial data, and reusable construction relationships; no copied plan or style mode |
 | `CULTURAL_COGNITION_RESEARCH.md`, `B12_CULTURE_QUESTION_AUDIT.md` | B12 research and migration evidence retained beneath the B13 completion |
-| `B13_ACCEPTANCE_RECEIPTS.md`, `B13_REVIEW_RECEIPT.md` | Executable B13 closure and independent causal, structural, and surface review evidence |
+| `B13_ACCEPTANCE_RECEIPTS.md`, `B13_REVIEW_RECEIPT.md`, `Receipts/B14/`, `Receipts/B15/` | Executable closure, retained-regression, independent review, fixture, build, and deployment evidence |
 
 ## Project history
 

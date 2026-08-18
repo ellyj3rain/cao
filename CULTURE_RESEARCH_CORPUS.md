@@ -11,10 +11,15 @@ consumes it. It is a design and provenance record, not a claim of psychometric
 calibration.
 
 Culture records population distributions over questions. Ideoligion owns
-doctrine, Political Beliefs own claims about proper political arrangements,
+explicit doctrine, sacred or prohibited conduct, memes, precepts, roles, and
+rituals. Political Order owns claims about proper political arrangements,
 institutions own adopted rules, and practices own observed conduct. A source
 listed here is evidence that may update Culture; it is not a substitute for the
 fact owner and does not assert that an event occurred.
+
+This corpus justifies the admitted registry. It does not establish that the
+registry already covers every culturally variable mechanic exposed by Core,
+DLC, or supported mods.
 
 ## Primary source families
 

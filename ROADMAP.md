@@ -1,7 +1,7 @@
 # Colonist Awareness - roadmap
 
-The A sequence is closed at `A102`; the chronology is complete through `B13`,
-and `B14` is the next development batch after the operator runtime test.
+The A sequence is closed at `A102`; the chronology is complete through `B15`,
+and `B16` is the next development batch after the operator runtime test.
 Historical batch identifiers below use the current sequence. Thematic `T-*`
 identifiers link continuing work across nonadjacent batches. The chronological
 catalog is [`BATCH_LOG.md`](BATCH_LOG.md); thematic links are in
@@ -429,12 +429,15 @@ session was closed without saving.
   obligations so refuge, resupply, reinforcement, safe passage, retaliation, and
   willingness to support a renewed attempt depend on the places and people involved,
   not only a faction label.
-- Technology remains separate from organization. Vanilla supplies one `FactionDef`
-  tech level, not a per-settlement level. Each expanded settlement therefore needs a
-  CA capability/technology profile, using its faction as a prior while allowing local
-  communications, transport, medicine, equipment, infrastructure, and sustainment to
-  differ. Leadership, discipline, alliances, and willingness to spend those resources
-  come from social structure, roles, relationships, Doctrine, and capable pawns.
+- Technological Knowledge remains separate from organization and is canonical
+  faction state beside Culture and Political Order. `FactionDef.techLevel` may
+  seed an otherwise unauthored faction but does not remain runtime authority.
+  Settlements query the faction's current knowledge and separately represent
+  their communications, transport, medicine, equipment, infrastructure,
+  materials, and sustainment. Experimental distribution may make current
+  availability depend on accessible pawn, institution, or record custody.
+  Leadership, discipline, alliances, and willingness to use those resources
+  still come from social structure, relationships, Doctrine, and capable pawns.
 - CA delivers an Authority result through the native Lord memo/transition seam to
   move the on-map group into withdrawal. Strategic continuation is CA world state:
   map exit alone supplies no refuge or journey. CA would carry the operation's outcome
@@ -1649,14 +1652,16 @@ operator's RimWorld runtime test.
 
 ## Culture Completion and Causal Fidelity - B13 / T-001, T-002, T-004, T-006, T-019, T-021-T-025, T-028, T-030
 
-B13 completes B12's Culture capability without replacing its durable owner.
+B13 completes B12's bounded Culture registry without replacing its durable owner.
 Twenty-four questions now form eight categories with three questions each.
 Every question owns five semantic anchors, evidence and research provenance,
 question-specific pawn appraisal, substantive consumers, and a historical
 feedback route. Nine complete historical/social presets, saved profiles, manual
 editing, deterministic randomization, and generated completion write the same
 Culture object. One global diversity control owns default population spread;
-per-question spread remains advanced.
+per-question spread remains advanced. This established internal registry
+coverage, not exhaustive semantic coverage of culturally variable game
+mechanics; the reverse mechanic-to-owner audit remains subsequent work.
 
 The cognition path keeps neighboring causes separate: salience affects
 attention rather than manufacturing conviction; norm strength and divergence
@@ -1673,4 +1678,40 @@ Culture records carry 192 complete root distributions, two authored local rows,
 and 26 evidence records. Sixty-seven B13 receipts join the retained 75 B10, 78 B11,
 and 113 B12 assertions. Independent causal, structural, and surface review, a
 clean build, and byte-verified deployment close static acceptance. The next
-action is the operator's RimWorld runtime test; `B14` remains next.
+  action is the operator's RimWorld runtime test.
+
+## Regional World and Society Creation Convergence - B14 / T-001, T-002, T-013-T-015, T-019-T-030
+
+B14 makes regional selection, preview, confirmation, and generation consume one
+persisted geography composition. Region, Map, and Details navigate one selected
+object graph; arrival and settlement placement use actual member areas. The
+current fixture preserves its selected world, region, scale, factions,
+settlements, populations, relations, programs, provisions, Culture, Political
+Order, and represented institutions.
+
+Society becomes a joint initializer over faction-owned Culture and Political
+Order. Historical Society presets and reusable user snapshots apply both
+components atomically, while component presets remain direct substitutions.
+The preset identity is not campaign state. Political Order replaces the former
+belief/current-order duplication; represented institutions remain separate
+realized facts.
+
+## Faction Technological Knowledge and Distributed Availability - B15 / T-001, T-004, T-005, T-015, T-016, T-019, T-021, T-023-T-025, T-028, T-030
+
+B15 extends the faction-owned composition to Culture, Political Order, and
+Technological Knowledge. Society remains the joint control surface and Society
+presets become atomic three-component snapshots. Nine technological domains
+separately represent understanding, construction, operation, and maintenance.
+One exact native-definition translation layer supplies research, construction,
+production, agriculture, habitat, frontier, and autonomous-development
+requirements. Broad knowledge never fabricates native research completion. The
+B15 consumer matrix distinguishes current execution paths from unused
+domain-by-competency capacity.
+
+Standard mode treats faction knowledge as shared social capability.
+Experimental Distributed Knowledge changes only availability and custody: the
+same state is projected through accessible pawns, institutions, and records at
+the requesting settlement or map. Campaign catalog 4 and pending epoch 13 carry
+the supported B14-to-B15 migration without inventing prior custody or history.
+The next action after technical closure is the operator's runtime test; `B16` is
+the next ordinary batch.
