@@ -6,8 +6,20 @@ using ColonistAwareness;
 
 internal static class Program
 {
-    private static readonly string Managed =
-        @"C:\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed";
+    private static readonly string Managed = ResolveManagedDirectory();
+
+    private static string ResolveManagedDirectory()
+    {
+        string configured = Environment.GetEnvironmentVariable(
+            "RIMWORLD_MANAGED_DIR");
+        if (!string.IsNullOrWhiteSpace(configured))
+            return Path.GetFullPath(configured);
+
+        return Path.Combine(Environment.GetFolderPath(
+                Environment.SpecialFolder.ProgramFilesX86),
+            "Steam", "steamapps", "common", "RimWorld",
+            "RimWorldWin64_Data", "Managed");
+    }
 
     private static int Main()
     {
