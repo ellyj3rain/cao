@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Memory |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.4.1.0-alpha` · closed batch tip `B13` · next `B14` |
+| Version | `1.5.0.0-alpha` · closed batch tip `B14` · next `B15` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `MEMORY.md` |
@@ -99,6 +99,7 @@ derive the current root version through the Neo four-coordinate odometer.
 | `CAMPAIGN_COMPATIBILITY.md` | CANONICAL | Operator update, preflight, supported migration, visible failure, backup, and rollback workflow. |
 | `AUTHORING_ONTOLOGY_COVERAGE.md` | CANONICAL | Four-layer authoring coverage, mechanics classification, production vocabulary, semantic kinds, category cardinalities, and duplicate-surface audit. |
 | `B13_CAUSAL_CONTRACT.md`, `CULTURE_RESEARCH_CORPUS.md` | CANONICAL | Current twenty-four-question Culture registry, authoring contract, causal separations, sources, consumers, historical feedback, and calibration limits. |
+| `PLAYER_BASE_PATTERN_CORPUS.md` | CANONICAL, INCOMPLETE | Full-save and structured-snapshot layout corpus, evidence strata, extraction contract, and autonomous-building admission rules. Nine operator saves cover early/combat evidence; the broad Real Ruins screen defines 4,238 complete byte-unique layouts across 80 biome definitions with lineage-safe partitions. Quality/capability classification, complementary mature full saves, and full-save terrain/roof decoding remain open. |
 | `B12_CAUSAL_CONTRACT.md`, `B12_CULTURE_QUESTION_AUDIT.md` | RECORD | B12's original thirteen-question capability boundary and exact former-subject disposition, retained beneath B13. |
 | `CULTURAL_COGNITION_RESEARCH.md` | RECORD | Supplied-package hashes, admitted B12/B13 research constructs, evidence limits, and code provenance. |
 | `B13_B12_FIDELITY_AUDIT.md` | RECORD | Pre-change audit proving which B12 contracts were preserved, extended, or corrected. |

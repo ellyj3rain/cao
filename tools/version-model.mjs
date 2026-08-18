@@ -19,8 +19,8 @@ export const KOHAI_HARD_CAP = 16;
 export const PATCH_HARD_CAP = 24;
 export const MATURITY_LADDER = Object.freeze(["pre-alpha", "alpha", "beta", "rc"]);
 export const ROOT_REPLAY_START_VERSION = "0.1.0.0-pre-alpha";
-export const CLOSED_BATCH_TIP = "B13";
-export const NEXT_BATCH = "B14";
+export const CLOSED_BATCH_TIP = "B14";
+export const NEXT_BATCH = "B15";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_REPO_ROOT = resolve(here, "..");
@@ -439,6 +439,17 @@ export const VERSION_UNITS = Object.freeze([
     threads: ["T-001", "T-002", "T-004", "T-006", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
     rationale: "B13 completes and matures B12's Culture capability without replacing its durable ownership architecture. It expands the production registry to twenty-four questions in eight player-legible categories, supplies complete historical and social presets, puts manual editing, presets, and random generation through one Culture object, and separates salience from conviction, norm strength from expected enforcement, source confidence from knowledge confidence, and visibility from public-expression compression. Question-specific psychology, represented observations, downstream consumers, world-faction completion, schema-2 cognition persistence, fixed-seed receipts, and the converted current fixture close the same capability as a coherent integration unit, so the unit carries the kohai tier.",
   },
+  {
+    id: "VU-041",
+    series: "B",
+    first: 14,
+    last: 14,
+    dates: "2026-08-14 to 2026-08-17",
+    tier: "minor",
+    name: "Regional world and Society creation convergence",
+    threads: ["T-001", "T-002", "T-013", "T-014", "T-015", "T-019", "T-020", "T-021", "T-022", "T-023", "T-024", "T-025", "T-026", "T-027", "T-028", "T-029", "T-030"],
+    rationale: "B14 establishes a new end-to-end creation capability across regional geography, settlement viability, and coherent Society authoring. Preview, confirmation, and generation now share one exact geography composition; hostile environments derive concrete habitat requirements; and autonomous construction ranks task-owned spatial evidence. Culture and Political Order remain canonical sibling owners while an independent Society recipe atomically initializes both, supports reusable saved snapshots, and leaves no persistent preset ownership. Starting Region placement, current-schema persistence, startup integration, offline creator tooling, fixed-cause receipts, reproducible builds, and byte-verified deployment close the capability as one minor unit.",
+  },
 ]);
 
 function parseVersion(version) {
@@ -686,9 +697,10 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     "B11",
     "B12",
     "B13",
+    "B14",
   ];
   if (JSON.stringify(covered) !== JSON.stringify(expected)) {
-    errors.push("version units must cover A1-B13 exactly once, contiguously, and in order");
+    errors.push("version units must cover A1-B14 exactly once, contiguously, and in order");
   }
   VERSION_UNITS.forEach((unit, index) => {
     const expectedId = `VU-${String(index + 1).padStart(3, "0")}`;
@@ -703,19 +715,19 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     .sort((left, right) => left[0].localeCompare(right[0])
       || Number(left.slice(1)) - Number(right.slice(1)));
   if (JSON.stringify(closedIds) !== JSON.stringify(expected)) {
-    errors.push("Batches/ must contain exactly the closed A001-A102 and B001-B013 record set");
+    errors.push("Batches/ must contain exactly the closed A001-A102 and B001-B014 record set");
   }
-  if (batchFiles.some((name) => /^B0*14-.*\.md$/.test(name))) {
-    errors.push("B14 must remain unconsumed until the next development batch");
+  if (batchFiles.some((name) => /^B0*15-.*\.md$/.test(name))) {
+    errors.push("B15 must remain unconsumed until the next development batch");
   }
 
   const batchLog = readFileSync(join(repoRoot, "BATCH_LOG.md"), "utf8");
   const logIds = [...batchLog.matchAll(/^\| \[([A-Z])(\d+)\]/gm)]
     .map((match) => `${match[1]}${Number(match[2])}`);
   if (JSON.stringify(logIds) !== JSON.stringify(closedIds)) {
-    errors.push("BATCH_LOG.md must index A1-B13 exactly once and in order");
+    errors.push("BATCH_LOG.md must index A1-B14 exactly once and in order");
   }
-  if (/^\| \[B14\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B14 record yet");
+  if (/^\| \[B15\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B15 record yet");
 
   const threads = readFileSync(join(repoRoot, "Batches", "THREADS.md"), "utf8");
   const declaredThreads = new Set([...threads.matchAll(/<a id="t-(\d{3})"><\/a>T-(\d{3})/g)].map((match) => `T-${match[1]}`));

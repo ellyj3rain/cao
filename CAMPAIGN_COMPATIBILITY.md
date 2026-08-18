@@ -1,6 +1,6 @@
 # Campaign compatibility
 
-Status: canonical for `1.4.1.0-alpha` / B13
+Status: canonical for `1.4.1.0-alpha` / active B14
 Current campaign boundary: `1`
 Current schema catalog: `3`
 
@@ -78,8 +78,8 @@ native-class validator.
 Pending authoring is an unconfirmed proposal. The active/mirror Starting Region
 plan, unconfirmed founding draft, preset files, and preview caches may be
 regenerated or rejected according to pending-authoring epoch 12 and their own
-current schema. The governed regional plan is schema 11; Culture is schema 10;
-Political Beliefs remains schema 9.
+current schema. The governed regional plan is schema 13; Culture is schema 10;
+Political Order is schema 10.
 
 A realized campaign begins when the world and founding state are confirmed and
 materialized. Its regions, settlements, residents, domestic units, Culture and
@@ -100,14 +100,15 @@ unmatched subject remains explicit legacy evidence. No convenient substitute is
 invented. The B11 rule also remains in force: an old subject-shaped practice is
 converted only when saved longitudinal evidence identifies the corresponding
 conduct; otherwise it is invalid pending state, not a durable practice preserved
-through an alias. Political schema 9 converts old
-ownership and economy `mixed` values into every mechanism their B10 descriptions
-explicitly named. B10 `mixed support` did not identify which systems coexisted;
-preflight rejects that ambiguous record before owner load rather than inventing
-a pair. This is a pre-campaign correction: no retained durable campaign exists,
-and the governed fixture already records explicit current support mechanisms.
-Partial belief and current-order sets are copied into their destination and are
-never persistent shared owners.
+through an alias. Political Order schema 10 replaces the flat schema-9 mechanism
+list with one complete, versioned composition over concrete political questions.
+The governed pending fixture translates exact saved commitments, fills missing
+domains from evidence-matched complete presets, and records every mixture as a
+normalized composition. Generated names and accounts remain consequences of
+that state. Complete saved orders are copied into their destination and are
+never persistent shared owners. Represented institutions remain a separate
+factual record and are never inferred merely because a population professes an
+order.
 
 ## Stable identity and future behavior
 

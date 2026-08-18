@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Governance |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.4.1.0-alpha` · closed batch tip `B13` · next `B14` |
+| Version | `1.5.0.0-alpha` · closed batch tip `B14` · next `B15` |
 <!-- cao:generated:version END -->
 | Design authority | ellyj3rain |
 | Repository | `GOVERNANCE.md` |
@@ -43,6 +43,10 @@ substrate; the other three are what make the mod a framework.
   attribute invented intent.
 - **Declarations are promises.** Settings copy and in-game text must match shipped
   behavior exactly.
+- **Concepts are not copy.** Operator discussion and model terminology direct the
+  design; they enter the UI only when explicitly supplied or approved as copy.
+  Player text is written separately in concise, concrete RimWorld language at
+  the level of the choice, its direct effect, and the object it changes.
 - **Author causes, inspect consequences.** Simulation complexity does not justify
   exposing every analytical category as a player control. Authoring surfaces own
   concrete persistent facts with real consumers; continuous, relational,
@@ -57,10 +61,14 @@ substrate; the other three are what make the mod a framework.
   population-scoped evaluations, and practices are concrete repeated conduct;
   each production entry has factual evidence and a consumer. Ideoligion is
   RimWorld's native religious and moral substrate;
-  Political Beliefs are normative commitments; institutions and adopted rules
+  Political Order is the population's normative composition; institutions and adopted rules
   are realized order; observed practice is what people actually do. Agreement
   and contradiction remain representable rather than being collapsed for UI
   convenience.
+- **Generated identity follows authored state.** Political names, accounts,
+  summaries, presets, and suggestions are generated from the complete saved
+  variables. Optional display-name editing never substitutes prose for causal
+  state and never becomes the primary authoring path.
 - **Publishable-portable.** No operator-specific hardcoding; license-clean bespoke
   implementations (reference reading of other mods is fine; copying is not).
 - **DLL changes need a full game restart; Defs XML hot-reloads in dev mode.**
@@ -184,7 +192,7 @@ knowledge, material, and history. World tendencies summarize or guide; they do
 not instantiate institutions. Every active settlement program has a concrete
 need and complete operational contract. Culture affects meaning, legitimacy,
 participation, priority, and form without granting execution capability.
-Political Beliefs remain distinct from instituted order. Provision operators,
+Political Order remains distinct from represented institutions. Provision operators,
 funding, stock, access, and behavior are actual facts. Assets are nodes of an
 institution, never the institution itself.
 
@@ -216,13 +224,15 @@ navigation; empty and one-item categories are omitted, and top-level categories
 appear only when multiple meaningful groups contain enough content to aid
 discovery.
 
-Political Beliefs, current order, authority, institutions, economy,
-self-identification, and observed practice remain distinct. Presets are explicit
-copy-on-apply partial patches. Several compatible mechanisms may coexist;
-exclusivity requires a recorded engine or model invariant. Named archetypes may
-seed or describe state but cannot replace its independent facts. Shared layout
-primitives do not justify duplicate semantic records or duplicate authoring
-surfaces.
+Political Order, represented institutions, authority, economy,
+self-identification, and observed practice remain distinct. Political Order is
+a complete causal composition: each blendable question totals 100 and each
+exclusive question selects one position. Presets and generated orders fill that
+same state and remain editable. Several compatible positions may coexist only
+inside an intelligible owning question; exclusivity requires a recorded engine
+or model invariant. Generated names and accounts describe the saved variables
+and never replace them. Shared layout primitives do not justify duplicate
+semantic records or duplicate authoring surfaces.
 
 B11 closed after retained B10 regressions, the complete mechanics coverage
 matrix, five-lens review with no unresolved Critical or High finding, a clean
@@ -238,7 +248,7 @@ and preserves every former dimension and unmatched subject as evidence. A
 convenient substitute is not a compatible migration.
 
 Persistent psychology, dynamic condition, Culture, native Ideoligion, Political
-Beliefs, current order, institutions, proposition knowledge, actions, and
+Order, represented institutions, proposition knowledge, actions, and
 practices are distinct causes. Cultural cognition, political cognition, and
 proposition knowledge have separate durable world owners. Organizations own
 legitimacy and sanction history. Each owner has one cadence, validator, profiler

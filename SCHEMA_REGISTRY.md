@@ -1,6 +1,6 @@
 # Campaign schema registry
 
-Status: canonical for `1.4.1.0-alpha` / B13
+Status: canonical for `1.4.1.0-alpha` / active B14
 Boundary version: `1`
 First durable CAO campaign baseline: B11
 Current catalog version: `3`
@@ -81,7 +81,7 @@ evidence of realized campaign history.
 | `map.culture-longitudinal` | 2 / 1 | `CACultureLongitudinalMapComponent` | local Culture question distributions, practices, evidence, history and evaluation schedule; Culture model validates revision/history |
 | `map.equipment-transition` | 1 / 1 | `EquipTransitionMapComponent` | stowed/transition weapon identity and authority episodes |
 | `game.hidden-things` | 1 / 1 | `HiddenThingsComponent` | hidden stash identities and quality |
-| `world.faction-state` | 2 / 1 | `CAFactionStateWorldComponent` | faction state list; Culture, normative beliefs, and current-order nested validation |
+| `world.faction-state` | 2 / 1 | `CAFactionStateWorldComponent` | faction state list; Culture, normative Political Order, and represented-institution nested validation |
 | `world.player-founding` | 2 / 1 | `CAPlayerFoundingWorldComponent` | confirmed founding plan, application tick and source identity |
 | `world.organization` | 2 / 1 | `CAOrganizationWorldComponent` | organizations, offices, membership, customs, agreements, cases, offers, gatherings, frontier plans, legitimacy and sanction appraisals |
 | `world.organization-relations` | 1 / 1 | `CAOrganizationRelationsWorldComponent` | typed relations and facility holdings; unique IDs/signatures and next-ID continuity |
@@ -100,7 +100,7 @@ evidence of realized campaign history.
 | `map.raid-response` | 1 / 1 | `RaidResponseMapComponent` | shelter cells and behavior/authority episodes |
 | `map.contingency-plan` | 1 / 1 | `CAPlanMapComponent` | named plans, legs and stable plan IDs |
 | `map.road-expansion` | 1 / 1 | `CARoadExpansionMapComponent` | road projects and restoration validation state |
-| `map.settlement-planning-context` | 1 / 1 | `CASettlementPlanningContextMapComponent` | context snapshot, revision and source signature |
+| `map.settlement-planning-context` | 3 / 2 | `CASettlementPlanningContextMapComponent` | resident/program/built context plus represented biome, annual climate, ecology, cultivable ground, habitat requirements, food route, minimum capability, site capacity, revision, and source signature; schema 2 refreshes the additive habitat fields from current represented map facts |
 | `map.settlement-work` | 1 / 1 | `CASettlementWorksMapComponent` | research, repair and rebuild work receipts and restore-validation state |
 | `map.spatial-initiative` | 1 / 1 | `CASpatialInitiativeMapComponent` | active spatial objective and built storage/room receipts |
 | `game.squad` | 1 / 1 | `SquadComponent` | squad membership, roles and orders |
@@ -133,16 +133,16 @@ evidence of realized campaign history.
 | Schema key | Current / minimum | Owner | Identity and validation |
 |---|---:|---|---|
 | `model.culture` | 10 / 9 | faction, settlement or local Culture owner | stable Culture ID/locality, constituents, inherited/local question distributions, legacy evidence, concrete repeated practices, direct-question observations with measured position/spread/population/continuity/source identity, and transition history; a subject key is neither a question nor a practice identity |
-| `model.political-beliefs` | 9 / 9 | faction/founding owner | independently composable normative mechanisms and derivation receipts; beliefs do not rewrite current order |
-| `model.current-order` | 1 / 1 | faction/founding/region owner | independently composable instituted authority, labour, voice, property and related mechanisms; self-identification and normative belief remain separate |
+| `model.political-order` | 10 / 10 | faction/founding population owner | complete normative composition over registered political questions; every blendable question totals 100, exclusive questions select one position, and generated identity/account remain projections of these variables |
+| `model.represented-institutions` | 1 / 1 | established faction/region owner | represented authority, labour, voice, property, security, and related instituted mechanisms; scenario and historical facts remain separate from Political Order |
 | `model.founding-arrangement` | 1 / 1 | player founding owner | adopted founding order and agreement/tension with professed beliefs |
 | `model.player-founding-plan` | 3 / 3 | player founding owner | plan identity, Culture, Ideoligion reference, beliefs and arrangement |
-| `model.regional-plan` | 11 / 11 | regional world owner | region ID, candidate/arrival/member tiles, faction/settlement/relation plans and authored fixture state |
+| `model.regional-plan` | 13 / 13 | regional world owner | region ID, candidate/arrival/member tiles, faction/settlement/relation plans, authoritative geography composition, and one persisted environment/requirement/capability/viability result per settlement and frontier holding |
 | `model.regional-settlement-record` | 8 / 8 | regional world owner | stable `regionalId + slot`, faction, local rect, population, program, provision, capability and history-bearing fields |
 | `model.settlement-population-group` | 1 / 1 | settlement composition owner | stable group key, kind, share, faction and Ideoligion relationships |
 | `model.domestic-unit` | 1 / 1 | domestic state owner | settlement-scoped stable unit identity, continuity pawn, memberships and transitions |
 | `model.domestic-provision-demand` | 1 / 1 | domestic state owner | exact unit/operator need and source evidence |
-| `model.frontier-map-plan` | 1 / 1 | organization owner | stable map/tile/form holding plan; derived realization signature validates inputs |
+| `model.frontier-map-plan` | 2 / 2 | organization owner | stable map/tile/form holding plan, exact supporting-faction identity, habitat requirements/capability, materialization result, and a realization signature over map, policy, environment, supporter, and holding count |
 | `model.groundwater-tuning` | 1 / 1 | regional world owner | fixed world-generation tuning saved with the world |
 | `model.settlement-residence` | 1 / 1 | settlement residence owner | stable pawn assignment, population group, entry and typed exit |
 | `model.settlement-capability` | 2 / 2 | settlement capability owner | domain, level, evidence source/signature and assessment tick |
@@ -171,8 +171,8 @@ outside realized campaign history:
 
 | Surface | Owner / version | Reset or conversion rule |
 |---|---|---|
-| Active and mirror Starting Region plan XML | `CARegionalPlan` schema 11 plus `CAPendingAuthoringDataEpoch` 12 | May be rejected/discarded when its pending schema is incompatible; on confirmation it is converted into `world.regional` facts once |
-| Culture profiles and political-belief sets | `CAUserCultureProfile` wrapper 9 containing `CACulture` 10, and `CAUserPoliticalBeliefSet` 9 | Invalid entries may be pruned; applying one copies Culture distributions or an explicit partial normative patch into an authored/realized owner |
+| Runtime-keyed Starting Region plan and governed mirror XML | `CARegionalPlan` schema 13 plus `CAPendingAuthoringDataEpoch` 12 | The per-world keyed file is the runtime authority and the standalone file is its governed test mirror; incompatible pending state may be rejected, and confirmation converts the plan into `world.regional` facts once |
+| User Culture, Political Order, and Society profiles | `CAUserCultureProfile` 9 containing `CACulture` 10; `CAUserPoliticalOrderProfile` 10 containing `CAPoliticalBeliefs` 10; `CAUserSocietyProfile` 1 containing both component snapshots | Invalid global-setting entries may be pruned. Component profiles copy only their owner. A Society profile validates both deep copies and atomically replaces both canonical faction components; no profile key is written into campaign state |
 | Unconfirmed player founding draft | `CAPlayerFoundingPlan` 3 in session state | May be replaced until confirmation; confirmed state belongs to `world.player-founding` |
 | Creation preview/projection caches | creation-page/session owners | Recomputed freely; never treated as campaign history |
 

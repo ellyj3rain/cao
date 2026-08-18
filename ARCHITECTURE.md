@@ -264,6 +264,40 @@ expression, environmental fit, operational coherence, historical continuity,
 strategic topology, and bounded imperfection. Efficiency supplies a viability
 floor rather than the single objective.
 
+`CASettlementEnvironmentCausalKernel` derives physical site support from the
+actual terrain, biome, growing period, plant and forage support, and seasonal
+temperature range. Regional realization includes the source member tiles and
+their mutators in its causal identity. On a live regional map,
+`CASettlementPlanningContextMapComponent` aggregates those exact projected
+source cells together with current room and outdoor conditions. This one
+environmental projection constrains settlement and frontier capacity and ranks
+already-authorized spatial behavior. It does not create Culture, Political
+Order, institutions, space programs, or permission.
+
+`CAHabitatViabilityCausalKernel` converts those physical facts into explicit
+requirements for shelter, temperature control, food production or supply,
+reserves, medicine, water treatment, light, hazard protection, and breathable
+interior space. A settlement satisfies them only through its actual saved
+programs and faction capability. Advanced capability may admit a hostile tile
+as potential established-settlement ground, but confirmation still requires
+the authored programs that construct and maintain the habitat. A frontier
+holding above the unaffiliated baseline persists the exact faction supplying
+that capability. Unsupported frontier hazard and vacuum sites fail closed; a
+technology label never stands in for a building, supply route, protective
+system, or operating population.
+
+Frontier residents materialize only after a compact habitat has physically
+closed every supported requirement. Whole-site selection uses composable
+terrain fit, functional adjacency, throughput, circulation, expansion,
+environmental buffering, defense, material cost, and visual-order evidence.
+The same relationships extend the existing autonomous-home and settlement
+planning grammar through `PLAYER_BASE_PATTERN_CORPUS.md`; they are task-owned
+evidence extracted through one normalized full-save and structured-snapshot
+pipeline, not copied layouts, a universal score, or a player-facing style mode.
+Corpus strata preserve what each source can prove: the operator's
+early/combat-precarity layouts do not stand in for anonymous broad-layout
+screening or complementary mature mid-game and end-game development evidence.
+
 Existing player-authored Kitchen, Freezer, Utility, and Defense programs, plus
 legacy Storage programs, are evaluated in place from their `CASpaceProgram`
 footprints. The facility-requirement receipt keeps loss criticality, loaded-item
@@ -346,7 +380,7 @@ materialize player homes, entered settlements, encounters, and other events that
 need pawn-, thing-, job-, or Lord-level detail.
 
 A faction owns inherited Culture and its optional native visual tradition,
-Ideoligion, Political Beliefs, instituted current order, and the authority shared
+Ideoligion, Political Order, represented institutions, and the authority shared
 between its settlements. A settlement keeps a stable CA identity even when its
 faction changes. Its realized record owns residents, population groups,
 organizations, material state, relationships, materialization history, and one
@@ -384,7 +418,7 @@ interest, institutional experience, threat, held proposition knowledge, and a
 majority perceived only through represented exposure. Strong compatible
 positions may form
 faction-bounded coalitions while retaining internal disagreement. Political
-Beliefs remain normative authoring state and current order remains instituted
+Order remains normative authoring state and represented institutions remain instituted
 fact.
 
 Organizations own institutional legitimacy and sanction history. Procedure,
@@ -406,18 +440,39 @@ action. Native execution, direct or relayed operator intent, authorization,
 knowledge, land, technology, labor, materials, treasury, and office remain
 separate causes.
 
-An existing faction's current order is realized state from a society with history.
+An existing faction's represented institutions are realized state from a society with history.
 An established settlement begins with an explicit temporal basis and may retain
 mature institutions and local Culture, but authoring does not invent unobserved
 event history merely to make it established. The player founding state is
-intentionally earlier: it owns the inherited Culture and Political Beliefs brought
+intentionally earlier: it owns the inherited Culture and Political Order brought
 by the founders, a receipt for their native Ideoligion content and revision, and
 the Founding Arrangement adopted at landing. Native Ideoligion validity is checked
 before the receipt may authorize scenario notification. That arrangement
 materializes once as exact, duration-aware founding relations. It is not expanded
-into broader current-order answers that the player did not choose. Player
+into broader represented institutions that the player did not choose. Player
 institutions and local historical Culture develop through simulation; the
 established-faction generator does not fill them at game start.
+
+The Society-preset library is the joint authoring surface shared by both
+creation contexts. Its twenty-two built-in entries have independent Society
+keys, names, catalog metadata, Culture references, and complete Political Order
+compositions, materialized at catalog construction rather than reapplied from a
+live component preset. User recipes persist the same two component snapshots in global
+settings. Applying any recipe validates both copies before atomically replacing
+the faction's canonical Culture and Political Order; no preset identity enters
+campaign state. Culture and Political Order preset libraries remain independent
+component substitutions over those same owners. Historical Society recipes use
+evidence-specific political compositions rather than a one-to-one alias of the
+Culture catalog. A Society preset never materializes an Ideoligion, founding
+arrangement, office, policy, organization, or historical event.
+
+Starting Region reuses this library when the player places a new society. The
+page creates one ordinary local faction and settlement, explicitly records the
+scenario population, and arms the same broad-area assignment used by manual
+settlement placement. It copies both components once; settlement Culture then
+references the faction-owned source until an explicit local divergence is
+authored. No catalog entry, placement mode, or settlement archetype is added to
+persistent state.
 
 Individual observation becomes collective action only through an explicit causal
 chain: a pawn observes; a valid communication or reporting edge carries an
@@ -427,24 +482,27 @@ and observed consequences create new facts and records. Organization records kee
 their source, place and time, reporting chain, confidence, access, replacement,
 and loss. They may be stale, false, secret, corrupted, or absent.
 
-Political subjects cover leadership, decisions, participation, dissent,
-ownership, economy, work, support, membership, status, local order, defense, and
-war conduct. Political Beliefs record normative mechanisms; current order records
-instituted mechanisms. Several compatible mechanisms may coexist on one subject,
-and only an explicit absence mechanism excludes standing leadership, local-order,
-or defense mechanisms on that same subject. Partial belief and current-order sets
-copy only listed mechanisms and preserve unrelated authored facts. They create no
-political identity and are never shared mutable world owners. NPC generation
-derives a belief only from same-subject current order, an explicit observed fact,
-or the matching Culture question distribution and records the causal evidence used; unsupported
-subjects remain unset. Settlement authority records what a faction's settlements
-decide and provide together. Offices, votes, delegation, emergency powers,
-succession, trade, mobilization, negotiation, surrender, and agreements use
-those saved facts.
+Political Order covers twenty-six questions: authority and decisions; political
+voice, liberty, status, and membership; twelve distinct ownership domains;
+exchange, credit, rent, work, and basic provision; and local security, defense,
+and conduct in conflict. A blendable question is one normalized 100-point
+composition over compatible positions. An exclusive question selects one
+position. Complete presets and deterministic generation populate this same
+state, after which every value remains editable. The order's generated name,
+summary, and account are read-only projections of the saved variables.
+
+Represented institutions remain separate factual mechanisms. Existing societies
+may begin with offices, bodies, work rules, provision systems, property facts,
+and security institutions because their history precedes the scenario. Founders
+begin with their Political Order and a chosen Founding Arrangement; later
+institutions develop through play. Settlement authority records what a faction's
+settlements decide and provide together. Offices, votes, delegation, emergency
+powers, succession, trade, mobilization, negotiation, surrender, and agreements
+use those represented facts.
 
 Organizations own offices, groups, customs, security, agreements, policies,
 claims, relations, and decision history. Organization customs follow the social
-order actually in force. Political Beliefs remain standards used to judge that
+order actually in force. Political Order remains the standard used to judge that
 order and observed acts; they do not silently become adopted customs. There is no separate ideology
 classification layer between those facts and their consequences.
 
@@ -592,11 +650,12 @@ RimWorld's native Reinstall contract.
 
 ## Starting Region Information Architecture
 
-`Page_CAStartingRegion` keeps one shared object selection across Objects, Map,
-and Details. Object-rail selection may enter Details; map selection stays on the
-map and exposes an explicit details action. Compact settlement Details traverses
-the object-rail order and resets only its scroll position. Drawing and navigation
-do not regenerate saved state.
+`Page_CAStartingRegion` keeps one shared selection across Region, Map, and
+Details. The Region list contains the region, its factions, and their owned
+settlements. Map selection stays on the map, exposes an explicit details action,
+and invokes the same settlement-placement boundary as the Region list. Compact
+settlement Details traverses the Region-list order and resets only its scroll
+position. Drawing and navigation do not regenerate saved state.
 
 The Details contract distinguishes choice, essential fact, blocking warning,
 and secondary inspection. `CAContextualChoicePresentation` renders a control for
@@ -647,7 +706,7 @@ material nodes, history, blockers, confidence, assessment tick, and a source
 signature. It has no random jitter and does not create a program. World axes are
 read models or generation pressures and cannot feed the reality they summarize.
 
-Political Beliefs remain normative positions. Current order, offices, policies,
+Political Order remains normative composition. Represented institutions, offices, policies,
 ownership, taxation, work, and provision are separately persisted facts that
 change through represented decisions and transitions. Culture owns population
 distributions over admitted questions and may affect appraisal, legitimacy,
@@ -674,10 +733,10 @@ idempotent, and describe upgrade-time initialization without inventing earlier
 history.
 
 `AuthoringOntologyKernel` owns immutable semantic-kind, production-vocabulary,
-partial-set, category-cardinality, and control-contract registries. It does not
+complete-preset, category-cardinality, and control-contract registries. It does not
 own Culture, political, faction, settlement, or world state. The current
-production inventory contains 45 social referents, 30 concrete practices, 52
-political mechanisms, 12 belief sets, 10 current-order sets, 33 explicit
+production inventory contains 45 social referents, 30 concrete practices, 110
+question-scoped political positions, 8 complete Political Order presets, 32 explicit
 control contracts, and 24 Culture questions in eight categories. `AUTHORING_ONTOLOGY_COVERAGE.md`
 maps the active mechanics,
 sources, consumers, category counts, duplicate-surface audit, and exclusions.
@@ -685,8 +744,8 @@ sources, consumers, category counts, duplicate-surface audit, and exclusions.
 `CACultureAuthoringKernel` and `CACulturePresetLibrary` are pure authoring
 adapters over `CACulture`; manual changes, complete historical/social presets,
 saved profiles, deterministic randomization, and generated completion create no
-parallel mode state. One global diversity value supplies default population
-spread and an expanded question may override only its own spread. Salience,
+parallel mode state. One overall-disagreement value supplies default population
+spread and an expanded value may override only its own spread. Salience,
 conviction, norm pressure, represented enforcement, inherited-prior strength,
 knowledge confidence, observation likelihood, and public expression remain
 separate realized causes in the cultural-cognition owner. Direct historical

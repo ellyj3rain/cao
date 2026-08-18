@@ -1,12 +1,12 @@
 # Persistence census
 
-Date: 2026-08-13
+Date: 2026-08-17
 
 This report is generated from production C# source, independently of the campaign schema catalog. It discovers declarations that directly write through `Scribe`, call a nested `Expose` writer, or inherit a native persisted job/lord/need/thought/world/scenario owner. Every discovered carrier must resolve to an executable catalog schema or a narrow, stated non-campaign exclusion.
 
-- Discovered persistence carriers: **250**
+- Discovered persistence carriers: **253**
 - Catalog schemas reached from source carriers: **86**
-- Explicit non-campaign exclusions: **4**
+- Explicit non-campaign exclusions: **5**
 - Unclassified or invalid routes: **0**
 - Result: **PASS**
 
@@ -23,7 +23,8 @@ This report is generated from production C# source, independently of the campaig
 | `ColonistAwareness.JobDriver_CASearchKnownContact` in `Source/AssaultAwarenessModule.cs` | direct Scribe/nested Expose writer | `map.assault-awareness` | **PASS** |
 | `ColonistAwareness.JobDriver_CAInvestigateGunfire` in `Source/AudibleCueModule.cs` | native persisted owner (`JobDriver`) | `native.ca-job-drivers` | **PASS** |
 | `ColonistAwareness.CAUserCultureProfile` in `Source/AuthoringPresentationModule.cs` | direct Scribe/nested Expose writer | Excluded: global mod settings or user preset outside a realized campaign save | **PASS** |
-| `ColonistAwareness.CAUserPoliticalBeliefSet` in `Source/AuthoringPresentationModule.cs` | direct Scribe/nested Expose writer | Excluded: global mod settings or user preset outside a realized campaign save | **PASS** |
+| `ColonistAwareness.CAUserPoliticalOrderProfile` in `Source/AuthoringPresentationModule.cs` | direct Scribe/nested Expose writer | Excluded: global mod settings or user preset outside a realized campaign save | **PASS** |
+| `ColonistAwareness.CAUserSocietyProfile` in `Source/AuthoringPresentationModule.cs` | direct Scribe/nested Expose writer | Excluded: global mod settings or user preset outside a realized campaign save | **PASS** |
 | `ColonistAwareness.AutonomousHomeMapComponent` in `Source/AutonomousHomeModule.cs` | direct Scribe/nested Expose writer | `map.autonomous-home` | **PASS** |
 | `ColonistAwareness.CAHomeBuiltRecord` in `Source/AutonomousHomeModule.cs` | direct Scribe/nested Expose writer | `map.autonomous-home` | **PASS** |
 | `ColonistAwareness.AutonomyComponent` in `Source/AutonomyModule.cs` | direct Scribe/nested Expose writer | `game.autonomy` | **PASS** |
@@ -95,7 +96,7 @@ This report is generated from production C# source, independently of the campaig
 | `ColonistAwareness.CADomesticUnit` in `Source/DomesticUnitModule.cs` | direct Scribe/nested Expose writer | `model.domestic-unit` | **PASS** |
 | `ColonistAwareness.JobDriver_DragTo` in `Source/DragModule.cs` | native persisted owner (`JobDriver`) | `native.ca-job-drivers` | **PASS** |
 | `ColonistAwareness.EquipTransitionMapComponent` in `Source/EquipTransitionModule.cs` | direct Scribe/nested Expose writer | `map.equipment-transition` | **PASS** |
-| `ColonistAwareness.CAAxisEntry` in `Source/FactionCompositionModule.cs` | direct Scribe/nested Expose writer | `model.current-order`, `model.political-beliefs` | **PASS** |
+| `ColonistAwareness.CAAxisEntry` in `Source/FactionCompositionModule.cs` | direct Scribe/nested Expose writer | `model.political-order`, `model.represented-institutions` | **PASS** |
 | `ColonistAwareness.CACulturalMeaning` in `Source/FactionCultureBeliefsModule.cs` | direct Scribe/nested Expose writer | `model.culture` | **PASS** |
 | `ColonistAwareness.CACulture` in `Source/FactionCultureBeliefsModule.cs` | direct Scribe/nested Expose writer | `model.culture` | **PASS** |
 | `ColonistAwareness.CACultureConstituent` in `Source/FactionCultureBeliefsModule.cs` | direct Scribe/nested Expose writer | `model.culture` | **PASS** |
@@ -103,8 +104,8 @@ This report is generated from production C# source, independently of the campaig
 | `ColonistAwareness.CACultureObservation` in `Source/FactionCultureBeliefsModule.cs` | direct Scribe/nested Expose writer | `model.culture` | **PASS** |
 | `ColonistAwareness.CACulturePractice` in `Source/FactionCultureBeliefsModule.cs` | direct Scribe/nested Expose writer | `model.culture` | **PASS** |
 | `ColonistAwareness.CACultureTransition` in `Source/FactionCultureBeliefsModule.cs` | direct Scribe/nested Expose writer | `model.culture` | **PASS** |
-| `ColonistAwareness.CAPoliticalBeliefs` in `Source/FactionCultureBeliefsModule.cs` | direct Scribe/nested Expose writer | `model.political-beliefs` | **PASS** |
-| `ColonistAwareness.CAPoliticalDerivationReceipt` in `Source/FactionCultureBeliefsModule.cs` | direct Scribe/nested Expose writer | `model.political-beliefs` | **PASS** |
+| `ColonistAwareness.CAPoliticalBeliefs` in `Source/FactionCultureBeliefsModule.cs` | direct Scribe/nested Expose writer | `model.political-order` | **PASS** |
+| `ColonistAwareness.CAPoliticalDerivationReceipt` in `Source/FactionCultureBeliefsModule.cs` | direct Scribe/nested Expose writer | `model.political-order` | **PASS** |
 | `ColonistAwareness.CAFactionState` in `Source/FactionStateModule.cs` | direct Scribe/nested Expose writer | `world.faction-state` | **PASS** |
 | `ColonistAwareness.CAFactionStateWorldComponent` in `Source/FactionStateModule.cs` | direct Scribe/nested Expose writer | `world.faction-state` | **PASS** |
 | `ColonistAwareness.CAFoundingArrangement` in `Source/FoundingArrangementModule.cs` | direct Scribe/nested Expose writer | `model.founding-arrangement` | **PASS** |
@@ -166,6 +167,8 @@ This report is generated from production C# source, independently of the campaig
 | `ColonistAwareness.CAPlayerFoundingPlan` in `Source/PlayerFoundingStateModule.cs` | direct Scribe/nested Expose writer | `model.player-founding-plan` | **PASS** |
 | `ColonistAwareness.CAPlayerFoundingWorldComponent` in `Source/PlayerFoundingStateModule.cs` | direct Scribe/nested Expose writer | `world.player-founding` | **PASS** |
 | `ColonistAwareness.ScenPart_CAEstablishedPlayerSettlement` in `Source/PlayerFoundingStateModule.cs` | direct Scribe/nested Expose writer | `scenario.established-player-settlement` | **PASS** |
+| `ColonistAwareness.CAPoliticalOptionShare` in `Source/PoliticalOrderAuthoringModule.cs` | direct Scribe/nested Expose writer | `model.political-order` | **PASS** |
+| `ColonistAwareness.CAPoliticalQuestionState` in `Source/PoliticalOrderAuthoringModule.cs` | direct Scribe/nested Expose writer | `model.political-order` | **PASS** |
 | `ColonistAwareness.CAKnowledgePropositionRecord` in `Source/PropositionKnowledgeModule.cs` | direct Scribe/nested Expose writer | `world.proposition-knowledge` | **PASS** |
 | `ColonistAwareness.CAPropositionKnowledgeWorldComponent` in `Source/PropositionKnowledgeModule.cs` | direct Scribe/nested Expose writer | `world.proposition-knowledge` | **PASS** |
 | `ColonistAwareness.CAResearchProgramReceipt` in `Source/PropositionKnowledgeModule.cs` | direct Scribe/nested Expose writer | `world.proposition-knowledge` | **PASS** |
