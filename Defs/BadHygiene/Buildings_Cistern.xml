@@ -40,7 +40,6 @@
       <li>Metallic</li>
     </stuffCategories>
     <designationCategory>Production</designationCategory>
-    <constructEffect>ConstructWood</constructEffect>
     <comps>
       <li Class="ColonistAwareness.CompProperties_WaterVessel">
         <capacity>240</capacity>

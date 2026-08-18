@@ -10,7 +10,7 @@
 				<muteWhenPaused>False</muteWhenPaused>
 				<grains>
 					<li Class = "AudioGrain_Clip">
-						<clipPath>Explosives/Explosion_BombWater</clipPath>
+						<clipPath>Boats/Explosives/Explosion_BombWater</clipPath>
 					</li>				
 				</grains>
 				<volumeRange>
@@ -35,7 +35,7 @@
 				<muteWhenPaused>True</muteWhenPaused>
 				<grains>
 					<li Class = "AudioGrain_Clip">
-						<clipPath>Explosives/Explosion_PirateCannon</clipPath>
+						<clipPath>Boats/Explosives/Explosion_PirateCannon</clipPath>
 					</li>
 				</grains>
 				<volumeRange>
@@ -62,7 +62,7 @@
 				<muteWhenPaused>False</muteWhenPaused>
 				<grains>
 					<li Class = "AudioGrain_Clip">
-						<clipPath>Ship/ShipBell_1</clipPath>
+						<clipPath>Boats/Ship/ShipBell_1</clipPath>
 					</li>
 				</grains>
 				<volumeRange>

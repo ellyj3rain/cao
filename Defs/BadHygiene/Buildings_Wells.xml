@@ -39,7 +39,6 @@
       <li>Woody</li>
     </stuffCategories>
     <designationCategory>Production</designationCategory>
-    <constructEffect>ConstructDirt</constructEffect>
     <comps>
       <!-- Five, not three: hand-dug wells historically go down tens of
            metres. Only genuinely dry country puts water beyond a
