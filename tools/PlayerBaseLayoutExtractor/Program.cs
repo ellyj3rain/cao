@@ -660,13 +660,13 @@ internal static partial class Program
         }
         if (string.IsNullOrWhiteSpace(output))
         {
-            error = "--output is required.";
-            return false;
+            output = Path.Combine(FindRepositoryRoot(), "Corpus",
+                "PlayerBaseLayouts", "local", "generated");
         }
         if (acquireRealRuins > 0 && string.IsNullOrWhiteSpace(realRuinsCache))
         {
-            error = "--cache is required with --acquire-real-ruins.";
-            return false;
+            realRuinsCache = Path.Combine(FindRepositoryRoot(), "Corpus",
+                "PlayerBaseLayouts", ".cache", "real-ruins", "raw");
         }
         if (acquireRealRuins > 0
             && !string.IsNullOrWhiteSpace(profileRealRuins))
@@ -707,15 +707,37 @@ internal static partial class Program
     private static void PrintUsage()
     {
         Console.Error.WriteLine("usage: dotnet run --project "
-            + "tools/PlayerBaseLayoutExtractor -- --output <directory> "
+            + "tools/PlayerBaseLayoutExtractor -- [--output <directory>] "
             + "[--recursive] <rws-bp-or-directory> [...]");
         Console.Error.WriteLine("   or: dotnet run --project "
-            + "tools/PlayerBaseLayoutExtractor -- --output <directory> "
-            + "--cache <directory> --acquire-real-ruins <count> "
+            + "tools/PlayerBaseLayoutExtractor -- [--output <directory>] "
+            + "[--cache <directory>] --acquire-real-ruins <count> "
             + "[--max-concurrency 4]");
         Console.Error.WriteLine("   or: dotnet run --project "
-            + "tools/PlayerBaseLayoutExtractor -- --output <directory> "
+            + "tools/PlayerBaseLayoutExtractor -- [--output <directory>] "
             + "--profile-real-ruins <acquisition-index.json>");
+        Console.Error.WriteLine("Default output and acquisition cache paths "
+            + "are local, gitignored directories under "
+            + "Corpus/PlayerBaseLayouts/.");
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        DirectoryInfo? directory = new(Directory.GetCurrentDirectory());
+        while (directory != null)
+        {
+            string gitPath = Path.Combine(directory.FullName, ".git");
+            if ((Directory.Exists(gitPath) || File.Exists(gitPath))
+                && File.Exists(Path.Combine(directory.FullName,
+                    "GOVERNANCE.md")))
+            {
+                return directory.FullName;
+            }
+            directory = directory.Parent;
+        }
+        throw new InvalidOperationException("The repository root could not "
+            + "be found. Run this tool inside the CAO checkout or provide "
+            + "explicit --output and --cache paths.");
     }
 
     private static string SafeFileStem(string fileName)

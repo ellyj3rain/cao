@@ -71,6 +71,12 @@ substrate; the other three are what make the mod a framework.
   state and never becomes the primary authoring path.
 - **Publishable-portable.** No operator-specific hardcoding; license-clean bespoke
   implementations (reference reading of other mods is fine; copying is not).
+- **Machine-learning corpus boundary.** Raw saves and snapshots, normalized
+  per-layout records, exact cohort membership, screening/evaluation rows,
+  partitions, and caches remain local and ignored. Preserve public methodology,
+  aggregate statistics, and non-reconstructive dataset accounting under
+  `DATASET_GOVERNANCE.md`; preserve exact private lineage in the ignored local
+  compliance manifest.
 - **DLL changes need a full game restart; Defs XML hot-reloads in dev mode.**
 - **Test-save continuity.** Never overwrite or delete the operator's real game, an
   original test baseline, or a deliberately preserved checkpoint. Work from a

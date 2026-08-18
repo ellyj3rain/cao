@@ -19,6 +19,13 @@ tools/**/bin/
 # never commit decompiled game source (lives outside the repo; keep it that way)
 rimworld-decompiled/
 
-# Local native-layout corpus cache. Exact public snapshots are reproducible
-# from the governed screening index and are not forge artifacts.
-Corpus/PlayerBaseLayouts/.cache/
+# Machine-learning corpus payload is local by default. This includes source
+# saves/snapshots, normalized per-layout records, screening/cohort manifests,
+# caches, and train/validation/test working sets. Only the directory boundary
+# and a non-reconstructive aggregate profile are publishable exceptions.
+Corpus/PlayerBaseLayouts/**
+!Corpus/PlayerBaseLayouts/
+!Corpus/PlayerBaseLayouts/README.md
+!Corpus/PlayerBaseLayouts/external/
+Corpus/PlayerBaseLayouts/external/**
+!Corpus/PlayerBaseLayouts/external/real-ruins-broad-profile.json
