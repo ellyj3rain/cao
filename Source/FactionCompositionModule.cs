@@ -7,7 +7,8 @@ using Verse;
 
 namespace ColonistAwareness
 {
-    // Questions shared by political beliefs and current order. Each entry is
+    // Compatibility questions shared by Political Order projections and
+    // represented institutions. Each entry is
     // one mechanism. Several mechanisms may coexist on an axis unless the
     // axis declares a genuine absence invariant (for example no standing
     // defense cannot coexist with a professional force).
@@ -425,7 +426,7 @@ namespace ColonistAwareness
         // ---- generation ------------------------------------------------
         //
         // Current structure has one generator. This entry point establishes
-        // Culture and Political Beliefs first, then delegates every unset
+        // Culture and Political Order first, then delegates every unset
         // structure field to that generator. It never bypasses an explicitly
         // incomplete institutional state.
         internal static int Derive(CARegionalPlan plan,
@@ -454,7 +455,7 @@ namespace ColonistAwareness
         {
             int specified = Axes.Length
                 - CountByState(group.factionStructure, CAAxisSource.Unset);
-            if (specified == 0) return "Current order not set";
+            if (specified == 0) return "No established institutions represented";
             var parts = new List<string>();
             foreach (string axisKey in new[] { Leadership, Ownership, Defense })
             {
@@ -476,11 +477,12 @@ namespace ColonistAwareness
                 parts.Add((Axes.Length - specified) + " fields unset");
 
             string joined = string.Join(", ", parts.ToArray());
-            return joined.NullOrEmpty() ? "Current order not set"
+            return joined.NullOrEmpty() ? "No established institutions represented"
                 : joined.CapitalizeFirst();
         }
 
-        // Political-belief and current-structure differences are preserved.
+        // Political commitments and represented-institution differences are
+        // preserved.
         internal static List<string> Conflicts(
             CARegionalFactionPlan group)
         {

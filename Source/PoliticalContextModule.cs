@@ -2,7 +2,7 @@ using RimWorld;
 
 namespace ColonistAwareness
 {
-    // Political Beliefs are normative claims. Neither current institutions,
+    // Political Order is normative composition. Neither represented institutions,
     // Culture, FactionDef flags nor world relations establish what a
     // population believes ought to be true. This adapter therefore exposes an
     // empty context until authored testimony or an observed normative record

@@ -554,7 +554,7 @@ namespace ColonistAwareness
                 ContactWeaponCategory.Unknown);
 
             // Record the strike when combat knowledge is recorded. The act
-            // record states circumstances only; political beliefs judge it later.
+            // record states circumstances only; Political Order judges it later.
             // Witnesses and reports retain their own knowledge source.
             if (pawnSource && CAViolenceSite.BothPeople(victim,
                 (Pawn)instigator))

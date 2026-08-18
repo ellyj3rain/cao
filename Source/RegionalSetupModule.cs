@@ -315,7 +315,7 @@ namespace ColonistAwareness
                         // Automatic relations preserve an actual RimWorld
                         // relation. Starting Region overrides remain separate.
                         plan.SetRelation(group.key, other.key, relation,
-                            false);
+                            CARegionalRelationSource.NativeExisting);
                     }
                 }
 
@@ -340,7 +340,7 @@ namespace ColonistAwareness
             }
 
             CARegionalPlanUtility.EnsureRelationRows(plan);
-            // Current order is an input to local services and settlement
+            // Represented institutions are inputs to local services and settlement
             // programs. Resolve it before settlement state so automatic
             // regions follow the same dependency order as Starting Region.
             foreach (CARegionalFactionPlan group in plan.factions
@@ -425,16 +425,7 @@ namespace ColonistAwareness
 
         private static int PlacementLandCapacity(int tileId)
         {
-            PlanetTile tile = CARegionalPlanUtility.SurfaceTile(tileId);
-            if (!tile.Valid || tile.Tile == null || tile.Tile.WaterCovered)
-                return 0;
-            switch (tile.Tile.hilliness)
-            {
-                case Hilliness.Impassable: return 0;
-                case Hilliness.Mountainous: return 1;
-                case Hilliness.LargeHills: return 2;
-                default: return 3;
-            }
+            return CASettlementEnvironment.ForTile(tileId).LandCapacity;
         }
 
         private static float TileDistance(int leftId, int rightId)
@@ -467,18 +458,18 @@ namespace ColonistAwareness
         public bool authored;
 
         // Current authority shared between this faction's settlements.
-        // Generated from current order unless explicitly set.
+        // Generated from represented institutions unless explicitly set.
         public byte settlementAuthority; // CASettlementAuthority
         public bool settlementAuthorityExplicit;
 
-        // Current order: instituted state, never normative Political Beliefs.
+        // Represented institutions: instituted state, never normative Political Order.
         public List<CAAxisEntry> factionStructure = new List<CAAxisEntry>();
         // Explicit evidence-only state for a faction whose institutions are
         // intentionally unknown. Established generated factions otherwise
         // realize every institutional axis at initialization.
         public bool institutionalStateIncomplete;
 
-        // Default population culture and political beliefs. Ideoligion remains
+        // Default population Culture and Political Order. Ideoligion remains
         // native faction state. Population groups may carry different
         // Ideoligions, beliefs, and faction affiliation.
         public CACulture culture = new CACulture();
@@ -638,6 +629,18 @@ namespace ColonistAwareness
         // explicit history. They do not create the facts they summarize.
         public int residentPopulation = -1;
         public int landCapacity = -1;
+        // Saved habitat contract. The environment declares requirements;
+        // the established settlement's actual programs and technical means
+        // declare capabilities. Generation consumes this result instead of
+        // re-reading or re-rolling the biome.
+        public int environmentSourceHash;
+        public int habitatRequirementMask;
+        public int requiredCapabilityTier;
+        public int habitatCapabilityMask;
+        public int missingHabitatRequirementMask;
+        public byte habitatFoodRoute; // CAHabitatFoodRoute
+        public bool habitatViable;
+        public string habitatBlocker;
         public int realizedAccessInfrastructure = -1;
         // Saved route facts. Programs and confirmed generation consume these
         // values instead of consulting mutable world tiles again.
@@ -696,6 +699,20 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref residentPopulation,
                 "residentPopulation", -1);
             Scribe_Values.Look(ref landCapacity, "landCapacity", -1);
+            Scribe_Values.Look(ref environmentSourceHash,
+                "environmentSourceHash", 0);
+            Scribe_Values.Look(ref habitatRequirementMask,
+                "habitatRequirementMask", 0);
+            Scribe_Values.Look(ref requiredCapabilityTier,
+                "requiredCapabilityTier", 0);
+            Scribe_Values.Look(ref habitatCapabilityMask,
+                "habitatCapabilityMask", 0);
+            Scribe_Values.Look(ref missingHabitatRequirementMask,
+                "missingHabitatRequirementMask", 0);
+            Scribe_Values.Look(ref habitatFoodRoute,
+                "habitatFoodRoute", (byte)0);
+            Scribe_Values.Look(ref habitatViable, "habitatViable", false);
+            Scribe_Values.Look(ref habitatBlocker, "habitatBlocker");
             Scribe_Values.Look(ref realizedAccessInfrastructure,
                 "realizedAccessInfrastructure", -1);
             Scribe_Values.Look(ref hasRoadAccess, "hasRoadAccess", false);
@@ -749,7 +766,19 @@ namespace ColonistAwareness
         public int landCapacity;
         public int materialLevel;
         public int form; // 0 cabin, 1 established homestead
-        public bool factionless;
+        // A naturally supported holding may remain unaffiliated. A holding
+        // whose habitat requires greater capability persists the exact
+        // supporting faction selected before materialization.
+        public int supportingFactionKey = -1;
+        public int supportingFactionLoadId = -1;
+        public int environmentSourceHash;
+        public int habitatRequirementMask;
+        public int requiredCapabilityTier;
+        public int capabilityTier;
+        public int habitatCapabilityMask;
+        public int missingHabitatRequirementMask;
+        public byte habitatFoodRoute; // CAHabitatFoodRoute
+        public string materializationFailure;
         public bool materialized;
         public int materializedMapId = -1;
         public IntVec3 site = IntVec3.Invalid;
@@ -763,7 +792,25 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref landCapacity, "landCapacity", 0);
             Scribe_Values.Look(ref materialLevel, "materialLevel", 0);
             Scribe_Values.Look(ref form, "form", 0);
-            Scribe_Values.Look(ref factionless, "factionless", false);
+            Scribe_Values.Look(ref supportingFactionKey,
+                "supportingFactionKey", -1);
+            Scribe_Values.Look(ref supportingFactionLoadId,
+                "supportingFactionLoadId", -1);
+            Scribe_Values.Look(ref environmentSourceHash,
+                "environmentSourceHash", 0);
+            Scribe_Values.Look(ref habitatRequirementMask,
+                "habitatRequirementMask", 0);
+            Scribe_Values.Look(ref requiredCapabilityTier,
+                "requiredCapabilityTier", 0);
+            Scribe_Values.Look(ref capabilityTier, "capabilityTier", 0);
+            Scribe_Values.Look(ref habitatCapabilityMask,
+                "habitatCapabilityMask", 0);
+            Scribe_Values.Look(ref missingHabitatRequirementMask,
+                "missingHabitatRequirementMask", 0);
+            Scribe_Values.Look(ref habitatFoodRoute,
+                "habitatFoodRoute", (byte)0);
+            Scribe_Values.Look(ref materializationFailure,
+                "materializationFailure");
             Scribe_Values.Look(ref materialized, "materialized", false);
             Scribe_Values.Look(ref materializedMapId,
                 "materializedMapId", -1);
@@ -773,12 +820,20 @@ namespace ColonistAwareness
         }
     }
 
+    public enum CARegionalRelationSource : byte
+    {
+        Unset = 0,
+        NativeExisting = 1,
+        NativeInitial = 2,
+        Authored = 3
+    }
+
     public sealed class CARegionalRelationPlan : IExposable
     {
         public int leftFactionKey;
         public int rightFactionKey;
         public FactionRelationKind relation = FactionRelationKind.Neutral;
-        public bool authorRelation = true;
+        public CARegionalRelationSource source = CARegionalRelationSource.Unset;
 
         public void ExposeData()
         {
@@ -786,18 +841,19 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref rightFactionKey, "rightFactionKey", 0);
             Scribe_Values.Look(ref relation, "relation",
                 FactionRelationKind.Neutral);
-            Scribe_Values.Look(ref authorRelation, "authorRelation", true);
+            Scribe_Values.Look(ref source, "source",
+                CARegionalRelationSource.Unset);
         }
     }
 
     public sealed class CARegionalPlan : IExposable
     {
-        internal const int CurrentSchemaVersion = 11;
+        internal const int CurrentSchemaVersion = 13;
 
-        // Schema 11 is the B11 authoring-ontology epoch. Domestic provision remains
-        // unresolved until factual pawn relations exist; capabilities are
-        // evidence-backed read models; programs and provision arrangements
-        // carry their direct operational causes.
+        // Schema 13 keeps the schema-12 relation provenance and adds one saved
+        // habitat requirement/capability result for every settlement and
+        // frontier holding. A viable label can no longer stand in for missing
+        // food, shelter, medicine, water, climate, or hazard functions.
         // Earlier development schemas are deliberately unsupported.
         public int schemaVersion = CurrentSchemaVersion;
         public string regionalId;
@@ -1014,7 +1070,7 @@ namespace ColonistAwareness
         }
 
         internal void SetRelation(int left, int right,
-            FactionRelationKind relation, bool authorRelation = true)
+            FactionRelationKind relation, CARegionalRelationSource source)
         {
             if (left == right) return;
             CARegionalRelationPlan pair = RelationPlanBetween(left, right);
@@ -1028,7 +1084,7 @@ namespace ColonistAwareness
                 relations.Add(pair);
             }
             pair.relation = relation;
-            pair.authorRelation = authorRelation;
+            pair.source = source;
         }
 
         internal bool ValidFor(CAExpandedLandmassProfile profile)
@@ -1474,7 +1530,7 @@ namespace ColonistAwareness
                         allowExactLegacy: false);
                 if (!beliefFailure.NullOrEmpty())
                 {
-                    failure = "Political beliefs for " + FactionName(group)
+                    failure = "Political Order for " + FactionName(group)
                         + " cannot be used: " + beliefFailure;
                     return false;
                 }
@@ -1482,7 +1538,7 @@ namespace ColonistAwareness
                     .ValidationFailure(group.factionStructure);
                 if (!orderFailure.NullOrEmpty())
                 {
-                    failure = "Current order for " + FactionName(group)
+                    failure = "Represented institutions for " + FactionName(group)
                         + " cannot be used: " + orderFailure;
                     return false;
                 }
@@ -1778,7 +1834,7 @@ namespace ColonistAwareness
         }
 
         // The faction that owns a settlement. Research, technology, relations,
-        // political beliefs, and current order are resolved on this object.
+        // Political Order and represented institutions are resolved on this object.
         internal static string FactionName(CARegionalFactionPlan group)
         {
             if (group == null) return "no owner";
@@ -1925,17 +1981,156 @@ namespace ColonistAwareness
                 {
                     int left = keys[i];
                     int right = keys[j];
-                    if (plan.relations.Any(pair => pair != null
-                            && pair.leftFactionKey == left
-                            && pair.rightFactionKey == right)) continue;
-                    plan.relations.Add(new CARegionalRelationPlan
+                    CARegionalRelationPlan pair = plan.relations.FirstOrDefault(
+                        item => item != null && item.leftFactionKey == left
+                            && item.rightFactionKey == right);
+                    if (pair == null)
                     {
-                        leftFactionKey = left,
-                        rightFactionKey = right,
-                        relation = FactionRelationKind.Neutral,
-                        authorRelation = false
-                    });
+                        pair = new CARegionalRelationPlan
+                        {
+                            leftFactionKey = left,
+                            rightFactionKey = right
+                        };
+                        plan.relations.Add(pair);
+                    }
+                    if (!plan.confirmed
+                        && pair.source != CARegionalRelationSource.Authored)
+                    {
+                        if (TryDetermineNativeRelation(plan.FactionPlan(left),
+                                plan.FactionPlan(right), out FactionRelationKind
+                                relation, out CARegionalRelationSource source,
+                                out _))
+                        {
+                            pair.relation = relation;
+                            pair.source = source;
+                        }
+                        else
+                        {
+                            pair.relation = FactionRelationKind.Neutral;
+                            pair.source = CARegionalRelationSource.Unset;
+                        }
+                    }
                 }
+        }
+
+        internal static bool TryDetermineNativeRelation(
+            CARegionalFactionPlan left, CARegionalFactionPlan right,
+            out FactionRelationKind relation,
+            out CARegionalRelationSource source, out string failure)
+        {
+            relation = FactionRelationKind.Neutral;
+            source = CARegionalRelationSource.Unset;
+            failure = null;
+            if (left == null || right == null)
+            {
+                failure = "a faction is missing";
+                return false;
+            }
+            if (left.source == CARegionalFactionSource.ExistingWorldFaction
+                && right.source
+                    == CARegionalFactionSource.ExistingWorldFaction)
+            {
+                Faction leftFaction = FactionByLoadId(
+                    left.existingFactionLoadId);
+                Faction rightFaction = FactionByLoadId(
+                    right.existingFactionLoadId);
+                if (!IsEligibleExistingFaction(leftFaction)
+                    || !IsEligibleExistingFaction(rightFaction)
+                    || leftFaction == rightFaction)
+                {
+                    failure = "the existing faction relation is unavailable";
+                    return false;
+                }
+                relation = leftFaction.RelationKindWith(rightFaction);
+                source = CARegionalRelationSource.NativeExisting;
+                return true;
+            }
+
+            FactionDef leftDef = left.ResolvedFactionDef;
+            FactionDef rightDef = right.ResolvedFactionDef;
+            if (leftDef == null || rightDef == null)
+            {
+                failure = "the selected faction types do not define a native "
+                    + "initial relation";
+                return false;
+            }
+            int goodwill = Math.Min(InitialGoodwill(leftDef, rightDef),
+                InitialGoodwill(rightDef, leftDef));
+            relation = goodwill <= -10 ? FactionRelationKind.Hostile
+                : goodwill >= 75 ? FactionRelationKind.Ally
+                : FactionRelationKind.Neutral;
+            source = CARegionalRelationSource.NativeInitial;
+            return true;
+        }
+
+        internal static bool TryValidateRelationSource(CARegionalPlan plan,
+            CARegionalRelationPlan relation, out string failure)
+        {
+            failure = null;
+            if (relation == null)
+            {
+                failure = "relation row is missing";
+                return false;
+            }
+            CARegionalFactionPlan left = plan?.FactionPlan(
+                relation.leftFactionKey);
+            CARegionalFactionPlan right = plan?.FactionPlan(
+                relation.rightFactionKey);
+            if (left == null || right == null)
+            {
+                failure = "relation owner is missing";
+                return false;
+            }
+            if (relation.source == CARegionalRelationSource.Authored)
+                return true;
+            if (relation.source == CARegionalRelationSource.NativeExisting)
+            {
+                if (left.source == CARegionalFactionSource.ExistingWorldFaction
+                    && right.source
+                        == CARegionalFactionSource.ExistingWorldFaction)
+                    return true;
+                failure = "existing-world provenance was assigned to a new "
+                    + "faction";
+                return false;
+            }
+            if (relation.source == CARegionalRelationSource.NativeInitial)
+            {
+                if (left.source == CARegionalFactionSource.ExistingWorldFaction
+                    && right.source
+                        == CARegionalFactionSource.ExistingWorldFaction)
+                {
+                    failure = "native-initial provenance was assigned to two "
+                        + "existing factions";
+                    return false;
+                }
+                if (!TryDetermineNativeRelation(left, right,
+                        out FactionRelationKind expected,
+                        out CARegionalRelationSource expectedSource,
+                        out failure))
+                    return false;
+                if (expectedSource != CARegionalRelationSource.NativeInitial
+                    || expected != relation.relation)
+                {
+                    failure = "saved native-initial relation does not match "
+                        + "the selected faction types";
+                    return false;
+                }
+                return true;
+            }
+            failure = "no represented relation source exists";
+            return false;
+        }
+
+        private static int InitialGoodwill(FactionDef faction,
+            FactionDef other)
+        {
+            if (faction.permanentEnemy) return -100;
+            if (faction.permanentEnemyToEveryoneExceptPlayer
+                && !other.isPlayer) return -100;
+            if (faction.permanentEnemyToEveryoneExcept != null
+                && !faction.permanentEnemyToEveryoneExcept.Contains(other))
+                return -100;
+            return faction.naturalEnemy ? -80 : 0;
         }
     }
 
@@ -2076,6 +2271,7 @@ namespace ColonistAwareness
             catch { return null; }
         }
         private static CARegionalPlan previewDerived;
+        private static CARegionalPlan boundPreviewPlan;
         internal static bool ChoosingLandingAnchor;
         // [setup pass] The dialog-open guard that keeps outside clicks from
         // replacing the plan being edited.
@@ -2118,6 +2314,11 @@ namespace ColonistAwareness
             EditingDialogOpen = false;
             committing = false;
             relocationConfirmationOpen = false;
+            // Map Preview bindings belong to the window interaction that
+            // produced them. Re-entering this page starts a fresh interaction
+            // and must not let a previously browsed candidate outrank the
+            // current world's pending plan.
+            boundPreviewPlan = null;
             lastObservedSelection = -1;
             landingPanelScroll = Vector2.zero;
             InstallStartingRegionPage(page);
@@ -2150,6 +2351,7 @@ namespace ColonistAwareness
             }
             Pending = null;
             previewDerived = null;
+            boundPreviewPlan = null;
             pendingIdentity = null;
             TryRestoreFromDisk(identity);
             // A restored footprint is this world's authoritative choice, so
@@ -2234,6 +2436,7 @@ namespace ColonistAwareness
             CARegionMapWidget.InvalidateForWorldBoundary();
             Pending = null;
             previewDerived = null;
+            boundPreviewPlan = null;
             pendingIdentity = null;
             ChoosingLandingAnchor = false;
             EditingDialogOpen = false;
@@ -2257,6 +2460,7 @@ namespace ColonistAwareness
             Pending = plan;
             pendingIdentity = plan == null ? null : WorldIdentity();
             previewDerived = null;
+            boundPreviewPlan = null;
         }
 
         internal static void ClearPending()
@@ -2264,6 +2468,7 @@ namespace ColonistAwareness
             Pending = null;
             pendingIdentity = null;
             previewDerived = null;
+            boundPreviewPlan = null;
         }
 
         internal static CARegionalPlan PendingForCurrentWorld
@@ -2552,6 +2757,7 @@ namespace ColonistAwareness
             {
                 Pending = null;
                 previewDerived = null;
+                boundPreviewPlan = null;
                 ChoosingLandingAnchor = false;
                 return;
             }
@@ -2698,6 +2904,7 @@ namespace ColonistAwareness
                     StickyRegionTileCount, StickyFootprintRotation);
                 pendingIdentity = WorldIdentity();
                 previewDerived = null;
+                boundPreviewPlan = null;
                 Log.Message("[CA][Regional] provisional starting footprint "
                     + Pending.regionalId + "; local source scale "
                     + profile.Size + "x" + profile.Size + "; extent actual "
@@ -2740,6 +2947,7 @@ namespace ColonistAwareness
                 + profile.Size + " with authored region intact";
             pendingIdentity = WorldIdentity();
             previewDerived = null;
+            boundPreviewPlan = null;
             SavePending();
             CARegionalCompatibility.NotifyPreviewChanged();
             Messages.Message("Local area scale changed from " + oldScale
@@ -2760,12 +2968,26 @@ namespace ColonistAwareness
 
         internal static CARegionalPlan ActivePreviewPlan
         {
-            get { return PendingForCurrentWorld ?? previewDerived; }
+            get
+            {
+                // Only the candidate bound by the current external preview
+                // request may supply size or generation authority. Pending
+                // and cached derived plans are lookup inputs, not proof that
+                // an unrelated world-tile preview belongs to the region.
+                return boundPreviewPlan;
+            }
         }
 
         internal static void BindPreviewPlan(CARegionalPlan plan)
         {
-            if (plan != null) previewDerived = plan;
+            if (plan == null) return;
+            boundPreviewPlan = plan;
+            if (plan != PendingForCurrentWorld) previewDerived = plan;
+        }
+
+        internal static void ClearPreviewBinding()
+        {
+            boundPreviewPlan = null;
         }
 
         internal static CARegionalPlan EnsurePreviewPlan(PlanetTile mapTile,
@@ -2796,7 +3018,7 @@ namespace ColonistAwareness
         internal static CARegionalPlan PreviewPlanFor(PlanetTile mapTile,
             IntVec3 backingSize)
         {
-            CARegionalPlan plan = PendingForCurrentWorld ?? previewDerived;
+            CARegionalPlan plan = ActivePreviewPlan;
             if (plan == null || plan.BackingMapSize != backingSize
                 || !mapTile.Valid || plan.memberTileIds == null
                 || !plan.memberTileIds.Contains(mapTile.tileId)) return null;
@@ -2836,6 +3058,20 @@ namespace ColonistAwareness
             {
                 Messages.Message(InvalidPlanMessage(plan, profile),
                     MessageTypeDefOf.RejectInput, false);
+                return false;
+            }
+            CARegionalProjectionKernel geographyKernel =
+                CARegionalProjectionPreview.KernelFor(plan);
+            string geographyFailure;
+            if (!CARegionalGeographyContract.TryValidate(plan,
+                    geographyKernel, out geographyFailure))
+            {
+                Messages.Message("This region cannot generate correctly: "
+                        + geographyFailure,
+                    MessageTypeDefOf.RejectInput, false);
+                Log.Warning("[CA][Regional] composition validation refused "
+                    + "candidate " + (plan.candidateId ?? "unknown") + ": "
+                    + geographyFailure);
                 return false;
             }
             string settlementFailure;
@@ -2963,6 +3199,7 @@ namespace ColonistAwareness
                 Verse.Find.GameInitData.startingTile = start;
                 lastObservedSelection = start.tileId;
                 previewDerived = null;
+                boundPreviewPlan = null;
                 SavePending();
                 Log.Message("[CA][Regional] candidate " + plan.candidateId
                     + " confirmed as the authoritative regional plan; root "
@@ -3037,8 +3274,6 @@ namespace ColonistAwareness
             CARegionalPlan plan = PendingForCurrentWorld;
             if (plan == null) return;
 
-            CARegionalWorldOverlay.Draw(plan);
-            CARegionalPreviewOverlay.Draw(plan);
             // The panel is built after its content is known - see the measured
             // layout below - because its height now follows the text.
             float width = 390f;
@@ -3081,6 +3316,10 @@ namespace ColonistAwareness
                 .SelectMany(tile => Verse.Find.World.NaturalRockTypesIn(tile))
                 .Distinct().OrderBy(rock => rock.label)
                 .Select(rock => rock.LabelCap.ToString()));
+            CARegionalProjectionKernel geographyKernel =
+                CARegionalProjectionPreview.KernelFor(plan);
+            CARegionalGeographyComposition geography =
+                CARegionalGeographyContract.Inspect(plan, geographyKernel);
             // [legibility] The panel says what the land is and what
             // the map will be. Tile numbers, reservation counts and
             // enum names are for the log, not for a person choosing
@@ -3096,6 +3335,8 @@ namespace ColonistAwareness
                 + "\nGround: " + relief
                 + "\nStone: " + (geology.NullOrEmpty()
                     ? "none here" : geology)
+                + "\nRoutes and features: " + geography.PlayerSummary()
+                + "\nGeneration: " + geography.GenerationWords().CapitalizeFirst()
                 + (reservable ? ""
                     : "\n\nThis land is not available: "
                         + (reservationFailure ?? "something already holds it"));
@@ -3124,6 +3365,7 @@ namespace ColonistAwareness
             float contentHeight = noteY + noteH + 8f;
             Rect panel = RegionalPanelRect(width,
                 titleH + contentHeight + 26f);
+            CARegionalPreviewDock.Arrange(panel);
             Widgets.DrawWindowBackground(panel);
             Rect inner = panel.ContractedBy(12f);
             Text.Font = GameFont.Medium;
@@ -3136,6 +3378,8 @@ namespace ColonistAwareness
                 Mathf.Max(outRect.height, contentHeight));
             Widgets.BeginScrollView(outRect, ref landingPanelScroll, view);
             Widgets.Label(new Rect(0f, 0f, view.width, bodyH), bodyText);
+            TooltipHandler.TipRegion(new Rect(0f, 0f, view.width, bodyH),
+                geography.Tooltip());
             Widgets.Label(new Rect(0f, surveyY, view.width, surveyH),
                 surveyText);
 
@@ -3185,26 +3429,8 @@ namespace ColonistAwareness
             const float margin = 18f;
             float cappedHeight = Mathf.Min(height,
                 Mathf.Max(120f, UI.screenHeight - 142f - margin));
-            Rect panel = new Rect(UI.screenWidth - width - margin, 142f,
+            return new Rect(UI.screenWidth - width - margin, 142f,
                 width, cappedHeight);
-            Window preview = Verse.Find.WindowStack?.Windows
-                .FirstOrDefault(window => window?.GetType().FullName
-                    == "MapPreview.MapPreviewWindow");
-            if (preview == null || !panel.Overlaps(preview.windowRect))
-                return panel;
-
-            float leftOfPreview = preview.windowRect.x - width - 12f;
-            if (leftOfPreview >= margin)
-                return new Rect(leftOfPreview, preview.windowRect.y,
-                    width, cappedHeight);
-
-            float belowPreview = preview.windowRect.yMax + 12f;
-            if (belowPreview + cappedHeight <= UI.screenHeight - margin)
-                return new Rect(Mathf.Clamp(preview.windowRect.x, margin,
-                        UI.screenWidth - width - margin), belowPreview,
-                    width, cappedHeight);
-
-            return new Rect(margin, 142f, width, cappedHeight);
         }
 
         private static bool HasDesignedRegion(CARegionalPlan plan)
@@ -3279,6 +3505,7 @@ namespace ColonistAwareness
             StickyFootprintRotation = replacement.FootprintRotation;
             Pending = replacement;
             previewDerived = null;
+            boundPreviewPlan = null;
             ChoosingLandingAnchor = false;
             Verse.Find.WorldInterface.SelectedTile = replacement.StartTile;
             lastObservedSelection = replacement.startTileId;
@@ -3307,7 +3534,7 @@ namespace ColonistAwareness
             // one large square. The panel prints the resulting cell
             // count so the cost of the choice is visible before it is
             // taken.
-            int[] options = { 4, 6, 8, 10, 12 };
+            int[] options = CARegionalGeographyComposition.SupportedExtents;
             int index = Array.IndexOf(options,
                 current.RequestedRegionTileCount);
             int next = options[(index + 1 + options.Length) % options.Length];
@@ -3469,6 +3696,11 @@ namespace ColonistAwareness
             StickyRegionTileCount = replacement.RequestedRegionTileCount;
             StickyFootprintRotation = replacement.footprintRotation;
             Pending = replacement;
+            // Size and orientation create a new geographic candidate. Any
+            // Map Preview binding from the previous shape must yield to this
+            // replacement before the refresh asks for its frame or gensteps.
+            previewDerived = null;
+            boundPreviewPlan = null;
             ChoosingLandingAnchor = false;
             PlanetTile selectedAfterReplacement =
                 Verse.Find.WorldInterface.SelectedTile;
@@ -3522,169 +3754,181 @@ namespace ColonistAwareness
         }
     }
 
-    [StaticConstructorOnStartup]
     internal static class CARegionalWorldOverlay
     {
-        // The live placement view draws every authored settlement where it
-        // stands, colored by faction and numbered by settlement slot. An
-        // armed settlement pulses; the landing keeps its cyan
-        // mark; far-side markers cull against the planet.
-        internal static void Draw(CARegionalPlan plan)
-        {
-            if (plan == null || plan.memberTileIds == null
-                || plan.memberTileIds.Count == 0) return;
-            var stacked = new Dictionary<int, int>();
-            foreach (CARegionalSettlementPlan item in plan.settlements
-                .Where(item => item != null).OrderBy(item => item.slot))
-            {
-                int seen;
-                stacked.TryGetValue(item.memberTileId, out seen);
-                stacked[item.memberTileId] = seen + 1;
-                DrawPoint(CARegionalPlanUtility.SurfaceTile(
-                        item.memberTileId),
-                    FactionColor(item.factionKey), 11f,
-                    new Vector2(10f, 4f + seen * 14f),
-                    "B" + (item.slot + 1), false);
-            }
-            DrawPoint(plan.StartTile, new Color(0.55f, 0.95f, 1f, 1f),
-                12f, Vector2.zero, "Landing", false);
-        }
-
         internal static Color FactionColor(int key)
         {
             return Color.HSVToRGB((key * 0.6180339887f) % 1f, 0.62f,
                 0.95f);
         }
-
-        private static void DrawPoint(PlanetTile tile, Color color,
-            float size, Vector2 offset, string label, bool pulse)
-        {
-            if (!tile.Valid) return;
-            Vector3 center = Verse.Find.WorldGrid.GetTileCenter(tile);
-            if (WorldRendererUtility.HiddenBehindTerrainNow(center)) return;
-            Vector2 screen = GenWorldUI.WorldToUIPosition(center) + offset;
-            if (!new Rect(0f, 0f, UI.screenWidth, UI.screenHeight)
-                    .Contains(screen)) return;
-            if (pulse)
-                size += Mathf.PingPong(Time.realtimeSinceStartup * 6f, 4f);
-            Color previousColor = GUI.color;
-            Rect outer = new Rect(screen.x - size * 0.5f,
-                screen.y - size * 0.5f, size, size);
-            GUI.color = new Color(0.03f, 0.04f, 0.05f, 0.95f);
-            Widgets.DrawTextureRotated(outer, BaseContent.WhiteTex, 45f);
-            Rect inner = outer.ContractedBy(2f);
-            GUI.color = color;
-            Widgets.DrawTextureRotated(inner, BaseContent.WhiteTex, 45f);
-            if (!label.NullOrEmpty())
-            {
-                Text.Font = GameFont.Tiny;
-                Vector2 textSize = Text.CalcSize(label);
-                Rect textRect = new Rect(screen.x + size * 0.5f + 3f,
-                    screen.y - textSize.y * 0.5f, textSize.x + 4f,
-                    textSize.y);
-                GUI.color = new Color(0f, 0f, 0f, 0.55f);
-                GUI.DrawTexture(textRect.ExpandedBy(1f),
-                    BaseContent.BlackTex);
-                GUI.color = color;
-                Widgets.Label(textRect, label);
-                Text.Font = GameFont.Small;
-            }
-            GUI.color = previousColor;
-        }
     }
 
-    // The landing-page preview carries area labels, not placement pins. Their
-    // anchors come from the largest connected piece of visible land owned by
-    // the relevant area in the shared projection kernel. A tile center is
-    // world-tile source and may be water after geographic features resolve; it
-    // is not a valid visual anchor and never becomes an in-map coordinate.
-    internal static class CARegionalPreviewOverlay
+    // Map Preview owns its windows; Starting Region owns where those windows
+    // fit while this page is open. Keep the details panel stable and dock the
+    // preview plus its toolbar into the available map lane. Their saved global
+    // positions are restored when the page closes, so CA does not rewrite the
+    // other mod's ordinary layout preference.
+    internal static class CARegionalPreviewDock
     {
-        private static CARegionalProjectionKernel kernel;
+        private static bool captured;
+        private static bool toolbarCaptured;
+        private static Window capturedPreview;
+        private static Window capturedToolbar;
+        private static Vector2 previewPosition;
+        private static Vector2 toolbarPosition;
+        private static Vector2 preferredPreviewSize;
+        private static Vector2 preferredToolbarSize;
+        private static Rect lastDetailsPanel;
+        private static bool hasDetailsPanel;
 
-        internal static void Draw(CARegionalPlan plan)
+        internal static void Arrange(Rect detailsPanel)
         {
-            if (plan == null || Verse.Find.WindowStack == null) return;
-            Window preview = Verse.Find.WindowStack.Windows
-                .FirstOrDefault(window => window?.GetType().FullName
-                    == "MapPreview.MapPreviewWindow");
+            lastDetailsPanel = detailsPanel;
+            hasDetailsPanel = true;
+            WindowStack stack = Verse.Find.WindowStack;
+            if (stack == null) return;
+            Window preview = stack.Windows.FirstOrDefault(window =>
+                window?.GetType().FullName == "MapPreview.MapPreviewWindow");
             if (preview == null) return;
-            kernel = CARegionalProjectionPreview.KernelFor(plan);
-            if (kernel == null || kernel.MemberByCell == null
-                || kernel.MemberByCell.Length == 0) return;
-            Rect rect = preview.windowRect;
-            CARegionalPlan captured = plan;
-            Verse.Find.WindowStack.ImmediateWindow(73159221,
-                rect, WindowLayer.Super, delegate
-                {
-                    Rect local = rect.AtZero();
-                    Rect honesty = new Rect(8f, 36f,
-                        Mathf.Min(310f, local.width - 16f), 24f);
-                    Widgets.DrawBoxSolid(honesty,
-                        new Color(0.03f, 0.04f, 0.05f, 0.86f));
-                    Text.Font = GameFont.Tiny;
-                    Text.Anchor = TextAnchor.MiddleCenter;
-                    Widgets.Label(honesty,
-                        "Area labels - not placement coordinates");
-                    Text.Anchor = TextAnchor.UpperLeft;
-                    Text.Font = GameFont.Small;
-                    TooltipHandler.TipRegion(honesty,
-                        "The rendered map can vary with its generation seed. "
-                        + "These labels identify relevant visible land only; "
-                        + "they are not beauty, fertility, buildability, or "
-                        + "exact placement scores.");
-                    foreach (CARegionalSettlementPlan item in captured.settlements)
-                    {
-                        if (item == null) continue;
-                        DrawAreaLabel(local, NormalizedSpot(
-                                item.memberTileId),
-                            CARegionalWorldOverlay.FactionColor(
-                                item.factionKey),
-                            "Settlement " + (item.slot + 1));
-                    }
-                    DrawAreaLabel(local, NormalizedSpot(
-                            captured.startTileId),
-                        new Color(0.55f, 0.95f, 1f, 1f), "Arrival area");
-                }, false, false, 0f);
+            Window toolbar = stack.Windows.FirstOrDefault(window =>
+                window?.GetType().FullName == "MapPreview.MapPreviewToolbar");
+            if (!captured || !ReferenceEquals(capturedPreview, preview))
+            {
+                previewPosition = preview.windowRect.position;
+                preferredPreviewSize = preview.windowRect.size;
+                capturedPreview = preview;
+                captured = true;
+            }
+            // The toolbar may be added one frame after the preview window.
+            // Capture it when it actually exists rather than freezing a
+            // zero-sized placeholder into the page layout.
+            if (toolbar != null && (!toolbarCaptured
+                    || !ReferenceEquals(capturedToolbar, toolbar)))
+            {
+                toolbarPosition = toolbar.windowRect.position;
+                preferredToolbarSize = toolbar.windowRect.size;
+                capturedToolbar = toolbar;
+                toolbarCaptured = true;
+            }
+
+            const float margin = 12f;
+            const float gap = 10f;
+            float leftBound = margin;
+            Window inspect = stack.Windows.FirstOrDefault(window =>
+                window?.GetType().Name == "WorldInspectPane");
+            if (inspect != null)
+                leftBound = Mathf.Max(leftBound,
+                    inspect.windowRect.xMax + gap);
+
+            // PreviewWindow's own longest side is the user's configured size.
+            // Preserve it when the lane fits; otherwise scale the window
+            // proportionally for this page only. The generated texture and its
+            // geography remain unchanged.
+            float rightBound = detailsPanel.x - gap;
+            float laneWidth = Mathf.Max(1f, rightBound - leftBound);
+            float previewY = toolbar == null ? 64f
+                : Mathf.Max(64f, toolbar.windowRect.height + 55f);
+            float bottom = UI.screenHeight - 158f;
+            float laneHeight = Mathf.Max(1f, bottom - previewY);
+            float scale = Mathf.Min(1f, laneWidth
+                    / Mathf.Max(1f, preferredPreviewSize.x),
+                laneHeight / Mathf.Max(1f, preferredPreviewSize.y));
+            Vector2 previewSize = preferredPreviewSize * scale;
+            float x = rightBound - previewSize.x;
+            if (x < leftBound)
+                x = leftBound;
+            x = Mathf.Clamp(x, margin,
+                Mathf.Max(margin,
+                    UI.screenWidth - previewSize.x - margin));
+            if (previewY + previewSize.y > bottom)
+                previewY = Mathf.Max(64f,
+                    bottom - previewSize.y);
+            preview.windowRect = new Rect(x, previewY,
+                previewSize.x, previewSize.y);
+
+            if (toolbar == null || !toolbarCaptured) return;
+            float toolbarWidth = Mathf.Min(preferredToolbarSize.x, laneWidth);
+            float toolbarX = Mathf.Clamp(x, margin,
+                Mathf.Max(margin,
+                    UI.screenWidth - toolbarWidth - margin));
+            float toolbarY = Mathf.Max(8f,
+                preview.windowRect.y - toolbar.windowRect.height - 5f);
+            toolbar.windowRect = new Rect(toolbarX, toolbarY,
+                toolbarWidth, preferredToolbarSize.y);
         }
 
-        private static Vector2 NormalizedSpot(int tileId)
+        internal static void BeforeExternalSelection(Window preview)
         {
-            if (kernel == null) return new Vector2(-1f, -1f);
-            Vector2 anchor = kernel.VisualLandAnchor(tileId);
-            return new Vector2(Mathf.Clamp01(
-                    (anchor.x + 0.5f) / kernel.Size.x),
-                1f - Mathf.Clamp01((anchor.y + 0.5f) / kernel.Size.z));
+            if (captured && preview != null
+                && ReferenceEquals(capturedPreview, preview))
+            {
+                preview.windowRect.position = previewPosition;
+                preview.windowRect.size = preferredPreviewSize;
+            }
         }
 
-        private static void DrawAreaLabel(Rect local, Vector2 spot,
-            Color color, string label)
+        internal static void AfterExternalSelection()
         {
-            if (spot.x < 0f) return;
-            Vector2 screen = new Vector2(local.x + spot.x * local.width,
-                local.y + spot.y * local.height);
-            Color previous = GUI.color;
-            Text.Font = GameFont.Tiny;
-            Vector2 textSize = Text.CalcSize(label);
-            Rect textRect = new Rect(screen.x - textSize.x * 0.5f - 5f,
-                screen.y - textSize.y * 0.5f - 2f,
-                textSize.x + 10f, textSize.y + 4f);
-            textRect.x = Mathf.Clamp(textRect.x, 2f,
-                Mathf.Max(2f, local.width - textRect.width - 2f));
-            textRect.y = Mathf.Clamp(textRect.y, 2f,
-                Mathf.Max(2f, local.height - textRect.height - 2f));
-            GUI.color = new Color(0.02f, 0.03f, 0.04f, 0.88f);
-            GUI.DrawTexture(textRect, BaseContent.WhiteTex);
-            GUI.color = color;
-            Widgets.DrawBox(textRect, 1);
-            Text.Anchor = TextAnchor.MiddleCenter;
-            Widgets.Label(textRect, label);
-            Text.Anchor = TextAnchor.UpperLeft;
-            TooltipHandler.TipRegion(textRect, label
-                + " identifies the relevant land area. It is not an exact "
-                + "generated-map coordinate.");
-            Text.Font = GameFont.Small;
-            GUI.color = previous;
+            if (!captured || !hasDetailsPanel) return;
+            WindowStack stack = Verse.Find.WindowStack;
+            Window preview = stack?.Windows.FirstOrDefault(window =>
+                window?.GetType().FullName == "MapPreview.MapPreviewWindow");
+            if (preview != null && ReferenceEquals(capturedPreview, preview))
+                preferredPreviewSize = preview.windowRect.size;
+            Arrange(lastDetailsPanel);
+        }
+
+        // Map Preview persists window positions from PreClose. If either
+        // docked window is closed or recreated while this page is still open,
+        // put its own undocked geometry back first so CA's temporary layout
+        // never becomes that mod's global preference.
+        internal static void BeforeExternalPreviewClose(Window preview)
+        {
+            if (!captured || preview == null
+                || !ReferenceEquals(capturedPreview, preview)) return;
+            preview.windowRect.position = previewPosition;
+            preview.windowRect.size = preferredPreviewSize;
+            Window toolbar = Verse.Find.WindowStack?.Windows.FirstOrDefault(
+                window => window?.GetType().FullName
+                    == "MapPreview.MapPreviewToolbar");
+            BeforeExternalToolbarClose(toolbar);
+            captured = false;
+            capturedPreview = null;
+        }
+
+        internal static void BeforeExternalToolbarClose(Window toolbar)
+        {
+            if (!toolbarCaptured || toolbar == null
+                || !ReferenceEquals(capturedToolbar, toolbar)) return;
+            toolbar.windowRect.position = toolbarPosition;
+            toolbar.windowRect.size = preferredToolbarSize;
+            toolbarCaptured = false;
+            capturedToolbar = null;
+        }
+
+        internal static void Release()
+        {
+            WindowStack stack = Verse.Find.WindowStack;
+            Window preview = stack?.Windows.FirstOrDefault(window =>
+                window?.GetType().FullName == "MapPreview.MapPreviewWindow");
+            Window toolbar = stack?.Windows.FirstOrDefault(window =>
+                window?.GetType().FullName == "MapPreview.MapPreviewToolbar");
+            if (preview != null && ReferenceEquals(capturedPreview, preview))
+            {
+                preview.windowRect.position = previewPosition;
+                preview.windowRect.size = preferredPreviewSize;
+            }
+            if (toolbar != null && toolbarCaptured
+                && ReferenceEquals(capturedToolbar, toolbar))
+            {
+                toolbar.windowRect.position = toolbarPosition;
+                toolbar.windowRect.size = preferredToolbarSize;
+            }
+            captured = false;
+            toolbarCaptured = false;
+            capturedPreview = null;
+            capturedToolbar = null;
+            hasDetailsPanel = false;
         }
     }
 
@@ -3798,15 +4042,15 @@ namespace ColonistAwareness
                                 || (item.leftFactionKey == right.key
                                     && item.rightFactionKey == left.key)));
                     if (pair == null) continue;
-                    // The persisted row is authoritative. authorRelation is
-                    // provenance only; generated and authored rows must drive
-                    // the same RimWorld faction state downstream.
+                    // The validated persisted row is authoritative. Its source
+                    // records whether this fact came from existing world state,
+                    // native faction initialization, or Starting Region.
                     ApplyRelation(left.resolvedFaction,
                         right.resolvedFaction,
                         pair.relation);
                 }
 
-            // Draft Culture, political beliefs, and current order become
+            // Draft Culture, Political Order, and represented institutions become
             // durable faction state. Native Ideo remains separate.
             foreach (CARegionalFactionPlan group in plan.factions)
             {
@@ -4778,6 +5022,13 @@ namespace ColonistAwareness
             kernel = CARegionalProjectionKernel.Build(
                 CARegionalProjectionRequest.ForGeneration(region, map.Size,
                     map.Biome));
+            CARegionalGeographyComposition composition =
+                CARegionalGeographyContract.Inspect(region, kernel);
+            if (!composition.IsValid)
+                throw new InvalidOperationException("[CA][Regional] confirmed "
+                    + "composition " + composition.Signature
+                    + " failed at generation: "
+                    + string.Join("; ", composition.Failures));
             memberByCell = kernel.MemberByCell;
             if (memberByCell.Length == 0) return;
             nearestLandMemberByCell = kernel.NearestLandMemberByCell;
@@ -4792,6 +5043,7 @@ namespace ColonistAwareness
             boundaryWaterTiles = kernel.BoundaryWaterTiles;
             Log.Message("[CA][Regional][Timing] projection " + map.Size.x
                 + "x" + map.Size.z + " map " + map.uniqueID + ": "
+                + "composition " + composition.Signature + "; "
                 + kernel.PerformanceSummary);
         }
 
@@ -5547,6 +5799,17 @@ namespace ColonistAwareness
         private static void Postfix(Page_SelectStartingSite __instance)
         {
             CARegionalSetupSession.Begin(__instance);
+        }
+    }
+
+    [HarmonyPatch(typeof(Page_SelectStartingSite), nameof(
+        Page_SelectStartingSite.PostClose))]
+    internal static class CARegionalLandingPageClosePatch
+    {
+        [HarmonyPrefix]
+        private static void Prefix()
+        {
+            CARegionalPreviewDock.Release();
         }
     }
 

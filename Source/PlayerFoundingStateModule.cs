@@ -37,7 +37,7 @@ namespace ColonistAwareness
     }
 
     // The player authors a founding population, not an already mature NPC
-    // faction. Culture, native Ideoligion, and political beliefs arrive with
+    // faction. Culture, native Ideoligion, and Political Order arrive with
     // the founders. The arrangement is what they establish at landing.
     public sealed class CAPlayerFoundingPlan : IExposable
     {
@@ -212,7 +212,7 @@ namespace ColonistAwareness
                     founding.politicalBeliefs,
                     out CAPoliticalBeliefs beliefs,
                     out string beliefFailure))
-                return "founding political beliefs: " + beliefFailure;
+                return "founding Political Order: " + beliefFailure;
             CAPlayerFoundingPlan candidate = founding.Copy();
             candidate.culture = culture;
             candidate.politicalBeliefs = beliefs;
@@ -352,7 +352,7 @@ namespace ColonistAwareness
             string beliefFailure = CAPoliticalBeliefsModel.ValidationFailure(
                 draft.politicalBeliefs, allowExactLegacy: false);
             if (!beliefFailure.NullOrEmpty())
-                return "founding political beliefs: " + beliefFailure;
+                return "founding Political Order: " + beliefFailure;
             if (draft.arrangementSource > (byte)CAAxisSource.Authored)
                 return "founding arrangement source is invalid";
             if (draft.arrangement == null)
@@ -401,8 +401,11 @@ namespace ColonistAwareness
                 DetermineTemporalBoundary(draft);
 
             string seed = Seed;
+            if (draft.culture.name.NullOrEmpty())
+                draft.culture.name = "Founders' culture";
             CACultureModel.EnsureIdentity(draft.culture,
                 seed + ":culture");
+            CACultureModel.SynchronizeOwnIdentityLabel(draft.culture);
             CAPoliticalBeliefsModel.Ensure(draft.politicalBeliefs,
                 seed + ":politics");
             if (draft.arrangement == null
@@ -680,7 +683,7 @@ namespace ColonistAwareness
                 draft.politicalBeliefs, allowExactLegacy: false);
             if (!beliefFailure.NullOrEmpty())
             {
-                failure = "The founders' political beliefs cannot be used: "
+                failure = "The founders' Political Order cannot be used: "
                     + beliefFailure;
                 return false;
             }
@@ -783,7 +786,7 @@ namespace ColonistAwareness
             return true;
         }
 
-        // Inherited Culture and political beliefs are carried by the founders
+        // Inherited Culture and Political Order are carried by the founders
         // and may therefore be available to map generation. This deliberately
         // leaves factionStructure alone: it records realized institutions,
         // not the four narrower landing terms in the founding arrangement.

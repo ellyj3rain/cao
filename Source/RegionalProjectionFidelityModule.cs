@@ -254,7 +254,8 @@ namespace ColonistAwareness
             allowedGameStates = AllowedGameStates.Entry)]
         private static void MeasureRegionalPreviewFidelity()
         {
-            CARegionalPlan plan = CARegionalSetupSession.ActivePreviewPlan;
+            CARegionalPlan plan = CARegionalSetupSession.PendingForCurrentWorld
+                ?? CARegionalSetupSession.ActivePreviewPlan;
             if (plan == null)
             {
                 Log.Warning("[CA][Regional][Fidelity] no candidate plan is "

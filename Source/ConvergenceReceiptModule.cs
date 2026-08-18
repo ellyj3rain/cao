@@ -85,10 +85,10 @@ namespace ColonistAwareness
                 owner.EnsureCultureAndPolitics(plan);
                 text.AppendLine("  [3] FACTION STATE for "
                     + CARegionalPlanUtility.FactionName(owner) + ":");
-                text.AppendLine("      political beliefs: "
+                text.AppendLine("      Political Order: "
                     + CAPoliticalBeliefsModel.Summary(
                         owner.politicalBeliefs));
-                text.AppendLine("      current order: "
+                text.AppendLine("      represented institutions: "
                     + CAFactionAxes.Characterize(plan, owner));
             }
 
@@ -129,10 +129,10 @@ namespace ColonistAwareness
                     + CACultureModel.Summary(owner.culture));
                 text.AppendLine("      Ideoligion: "
                     + (owner.LivingIdeo?.name ?? "generated with faction"));
-                text.AppendLine("      political beliefs: "
+                text.AppendLine("      Political Order: "
                     + CAPoliticalBeliefsModel.Summary(
                         owner.politicalBeliefs));
-                text.AppendLine("      current order: "
+                text.AppendLine("      represented institutions: "
                     + CAFactionAxes.Characterize(plan, owner));
                 text.AppendLine("      settlement authority: "
                     + CARegionalSettlements.SettlementAuthorityWords(
@@ -338,7 +338,7 @@ namespace ColonistAwareness
                         + "acts as they occur");
             }
 
-            // [F] Current order in generated settlement state:
+            // [F] Represented institutions in generated settlement state:
             // named officeholders, membership, ownership, staffed posts, and
             // local order.
             CAOrganizationWorldComponent orgComp =

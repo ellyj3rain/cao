@@ -467,7 +467,7 @@ namespace ColonistAwareness
                                 optionKey = option.Key
                             }).ToList(),
                         evidenceHistory = new List<string>(),
-                        provenance = "pawn evidence; current order excluded"
+                        provenance = "pawn evidence; represented institutions excluded"
                     };
                     politicalAttitudes.Add(state);
                     IndexAttitude(state, pawn);

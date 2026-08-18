@@ -7,7 +7,7 @@ using Verse;
 namespace ColonistAwareness
 {
     // CA state attached directly to a native RimWorld faction. Inherited
-    // Culture, political beliefs, and the current order remain
+    // Culture, Political Order, and represented institutions remain
     // separate from the faction's native Ideoligion.
     public sealed class CAFactionState : IExposable
     {
@@ -143,13 +143,13 @@ namespace ColonistAwareness
                         allowExactLegacy: false);
                 if (!beliefFailure.NullOrEmpty())
                     return "native faction " + state.factionLoadId
-                        + " has unsupported political beliefs: "
+                        + " has an unsupported Political Order: "
                         + beliefFailure;
                 string orderFailure = CAPoliticalBeliefsModel
                     .ValidationFailure(state.factionStructure);
                 if (!orderFailure.NullOrEmpty())
                     return "native faction " + state.factionLoadId
-                        + " has unsupported current order: " + orderFailure;
+                        + " has unsupported represented institutions: " + orderFailure;
             }
             return null;
         }
@@ -189,12 +189,12 @@ namespace ColonistAwareness
                         state.politicalBeliefs, out CAPoliticalBeliefs beliefs,
                         out string beliefFailure))
                     return "faction " + state.factionLoadId
-                        + " political beliefs: " + beliefFailure;
+                        + " Political Order: " + beliefFailure;
                 if (!CAPoliticalBeliefsModel.TryUpgradeMechanismsFromB10(
                         state.factionStructure, out List<CAAxisEntry> order,
                         out string orderFailure))
                     return "faction " + state.factionLoadId
-                        + " current order: " + orderFailure;
+                        + " represented institutions: " + orderFailure;
                 candidates.Add(new CAFactionState
                 {
                     factionLoadId = state.factionLoadId,
@@ -258,7 +258,7 @@ namespace ColonistAwareness
     }
 
     // Establishes evidence-backed inherited Culture, derives only political
-    // positions with real scored causes, and completes the current order for
+    // positions with real scored causes, and records represented institutions for
     // every humanlike faction. Native Ideoligion remains untouched.
     internal static class CAFactionStateGenerator
     {
@@ -334,7 +334,7 @@ namespace ColonistAwareness
                 + " Culture questions, " + beliefSets
                 + " political-belief sets, " + beliefFields
                 + " political-belief fields, " + structureFields
-                + " current-order mechanisms generated; " + skipped
+                + " represented institutional mechanisms generated; " + skipped
                 + " non-humanlike factions skipped; unsupported political "
                 + "fields remain unset; Ideoligions unchanged";
         }

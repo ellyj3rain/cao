@@ -8,7 +8,7 @@ using Verse;
 namespace ColonistAwareness
 {
     // One population group, one editor, one independent control per fact.
-    // Affiliation, Ideoligion, and political belief intentionally do not
+    // Affiliation, Ideoligion, and Political Order intentionally do not
     // infer or overwrite one another.
     internal sealed class Dialog_CAPopulationGroupEditor : Window
     {
@@ -54,7 +54,7 @@ namespace ColonistAwareness
             Text.Font = GameFont.Small;
             GUI.color = new Color(0.74f, 0.78f, 0.82f);
             const string introduction = "Set the group's size, settlement "
-                + "pattern, affiliation, Ideoligion, and political beliefs. "
+                + "pattern, affiliation, Ideoligion, and Political Order. "
                 + "Belief sources may follow affiliation or remain independent.";
             float introductionHeight = Text.CalcHeight(introduction,
                 inRect.width);
@@ -136,10 +136,10 @@ namespace ColonistAwareness
                 IdeoligionWords(),
                 "Sets religious and moral belief only.", OpenIdeoligions,
                 IdeoligionSourceState());
-            ChoiceRow(ref y, view.width, "Political beliefs",
+            ChoiceRow(ref y, view.width, "Political Order",
                 PoliticalWords(),
                 "Sets what this population considers proper; it does not "
-                    + "change the settlement's current rules.", OpenPolitics,
+                    + "change represented settlement institutions.", OpenPolitics,
                 PoliticalSourceState());
 
             viewHeight = y + 8f;
@@ -323,7 +323,7 @@ namespace ColonistAwareness
                     Summary = local.TechnologySummary,
                     Traits = CAFactionAxes.Characterize(plan, local),
                     Details = "Changes faction membership. Ideoligion and "
-                        + "political beliefs change only when their source is "
+                        + "Political Order changes only when its source is "
                         + "set to Use faction affiliation.",
                     Badge = "Faction affiliation",
                     Accent = CARegionalWorldOverlay.FactionColor(local.key),
@@ -360,7 +360,7 @@ namespace ColonistAwareness
                 }
             });
             CACreationUI.OpenChoices("Faction affiliation",
-                "Choose membership. Ideoligion and political beliefs follow "
+                "Choose membership. Ideoligion and Political Order follow "
                 + "only when their source is set to Use faction affiliation.",
                 options);
         }
@@ -440,7 +440,7 @@ namespace ColonistAwareness
             }
             CACreationUI.OpenChoices("Ideoligion",
                 "Choose religious and moral belief only. Faction affiliation "
-                + "and political beliefs remain unchanged.", options);
+                + "and Political Order remain unchanged.", options);
         }
 
         private void OpenPolitics()
@@ -450,12 +450,12 @@ namespace ColonistAwareness
             {
                 Key = "affiliation",
                 Name = "Use faction affiliation",
-                Summary = "Use the political beliefs of the affiliated faction.",
-                Badge = "Political-belief source",
+                Summary = "Use the Political Order of the affiliated faction.",
+                Badge = "Political Order source",
                 Accent = CACreationUI.Generated,
                 Selected = population.politicalBeliefsFactionKey < 0
                     && population.politicalBeliefsId.NullOrEmpty(),
-                ConfirmLabel = "Use affiliated beliefs",
+                ConfirmLabel = "Use affiliated Political Order",
                 Choose = delegate
                 {
                     population.politicalBeliefsFactionKey = -1;
@@ -472,15 +472,15 @@ namespace ColonistAwareness
                     Key = local.key.ToString(),
                     Name = CAPoliticalBeliefsModel.Summary(
                         local.politicalBeliefs),
-                    Summary = "Political beliefs of "
+                    Summary = "Political Order of "
                         + CARegionalPlanUtility.FactionName(local) + ".",
                     Traits = CAPoliticalBeliefsModel.Summary(
                         local.politicalBeliefs),
-                    Badge = "Political-belief source",
+                    Badge = "Political Order source",
                     Accent = CARegionalWorldOverlay.FactionColor(local.key),
                     Selected = population.politicalBeliefsFactionKey
                         == local.key,
-                    ConfirmLabel = "Use these political beliefs",
+                    ConfirmLabel = "Use this Political Order",
                     Choose = delegate
                     {
                         population.politicalBeliefsFactionKey = local.key;
@@ -489,10 +489,10 @@ namespace ColonistAwareness
                     }
                 });
             }
-            CACreationUI.OpenChoices("Political beliefs",
+            CACreationUI.OpenChoices("Political Order",
                 "Choose what this population considers proper. Ideoligion, "
-                + "faction affiliation, and current settlement rules remain "
-                + "unchanged.", options);
+                + "faction affiliation, and institutions stay unchanged.",
+                options);
         }
     }
 

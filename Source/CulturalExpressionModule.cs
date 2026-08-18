@@ -337,7 +337,7 @@ namespace ColonistAwareness
             AddReading(result, "Lived practices",
                 CACultureHistory.PracticeSummary(input.Culture));
 
-            AddReading(result, "Population and inheritance",
+            AddReading(result, "Population and Culture",
                 PopulationCultureSummary(input.Culture, populations),
                 "Resident groups: " + PopulationWords(populations),
                 "Resident belief sources: "
@@ -345,17 +345,19 @@ namespace ColonistAwareness
                 "Resident Ideoligions: "
                     + WeightedIdeoligionWords(input.PopulationIdeoligions));
 
-            AddReading(result, "Belief and instituted order",
+            AddReading(result, "Beliefs and institutions",
                 tensions.Count > 0
-                    ? tensions.Count + " preferred positions differ from current order."
+                    ? tensions.Count + " political belief"
+                        + (tensions.Count == 1 ? " differs" : "s differ")
+                        + " from the institutions in use."
                     : input.Founding
                         ? "The founders carry beliefs; only the landing arrangement is adopted."
-                        : "Recorded political beliefs and institutions are aligned.",
+                        : "Political Order and the institutions in use agree.",
                 "Beliefs held: " + AxisSetWords(input.Beliefs),
                 input.Founding
                     ? "Rules adopted at landing: "
                         + FoundingWords(input.Arrangement)
-                    : "Current order: " + AxisSetWords(input.Institutions),
+                    : "Institutions in use: " + AxisSetWords(input.Institutions),
                 "Ideoligion: " + input.Ideoligion);
             result.Readings[result.Readings.Count - 1].Facts.Add(
                 "Ideoligion commitments: "
@@ -371,7 +373,7 @@ namespace ColonistAwareness
                 "Residents: " + input.Residents,
                 "Ground and routes: " + GeographyWords(input) + ".",
                 "Provision arrangements: " + ProvisionWords(input.Provisions),
-                "Current order: " + InstitutionSummary(input) + ".",
+                "Institutions in use: " + InstitutionSummary(input) + ".",
                 "Material setting: " + MaterialSummary(input) + ".");
 
             CACulturalExpressionCausalResult causal =

@@ -315,22 +315,22 @@ namespace ColonistAwareness
                 "CA_regionalSettlements/li/culture"),
             N("model.culture", "ColonistAwareness.CARegionalWorldComponent",
                 "CA_regionalPlans/li/playerFounding/culture"),
-            N("model.political-beliefs",
+            N("model.political-order",
                 "ColonistAwareness.CAFactionStateWorldComponent",
                 "CA_factionStates/li/politicalBeliefs"),
-            N("model.political-beliefs",
+            N("model.political-order",
                 "ColonistAwareness.CAPlayerFoundingWorldComponent",
                 "CA_playerFounding/politicalBeliefs"),
-            N("model.political-beliefs",
+            N("model.political-order",
                 "ColonistAwareness.CARegionalWorldComponent",
                 "CA_regionalPlans/li/factions/li/politicalBeliefs"),
-            N("model.political-beliefs",
+            N("model.political-order",
                 "ColonistAwareness.CARegionalWorldComponent",
                 "CA_regionalPlans/li/playerFounding/politicalBeliefs"),
-            N("model.current-order",
+            N("model.represented-institutions",
                 "ColonistAwareness.CAFactionStateWorldComponent",
                 "CA_factionStates/li/factionStructure"),
-            N("model.current-order", "ColonistAwareness.CARegionalWorldComponent",
+            N("model.represented-institutions", "ColonistAwareness.CARegionalWorldComponent",
                 "CA_regionalPlans/li/factions/li/factionStructure"),
             N("model.founding-arrangement",
                 "ColonistAwareness.CAPlayerFoundingWorldComponent",
@@ -1700,9 +1700,11 @@ namespace ColonistAwareness
                                 failures);
                     }
                     else if (binding.SchemaKey ==
-                        "model.political-beliefs")
+                        "model.political-order")
                         ValidateRequiredChildren(frame,
-                            K("positions", "derivationReceipts"), K(), K(),
+                            K("positions", "derivationReceipts", "questions"),
+                            K("name", "nameAuthored", "nameRoll",
+                                "generationRoll"), K(),
                             failures);
                 }
             }

@@ -476,7 +476,7 @@ namespace ColonistAwareness
                 "Ideoligion=" + (input.Ideoligion ?? "unrecorded"),
                 "Ideoligion commitments=" + JoinValues(
                     input.IdeoligionCommitments),
-                "political beliefs=" + AxisFingerprint(
+                "Political Order=" + AxisFingerprint(
                     input.PoliticalBeliefs),
                 "institutional practice=" + AxisFingerprint(
                     input.InstitutionalPractice),

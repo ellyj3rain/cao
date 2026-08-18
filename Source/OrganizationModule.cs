@@ -1121,7 +1121,7 @@ namespace ColonistAwareness
         public List<int> memberPawnIds = new List<int>();
         public bool affiliatedWithPlayer;
         // Conflicts remain open until current practice matches the faction's
-        // political beliefs. Parallel lists store each key and start tick.
+        // Political Order. Parallel lists store each key and start tick.
         public List<string> openBeliefConflicts = new List<string>();
         public List<int> beliefConflictStartTicks = new List<int>();
         public int lastBeliefCheckTick = -1;
@@ -1765,8 +1765,18 @@ namespace ColonistAwareness
             catch { }
             int seed = Gen.HashCombineInt(worldSeed, tileId,
                 map.Size.x, map.Size.z);
+            CASettlementEnvironmentFacts environment =
+                CASettlementEnvironment.ForTile(tileId);
+            Faction supporter = CAHabitatViability.WorldSupporter(
+                environment);
+            int capabilityTier = supporter == null ? 0
+                : CAHabitatViability.TechnologyTier(supporter);
+            bool viableSite = environment.Valid
+                && CAHabitatViability.FrontierPotential(environment,
+                    capabilityTier).Viable;
             int suitableCapacity = Mathf.Clamp(
                 map.Size.x * map.Size.z / 40000, 2, 8);
+            if (!viableSite) suitableCapacity = 0;
             int count = CAWorldTendencyCausalKernel.FrontierHoldingCount(
                 suitableCapacity, policy.frontierHoldingFrequency);
             int landCapacity = FrontierLandCapacity(map);
@@ -1776,13 +1786,10 @@ namespace ColonistAwareness
                 mapTileId = tileId,
                 mapWidth = map.Size.x,
                 mapHeight = map.Size.z,
-                realizationSourceHash = CAWorldTendencyCausalKernel
-                    .HashCombineInt(seed,
-                        Mathf.RoundToInt(
-                            policy.frontierHoldingFrequency * 10000f),
-                        Mathf.RoundToInt(
-                            policy.frontierHoldingSize * 10000f),
-                        suitableCapacity)
+                realizationSourceHash = FrontierRealizationSourceHash(
+                    seed, policy, suitableCapacity, environment,
+                    capabilityTier, supporter?.loadID ?? -1),
+                schemaVersion = CAFrontierMapPlan.CurrentSchemaVersion
             };
             for (int i = 0; i < count; i++)
             {
@@ -1792,7 +1799,7 @@ namespace ColonistAwareness
                 int material = CAWorldTendencyCausalKernel
                     .FrontierMaterialLevel(landCapacity,
                         policy.frontierHoldingSize);
-                created.holdings.Add(new CAFrontierHoldingPlan
+                var holding = new CAFrontierHoldingPlan
                 {
                     key = i,
                     memberTileId = tileId,
@@ -1800,9 +1807,12 @@ namespace ColonistAwareness
                     landCapacity = landCapacity,
                     materialLevel = material,
                     form = CAWorldTendencyCausalKernel.FrontierForm(
-                        residents, material),
-                    factionless = true
-                });
+                        residents, material)
+                };
+                CAHabitatViability.ApplyFrontier(holding, environment,
+                    capabilityTier, supportingFactionLoadId:
+                        supporter?.loadID ?? -1);
+                created.holdings.Add(holding);
             }
             frontierMapPlans.Add(created);
             return created;
@@ -1811,10 +1821,44 @@ namespace ColonistAwareness
         private static bool ValidFrontierMapPlan(CAFrontierMapPlan plan,
             Map map, int tileId)
         {
-            if (plan == null || plan.mapTileId != tileId
+            if (plan == null
+                || plan.schemaVersion != CAFrontierMapPlan.CurrentSchemaVersion
+                || plan.mapTileId != tileId
                 || plan.mapWidth != map.Size.x
                 || plan.mapHeight != map.Size.z
                 || plan.holdings == null || plan.holdings.Count > 8)
+                return false;
+
+            CARegionalWorldPolicy policy = CARegionalWorldComponent.Current
+                ?.WorldPolicy ?? new CARegionalWorldPolicy();
+            CASettlementEnvironmentFacts environment =
+                CASettlementEnvironment.ForTile(tileId);
+            CAFrontierHoldingPlan first = plan.holdings.FirstOrDefault();
+            Faction supporter = first?.supportingFactionLoadId >= 0
+                ? CARegionalPlanUtility.FactionByLoadId(
+                    first.supportingFactionLoadId)
+                : CAHabitatViability.WorldSupporter(environment);
+            int capabilityTier = supporter == null ? 0
+                : CAHabitatViability.TechnologyTier(supporter);
+            bool viableSite = environment.Valid
+                && CAHabitatViability.FrontierPotential(environment,
+                    capabilityTier).Viable;
+            int suitableCapacity = Mathf.Clamp(
+                map.Size.x * map.Size.z / 40000, 2, 8);
+            if (!viableSite) suitableCapacity = 0;
+            int expectedCount = CAWorldTendencyCausalKernel
+                .FrontierHoldingCount(suitableCapacity,
+                    policy.frontierHoldingFrequency);
+            int worldSeed = 0;
+            try { worldSeed = Verse.Find.World.info.Seed; }
+            catch { }
+            int seed = Gen.HashCombineInt(worldSeed, tileId,
+                map.Size.x, map.Size.z);
+            if (plan.holdings.Count != expectedCount
+                || plan.realizationSourceHash
+                    != FrontierRealizationSourceHash(seed, policy,
+                        suitableCapacity, environment, capabilityTier,
+                        supporter?.loadID ?? -1))
                 return false;
 
             var keys = new HashSet<int>();
@@ -1831,10 +1875,32 @@ namespace ColonistAwareness
                     || holding.materialLevel > holding.landCapacity
                     || holding.form != CAWorldTendencyCausalKernel
                         .FrontierForm(holding.residentCount,
-                            holding.materialLevel))
+                            holding.materialLevel)
+                    || !CAHabitatViability.ValidateFrontier(holding,
+                        environment, out _)
+                    || holding.supportingFactionKey != -1
+                    || holding.supportingFactionLoadId
+                        != (supporter?.loadID ?? -1)
+                    || holding.capabilityTier != capabilityTier)
                     return false;
             }
             return true;
+        }
+
+        private static int FrontierRealizationSourceHash(int seed,
+            CARegionalWorldPolicy policy, int suitableCapacity,
+            CASettlementEnvironmentFacts environment, int capabilityTier,
+            int supportingFactionLoadId)
+        {
+            int hash = CAWorldTendencyCausalKernel.HashCombineInt(seed,
+                Mathf.RoundToInt(
+                    policy.frontierHoldingFrequency * 10000f),
+                Mathf.RoundToInt(
+                    policy.frontierHoldingSize * 10000f),
+                suitableCapacity);
+            return CAWorldTendencyCausalKernel.HashCombineInt(hash,
+                environment?.SourceHash ?? 0, capabilityTier,
+                supportingFactionLoadId);
         }
 
         private static int FrontierLandCapacity(Map map)
@@ -5456,12 +5522,13 @@ namespace ColonistAwareness
                 "Payments travel by drop pod, caravan, or pack train. Travel "
                 + "time and interception depend on the delivery method and "
                 + "conditions at the destination." },
-            new[] { "Current order",
-                "Political beliefs and current order are separate. "
-                + "The fields are leadership, decisions, participation, "
-                + "dissent, ownership, economy, work, support, membership, "
-                + "status, local order, defense, and war conduct. Settlement "
-                + "authority is set separately." },
+            new[] { "Political Order",
+                "Political Order records the population's commitments about "
+                + "authority, civic life, property, enterprise, exchange, work, "
+                + "provision, security, and conflict. CA generates its name and "
+                + "account from those facts. Established institutions and rules "
+                + "at landing are represented separately, so belief and practice "
+                + "may agree or differ. Settlement authority remains its own fact." },
             new[] { "Warnings",
                 "Allies and agreement partners can share hostile contacts. "
                 + "Garrisons respond according to current policy, and the "

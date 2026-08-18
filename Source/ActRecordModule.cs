@@ -519,7 +519,7 @@ namespace ColonistAwareness
     // engine returns from Pawn.PostApplyDamage before notifying a
     // mind that is already dead.
     //
-    // Neither changes anything. They observe, and political beliefs
+    // Neither changes anything. They observe, and Political Order
     // decide what the observation was worth.
     public static class CAViolencePatches
     {

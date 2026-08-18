@@ -1419,10 +1419,16 @@ namespace ColonistAwareness
                     + SkillLevel(planner, SkillDefOf.Melee);
                 int reflective = SkillLevel(planner, SkillDefOf.Intellectual)
                     + SkillLevel(planner, SkillDefOf.Artistic);
+                CASettlementPlanningContextMapComponent environment =
+                    CASettlementPlanningContextMapComponent.For(map);
+                environment?.Refresh();
+                bool preferIndoor = environment?.PreferIndoorActivity(planner)
+                    == true;
                 CASpaceProgram recreationProgram = PreferredProgramFor(
                     CAHomePlanKind.Recreation);
 
-                if (physical > reflective && horseshoes != null)
+                if (physical > reflective && horseshoes != null
+                    && !preferIndoor)
                 {
                     if (TryMakeOutdoorPlan(planner, horseshoes,
                         "the household lacks recreation and " + planner.LabelShort
@@ -1440,11 +1446,16 @@ namespace ColonistAwareness
                 {
                     if (chess != null && TryMakeIndoorPlan(planner, chess,
                         CAHomePlanKind.Recreation,
-                        "the household lacks recreation and " + planner.LabelShort
-                            + " favors a thinking game", null, recreationProgram,
+                        preferIndoor
+                            ? "the household lacks recreation and the local climate favors an indoor game"
+                            : "the household lacks recreation and "
+                                + planner.LabelShort
+                                + " favors a thinking game",
+                        null, recreationProgram,
                         out plan, out blocker))
                         return true;
-                    if (horseshoes != null && TryMakeOutdoorPlan(planner, horseshoes,
+                    if (!preferIndoor && horseshoes != null
+                        && TryMakeOutdoorPlan(planner, horseshoes,
                         "the household lacks recreation", recreationProgram,
                         out plan, out blocker))
                         return true;
@@ -1832,7 +1843,7 @@ namespace ColonistAwareness
                     && program != null
                     && program.author == CASpaceAuthor.Player
                     && CABehaviorGate.StableProfileAllows(planner,
-                        "spatial.home_comfort")
+                        "spatial.home_essentials")
                 ? CASettlementPlanningContextMapComponent.For(map) : null;
             settlementContext?.Refresh();
             for (int pass = 0; pass < 2; pass++)

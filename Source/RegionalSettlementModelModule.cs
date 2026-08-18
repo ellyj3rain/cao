@@ -375,6 +375,40 @@ namespace ColonistAwareness
                         + programFailure;
                     return false;
                 }
+                CASettlementEnvironmentFacts environment =
+                    CASettlementEnvironment.ForTile(
+                        settlement.memberTileId);
+                CAHabitatViabilityResult habitat = CAHabitatViability
+                    .EvaluateSettlement(plan, settlement, environment);
+                if (settlement.environmentSourceHash
+                        != environment.SourceHash
+                    || settlement.habitatRequirementMask
+                        != environment.HabitatRequirementMask
+                    || settlement.requiredCapabilityTier
+                        != environment.RequiredCapabilityTier
+                    || settlement.habitatFoodRoute
+                        != (byte)CAHabitatViability.RealizedFoodRoute(
+                            plan, settlement, environment)
+                    || settlement.habitatCapabilityMask
+                        != habitat.CapabilityMask
+                    || settlement.missingHabitatRequirementMask
+                        != habitat.MissingRequirementMask
+                    || settlement.habitatViable != habitat.Viable)
+                {
+                    failure = "settlement " + settlement.slot
+                        + " has a habitat result inconsistent with its saved "
+                        + "environment and operating capabilities";
+                    return false;
+                }
+                if (!habitat.Viable)
+                {
+                    failure = "settlement " + settlement.slot
+                        + " cannot support permanent habitation: "
+                        + (settlement.habitatBlocker ?? "missing "
+                            + CAHabitatViability.MissingWords(
+                                habitat.MissingRequirementMask));
+                    return false;
+                }
             }
             if ((settlements.Count == 1
                     && settlements[0].realizedRole
@@ -436,19 +470,12 @@ namespace ColonistAwareness
                             + " is missing or invalid";
                         return false;
                     }
-                    CARegionalFactionPlan left = plan.FactionPlan(
-                        factionKeys[i]);
-                    CARegionalFactionPlan right = plan.FactionPlan(
-                        factionKeys[j]);
-                    bool nativePair = left?.source
-                            == CARegionalFactionSource.ExistingWorldFaction
-                        && right?.source
-                            == CARegionalFactionSource.ExistingWorldFaction;
-                    if (!nativePair && !relation.authorRelation)
+                    if (!CARegionalPlanUtility.TryValidateRelationSource(plan,
+                            relation, out string sourceFailure))
                     {
                         failure = "the realized relation for faction pair "
                             + factionKeys[i] + "-" + factionKeys[j]
-                            + " has no native or authored source";
+                            + " has invalid provenance: " + sourceFailure;
                         return false;
                     }
                 }
@@ -489,6 +516,7 @@ namespace ColonistAwareness
             for (int i = 0; i < holdings.Count; i++)
             {
                 CAFrontierHoldingPlan saved = holdings[i];
+                CAFrontierHoldingPlan expected = expectedHoldings[i];
                 if (saved == null || saved.key != i
                     || !(plan.memberTileIds?.Contains(saved.memberTileId)
                         ?? false)
@@ -506,7 +534,23 @@ namespace ColonistAwareness
                             plan.worldPolicy.frontierHoldingSize)
                     || saved.form != CAWorldTendencyCausalKernel.FrontierForm(
                         saved.residentCount, saved.materialLevel)
-                    || !saved.factionless)
+                    || saved.memberTileId != expected.memberTileId
+                    || saved.supportingFactionKey
+                        != expected.supportingFactionKey
+                    || saved.environmentSourceHash
+                        != expected.environmentSourceHash
+                    || saved.habitatRequirementMask
+                        != expected.habitatRequirementMask
+                    || saved.requiredCapabilityTier
+                        != expected.requiredCapabilityTier
+                    || saved.capabilityTier != expected.capabilityTier
+                    || saved.habitatCapabilityMask
+                        != expected.habitatCapabilityMask
+                    || saved.missingHabitatRequirementMask
+                        != expected.missingHabitatRequirementMask
+                    || saved.habitatFoodRoute
+                        != expected.habitatFoodRoute
+                    || saved.missingHabitatRequirementMask != 0)
                 {
                     failure = "frontier holding " + i
                         + " is incomplete or inconsistent with its saved causes";
@@ -569,6 +613,15 @@ namespace ColonistAwareness
                     settlement.memberTileId);
                 settlement.historicalDevelopment = HistoricalDevelopment(
                     settlement);
+                settlement.hasRoadAccess =
+                    CARegionalPlanUtility.ConstituentHasRoad(
+                        settlement.memberTileId);
+                settlement.hasRiverAccess =
+                    CARegionalPlanUtility.ConstituentHasRiver(
+                        settlement.memberTileId);
+                settlement.hasCoastalAccess =
+                    CARegionalPlanUtility.ConstituentIsCoastal(
+                        settlement.memberTileId);
                 CACultureHistory.EnsureSettlementCulture(plan, settlement);
                 int tier = TechTier(plan.FactionPlan(settlement.factionKey));
                 settlement.residentPopulation =
@@ -577,6 +630,13 @@ namespace ColonistAwareness
                         settlement.historicalDevelopment, tier,
                         settlement.populationOrigin
                             == CASettlementOrigin.ScenarioOverride);
+                // Established functions must exist before scale, services, or
+                // viability summarize them. Environment declares need but
+                // never authors these operating contracts.
+                CASettlementComposition.EnsureDerived(plan, settlement);
+                CASettlementProgramRegistry.EnsureDerived(plan, settlement,
+                    force: true);
+                CAHabitatViability.ApplySettlement(plan, settlement);
             }
 
             CARegionalSettlementPlan center = settlements
@@ -611,15 +671,6 @@ namespace ColonistAwareness
 
             foreach (CARegionalSettlementPlan settlement in settlements)
             {
-                settlement.hasRoadAccess =
-                    CARegionalPlanUtility.ConstituentHasRoad(
-                        settlement.memberTileId);
-                settlement.hasRiverAccess =
-                    CARegionalPlanUtility.ConstituentHasRiver(
-                        settlement.memberTileId);
-                settlement.hasCoastalAccess =
-                    CARegionalPlanUtility.ConstituentIsCoastal(
-                        settlement.memberTileId);
                 settlement.realizedAccessInfrastructure =
                     CASettlementStartingState.Access(plan, settlement);
                 settlement.realizedServiceInfrastructure =
@@ -676,15 +727,6 @@ namespace ColonistAwareness
                     routeEdges, averageDistance, dominant,
                     settlementFactionCount, plan.regionalRelationPattern,
                     plan.frontierHoldings?.Count ?? 0);
-            // Provision operators derive from the realized social order;
-            // settlement programs then derive from those arrangements and the
-            // complete saved settlement facts.
-            foreach (CARegionalSettlementPlan settlement in settlements)
-            {
-                CASettlementComposition.EnsureDerived(plan, settlement);
-                CASettlementProgramRegistry.EnsureDerived(plan, settlement,
-                    force: true);
-            }
             plan.settlementRealizationSourceHash = RealizationSourceHash(plan);
             plan.settlementRealizationComplete = true;
         }
@@ -714,6 +756,17 @@ namespace ColonistAwareness
             List<int> suitable = (plan.memberTileIds ?? new List<int>())
                 .Where(id => id != plan.startTileId && !occupied.Contains(id)
                     && LandCapacity(id) > 0)
+                .Where(id =>
+                {
+                    CASettlementEnvironmentFacts environment =
+                        CASettlementEnvironment.ForTile(id);
+                    return environment.Valid
+                        && (CAHabitatViability.FrontierPotential(
+                                environment, 0)
+                                .Viable
+                            || CAHabitatViability.RegionalSupporter(plan,
+                                environment) != null);
+                })
                 .OrderBy(id => CAWorldTendencyCausalKernel.Unit(seed, id,
                     2718283)).ThenBy(id => id).ToList();
             int count = CAWorldTendencyCausalKernel.FrontierHoldingCount(
@@ -727,7 +780,11 @@ namespace ColonistAwareness
                 int material = CAWorldTendencyCausalKernel
                     .FrontierMaterialLevel(land,
                         policy.frontierHoldingSize);
-                result.Add(new CAFrontierHoldingPlan
+                CASettlementEnvironmentFacts environment =
+                    CASettlementEnvironment.ForTile(suitable[i]);
+                CARegionalFactionPlan supporter = CAHabitatViability
+                    .RegionalSupporter(plan, environment);
+                var holding = new CAFrontierHoldingPlan
                 {
                     key = i,
                     memberTileId = suitable[i],
@@ -735,9 +792,13 @@ namespace ColonistAwareness
                     landCapacity = land,
                     materialLevel = material,
                     form = CAWorldTendencyCausalKernel.FrontierForm(
-                        residents, material),
-                    factionless = true
-                });
+                        residents, material)
+                };
+                CAHabitatViability.ApplyFrontier(holding, environment,
+                    supporter == null ? 0
+                        : CAHabitatViability.TechnologyTier(supporter),
+                    supporter?.key ?? -1);
+                result.Add(holding);
             }
             return result;
         }
@@ -774,7 +835,7 @@ namespace ColonistAwareness
                     relation.leftFactionKey,
                     relation.rightFactionKey, (int)relation.relation);
                 hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                    relation.authorRelation ? 1 : 0);
+                    (int)relation.source);
             }
             foreach (CARegionalFactionPlan faction in (plan?.factions
                 ?? new List<CARegionalFactionPlan>()).Where(item => item != null)
@@ -826,6 +887,12 @@ namespace ColonistAwareness
                     settlement.hasRoadAccess ? 1 : 0,
                     settlement.hasRiverAccess ? 1 : 0,
                     settlement.hasCoastalAccess ? 1 : 0);
+                // The member tile is authoritative geography. Include its
+                // environment so biome, climate, or mutator changes cannot
+                // leave a stale hilliness-only population realization.
+                hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
+                    CASettlementEnvironment.ForTile(
+                        settlement.memberTileId).SourceHash);
             }
             return hash;
         }
@@ -834,42 +901,34 @@ namespace ColonistAwareness
         {
             CARegionalPlanUtility.EnsureRelationRows(plan);
             foreach (CARegionalRelationPlan relation in plan.relations
-                .Where(item => item != null && !item.authorRelation))
+                .Where(item => item != null && item.source
+                    != CARegionalRelationSource.Authored))
             {
                 CARegionalFactionPlan leftPlan = plan.FactionPlan(
                     relation.leftFactionKey);
                 CARegionalFactionPlan rightPlan = plan.FactionPlan(
                     relation.rightFactionKey);
-                Faction left = leftPlan?.source
-                        == CARegionalFactionSource.ExistingWorldFaction
-                    ? CARegionalPlanUtility.FactionByLoadId(
-                        leftPlan.existingFactionLoadId) : null;
-                Faction right = rightPlan?.source
-                        == CARegionalFactionSource.ExistingWorldFaction
-                    ? CARegionalPlanUtility.FactionByLoadId(
-                        rightPlan.existingFactionLoadId) : null;
-                if (left != null && right != null)
-                    relation.relation = left.RelationKindWith(right);
-                else if (!relation.authorRelation)
+                if (CARegionalPlanUtility.TryDetermineNativeRelation(leftPlan,
+                        rightPlan, out FactionRelationKind realized,
+                        out CARegionalRelationSource source, out string failure))
+                {
+                    relation.relation = realized;
+                    relation.source = source;
+                }
+                else
+                {
+                    relation.source = CARegionalRelationSource.Unset;
                     Log.Warning("[CA][Region] faction relation "
                         + relation.leftFactionKey + "-"
-                        + relation.rightFactionKey + " remains unset: no "
-                        + "native relation or Starting Region decision exists");
+                        + relation.rightFactionKey + " remains unset: "
+                        + failure);
+                }
             }
         }
 
         private static int LandCapacity(int tileId)
         {
-            PlanetTile tile = CARegionalPlanUtility.SurfaceTile(tileId);
-            if (!tile.Valid || tile.Tile == null || tile.Tile.WaterCovered)
-                return 0;
-            switch (tile.Tile.hilliness)
-            {
-                case Hilliness.Impassable: return 0;
-                case Hilliness.Mountainous: return 1;
-                case Hilliness.LargeHills: return 2;
-                default: return 3;
-            }
+            return CASettlementEnvironment.ForTile(tileId).LandCapacity;
         }
 
         private static int HistoricalDevelopment(
@@ -1003,7 +1062,7 @@ namespace ColonistAwareness
             return PatternWords(topology) + " · " + ScaleWords(scale);
         }
 
-        // Settlement authority is separate from Political Beliefs. It may be
+        // Settlement authority is separate from Political Order. It may be
         // authored directly or summarized from complete instituted leadership
         // and participation facts. Settlement count never supplies authority.
         internal static bool TrySettlementAuthorityOf(CARegionalPlan plan,
@@ -1129,7 +1188,7 @@ namespace ColonistAwareness
             return text.ToString();
         }
 
-        // A direct summary of current order and settlement pattern.
+        // A direct summary of represented institutions and settlement pattern.
         internal static string Characterize(CARegionalPlan plan,
             CARegionalFactionPlan group)
         {

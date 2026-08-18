@@ -50,8 +50,10 @@ namespace ColonistAwareness
         public int autonomousHomePlanningResetGeneration;
         public List<CAUserCultureProfile> cultureProfiles =
             new List<CAUserCultureProfile>();
-        public List<CAUserPoliticalBeliefSet> politicalBeliefSets =
-            new List<CAUserPoliticalBeliefSet>();
+        public List<CAUserPoliticalOrderProfile> politicalOrderProfiles =
+            new List<CAUserPoliticalOrderProfile>();
+        public List<CAUserSocietyProfile> societyProfiles =
+            new List<CAUserSocietyProfile>();
         // A behavior system without its causal receipts cannot be evaluated during
         // ordinary play. Tracing is therefore the default operating posture; the
         // player may still disable it explicitly from the mod settings.
@@ -114,8 +116,10 @@ namespace ColonistAwareness
             {
                 Scribe_Collections.Look(ref cultureProfiles,
                     "cultureProfiles", LookMode.Deep);
-                Scribe_Collections.Look(ref politicalBeliefSets,
-                    "politicalBeliefSets", LookMode.Deep);
+                Scribe_Collections.Look(ref politicalOrderProfiles,
+                    "politicalOrderProfiles", LookMode.Deep);
+                Scribe_Collections.Look(ref societyProfiles,
+                    "societyProfiles", LookMode.Deep);
             }
             Scribe_Values.Look(ref traceBehavior, "traceBehavior", true);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
@@ -123,8 +127,9 @@ namespace ColonistAwareness
                 if (!CAPendingAuthoringDataEpoch.IsCurrent(authoringDataEpoch))
                 {
                     cultureProfiles = new List<CAUserCultureProfile>();
-                    politicalBeliefSets =
-                        new List<CAUserPoliticalBeliefSet>();
+                    politicalOrderProfiles =
+                        new List<CAUserPoliticalOrderProfile>();
+                    societyProfiles = new List<CAUserSocietyProfile>();
                     authoringDataEpoch = CAPendingAuthoringDataEpoch.Current;
                     CAPendingAuthoringDataEpoch.RecordDiscard(
                         "saved profiles");

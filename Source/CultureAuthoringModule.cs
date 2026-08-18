@@ -23,7 +23,9 @@ namespace ColonistAwareness
     {
         public string Key;
         public string Label;
-        public string Society;
+        public string CatalogGroup;
+        public string ReferenceContext;
+        public string ReferenceRegion;
         public string ApproximatePeriod;
         public string Sources;
         public string Summary;
@@ -37,12 +39,16 @@ namespace ColonistAwareness
         {
             if (string.IsNullOrWhiteSpace(Key)
                 || string.IsNullOrWhiteSpace(Label)
-                || string.IsNullOrWhiteSpace(Society)
-                || string.IsNullOrWhiteSpace(ApproximatePeriod)
+                || string.IsNullOrWhiteSpace(CatalogGroup)
+                || string.IsNullOrWhiteSpace(ReferenceContext)
                 || string.IsNullOrWhiteSpace(Sources)
                 || string.IsNullOrWhiteSpace(Summary)
                 || string.IsNullOrWhiteSpace(Rationale))
                 return "preset identity or rationale is incomplete";
+            if (CatalogGroup == "Historical cultures"
+                && (string.IsNullOrWhiteSpace(ReferenceRegion)
+                    || string.IsNullOrWhiteSpace(ApproximatePeriod)))
+                return "historical Culture metadata is incomplete";
             if (GlobalDiversity < 0 || GlobalDiversity > 4
                 || NormStrength < 0f || NormStrength > 1f
                 || DivergenceTolerance < 0f
@@ -78,7 +84,7 @@ namespace ColonistAwareness
 
         public static string ValidationFailure()
         {
-            if (Definitions.Length != 9)
+            if (Definitions.Length != 22)
                 return "the built-in Culture preset library is incomplete";
             if (Definitions.GroupBy(value => value.Key, StringComparer.Ordinal)
                 .Any(group => group.Count() != 1))
@@ -90,6 +96,15 @@ namespace ColonistAwareness
                     return definition.Key + ": " + failure;
             }
             return null;
+        }
+
+        public static bool Matches(CACulture culture,
+            CACulturePresetDef preset)
+        {
+            if (culture == null || preset == null) return false;
+            var expected = new CACulture();
+            Apply(expected, preset, "preset-match:" + preset.Key);
+            return CACultureModel.MatchesInheritedTemplate(culture, expected);
         }
 
         public static void Apply(CACulture culture,
@@ -132,14 +147,17 @@ namespace ColonistAwareness
                 ?? new List<CACultureQuestionDistribution>();
             culture.authoredMask |= CACulture.QuestionStateField
                 | CACulture.DiversityField;
+            culture.name = preset.Label;
+            culture.authoredMask &= ~CACulture.NameField;
             CACultureModel.Normalize(culture);
+            CACultureModel.SynchronizeOwnIdentityLabel(culture);
         }
 
         private static CACulturePresetDef[] Build()
         {
             return new[]
             {
-                Preset("mobile-kin-band", "Mobile kin band",
+                Preset("mobile-kin-band", "Mobile kin culture",
                     "Strong kin duties, little durable rank, and practical knowledge carried through the group.",
                     "Small mobile groups organized around kin reciprocity and limited formal office.",
                     1, 0.62f, 0.34f,
@@ -148,7 +166,7 @@ namespace ColonistAwareness
                     0.22f, 0.10f, -0.48f, -0.48f, 0.72f, 0.30f,
                     0.42f, -0.22f, 0.52f, 0.38f, 0.22f, 0.46f),
                 Preset("ranked-agrarian-households",
-                    "Ranked agrarian households",
+                    "Ranked agrarian culture",
                     "Landed households, inherited standing, customary authority, and divided work.",
                     "Agrarian household orders with inherited status, local custom, and restricted office.",
                     2, 0.74f, 0.25f,
@@ -156,7 +174,7 @@ namespace ColonistAwareness
                     0.78f, 0.70f, -0.60f, -0.38f, -0.48f, -0.58f,
                     -0.52f, -0.60f, 0.48f, 0.45f, 0.42f, -0.48f,
                     0.22f, 0.44f, 0.40f, -0.36f, -0.44f, 0.18f),
-                Preset("civic-market-town", "Civic market town",
+                Preset("civic-market-town", "Civic market-town culture",
                     "Mixed households, public gathering, voluntary trade, and respected practical expertise.",
                     "Town society organized through exchange, negotiated office, and guild-like skill.",
                     2, 0.54f, 0.52f,
@@ -164,7 +182,7 @@ namespace ColonistAwareness
                     -0.30f, -0.22f, 0.56f, 0.52f, 0.42f, 0.48f,
                     0.58f, 0.46f, 0.18f, -0.46f, 0.34f, -0.20f,
                     0.44f, -0.12f, -0.28f, 0.58f, 0.46f, 0.72f),
-                Preset("central-court-society", "Central court society",
+                Preset("central-court-society", "Central court culture",
                     "Formal rank, concentrated office, managed public order, and specialized knowledge.",
                     "A central court with durable status, restricted voice, and administered authority.",
                     2, 0.78f, 0.22f,
@@ -172,7 +190,7 @@ namespace ColonistAwareness
                     0.76f, 0.82f, -0.64f, -0.38f, -0.52f, -0.62f,
                     -0.58f, -0.68f, 0.76f, 0.38f, 0.44f, -0.68f,
                     0.18f, 0.62f, 0.48f, -0.44f, -0.24f, 0.74f),
-                Preset("frontier-mutual-aid", "Frontier mutual-aid settlement",
+                Preset("frontier-mutual-aid", "Frontier mutual-aid culture",
                     "Strong practical cooperation, open mobility, and cautious contact under uncertain conditions.",
                     "A recently established population depending on shared provision and adaptable skill.",
                     3, 0.52f, 0.58f,
@@ -181,7 +199,7 @@ namespace ColonistAwareness
                     0.46f, 0.38f, 0.28f, -0.52f, 0.82f, 0.18f,
                     0.34f, 0.06f, 0.12f, 0.54f, 0.70f, 0.74f),
                 Preset("industrial-civic-association",
-                    "Industrial civic association",
+                    "Industrial civic culture",
                     "Broad membership, formal procedure, specialist work, and open technical knowledge.",
                     "A civic association structured by public procedure, skilled production, and institutional provision.",
                     3, 0.50f, 0.62f,
@@ -190,8 +208,9 @@ namespace ColonistAwareness
                     0.78f, 0.68f, 0.26f, -0.70f, 0.68f, 0.22f,
                     0.58f, -0.38f, -0.42f, 0.82f, 0.78f, 0.84f),
                 HistoricalPreset("united-states-postwar-mid-century",
-                    "United States - postwar mid-century",
-                    "1946-1964",
+                    "Postwar American culture",
+                    "Americas", "United States", "1946-1964",
+                    "GSS longitudinal social-change series; WVS United States samples; ISSP Family and Changing Gender Roles modules",
                     "Strong conventional family norms, gendered work, private property, civic participation, and confidence in enforcement.",
                     "A research-informed authoring prior for the United States after World War II and before the major late-century shifts recorded by GSS, WVS, and ISSP series.",
                     3, 0.70f, 0.38f,
@@ -200,8 +219,9 @@ namespace ColonistAwareness
                     -0.70f, -0.60f, 0.35f, 0.30f, 0.45f, 0.40f,
                     0.55f, 0.40f, -0.15f, 0.55f, 0.35f, 0.50f),
                 HistoricalPreset("united-states-turn-millennium",
-                    "United States - turn of the millennium",
-                    "1995-2005",
+                    "Turn-of-the-millennium American culture",
+                    "Americas", "United States", "1995-2005",
+                    "GSS longitudinal social-change series; WVS United States samples; ISSP Family and Changing Gender Roles modules",
                     "Broader relationship and office acceptance, open membership, strong mobility, private property, and accessible technical knowledge.",
                     "A research-informed authoring prior centered on the longitudinal social changes visible around the millennium in GSS, WVS, and ISSP series.",
                     3, 0.56f, 0.55f,
@@ -210,15 +230,160 @@ namespace ColonistAwareness
                     -0.80f, -0.65f, 0.55f, 0.55f, 0.35f, 0.50f,
                     0.45f, 0.35f, -0.15f, 0.65f, 0.55f, 0.55f),
                 HistoricalPreset("united-states-contemporary",
-                    "United States - contemporary",
-                    "2017-2024",
+                    "Contemporary American culture",
+                    "Americas", "United States", "2017-2024",
+                    "GSS longitudinal social-change series; WVS United States samples; ISSP Family and Changing Gender Roles modules",
                     "Broad relationship and office acceptance, open work, civic voice, accessible knowledge, and substantial internal disagreement.",
                     "A research-informed authoring prior for recent United States responses in GSS, WVS, and ISSP series; it is not a fitted national distribution.",
                     4, 0.50f, 0.66f,
                     0.75f, -0.15f, 0.00f, 0.00f, -0.45f, 0.80f,
                     -0.70f, -0.10f, 0.55f, 0.20f, 0.25f, 0.45f,
                     -0.85f, -0.45f, 0.65f, 0.55f, 0.25f, 0.55f,
-                    0.20f, 0.25f, 0.05f, 0.75f, 0.45f, 0.45f)
+                    0.20f, 0.25f, 0.05f, 0.75f, 0.45f, 0.45f),
+                HistoricalPreset("english-north-america-early-colonial",
+                    "Early English colonial culture",
+                    "Americas", "English North American colonies",
+                    "1607-1700",
+                    "Library of Congress colonial North America collections; Library of Congress Africans in America historical overview",
+                    "Kin and household obligation, restricted public standing, private property, coerced labor, severe punishment, and guarded membership.",
+                    "A prior for dominant English colonial settlements. It does not stand for Indigenous nations, enslaved Africans, other European colonies, or every colony within the period.",
+                    4, 0.76f, 0.22f,
+                    -0.90f, -0.85f, 0.78f, -0.72f, 0.72f, -0.78f,
+                    0.30f, 0.48f, -0.10f, -0.72f, -0.72f, -0.68f,
+                    -0.55f, -0.58f, 0.55f, 0.82f, 0.15f, -0.75f,
+                    -0.40f, 0.62f, 0.55f, -0.30f, -0.25f, 0.42f),
+                HistoricalPreset("united-states-civil-war-union",
+                    "Civil War Union culture",
+                    "Americas", "United States (Union)", "1861-1865",
+                    "Library of Congress Civil War primary-source timeline; Abraham Lincoln Papers on emancipation",
+                    "Anti-aristocratic civic identity, broad white male participation, private property, wartime enforcement, and rapidly changing membership claims.",
+                    "A prior for the Union's dominant public culture during the war. It leaves Black, immigrant, Indigenous, dissenting, and local cultures available as separate populations rather than averaging them away.",
+                    4, 0.65f, 0.38f,
+                    -0.88f, -0.85f, 0.52f, -0.62f, 0.58f, -0.68f,
+                    -0.70f, -0.15f, 0.52f, -0.15f, -0.25f, 0.05f,
+                    0.20f, 0.15f, 0.55f, 0.35f, 0.20f, -0.75f,
+                    0.22f, 0.35f, 0.40f, 0.48f, 0.55f, 0.55f),
+                HistoricalPreset("confederate-slaveholding-dominant-culture",
+                    "Confederate slaveholding culture",
+                    "Americas", "Confederate States", "1861-1865",
+                    "Library of Congress Civil War primary-source timeline; Library of Congress Africans in America historical overview",
+                    "Hereditary racial caste, concentrated property, enslaved labor, restricted voice, exclusion, and severe punishment.",
+                    "Represents the Confederacy's dominant slaveholding culture. It does not describe enslaved people, free Black communities, Indigenous nations, Unionists, or every white Southerner.",
+                    4, 0.82f, 0.12f,
+                    -0.90f, -0.85f, 0.68f, -0.78f, 0.78f, -0.82f,
+                    0.55f, 0.82f, -0.68f, -0.85f, -0.88f, -0.82f,
+                    -0.58f, -0.70f, 0.80f, 0.95f, -0.20f, -0.92f,
+                    -0.55f, 0.82f, 0.72f, -0.35f, -0.18f, 0.30f),
+                HistoricalPreset("freedpeople-emancipation-communities",
+                    "Freedpeople emancipation culture",
+                    "Americas", "United States freedpeople communities",
+                    "1863-1877",
+                    "Library of Congress Freedmen primary-source timeline; Library of Congress Abraham Lincoln and emancipation collections",
+                    "Family reunification, freedom from forced labor, public voice, mutual aid, education, mobility, and equal citizenship.",
+                    "Represents freedpeople building families and institutions during emancipation and Reconstruction. It is not a single profile for every Black American.",
+                    4, 0.68f, 0.45f,
+                    -0.75f, -0.75f, 0.85f, -0.25f, 0.25f, -0.15f,
+                    -0.90f, -0.70f, 0.75f, 0.15f, 0.45f, 0.60f,
+                    0.80f, 0.65f, 0.05f, -0.90f, 0.75f, -0.25f,
+                    0.65f, -0.25f, -0.20f, 0.85f, 0.68f, 0.55f),
+                HistoricalPreset("france-napoleonic-empire",
+                    "Napoleonic French culture", "Europe", "France",
+                    "1804-1815",
+                    "Fondation Napoleon Code civil dossiers; Napoleonic legal, educational, and administrative records",
+                    "Patriarchal family law, protected private property, merit-linked office, conscription, centralized enforcement, and legal-administrative innovation.",
+                    "A prior for metropolitan French public culture under the First Empire; occupied territories, colonies, classes, and political opponents remain distinct populations.",
+                    3, 0.72f, 0.24f,
+                    -0.85f, -0.82f, 0.55f, -0.72f, 0.62f, -0.70f,
+                    -0.25f, 0.42f, 0.35f, -0.20f, 0.05f, 0.05f,
+                    -0.65f, -0.75f, 0.80f, 0.75f, 0.05f, -0.82f,
+                    -0.10f, 0.50f, 0.45f, 0.25f, 0.58f, 0.65f),
+                HistoricalPreset("france-second-empire",
+                    "Second-Empire French culture", "Europe", "France",
+                    "1852-1870",
+                    "Fondation Napoleon Second Empire legal and education dossiers; French social and labor legislation of the period",
+                    "Plebiscitary executive rule, private enterprise, industrial mobility, public works, regulated dissent, and expanding technical knowledge.",
+                    "A prior spanning the authoritarian and liberal phases of the Second Empire; class, region, religion, and opposition movements remain internally diverse.",
+                    3, 0.62f, 0.36f,
+                    -0.82f, -0.78f, 0.48f, -0.62f, 0.55f, -0.62f,
+                    -0.15f, 0.30f, 0.45f, 0.05f, 0.18f, 0.20f,
+                    -0.30f, -0.25f, 0.70f, 0.35f, 0.28f, -0.72f,
+                    0.05f, 0.45f, 0.35f, 0.45f, 0.72f, 0.72f),
+                HistoricalPreset("germany-weimar-republic",
+                    "Weimar German culture", "Europe", "Germany",
+                    "1919-1933",
+                    "German History in Documents and Images, Weimar Constitution and period documents",
+                    "Universal suffrage, legal gender equality, abolished birth privilege, protected dissent, private property, social insurance, and plural public life.",
+                    "The constitutional and civic center is paired with high diversity because Weimar Germany contained sharp regional, religious, class, and antidemocratic divisions.",
+                    4, 0.50f, 0.62f,
+                    -0.70f, -0.70f, 0.42f, -0.15f, 0.28f, 0.25f,
+                    -0.72f, -0.25f, 0.62f, -0.05f, 0.20f, 0.35f,
+                    0.75f, 0.75f, 0.35f, -0.45f, 0.70f, -0.48f,
+                    0.45f, 0.10f, 0.10f, 0.72f, 0.78f, 0.72f),
+                HistoricalPreset("germany-national-socialist-dictatorship",
+                    "Nazi regime culture", "Europe",
+                    "Germany", "1933-1945",
+                    "United States Holocaust Memorial Museum Holocaust Encyclopedia and Nazi law, education, labor, gender, and persecution collections",
+                    "Racial heredity, exclusion, forced integration into state organizations, suppressed dissent, coerced labor, severe punishment, and ideological control of knowledge.",
+                    "This represents the regime's promoted dominant culture and coercive public norms. It does not assign those positions to victims, resisters, occupied peoples, or every German.",
+                    2, 0.95f, 0.02f,
+                    -0.95f, -0.90f, 0.78f, -0.85f, 0.72f, -0.88f,
+                    0.72f, 0.85f, -0.62f, -0.98f, -0.98f, -0.96f,
+                    -0.92f, -0.98f, 0.95f, 0.98f, 0.25f, -0.55f,
+                    -0.98f, 0.96f, 0.95f, -0.82f, 0.15f, 0.30f),
+                HistoricalPreset("japan-late-tokugawa",
+                    "Late Tokugawa Japanese culture", "Asia", "Japan", "1800-1867",
+                    "National Diet Library histories of Edo education and social institutions; Asia for Educators Tokugawa materials",
+                    "Binding household duty, hereditary status, divided work, restricted membership, customary enforcement, and respected practical and classical expertise.",
+                    "A prior for late Tokugawa public culture; domains, classes, cities, villages, outcast communities, Ainu, and Ryukyuan populations remain distinct.",
+                    3, 0.82f, 0.18f,
+                    -0.85f, -0.65f, 0.80f, -0.68f, 0.70f, -0.72f,
+                    0.82f, 0.90f, -0.72f, -0.82f, -0.75f, -0.80f,
+                    -0.72f, -0.70f, 0.75f, 0.55f, 0.20f, -0.25f,
+                    -0.15f, 0.60f, 0.35f, -0.15f, -0.35f, 0.60f),
+                HistoricalPreset("japan-meiji-transformation",
+                    "Meiji Japanese culture", "Asia", "Japan",
+                    "1868-1912",
+                    "National Diet Library Modern Japan in Archives and histories of the Meiji education system",
+                    "Abolished formal estates, rapid mobility, conscription, centralized enforcement, mass education, technical expertise, and experimental institutional change.",
+                    "A prior for the transformation's dominant national project; women, classes, regions, political movements, and colonized populations remain distinct.",
+                    3, 0.74f, 0.24f,
+                    -0.82f, -0.70f, 0.68f, -0.62f, 0.55f, -0.65f,
+                    0.20f, 0.35f, 0.50f, -0.20f, 0.10f, 0.15f,
+                    -0.25f, -0.35f, 0.80f, 0.60f, 0.15f, -0.62f,
+                    -0.15f, 0.45f, 0.38f, 0.68f, 0.88f, 0.82f),
+                HistoricalPreset("qing-china-late-imperial",
+                    "Late Qing Chinese culture", "Asia", "Qing China",
+                    "1800-1911",
+                    "Asia for Educators late-imperial social order, Confucian classics, and civil-service examination materials",
+                    "Extended-kin duty, entrenched status, examination-linked mobility, restricted voice, literati expertise, customary enforcement, and guarded membership.",
+                    "A high-diversity prior for an immense empire; region, ethnicity, class, religion, gender, rebellion, and late reform cannot be collapsed into one population.",
+                    4, 0.85f, 0.15f,
+                    -0.88f, -0.55f, 0.90f, -0.78f, 0.72f, -0.85f,
+                    0.50f, 0.82f, 0.20f, -0.60f, -0.35f, -0.55f,
+                    -0.82f, -0.78f, 0.82f, 0.62f, 0.10f, -0.45f,
+                    -0.40f, 0.70f, 0.55f, -0.25f, -0.55f, 0.82f),
+                HistoricalPreset("ottoman-empire-tanzimat",
+                    "Tanzimat Ottoman culture", "Asia", "Ottoman Empire",
+                    "1839-1876",
+                    "Law Library of Congress Ottoman legal history; Library of Congress Federal Research Division; Tanzimat decrees and nationality law",
+                    "Imperial reform, qualified legal equality, retained communal difference, conscription, central administration, secular schools, and changing property rules.",
+                    "A high-diversity prior for reform amid persistent millet, regional, ethnic, religious, gender, and class differences; proclaimed equality and realized practice remain separate.",
+                    4, 0.65f, 0.35f,
+                    -0.84f, -0.45f, 0.78f, -0.72f, 0.65f, -0.62f,
+                    0.25f, 0.50f, 0.30f, -0.10f, -0.05f, 0.15f,
+                    -0.35f, -0.45f, 0.75f, 0.45f, 0.25f, -0.38f,
+                    0.20f, 0.15f, 0.25f, 0.35f, 0.60f, 0.70f),
+                HistoricalPreset("mughal-india-akbar",
+                    "Akbar-era Mughal culture", "Asia", "Mughal India",
+                    "1556-1605",
+                    "Metropolitan Museum of Art Mughal histories; Library of Congress India and Pakistan country studies",
+                    "Dynastic rank, imperial service, cross-religious court inclusion, strong enforcement, commercial exchange, translation, and expert administration.",
+                    "A high-diversity prior for an imperial center and its promoted synthesis; caste, locality, religion, gender, class, and communities beyond the court remain distinct.",
+                    4, 0.70f, 0.38f,
+                    -0.85f, -0.50f, 0.82f, -0.72f, 0.65f, -0.68f,
+                    0.52f, 0.78f, 0.15f, 0.20f, 0.25f, 0.05f,
+                    -0.72f, -0.35f, 0.78f, 0.55f, 0.20f, -0.20f,
+                    -0.10f, 0.50f, 0.35f, 0.05f, 0.55f, 0.70f)
             };
         }
 
@@ -229,24 +394,28 @@ namespace ColonistAwareness
             string summary, string rationale, int diversity,
             float normStrength, float tolerance, params float[] means)
         {
-            return Preset(key, label, "social form", "not period-bound",
+            return Preset(key, label, "Social forms", "social form", null,
+                null,
                 "WVS7; ISSP22; ESS; GSS; Schwartz; social-norm and legitimacy literature",
                 summary, rationale, diversity, normStrength, tolerance, means);
         }
 
         private static CACulturePresetDef HistoricalPreset(string key,
-            string label, string approximatePeriod, string summary,
-            string rationale, int diversity, float normStrength,
-            float tolerance, params float[] means)
+            string label, string referenceRegion, string referenceContext,
+            string approximatePeriod, string sources, string summary,
+            string rationale, int diversity, float normStrength, float tolerance,
+            params float[] means)
         {
-            return Preset(key, label, "United States", approximatePeriod,
-                "GSS longitudinal social-change series; WVS United States samples; ISSP Family and Changing Gender Roles modules",
-                summary, rationale, diversity, normStrength, tolerance, means);
+            return Preset(key, label, "Historical cultures", referenceContext,
+                referenceRegion,
+                approximatePeriod, sources, summary, rationale, diversity,
+                normStrength, tolerance, means);
         }
 
         private static CACulturePresetDef Preset(string key, string label,
-            string society, string approximatePeriod, string sources,
-            string summary, string rationale, int diversity,
+            string catalogGroup, string referenceContext,
+            string referenceRegion, string approximatePeriod,
+            string sources, string summary, string rationale, int diversity,
             float normStrength, float tolerance, params float[] means)
         {
             if (means.Length != CACultureQuestionRegistry.FixedQuestionCount)
@@ -266,7 +435,9 @@ namespace ColonistAwareness
             {
                 Key = key,
                 Label = label,
-                Society = society,
+                CatalogGroup = catalogGroup,
+                ReferenceContext = referenceContext,
+                ReferenceRegion = referenceRegion,
                 ApproximatePeriod = approximatePeriod,
                 Sources = sources,
                 Summary = summary,

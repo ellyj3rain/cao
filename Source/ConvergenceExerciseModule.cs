@@ -234,7 +234,7 @@ namespace ColonistAwareness
                 // History axes that guarantee an interesting composition.
                 plan.worldPolicy.reallocationSourceVariety = 1f;
 
-                // Two factions with different political beliefs.
+                // Two factions with different complete Political Orders.
                 var councilFaction = new CARegionalFactionPlan
                 {
                     key = 1,
@@ -266,20 +266,16 @@ namespace ColonistAwareness
                 plan.factions.Add(tradeFaction);
                 councilFaction.EnsureCultureAndPolitics(plan);
                 tradeFaction.EnsureCultureAndPolitics(plan);
-                CAPoliticalBeliefsModel.ApplyTemplate(
+                CAPoliticalOrderModel.ApplyPreset(
                     councilFaction.politicalBeliefs,
-                    CAPoliticalPatchTemplates.Beliefs.First(item =>
-                        item.Key == "ca.template.cooperative_production"));
-                CAPoliticalBeliefsModel.ApplyTemplate(
+                    "cooperative-commonwealth", CAAxisSource.Authored);
+                CAPoliticalOrderModel.ApplyPreset(
                     tradeFaction.politicalBeliefs,
-                    CAPoliticalPatchTemplates.Beliefs.First(item =>
-                        item.Key == "ca.template.private_trade"));
-                CAFactionAxes.Derive(plan, councilFaction);
-                CAFactionAxes.Derive(plan, tradeFaction);
+                    "civic-market", CAAxisSource.Authored);
 
                 // Three settlements: the council faction holds two, the trade
                 // faction one. The first has a concentrated minority whose
-                // affiliation, culture, Ideoligion, and political beliefs are
+                // affiliation, Culture, Ideoligion, and Political Order are
                 // explicitly sourced independently.
                 // Settlements use non-root areas: the root is the
                 // landing tile, and validation rightly refuses an arrival

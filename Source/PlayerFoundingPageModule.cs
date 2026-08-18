@@ -43,7 +43,7 @@ namespace ColonistAwareness
                 current = current.next;
             }
 
-            // Culture, political beliefs, and the founding arrangement still
+            // Culture, Political Order, and the founding arrangement still
             // exist when the Ideology expansion is inactive.
             if (insertionAnchor != null)
             {
@@ -147,35 +147,42 @@ namespace ColonistAwareness
             bool twoColumns = gridWidth >= 900f;
             float cardWidth = twoColumns ? (gridWidth - gap) / 2f
                 : gridWidth;
+            float societyHeight = MeasureSocietyCard(gridWidth);
             float cultureHeight = MeasureCultureCard(cardWidth);
             float ideoHeight = MeasureIdeoCard(cardWidth);
             float politicalHeight = MeasurePoliticalCard(cardWidth);
             float arrangementHeight = MeasureArrangementCard(cardWidth);
-            float gridHeight = twoColumns
+            float componentHeight = twoColumns
                 ? Mathf.Max(cultureHeight, ideoHeight) + gap
                     + Mathf.Max(politicalHeight, arrangementHeight)
                 : cultureHeight + ideoHeight + politicalHeight
                     + arrangementHeight + gap * 3f;
+            float gridHeight = societyHeight + gap + componentHeight;
             Rect cardsView = new Rect(0f, 0f, gridWidth, gridHeight);
             Widgets.BeginScrollView(cardsOut, ref cardScroll, cardsView);
             try
             {
+                DrawSocietyCard(new Rect(0f, 0f, gridWidth,
+                    societyHeight));
+                float componentY = societyHeight + gap;
                 if (twoColumns)
                 {
                     float firstRow = Mathf.Max(cultureHeight, ideoHeight);
                     float secondRow = Mathf.Max(politicalHeight,
                         arrangementHeight);
-                    DrawCultureCard(new Rect(0f, 0f, cardWidth, firstRow));
-                    DrawIdeoCard(new Rect(cardWidth + gap, 0f, cardWidth,
+                    DrawCultureCard(new Rect(0f, componentY, cardWidth,
                         firstRow));
-                    DrawPoliticalCard(new Rect(0f, firstRow + gap,
+                    DrawIdeoCard(new Rect(cardWidth + gap, componentY,
+                        cardWidth, firstRow));
+                    DrawPoliticalCard(new Rect(0f,
+                        componentY + firstRow + gap,
                         cardWidth, secondRow));
                     DrawArrangementCard(new Rect(cardWidth + gap,
-                        firstRow + gap, cardWidth, secondRow));
+                        componentY + firstRow + gap, cardWidth, secondRow));
                 }
                 else
                 {
-                    float cardY = 0f;
+                    float cardY = componentY;
                     DrawCultureCard(new Rect(0f, cardY, gridWidth,
                         cultureHeight));
                     cardY += cultureHeight + gap;
@@ -206,24 +213,50 @@ namespace ColonistAwareness
 
         private string FoundingOverview()
         {
-            string compact = "Culture: "
+            CASocietyPreset society = CASocietyPresetLibrary.Match(
+                draft?.culture, draft?.politicalBeliefs);
+            string compact = (society == null ? "Custom society"
+                    : "Matches society preset: " + society.Label)
+                + " | Culture: "
                 + CAAuthoringChoices.CultureIdentity(draft?.culture)
-                + " · Ideoligion: "
+                + " | Ideoligion: "
                 + (CAPlayerFoundingModel.NativeIdeo?.name
                     ?? (ModsConfig.IdeologyActive ? "not set" : "inactive"));
             string political = CAAuthoringChoices.PoliticalIdentity(
                 draft?.politicalBeliefs);
-            string standard = compact + " · Political beliefs: " + political
-                + " · Landing rules: "
+            string standard = compact + " | Political Order: " + political
+                + " | Landing rules: "
                 + (draft?.arrangement?.label ?? "not set");
             int tensions = CAPoliticalBeliefPractice
                 .ReadAgainstPoliticalBeliefs(draft?.politicalBeliefs,
                     draft?.arrangement)
                 .Count(item => item != null && !item.Silent
                     && !item.conforms);
-            string expanded = standard + " · " + tensions
-                + (tensions == 1 ? " belief-term tension" : " belief-term tensions");
+            string expanded = standard + " | " + tensions
+                + (tensions == 1 ? " difference" : " differences")
+                + " between beliefs and landing rules";
             return expanded;
+        }
+
+        private void DrawSocietyCard(Rect rect)
+        {
+            CASocietyPreset preset = CASocietyPresetLibrary.Match(
+                draft?.culture, draft?.politicalBeliefs);
+            float y = BeginCard(rect, "Society preset",
+                SocietyDescription());
+            string title = preset?.Label ?? "Custom society";
+            string detail = preset == null
+                ? "Culture and Political Order are a custom composition."
+                : preset.CultureSummary + " Political Order: "
+                    + CAPoliticalOrderModel.Identity(
+                        preset.PoliticalPreview()) + ".";
+            DrawSummary(rect, ref y, null, title, detail,
+                preset == null ? "Customized" : "Preset");
+            DrawButtons(rect, ref y,
+                new CAFoundingAction("Choose society preset...",
+                    OpenSocietyPresets),
+                new CAFoundingAction("Save society preset...",
+                    SaveSocietyProfile));
         }
 
         protected override bool CanDoNext()
@@ -287,7 +320,7 @@ namespace ColonistAwareness
             };
             if (CAAuthoringProfileLibrary.Cultures.Count > 0)
                 actions.Add(new CAFoundingAction("Load saved...",
-                    OpenCulturePresets));
+                    OpenSavedCultureProfiles));
             actions.Add(new CAFoundingAction("Save Culture...",
                 SaveCultureProfile));
             DrawButtons(rect, ref y, actions.ToArray());
@@ -311,7 +344,7 @@ namespace ColonistAwareness
 
         private void DrawPoliticalCard(Rect rect)
         {
-            float y = BeginCard(rect, "Political beliefs",
+            float y = BeginCard(rect, "Political Order",
                 PoliticalDescription());
             DrawSummary(rect, ref y, null,
                 CAAuthoringChoices.PoliticalIdentity(
@@ -319,9 +352,10 @@ namespace ColonistAwareness
                 CAPoliticalBeliefsModel.Summary(draft?.politicalBeliefs),
                 PoliticalStateWords());
             DrawButtons(rect, ref y,
-                new CAFoundingAction("Set beliefs", delegate
+                new CAFoundingAction("Compose Political Order...", delegate
                 {
-                    Find.WindowStack.Add(Dialog_CAAxisEditor.ForBeliefs(
+                    Find.WindowStack.Add(
+                        Dialog_CAPoliticalOrderEditor.ForFounding(
                         draft.politicalBeliefs,
                         CAPlayerFoundingModel.Seed + ":politics-edit",
                         draft.arrangement,
@@ -330,8 +364,7 @@ namespace ColonistAwareness
                             RefreshSuggestedArrangement();
                             Changed();
                         }));
-                }),
-                new CAFoundingAction("Belief sets...", OpenPoliticalPresets));
+                }));
         }
 
         private void DrawArrangementCard(Rect rect)
@@ -386,10 +419,8 @@ namespace ColonistAwareness
 
         private string CultureDescription()
         {
-            return "The founders bring an inherited culture. Ideoligion and "
-                + "political beliefs remain separate; local practice develops "
-                + "from the population, adopted rules, material conditions, "
-                + "and history.";
+            return "The customs and values the founders bring with them. "
+                + "Their Culture can change through play.";
         }
 
         private static string IdeoDescription()
@@ -397,9 +428,9 @@ namespace ColonistAwareness
             return ModsConfig.IdeologyActive
                 ? "Religious and moral belief. This is RimWorld's native "
                     + "Ideoligion and remains distinct from culture and "
-                    + "political belief."
-                : "The Ideology expansion is inactive. Culture, political "
-                    + "beliefs, and the founding terms remain active.";
+                    + "Political Order."
+                : "The Ideology expansion is inactive. Culture, Political "
+                    + "Order, and the founding terms remain active.";
         }
 
         private static string IdeoDetail(Ideo ideo)
@@ -412,15 +443,37 @@ namespace ColonistAwareness
 
         private static string PoliticalDescription()
         {
-            return "What the founders believe society should permit, "
-                + "require, and protect. Belief does not automatically "
-                + "become law.";
+            return "The authority, civic rights, property, exchange, work, "
+                + "provision, and security the founders consider proper. "
+                + "The name and description follow these choices. Beliefs do "
+                + "not automatically become law.";
         }
 
         private static string ArrangementDescription()
         {
             return "The rules put in force at landing. They may follow or "
-                + "contradict the founders' political beliefs.";
+                + "contradict the founders' Political Order.";
+        }
+
+        private static string SocietyDescription()
+        {
+            return "Set Culture and Political Order together from one "
+                + "historical or social starting point. Edit either result "
+                + "below.";
+        }
+
+        private float MeasureSocietyCard(float width)
+        {
+            CASocietyPreset preset = CASocietyPresetLibrary.Match(
+                draft?.culture, draft?.politicalBeliefs);
+            string detail = preset == null
+                ? "Culture and Political Order are a custom composition."
+                : preset.CultureSummary + " Political Order: "
+                    + CAPoliticalOrderModel.Identity(
+                        preset.PoliticalPreview()) + ".";
+            return MeasureCard(width, SocietyDescription(),
+                preset?.Label ?? "Custom society", detail,
+                preset == null ? "Customized" : "Preset");
         }
 
         private float MeasureCultureCard(float width)
@@ -612,29 +665,43 @@ namespace ColonistAwareness
 
         private string CultureStateWords()
         {
+            if (CACulturePresetLibrary.All.Any(item =>
+                    CACulturePresetLibrary.Matches(draft?.culture, item)))
+                return "Preset";
             if ((draft?.culture?.authoredMask ?? 0) != 0) return "Edited";
             if (draft?.culture?.inheritedQuestions?.Any(value => value != null
                     && (value.provenance ?? "").StartsWith("authored",
                         StringComparison.OrdinalIgnoreCase)) == true)
                 return "Edited";
-            return "Inherited";
+            return "Starting";
         }
 
         private string PoliticalStateWords()
         {
-            List<CAAxisEntry> positions = draft?.politicalBeliefs?.positions;
-            if (positions?.Any(item => item != null && item.source
-                    == (byte)CAAxisSource.Authored) == true) return "Edited";
-            return positions?.Count == CAFactionAxes.Axes.Length
-                && CAFactionAxes.CountByState(positions,
-                    CAAxisSource.Unset) == 0 ? "Set" : "Incomplete";
+            CAPoliticalBeliefs beliefs = draft?.politicalBeliefs;
+            if (!CAPoliticalOrderModel.HasVariables(beliefs))
+                return "Incomplete";
+            if (CAPoliticalOrderModel.Presets.Any(item =>
+                    CAPoliticalOrderModel.MatchesPreset(beliefs, item.Key))
+                || CASocietyPresetLibrary.All.Any(item =>
+                    item.MatchesPoliticalOrder(beliefs)))
+                return "Preset";
+            if ((beliefs.questions ?? new List<CAPoliticalQuestionState>())
+                .Where(item => item?.options != null)
+                .SelectMany(item => item.options)
+                .Any(item => item != null && item.source
+                    == (byte)CAAxisSource.Authored))
+                return "Edited";
+            return CAPoliticalOrderModel.ValidationFailure(beliefs)
+                .NullOrEmpty() ? "Generated" : "Incomplete";
         }
 
         private static Color StateColor(string words)
         {
             if (words == "Preset") return CACreationUI.Preset;
             if (words == "Saved profile") return CACreationUI.Authored;
-            if (words == "Generated") return CACreationUI.Generated;
+            if (words == "Generated" || words == "Starting")
+                return CACreationUI.Generated;
             if (words == "Inactive" || words == "Not set")
                 return CACreationUI.Unset;
             return CACreationUI.Authored;
@@ -655,12 +722,34 @@ namespace ColonistAwareness
 
         private void OpenCulturePresets()
         {
-            if (CAAuthoringProfileLibrary.Cultures.Count == 0) return;
+            CACreationUI.OpenChoices("Culture presets",
+                "Choose a complete historical or social starting point. "
+                    + "The preset sets every cultural value. You can change "
+                    + "any result and choose a visual style separately.",
+                CAAuthoringChoices.CulturePresets(draft?.culture,
+                    CAPlayerFoundingModel.Seed, Changed));
+        }
+
+        private void OpenSavedCultureProfiles()
+        {
             CACreationUI.OpenChoices("Saved Cultures",
-                "Use a saved Culture. Choose native RimWorld styles separately "
-                    + "in the Culture editor under Visual tradition.",
+                "Choose a saved Culture. This changes Culture only; Political "
+                    + "Order remains unchanged.",
                 CAAuthoringChoices.CultureProfiles(draft?.culture,
                     CAPlayerFoundingModel.Seed, Changed));
+        }
+
+        private void OpenSocietyPresets()
+        {
+            CACreationUI.OpenChoices("Society presets",
+                "Choose one starting society. It sets Culture and Political "
+                    + "Order together. You can change either afterward.",
+                CAAuthoringChoices.SocietyPresets(draft?.culture,
+                    draft?.politicalBeliefs, CAPlayerFoundingModel.Seed,
+                    delegate
+                    {
+                        Changed();
+                    }));
         }
 
         private void SaveCultureProfile()
@@ -681,20 +770,28 @@ namespace ColonistAwareness
                 }));
         }
 
-        private void OpenPoliticalPresets()
+        private void SaveSocietyProfile()
         {
-            List<CACreationChoice> options =
-                CAAuthoringChoices.PoliticalBeliefSets(
-                    draft?.politicalBeliefs,
-                    CAPlayerFoundingModel.Seed, delegate
-                    {
-                        RefreshSuggestedArrangement();
-                        Changed();
-                    });
-            CACreationUI.OpenChoices("Political belief sets",
-                "Add partial commitments the founders consider proper. Each "
-                + "set preserves unlisted mechanisms, and beliefs do not "
-                + "automatically become settlement rules.", options);
+            string failure = CACultureModel.SubstantiveFailure(
+                draft?.culture);
+            if (failure.NullOrEmpty())
+                failure = CAPoliticalOrderModel.ValidationFailure(
+                    draft?.politicalBeliefs);
+            if (!failure.NullOrEmpty())
+            {
+                Messages.Message(failure, MessageTypeDefOf.RejectInput,
+                    false);
+                return;
+            }
+            CASocietyPreset match = CASocietyPresetLibrary.Match(
+                draft?.culture, draft?.politicalBeliefs);
+            Find.WindowStack.Add(new Dialog_CAProfileName(
+                "Save society preset", match?.Label ?? "Saved society", value =>
+                {
+                    CAAuthoringProfileLibrary.SaveSociety(value,
+                        draft?.culture, draft?.politicalBeliefs);
+                    Changed();
+                }));
         }
 
         private void OpenArrangementPresets()
@@ -725,7 +822,7 @@ namespace ColonistAwareness
             }
             CACreationUI.OpenChoices("Founding terms",
                 "Choose the rules put in force when the founders land. "
-                + "Agreement or tension with their political beliefs is "
+                + "Agreement or tension with their Political Order is "
                 + "retained as part of the colony's state.", options);
         }
 
@@ -924,7 +1021,7 @@ namespace ColonistAwareness
                 "Founding terms");
             Text.Font = GameFont.Small;
             const string introduction = "These rules take effect at landing. "
-                + "Political beliefs state what the founders consider proper; "
+                + "Political Order states what the founders consider proper; "
                 + "agreement or tension between belief and practice is retained.";
             float introductionHeight = Text.CalcHeight(introduction,
                 inRect.width);

@@ -5,7 +5,7 @@ using Verse;
 
 namespace ColonistAwareness
 {
-    // Political Beliefs state what a population considers proper. Faction
+    // Political Order states what a population considers proper. Faction
     // structure records realized social order. This bridge compares the two
     // and projects only realized practice into organization customs.
     // Ideoligion remains a separate native system.
@@ -290,7 +290,7 @@ namespace ColonistAwareness
         }
 
         // Organization customs describe current practice. They follow the
-        // realized social order, never political beliefs by themselves.
+        // realized social order, never Political Order by itself.
         internal static void ReconcileCurrentStructure(CAOrganization org,
             List<CAAxisEntry> structure)
         {

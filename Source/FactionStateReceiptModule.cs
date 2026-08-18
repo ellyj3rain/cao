@@ -8,7 +8,7 @@ using Verse;
 namespace ColonistAwareness
 {
     // Developer receipt for the separation between native Ideoligion and CA
-    // inherited Culture, political beliefs, and current order.
+    // inherited Culture, Political Order, and represented institutions.
     internal static class CAFactionStateReceipt
     {
         internal static string Run()
@@ -57,7 +57,7 @@ namespace ColonistAwareness
             text.AppendLine("  eligible factions: " + factions.Count);
             text.AppendLine("  substantive Culture and political owners: "
                 + complete);
-            text.AppendLine("  factions with unset political beliefs: "
+            text.AppendLine("  factions with unset Political Order: "
                 + unsetBeliefs);
             text.AppendLine("  factions with unset structure: "
                 + unsetStructure);

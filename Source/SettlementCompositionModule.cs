@@ -11,22 +11,24 @@ using Verse.AI.Group;
 namespace ColonistAwareness
 {
     // A settlement population consists of population groups. Each group
-    // carries faction affiliation, Ideoligion, political beliefs, population
+    // carries faction affiliation, Ideoligion, Political Order, population
     // share, and starting certainty. Inherited Culture belongs to its source
     // populations; local Culture records what the weighted population lives
     // through. Faction and Ideoligion use RimWorld's
-    // native pawn fields where possible; political beliefs remain durable CA
+    // native pawn fields where possible; Political Order remains durable CA
     // state.
-    // Provision arrangements are generated from population, current order,
+    // Provision arrangements are generated from population, represented institutions,
     // infrastructure, and settlement role.
     public enum CAPopulationGroupKind : byte
     {
         Main,
-        // Real pawns of another faction living here. Converted to a local
-        // political group when the two factions are hostile.
+        // A population affiliated with another faction. Native pawn faction
+        // membership is used when relations permit peaceful co-residence;
+        // otherwise the durable affiliation remains authoritative while the
+        // group is projected through settlement-faction residents.
         OtherFaction,
         // A distinct local group whose pawns belong to the settlement faction.
-        // Its Ideoligion or political beliefs may differ.
+        // Its Ideoligion or Political Order may differ.
         LocalResidents,
         Unaffiliated
     }
@@ -42,7 +44,7 @@ namespace ColonistAwareness
         // Faction affiliation; -1 for unaffiliated. Resolved to a RimWorld
         // faction at materialization where residency permits it.
         public int factionKey = -1;
-        // Political beliefs are independent of faction affiliation and
+        // Political Order is independent of faction affiliation and
         // Ideoligion. -1 inherits from factionKey.
         public int politicalBeliefsFactionKey = -1;
         // Stable political-belief identity stamped when the draft becomes a
@@ -323,7 +325,7 @@ namespace ColonistAwareness
                 return new List<CAProvisionArrangement>();
             // The current arrangement is the authoritative fact. This pass
             // validates its complete causal contract; it does not derive an
-            // operator from Culture, Political Beliefs, tendencies, scale, or
+            // operator from Culture, Political Order, tendencies, scale, or
             // infrastructure summaries.
             var facts = new CAProvisionCausalFacts();
             foreach (CAProvisionArrangement arrangement in
@@ -501,13 +503,11 @@ namespace ColonistAwareness
                             case CAPopulationGroupKind.Main:
                                 break; // the remainder, tagged at the end
                             case CAPopulationGroupKind.OtherFaction:
-                                ProjectMinority(record, map, populationGroup,
+                                if (!ProjectMinority(record, map,
+                                    populationGroup,
                                     Math.Max(1, Mathf.RoundToInt(
                                         projectedTotal
-                                        * populationGroup.share / 100f)));
-                                // A demotion samples from within instead.
-                                if (populationGroup.kind
-                                    == CAPopulationGroupKind.LocalResidents)
+                                        * populationGroup.share / 100f))))
                                     ProjectWithin(record, map, populationGroup,
                                         residents, ref cursor, rights,
                                         projectedTotal);
@@ -520,8 +520,7 @@ namespace ColonistAwareness
                                 break;
                         }
                     }
-                    // A hostile external affiliation becomes a distinct local
-                    // group. Whatever remains is the dominant population group.
+                    // Whatever remains is the dominant population group.
                     CASettlementPopulationGroup dominant = record.populationGroups
                         .FirstOrDefault(item => item != null && item.kind
                             == CAPopulationGroupKind.Main);
@@ -541,26 +540,17 @@ namespace ColonistAwareness
             }
         }
 
-        // Residents belonging to another faction. Hostile faction pairs are
-            // recorded as a local group with the settlement faction instead.
-        private static void ProjectMinority(
+        // Residents belonging to another faction can use native faction
+        // membership only when that membership will not start immediate combat.
+        // Returning false delegates pawn projection to ProjectWithin without
+        // changing the authored population group's identity or affiliation.
+        private static bool ProjectMinority(
             CARegionalSettlementRecord record, Map map,
             CASettlementPopulationGroup populationGroup, int count)
         {
             Faction minor = FactionForGroup(map, populationGroup.factionKey);
             if (!IsProjectableOtherFaction(record, map, populationGroup))
-            {
-                int formerFactionKey = populationGroup.factionKey;
-                if (populationGroup.ideoligionFactionKey < 0)
-                    populationGroup.ideoligionFactionKey = formerFactionKey;
-                if (populationGroup.politicalBeliefsFactionKey < 0)
-                    populationGroup.politicalBeliefsFactionKey = formerFactionKey;
-                populationGroup.factionKey = record.factionKey;
-                populationGroup.kind = CAPopulationGroupKind.LocalResidents;
-                if (minor != null)
-                    populationGroup.label += " local community";
-                return;
-            }
+                return false;
             var parms = new PawnGroupMakerParms
             {
                 tile = map.Tile,
@@ -574,7 +564,7 @@ namespace ColonistAwareness
             };
             List<Pawn> spawned = PawnGroupMakerUtility
                 .GeneratePawns(parms, false).Take(count).ToList();
-            if (spawned.Count == 0) return;
+            if (spawned.Count == 0) return false;
             Lord lord = LordMaker.MakeNewLord(minor,
                 new LordJob_CARegionalSettlement(minor,
                     record.localRect.CenterCell), map);
@@ -605,6 +595,7 @@ namespace ColonistAwareness
                 Tag(record, populationGroup, pawn);
                 NudgeCertainty(pawn, populationGroup);
             }
+            return true;
         }
 
         // A population group within the dominant faction may keep a different
@@ -669,11 +660,8 @@ namespace ColonistAwareness
                 Tag(record, populationGroup, pawn);
                 NudgeCertainty(pawn, populationGroup);
             }
-            if (suppressed > 0
-                && !populationGroup.label.NullOrEmpty()
-                && !populationGroup.label.Contains("suppressed"))
+            if (suppressed > 0)
             {
-                populationGroup.label += " (Ideoligion suppressed)";
                 Log.Message("[CA][Rights] " + (record.name ?? "settlement")
                     + ": " + suppressed + " members of a population group "
                     + "were assigned the faction Ideoligion under enforced "

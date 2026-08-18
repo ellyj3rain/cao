@@ -1186,6 +1186,25 @@ namespace ColonistAwareness
         private int sampledContextCells;
         private int sampledWaterCells;
         private int sampledNaturalRoofCells;
+        private int sampledCultivableCells;
+
+        private string environmentalBiomes;
+        private int environmentalSourceTiles;
+        private int environmentalGrowingTwelfths;
+        private float environmentalAverageTemperature;
+        private float environmentalMinimumTemperature;
+        private float environmentalMaximumTemperature;
+        private float environmentalRainfall;
+        private float environmentalForageability;
+        private float environmentalPlantDensity;
+        private float environmentalDiseasePerYear;
+        private float environmentalFoodSupport;
+        private float environmentalThermalPressure;
+        private int environmentalLandCapacity;
+        private int environmentalHabitatRequirementMask;
+        private int environmentalRequiredCapabilityTier;
+        private int environmentalFoodRoute;
+        private int environmentalSourceHash;
 
         private List<CASettlementIdeoligionEvidence> ideoligions =
             new List<CASettlementIdeoligionEvidence>();
@@ -1201,6 +1220,14 @@ namespace ColonistAwareness
         public int Revision => revision;
         internal int FirstObservedTick => firstObservedTick;
         internal string EvidenceSignature => signature;
+
+        internal bool PreferIndoorActivity(Pawn pawn)
+        {
+            if (pawn == null) return environmentalThermalPressure >= 0.55f;
+            FloatRange safe = pawn.SafeTemperatureRange();
+            return environmentalThermalPressure >= 0.55f
+                || !safe.Includes(map.mapTemperature.OutdoorTemp);
+        }
 
         internal CASettlementPlacementEvidence ScoreSleepPlacement(
             Pawn planner, CASpaceProgram program, Room room, IntVec3 cell,
@@ -1248,6 +1275,30 @@ namespace ColonistAwareness
                 result.environmentalFit = naturalRoof ? 1.50f : -0.25f;
             else if (naturalRoofShare <= 0.10f)
                 result.environmentalFit = naturalRoof ? -0.20f : 0.35f;
+
+            // Current room temperature and the represented tiles' full
+            // seasonal range are independent facts. The first protects the
+            // resident now; the second lets placement anticipate a climate
+            // that is temporarily mild without inventing a new plan.
+            if (planner != null)
+            {
+                FloatRange comfort = planner.ComfortableTemperatureRange();
+                float roomTemperature = room.Temperature;
+                if (comfort.Includes(roomTemperature))
+                    result.environmentalFit += 0.75f;
+                else
+                {
+                    float distance = roomTemperature < comfort.min
+                        ? comfort.min - roomTemperature
+                        : roomTemperature - comfort.max;
+                    result.environmentalFit -= Mathf.Min(3f,
+                        0.12f * distance);
+                }
+            }
+            if (environmentalThermalPressure > 0f)
+                result.environmentalFit += room.UsesOutdoorTemperature
+                    ? -1.50f * environmentalThermalPressure
+                    : 0.80f * environmentalThermalPressure;
 
             result.operationalCoherence = Mathf.Clamp(
                 1.20f - Mathf.Abs(doorDistance - 4f) * 0.25f,
@@ -1496,6 +1547,42 @@ namespace ColonistAwareness
                 "CA_settlementContextSampledWaterCells", 0);
             Scribe_Values.Look(ref sampledNaturalRoofCells,
                 "CA_settlementContextSampledNaturalRoofCells", 0);
+            Scribe_Values.Look(ref sampledCultivableCells,
+                "CA_settlementContextSampledCultivableCells", 0);
+            Scribe_Values.Look(ref environmentalBiomes,
+                "CA_settlementContextEnvironmentalBiomes");
+            Scribe_Values.Look(ref environmentalSourceTiles,
+                "CA_settlementContextEnvironmentalSourceTiles", 0);
+            Scribe_Values.Look(ref environmentalGrowingTwelfths,
+                "CA_settlementContextEnvironmentalGrowingTwelfths", 0);
+            Scribe_Values.Look(ref environmentalAverageTemperature,
+                "CA_settlementContextEnvironmentalAverageTemperature", 0f);
+            Scribe_Values.Look(ref environmentalMinimumTemperature,
+                "CA_settlementContextEnvironmentalMinimumTemperature", 0f);
+            Scribe_Values.Look(ref environmentalMaximumTemperature,
+                "CA_settlementContextEnvironmentalMaximumTemperature", 0f);
+            Scribe_Values.Look(ref environmentalRainfall,
+                "CA_settlementContextEnvironmentalRainfall", 0f);
+            Scribe_Values.Look(ref environmentalForageability,
+                "CA_settlementContextEnvironmentalForageability", 0f);
+            Scribe_Values.Look(ref environmentalPlantDensity,
+                "CA_settlementContextEnvironmentalPlantDensity", 0f);
+            Scribe_Values.Look(ref environmentalDiseasePerYear,
+                "CA_settlementContextEnvironmentalDiseasePerYear", 0f);
+            Scribe_Values.Look(ref environmentalFoodSupport,
+                "CA_settlementContextEnvironmentalFoodSupport", 0f);
+            Scribe_Values.Look(ref environmentalThermalPressure,
+                "CA_settlementContextEnvironmentalThermalPressure", 0f);
+            Scribe_Values.Look(ref environmentalLandCapacity,
+                "CA_settlementContextEnvironmentalLandCapacity", 0);
+            Scribe_Values.Look(ref environmentalHabitatRequirementMask,
+                "CA_settlementContextEnvironmentalHabitatRequirementMask", 0);
+            Scribe_Values.Look(ref environmentalRequiredCapabilityTier,
+                "CA_settlementContextEnvironmentalRequiredCapabilityTier", 0);
+            Scribe_Values.Look(ref environmentalFoodRoute,
+                "CA_settlementContextEnvironmentalFoodRoute", 0);
+            Scribe_Values.Look(ref environmentalSourceHash,
+                "CA_settlementContextEnvironmentalSourceHash", 0);
             Scribe_Collections.Look(ref ideoligions,
                 "CA_settlementContextIdeoligions", LookMode.Deep);
 
@@ -1790,17 +1877,50 @@ namespace ColonistAwareness
             sampledContextCells = 0;
             sampledWaterCells = 0;
             sampledNaturalRoofCells = 0;
+            sampledCultivableCells = 0;
+            var environmentalCells = new List<IntVec3>();
             for (int x = sampleMinX; x <= sampleMaxX; x++)
             {
                 for (int z = sampleMinZ; z <= sampleMaxZ; z++)
                 {
                     var cell = new IntVec3(x, 0, z);
+                    environmentalCells.Add(cell);
                     sampledContextCells++;
                     if (cell.GetTerrain(map).IsWater) sampledWaterCells++;
                     if (cell.GetRoof(map)?.isNatural == true)
                         sampledNaturalRoofCells++;
+                    if (!cell.GetTerrain(map).IsWater
+                        && !cell.Roofed(map)
+                        && cell.GetFertility(map) >= 0.7f)
+                        sampledCultivableCells++;
                 }
             }
+
+            CASettlementEnvironmentFacts environment =
+                CASettlementEnvironment.ForMap(map, environmentalCells);
+            environmentalBiomes = environment.Biomes;
+            environmentalSourceTiles = environment.SourceTiles;
+            environmentalGrowingTwelfths = environment.GrowingTwelfths;
+            environmentalAverageTemperature =
+                environment.AverageTemperature;
+            environmentalMinimumTemperature =
+                environment.MinimumTemperature;
+            environmentalMaximumTemperature =
+                environment.MaximumTemperature;
+            environmentalRainfall = environment.Rainfall;
+            environmentalForageability = environment.Forageability;
+            environmentalPlantDensity = environment.PlantDensity;
+            environmentalDiseasePerYear = environment.DiseasePerYear;
+            environmentalFoodSupport = environment.FoodSupport;
+            environmentalThermalPressure =
+                environment.SeasonalThermalPressure;
+            environmentalLandCapacity = environment.LandCapacity;
+            environmentalHabitatRequirementMask =
+                environment.HabitatRequirementMask;
+            environmentalRequiredCapabilityTier =
+                environment.RequiredCapabilityTier;
+            environmentalFoodRoute = (int)environment.FoodRoute;
+            environmentalSourceHash = environment.SourceHash;
         }
 
         private string BuildSignature(
@@ -1827,7 +1947,34 @@ namespace ColonistAwareness
                 .Append(waterHomeCells).Append('|')
                 .Append(sampledContextCells).Append('|')
                 .Append(sampledWaterCells).Append('|')
-                .Append(sampledNaturalRoofCells);
+                .Append(sampledNaturalRoofCells).Append('|')
+                .Append(sampledCultivableCells).Append('|')
+                .Append(environmentalBiomes).Append('|')
+                .Append(environmentalSourceTiles).Append('|')
+                .Append(environmentalGrowingTwelfths).Append('|')
+                .Append(environmentalAverageTemperature.ToString("F2",
+                    System.Globalization.CultureInfo.InvariantCulture))
+                .Append('|').Append(environmentalMinimumTemperature.ToString(
+                    "F2", System.Globalization.CultureInfo.InvariantCulture))
+                .Append('|').Append(environmentalMaximumTemperature.ToString(
+                    "F2", System.Globalization.CultureInfo.InvariantCulture))
+                .Append('|').Append(environmentalRainfall.ToString("F2",
+                    System.Globalization.CultureInfo.InvariantCulture))
+                .Append('|').Append(environmentalForageability.ToString("F4",
+                    System.Globalization.CultureInfo.InvariantCulture))
+                .Append('|').Append(environmentalPlantDensity.ToString("F4",
+                    System.Globalization.CultureInfo.InvariantCulture))
+                .Append('|').Append(environmentalDiseasePerYear.ToString("F4",
+                    System.Globalization.CultureInfo.InvariantCulture))
+                .Append('|').Append(environmentalFoodSupport.ToString("F4",
+                    System.Globalization.CultureInfo.InvariantCulture))
+                .Append('|').Append(environmentalThermalPressure.ToString("F4",
+                    System.Globalization.CultureInfo.InvariantCulture))
+                .Append('|').Append(environmentalLandCapacity).Append('|')
+                .Append(environmentalHabitatRequirementMask).Append('|')
+                .Append(environmentalRequiredCapabilityTier).Append('|')
+                .Append(environmentalFoodRoute).Append('|')
+                .Append(environmentalSourceHash);
             for (int i = 0; i < ideoligionEvidence.Count; i++)
                 builder.Append('|').Append(
                     ideoligionEvidence[i].StableSignature());
@@ -1871,7 +2018,38 @@ namespace ColonistAwareness
                 + naturalRoofHomeCells + ", water " + waterHomeCells
                 + "); settlement margin " + sampledContextCells
                 + " cells (natural roof " + sampledNaturalRoofCells
-                + ", water " + sampledWaterCells + ")"
+                + ", water " + sampledWaterCells + ", cultivable "
+                + sampledCultivableCells + ")"
+                + "\n  biome/climate evidence: "
+                + (environmentalBiomes ?? "unknown") + " across "
+                + environmentalSourceTiles + " represented source tile"
+                + (environmentalSourceTiles == 1 ? "" : "s")
+                + "; annual "
+                + environmentalMinimumTemperature.ToString("F1") + " to "
+                + environmentalMaximumTemperature.ToString("F1") + "C"
+                + ", current "
+                + map.mapTemperature.OutdoorTemp.ToString("F1")
+                + "C, outdoor growing "
+                + (environmentalGrowingTwelfths * 5) + "/60 days, rain "
+                + environmentalRainfall.ToString("F0") + "mm, forage "
+                + environmentalForageability.ToStringPercent()
+                + ", plant density "
+                + environmentalPlantDensity.ToStringPercent()
+                + ", disease "
+                + environmentalDiseasePerYear.ToString("F1")
+                + "/year, food support "
+                + environmentalFoodSupport.ToStringPercent()
+                + ", site capacity " + environmentalLandCapacity + "/3"
+                + "\n  habitat requirements: "
+                + string.Join(", ", CAHabitatViabilityCausalKernel
+                    .Enumerate(environmentalHabitatRequirementMask)
+                    .Select(CAHabitatViabilityCausalKernel.RequirementWords)
+                    .ToArray())
+                + "; food route " + CAHabitatViabilityCausalKernel
+                    .FoodRouteWords((CAHabitatFoodRoute)
+                        environmentalFoodRoute)
+                + "; minimum capability tier "
+                + environmentalRequiredCapabilityTier
                 + "\n  historical-continuity evidence: saved context revision "
                 + revision + " since tick " + firstObservedTick
                 + "; new Autonomous Bed proposals inside player-authored sleep "

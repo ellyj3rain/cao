@@ -832,7 +832,7 @@ namespace ColonistAwareness
                         "Anon2CushionedChair" }
                 });
             Add(Custody, "Custody", "Security",
-                "A secure room operated under the current order.",
+                "A secure room operated under represented local institutions.",
                 "native custody work and authorized wardens",
                 "bedroll in the same program",
                 (p, s) => new[] { new[] { "Bedroll", "Bed" } });

@@ -736,169 +736,6 @@ namespace ColonistAwareness
         }
     }
 
-    public enum CAPoliticalPatchTarget : byte
-    {
-        NormativeBeliefs = 0,
-        CurrentOrder = 1
-    }
-
-    public sealed class CAPoliticalPatchTemplate
-    {
-        public string Key;
-        public string Label;
-        public string Summary;
-        public CAPoliticalPatchTarget Target;
-        public string Domain;
-        public Dictionary<string, List<string>> Mechanisms =
-            new Dictionary<string, List<string>>(StringComparer.Ordinal);
-        public string MergeBehavior =
-            "Add the listed mechanisms; preserve every unlisted and already-authored mechanism.";
-
-        public IEnumerable<string> ExactWrites()
-        {
-            return Mechanisms.OrderBy(value => value.Key,
-                    StringComparer.Ordinal)
-                .SelectMany(value => value.Value.OrderBy(item => item,
-                    StringComparer.Ordinal).Select(item => value.Key + "=" + item));
-        }
-    }
-
-    public static class CAPoliticalPatchTemplates
-    {
-        public static readonly IReadOnlyList<CAPoliticalPatchTemplate> Beliefs =
-            new[]
-            {
-                Template("shared_council", "Shared council",
-                    "Adds a standing council, majority decisions, broad participation, and protected dissent.",
-                    CAPoliticalPatchTarget.NormativeBeliefs, "Authority",
-                    P("leadership", "council"), P("decisions", "majority"),
-                    P("participation", "universal"), P("dissent", "plural")),
-                Template("delegated_federation", "Delegated federation",
-                    "Adds delegated leaders, consensus decisions, and member participation.",
-                    CAPoliticalPatchTarget.NormativeBeliefs, "Authority",
-                    P("leadership", "federated"), P("decisions", "consensus"),
-                    P("participation", "members")),
-                Template("central_executive", "Central executive",
-                    "Adds a single executive and decree as legitimate authority mechanisms.",
-                    CAPoliticalPatchTarget.NormativeBeliefs, "Authority",
-                    P("leadership", "single"), P("decisions", "decree")),
-                Template("customary_standing", "Customary standing",
-                    "Adds customary decisions, household participation, customary dissent rules, and hereditary status.",
-                    CAPoliticalPatchTarget.NormativeBeliefs, "Authority",
-                    P("decisions", "custom"), P("participation", "heads"),
-                    P("dissent", "customary"), P("status", "hereditary")),
-                Template("cooperative_production", "Cooperative production",
-                    "Adds cooperative ownership and organized worker control without selecting authority or membership.",
-                    CAPoliticalPatchTarget.NormativeBeliefs, "Property and work",
-                    P("ownership", "cooperative"), P("work", "organized")),
-                Template("common_provision", "Common provision",
-                    "Adds common ownership, shared stores, and communal support.",
-                    CAPoliticalPatchTarget.NormativeBeliefs, "Property and work",
-                    P("ownership", "common"), P("economy", "communal"),
-                    P("support", "communal")),
-                Template("private_trade", "Private trade",
-                    "Adds private ownership, market exchange, hired work, and household provision.",
-                    CAPoliticalPatchTarget.NormativeBeliefs, "Property and work",
-                    P("ownership", "private"), P("economy", "market"),
-                    P("work", "contract"), P("support", "private")),
-                Template("public_service", "Public service",
-                    "Adds required public work and authority provision without choosing ownership.",
-                    CAPoliticalPatchTarget.NormativeBeliefs, "Property and work",
-                    P("work", "duty"), P("support", "public")),
-                Template("open_equal_membership", "Open and equal membership",
-                    "Adds open admission and broad equality.",
-                    CAPoliticalPatchTarget.NormativeBeliefs, "Membership",
-                    P("membership", "open"), P("status", "equal")),
-                Template("hereditary_membership", "Hereditary membership",
-                    "Adds inherited membership and hereditary standing.",
-                    CAPoliticalPatchTarget.NormativeBeliefs, "Membership",
-                    P("membership", "hereditary"), P("status", "hereditary")),
-                Template("community_defense", "Community defense",
-                    "Adds a community watch, militia service, and quarter for defeated enemies.",
-                    CAPoliticalPatchTarget.NormativeBeliefs, "Security",
-                    P("localOrder", "watch"), P("defense", "militia"),
-                    P("warConduct", "quarter")),
-                Template("professional_security", "Professional security",
-                    "Adds guards, professional defense, and combatant-only force.",
-                    CAPoliticalPatchTarget.NormativeBeliefs, "Security",
-                    P("localOrder", "constabulary"), P("defense", "professional"),
-                    P("warConduct", "combatants"))
-            };
-
-        public static readonly IReadOnlyList<CAPoliticalPatchTemplate> CurrentOrder =
-            new[]
-            {
-                Template("standing_council", "Standing council",
-                    "Adds a council, majority procedure, and member participation to current authority.",
-                    CAPoliticalPatchTarget.CurrentOrder, "Authority",
-                    P("leadership", "council"), P("decisions", "majority"),
-                    P("participation", "members")),
-                Template("single_executive", "Single executive",
-                    "Adds a single executive and decree to current authority.",
-                    CAPoliticalPatchTarget.CurrentOrder, "Authority",
-                    P("leadership", "single"), P("decisions", "decree")),
-                Template("delegated_councils", "Delegated councils",
-                    "Adds delegated leaders and consensus procedure to current authority.",
-                    CAPoliticalPatchTarget.CurrentOrder, "Authority",
-                    P("leadership", "federated"), P("decisions", "consensus")),
-                Template("public_assembly", "Public assembly",
-                    "Adds all-member leadership, consensus, and resident participation.",
-                    CAPoliticalPatchTarget.CurrentOrder, "Authority",
-                    P("leadership", "whole"), P("decisions", "consensus"),
-                    P("participation", "universal")),
-                Template("cooperative_workplaces", "Cooperative workplaces",
-                    "Adds cooperative ownership and organized work to the current economy.",
-                    CAPoliticalPatchTarget.CurrentOrder, "Property and work",
-                    P("ownership", "cooperative"), P("work", "organized")),
-                Template("common_stores", "Common stores",
-                    "Adds common ownership, shared distribution, and communal support.",
-                    CAPoliticalPatchTarget.CurrentOrder, "Property and work",
-                    P("ownership", "common"), P("economy", "communal"),
-                    P("support", "communal")),
-                Template("private_market", "Private market",
-                    "Adds private ownership, market exchange, and hired work.",
-                    CAPoliticalPatchTarget.CurrentOrder, "Property and work",
-                    P("ownership", "private"), P("economy", "market"),
-                    P("work", "contract")),
-                Template("public_distribution", "Public distribution",
-                    "Adds faction ownership, planned distribution, required service, and public support.",
-                    CAPoliticalPatchTarget.CurrentOrder, "Property and work",
-                    P("ownership", "state"), P("economy", "planned"),
-                    P("work", "duty"), P("support", "public")),
-                Template("community_watch", "Community watch",
-                    "Adds resident watch and militia defense to current security.",
-                    CAPoliticalPatchTarget.CurrentOrder, "Security",
-                    P("localOrder", "watch"), P("defense", "militia")),
-                Template("professional_force", "Professional force",
-                    "Adds guards and professional soldiers to current security.",
-                    CAPoliticalPatchTarget.CurrentOrder, "Security",
-                    P("localOrder", "constabulary"), P("defense", "professional"))
-            };
-
-        private static KeyValuePair<string, string[]> P(string axis,
-            params string[] mechanisms)
-        {
-            return new KeyValuePair<string, string[]>(axis, mechanisms);
-        }
-
-        private static CAPoliticalPatchTemplate Template(string key,
-            string label, string summary, CAPoliticalPatchTarget target,
-            string domain, params KeyValuePair<string, string[]>[] patches)
-        {
-            return new CAPoliticalPatchTemplate
-            {
-                Key = "ca.template." + key,
-                Label = label,
-                Summary = summary,
-                Target = target,
-                Domain = domain,
-                Mechanisms = patches.ToDictionary(value => value.Key,
-                    value => value.Value.Distinct(StringComparer.Ordinal)
-                        .ToList(), StringComparer.Ordinal)
-            };
-        }
-    }
-
     public static class CAAuthoringCategoryPolicy
     {
         public const int TopLevelMinimumItems = 4;
@@ -988,50 +825,45 @@ namespace ColonistAwareness
                     "derived from repeated evidence; read-only at the authoring surface",
                     new[] { "CACulture.transitions[]" },
                     "Culture history, expression, and operator inspection"),
-                Control("politics.belief-mechanisms",
-                    CAAuthoringSemanticKind.MultiValuedSet,
+                Control("politics.order",
+                    CAAuthoringSemanticKind.StructuredComposition,
                     "CAPoliticalBeliefs", "faction or founding population",
                     CAAuthoringTemporalStatus.Normative,
-                    "zero or more mechanisms per political subject",
-                    "mechanisms coexist except an explicit absence mechanism excludes standing mechanisms on the same subject",
-                    "player choice, scenario authoring, or evidenced generation",
-                    new[] { "CAPoliticalBeliefs.positions[].axis",
-                        "CAPoliticalBeliefs.positions[].option" },
-                    "founding suggestions, legitimacy, conflict, and comparison with current order"),
-                Control("politics.current-order-mechanisms",
+                    "one complete political question state per registered subject",
+                    "exclusive subjects select one position; blendable subjects distribute 100 points across compatible positions",
+                    "player choice, complete preset, or evidenced generation",
+                    new[] { "CAPoliticalBeliefs.questions[].questionKey",
+                        "CAPoliticalBeliefs.questions[].options[].optionKey",
+                        "CAPoliticalBeliefs.questions[].options[].share",
+                        "CAPoliticalBeliefs.questions[].options[].source" },
+                    "generated political identity and account, founding suggestions, legitimacy, conflict, ownership, provision, and comparison with represented institutions"),
+                Control("politics.represented-institutions",
                     CAAuthoringSemanticKind.MultiValuedSet,
                     "CAFactionState", "established faction",
                     CAAuthoringTemporalStatus.Current,
                     "zero or more instituted mechanisms per political subject",
                     "mechanisms coexist except an explicit absence mechanism excludes standing mechanisms on the same subject",
                     "scenario authoring or represented institutional evidence",
-                    new[] { "CAFactionState current-order mechanisms: axis",
-                        "CAFactionState current-order mechanisms: option" },
+                    new[] { "CAFactionState.factionStructure[].axis",
+                        "CAFactionState.factionStructure[].option" },
                     "organizations, offices, security, work, property, and belief-practice tension"),
-                Control("politics.belief-set",
-                    CAAuthoringSemanticKind.PartialPatchPreset,
-                    "CAPoliticalPatchTemplate", "political beliefs",
+                Control("politics.order-identity",
+                    CAAuthoringSemanticKind.Derived,
+                    "CAPoliticalBeliefs", "political order",
                     CAAuthoringTemporalStatus.Normative,
-                    "one partial patch per application",
-                    "adds listed mechanisms and preserves unlisted and existing mechanisms",
-                    "built-in or user-saved partial copy",
-                    new[] { "CAPoliticalBeliefs.positions[] listed writes" },
-                    "political composer"),
-                Control("politics.current-order-set",
-                    CAAuthoringSemanticKind.PartialPatchPreset,
-                    "CAPoliticalPatchTemplate", "established faction current order",
-                    CAAuthoringTemporalStatus.Current,
-                    "one partial patch per application",
-                    "adds listed instituted mechanisms and preserves unlisted and existing mechanisms",
-                    "built-in partial copy",
-                    new[] { "CAFactionState current-order listed writes" },
-                    "established-society composer"),
+                    "one generated name and one generated account",
+                    "the complete political variables remain authoritative; an optional custom name does not replace them",
+                    "read-only deterministic projection of the saved political variables; an optional display-name override changes identity text only",
+                    new[] { "CAPoliticalBeliefs.name",
+                        "CAPoliticalBeliefs.nameAuthored",
+                        "CAPoliticalBeliefs.nameRoll" },
+                    "player-facing identity, summaries, presets, and inspection"),
                 Control("faction.name",
                     CAAuthoringSemanticKind.OptionalUnset,
                     "CARegionalFactionPlan", "established faction",
                     CAAuthoringTemporalStatus.Current,
                     "zero or one authored display name",
-                    "coexists with type, Culture, Ideoligion, beliefs, and current order",
+                    "coexists with type, Culture, Ideoligion, Political Order, and represented institutions",
                     "scenario authoring",
                     new[] { "CARegionalFactionPlan.customName" },
                     "native faction materialization and summaries"),
@@ -1078,7 +910,7 @@ namespace ColonistAwareness
                     new[] { "CARegionalRelationPlan.leftFactionKey",
                         "CARegionalRelationPlan.rightFactionKey",
                         "CARegionalRelationPlan.relation",
-                        "CARegionalRelationPlan.authorRelation" },
+                        "CARegionalRelationPlan.source" },
                     "native relations, regional pattern, conflict, and connections"),
                 Control("settlement.owner",
                     CAAuthoringSemanticKind.Relational,
@@ -1088,7 +920,7 @@ namespace ColonistAwareness
                     "a faction may own several settlements",
                     "scenario authoring or authorized world-pool source",
                     new[] { "CARegionalSettlementPlan.factionKey" },
-                    "population affiliation, current order, materialization, and regional hierarchy"),
+                    "population affiliation, represented institutions, materialization, and regional hierarchy"),
                 Control("settlement.location",
                     CAAuthoringSemanticKind.Relational,
                     "CARegionalSettlementPlan", "settlement-to-region ground",
@@ -1248,7 +1080,7 @@ namespace ColonistAwareness
                     "CAFoundingArrangement", "player founding moment",
                     CAAuthoringTemporalStatus.Current,
                     "one adopted initial arrangement with independently authored terms",
-                    "coexists with inherited Culture, Ideoligion, and Political Beliefs and may disagree with them",
+                    "coexists with inherited Culture, Ideoligion, and Political Order and may disagree with it",
                     "player choice or explicit generated suggestion",
                     new[] { "CAFoundingArrangement.leaderRule",
                         "CAFoundingArrangement.workRequired",

@@ -6,7 +6,7 @@ using Verse;
 
 namespace ColonistAwareness
 {
-    // Applies political beliefs to current practices and reported acts.
+    // Applies Political Order to current practices and reported acts.
     // Factions lose public support when their rules conflict with practice.
     // Informed pawns receive positive or negative belief memories.
     internal static class CAPoliticalBeliefEffects
@@ -471,7 +471,7 @@ namespace ColonistAwareness
                     int habituation = Mathf.RoundToInt(
                         timing.habituateAfterTicks * (1f
                             + Mathf.Clamp01(cultural.Salience / 100f) * 0.5f));
-                    // Political beliefs remain unchanged. A persisted culture
+                    // Political Order remains unchanged. A persisted Culture
                     // of public gathering makes voice and shared-leadership
                     // contradictions remain politically salient for longer.
                     if (held >= habituation)
@@ -632,7 +632,7 @@ namespace ColonistAwareness
             }
         }
 
-        // Each informed pawn judges from their political beliefs, not from
+        // Each informed pawn judges from their Political Order, not from
         // organization-wide customs. Uninformed pawns carry no memory of
         // the event.
         private static void JudgeForPawns(CAActRecord e, int now)
@@ -662,7 +662,7 @@ namespace ColonistAwareness
                     if (verdict == CAVerdict.Silent) continue;
                     contributions.Add(new CASocialContribution
                     {
-                        Source = "Political Beliefs",
+                        Source = "Political Order",
                         Approval = verdict == CAVerdict.Offends ? -80 : 65,
                         Prestige = verdict == CAVerdict.Offends ? -50 : 35,
                         Normality = verdict == CAVerdict.Offends ? 20 : 70,

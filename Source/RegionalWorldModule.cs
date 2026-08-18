@@ -120,14 +120,18 @@ namespace ColonistAwareness
         private static bool sizesInstalled;
         private static bool footprintLayerInstalled;
         private static bool previewInstalled;
+        private static bool previewInstallDeferred;
         private static Delegate previousPreviewSizeOverride;
         private static Type previewApiType;
         private static PropertyInfo previewGeneratingProperty;
         private static FieldInfo previewGeneratingField;
         private static MethodInfo previewRefreshMethod;
         private static MethodInfo previewDetermineMapSizeMethod;
+        private static FieldInfo previewMaxMapSizeField;
+        private static FieldInfo previewSizeOverrideField;
         private static FieldInfo previewWidgetField;
         private static PropertyInfo previewTextureProperty;
+        private static string lastPreviewRequestSignature;
 
         internal static void TryInstall()
         {
@@ -141,8 +145,13 @@ namespace ColonistAwareness
             if (footprintLayerInstalled) return;
             try
             {
-                PlanetLayerDef surface = PlanetLayerDefOf.Surface
-                    ?? DefDatabase<PlanetLayerDef>.GetNamedSilentFail("Surface");
+                // This installer also runs from the Mod constructor, before
+                // DefOf initialization.  Resolve directly from the database so
+                // an early verification can defer without touching the DefOf
+                // static constructor; the scheduled post-load pass will find
+                // Surface once defs are ready.
+                PlanetLayerDef surface = DefDatabase<PlanetLayerDef>
+                    .GetNamedSilentFail("Surface");
                 List<Type> layers = surface?.worldDrawLayers;
                 if (layers == null)
                 {
@@ -236,6 +245,23 @@ namespace ColonistAwareness
         private static void TryInstallMapPreviewCompatibility()
         {
             if (previewInstalled) return;
+            // AwarenessMod is constructed on RimWorld's play-load worker.
+            // Map Preview's toolbar static constructor reads DefOf state and
+            // loads textures, so touching it there permanently poisons the
+            // type. ModEntry already schedules this installer on the main
+            // thread; wait for that call and for DefOf binding to complete.
+            if (ModsConfig.IsActive("m00nl1ght.mappreview")
+                && (!UnityData.IsInMainThread
+                    || OptionCategoryDefOf.General == null))
+            {
+                if (!previewInstallDeferred)
+                {
+                    previewInstallDeferred = true;
+                    Log.Message("[CA][Regional] Map Preview compatibility "
+                        + "deferred until main-thread DefOf initialization");
+                }
+                return;
+            }
             try
             {
                 Type sizeType = FindType("MapPreview.MapSizeUtility");
@@ -244,29 +270,38 @@ namespace ColonistAwareness
 
                 if (sizeType != null)
                 {
-                    FieldInfo max = AccessTools.Field(sizeType, "MaxMapSize");
-                    if (max != null)
+                    previewMaxMapSizeField = AccessTools.Field(sizeType,
+                        "MaxMapSize");
+                    if (previewMaxMapSizeField != null)
                     {
-                        IntVec2 existing = max.GetValue(null) is IntVec2 value
+                        IntVec2 existing = previewMaxMapSizeField.GetValue(null)
+                            is IntVec2 value
                             ? value
                             : new IntVec2(0, 0);
-                        max.SetValue(null, new IntVec2(
+                        previewMaxMapSizeField.SetValue(null, new IntVec2(
                             Math.Max(existing.x,
                                 RegionalPreviewInitialDimension),
                             Math.Max(existing.z,
                                 RegionalPreviewInitialDimension)));
                     }
-                    FieldInfo sizeOverride = AccessTools.Field(sizeType,
-                        "MapSizeOverride");
-                    if (sizeOverride != null)
+                    // Map Preview 1.6 names this GameInitMapSizeOverride. Keep
+                    // the old name as a narrow fallback for earlier releases,
+                    // but never report the current hook healthy unless one of
+                    // the actual fields was found.
+                    previewSizeOverrideField = AccessTools.Field(sizeType,
+                            "GameInitMapSizeOverride")
+                        ?? AccessTools.Field(sizeType, "MapSizeOverride");
+                    if (previewSizeOverrideField != null)
                     {
-                        previousPreviewSizeOverride = sizeOverride.GetValue(null)
-                            as Delegate;
+                        previousPreviewSizeOverride = previewSizeOverrideField
+                            .GetValue(null) as Delegate;
                         Delegate regionalOverride = Delegate.CreateDelegate(
-                            sizeOverride.FieldType, AccessTools.Method(
+                            previewSizeOverrideField.FieldType,
+                            AccessTools.Method(
                                 typeof(CARegionalCompatibility),
                                 nameof(PreviewMapSizeOverride)));
-                        sizeOverride.SetValue(null, regionalOverride);
+                        previewSizeOverrideField.SetValue(null,
+                            regionalOverride);
                     }
                 }
                 if (previewApiType != null)
@@ -301,7 +336,10 @@ namespace ColonistAwareness
                             typeof(CARegionalCompatibility),
                             nameof(PreviewMinimalComponentsPostfix)));
                 previewDetermineMapSizeMethod = AccessTools.Method(sizeType,
-                    "DetermineMapSize");
+                    "DetermineMapSize", new[]
+                    {
+                        typeof(World), typeof(PlanetTile), typeof(MapParent)
+                    });
                 if (previewDetermineMapSizeMethod != null)
                     previewHarmony.Patch(previewDetermineMapSizeMethod,
                         postfix: new HarmonyMethod(
@@ -309,8 +347,13 @@ namespace ColonistAwareness
                             nameof(PreviewDetermineMapSizePostfix)));
                 Type previewWindowType = FindType(
                     "MapPreview.MapPreviewWindow");
+                Type previewToolbarType = FindType(
+                    "MapPreview.MapPreviewToolbar");
                 MethodInfo tileSelected = AccessTools.Method(
-                    previewWindowType, "OnWorldTileSelected");
+                    previewWindowType, "OnWorldTileSelected", new[]
+                    {
+                        typeof(World), typeof(PlanetTile), typeof(MapParent)
+                    });
                 previewWidgetField = AccessTools.Field(previewWindowType,
                     "_previewWidget");
                 previewTextureProperty = AccessTools.Property(FindType(
@@ -322,22 +365,60 @@ namespace ColonistAwareness
                     previewHarmony.Patch(tileSelected,
                         prefix: new HarmonyMethod(
                             typeof(CARegionalCompatibility),
-                            nameof(PreviewWindowTileSelectedPrefix)));
+                            nameof(PreviewWindowTileSelectedPrefix)),
+                        postfix: new HarmonyMethod(
+                            typeof(CARegionalCompatibility),
+                            nameof(PreviewWindowTileSelectedPostfix)));
                 }
                 else
                 {
                     Log.Warning("[CA][Regional] Map Preview exact-size texture "
                         + "compatibility could not be installed");
                 }
+                MethodInfo previewPreClose = AccessTools.Method(
+                    previewWindowType, "PreClose", Type.EmptyTypes);
+                if (previewPreClose != null)
+                    previewHarmony.Patch(previewPreClose,
+                        prefix: new HarmonyMethod(
+                            typeof(CARegionalCompatibility),
+                            nameof(PreviewWindowPreClosePrefix)));
+                MethodInfo toolbarPreClose = AccessTools.Method(
+                    previewToolbarType, "PreClose", Type.EmptyTypes);
+                if (toolbarPreClose != null)
+                    previewHarmony.Patch(toolbarPreClose,
+                        prefix: new HarmonyMethod(
+                            typeof(CARegionalCompatibility),
+                            nameof(PreviewToolbarPreClosePrefix)));
                 previewRefreshMethod = AccessTools.Method(
                     FindType("MapPreview.WorldInterfaceManager"),
                     "RefreshPreview");
                 previewInstalled = true;
-                Log.Message("[CA][Regional] Map Preview compatibility installed; "
-                    + "regional requests use aggregate bounds and projection "
-                    + "steps; preview textures resize to each exact backing "
-                    + "frame; inhabited settlement materialization remains "
-                    + "preview-inert");
+                bool exactSizeHealthy = previewMaxMapSizeField != null
+                    && previewSizeOverrideField != null
+                    && previewDetermineMapSizeMethod != null
+                    && tileSelected != null && previewWidgetField != null
+                    && previewTextureProperty != null;
+                if (exactSizeHealthy && collect != null
+                    && constructMinimal != null)
+                    Log.Message("[CA][Regional] Map Preview compatibility "
+                        + "installed against the 1.6 three-argument size API; "
+                        + "regional requests use the selected composition's "
+                        + "exact backing frame and shared projection steps; "
+                        + "inhabited settlement materialization remains "
+                        + "preview-inert");
+                else
+                    Log.Warning("[CA][Regional] Map Preview compatibility is "
+                        + "partial: max=" + (previewMaxMapSizeField != null)
+                        + ", game-init override="
+                        + (previewSizeOverrideField != null)
+                        + ", determine-size-3="
+                        + (previewDetermineMapSizeMethod != null)
+                        + ", tile-selected-3=" + (tileSelected != null)
+                        + ", widget=" + (previewWidgetField != null)
+                        + ", texture=" + (previewTextureProperty != null)
+                        + ", collect=" + (collect != null)
+                        + ", minimal-components="
+                        + (constructMinimal != null));
             }
             catch (Exception ex)
             {
@@ -348,8 +429,7 @@ namespace ColonistAwareness
 
         private static IntVec2 PreviewMapSizeOverride()
         {
-            CARegionalPlan plan = CARegionalSetupSession
-                .PendingForCurrentWorld;
+            CARegionalPlan plan = CARegionalSetupSession.ActivePreviewPlan;
             if (plan != null)
                 return new IntVec2(plan.BackingMapSize.x,
                     plan.BackingMapSize.z);
@@ -370,13 +450,18 @@ namespace ColonistAwareness
                 || previewTextureProperty == null) return;
             try
             {
-                CARegionalPlan plan = CARegionalWorldComponent.Current
-                    ?.FindRegionContaining(tileId);
-                CARegionalPlan pending = CARegionalSetupSession
-                    .PendingForCurrentWorld;
-                if (plan == null && pending?.memberTileIds != null
-                    && pending.memberTileIds.Contains(tileId.tileId))
-                    plan = pending;
+                // The external window persists its current position while it
+                // handles a tile change. Present its own undocked position for
+                // that write, then the postfix returns it to CA's temporary
+                // page layout. This keeps Map Preview's saved preference intact.
+                CARegionalPreviewDock.BeforeExternalSelection(
+                    __instance as Window);
+                // The global Map Preview size delegate has no tile argument.
+                // Clear the preceding request first so a native tile outside
+                // the selected composition cannot inherit a regional frame or
+                // regional gensteps from the last click.
+                CARegionalSetupSession.ClearPreviewBinding();
+                CARegionalPlan plan = ResolvePreviewPlan(world, tileId);
                 if (plan != null)
                 {
                     CARegionalSetupSession.BindPreviewPlan(plan);
@@ -390,26 +475,35 @@ namespace ColonistAwareness
                             mapParent = canonicalParent;
                     }
                 }
-                object rawSize = previewDetermineMapSizeMethod.Invoke(null,
-                    new object[] { world, mapParent });
-                if (!(rawSize is IntVec2 size) || size.x <= 0 || size.z <= 0)
-                    return;
+                if (plan == null) return;
+                IntVec2 size = new IntVec2(plan.BackingMapSize.x,
+                    plan.BackingMapSize.z);
+                EnsurePreviewMaximum(size);
                 object widget = previewWidgetField.GetValue(__instance);
                 Texture2D texture = widget == null ? null
                     : previewTextureProperty.GetValue(widget, null)
                         as Texture2D;
-                if (texture == null
-                    || (texture.width == size.x && texture.height == size.z))
-                    return;
-                if (!texture.Reinitialize(size.x, size.z))
+                if (texture != null
+                    && (texture.width != size.x || texture.height != size.z)
+                    && !texture.Reinitialize(size.x, size.z))
                 {
                     Log.Warning("[CA][Regional] Map Preview texture rejected "
                         + "exact regional backing " + size.x + "x" + size.z);
                     return;
                 }
-                Log.Message("[CA][Regional] Map Preview texture resized to "
-                    + size.x + "x" + size.z
-                    + " for the exact regional backing frame");
+                CARegionalGeographyComposition composition =
+                    CARegionalGeographyContract.Inspect(plan);
+                if (lastPreviewRequestSignature != composition.Signature)
+                {
+                    lastPreviewRequestSignature = composition.Signature;
+                    Log.Message("[CA][Regional][Preview] request "
+                        + composition.Signature + " bound to candidate "
+                        + (plan.candidateId ?? "unknown") + "; arrival "
+                        + plan.startTileId + "; exact backing " + size.x + "x"
+                        + size.z + "; texture "
+                        + (texture == null ? "unavailable" : texture.width
+                            + "x" + texture.height));
+                }
             }
             catch (Exception ex)
             {
@@ -419,10 +513,27 @@ namespace ColonistAwareness
             }
         }
 
-        private static void PreviewDetermineMapSizePostfix(World world,
-            MapParent mapParent, ref IntVec2 __result)
+        private static void PreviewWindowTileSelectedPostfix()
         {
-            PlanetTile tile = mapParent?.Tile
+            CARegionalPreviewDock.AfterExternalSelection();
+        }
+
+        private static void PreviewWindowPreClosePrefix(object __instance)
+        {
+            CARegionalPreviewDock.BeforeExternalPreviewClose(
+                __instance as Window);
+        }
+
+        private static void PreviewToolbarPreClosePrefix(object __instance)
+        {
+            CARegionalPreviewDock.BeforeExternalToolbarClose(
+                __instance as Window);
+        }
+
+        private static void PreviewDetermineMapSizePostfix(World world,
+            PlanetTile tile, MapParent mapParent, ref IntVec2 __result)
+        {
+            if (!tile.Valid) tile = mapParent?.Tile
                 ?? Verse.Find.WorldInterface.SelectedTile;
             if (!tile.Valid || tile.Layer != Verse.Find.WorldGrid.Surface)
                 return;
@@ -433,6 +544,7 @@ namespace ColonistAwareness
                 CARegionalSetupSession.BindPreviewPlan(existing);
                 __result = new IntVec2(existing.BackingMapSize.x,
                     existing.BackingMapSize.z);
+                EnsurePreviewMaximum(__result);
                 return;
             }
             CARegionalPlan pending = CARegionalSetupSession
@@ -442,6 +554,7 @@ namespace ColonistAwareness
             {
                 __result = new IntVec2(pending.BackingMapSize.x,
                     pending.BackingMapSize.z);
+                EnsurePreviewMaximum(__result);
                 return;
             }
             CAExpandedLandmassProfile profile =
@@ -475,13 +588,65 @@ namespace ColonistAwareness
                     ?? CAWorldTendenciesSession.Policy;
                 int available = Math.Max(1, CARegionalBundleBuilder.Build(
                     tile, 12).Count);
-                count = policy.ResolveRequestedExtent(tile, available);
+                count = CARegionalSetupSession.StickyRegionTileCount > 0
+                    ? CARegionalSetupSession.StickyRegionTileCount
+                    : policy.ResolveRequestedExtent(tile, available);
             }
             CARegionalPlan plan = CARegionalSetupSession.EnsurePreviewPlan(
                 tile, profile, count);
             if (plan == null) return;
+            CARegionalSetupSession.BindPreviewPlan(plan);
             __result = new IntVec2(plan.BackingMapSize.x,
                 plan.BackingMapSize.z);
+            EnsurePreviewMaximum(__result);
+        }
+
+        private static CARegionalPlan ResolvePreviewPlan(World world,
+            PlanetTile tile)
+        {
+            if (world == null || !tile.Valid) return null;
+            CARegionalPlan plan = CARegionalWorldComponent.Current
+                ?.FindRegionContaining(tile);
+            CARegionalPlan pending = CARegionalSetupSession
+                .PendingForCurrentWorld;
+            if (plan == null && pending?.memberTileIds != null
+                && pending.memberTileIds.Contains(tile.tileId))
+                plan = pending;
+            if (plan != null) return plan;
+
+            CAExpandedLandmassProfile profile;
+            int localSize = Verse.Find.GameInitData?.mapSize ?? 0;
+            bool hasProfile = CAExpandedLandmassProfile.TryFor(localSize,
+                out profile);
+            if (!hasProfile && world.info != null)
+            {
+                IntVec3 initial = world.info.initialMapSize;
+                hasProfile = initial.x == initial.z
+                    && CAExpandedLandmassProfile.TryFor(initial.x,
+                        out profile);
+            }
+            if (!hasProfile) return null;
+            CARegionalWorldPolicy policy = pending?.worldPolicy
+                ?? CARegionalWorldComponent.Current?.WorldPolicy
+                ?? CAWorldTendenciesSession.Policy;
+            int available = Math.Max(1,
+                CARegionalBundleBuilder.Build(tile, 12).Count);
+            int count = CARegionalSetupSession.StickyRegionTileCount > 0
+                ? CARegionalSetupSession.StickyRegionTileCount
+                : policy.ResolveRequestedExtent(tile, available);
+            return CARegionalSetupSession.EnsurePreviewPlan(tile, profile,
+                count);
+        }
+
+        private static void EnsurePreviewMaximum(IntVec2 size)
+        {
+            if (previewMaxMapSizeField == null || size.x <= 0 || size.z <= 0)
+                return;
+            IntVec2 existing = previewMaxMapSizeField.GetValue(null)
+                is IntVec2 value ? value : new IntVec2(0, 0);
+            if (existing.x >= size.x && existing.z >= size.z) return;
+            previewMaxMapSizeField.SetValue(null, new IntVec2(
+                Math.Max(existing.x, size.x), Math.Max(existing.z, size.z)));
         }
 
         private static bool IsRegionalPreviewStep(GenStepDef def)
@@ -506,6 +671,8 @@ namespace ColonistAwareness
                 + plan.startTileId + "; members "
                 + string.Join(",", plan.memberTileIds) + "; backing "
                 + plan.BackingMapSize.x + "x" + plan.BackingMapSize.z
+                + "; composition "
+                + CARegionalGeographyContract.Inspect(plan).Signature
                 + "; queued projection and world links before texture");
         }
 
@@ -1077,18 +1244,18 @@ namespace ColonistAwareness
                         || faction.politicalBeliefs.schemaVersion
                             != CAPoliticalBeliefs.CurrentSchemaVersion)
                         return "regional faction " + faction.key
-                            + " has missing or incompatible political beliefs";
+                            + " has a missing or incompatible Political Order";
                     string beliefFailure = CAPoliticalBeliefsModel
                         .ValidationFailure(faction.politicalBeliefs,
                             allowExactLegacy: false);
                     if (!beliefFailure.NullOrEmpty())
                         return "regional faction " + faction.key
-                            + " political beliefs: " + beliefFailure;
+                            + " Political Order: " + beliefFailure;
                     string orderFailure = CAPoliticalBeliefsModel
                         .ValidationFailure(faction.factionStructure);
                     if (!orderFailure.NullOrEmpty())
                         return "regional faction " + faction.key
-                            + " current order: " + orderFailure;
+                            + " represented institutions: " + orderFailure;
                 }
                 for (int settlementIndex = 0;
                     settlementIndex < region.settlements.Count;
@@ -1202,7 +1369,7 @@ namespace ColonistAwareness
                 if (faction == null) return "faction " + i + " is null";
                 if (faction.factionStructure == null)
                     return "faction " + faction.key
-                        + " current-order collection is missing";
+                        + " represented-institution collection is missing";
                 CASettlementAuthority authority =
                     (CASettlementAuthority)faction.settlementAuthority;
                 if (!CARegionalSettlements.ActiveSettlementAuthorities
@@ -1402,14 +1569,14 @@ namespace ColonistAwareness
                             out CAPoliticalBeliefs beliefs,
                             out string beliefFailure))
                         return "regional faction " + faction.key
-                            + " political beliefs: " + beliefFailure;
+                            + " Political Order: " + beliefFailure;
                     if (!CAPoliticalBeliefsModel
                             .TryUpgradeMechanismsFromB10(
                                 faction.factionStructure,
                                 out List<CAAxisEntry> order,
                                 out string orderFailure))
                         return "regional faction " + faction.key
-                            + " current order: " + orderFailure;
+                            + " represented institutions: " + orderFailure;
                     CARegionalFactionPlan target = faction;
                     commits.Add(() =>
                     {
@@ -1450,7 +1617,7 @@ namespace ColonistAwareness
                         region.playerFounding.politicalBeliefs,
                         out CAPoliticalBeliefs foundingBeliefs,
                         out string foundingBeliefFailure))
-                    return "regional founding political beliefs: "
+                    return "regional founding Political Order: "
                         + foundingBeliefFailure;
                 CAPlayerFoundingPlan foundingCandidate =
                     region.playerFounding.Copy();
@@ -2554,6 +2721,143 @@ namespace ColonistAwareness
         }
     }
 
+    internal static class CARegionalGenerationReceipt
+    {
+        private const string FileName =
+            "CA-B14-regional-generation-receipt.txt";
+
+        internal static void Write(CARegionalPlan region, Map map,
+            CARegionalWorldComponent world, HashSet<int> materializedSlots,
+            string gateFailure = null)
+        {
+            List<CARegionalSettlementPlan> settlements = (region?.settlements
+                    ?? new List<CARegionalSettlementPlan>())
+                .Where(item => item != null).OrderBy(item => item.slot)
+                .ToList();
+            var expectedSlots = new HashSet<int>(settlements.Select(
+                item => item.slot));
+            var actualSlots = materializedSlots ?? new HashSet<int>();
+            Dictionary<int, CARegionalSettlementRecord> records = world == null
+                || map == null
+                ? new Dictionary<int, CARegionalSettlementRecord>()
+                : world.ForMap(map).Where(item => item != null)
+                    .GroupBy(item => item.slot)
+                    .ToDictionary(group => group.Key, group => group.Last());
+
+            int ownershipResolved = settlements.Count(settlement =>
+                records.TryGetValue(settlement.slot,
+                    out CARegionalSettlementRecord record)
+                && record.factionKey == settlement.factionKey
+                && CARegionalPlanUtility.MatchesFaction(record.faction,
+                    region.FactionPlan(settlement.factionKey)));
+            int populationsResolved = settlements.Count(settlement =>
+                records.TryGetValue(settlement.slot,
+                    out CARegionalSettlementRecord record)
+                && PopulationMatches(settlement.populationGroups,
+                    record.populationGroups));
+
+            bool relationsValid = true;
+            bool unsupportedSourceRejected = true;
+            var relationFacts = new List<string>();
+            foreach (CARegionalRelationPlan relation in (region?.relations
+                         ?? new List<CARegionalRelationPlan>())
+                     .Where(item => item != null)
+                     .OrderBy(item => item.leftFactionKey)
+                     .ThenBy(item => item.rightFactionKey))
+            {
+                string sourceFailure;
+                bool valid = CARegionalPlanUtility.TryValidateRelationSource(
+                    region, relation, out sourceFailure);
+                relationsValid &= valid;
+                relationFacts.Add(relation.leftFactionKey + "-"
+                    + relation.rightFactionKey + ":" + relation.source + ":"
+                    + relation.relation + (valid ? "" : ":INVALID(" +
+                        sourceFailure + ")"));
+            }
+            CARegionalRelationPlan representedRelation = (region?.relations
+                    ?? new List<CARegionalRelationPlan>())
+                .FirstOrDefault(item => item != null);
+            if (representedRelation != null)
+            {
+                var unsupported = new CARegionalRelationPlan
+                {
+                    leftFactionKey = representedRelation.leftFactionKey,
+                    rightFactionKey = representedRelation.rightFactionKey,
+                    relation = representedRelation.relation,
+                    source = CARegionalRelationSource.Unset
+                };
+                unsupportedSourceRejected = !CARegionalPlanUtility
+                    .TryValidateRelationSource(region, unsupported,
+                        out string _);
+            }
+
+            bool gatePassed = gateFailure.NullOrEmpty();
+            bool slotsComplete = actualSlots.SetEquals(expectedSlots);
+            bool passed = gatePassed && slotsComplete
+                && ownershipResolved == settlements.Count
+                && populationsResolved == settlements.Count
+                && relationsValid && unsupportedSourceRejected;
+            string receipt = "[CA][B14][GenerationReceipt] "
+                + (passed ? "PASS" : "FAIL") + " region="
+                + (region?.regionalId ?? "unknown") + " gate="
+                + (gatePassed ? "pass" : gateFailure) + " expected="
+                + settlements.Count + " materialized=" + actualSlots.Count
+                + " slots=" + string.Join(",", actualSlots.OrderBy(value =>
+                    value)) + " ownership=" + ownershipResolved + "/"
+                + settlements.Count + " populations=" + populationsResolved
+                + "/" + settlements.Count + " relations="
+                + string.Join(",", relationFacts) + " unsupportedSourceProbe="
+                + (unsupportedSourceRejected ? "rejected" : "accepted");
+            if (passed) Log.Message(receipt);
+            else Log.Error(receipt);
+            try
+            {
+                System.IO.Directory.CreateDirectory(
+                    GenFilePaths.DevOutputFolderPath);
+                System.IO.File.WriteAllText(System.IO.Path.Combine(
+                    GenFilePaths.DevOutputFolderPath, FileName), receipt
+                    + Environment.NewLine);
+            }
+            catch (Exception exception)
+            {
+                Log.Warning("[CA][B14][GenerationReceipt] could not write "
+                    + "the external receipt: " + exception.Message);
+            }
+        }
+
+        private static bool PopulationMatches(
+            List<CASettlementPopulationGroup> planned,
+            List<CASettlementPopulationGroup> recorded)
+        {
+            planned = planned ?? new List<CASettlementPopulationGroup>();
+            recorded = recorded ?? new List<CASettlementPopulationGroup>();
+            if (planned.Count != recorded.Count) return false;
+            foreach (CASettlementPopulationGroup expected in planned)
+            {
+                if (expected == null) return false;
+                CASettlementPopulationGroup actual = recorded.SingleOrDefault(
+                    item => item != null && item.key == expected.key);
+                if (actual == null || actual.kind != expected.kind
+                    || actual.label != expected.label
+                    || actual.share != expected.share
+                    || actual.factionKey != expected.factionKey
+                    || actual.politicalBeliefsFactionKey
+                        != expected.politicalBeliefsFactionKey
+                    || actual.ideoligionCertainty
+                        != expected.ideoligionCertainty
+                    || actual.ideoligionFactionKey
+                        != expected.ideoligionFactionKey
+                    || actual.nativeIdeoligionId
+                        != expected.nativeIdeoligionId
+                    || actual.ideoligionProtected
+                        != expected.ideoligionProtected
+                    || actual.authored != expected.authored)
+                    return false;
+            }
+            return true;
+        }
+    }
+
     public sealed class GenStep_CARegionalSettlements : GenStep
     {
         private sealed class Placement
@@ -2586,6 +2890,8 @@ namespace ColonistAwareness
             if (!CARegionalPlanUtility.TryValidateStableIdentities(region,
                     out identityFailure))
             {
+                CARegionalGenerationReceipt.Write(region, map, world,
+                    new HashSet<int>(), "stable identity: " + identityFailure);
                 Log.Error("[CA][Regional] refused settlement materialization "
                     + "for " + (region.regionalId ?? "unknown") + ": "
                     + identityFailure);
@@ -2594,10 +2900,38 @@ namespace ColonistAwareness
             CAExpandedLandmassProfile profile;
             if (!CAExpandedLandmassProfile.TryFor(region.mapSize,
                     out profile)) return;
+            string realizationFailure;
+            if (!CARegionalSettlements.TryValidateRealization(region,
+                    out realizationFailure))
+            {
+                CARegionalGenerationReceipt.Write(region, map, world,
+                    new HashSet<int>(), "realization: " + realizationFailure);
+                Log.Error("[CA][Regional] refused settlement materialization "
+                    + "for " + (region.regionalId ?? "unknown") + ": "
+                    + realizationFailure);
+                return;
+            }
+            foreach (CARegionalSettlementPlan settlement in region.settlements)
+            {
+                if (settlement != null
+                    && !CASettlementProgramRegistry.TryValidateSaved(region,
+                        settlement, out string programFailure))
+                {
+                    CARegionalGenerationReceipt.Write(region, map, world,
+                        new HashSet<int>(), "settlement " + settlement.slot
+                        + " program: " + programFailure);
+                    Log.Error("[CA][Regional] refused settlement "
+                        + "materialization for "
+                        + (region.regionalId ?? "unknown") + ": settlement "
+                        + settlement.slot + " program: " + programFailure);
+                    return;
+                }
+            }
             CARegionalPlanResolver.Resolve(region);
             CARegionalProjectionMapComponent projection = map.GetComponent<
                 CARegionalProjectionMapComponent>();
             int materialized = 0;
+            var seenSlots = new HashSet<int>();
             var materializedSlots = new HashSet<int>();
             var physicalClusters = new Dictionary<string, List<CellRect>>();
             for (int index = 0; index < region.settlements.Count; index++)
@@ -2605,7 +2939,7 @@ namespace ColonistAwareness
                 CARegionalSettlementPlan settlement = region.settlements[index];
                 if (settlement == null) continue;
                 int slot = settlement.slot;
-                if (slot < 0 || !materializedSlots.Add(slot))
+                if (slot < 0 || !seenSlots.Add(slot))
                 {
                     Log.Warning("[CA][Regional] skipped authored settlement row "
                         + index + " because stable slot " + slot
@@ -2636,23 +2970,6 @@ namespace ColonistAwareness
                 {
                     Log.Message("[CA][Regional] encounter-only settlement "
                         + record.regionalId + " will not rematerialize");
-                    continue;
-                }
-                // Confirmed generation consumes the saved program exactly.
-                // It cannot regenerate an authoring omission or accommodate
-                // post-confirmation source drift.
-                string realizationFailure;
-                string programFailure = null;
-                bool realizationValid = CARegionalSettlements
-                    .TryValidateRealization(region, out realizationFailure);
-                bool programValid = realizationValid
-                    && CASettlementProgramRegistry.TryValidateSaved(region,
-                        settlement, out programFailure);
-                if (!realizationValid || !programValid)
-                {
-                    Log.Error("[CA][Regional] refused invalid confirmed "
-                        + "settlement " + slot + ": "
-                        + (realizationFailure ?? programFailure));
                     continue;
                 }
                 if (record == null)
@@ -2706,6 +3023,7 @@ namespace ColonistAwareness
                     Math.Max(1, districts)); // [morphology lane]
                 clusterRects.Add(rect);
                 materialized++;
+                materializedSlots.Add(slot);
             }
 
             // Each multi-settlement faction's authority becomes member
@@ -2716,6 +3034,8 @@ namespace ColonistAwareness
                 world.ForMap(map));
             // The world map shows one faction-colored marker per settlement.
             CARegionalSettlementMarkers.Ensure(region, world.ForMap(map));
+            CARegionalGenerationReceipt.Write(region, map, world,
+                materializedSlots);
 
             Log.Message("[CA][Regional] materialized " + materialized + "/"
                 + region.settlements.Count + " authored settlements on "
@@ -3286,9 +3606,7 @@ namespace ColonistAwareness
                     Log.Message("[CA][Regional] faction relation "
                         + relation.leftFactionKey + "-" + relation.rightFactionKey
                         + "; " + relation.relation + "; source "
-                        + (relation.authorRelation
-                            ? "starting-region override"
-                            : "realized default"));
+                        + relation.source);
             }
             else if (expanded)
                 Log.Warning("[CA][Regional] census found no regional plan for "

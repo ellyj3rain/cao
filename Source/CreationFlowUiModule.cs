@@ -27,6 +27,10 @@ namespace ColonistAwareness
         internal bool Selected;
         internal bool Disabled;
         internal Action Choose;
+        // Choices that can fail validation keep the dialog open and report the
+        // failure at their owning surface. Ordinary choices continue to use
+        // Choose.
+        internal Func<bool> TryChoose;
     }
 
     internal static class CACreationUI
@@ -613,8 +617,15 @@ namespace ColonistAwareness
             if (Widgets.ButtonText(use, confirm, true, true,
                     !choice.Disabled) && !choice.Disabled)
             {
-                choice.Choose?.Invoke();
-                Close();
+                bool accepted;
+                if (choice.TryChoose != null)
+                    accepted = choice.TryChoose();
+                else
+                {
+                    accepted = choice.Choose != null;
+                    choice.Choose?.Invoke();
+                }
+                if (accepted) Close();
             }
         }
     }

@@ -34,7 +34,7 @@ namespace ColonistAwareness
                 .Append(founding.nativeIdeoName ?? "not recorded")
                 .Append("; signature=")
                 .Append(founding.nativeIdeoSignature ?? "not recorded")
-                .Append("\n  political beliefs=")
+                .Append("\n  Political Order=")
                 .Append(Axes(founding.politicalBeliefs?.positions))
                 .Append("\n  adopted terms=")
                 .Append(founding.arrangement?.label ?? "not chosen")

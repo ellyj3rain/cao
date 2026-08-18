@@ -127,6 +127,8 @@ namespace ColonistAwareness
         public static NeedDef CA_Thirst;
         public static NeedDef CA_Hygiene;
         public static NeedDef CA_Bladder;
+        public static StatDef CA_ThirstRateMultiplier;
+        public static StatDef CA_BladderRateMultiplier;
 
         static CAWaterDefOf()
         {
