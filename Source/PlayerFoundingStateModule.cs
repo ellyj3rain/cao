@@ -133,7 +133,7 @@ namespace ColonistAwareness
     // institutions that subsequently develop through play.
     public sealed class CAPlayerFoundingWorldComponent : WorldComponent
     {
-        private int campaignSchemaVersion = 3;
+        private int campaignSchemaVersion = 4;
         private int legacyAuthoringDataEpoch =
             CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private CAPlayerFoundingPlan founding =
@@ -207,14 +207,16 @@ namespace ColonistAwareness
 
         private string MigrateSupportedState()
         {
-            if (campaignSchemaVersion != 2)
+            if (campaignSchemaVersion != 2
+                && campaignSchemaVersion != 3)
                 return "player-founding owner schema "
                     + campaignSchemaVersion + " has no supported migration";
             if (founding == null) return "founding plan is missing";
-            if (founding.schemaVersion != 3)
+            int expectedFoundingSchema = campaignSchemaVersion == 2 ? 3 : 4;
+            if (founding.schemaVersion != expectedFoundingSchema)
                 return "founding plan schema is " + founding.schemaVersion
-                    + ", expected 3";
-            if (!CACultureModel.TryUpgradeFromB10(founding.culture,
+                    + ", expected " + expectedFoundingSchema;
+            if (!CACultureModel.TryUpgradeToCurrent(founding.culture,
                     out CACulture culture, out string cultureFailure))
                 return "founding Culture: " + cultureFailure;
             if (!CAPoliticalBeliefsModel.TryUpgradeFromB10(

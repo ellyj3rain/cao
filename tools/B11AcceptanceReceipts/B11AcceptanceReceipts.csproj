@@ -11,6 +11,8 @@
              Link="SocialMeaningKernel.cs" />
     <Compile Include="..\..\Source\AuthoringOntologyKernel.cs"
              Link="AuthoringOntologyKernel.cs" />
+    <Compile Include="..\..\Source\CultureNativePracticeContractKernel.cs"
+             Link="CultureNativePracticeContractKernel.cs" />
     <Compile Include="..\..\Source\CampaignCompatibilityKernel.cs"
              Link="CampaignCompatibilityKernel.cs" />
     <Compile Include="..\..\Source\CampaignCompatibilityPreflightKernel.cs"

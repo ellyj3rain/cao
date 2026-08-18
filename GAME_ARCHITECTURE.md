@@ -615,11 +615,13 @@ Culture, political, knowledge, or behavior history.
 
 Native factions, Ideoligions, relations, things, rooms, work, policies, and acts
 remain the factual sources for CA authoring and interpretation. The social-subject
-registry names what a population evaluates. Cultural meanings store that
-evaluation. Concrete practices store repeated represented conduct and identify
-the native or CA evidence adapter and runtime consumer. Political Beliefs store
-normative mechanisms, while current order stores instituted mechanisms. Shared
-editor layout does not merge those records or grant authority to presentation.
+registry names what a population evaluates. Culture stores population-scoped
+question distributions, disagreement, practice, and history. Concrete practices
+store repeated represented conduct and identify the native or CA evidence
+adapter and runtime consumer. Political Order stores normative political and
+economic composition, while represented institutions store rules and mechanisms
+actually in force. Shared editor layout does not merge those records or grant
+authority to presentation.
 
 The authoring projection caches immutable registry slices and applies category
 navigation only when multiple human-relevant groups contain enough entries to

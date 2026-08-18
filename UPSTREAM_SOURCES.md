@@ -37,6 +37,7 @@ guessed.
 
 | Source | Position |
 |---|---|
+| Ideology: More Precepts | Source-audited at `github.com/llunak/rimworld-moreprecepts`, commit `33eab9398d7acc608e11dd7390476fefc4f433f5`; RimWorld-EULA terms with MIT for clearly original content. No code or assets incorporated. CA provides optional exact package/kind/`defName` semantic compatibility for audited definitions; the mod remains independently installed and natively executed. |
 | Vanilla Expanded Framework, Vanilla Furniture Expanded, Vanilla Trading Expanded | **CC BY-NC-ND.** Nothing used. VTE is a compatibility target only — CA influences price through the game's own virtual `Tradeable.GetPriceFor`, never by touching their code. |
 | Hospitality, Storefront, Gastronomy, RimBank, Empire, Simple Warrants, Law and Order, Yayo's Bank | Audited and traced, not incorporated. See `PRIOR_ART_TRACES.md`. |
 

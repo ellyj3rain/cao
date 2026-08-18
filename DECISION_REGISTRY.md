@@ -2548,3 +2548,39 @@
   availability, and supported B14-to-B15 owner and pending-plan migration.
   Migration initializes only represented capability at the upgrade boundary and
   invents no earlier carriers, teaching, loss, archives, or research history.
+
+- **DR-174** (2026-08-18) - **Playable social facts retain separate canonical
+  owners.** Native Ideoligion owns explicit doctrine, sacred or prohibited
+  conduct, ritual, memes, precepts, roles, and prescriptions. Culture owns
+  population appraisal, distributions, disagreement, and historical drift.
+  Political Order owns beliefs about legitimate political and economic
+  arrangements. Represented institutions own rules and mechanisms in force.
+  Practice owns repeated represented conduct. Agreement or conflict between
+  these facts is meaningful state; none is derived as a replacement for another.
+
+- **DR-175** (2026-08-18) - **Native and supported-mod semantics require exact
+  registered identity.** An Ideoligion adapter matches package ID, definition
+  kind, and `defName`; a native-practice adapter matches package ID and exact
+  `HistoryEventDef`. Known mappings may contribute bounded Culture evidence,
+  while unknown or changed definitions remain native facts. Labels,
+  descriptions, prefixes, and similar names never establish semantics. RimWorld
+  remains the executor of native doctrine and conduct.
+
+- **DR-176** (2026-08-18) - **Occurrence, practice, and approval are separate
+  evidence layers.** Exact native occurrences retain event, actor, faction, map,
+  and tick provenance in the Culture-longitudinal owner after native execution.
+  One occurrence is not a practice. Only repeated represented conduct may
+  establish practice evidence, and neither occurrence nor practice establishes
+  Culture approval. Doctrine can pressure a Culture appraisal without becoming
+  that appraisal.
+
+- **DR-177** (2026-08-18) - **B16 matures Culture through reverse playable-
+  mechanics coverage.** Culture question registry 3 contains forty-eight
+  questions in twelve categories as the present audit result rather than a
+  quota. Catalog 5 advances the map Culture-longitudinal and adjacent faction,
+  founding, and regional owners. Compatible migration preserves every complete
+  registry-2 row and adds only neutral, low-confidence, explicitly unobserved
+  state. The governed fixture's one non-constituent sparse row is preserved as
+  exact legacy evidence by a scoped fixture repair; generic migration remains
+  strict. This completes the existing Culture line as kohai unit `VU-043` and
+  derives `1.6.1.0-alpha`.

@@ -9,13 +9,17 @@ namespace ColonistAwareness
         public string QuestionKey;
         public float Mean;
         public float Salience;
+        public float SourceConfidence;
+        public string Evidence;
 
         public CACulturePresetValue(string questionKey, float mean,
-            float salience)
+            float salience, float sourceConfidence, string evidence)
         {
             QuestionKey = questionKey;
             Mean = mean;
             Salience = salience;
+            SourceConfidence = sourceConfidence;
+            Evidence = evidence;
         }
     }
 
@@ -60,7 +64,10 @@ namespace ColonistAwareness
             if (Values.Any(value => value == null
                     || CACultureQuestionRegistry.Find(value.QuestionKey) == null
                     || value.Mean < -1f || value.Mean > 1f
-                    || value.Salience < 0f || value.Salience > 1f)
+                    || value.Salience < 0f || value.Salience > 1f
+                    || value.SourceConfidence < 0f
+                    || value.SourceConfidence > 1f
+                    || string.IsNullOrWhiteSpace(value.Evidence))
                 || Values.GroupBy(value => value.QuestionKey,
                     StringComparer.Ordinal).Any(group => group.Count() != 1))
                 return "preset contains an invalid or duplicated question";
@@ -131,8 +138,8 @@ namespace ColonistAwareness
                 distribution.toleranceForDivergence =
                     preset.DivergenceTolerance;
                 distribution.visibility = 0.65f;
-                distribution.sourceConfidence = 0.68f;
-                distribution.provenance = "built-in Culture preset: "
+                distribution.sourceConfidence = value.SourceConfidence;
+                distribution.provenance = "built-in Culture authoring prior: "
                     + preset.Key;
                 distribution.sourceIdentity = sourceIdentity
                     ?? "preset:" + preset.Key;
@@ -140,7 +147,7 @@ namespace ColonistAwareness
                     CASocialPatternKernel.StableHash(preset.Key + "|"
                         + value.QuestionKey + "|" + value.Mean.ToString(
                             "0.000", System.Globalization.CultureInfo
-                                .InvariantCulture));
+                                .InvariantCulture) + "|" + value.Evidence);
                 return distribution;
             }).ToList();
             culture.localQuestions = culture.localQuestions
@@ -418,18 +425,22 @@ namespace ColonistAwareness
             string sources, string summary, string rationale, int diversity,
             float normStrength, float tolerance, params float[] means)
         {
+            if (means.Length == CACultureQuestionRegistry.LegacyQuestionCount)
+                means = means.Concat(B16Means(key)).ToArray();
             if (means.Length != CACultureQuestionRegistry.FixedQuestionCount)
                 throw new InvalidOperationException("Culture preset " + key
                     + " has " + means.Length + " means, expected "
                     + CACultureQuestionRegistry.FixedQuestionCount + ".");
             IReadOnlyList<CACultureQuestionDef> questions =
                 CACultureQuestionRegistry.All;
-            var values = new List<CACulturePresetValue>(means.Length);
+            var values = new List<CACulturePresetValue>(
+                CACultureQuestionRegistry.FixedQuestionCount);
             for (int i = 0; i < means.Length; i++)
             {
                 float salience = 0.48f + Math.Abs(means[i]) * 0.28f;
                 values.Add(new CACulturePresetValue(questions[i].Key,
-                    means[i], Math.Min(0.90f, salience)));
+                    means[i], Math.Min(0.90f, salience), 0.34f,
+                    "Contextual authoring estimate informed by the preset source list; not a fitted question-level measurement."));
             }
             return new CACulturePresetDef
             {
@@ -447,6 +458,120 @@ namespace ColonistAwareness
                 DivergenceTolerance = tolerance,
                 Values = values
             };
+        }
+
+        // Registry order 24..47: sexual conduct, marriage naming, childhood,
+        // age, doctrine, xenotype, work, acquisition, violence, male and
+        // female exposure, alteration, integrity, pain, remains, human flesh,
+        // animal food, food adaptability, drugs, animal standing, resources,
+        // settlement, comfort, machines. These are authored priors, not
+        // measurements of every person represented by a historical label.
+        private static float[] B16Means(string key)
+        {
+            switch (key)
+            {
+                case "mobile-kin-band": return V(
+                    .15f, 0f, .30f, .55f, .15f, -.10f, .60f, .15f,
+                    .20f, .35f, .25f, .10f, .20f, .15f, .60f, -.75f,
+                    .70f, .75f, .20f, .40f, .65f, -.45f, -.35f, -.70f);
+                case "ranked-agrarian-households": return V(
+                    -.35f, -.65f, -.05f, .70f, -.30f, .45f, .65f, .15f,
+                    .25f, -.45f, -.65f, -.15f, .10f, .20f, .70f, -.80f,
+                    .65f, .25f, -.15f, .15f, .15f, .80f, .05f, -.90f);
+                case "civic-market-town": return V(
+                    .30f, 0f, .55f, .10f, .45f, -.25f, .50f, -.65f,
+                    -.25f, -.15f, -.15f, .25f, .65f, -.25f, .55f, -.90f,
+                    .45f, .60f, .15f, .40f, .30f, .75f, .55f, .10f);
+                case "central-court-society": return V(
+                    -.40f, -.70f, .10f, .70f, -.35f, .50f, .65f, .45f,
+                    .45f, -.55f, -.75f, .20f, -.10f, .45f, .75f, -.80f,
+                    .65f, .45f, .25f, .05f, -.10f, .75f, .55f, .05f);
+                case "frontier-mutual-aid": return V(
+                    .25f, 0f, .45f, .20f, .40f, -.20f, .75f, -.10f,
+                    .15f, .25f, .15f, .15f, .55f, -.25f, .55f, -.85f,
+                    .70f, .80f, .25f, .35f, .40f, .70f, -.10f, -.20f);
+                case "industrial-civic-association": return V(
+                    .20f, -.10f, .60f, .05f, .45f, -.30f, .75f, -.70f,
+                    -.30f, -.20f, -.25f, .45f, .70f, -.35f, .50f, -.90f,
+                    .50f, .65f, .15f, .35f, .25f, .85f, .65f, .75f);
+                case "united-states-postwar-mid-century": return V(
+                    -.55f, -.70f, .55f, .35f, .15f, -.45f, .70f, -.75f,
+                    -.20f, -.65f, -.85f, .20f, .60f, -.35f, .65f, -.95f,
+                    .70f, .45f, -.15f, .20f, .15f, .85f, .65f, .50f);
+                case "united-states-turn-millennium": return V(
+                    .20f, -.10f, .70f, 0f, .55f, -.35f, .65f, -.80f,
+                    -.30f, -.15f, -.20f, .45f, .75f, -.40f, .60f, -.95f,
+                    .45f, .70f, .10f, .45f, .35f, .80f, .75f, .80f);
+                case "united-states-contemporary": return V(
+                    .55f, .05f, .80f, 0f, .70f, -.30f, .60f, -.85f,
+                    -.25f, .10f, .10f, .55f, .80f, -.45f, .65f, -.95f,
+                    .35f, .80f, .25f, .55f, .55f, .70f, .80f, .90f);
+                case "english-north-america-early-colonial": return V(
+                    -.80f, -.85f, -.10f, .55f, -.65f, .45f, .80f, .15f,
+                    .35f, -.80f, -.90f, -.30f, .35f, .25f, .85f, -.95f,
+                    .75f, -.20f, -.45f, .05f, .25f, .90f, -.15f, -.95f);
+                case "united-states-civil-war-union": return V(
+                    -.75f, -.80f, .15f, .25f, -.10f, -.35f, .75f, .10f,
+                    .55f, -.70f, -.85f, -.20f, .45f, .35f, .75f, -.95f,
+                    .75f, .10f, -.35f, .10f, .10f, .90f, -.10f, -.90f);
+                case "confederate-slaveholding-dominant-culture": return V(
+                    -.85f, -.90f, -.55f, .65f, -.75f, .90f, .80f, .55f,
+                    .70f, -.80f, -.95f, -.25f, -.55f, .45f, .70f, -.90f,
+                    .75f, -.25f, -.40f, -.15f, -.20f, .95f, .15f, -.95f);
+                case "freedpeople-emancipation-communities": return V(
+                    -.45f, -.45f, .70f, .45f, .65f, -.80f, .85f, -.75f,
+                    -.10f, -.65f, -.75f, -.20f, .80f, -.35f, .85f, -.95f,
+                    .65f, .20f, -.35f, .25f, .30f, .80f, -.20f, -.90f);
+                case "france-napoleonic-empire": return V(
+                    -.75f, -.85f, .10f, .40f, -.45f, -.20f, .85f, .25f,
+                    .55f, -.75f, -.90f, .15f, .30f, .25f, .75f, -.95f,
+                    .70f, .15f, -.15f, .05f, .05f, .85f, .25f, -.85f);
+                case "france-second-empire": return V(
+                    -.60f, -.75f, .30f, .25f, -.25f, -.30f, .80f, -.40f,
+                    .25f, -.65f, -.80f, .25f, .45f, -.20f, .65f, -.95f,
+                    .65f, .35f, -.05f, .15f, .10f, .85f, .50f, -.60f);
+                case "germany-weimar-republic": return V(
+                    .20f, -.20f, .70f, 0f, .70f, -.55f, .65f, -.65f,
+                    -.35f, -.20f, -.30f, .45f, .70f, -.30f, .60f, -.95f,
+                    .50f, .65f, .10f, .40f, .35f, .75f, .55f, .55f);
+                case "germany-national-socialist-dictatorship": return V(
+                    -.90f, -.85f, -.95f, .65f, -.98f, .98f, .95f, .85f,
+                    .95f, -.65f, -.85f, .55f, -.90f, .85f, -.20f, -.85f,
+                    .70f, -.10f, .20f, -.80f, -.70f, .90f, .20f, .45f);
+                case "japan-late-tokugawa": return V(
+                    -.80f, -.90f, .05f, .80f, -.65f, .50f, .75f, -.25f,
+                    .35f, -.70f, -.90f, -.10f, .30f, .35f, .80f, -.95f,
+                    .70f, .35f, -.20f, .15f, .35f, .90f, .10f, -.90f);
+                case "japan-meiji-transformation": return V(
+                    -.70f, -.80f, .35f, .40f, -.20f, -.15f, .90f, -.20f,
+                    .55f, -.65f, -.85f, .25f, .40f, .30f, .65f, -.95f,
+                    .65f, .55f, -.05f, .15f, .20f, .85f, .30f, .40f);
+                case "qing-china-late-imperial": return V(
+                    -.85f, -.90f, -.10f, .85f, -.60f, .55f, .80f, -.20f,
+                    .35f, -.80f, -.95f, -.20f, .20f, .40f, .85f, -.95f,
+                    .70f, .25f, -.25f, .10f, .30f, .90f, .05f, -.90f);
+                case "ottoman-empire-tanzimat": return V(
+                    -.75f, -.80f, .20f, .55f, -.15f, .25f, .85f, -.15f,
+                    .45f, -.75f, -.90f, .10f, .35f, .35f, .75f, -.95f,
+                    .65f, .40f, -.10f, .15f, .15f, .85f, .25f, -.45f);
+                case "mughal-india-akbar": return V(
+                    -.70f, -.75f, .15f, .65f, .35f, .20f, .80f, -.05f,
+                    .35f, -.70f, -.85f, .10f, .30f, .30f, .80f, -.95f,
+                    .60f, .50f, -.10f, .20f, .25f, .85f, .30f, -.80f);
+                default:
+                    throw new InvalidOperationException("Culture preset " + key
+                        + " has no B16 mechanical-coverage composition.");
+            }
+        }
+
+        private static float[] V(params float[] values)
+        {
+            if (values.Length != CACultureQuestionRegistry.FixedQuestionCount
+                    - CACultureQuestionRegistry.LegacyQuestionCount)
+                throw new InvalidOperationException(
+                    "B16 Culture preset completion has " + values.Length
+                        + " values, expected 24.");
+            return values;
         }
     }
 

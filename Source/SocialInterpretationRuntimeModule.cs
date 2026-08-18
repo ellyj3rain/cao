@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
@@ -246,13 +247,16 @@ namespace ColonistAwareness
             };
             reactions.Add(recorded);
             IndexReaction(recorded);
-            string exposedQuestion = CACultureQuestionRegistry
-                .QuestionForSocialSubject(fact.SubjectKey);
-            if (!exposedQuestion.NullOrEmpty()
+            string[] exposedQuestions = CACultureQuestionRegistry
+                .AdaptersForSocialSubject(fact.SubjectKey)
+                .Select(value => value.QuestionKey)
+                .Distinct(StringComparer.Ordinal).ToArray();
+            if (exposedQuestions.Length > 0
                 && int.TryParse(fact.ActorIdentity, out int sourcePawnId))
             {
-                cognition?.RecordQuestionExposure(pawn, sourcePawnId,
-                    exposedQuestion, fact.Tick);
+                foreach (string exposedQuestion in exposedQuestions)
+                    cognition?.RecordQuestionExposure(pawn, sourcePawnId,
+                        exposedQuestion, fact.Tick);
                 if (CAPoliticalEvidenceMap.TryFor(fact, out string axis,
                         out _, out _))
                     cognition?.RecordPoliticalExposure(pawn, sourcePawnId,
@@ -261,10 +265,9 @@ namespace ColonistAwareness
             CAInstitutionSanctionRuntime.Observe(fact, pawn,
                 populationIdentity, institutionalOrganizationIdentity,
                 response);
-            if (!exposedQuestion.NullOrEmpty())
-                cognition?.RefreshRepresentedEvidence(pawn,
-                    exposedQuestion, fact.Tick, null,
-                    institutionalOrganizationIdentity);
+            foreach (string exposedQuestion in exposedQuestions)
+                cognition?.RefreshRepresentedEvidence(pawn, exposedQuestion,
+                    fact.Tick, null, institutionalOrganizationIdentity);
             CAModuleProfiler.Observe(
                 CAModuleProfileKey.SocialInterpretation,
                 objectsExamined: 1, candidatesAccepted: 1);

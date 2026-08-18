@@ -6,7 +6,7 @@ institutions, beliefs, and authority. Factions make decisions and carry their
 consequences forward instead of resetting to isolated game events.
 
 <!-- cao:generated:version BEGIN -->
-Current version: `1.6.0.0-alpha`. Implementation is complete through batch `B15`; `B16` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.
+Current version: `1.6.1.0-alpha`. Implementation is complete through batch `B16`; `B17` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.
 <!-- cao:generated:version END -->
 
 ## Framework
@@ -80,18 +80,20 @@ source-truncated fragments remain quarantined from complete-base evidence.
 
 Culture is persistent social history with substantive inherited state. Its
 current admitted authoring registry is a population distribution over
-twenty-four explicit questions in eight categories: relationships and family, gender and
-social authority, status and hierarchy, membership and outsiders, public
-authority and social order, property and provision, violence and punishment,
-and knowledge and tradition. Each question has five ordered anchors, a center,
+forty-eight explicit questions in twelve categories: relationships, family, and
+sexuality; gender and social authority; status and hierarchy; membership and
+outsiders; public authority and social order; property, labor, and provision;
+violence, captivity, and punishment; knowledge and tradition; body, health, and
+death; food and substances; animals and environment; and daily life and
+technology. Each question has five ordered anchors, a center,
 population spread, norm and evidence settings, provenance, historical feedback,
-and material consumers. This is the current internally complete registry, not
-evidence that every culturally variable RimWorld mechanic has already been
-interpreted. Concrete social subjects remain factual referents;
+and material consumers. The registry is the current result of a reverse audit
+from playable Core, DLC, CA, and explicitly supported-mod mechanics; its size is
+not a permanent quota. Concrete social subjects remain factual referents;
 practices remain repeated conduct with actors, conditions, authority, materials,
 evidence, and consumers. Neither is silently promoted into a Culture question.
 
-The Culture composer groups all eight categories, exposes one Overall
+The Culture composer groups all twelve categories, exposes one Overall
 disagreement control, and keeps per-value disagreement under More. Twenty-two
 complete historical and social presets across the Americas, Europe, and Asia,
 manual editing, saved profiles, and
@@ -222,12 +224,14 @@ changes require a full RimWorld restart.
 | `MODULE_OWNERSHIP.md` | Authoritative module, mutation, cadence, cache, and diagnostics ownership |
 | `SCHEMA_REGISTRY.md`, `PERSISTENCE_CENSUS.md`, `CAMPAIGN_COMPATIBILITY.md` | Durable campaign schema, independent source-writer census, preflight, migration, update, and rollback contracts |
 | `AUTHORING_ONTOLOGY_COVERAGE.md` | Production social/political vocabulary, mechanics coverage, control contracts, categories, and exclusions |
-| `B13_CAUSAL_CONTRACT.md`, `CULTURE_RESEARCH_CORPUS.md` | Current admitted twenty-four-question Culture registry, source basis, causal separations, consumers, feedback, and calibration limits; not an exhaustive playable-mechanics audit |
+| `B16_PLAYABLE_SOCIAL_ONTOLOGY_AUDIT.md`, `AUTHORING_ONTOLOGY_COVERAGE.md` | Current forty-eight-question Culture registry, exact Ideoligion and native-event semantic adapters, ownership audit, mechanics coverage, consumers, and fail-closed mod boundary |
+| `B13_CAUSAL_CONTRACT.md` | Historical twenty-four-question B13 Culture boundary retained beneath B16 |
+| `CULTURE_RESEARCH_CORPUS.md` | Current Culture research and playable-mechanics corpus: B13 source basis plus B16 reverse ownership audit, causal separations, consumers, feedback, and calibration limits |
 | `REGIONAL_GEOGRAPHY_CONTRACT.md` | Shared B14 preview and generation identity, supported geography combinations, and fail-closed realization rules |
 | `B15_TECHNOLOGICAL_KNOWLEDGE_CONTRACT.md` | Faction-owned technological domains, Society composition, native translation, and standard/distributed availability |
 | `PLAYER_BASE_PATTERN_CORPUS.md`, `Corpus/PlayerBaseLayouts/`, `tools/PlayerBaseLayoutExtractor/` | Full-save and structured-snapshot layouts, exact provenance and evidence limits, normalized spatial data, and reusable construction relationships; no copied plan or style mode |
 | `CULTURAL_COGNITION_RESEARCH.md`, `B12_CULTURE_QUESTION_AUDIT.md` | B12 research and migration evidence retained beneath the B13 completion |
-| `B13_ACCEPTANCE_RECEIPTS.md`, `B13_REVIEW_RECEIPT.md`, `Receipts/B14/`, `Receipts/B15/` | Executable closure, retained-regression, independent review, fixture, build, and deployment evidence |
+| `B13_ACCEPTANCE_RECEIPTS.md`, `B13_REVIEW_RECEIPT.md`, `Receipts/B14/`, `Receipts/B15/`, `Receipts/B16/` | Executable closure, retained-regression, review, fixture, build, and deployment evidence |
 
 ## Project history
 

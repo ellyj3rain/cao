@@ -760,9 +760,9 @@ history.
 `AuthoringOntologyKernel` owns immutable semantic-kind, production-vocabulary,
 complete-preset, category-cardinality, and control-contract registries. It does not
 own Culture, political, faction, settlement, or world state. The current
-production inventory contains 45 social referents, 30 concrete practices, 110
+production inventory contains 45 social referents, 55 concrete practices, 110
 question-scoped political positions, 8 complete Political Order presets, 32 explicit
-control contracts, and 24 Culture questions in eight categories. `AUTHORING_ONTOLOGY_COVERAGE.md`
+control contracts, and 48 Culture questions in twelve categories. `AUTHORING_ONTOLOGY_COVERAGE.md`
 maps the active mechanics,
 sources, consumers, category counts, duplicate-surface audit, and exclusions.
 
@@ -778,6 +778,14 @@ question evidence persists its measured position, spread, represented
 population, continuity, and source identity once in the Culture observation
 ledger before stable pawn appraisal. Expertise deference uses an explicit
 demonstrated-skill map for every built-in factual subject.
+
+`CAIdeoligionSemanticAdapterRegistry` is the exact doctrine-to-evidence boundary.
+It matches package ID, definition kind, and `defName`; native or modded labels
+never imply semantics. `CANativeCultureEventAdapterRegistry` observes exact
+native events only after RimWorld executes them and writes bounded occurrence
+provenance through `CACultureLongitudinalMapComponent`. Doctrine, population
+appraisal, rules in force, and repeated practice therefore remain independently
+owned even when they describe the same conduct.
 
 `CACulturalCognitionWorldComponent`, `CAPoliticalCognitionWorldComponent`, and
 `CAPropositionKnowledgeWorldComponent` separately own psychology/attitudes/

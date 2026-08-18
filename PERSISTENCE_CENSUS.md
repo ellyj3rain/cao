@@ -1,10 +1,10 @@
 # Persistence census
 
-Date: 2026-08-17
+Date: 2026-08-18
 
 This report is generated from production C# source, independently of the campaign schema catalog. It discovers declarations that directly write through `Scribe`, call a nested `Expose` writer, or inherit a native persisted job/lord/need/thought/world/scenario owner. Every discovered carrier must resolve to an executable catalog schema or a narrow, stated non-campaign exclusion.
 
-- Discovered persistence carriers: **257**
+- Discovered persistence carriers: **258**
 - Catalog schemas reached from source carriers: **87**
 - Explicit non-campaign exclusions: **5**
 - Unclassified or invalid routes: **0**
@@ -89,6 +89,7 @@ This report is generated from production C# source, independently of the campaig
 | `ColonistAwareness.CAPoliticalIssueLink` in `Source/CulturalPoliticsStateModule.cs` | direct Scribe/nested Expose writer | `world.political-cognition` | **PASS** |
 | `ColonistAwareness.CAPoliticalOptionSupport` in `Source/CulturalPoliticsStateModule.cs` | direct Scribe/nested Expose writer | `world.political-cognition` | **PASS** |
 | `ColonistAwareness.CACultureLongitudinalMapComponent` in `Source/CultureLongitudinalModule.cs` | direct Scribe/nested Expose writer | `map.culture-longitudinal` | **PASS** |
+| `ColonistAwareness.CANativeCultureEventRecord` in `Source/CultureNativePracticeModule.cs` | direct Scribe/nested Expose writer | `map.culture-longitudinal` | **PASS** |
 | `ColonistAwareness.CAAgentDebugBridge` in `Source/DevTestModule.cs` | direct Scribe/nested Expose writer | Excluded: developer-only diagnostic state with no campaign causal authority | **PASS** |
 | `ColonistAwareness.CADomesticMembership` in `Source/DomesticUnitModule.cs` | direct Scribe/nested Expose writer | `model.domestic-unit` | **PASS** |
 | `ColonistAwareness.CADomesticMembershipTransition` in `Source/DomesticUnitModule.cs` | direct Scribe/nested Expose writer | `model.domestic-unit` | **PASS** |

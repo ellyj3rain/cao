@@ -9,7 +9,7 @@ and setup UI use the same terms.
 | Level | Saved facts |
 |---|---|
 | Region | selected world areas, arrival area, world tendencies, settlement pattern, principal settlement scale, regional relation pattern, frontier holdings |
-| Faction | source faction, substantive inherited Culture, optional visual tradition, native Ideoligion receipt, normative Political Beliefs, instituted current order, settlement authority, faction era |
+| Faction | source faction, canonical Culture, Political Order, Technological Knowledge, optional visual tradition, native Ideoligion receipt, represented institutions, settlement authority, faction era |
 | Settlement | owning faction, world area, population origin, resident population, land capacity, role, form, realized access, services, civic state, economy, trade, specialization, historical development, scale, population groups, settlement program, provision arrangements, local Culture |
 | Faction relation | left faction, right faction, realized relation, authored/generated provenance |
 | Frontier holding | world area, household size, land capacity, material level, form, faction status |
@@ -50,10 +50,11 @@ Generation consumes one confirmed candidate in this order:
    them, and persist faction relations. Starting-region rows retain authored
    count, positions, owners, and relation overrides.
 3. Resolve each established faction's substantive Culture, native Ideoligion,
-   Political Beliefs, current order, settlement authority, and temporal
-   basis. Resolve the player's inherited Culture and Political Beliefs, retain
-   the native Ideoligion receipt, and materialize only the exact rules adopted at
-   landing. Broader player structure remains unset until play establishes it.
+   Political Order, Technological Knowledge, represented institutions,
+   settlement authority, and temporal basis. Resolve the player's inherited
+   Culture, Political Order, and Technological Knowledge, retain the native
+   Ideoligion receipt, and materialize only the exact founding rules adopted at
+   landing. Broader player institutions remain unset until play establishes them.
 4. Resolve each settlement's population, land, role, form, access, services,
    civic state, economy, trade, specialization, and history. Derive one open
    settlement program from those facts and loaded functional asset contracts.
@@ -62,7 +63,8 @@ Generation consumes one confirmed candidate in this order:
    pattern from those facts.
 6. Generate or retain population groups and causal provision arrangements with
    real household, communal, or authority operators.
-7. Derive material capability from faction era and local supports.
+7. Resolve practical capability from faction-owned Technological Knowledge and
+   the local people, materials, access, and facilities able to exercise it.
 8. Establish each existing settlement's directly authored local Culture
    baseline: constituents, inherited/local question distributions, current
    practices, plurality, legacy evidence, and disagreement. Do not fabricate
@@ -99,15 +101,16 @@ durable repeated conduct with actors, target, trigger or cadence, operator,
 authority, setting, material conditions, evidence, consumer, provenance, and
 implicated subjects. A factual subject does not become a question or practice.
 
-The production vocabulary contains 24 Culture questions in eight categories,
-45 factual social referents, and 30 concrete practices derived from the active mechanics inventory.
+The production vocabulary contains 48 Culture questions in twelve categories,
+45 factual social referents, and 55 concrete practices derived from the active
+mechanics inventory and the reverse playable-ontology audit.
 Every Culture question identifies a coherent construct, direct authoring fact,
 constraints, migration rule, and real consumer. Every referent and practice has a
 factual source and consumer. An open registration contract remains
 representational capacity, not evidence that unsupported future content exists.
 
 The same Culture composer serves player founding, established factions, and
-settlements at their different temporal scopes. It exposes constituents, eight
+settlements at their different temporal scopes. It exposes constituents, twelve
 question categories, five descriptive anchors per question, one global
 diversity control, advanced per-question spread, complete historical/social
 presets, deterministic randomization, inherited and current concrete practices,
@@ -119,31 +122,32 @@ practice. Saved Culture profiles copy inherited distributions, practices, and
 optional visual tradition without locality,
 observations, transitions, evidence, or a live profile pointer.
 
-## Political Beliefs and realized order
+## Political Order and represented institutions
 
-Political Beliefs and current order use the same thirteen comparison subjects:
-leadership, decisions, participation, dissent, ownership, economy, work,
-support, membership, status, local order, defense, and conduct in war. Beliefs
-record what a population considers proper. Current order records instituted
-mechanisms. Agreement and contradiction are both valid state.
+Political Order records what political and economic arrangements a population
+regards as proper. It covers twenty-six questions: authority and decisions;
+political voice, liberty, status, and membership; twelve distinct ownership
+domains; exchange, credit, rent, work, and basic provision; and local security,
+defense, and conduct in conflict. A blendable question is one normalized
+100-point composition over compatible positions. An exclusive question selects
+one position. Complete presets and deterministic generation populate the same
+state, after which every value remains editable. Generated names, summaries,
+and accounts are projections rather than saved political facts.
 
-Each subject is independently composable and may carry several compatible
-mechanisms. Only explicit absence on leadership, local order, or defense excludes
-standing mechanisms on that same subject. Twelve belief sets and ten current-order
-sets are transparent partial accelerators. Each declares its exact mechanisms,
-adds those mechanisms to a copy, and preserves unlisted and already-authored
-compatible facts. Set identity never enters world identity, later saved-set edits
-cannot mutate a world, and missing player positions are never filled randomly.
+Represented institutions are the separate rules and mechanisms actually in
+force. Existing factions may begin with offices, decision bodies, work rules,
+provision systems, property facts, and security institutions because their
+history predates the scenario. Founders begin with Political Order and one
+chosen Founding Arrangement; later institutions develop through play. Agreement
+and contradiction between the normative composition and instituted facts are
+both valid state.
 
-NPC generation derives one axis only from:
-
-- the same subject in realized current order;
-- an explicit axis-specific observed fact; or
-- the corresponding non-neutral Culture question distribution where one exists.
-
-Every resolved axis records the causal evidence and stable tie-break. Unsupported
-axes remain unset. Technology, hostility, raids, trade reach, leader presence,
-and permanent-enemy status do not stand in for political beliefs.
+Generation may use represented institutional facts, exact observed evidence,
+or admitted Culture distributions as explicit inputs, but it does not silently
+derive Political Order from technology, hostility, raids, trade reach, leader
+presence, or permanent-enemy status. Every resolved question records its causal
+evidence and stable tie-break; unsupported inputs remain unset rather than being
+filled by proxy.
 
 Native Ideoligion remains first-class and separate. Its religious, ritual,
 moral, and spiritual semantics may contribute when they overlap a known social
@@ -154,8 +158,8 @@ authority, work, voice, and supply arrangement adopted at landing.
 
 Social facts do not create map-global knowledge. A pawn responds only when a
 real observation or communication route supplies the fact. Interpretation may
-retain separate contributions from Culture, Political Beliefs, native
-Ideoligion where relevant, personal state, institutions, and relationships.
+retain separate contributions from Culture, Political Order, native Ideoligion
+where relevant, personal state, institutions, and relationships.
 Contradictions remain visible.
 
 Pawn cultural state persists private position, public expression, perceived
@@ -253,11 +257,11 @@ supports.
 
 ## Persistence
 
-The current pending-authoring data epoch is `13`. The pending-plan schema is `14`; the
+The current pending-authoring data epoch is `14`. The pending-plan schema is `15`; the
 materialized settlement record uses schema `9`; settlement programs and entries
 use schema `4`; operational facts use schema `3`; program-asset receipts use
 schema `1`; provision arrangements use schema `5`; domestic units and residence
-use schema `1`; capability assessments use schema `2`; Culture uses schema `10`;
+use schema `1`; capability assessments use schema `2`; Culture uses schema `11`;
 Political Order uses schema `10`; Technological Knowledge uses schema `1`;
 player founding uses schema `4`. The plan writes
 factions, settlements, population groups, programs, provision arrangements,
@@ -267,15 +271,19 @@ realization state, and the player-founding object directly.
 Pending authoring remains pre-release and an epoch mismatch may reject an
 unconfirmed regional draft, founding draft, or reusable set with one diagnostic.
 It cannot clear realized Culture, Political Order, Technological Knowledge,
-represented institutions, social interpretation, or campaign history. Live B15
+represented institutions, social interpretation, or campaign history. Live B16
 state follows the durable campaign manifest and explicit compatibility contract.
-The governed B15 fixture contains
+The governed B16 fixture contains
 intentional world, region, candidate, arrival, scale, faction, settlement,
 population, and 19 explicitly established operational facts. On load it enters
 the same production realization path as an operator-authored draft; the fixture
 generator calls the production authoring kernel and contains no parallel causal
 model. Its active and keyed surfaces preserve three factions, four settlements,
-nine population groups, nineteen established operations, 192 complete root
-Culture question distributions, 2 authored local distributions, and 26
-preserved evidence records under epoch 13, regional-plan schema 14, and Culture
-registry 2.
+four current population assignments, nineteen established operations, and 577
+serialized inherited/local Culture rows. Every one of the 12 valid represented
+owner/scope pairs contains all 48 registry questions; 576 inherited rows, one
+authored local distribution, and 26 preserved legacy-evidence records remain
+under epoch 14, regional-plan schema 15, Culture schema 11, and Culture registry
+3. Of the 290 serialized pre-B16 Culture rows, 289 remain exact live state and
+one sparse row whose population is no longer a settlement constituent remains
+exact legacy evidence.

@@ -4,6 +4,40 @@ using System.Linq;
 
 namespace ColonistAwareness
 {
+    public readonly struct CAIdeoligionPressureSummary
+    {
+        public readonly float Center;
+        public readonly float Intensity;
+        public readonly float Conflict;
+
+        public CAIdeoligionPressureSummary(float center, float intensity,
+            float conflict)
+        {
+            Center = center;
+            Intensity = intensity;
+            Conflict = conflict;
+        }
+    }
+
+    public static class CAIdeoligionPressureKernel
+    {
+        public static CAIdeoligionPressureSummary Aggregate(
+            IEnumerable<float> pressures)
+        {
+            float[] values = (pressures ?? Enumerable.Empty<float>())
+                .Select(value => Math.Max(-1f, Math.Min(1f, value)))
+                .ToArray();
+            if (values.Length == 0)
+                return new CAIdeoligionPressureSummary(0f, 0f, 0f);
+            float center = values.Average();
+            float intensity = values.Average(value => Math.Abs(value));
+            float conflict = values.Length < 2 ? 0f : values.Average(value =>
+                Math.Abs(value - center));
+            return new CAIdeoligionPressureSummary(center,
+                Math.Min(1f, intensity), Math.Min(1f, conflict));
+        }
+    }
+
     public enum CACulturalBehaviorResponse : byte
     {
         Comply,
@@ -88,6 +122,8 @@ namespace ColonistAwareness
         public readonly float DirectEvidenceConfidence;
         public readonly float RepresentedEnforcement;
         public readonly float MoralExperience;
+        public readonly float DoctrineIntensity;
+        public readonly float DoctrineConflict;
 
         public CAAttitudeMaterializationInput(float sampledPrivatePosition,
             float populationMean, float descriptiveNormPrior,
@@ -101,7 +137,9 @@ namespace ColonistAwareness
             float psychologicalPositionShift = 0f,
             float directEvidenceConfidence = 0.35f,
             float representedEnforcement = 0f,
-            float moralExperience = 0f)
+            float moralExperience = 0f,
+            float doctrineIntensity = -1f,
+            float doctrineConflict = 0f)
         {
             SampledPrivatePosition = sampledPrivatePosition;
             PopulationMean = populationMean;
@@ -121,6 +159,9 @@ namespace ColonistAwareness
             DirectEvidenceConfidence = directEvidenceConfidence;
             RepresentedEnforcement = representedEnforcement;
             MoralExperience = moralExperience;
+            DoctrineIntensity = doctrineIntensity < 0f
+                ? Math.Abs(doctrinePressure) : doctrineIntensity;
+            DoctrineConflict = doctrineConflict;
         }
     }
 
@@ -656,7 +697,7 @@ namespace ColonistAwareness
             // lived moral evidence. Salience changes attention, not conviction
             // by itself.
             float conviction = MoralConviction(privatePosition,
-                input.DoctrinePressure, identity, input.MoralExperience);
+                input.DoctrineIntensity, identity, input.MoralExperience);
             float evidence = Clamp01(input.DirectEvidenceConfidence);
             float knowledgeConfidence = KnowledgeConfidence(evidence,
                 input.PsychologicalUncertainty,
@@ -664,6 +705,8 @@ namespace ColonistAwareness
             float uncertainty = KnowledgeUncertainty(evidence,
                 input.PsychologicalUncertainty,
                 input.EpistemicVigilance);
+            uncertainty = Clamp01(uncertainty
+                + Clamp01(input.DoctrineConflict) * 0.35f);
             return new CAAttitudeMaterializationResult(
                 privatePosition, attention, conviction, identity,
                 Clamp01(input.SourceConfidence), knowledgeConfidence,

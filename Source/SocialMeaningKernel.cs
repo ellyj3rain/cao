@@ -780,7 +780,11 @@ namespace ColonistAwareness
                 || string.IsNullOrWhiteSpace(fact.FactIdentity)
                 || string.IsNullOrWhiteSpace(fact.KnowledgeSource)
                 || string.IsNullOrWhiteSpace(pawnIdentity)
-                || CASocialSubjectRegistry.Find(fact.SubjectKey) == null)
+                || (CASocialSubjectRegistry.Find(fact.SubjectKey) == null
+                    && (CACulturalPracticeRegistry.Find(fact.SubjectKey) == null
+                        || CACultureQuestionRegistry
+                            .AdaptersForSocialSubject(fact.SubjectKey).Count
+                                == 0)))
                 return null;
             string key = fact.FactIdentity + "|" + pawnIdentity;
             if ((existingFactPawnKeys ?? Enumerable.Empty<string>())
@@ -894,7 +898,12 @@ namespace ColonistAwareness
         // resolve through SubjectKey and the registry adapter.
         public string QuestionKey;
         public string PopulationIdentity;
-        public int WeightedApproval;
+        // Signed observed position. AppraisalEvidence distinguishes an
+        // expressed social judgment from a represented arrangement or
+        // repeated state; the latter may update a descriptive norm but cannot
+        // manufacture approval or condemnation.
+        public int WeightedPosition;
+        public bool AppraisalEvidence = true;
         public float Dispersion;
         public float Polarization;
         public float Participation;
@@ -950,7 +959,7 @@ namespace ColonistAwareness
                 {
                     SubjectKey = group.Key.SubjectKey,
                     PopulationIdentity = group.Key.Scope,
-                    WeightedApproval = (int)Math.Round(mean,
+                    WeightedPosition = (int)Math.Round(mean,
                         MidpointRounding.AwayFromZero),
                     Dispersion = Math.Min(1f,
                         (float)Math.Sqrt(variance) / 100f),
@@ -976,7 +985,7 @@ namespace ColonistAwareness
                 .GroupBy(value => value.SubjectKey))
             {
                 float[] means = subject.Select(value =>
-                    (float)value.WeightedApproval).ToArray();
+                    (float)value.WeightedPosition).ToArray();
                 float cross = means.Length <= 1 ? 0f
                     : (means.Max() - means.Min()) / 200f;
                 foreach (CASocialGroupPattern pattern in subject)
@@ -1071,8 +1080,8 @@ namespace ColonistAwareness
                         Normality = (int)Math.Round(pattern.Participation * 100f),
                         Salience = (int)Math.Round(Math.Min(1f,
                             pattern.Dispersion + pattern.Participation) * 100f),
-                        Approval = pattern.WeightedApproval,
-                        Prestige = pattern.WeightedApproval / 2,
+                        Approval = pattern.WeightedPosition,
+                        Prestige = pattern.WeightedPosition / 2,
                         EvidenceSignature = pattern.EvidenceSignature
                     };
                     result.Add(current);
@@ -1087,11 +1096,11 @@ namespace ColonistAwareness
                         pattern.EvidenceSignature,
                         StringComparison.Ordinal)) continue;
                 int approval = Blend(current.Approval,
-                    pattern.WeightedApproval);
+                    pattern.WeightedPosition);
                 int normality = Blend(current.Normality,
                     (int)Math.Round(pattern.Participation * 100f));
                 int prestige = Blend(current.Prestige,
-                    pattern.WeightedApproval / 2);
+                    pattern.WeightedPosition / 2);
                 int salience = Blend(current.Salience,
                     (int)Math.Round(Math.Min(1f, pattern.Dispersion
                         + pattern.Participation) * 100f));

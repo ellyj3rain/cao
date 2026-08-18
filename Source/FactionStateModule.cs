@@ -83,7 +83,7 @@ namespace ColonistAwareness
 
     public sealed class CAFactionStateWorldComponent : WorldComponent
     {
-        private int campaignSchemaVersion = 3;
+        private int campaignSchemaVersion = 4;
         private int legacyAuthoringDataEpoch =
             CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private List<CAFactionState> factionStates =
@@ -192,7 +192,8 @@ namespace ColonistAwareness
 
         private string MigrateSupportedState()
         {
-            if (campaignSchemaVersion != 2)
+            if (campaignSchemaVersion != 2
+                && campaignSchemaVersion != 3)
                 return "faction-state owner schema " + campaignSchemaVersion
                     + " has no supported migration";
             string identityFailure = ValidateOwnerIdentities();
@@ -202,7 +203,7 @@ namespace ColonistAwareness
             {
                 CAFactionState state = factionStates[i];
                 if (state == null) return "faction state " + i + " is null";
-                if (!CACultureModel.TryUpgradeFromB10(state.culture,
+                if (!CACultureModel.TryUpgradeToCurrent(state.culture,
                         out CACulture culture, out string cultureFailure))
                     return "faction " + state.factionLoadId + " Culture: "
                         + cultureFailure;

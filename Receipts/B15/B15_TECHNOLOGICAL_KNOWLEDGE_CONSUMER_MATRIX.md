@@ -1,9 +1,9 @@
 # B15 Technological Knowledge Consumer Matrix
 
-Generated: 2026-08-18 06:20:27 UTC / 2026-08-17 23:20:27 -07:00
+Generated: 2026-08-18 13:47:54 UTC / 2026-08-18 06:47:54 -07:00
 
-Assembly: `C:\Users\jleyv\AppData\Local\Temp\cao-b15-final-builds-native-20260818-0619Z\build-1\ColonistAwareness.dll`
-SHA-256: `DE6312FF9CF2F4B052AACDE82E93C113AF231D36494F93667266FB2D415F0764`
+Assembly: `Assemblies/ColonistAwareness.dll`
+SHA-256: `EF56D9BADAAF82DB5E8269A3996F2F56A565BC8E564DB9A970C97F5B72C94342`
 
 This matrix records the execution paths verified in the current B15 source. Domain/competency cells without a listed consumer remain inspectable model capacity; they are not claimed as shipped behavioral breadth.
 

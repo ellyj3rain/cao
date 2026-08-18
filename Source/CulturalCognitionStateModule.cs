@@ -292,6 +292,7 @@ namespace ColonistAwareness
             string worldIdentity, CACulture culture, string subgroupId,
             CACultureQuestionDistribution distribution,
             CAPsychologicalProfile psychology, float doctrinePressure,
+            float doctrineIntensity, float doctrineConflict,
             string doctrineSource, string organizationIdentity, int epoch,
             int tick)
         {
@@ -324,7 +325,8 @@ namespace ColonistAwareness
                         RepresentedEnforcementFor(distribution.questionKey,
                             organizationIdentity),
                         MoralExperienceFor(pawnId,
-                            distribution.questionKey, culture)));
+                            distribution.questionKey, culture),
+                        doctrineIntensity, doctrineConflict));
             return new CAPawnCulturalAttitude
             {
                 pawnId = pawnId,
@@ -350,13 +352,21 @@ namespace ColonistAwareness
                         : "; doctrine=" + doctrineSource),
                 sourceDistributionSignature =
                     CACultureDistributionKernel.Fingerprint(distribution),
-                sourceIdeoligionSignature = doctrineSource + ":"
-                    + doctrinePressure.ToString("0.0000",
-                        System.Globalization.CultureInfo.InvariantCulture),
+                sourceIdeoligionSignature = DoctrineSignature(doctrineSource,
+                    doctrinePressure, doctrineIntensity, doctrineConflict),
                 materializationEpoch = epoch,
                 lastUpdatedTick = tick
             };
         }
+
+        internal static string DoctrineSignature(string source, float center,
+            float intensity, float conflict) => (source ?? "") + ":"
+            + center.ToString("0.0000",
+                System.Globalization.CultureInfo.InvariantCulture) + ":"
+            + intensity.ToString("0.0000",
+                System.Globalization.CultureInfo.InvariantCulture) + ":"
+            + conflict.ToString("0.0000",
+                System.Globalization.CultureInfo.InvariantCulture);
 
         public static void Influence(CAPawnCulturalAttitude target,
             IEnumerable<(CAPawnCulturalAttitude attitude,
@@ -437,9 +447,10 @@ namespace ColonistAwareness
         {
             CACultureQuestionDef definition =
                 CACultureQuestionRegistry.Find(questionKey);
-            var subjects = new HashSet<string>(
-                definition?.SocialSubjectAdapters ?? Array.Empty<string>(),
-                StringComparer.Ordinal);
+            var subjects = new HashSet<string>((definition
+                    ?.SocialSubjectAdapters ?? Array.Empty<string>())
+                .Concat(definition?.PracticeEvidenceAdapters
+                    ?? Array.Empty<string>()), StringComparer.Ordinal);
             IEnumerable<CARepresentedMoralExperience> direct =
                 DirectQuestionEvidenceFor(pawnId, questionKey, culture)
                 .Select(observation => CACulturalCognitionPureKernel
@@ -840,13 +851,13 @@ namespace ColonistAwareness
             CACultureQuestionDistribution distribution = CACultureModel
                 .DistributionFor(culture, questionKey, subgroup);
             if (distribution == null) return null;
-            float doctrine = CACultureIdeoligionAdapter.Pressure(pawn.Ideo,
-                questionKey, out string doctrineSource);
+            CAIdeoligionPressureProfile doctrine =
+                CACultureIdeoligionAdapter.Profile(pawn.Ideo, questionKey);
             string distributionSignature = CACultureDistributionKernel
                 .Fingerprint(distribution);
-            string doctrineSignature = doctrineSource + ":"
-                + doctrine.ToString("0.0000",
-                    System.Globalization.CultureInfo.InvariantCulture);
+            string doctrineSignature = CACulturalAttitudeKernel
+                .DoctrineSignature(doctrine.Source, doctrine.Center,
+                    doctrine.Intensity, doctrine.Conflict);
             EnsureRuntimeIndexes();
             string attitudeIdentity = AttitudeIdentity(pawn.thingIDNumber,
                 questionKey, cultureId, subgroupId);
@@ -865,7 +876,7 @@ namespace ColonistAwareness
             if (existing != null)
             {
                 RefreshAttitude(existing, culture, distribution,
-                    ProfileFor(pawn), doctrine, doctrineSource,
+                    ProfileFor(pawn), doctrine,
                     distributionSignature,
                     doctrineSignature, organizationIdentity,
                     Find.TickManager?.TicksGame ?? 0);
@@ -874,7 +885,8 @@ namespace ColonistAwareness
             existing = CACulturalAttitudeKernel.Materialize(
                 pawn.thingIDNumber,
                 CAPlayerFoundingSession.WorldIdentity(), culture, subgroup,
-                distribution, ProfileFor(pawn), doctrine, doctrineSource,
+                distribution, ProfileFor(pawn), doctrine.Center,
+                doctrine.Intensity, doctrine.Conflict, doctrine.Source,
                 organizationIdentity,
                 epoch: CAPendingAuthoringDataEpoch.Current,
                 Find.TickManager?.TicksGame ?? 0);
@@ -1005,8 +1017,9 @@ namespace ColonistAwareness
 
         private static void RefreshAttitude(CAPawnCulturalAttitude target,
             CACulture culture, CACultureQuestionDistribution distribution,
-            CAPsychologicalProfile psychology, float doctrine,
-            string doctrineSource, string distributionSignature,
+            CAPsychologicalProfile psychology,
+            CAIdeoligionPressureProfile doctrine,
+            string distributionSignature,
             string doctrineSignature, string organizationIdentity, int tick)
         {
             psychology = psychology ?? new CAPsychologicalProfile();
@@ -1021,7 +1034,7 @@ namespace ColonistAwareness
                         distribution.toleranceForDivergence,
                         distribution.salience,
                         distribution.sourceConfidence,
-                        distribution.visibility, doctrine,
+                        distribution.visibility, doctrine.Center,
                         psychology.agreeableness,
                         psychology.groupIdentification,
                         psychology.reactance,
@@ -1036,7 +1049,8 @@ namespace ColonistAwareness
                             organizationIdentity),
                         CACulturalAttitudeKernel.MoralExperienceFor(
                             target.pawnId, distribution.questionKey,
-                            culture)));
+                            culture), doctrine.Intensity,
+                        doctrine.Conflict));
             target.attention = result.Attention;
             target.moralConviction = result.MoralConviction;
             target.identityCentrality = result.IdentityCentrality;
@@ -1051,8 +1065,8 @@ namespace ColonistAwareness
             target.prestigeSignal = distribution.prestigeSignal;
             target.uncertainty = result.Uncertainty;
             target.provenance = distribution.provenance
-                + (doctrineSource == null ? ""
-                    : "; doctrine=" + doctrineSource);
+                + (doctrine.Source == null ? ""
+                    : "; doctrine=" + doctrine.Source);
             target.sourceDistributionSignature = distributionSignature;
             target.sourceIdeoligionSignature = doctrineSignature;
             target.lastUpdatedTick = tick;
@@ -1062,43 +1076,83 @@ namespace ColonistAwareness
             CACulture culture, string subjectKey, string populationScope,
             string institutionalOrganizationIdentity)
         {
-            string questionKey = CACultureQuestionRegistry
-                .QuestionForSocialSubject(subjectKey);
-            CAPawnCulturalAttitude attitude = AttitudeFor(pawn, questionKey,
-                culture, populationScope,
-                institutionalOrganizationIdentity);
-            if (attitude == null)
+            IReadOnlyList<CACultureQuestionSubjectAdapterDef> adapters =
+                CACultureQuestionRegistry.AdaptersForSocialSubject(subjectKey);
+            var values = adapters.Select(adapter => new
+                {
+                    Adapter = adapter,
+                    Attitude = AttitudeFor(pawn, adapter.QuestionKey,
+                        culture, populationScope,
+                        institutionalOrganizationIdentity)
+                }).Where(value => value.Attitude != null).Select(value =>
+                {
+                    float weight = Mathf.Max(0.01f,
+                        value.Attitude.knowledgeConfidence
+                            * value.Attitude.moralConviction);
+                    return new
+                    {
+                        value.Adapter,
+                        value.Attitude,
+                        Weight = weight,
+                        Mean = value.Attitude.privateAttitude
+                            * value.Adapter.Direction,
+                        Public = value.Attitude.publicExpression
+                            * value.Adapter.Direction
+                    };
+                }).ToList();
+            if (values.Count == 0)
                 return CACultureModel.Resolve(culture, subjectKey,
                     populationScope);
-            int direction = CACultureQuestionRegistry
-                .DirectionForSocialSubject(subjectKey);
+            float total = values.Sum(value => value.Weight);
+            float mean = values.Sum(value => value.Mean * value.Weight)
+                / total;
+            float normality = values.Sum(value => value.Attitude
+                    .perceivedDescriptiveNorm * value.Adapter.Direction
+                    * value.Weight) / total;
+            float prestige = values.Sum(value => value.Attitude.prestigeSignal
+                    * value.Adapter.Direction * value.Weight) / total;
+            float salience = values.Sum(value => value.Attitude.moralConviction
+                    * value.Weight) / total;
+            float confidence = values.Sum(value => value.Attitude
+                    .knowledgeConfidence * value.Weight) / total;
+            float expressionDissonance = values.Sum(value => Mathf.Abs(
+                    value.Mean - value.Public) * value.Weight) / total;
+            float crossQuestion = Mathf.Sqrt(values.Sum(value =>
+                    (value.Mean - mean) * (value.Mean - mean) * value.Weight)
+                / total);
             var result = new CACulturalMeaningResolution
             {
                 SubjectKey = subjectKey,
-                Approval = Mathf.RoundToInt(attitude.privateAttitude
-                    * direction * 100f),
-                Normality = Mathf.RoundToInt((attitude
-                    .perceivedDescriptiveNorm * direction + 1f) * 50f),
-                Prestige = Mathf.RoundToInt(attitude.prestigeSignal
-                    * direction * 100f),
-                Salience = Mathf.RoundToInt(attitude.moralConviction * 100f),
-                Dissonance = Mathf.Clamp01(Mathf.Abs(
-                    attitude.privateAttitude - attitude.publicExpression)),
-                Confidence = attitude.knowledgeConfidence
+                Approval = Mathf.RoundToInt(mean * 100f),
+                Normality = Mathf.RoundToInt((normality + 1f) * 50f),
+                Prestige = Mathf.RoundToInt(prestige * 100f),
+                Salience = Mathf.RoundToInt(salience * 100f),
+                Dissonance = Mathf.Clamp01(Mathf.Max(expressionDissonance,
+                    crossQuestion)),
+                Confidence = Mathf.Clamp01(confidence)
             };
-            result.Provenance.Add(attitude.provenance ?? "pawn attitude");
-            result.Contributions.Add(new CACulturalMeaningContribution
+            foreach (var value in values)
             {
-                PopulationScope = populationScope,
-                Provenance = "pawn attitude",
-                SourceIdentity = pawn.thingIDNumber.ToString(),
-                Weight = Mathf.Max(1,
-                    Mathf.RoundToInt(attitude.knowledgeConfidence * 100f)),
-                Approval = result.Approval,
-                Normality = result.Normality,
-                Prestige = result.Prestige,
-                Salience = result.Salience
-            });
+                result.Provenance.Add((value.Attitude.provenance
+                    ?? "pawn attitude") + ":" + value.Adapter.QuestionKey);
+                result.Contributions.Add(new CACulturalMeaningContribution
+                {
+                    PopulationScope = populationScope,
+                    Provenance = "pawn attitude; "
+                        + value.Adapter.QuestionKey,
+                    SourceIdentity = pawn.thingIDNumber.ToString(),
+                    Weight = Mathf.Max(1,
+                        Mathf.RoundToInt(value.Weight * 100f)),
+                    Approval = Mathf.RoundToInt(value.Mean * 100f),
+                    Normality = Mathf.RoundToInt((value.Attitude
+                        .perceivedDescriptiveNorm * value.Adapter.Direction
+                        + 1f) * 50f),
+                    Prestige = Mathf.RoundToInt(value.Attitude.prestigeSignal
+                        * value.Adapter.Direction * 100f),
+                    Salience = Mathf.RoundToInt(value.Attitude.moralConviction
+                        * 100f)
+                });
+            }
             return result;
         }
 
@@ -1414,8 +1468,8 @@ namespace ColonistAwareness
             float enforcement = CACulturalAttitudeKernel
                 .RepresentedEnforcementFor(questionKey,
                     institutionalOrganizationIdentity);
-            float doctrine = CACultureIdeoligionAdapter.Pressure(pawn.Ideo,
-                questionKey, out _);
+            CAIdeoligionPressureProfile doctrine =
+                CACultureIdeoligionAdapter.Profile(pawn.Ideo, questionKey);
             float psychologicalUncertainty = CAPsychologyRuntime
                 .UncertaintyForQuestion(psychology, questionKey);
             attitude.knowledgeConfidence = CACulturalCognitionPureKernel
@@ -1424,8 +1478,11 @@ namespace ColonistAwareness
             attitude.uncertainty = CACulturalCognitionPureKernel
                 .KnowledgeUncertainty(evidence, psychologicalUncertainty,
                     psychology.epistemicVigilance);
+            attitude.uncertainty = Mathf.Clamp01(attitude.uncertainty
+                + doctrine.Conflict * 0.35f);
             attitude.moralConviction = CACulturalCognitionPureKernel
-                .MoralConviction(attitude.privateAttitude, doctrine,
+                .MoralConviction(attitude.privateAttitude,
+                    doctrine.Intensity,
                     attitude.identityCentrality, moralExperience);
             attitude.expectedEnforcement = enforcement;
             attitude.publicExpression = CACulturalCognitionPureKernel
@@ -2185,35 +2242,46 @@ namespace ColonistAwareness
 
     internal static class CAQuestionConsumerMap
     {
+        private static readonly Dictionary<string, string> ByBehavior =
+            new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["welfare.outsider_rescue"] =
+                    CACultureQuestionRegistry.OutsiderInclusion,
+                ["welfare.local_rescue"] =
+                    CACultureQuestionRegistry.MutualProvision,
+                ["welfare.local_treatment"] =
+                    CACultureQuestionRegistry.MutualProvision,
+                ["welfare.mission_triage"] =
+                    CACultureQuestionRegistry.MutualProvision,
+                ["welfare.accountability_check"] =
+                    CACultureQuestionRegistry.MutualProvision,
+                ["welfare.threshold_support"] =
+                    CACultureQuestionRegistry.MutualProvision,
+                ["welfare.buddy_carry"] =
+                    CACultureQuestionRegistry.MutualProvision,
+                ["welfare.medic_dispatch"] =
+                    CACultureQuestionRegistry.MutualProvision,
+                ["communication.knowledge_relay"] =
+                    CACultureQuestionRegistry.KnowledgeAccess,
+                ["communication.status_report"] =
+                    CACultureQuestionRegistry.VoiceInclusion,
+                ["authority.relay_obedience"] =
+                    CACultureQuestionRegistry.CoercionLegitimacy,
+                ["aftermath.secure_hostile"] =
+                    CACultureQuestionRegistry.CaptiveProtection,
+                ["aftermath.custody_resolution"] =
+                    CACultureQuestionRegistry.CaptiveProtection,
+                ["npc.enemy_restraint"] =
+                    CACultureQuestionRegistry.CaptiveProtection,
+                ["npc.captive_stabilization"] =
+                    CACultureQuestionRegistry.CaptiveProtection
+            };
+
         internal static string ForBehavior(string behaviorKey)
         {
             if (behaviorKey.NullOrEmpty()) return null;
-            switch (behaviorKey)
-            {
-                case "welfare.outsider_rescue":
-                    return CACultureQuestionRegistry.OutsiderInclusion;
-                case "welfare.local_rescue":
-                case "welfare.local_treatment":
-                case "welfare.mission_triage":
-                case "welfare.accountability_check":
-                case "welfare.threshold_support":
-                case "welfare.buddy_carry":
-                case "welfare.medic_dispatch":
-                    return CACultureQuestionRegistry.MutualProvision;
-                case "communication.knowledge_relay":
-                    return CACultureQuestionRegistry.KnowledgeAccess;
-                case "communication.status_report":
-                    return CACultureQuestionRegistry.VoiceInclusion;
-                case "authority.relay_obedience":
-                    return CACultureQuestionRegistry.CoercionLegitimacy;
-                case "aftermath.secure_hostile":
-                case "aftermath.custody_resolution":
-                case "npc.enemy_restraint":
-                case "npc.captive_stabilization":
-                    return CACultureQuestionRegistry.CaptiveProtection;
-                case "culture.longitudinal_update":
-                    return null;
-            }
+            if (ByBehavior.TryGetValue(behaviorKey, out string exact))
+                return exact;
             if (behaviorKey.StartsWith("research.",
                     StringComparison.Ordinal)
                 || behaviorKey == "spatial.npc_settlement_development")
@@ -2225,6 +2293,16 @@ namespace ColonistAwareness
                     StringComparison.Ordinal))
                 return CACultureQuestionRegistry.MutualProvision;
             return null;
+        }
+
+        internal static bool HasQuestion(string questionKey)
+        {
+            if (questionKey.NullOrEmpty()) return false;
+            if (ByBehavior.Values.Contains(questionKey,
+                    StringComparer.Ordinal)) return true;
+            return questionKey == CACultureQuestionRegistry.NoveltyAcceptance
+                || questionKey == CACultureQuestionRegistry.VoiceInclusion
+                || questionKey == CACultureQuestionRegistry.MutualProvision;
         }
     }
 

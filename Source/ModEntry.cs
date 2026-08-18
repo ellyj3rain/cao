@@ -118,17 +118,16 @@ namespace ColonistAwareness
             Scribe_Collections.Look(ref politicalOrderProfiles,
                 "politicalOrderProfiles", LookMode.Deep);
             bool currentSocietyProfiles = Scribe.mode == LoadSaveMode.Saving
-                || CAPendingAuthoringDataEpoch.IsCurrent(authoringDataEpoch);
+                || CAPendingAuthoringDataEpoch.CanRead(authoringDataEpoch);
             if (currentSocietyProfiles)
                 Scribe_Collections.Look(ref societyProfiles,
                     "societyProfiles", LookMode.Deep);
             Scribe_Values.Look(ref traceBehavior, "traceBehavior", true);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
-                if (!CAPendingAuthoringDataEpoch.IsCurrent(authoringDataEpoch))
+                if (!CAPendingAuthoringDataEpoch.CanRead(authoringDataEpoch))
                 {
                     societyProfiles = new List<CAUserSocietyProfile>();
-                    authoringDataEpoch = CAPendingAuthoringDataEpoch.Current;
                     CAPendingAuthoringDataEpoch.RecordDiscard(
                         "saved Society profiles");
                 }
@@ -140,6 +139,7 @@ namespace ColonistAwareness
                     initiativeSchema =
                         AutonomyComponent.CurrentInitiativeSchema;
                 }
+                authoringDataEpoch = CAPendingAuthoringDataEpoch.Current;
                 defaultInitiative = AutonomyComponent.Normalize(
                     defaultInitiative);
                 CAAuthoringProfileLibrary.Normalize(this);

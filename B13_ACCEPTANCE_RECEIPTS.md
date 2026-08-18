@@ -5,20 +5,20 @@ These fixed-seed and structural receipts verify the Culture registry, unified au
 | # | Contract | Result | Evidence |
 |---:|---|---|---|
 | 1 | Culture registry validates | **PASS** | no failure |
-| 2 | twenty-four stable questions | **PASS** | count=24; registry=2 |
-| 3 | eight categories contain three questions each | **PASS** | RelationshipsFamilySexuality=3; GenderSocialAuthority=3; StatusHierarchy=3; MembershipOutsiders=3; PublicAuthoritySocialOrder=3; PropertyLaborProvision=3; ViolenceCaptivityPunishment=3; KnowledgeTradition=3 |
-| 4 | every question has five ordered anchors | **PASS** | 24/24 use centered, strictly ordered five-anchor scales |
-| 5 | every question names evidence, research, and a consumer | **PASS** | 24/24 definitions carry causal and research provenance |
+| 2 | stable Culture questions | **PASS** | count=48; registry=3 |
+| 3 | every current Culture category is represented | **PASS** | RelationshipsFamilySexuality=6; GenderSocialAuthority=3; StatusHierarchy=4; MembershipOutsiders=5; PublicAuthoritySocialOrder=3; PropertyLaborProvision=5; ViolenceCaptivityPunishment=4; KnowledgeTradition=3; BodyHealthDeath=6; FoodSubstances=4; AnimalsEnvironment=3; DailyLifeTechnology=2 |
+| 4 | every question has five ordered anchors | **PASS** | 48/48 use centered, strictly ordered five-anchor scales |
+| 5 | every question names evidence, research, and a consumer | **PASS** | 48/48 definitions carry causal and research provenance |
 | 6 | historical and social Culture presets validate | **PASS** | 22 complete component presets use one social-or-historical Culture catalog axis |
-| 7 | every preset specifies the full registry | **PASS** | 22/22 presets specify 24 unique question values |
+| 7 | every preset specifies the full registry | **PASS** | 22/22 presets specify 48 unique question values |
 | 8 | preset profiles are substantively distinct | **PASS** | 22 distinct mean profiles; no era-wide monoculture shortcut |
 | 9 | one historical context has distinct period presets | **PASS** | United States has postwar, millennium, and contemporary sourced Culture priors |
-| 10 | preset application writes the same Culture object | **PASS** | second preset replaces the same 24 question distributions; no mode object |
+| 10 | preset application writes the same Culture object | **PASS** | second preset replaces the same 48 question distributions; no mode object |
 | 11 | question authoring carries explicit provenance | **PASS** | preset and random Culture remain authored when faction origin is classified |
 | 12 | manual editing changes only the selected question | **PASS** | one position changed; adjacent distribution fingerprint stable |
-| 13 | Culture randomization is complete and deterministic | **PASS** | fixed seed produced 24 valid distributions with one fingerprint |
+| 13 | Culture randomization is complete and deterministic | **PASS** | fixed seed produced 48 valid distributions with one fingerprint |
 | 14 | reopened editor randomization advances from saved Culture | **PASS** | the next seed is derived from persisted values, not a dialog-local nonce |
-| 15 | completion preserves authored Culture state | **PASS** | 23 absent rows added; authored row and provenance unchanged |
+| 15 | completion preserves authored Culture state | **PASS** | 47 absent rows added; authored row and provenance unchanged |
 | 16 | unrelated generated rows remain seed-stable | **PASS** | relationships.kinObligation is identical when a different row was authored |
 | 17 | global diversity changes spread, not position | **PASS** | 24 centers stable while default spread changes 0.10 to 0.60 |
 | 18 | question-specific spread overrides the global default | **PASS** | selected row remains 0.37; neighboring row follows 0.18 global spread |
@@ -39,8 +39,8 @@ These fixed-seed and structural receipts verify the Culture registry, unified au
 | 33 | office composition does not invent exclusion | **PASS** | single-gender holders yield no access evidence; represented mixed holders yield broad-access evidence |
 | 34 | pawn cognition retains exact institutional jurisdiction | **PASS** | regional Culture, sanction, legitimacy, and cached public-expression consumers share the current settlement organization key; player locality remains distinct from the player institution; generic ingress accepts the typed context intact |
 | 35 | pawn reaction lookup uses a maintained runtime index | **PASS** | daily seven-question refresh reuses one indexed pawn reaction list instead of rescanning and sorting the retained global ledger per question |
-| 36 | every Culture question reaches its designated production consumer | **PASS** | 24/24 exact question constants occur in designated relationship, political, office, or knowledge consumers |
-| 37 | all questions have a historical feedback route | **PASS** | 7 direct represented-fact routes plus 17 exact social-subject adapters |
+| 36 | every Culture question reaches its designated production consumer | **PASS** | 24/24 B13 question constants remain in designated relationship, political, office, or knowledge consumers |
+| 37 | all questions have a historical feedback route | **PASS** | every question names a direct, subject, practice, or doctrine evidence route |
 | 38 | direct historical evidence persists before transition | **PASS** | represented position, spread, participation, and population persist once; pawn appraisal and the transition boundary consume that record |
 | 39 | absence of an event is not a negative Culture fact | **PASS** | only represented samples create historical question evidence |
 | 40 | historical sampler calls the audited polarity kernels | **PASS** | production history uses the same executable polarity and absence rules as the receipts |
@@ -55,20 +55,20 @@ These fixed-seed and structural receipts verify the Culture registry, unified au
 | 49 | player and established societies share the Culture editor | **PASS** | founding and established-society surfaces share the same question model |
 | 50 | Culture editor content remains scroll-measured | **PASS** | dynamic height accounts for categories, wrapped anchors, and advanced rows |
 | 51 | advanced rows reserve space only for visible controls | **PASS** | provenance badges fit with tooltips and released spread overrides leave no empty button row |
-| 52 | campaign catalog records the B13 cognition schema | **PASS** | catalog=4 retains the cultural-cognition schema-2 owner introduced in 2 and admits no schema-1 payload |
+| 52 | campaign catalog records the B13 cognition schema | **PASS** | catalog=5 retains the cultural-cognition schema-2 owner introduced in 2 and admits no schema-1 payload |
 | 53 | durable attitudes persist the separated causal facts | **PASS** | schema-2 attitudes and preflight persist/validate attention, prior strength, social pressure, and observation likelihood |
 | 54 | preflight requires every schema-2 attitude cause | **PASS** | explicit zero values pass; an omitted observationLikelihood fails |
-| 55 | preflight requires Culture registry two | **PASS** | nested Culture payload validation admits only registry 2 |
-| 56 | psychology supplies explicit question-specific detail | **PASS** | 24/24 questions have uncertainty mappings; 23 have bounded directional loadings; gender authority has no personality-derived sex preference |
+| 55 | preflight requires the schema-owned Culture registry | **PASS** | schema 10 admits registry 2 for supported migration; current schema 11 admits only registry 3 |
+| 56 | psychology supplies explicit question-specific detail | **PASS** | the original 24 questions retain explicit psychology mappings; gender authority has no personality-derived sex preference |
 | 57 | production knowledge retains expertise deference | **PASS** | acquisition passes the pawn appraisal; later reevaluation recovers holder Culture; the shared executed map supplies every subject's skill domains |
 | 58 | represented experience is wired into the event path | **PASS** | materialization and refresh consume the persisted direct-history record plus represented social reactions |
 | 59 | built assembly remains the Culture model authority | **PASS** | production DLL normalized Culture; mapped every built-in social subject to demonstrated expertise; and executed stable direct-question source and moral appraisals |
-| 60 | active and mirror fixtures are byte-identical | **PASS** | SHA-256=A0FF1B43CF3A5AFAFE72DA34360B247B7D06CB03DE903AEA251F8FD5D5297C82 |
+| 60 | active and mirror fixtures are byte-identical | **PASS** | SHA-256=004C5A0F2505594D36E89CBD0F02A4BBE46C1B044965E6A5F29AFD27AFC521AF |
 | 61 | fixture preserves authored identity and composition | **PASS** | region/candidate/arrival/map; 3 factions; 4 settlements; 4 current population assignments; 19 program facts |
 | 62 | faction and population relationships survive readback | **PASS** | every settlement owner and affiliated population resolves to one of 3 factions; shares total 100 per settlement |
-| 63 | fixture carries complete current Culture state | **PASS** | 8 schema-10 registry-2 records each contain 24 root distributions |
-| 64 | prior authored and migration evidence remains intact | **PASS** | 290 distributions include 192 complete roots and 98 represented population or local facts; 25 evidence records retained |
-| 65 | fixture round-trips without dropping Culture | **PASS** | XML serialization/readback retains all 290 distributions and 8 Culture records |
+| 63 | fixture carries complete current Culture state | **PASS** | 8 schema-11 registry-3 records each contain 48 root distributions |
+| 64 | prior authored and migration evidence remains intact | **PASS** | 577 current distributions retain 289 live pre-B16 distributions, add registry-3 coverage to represented scopes, and preserve one orphaned former distribution among 26 evidence records |
+| 65 | fixture round-trips without dropping Culture | **PASS** | XML serialization/readback retains all 577 distributions and 8 Culture records |
 | 66 | research corpus names primary survey sources | **PASS** | WVS, ISSP, ESS, and GSS primary documentation linked |
 | 67 | research record states calibration limits | **PASS** | sources justify constructs and ordering without claiming fitted population estimates |
 

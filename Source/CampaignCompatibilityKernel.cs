@@ -46,7 +46,7 @@ namespace ColonistAwareness
     // source reorganization does not change a schema; a persisted contract does.
     public static class CACampaignSchemaCatalog
     {
-        public const int CurrentCatalogVersion = 4;
+        public const int CurrentCatalogVersion = 5;
 
         public static readonly CACampaignSchemaDefinition[] All =
         {
@@ -61,14 +61,14 @@ namespace ColonistAwareness
             D("map.combat-aftermath", 1),
             D("game.combat-spatial-log", 1),
             D("game.combat-topology", 1),
-            D("map.culture-longitudinal", 2, 1, 1),
+            D("map.culture-longitudinal", 3, 2, 1),
             D("map.equipment-transition", 1),
             D("game.hidden-things", 1),
-            D("world.faction-state", 3, 2, 1),
-            D("world.player-founding", 3, 2, 1),
+            D("world.faction-state", 4, 2, 1),
+            D("world.player-founding", 4, 2, 1),
             D("world.organization", 2, 1, 1),
             D("world.organization-relations", 1),
-            D("world.regional", 3, 2, 1),
+            D("world.regional", 4, 2, 1),
             D("world.cultural-cognition", 2, 2, 2),
             D("world.political-cognition", 1, 1, 2),
             D("world.proposition-knowledge", 1, 1, 2),
@@ -110,13 +110,13 @@ namespace ColonistAwareness
             D("native.regional-settlement-lord", 1),
             D("native.ca-job-drivers", 1),
             D("world.regional-reservation", 1),
-            D("model.culture", 10, 9, 1),
+            D("model.culture", 11, 9, 1),
             D("model.political-order", 10),
             D("model.technological-knowledge", 1, 1, 4),
             D("model.represented-institutions", 1),
             D("model.founding-arrangement", 1),
             D("model.player-founding-plan", 4, 3, 1),
-            D("model.regional-plan", 14, 13, 1),
+            D("model.regional-plan", 15, 13, 1),
             D("model.regional-settlement-record", 9, 8, 1),
             D("model.settlement-population-group", 1),
             D("model.domestic-unit", 1),
@@ -240,6 +240,24 @@ namespace ColonistAwareness
             return new CACampaignCompatibilityDecision(
                 CACampaignCompatibilityKind.Current,
                 key + " schema " + savedVersion + " is compatible");
+        }
+
+        public static CACampaignCompatibilityDecision EvaluateCatalogSchema(
+            int savedCatalogVersion, string key, int savedVersion)
+        {
+            CACampaignCompatibilityDecision compatible = EvaluateSchema(key,
+                savedVersion);
+            if (!compatible.CanLoad) return compatible;
+            if (!CACampaignSchemaCatalog.TryFind(key,
+                    out CACampaignSchemaDefinition definition))
+                return compatible;
+            if (savedCatalogVersion
+                    == CACampaignSchemaCatalog.CurrentCatalogVersion
+                && savedVersion != definition.CurrentVersion)
+                return Unsupported("current campaign catalog "
+                    + savedCatalogVersion + " requires " + key + " schema "
+                    + definition.CurrentVersion + ", found " + savedVersion);
+            return compatible;
         }
 
         private static CACampaignCompatibilityDecision Unsupported(

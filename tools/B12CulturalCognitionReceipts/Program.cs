@@ -55,8 +55,10 @@ internal static class Program
             CACultureQuestionRegistry.ValidationFailure() == null,
             CACultureQuestionRegistry.ValidationFailure() ?? "no failure");
         Add("current registry retains the B12 questions",
-            all.Count == 24 && all.Select(value => value.Key).Distinct(
-                StringComparer.Ordinal).Count() == 24,
+            all.Count == CACultureQuestionRegistry.FixedQuestionCount
+                && all.Select(value => value.Key).Distinct(
+                    StringComparer.Ordinal).Count()
+                    == CACultureQuestionRegistry.FixedQuestionCount,
             $"count={all.Count}; unique={all.Select(value => value.Key).Distinct().Count()}");
         Add("five ordered anchors per question", all.All(value =>
                 value.Anchors.Length == 5
@@ -76,10 +78,11 @@ internal static class Program
             CACultureQuestionRegistry.All.Select(
                 value => CACultureDistributionKernel.NewQuestion(value))
                 .ToList();
-        Add("explicit new-question defaults validate", defaults.Count == 24
+        Add("explicit new-question defaults validate", defaults.Count
+            == CACultureQuestionRegistry.FixedQuestionCount
             && defaults.All(value =>
                 CACultureDistributionKernel.ValidationFailure(value) == null),
-            "24/24 neutral authoring defaults; no identity-derived facts");
+            $"{defaults.Count}/{CACultureQuestionRegistry.FixedQuestionCount} neutral authoring defaults; no identity-derived facts");
 
         CACultureQuestionDistribution distribution = defaults[0];
         float sameA = Sample(distribution, "pawn-17");
@@ -797,13 +800,14 @@ internal static class Program
         string compactCombined = new string(combined.Where(value =>
             !char.IsWhiteSpace(value)).ToArray());
         Add("all questions have actual source consumers",
-            CACultureQuestionRegistry.All.All(definition =>
+            CACultureQuestionRegistry.All.Take(
+                CACultureQuestionRegistry.LegacyQuestionCount).All(definition =>
                 compactCombined.Contains("CACultureQuestionRegistry."
                         + ConstantName(definition.Key),
                     StringComparison.Ordinal)
                 || combined.Contains("\"" + definition.Key + "\"",
                     StringComparison.Ordinal)),
-            "24/24 registry constants occur outside the registry");
+            $"{CACultureQuestionRegistry.LegacyQuestionCount}/{CACultureQuestionRegistry.LegacyQuestionCount} B12/B13 registry constants remain in their designated consumers; later questions use the registry-driven cognition path");
         Add("durable owners partition represented cognition",
             new[] { "psychologicalProfiles", "culturalAttitudes",
                 "influenceEdges",
@@ -904,8 +908,8 @@ internal static class Program
                     StringComparison.Ordinal),
             "question facts are authored or migrated; psychology changes only from represented evidence");
         Add("Culture migration is exact and evidence-preserving",
-            culture.Contains("QuestionForSocialSubject", StringComparison.Ordinal)
-                && culture.Contains("preserved as evidence; no exact B12 question", StringComparison.Ordinal)
+            culture.Contains("AdaptersForSocialSubject", StringComparison.Ordinal)
+                && culture.Contains("preserved as evidence; no exact current question", StringComparison.Ordinal)
                 && culture.Contains("CALegacyCultureQuestionAdapter.Adapt",
                     StringComparison.Ordinal)
                 && culture.Contains("hasDescriptiveNormPrior = false",
@@ -987,7 +991,7 @@ internal static class Program
             first.Mean == second.Mean && first.Salience == second.Salience,
             $"mean={first.Mean:0.000}; salience={first.Salience:0.000}; normality and prestige have no adapter parameter");
         Add("catalog retains the B12 cognition owner",
-            CACampaignSchemaCatalog.CurrentCatalogVersion == 4
+            CACampaignSchemaCatalog.CurrentCatalogVersion == 5
                 && CACampaignSchemaCatalog.TryFind("world.cultural-cognition",
                     out CACampaignSchemaDefinition cognition)
                 && cognition.CurrentVersion == 2
@@ -1074,7 +1078,7 @@ internal static class Program
                     StringComparison.Ordinal),
             "identical evidence and sub-significance changes do not append history");
         Add("migration composes exact questions with preserved evidence",
-            culture.Contains("QuestionForSocialSubject",
+            culture.Contains("AdaptersForSocialSubject",
                     StringComparison.Ordinal)
                 && culture.Contains("CACultureLegacyEvidence",
                     StringComparison.Ordinal)
@@ -1219,7 +1223,7 @@ internal static class Program
             activeBytes.SequenceEqual(mirrorBytes),
             $"SHA-256={activeHash}; mirror={mirrorHash}");
         Add("fixture carries the current authoring epoch",
-            Value(document.Root, "authoringDataEpoch") == "13",
+            Value(document.Root, "authoringDataEpoch") == "14",
             "authoringDataEpoch="
                 + Value(document.Root, "authoringDataEpoch"));
         XElement[] settlements = Items(plan, "settlements").ToArray();
@@ -1243,29 +1247,51 @@ internal static class Program
                 + Items(value, "localQuestions").Count());
         int evidenceCount = cultures.Sum(value =>
             Items(value, "legacyEvidence").Count());
+        int quarantinedB12Count = cultures.SelectMany(value =>
+                Items(value, "legacyEvidence"))
+            .Count(value => Value(value, "sourceLayer")
+                    == "B16 governed fixture repair"
+                && Value(value, "disposition").Contains(
+                    "not a constituent", StringComparison.Ordinal));
         int b12QuestionCount = cultures.SelectMany(value =>
                 Items(value, "inheritedQuestions").Concat(
                     Items(value, "localQuestions")))
             .Count(value => Value(value, "provenance").Contains(
                 "B12 exact adapter", StringComparison.Ordinal));
+        var currentQuestionKeys = new HashSet<string>(
+            CACultureQuestionRegistry.All.Select(value => value.Key),
+            StringComparer.Ordinal);
         Add("fixture uses current Culture schema",
             cultures.Length == 8
-                && cultures.All(value => Value(value, "schemaVersion") == "10")
+                && cultures.All(value => Value(value, "schemaVersion") == "11")
                 && cultures.All(value => Value(value,
-                    "questionRegistryVersion") == "2")
+                    "questionRegistryVersion") == "3")
+                && cultures.All(value => Items(value,
+                        "inheritedQuestions").Concat(Items(value,
+                            "localQuestions")).GroupBy(question =>
+                            string.IsNullOrWhiteSpace(Value(question,
+                                "populationScope"))
+                                ? "*" : Value(question, "populationScope"),
+                            StringComparer.Ordinal).All(scope =>
+                                scope.Select(question => Value(question,
+                                        "questionKey"))
+                                    .ToHashSet(StringComparer.Ordinal)
+                                    .SetEquals(currentQuestionKeys)))
                 && !document.Descendants("inheritedMeanings").Any()
                 && !document.Descendants("localMeanings").Any(),
-            $"8 schema-10 records; {questionCount} distributions; obsolete meaning payloads absent");
+            $"8 schema-11/registry-3 records; {questionCount} distributions; every represented inherited population scope has 48 questions; obsolete meaning payloads absent");
         Add("migration evidence survives serialization",
-            questionCount >= 192 && b12QuestionCount == 22
-                && evidenceCount >= 25
+            questionCount >= 192
+                && b12QuestionCount + quarantinedB12Count == 22
+                && quarantinedB12Count == 1
+                && evidenceCount >= 26
                 && cultures.SelectMany(value => Items(value,
                     "legacyEvidence")).Any(value =>
                         Value(value, "sourceKey")
                             == "ca.property.compulsory_transfer"
                         && Value(value, "disposition").Contains(
                             "no exact B12 question", StringComparison.Ordinal)),
-            $"questions={questionCount}; B12-authored={b12QuestionCount}; evidence={evidenceCount}; complete roots plus later represented local facts retained; unmapped compulsory transfer preserved");
+            $"questions={questionCount}; B12 live={b12QuestionCount}; quarantined={quarantinedB12Count}; evidence={evidenceCount}; complete roots plus valid represented local facts retained; one orphaned scoped fact and unmapped compulsory transfer preserved as evidence");
         string roundTrip = XDocument.Parse(document.ToString(
             SaveOptions.DisableFormatting)).ToString(SaveOptions.DisableFormatting);
         Add("current fixture round-trips structurally",
@@ -1309,8 +1335,8 @@ internal static class Program
 | SHA-256 | `{Sha(activeBytes)}` on both files |
 | Identity | `{Value(plan, "regionalId")}` / `{Value(plan, "candidateId")}` / arrival `{Value(plan, "startTileId")}` / map `{Value(plan, "mapSize")}` |
 | Composition | {Items(plan, "factions").Count()} factions / {settlements.Length} settlements / {settlements.SelectMany(value => Items(value, "populationGroups")).Count()} population groups / {settlements.SelectMany(value => Items(value, "operationalFacts")).Count()} established program facts |
-| Culture | {cultures.Length} schema-10 records / {cultures.Sum(value => Items(value, "inheritedQuestions").Count() + Items(value, "localQuestions").Count())} exact question distributions / {cultures.Sum(value => Items(value, "legacyEvidence").Count())} preserved B11 source records |
-| Current-schema rerun | schema-10 state validates and remains byte-identical at the recorded hash |
+| Culture | {cultures.Length} schema-11 / registry-3 records / {cultures.Sum(value => Items(value, "inheritedQuestions").Count() + Items(value, "localQuestions").Count())} exact question distributions / {cultures.Sum(value => Items(value, "legacyEvidence").Count())} preserved B11 source records |
+| Current-schema rerun | schema-11 / registry-3 state validates and remains byte-identical at the recorded hash |
 | Pair replacement | injected failure after active replacement rolls both files back to their original bytes |
 
 Both runtime-consumed plan surfaces parse, are byte-identical, preserve the authored composition and plan identity, and serialize only the current Culture question model. The shared exact adapter gives only weighted approval and salience current question semantics. Every other former field remains evidence; a source meaning without an exact current question receives no invented replacement. The migration and second-run hash establish a byte-idempotent current-schema path.

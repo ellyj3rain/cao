@@ -1132,7 +1132,7 @@ namespace ColonistAwareness
             internal int MemberIndex;
         }
 
-        private int campaignSchemaVersion = 3;
+        private int campaignSchemaVersion = 4;
         private int legacyAuthoringDataEpoch =
             CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private List<CARegionalSettlementRecord> records =
@@ -1552,18 +1552,23 @@ namespace ColonistAwareness
 
         private string MigrateSupportedState()
         {
-            if (campaignSchemaVersion != 2)
+            if (campaignSchemaVersion != 2
+                && campaignSchemaVersion != 3)
                 return "regional owner schema " + campaignSchemaVersion
                     + " has no supported migration";
+            int expectedRegionSchema = campaignSchemaVersion == 2 ? 13 : 14;
+            int expectedFoundingSchema = campaignSchemaVersion == 2 ? 3 : 4;
+            int expectedRecordSchema = campaignSchemaVersion == 2 ? 8 : 9;
             int savedRegionSchema = regions.Count == 0
-                ? 13
+                ? expectedRegionSchema
                 : regions[0]?.schemaVersion ?? -1;
-            if (savedRegionSchema != 13)
+            if (savedRegionSchema != expectedRegionSchema)
                 return "regional plan schema " + savedRegionSchema
-                    + " has no supported B15 migration";
+                    + " has no supported migration from regional owner "
+                    + campaignSchemaVersion;
             string structureFailure = ValidateOwnerStructure(
-                savedRegionSchema, expectedFoundingSchema: 3,
-                expectedRecordSchema: 8);
+                savedRegionSchema, expectedFoundingSchema,
+                expectedRecordSchema);
             if (!structureFailure.NullOrEmpty()) return structureFailure;
             var commits = new List<Action>();
             var knowledgeByFaction =
@@ -1587,7 +1592,7 @@ namespace ColonistAwareness
                     if (faction == null)
                         return "regional plan " + region.regionalId
                             + " has a null faction";
-                    if (!CACultureModel.TryUpgradeFromB10(faction.culture,
+                    if (!CACultureModel.TryUpgradeToCurrent(faction.culture,
                             out CACulture culture,
                             out string cultureFailure))
                         return "regional faction " + faction.key
@@ -1639,7 +1644,7 @@ namespace ColonistAwareness
                     if (settlement == null)
                         return "regional plan " + region.regionalId
                             + " has a null settlement";
-                    if (!CACultureModel.TryUpgradeFromB10(
+                    if (!CACultureModel.TryUpgradeToCurrent(
                             settlement.localCulture,
                             out CACulture localCulture,
                             out string localFailure))
@@ -1651,10 +1656,11 @@ namespace ColonistAwareness
                 if (region.playerFounding == null)
                     return "regional plan " + region.regionalId
                         + " founding copy is missing";
-                if (region.playerFounding.schemaVersion != 3)
+                if (region.playerFounding.schemaVersion
+                    != expectedFoundingSchema)
                     return "regional founding-plan schema is "
                         + region.playerFounding.schemaVersion;
-                if (!CACultureModel.TryUpgradeFromB10(
+                if (!CACultureModel.TryUpgradeToCurrent(
                         region.playerFounding.culture,
                         out CACulture foundingCulture,
                         out string foundingCultureFailure))
@@ -1698,7 +1704,7 @@ namespace ColonistAwareness
             foreach (CARegionalSettlementRecord record in records)
             {
                 if (record == null) return "regional settlement record is null";
-                if (!CACultureModel.TryUpgradeFromB10(record.culture,
+                if (!CACultureModel.TryUpgradeToCurrent(record.culture,
                         out CACulture culture, out string cultureFailure))
                     return "regional settlement record " + record.regionalId
                         + "#" + record.slot + " Culture: " + cultureFailure;

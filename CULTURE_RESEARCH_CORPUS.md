@@ -1,6 +1,6 @@
 # Culture Research Corpus
 
-Date: 2026-08-13 PDT
+Date: 2026-08-18 PDT
 
 ## Purpose
 
@@ -35,6 +35,20 @@ DLC, or supported mods.
 | `Legitimacy` | Tyler (2003), DOI `10.1111/1540-5893.3703002` | Procedural legitimacy and the distinction between an outcome, the rule producing it, and acceptance of that rule. |
 | `Punishment` | Fehr and Gächter (2002), DOI `10.1038/415137a`; Boyd et al. (2003), DOI `10.1073/pnas.0630443100` | Punishment, cooperation, sanction response, and the need to keep observed sanctions separate from norm pressure. |
 | `Knowledge` | Sperber et al. (2010), DOI `10.1111/j.1468-0017.2010.01394.x` | Epistemic vigilance, source evaluation, expertise, corroboration, and confidence. |
+| `MarriageName` | MacEachern (2016), DOI [`10.1007/s40806-016-0045-9`](https://doi.org/10.1007/s40806-016-0045-9) | Marital surname choice as a socially expected, gendered descent and family-identity convention; it does not imply that one convention is universal. |
+| `ChildLabor` | Abdullah et al. (2023), DOI [`10.1016/j.newideapsych.2023.101032`](https://doi.org/10.1016/j.newideapsych.2023.101032) | Child work as a field of constituted and constitutive social norms, distinct from a child's actual work, capacity, education, or safety. |
+| `AgeNorms` | Kim et al. (2013), DOI [`10.1017/S0144686X13000111`](https://doi.org/10.1017/S0144686X13000111) | Shared expectations about age-appropriate behavior and standing; this supports an age norm, not an automatic office rule. |
+| `SocialDominance` | Pratto et al. (1994), DOI [`10.1037/0022-3514.67.4.741`](https://doi.org/10.1037/0022-3514.67.4.741) | Preference for group-based hierarchy as distinct from interpersonal dominance and from the institutions that enforce hierarchy. |
+| `Modesty` | Hamzeh (2011), DOI [`10.1080/13613324.2011.563287`](https://doi.org/10.1080/13613324.2011.563287) | Body covering as visual, spatial, and ethical social meaning. This case evidence justifies cultural variability, not a universal sex-specific direction. |
+| `BodyModification` | Schildkrout (2004), DOI [`10.1146/annurev.anthro.33.070203.143947`](https://doi.org/10.1146/annurev.anthro.33.070203.143947) | Bodily inscription and alteration as an interface between individual bodies and social meaning, separate from medical capability or doctrine. |
+| `BodilyIntegrity` | Archard (2008), DOI [`10.1111/j.1468-5930.2008.00394.x`](https://doi.org/10.1111/j.1468-5930.2008.00394.x) | Consent, bodily trespass, autonomy, and self-ownership as separable grounds for appraisal of extraction and intervention. |
+| `RitualPain` | Hegghammer (2021), DOI [`10.1007/s10767-020-09392-2`](https://doi.org/10.1007/s10767-020-09392-2) | Pain and violence can acquire socio-symbolic meaning through ordeal and group transformation; suffering itself does not prove that meaning. |
+| `Mortuary` | Bouckaert et al. (2024), DOI [`10.1057/s41599-024-03386-7`](https://doi.org/10.1057/s41599-024-03386-7) | Cross-cultural variation in corpse preparation, disposal, remembrance, and secondary rites; exact conduct remains an event or practice. |
+| `FoodDisgust` | Rozin and Fallon (1987), DOI [`10.1037/0033-295X.94.1.23`](https://doi.org/10.1037/0033-295X.94.1.23) | Food rejection by identity, origin, contamination, and disgust rather than taste or danger alone. It supports edibility and taboo constructs, not one row per food. |
+| `MoralExpansiveness` | Crimston et al. (2018), DOI [`10.1371/journal.pone.0205373`](https://doi.org/10.1371/journal.pone.0205373) | Variation in which human and nonhuman entities receive moral concern; it does not collapse animal use, diet, and targeted veneration into one rule. |
+| `EnvironmentalAttitudes` | Dunlap et al. (2000), DOI [`10.1111/0022-4537.00176`](https://doi.org/10.1111/0022-4537.00176) | Ecological worldview and restraint as population attitudes distinct from actual extraction, resource scarcity, and land-use institutions. |
+| `MobilitySedentism` | Kelly (1992), DOI [`10.1146/annurev.an.21.100192.000355`](https://doi.org/10.1146/annurev.an.21.100192.000355) | Mobility and sedentism as variable social organization with material and environmental effects, not a linear civilizational ranking. |
+| `RobotAcceptance` | de Graaf, Allouch, and van Dijk (2019), DOI [`10.1080/07370024.2017.1312406`](https://doi.org/10.1080/07370024.2017.1312406) | Attitudinal, normative, and control beliefs in acceptance of social robots; machine capability and access remain separate facts. |
 | `GHDI` | [German History in Documents and Images](https://germanhistorydocs.org/) | Weimar constitutional rights and period documents; German legal, civic, family, labor, and public-order change. |
 | `USHMM` | [United States Holocaust Memorial Museum Holocaust Encyclopedia](https://encyclopedia.ushmm.org/) | National Socialist race law, exclusion, family and gender policy, education, forced labor, punishment, persecution, and resistance. |
 | `Napoleon` | [Fondation Napoleon historical and legal dossiers](https://www.napoleon.org/) | Napoleonic and Second Empire family law, property, education, labor, administration, and institutional change. |
@@ -82,9 +96,44 @@ substantive downstream consumer.
 | Knowledge and tradition | `knowledge.noveltyAcceptance` | tradition-bound to experimental | research attempts, corroboration, adoption, and observed payoff | claim evaluation, research adoption, method rules | `WVS7`, `Knowledge`; novelty does not increase discovery or truth directly |
 | Knowledge and tradition | `knowledge.expertiseDeference` | status-indifferent to expert-led judgment | advice, demonstrated skill, source accuracy, and task outcomes | source weighting, expert-role support, credential rules | `ESS`, `Knowledge`; expertise is domain-specific and must be represented |
 
+## B16 reverse playable-mechanics decomposition
+
+The B16 expansion was admitted by reading playable mechanics back toward their
+owners. Each row below records the native or CA seam that made the question
+necessary, the research family supporting the decomposition, and the boundary
+that prevents doctrine, appraisal, institutions, and conduct from collapsing
+into one field. This is the current governed matrix for the 24 additions.
+
+| Stable key | Playable mechanical seam | Research basis | Ownership decision and exclusion | Downstream use |
+|---|---|---|---|---|
+| `relationships.sexualConduct` | Physical-love precepts and represented non-spousal intimacy | `WVS7`, `GSS`, `Norms` | Culture appraises consensual conduct; Ideoligion prescribes it and relationship events remain practice. | relationship appraisal; marriage and conduct rules |
+| `relationships.marriageNaming` | Native marriage-name precepts and represented marriage/name changes | `MarriageName`, `ISSP22` | Culture owns the expected convention; native doctrine and each pawn's actual name remain authoritative facts. | marriage-name appraisal and registration custom |
+| `relationships.childhoodProtection` | Child labor, education, care, and harm, including exact supported precepts | `ChildLabor`, `ISSP22` | Culture appraises adult obligation versus protected childhood; age, capacity, work assignment, and child-welfare rules remain separate. | child-work appraisal; welfare politics; work eligibility |
+| `status.ageStanding` | Age-standing precepts plus represented deference, office, care, and work by age | `AgeNorms`, `Schwartz` | Culture owns age-based standing; biological age and actual qualifications do not automatically grant authority. | deference appraisal; office support and qualifications |
+| `groups.doctrinalPluralism` | Ideoligion diversity, conversion, and cross-Ideoligion observance | `WVS7`, `ESS`, `Norms` | Culture appraises doctrinal difference; each Ideoligion retains its own doctrine and conversion remains an event. | conversion appraisal; membership conflict and access |
+| `groups.xenotypeHierarchy` | Preferred-xenotype doctrine and represented treatment/status by xenotype | `SocialDominance`, `WVS7` | Culture owns legitimacy attributed to group hierarchy; xenotype facts and institutional eligibility remain separate. | recruitment appraisal; status conflict; eligibility rules |
+| `labor.workExpectation` | Repeated upkeep, care, craft, research, cultivation, tending, transport, and repair | `WVS7`, `Norms` | Culture owns expected contribution; actual work, incapacity, schedules, and compelled labor are not inferred from it. | work appraisal; labor-duty support; obligation rules |
+| `property.predatoryAcquisition` | Raids, seizures, restitution, and taking from downed people | `Norms`, `Legitimacy` | Culture appraises taking by force; ownership, war authority, and each seizure remain independently represented. | raid/seizure appraisal; property and war support |
+| `war.violenceAcceptance` | Violence doctrine, assaults, battles, defense, and interpersonal violence | `WVS7`, `Schwartz`, `Norms` | Culture records the accepted breadth of violence; combat necessity, legal force, and actual attacks remain separate. | conduct appraisal; security and war support; force rules |
+| `body.maleExposure` | Sex-specific nudity/apparel precepts and represented exposure | `Modesty`, `Norms` | Culture owns expectations applied to male bodies; apparel, temperature needs, and native doctrine remain authoritative. | apparel/exposure appraisal and dress rules |
+| `body.femaleExposure` | Sex-specific nudity/apparel precepts and represented exposure | `Modesty`, `Norms` | Culture owns expectations applied to female bodies without forcing symmetry with the male distribution. | apparel/exposure appraisal and dress rules |
+| `body.alteration` | Body-modification, biosculpting, scarification, blindness, and their exact events | `BodyModification`, `Norms` | Culture appraises deliberate alteration; capability, consent, doctrine, and each procedure remain separate. | modification appraisal; medical and ritual authorization |
+| `body.integrity` | Organ-use doctrine plus extraction, implantation, sale, and consent facts | `BodilyIntegrity`, `Norms` | Culture records protection expected against non-consensual use; medical capability and consent rules remain separate owners. | organ/medical appraisal; rights support; extraction rules |
+| `body.painMeaning` | Pain, scarification, and blinding precepts plus represented suffering and ordeal | `RitualPain`, `Norms` | Culture records social meaning attributed to pain; injury, doctrine, and ritual authorization do not prove approval. | pain/ordeal appraisal and medical/ritual rules |
+| `death.humanRemainsTreatment` | Corpse handling, human butchery, exposure, and skull-display precepts | `Mortuary`, `Norms` | Culture appraises treatment of remains; doctrine, ownership of a corpse, disposal rules, and each act remain separate. | corpse-treatment appraisal and corpse-use rules |
+| `food.humanFleshAcceptance` | Cannibalism precepts plus exact human-meat consumption and butchery events | `FoodDisgust`, `Norms` | Culture records abhorrence through prestige; doctrine and actual eating remain independent facts. | meal appraisal and food/corpse-use rules |
+| `food.animalFoodAcceptance` | Meat-eating/ranching precepts plus animal-food consumption and slaughter | `MoralExpansiveness`, `FoodDisgust` | Culture appraises animal-derived food; animal moral standing, diet doctrine, slaughter, and nutritional value remain separate. | meal/slaughter appraisal and food-use rules |
+| `food.adaptability` | Fungus, insect-meat, and nutrient-paste precepts plus unfamiliar-food consumption | `FoodDisgust`, `Norms` | One edibility/adaptability construct groups origin-based unfamiliar foods without manufacturing one Culture row per ingredient. | food-choice appraisal and provision rules |
+| `substances.recreationalUse` | Drug/alcohol precepts plus exact ingestion and administration events | `WVS7`, `Norms` | Culture appraises non-medical use; chemical effects, addiction, medical administration, doctrine, and drug policy stay separate. | drug-use appraisal and medical/recreational rules |
+| `animals.moralStanding` | Slaughter and innocent-animal killing; target-specific veneration remains native-only | `MoralExpansiveness`, `Norms` | Culture owns general moral protection owed to animals; CA does not turn veneration of one animal into a global appraisal. | animal-treatment appraisal and harm rules |
+| `environment.resourceStewardship` | Tree cutting, mining, extraction doctrine, and represented extraction | `EnvironmentalAttitudes`, `Norms` | Culture owns expected restraint; terrain, scarcity, actual extraction, and land-use law remain separate. | extraction appraisal and land/resource rules |
+| `settlement.permanence` | Nomadism precepts and represented migration, abandonment, rebuilding, and tenure | `MobilitySedentism`, `Norms` | Culture appraises mobility versus permanent roots; location, buildings, survival constraints, and tenure institutions remain separate. | departure/settlement appraisal and tenure rules |
+| `daily.comfortExpectation` | Comfort and rough-living precepts plus housing, furnishings, and deprivation | `WVS7`, `Schwartz`, `Norms` | Culture owns proper material expectations; wealth, available furniture, need state, and provision rules remain separate. | comfort/housing appraisal and provision expectations |
+| `technology.machineDelegation` | Mechanoid-labor/autonomous-weapon doctrine plus represented machine work and defense | `RobotAcceptance`, `Norms` | Culture appraises delegation to machines; technological knowledge, machine access, capability, and deployment rules remain separate. | machine-work appraisal; labor/security support |
+
 ## Built-in historical and social presets
 
-Presets are complete editable Culture objects. A preset writes all 24 means,
+Presets are complete editable Culture objects. A preset writes all 48 question values,
 salience values, and one global diversity setting into the same distributions
 used by manual editing and randomization. It creates no mode flag and has no
 blend operation. Editing one question after applying a preset changes only that
@@ -92,14 +141,15 @@ question.
 
 The Society catalog is a separate joint initializer, not another presentation
 of the Culture catalog. Each Society recipe has its own key, name, metadata,
-Culture reference, and complete Political Order composition. The political
+Culture reference, complete Political Order composition, and complete
+Technological Knowledge composition. The political
 starting point below is construction provenance only. Each recipe materializes
 and owns its frozen complete 26-question composition, including any
 evidence-backed question distributions; entries may share a starting point when
 the evidence does not justify manufacturing a difference. Application never
-reconsults the Political Order preset catalog. It validates and copies both
-components into their canonical faction owners without
-retaining preset identity. Culture and Political Order keep their own editors,
+reconsults the Political Order preset catalog. It validates and copies all three
+components into their canonical faction owner without retaining preset identity.
+Culture, Political Order, and Technological Knowledge keep their own editors,
 component presets, and consumers, and an established faction's represented
 institutions are not rewritten.
 

@@ -1,7 +1,7 @@
 # Colonist Awareness - roadmap
 
-The A sequence is closed at `A102`; the chronology is complete through `B15`,
-and `B16` is the next development batch after the operator runtime test.
+The A sequence is closed at `A102`; the chronology is complete through `B16`,
+and `B17` is the next development batch after the operator runtime test.
 Historical batch identifiers below use the current sequence. Thematic `T-*`
 identifiers link continuing work across nonadjacent batches. The chronological
 catalog is [`BATCH_LOG.md`](BATCH_LOG.md); thematic links are in
@@ -1713,5 +1713,24 @@ Experimental Distributed Knowledge changes only availability and custody: the
 same state is projected through accessible pawns, institutions, and records at
 the requesting settlement or map. Campaign catalog 4 and pending epoch 13 carry
 the supported B14-to-B15 migration without inventing prior custody or history.
-The next action after technical closure is the operator's runtime test; `B16` is
-the next ordinary batch.
+
+## Playable Social Ontology and Ideoligion Semantics - B16 / T-001, T-002, T-004, T-006, T-019, T-021-T-025, T-028, T-030
+
+B16 audits playable Core, DLC, CA, and explicitly supported-mod mechanics back
+to their semantic owners. Native Ideoligion retains explicit doctrine and
+execution; Culture owns population appraisal and historical drift; Political
+Order owns legitimate-arrangement beliefs; represented institutions own rules
+in force; and practice owns repeated conduct. Exact package, definition kind,
+and definition identity are required before doctrine can contribute bounded
+Culture evidence. Exact native events are observed only after RimWorld executes
+them, and one occurrence is neither a practice nor proof of approval.
+
+The reverse audit expands Culture from B13's historical twenty-four-question
+boundary to forty-eight questions in twelve categories. Campaign catalog 5 and
+question registry 3 preserve every compatible former Culture row and add only
+neutral, low-confidence, explicitly unobserved values for missing constructs.
+The governed fixture's one proven non-constituent sparse row remains exact legacy
+evidence instead of live scope state. The current fixture, retained B10-B15
+suites, reproducible builds, and byte-verified deployment close the static
+boundary. The next action is the operator's runtime test; `B17` is the next
+ordinary batch.

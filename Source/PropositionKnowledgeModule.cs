@@ -438,16 +438,20 @@ namespace ColonistAwareness
                     (sourcePawn.skills?.GetSkill(SkillDefOf.Social)?.Level
                         ?? 0) / 20f);
             float authority = SourceAuthority(sourcePawn);
-            string questionKey = CACultureQuestionRegistry
-                .QuestionForSocialSubject(fact.SubjectKey);
-            CAPawnCulturalAttitude prior = questionKey.NullOrEmpty() ? null
-                : CACulturalCognitionWorldComponent.Current?.AttitudeFor(
-                    holder, questionKey);
-            int direction = CACultureQuestionRegistry
-                .DirectionForSocialSubject(fact.SubjectKey);
-            float priorCongruence = prior == null ? 0.5f : Mathf.Clamp01(
-                (prior.privateAttitude * direction
-                    * (fact.Realization < 0 ? -1f : 1f) + 1f) * 0.5f);
+            float[] priorSignals = CACultureQuestionRegistry
+                .AdaptersForSocialSubject(fact.SubjectKey)
+                .Select(adapter => new
+                {
+                    Adapter = adapter,
+                    Prior = CACulturalCognitionWorldComponent.Current?
+                        .AttitudeFor(holder, adapter.QuestionKey)
+                }).Where(value => value.Prior != null)
+                .Select(value => Mathf.Clamp01((value.Prior.privateAttitude
+                    * value.Adapter.Direction
+                    * (fact.Realization < 0 ? -1f : 1f) + 1f) * 0.5f))
+                .ToArray();
+            float priorCongruence = priorSignals.Length == 0 ? 0.5f
+                : priorSignals.Average();
             var input = new CAKnowledgeAcceptanceInput(
                 sourceReliability: directObservation ? 0.90f : 0.55f,
                 relationshipTrust: relationshipTrust,

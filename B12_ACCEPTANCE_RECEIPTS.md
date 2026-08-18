@@ -5,10 +5,10 @@ These receipts exercise the pure equations used by the runtime wrappers, inspect
 | # | Contract | Result | Evidence |
 |---:|---|---|---|
 | 1 | question registry validates | **PASS** | no failure |
-| 2 | current registry retains the B12 questions | **PASS** | count=24; unique=24 |
+| 2 | current registry retains the B12 questions | **PASS** | count=48; unique=48 |
 | 3 | five ordered anchors per question | **PASS** | all anchors are named and strictly monotonic |
 | 4 | every question names a represented consumer | **PASS** | behavior, political, institution, and knowledge routes inspected |
-| 5 | explicit new-question defaults validate | **PASS** | 24/24 neutral authoring defaults; no identity-derived facts |
+| 5 | explicit new-question defaults validate | **PASS** | 48/48 neutral authoring defaults; no identity-derived facts |
 | 6 | materialization is deterministic | **PASS** | same seed=0.353485/0.353485 |
 | 7 | pawns vary within one population | **PASS** | pawn17=0.353; pawn18=0.095 |
 | 8 | variance floor rejects degenerate input | **PASS** | floor=0.06 |
@@ -73,7 +73,7 @@ These receipts exercise the pure equations used by the runtime wrappers, inspect
 | 67 | research uses the complete represented contract | **PASS** | question, actors, authority, method, facility, materials, evidence, preservation, and dissemination |
 | 68 | institutions preserve represented knowledge | **PASS** | organization records become custodied propositions |
 | 69 | knowledge networks remain sparse and bounded | **PASS** | recent institutional records and prior knowledge are capped |
-| 70 | all questions have actual source consumers | **PASS** | 24/24 registry constants occur outside the registry |
+| 70 | all questions have actual source consumers | **PASS** | 24/24 B12/B13 registry constants remain in their designated consumers; later questions use the registry-driven cognition path |
 | 71 | durable owners partition represented cognition | **PASS** | cultural cognition, political cognition, and proposition knowledge persist separately |
 | 72 | legitimacy is owned by the represented organization | **PASS** | organization schedules and owns legitimacy; cognition provides read-only evidence; no duplicate institution ledger |
 | 73 | Culture changes selection appraisal, not authorization | **PASS** | Allowed remains the causal authorization; CA discretionary job selection consumes the response |
@@ -96,7 +96,7 @@ These receipts exercise the pure equations used by the runtime wrappers, inspect
 | 90 | durable Culture catalog admits exact nine-to-ten migration | **PASS** | minimum=9; current=10 |
 | 91 | organization schema adds owner-held institutional appraisals | **PASS** | world.organization 1 -> 2 carries legitimacy and sanction appraisals |
 | 92 | organization one-to-two migration initializes new owned lists | **PASS** | schema-1 organizations gain empty appraisal histories before schema-2 validation; no prior appraisal history is invented |
-| 93 | catalog routes and nested bindings are complete | **PASS** | 86 catalog schemas have executable component, nested-record, or native-class persistence routes |
+| 93 | catalog routes and nested bindings are complete | **PASS** | 87 catalog schemas have executable component, nested-record, or native-class persistence routes |
 | 94 | events are persisted before Culture history changes | **PASS** | fact -> pawn reaction -> sustained group pattern -> Culture transition |
 | 95 | Culture transitions require duration and coverage | **PASS** | minimum evidence, pawns, participation, and historical duration are explicit |
 | 96 | unchanged history suppresses no-op transitions | **PASS** | identical evidence and sub-significance changes do not append history |
@@ -111,11 +111,11 @@ These receipts exercise the pure equations used by the runtime wrappers, inspect
 | 105 | social and political graphs are sparse | **PASS** | each pawn retains at most eight influence edges; issue links are faction-bounded |
 | 106 | history, research, and sanction memory are capped | **PASS** | per-pawn evidence, research inputs, and sanction histories have explicit caps |
 | 107 | fixture pair replacement rolls back injected failure | **PASS** | active and mirror originals survive a failure after the first replacement |
-| 108 | active and mirror fixtures agree | **PASS** | SHA-256=27354E00647007BD54EC5D5E0B29E7E408E40CEEBE4A3CAAADE068D23BDCA101; mirror=27354E00647007BD54EC5D5E0B29E7E408E40CEEBE4A3CAAADE068D23BDCA101 |
-| 109 | fixture carries the B12 authoring epoch | **PASS** | authoringDataEpoch=12 |
-| 110 | authored identity and composition survive | **PASS** | region/candidate/tile/scale; 3 factions; 4 settlements; 9 populations; 19 program facts |
-| 111 | fixture uses current Culture schema | **PASS** | 8 schema-10 records; 194 distributions; obsolete meaning payloads absent |
-| 112 | migration evidence survives serialization | **PASS** | questions=194; B12-authored=22; evidence=26; unmapped compulsory transfer preserved |
+| 108 | active and mirror fixtures agree | **PASS** | SHA-256=004C5A0F2505594D36E89CBD0F02A4BBE46C1B044965E6A5F29AFD27AFC521AF; mirror=004C5A0F2505594D36E89CBD0F02A4BBE46C1B044965E6A5F29AFD27AFC521AF |
+| 109 | fixture carries the current authoring epoch | **PASS** | authoringDataEpoch=14 |
+| 110 | authored identity and composition survive | **PASS** | region/candidate/tile/scale; 3 factions; 4 settlements; 4 current population assignments; 19 program facts |
+| 111 | fixture uses current Culture schema | **PASS** | 8 schema-11/registry-3 records; 577 distributions; every represented inherited population scope has 48 questions; obsolete meaning payloads absent |
+| 112 | migration evidence survives serialization | **PASS** | questions=577; B12 live=21; quarantined=1; evidence=26; complete roots plus valid represented local facts retained; one orphaned scoped fact and unmapped compulsory transfer preserved as evidence |
 | 113 | current fixture round-trips structurally | **PASS** | question identities survive XML readback |
 
 Result: **113/113 PASS**

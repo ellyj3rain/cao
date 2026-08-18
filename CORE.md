@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Core |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.6.0.0-alpha` · closed batch tip `B15` · next `B16` |
+| Version | `1.6.1.0-alpha` · closed batch tip `B16` · next `B17` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `CORE.md` |
@@ -91,7 +91,7 @@ mod owns the persistent organizational reason and continuity.
 
 Culture is persistent longitudinal social-historical state with a substantive
 inherited baseline. Its current normative authority is a population distribution
-over twenty-four admitted Culture questions in eight categories, not a broad
+over forty-eight admitted Culture questions in twelve categories, not a broad
 meaning row or factual social subject. A distribution owns its center, spread,
 descriptive norm, prestige, salience, norm pressure, visibility, inherited-prior
 confidence, divergence tolerance, subgroup mixture, provenance, and evidence
@@ -100,9 +100,11 @@ referents and practices remain concrete repeated conduct with evidence and
 consumers. Exact B11 meanings migrate only where an ordered question exists;
 only weighted approval and salience acquire current question semantics, and
 every former dimension otherwise remains explicit legacy evidence.
-The admitted registry is internally complete for its current constructs; it is
-not an exhaustive claim over every culturally variable native or supported-mod
-mechanic.
+The admitted registry is the current result of a reverse playable-mechanics
+audit and is not a permanent quota. Native Ideoligion doctrine, represented
+institutions, and actual practice remain separate facts. Exact package, kind,
+and definition identity is required before native or supported-mod content can
+be interpreted as Culture evidence; unknown content remains native-only.
 
 Pawns retain deterministic private and public attitudes, attention, inherited-
 prior strength, perceived norms and social pressure, observation likelihood,
@@ -176,7 +178,7 @@ compatibility fallback after authored faction state becomes authoritative.
   real source-and-consumer contracts. Political Order is a complete composition
   over concrete questions; represented institutions remain separate factual
   state. Presets and deterministic generation fill the same complete variables
-  and remain editable. Pending-authoring epoch 13 may reject incompatible
+  and remain editable. Pending-authoring epoch 14 may reject incompatible
   unconfirmed drafts, while realized campaign state follows the durable B11
   boundary and current owner-specific compatibility rules. Manual, preset,
   profile, random, and generated Culture share one object; causal fields remain

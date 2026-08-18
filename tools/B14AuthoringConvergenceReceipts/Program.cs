@@ -10,7 +10,8 @@ internal static class Program
 
     private static int Main(string[] args)
     {
-        if (args.Length != 3)
+        bool verifyOnly = args.Length == 4 && args[3] == "--verify-only";
+        if (args.Length != 3 && !verifyOnly)
         {
             Console.Error.WriteLine("usage: B14AuthoringConvergenceReceipts "
                 + "<repo> <active-fixture> <mirror-fixture>");
@@ -377,9 +378,9 @@ internal static class Program
                 && culture.Contains("A later explicit rename sets NameField"),
             "the faction owns applied Culture; each settlement's explicit local-history record references that parent and refreshes inherited baselines until a local field is authored");
         C("Region authoring remains the current schema",
-            Value(plan, "schemaVersion") == "14"
-                && regional.Contains("CurrentSchemaVersion = 14"),
-            "regional plan schema 14 retains the existing geography and composition while adding faction-owned technological knowledge");
+            Value(plan, "schemaVersion") == "15"
+                && regional.Contains("CurrentSchemaVersion = 15"),
+            "regional plan schema 15 retains the existing geography and composition while carrying the current faction-owned authored state");
 
         string receiptPath = Path.Combine(repo, "Receipts", "B14",
             "B14_AUTHORING_CONVERGENCE_STATIC_RECEIPT.md");
@@ -402,7 +403,7 @@ internal static class Program
             .AppendLine("Result: **" + (failures == 0 ? "PASS" : "FAIL")
                 + "** - " + (checks.Count - failures) + "/" + checks.Count
                 + " checks passed.");
-        File.WriteAllText(receiptPath, output.ToString(),
+        if (!verifyOnly) File.WriteAllText(receiptPath, output.ToString(),
             new UTF8Encoding(false));
         foreach (Check check in checks)
             Console.WriteLine($"{check.Number:00} "

@@ -19,7 +19,8 @@ internal static class Program
 
     private static int Main(string[] args)
     {
-        if (args.Length != 6)
+        bool verifyOnly = args.Length == 7 && args[6] == "--verify-only";
+        if (args.Length != 6 && !verifyOnly)
         {
             Console.Error.WriteLine("usage: B15TechnologicalKnowledgeReceipts "
                 + "<repo> <rimworld-managed-directory> <rimworld-data-directory> "
@@ -73,8 +74,8 @@ internal static class Program
             object knowledge = Activator.CreateInstance(knowledgeType)!;
             ApplySociety(tryApply, presets[index], culture, political,
                 knowledge, "b15-receipt:" + index);
-            Require(ListCount(culture, "inheritedQuestions") == 24,
-                "Society preset did not apply 24 Culture values");
+            Require(ListCount(culture, "inheritedQuestions") == 48,
+                "Society preset did not apply 48 Culture values");
             Require(ListCount(political, "questions") == 26,
                 "Society preset did not apply 26 Political Order values");
             Require(ListCount(knowledge, "domains") == 9,
@@ -202,21 +203,24 @@ internal static class Program
         Directory.CreateDirectory(receiptDirectory);
         string assemblyHash = Convert.ToHexString(SHA256.HashData(
             File.ReadAllBytes(dll)));
-        WriteExecutionReceipt(Path.Combine(receiptDirectory,
-            "B15_TECHNOLOGICAL_KNOWLEDGE_EXECUTION_RECEIPT.md"), dll,
-            assemblyHash, presets.Count, societyHashes, standard);
-        WriteMappingReceipt(Path.Combine(receiptDirectory,
-            "B15_TECHNOLOGICAL_KNOWLEDGE_MAPPING_RECEIPT.md"), dll,
-            assemblyHash, researchRows);
-        WriteStaticReceipt(Path.Combine(receiptDirectory,
-            "B15_TECHNOLOGICAL_KNOWLEDGE_STATIC_RECEIPT.md"), repo, dll,
-            assemblyHash);
-        WriteConsumerMatrixReceipt(Path.Combine(receiptDirectory,
-            "B15_TECHNOLOGICAL_KNOWLEDGE_CONSUMER_MATRIX.md"), dll,
-            assemblyHash);
-        WriteNativeAuthorityReceipt(Path.Combine(receiptDirectory,
-            "B15_NATIVE_TECH_AUTHORITY_CENSUS.md"), dll, assemblyHash,
-            nativeReads);
+        if (!verifyOnly)
+        {
+            WriteExecutionReceipt(Path.Combine(receiptDirectory,
+                "B15_TECHNOLOGICAL_KNOWLEDGE_EXECUTION_RECEIPT.md"), dll,
+                assemblyHash, presets.Count, societyHashes, standard);
+            WriteMappingReceipt(Path.Combine(receiptDirectory,
+                "B15_TECHNOLOGICAL_KNOWLEDGE_MAPPING_RECEIPT.md"), dll,
+                assemblyHash, researchRows);
+            WriteStaticReceipt(Path.Combine(receiptDirectory,
+                "B15_TECHNOLOGICAL_KNOWLEDGE_STATIC_RECEIPT.md"), repo, dll,
+                assemblyHash);
+            WriteConsumerMatrixReceipt(Path.Combine(receiptDirectory,
+                "B15_TECHNOLOGICAL_KNOWLEDGE_CONSUMER_MATRIX.md"), dll,
+                assemblyHash);
+            WriteNativeAuthorityReceipt(Path.Combine(receiptDirectory,
+                "B15_NATIVE_TECH_AUTHORITY_CENSUS.md"), dll, assemblyHash,
+                nativeReads);
+        }
 
         Console.WriteLine("PASS faction-owned three-component Society apply: "
             + presets.Count + "/" + presets.Count);
@@ -791,30 +795,30 @@ internal static class Program
         Type catalog = RequiredType(assembly,
             "ColonistAwareness.CACampaignSchemaCatalog");
         Require((int)RequiredField(catalog, "CurrentCatalogVersion")
-                .GetRawConstantValue()! == 4,
-            "campaign schema catalog is not B15 version 4");
+                .GetRawConstantValue()! == 5,
+            "campaign schema catalog is not current version 5");
         IList definitions = (IList)RequiredField(catalog, "All").GetValue(null)!;
         var versions = definitions.Cast<object>().ToDictionary(
             item => StringProperty(item, "Key"),
             item => (int)RequiredProperty(item.GetType(), "CurrentVersion")
                 .GetValue(item)!);
-        Require(versions["world.faction-state"] == 3
-                && versions["world.player-founding"] == 3
-                && versions["world.regional"] == 3
+        Require(versions["world.faction-state"] == 4
+                && versions["world.player-founding"] == 4
+                && versions["world.regional"] == 4
                 && versions["model.technological-knowledge"] == 1
                 && versions["model.player-founding-plan"] == 4
-                && versions["model.regional-plan"] == 14
+                && versions["model.regional-plan"] == 15
                 && versions["model.regional-settlement-record"] == 9,
-            "campaign schema versions do not describe B15 ownership");
+            "current campaign schema versions do not retain B15 ownership");
     }
 
     private static void TestSupportedB14Migrations(Assembly gameAssembly,
         Assembly assembly, string repo)
     {
         string evidence = Path.Combine(repo, "Receipts", "B15", "evidence",
-            "active-schema13-before-b15.xml");
+            "active-schema13-compatible-migration.xml");
         Require(File.Exists(evidence),
-            "preserved B14 migration fixture is missing");
+            "derived compatible B14 migration fixture is missing");
         Type planType = RequiredType(assembly,
             "ColonistAwareness.CARegionalPlan");
 
@@ -948,15 +952,15 @@ internal static class Program
         Require(regionalFailure == null,
             "regional owner migration failed: " + regionalFailure);
         Require((int)RequiredField(planType, "schemaVersion")
-                    .GetValue(regionalPlan)! == 14
+                    .GetValue(regionalPlan)! == 15
                 && (int)RequiredField(recordType, "schemaVersion")
                     .GetValue(record)! == 9
                 && !string.IsNullOrEmpty(StringField(record,
                     "factionKnowledgeId"))
                 && Method(regionalOwnerType, "ValidateCampaignState", 0)
                     .Invoke(regionalOwner, Array.Empty<object>()) == null,
-            "regional owner migration did not produce valid plan, founding, "
-                + "and settlement-record state");
+            "regional owner migration did not produce valid current plan, "
+                + "founding, and settlement-record state");
     }
 
     private static void TestSettlementPotentialBoundary(Assembly assembly)
@@ -1072,8 +1076,8 @@ internal static class Program
 
         Require(plan != null, "current regional fixture did not Scribe-load");
         Require((int)RequiredField(planType, "schemaVersion").GetValue(plan)!
-                == 14,
-            "current regional fixture did not load as schema 14");
+                == 15,
+            "current regional fixture did not load as schema 15");
         IList factions = (IList)RequiredField(planType, "factions")
             .GetValue(plan)!;
         IList settlements = (IList)RequiredField(planType, "settlements")
@@ -1476,10 +1480,10 @@ internal static class Program
             .AppendLine("| Lifecycle | PASS - recruitment/departure, death, incapacity queries, research, custody, and redundancy use the same domain/competency keys |")
             .AppendLine("| Habitat | PASS - environment requirements remain separate from knowledge and material/program satisfaction |")
             .AppendLine("| Autonomous consumers | PASS - autonomous homes and spatial furnishing call the canonical construction query |")
-            .AppendLine("| Campaign schemas | PASS - catalog 4 registers knowledge schema 1 and supported B14-to-B15 owner/nested migrations |")
+            .AppendLine("| Campaign schemas | PASS - catalog 5 retains knowledge schema 1, supports B14-to-B15 migration, and advances adjacent social owners for Culture registry 3 |")
             .AppendLine("| Pending authoring | PASS - epoch 13 discards obsolete two-component drafts rather than inventing authored knowledge |")
             .AppendLine()
-            .AppendLine("Repository: `" + repo + "`")
+            .AppendLine("Repository: repository root")
             .AppendLine()
             .AppendLine("This static receipt verifies source topology and compiled contracts. It does not claim operator visual or gameplay acceptance.");
         File.WriteAllText(path, text.ToString(), new UTF8Encoding(false));
@@ -1563,7 +1567,7 @@ internal static class Program
                 "yyyy-MM-dd HH:mm:ss 'UTC'") + " / "
                 + now.ToString("yyyy-MM-dd HH:mm:ss zzz"))
             .AppendLine()
-            .AppendLine("Assembly: `" + dll + "`")
+            .AppendLine("Assembly: `" + PortableAssemblyPath(dll) + "`")
             .AppendLine("SHA-256: `" + hash + "`")
             .AppendLine();
     }
@@ -1670,6 +1674,12 @@ internal static class Program
     private static string Read(string repo, string relative) =>
         File.ReadAllText(Path.Combine(repo,
             relative.Replace('/', Path.DirectorySeparatorChar)));
+
+    private static string PortableAssemblyPath(string dll) =>
+        string.Equals(Path.GetFileName(dll), "ColonistAwareness.dll",
+            StringComparison.OrdinalIgnoreCase)
+            ? "Assemblies/ColonistAwareness.dll"
+            : Path.GetFileName(dll);
 
     private static void Require(bool condition, string failure)
     {

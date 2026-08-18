@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Governance |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.6.0.0-alpha` · closed batch tip `B15` · next `B16` |
+| Version | `1.6.1.0-alpha` · closed batch tip `B16` · next `B17` |
 <!-- cao:generated:version END -->
 | Design authority | ellyj3rain |
 | Repository | `GOVERNANCE.md` |
@@ -107,7 +107,7 @@ substrate; the other three are what make the mod a framework.
   evidence. Local Git commits are supporting engineering evidence when retained.
 - Batch identifiers share one namespace across letter eras. The A sequence is
   closed at `A102`; development continues with `[B#]` in the same directory and
-  log. `B15` is closed and `B16` is next after the operator runtime-test boundary. A new letter does not create another
+  log. `B16` is closed and `B17` is next after the operator runtime-test boundary. A new letter does not create another
   history tree, generator, catalog, or projection layer.
 - The records now under `Batches/` establish this append-only contract. The
   immediately preceding generated history tree was a regulatory projection, not
@@ -144,7 +144,7 @@ not expose those objects.
 ## Batch, thread, and version discipline
 
 - **Batch** is the atomic chronological development record. The closed history is
-  `A1` through `A102`, followed by `B1` through `B15`; `B16` is the next identifier.
+  `A1` through `A102`, followed by `B1` through `B16`; `B17` is the next identifier.
 - **Thread and family** are permanent, series-neutral semantic classifications.
   `T-*` and `TF-*` may connect nonadjacent batches across any letter sequence, and
   one batch may participate in several threads.
@@ -165,11 +165,11 @@ Maturity advances independently through `pre-alpha`, `alpha`, `beta`, `rc`, and
 GA.
 
 `tools/version-model.mjs` is the executable replay source. It derives `VERSION`,
-the generated version stamps, and `VERSION_MAP.md`; validates exact A1-B15
+the generated version stamps, and `VERSION_MAP.md`; validates exact A1-B16
 coverage; checks the thematic namespace; and fails if the declared next batch has
 already been consumed. Mechanically derived version facts are generated and
-gated, not hand-typed. Forty-two evidenced version units derive
-`1.6.0.0-alpha`.
+gated, not hand-typed. Forty-three evidenced version units derive
+`1.6.1.0-alpha`.
 
 When new development begins, the first batch opens the next contiguous version
 unit. Immediately following batches may share that version only when they form one
@@ -266,13 +266,14 @@ correctness, and surface review, a clean build, normal publication, and
 byte-identical closed-process deployment. Static evidence does not establish
 psychometric validity, empirical calibration, or gameplay quality.
 
-## B13 Culture Completion Contract
+## B13 Culture Boundary
 
-B13 retains B12's owners and completes its bounded Culture registry as twenty-four explicit
+B13 retained B12's owners and closed its bounded Culture registry as twenty-four explicit
 questions in eight categories. Every question has five ordered anchors,
 represented evidence, research provenance, pawn appraisal, a substantive
-consumer, and historical feedback. That internal closure is not an exhaustive
-audit of every culturally variable Core, DLC, or supported-mod mechanic. Manual editing, complete historical/social
+consumer, and historical feedback. B16 supersedes that registry as the current
+playable-mechanics coverage boundary while retaining B13 as historical evidence.
+Manual editing, complete historical/social
 presets, saved profiles, deterministic randomization, and generated completion
 all write the same Culture object. One global diversity control owns default
 population spread; per-question spread is advanced and local. Practices remain
@@ -285,7 +286,7 @@ persists the separated cognition fields under schema 2 and requires Culture
 question registry 2. Missing-event inference, identity-derived authoring, and
 silent player rerolls are invalid.
 
-B13 closes only after 67/67 B13 receipts, retained 75/78/113 B10-B12 suites,
+B13 closed after 67/67 B13 receipts, retained 75/78/113 B10-B12 suites,
 current-fixture agreement, independent causal/structural/surface review, a clean
 build, and byte-identical closed-process deployment. Static evidence does not
   establish empirical calibration or gameplay quality.
@@ -329,5 +330,30 @@ lost custody during a query. B15 closes only after supported
 B14-to-B15 migration, three-component atomic rollback, exact mapping,
 standard/distributed behavior, current-fixture preservation, retained
 regressions, independent review, reproducible build, and byte-identical
-closed-process deployment. `B16` is next; the immediate action is the operator's
-RimWorld runtime test.
+closed-process deployment.
+
+## B16 Playable Social Ontology Contract
+
+Ideoligion owns explicit doctrine, sacred or prohibited conduct, ritual, memes,
+precepts, roles, and religious or social prescriptions. Culture owns
+population-level social appraisal, distribution, disagreement, and historical
+drift. Political Order owns beliefs about legitimate political and economic
+arrangements. Institutions own rules and mechanisms actually in force. Practice
+owns represented repeated conduct. Agreement or conflict between these owners
+is meaningful state; no layer silently replaces another.
+
+Loaded native mechanics are audited by semantic owner before CA interprets
+them. `CAIdeoligionSemanticAdapterRegistry` maps only an exact package ID,
+definition kind, and `defName` to bounded Culture evidence. Unknown modded
+definitions remain native Ideoligion facts. `CANativeCultureEventAdapterRegistry`
+uses the same exact identity rule for native events after RimWorld executes
+them. Occurrences retain actor and source provenance; only repeated occurrences
+can establish practice, and practice never establishes approval by itself.
+
+Culture question registry 3 contains forty-eight questions in twelve categories
+as the present result of the reverse playable-mechanics audit, not as a quota.
+Catalog 5 upgrades compatible registry-2 Culture payloads additively: all former
+rows remain byte-for-byte equivalent in meaning and the twenty-four new rows
+enter each represented population scope as neutral, low-confidence, explicitly
+unobserved state. Faction, founding, regional, and map-longitudinal owners
+validate their complete nested state before publishing their new versions.

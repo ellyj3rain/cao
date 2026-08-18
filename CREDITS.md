@@ -78,6 +78,17 @@ SmashPhil. https://github.com/SmashPhil/Vehicle-Framework - MIT,
 (c) 2019-2026. Bundled with its SmashTools, CoreLib, DevTools and
 UpdateLogTool submodules, each separately MIT.
 
+## Ideology: More Precepts
+Luboš Luňák (llunak).
+https://github.com/llunak/rimworld-moreprecepts - RimWorld-EULA terms, with
+MIT for clearly original content.
+
+*Used for:* optional semantic compatibility only. CA audited the public Defs at
+commit `33eab9398d7acc608e11dd7390476fefc4f433f5` and maps selected exact
+package/kind/`defName` identities to Culture evidence. More Precepts remains the
+native executor. No upstream code or assets are copied or bundled, and the mod
+is not required.
+
 ## Economic stack
 
 ### Hospitality
