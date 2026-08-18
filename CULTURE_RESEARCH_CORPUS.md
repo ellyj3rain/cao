@@ -30,6 +30,14 @@ fact owner and does not assert that an event occurred.
 | `Legitimacy` | Tyler (2003), DOI `10.1111/1540-5893.3703002` | Procedural legitimacy and the distinction between an outcome, the rule producing it, and acceptance of that rule. |
 | `Punishment` | Fehr and Gächter (2002), DOI `10.1038/415137a`; Boyd et al. (2003), DOI `10.1073/pnas.0630443100` | Punishment, cooperation, sanction response, and the need to keep observed sanctions separate from norm pressure. |
 | `Knowledge` | Sperber et al. (2010), DOI `10.1111/j.1468-0017.2010.01394.x` | Epistemic vigilance, source evaluation, expertise, corroboration, and confidence. |
+| `GHDI` | [German History in Documents and Images](https://germanhistorydocs.org/) | Weimar constitutional rights and period documents; German legal, civic, family, labor, and public-order change. |
+| `USHMM` | [United States Holocaust Memorial Museum Holocaust Encyclopedia](https://encyclopedia.ushmm.org/) | National Socialist race law, exclusion, family and gender policy, education, forced labor, punishment, persecution, and resistance. |
+| `Napoleon` | [Fondation Napoleon historical and legal dossiers](https://www.napoleon.org/) | Napoleonic and Second Empire family law, property, education, labor, administration, and institutional change. |
+| `LOC` | [Library of Congress U.S. history and primary-source collections](https://www.loc.gov/classroom-materials/united-states-history-primary-source-timeline/) | Colonial North America, slavery, Civil War, emancipation, Freedmen, public voice, education, family, labor, and membership change. |
+| `NDLJ` | [National Diet Library, Modern Japan in Archives](https://www.ndl.go.jp/modern/e/) | Tokugawa-to-Meiji status, state formation, public education, political participation, and technical change. |
+| `AFE` | [Asia for Educators at Columbia University](https://afe.easia.columbia.edu/) | Late-imperial Chinese social hierarchy, examinations, kin organization, classical knowledge, and state administration. |
+| `LOC-Law` | [Law Library of Congress legal-history collections](https://www.loc.gov/research-centers/law-library-of-congress/) | Tanzimat equality, citizenship, property, conscription, education, adjudication, and public administration. |
+| `Met` | [Metropolitan Museum of Art Heilbrunn Timeline of Art History](https://www.metmuseum.org/toah/) | Mughal administration, court inclusion, trade, translation, expertise, artistic synthesis, and imperial rank. |
 
 The survey families show that the questions are intelligible and repeatedly
 measured. They do not provide ready-made RimWorld distributions. Built-in
@@ -77,6 +85,44 @@ used by manual editing and randomization. It creates no mode flag and has no
 blend operation. Editing one question after applying a preset changes only that
 question.
 
+The Society catalog is a separate joint initializer, not another presentation
+of the Culture catalog. Each Society recipe has its own key, name, metadata,
+Culture reference, and complete Political Order composition. The political
+starting point below is construction provenance only. Each recipe materializes
+and owns its frozen complete 26-question composition, including any
+evidence-backed question distributions; entries may share a starting point when
+the evidence does not justify manufacturing a difference. Application never
+reconsults the Political Order preset catalog. It validates and copies both
+components into their canonical faction owners without
+retaining preset identity. Culture and Political Order keep their own editors,
+component presets, and consumers, and an established faction's represented
+institutions are not rewritten.
+
+| Society preset | Political construction starting point |
+|---|---|
+| Mobile kin society | Communal assembly |
+| Ranked agrarian society | Customary landed order |
+| Civic market town | Civic free enterprise |
+| Central court society | Executive developmental state |
+| Frontier mutual-aid settlement | Communal assembly |
+| Industrial civic association | Progressive civic mixed economy |
+| Postwar United States (1946-1964) | Civic free enterprise |
+| Turn-of-the-millennium United States (1995-2005) | Civic free enterprise |
+| Contemporary United States (2017-2024) | Progressive civic mixed economy |
+| English North American colonies (1607-1700) | Customary landed order |
+| Civil War Union (1861-1865) | Civic free enterprise |
+| Confederate States (1861-1865) | Customary landed order |
+| Freedpeople during emancipation (1863-1877) | Progressive civic mixed economy |
+| First French Empire (1804-1815) | Executive developmental state |
+| Second French Empire (1852-1870) | Executive developmental state |
+| Weimar Germany (1919-1933) | Progressive civic mixed economy |
+| Nazi Germany (1933-1945) | Central party state |
+| Late Tokugawa Japan (1800-1867) | Customary landed order |
+| Meiji Japan (1868-1912) | Executive developmental state |
+| Late Qing China (1800-1911) | Customary landed order |
+| Tanzimat Ottoman Empire (1839-1876) | Executive developmental state |
+| Mughal Empire (1556-1605) | Customary landed order |
+
 | Preset | Historical/social organizing evidence | Deliberate profile | Limitation |
 |---|---|---|---|
 | Mobile kin band | Small mobile groups with strong kin reciprocity, little durable office, and knowledge carried through social transmission | strong kin duty, low durable rank, limited formal enforcement, moderate outsider caution, shared hardship provision, broad practical knowledge | not assigned to any ethnicity or time period; mobility and kin organization are authored facts |
@@ -88,12 +134,29 @@ question.
 | United States - postwar mid-century (1946-1964) | GSS longitudinal social-change reports, WVS United States samples, and ISSP family and gender-role modules support the period comparison | strong conventional family norms, gendered work, private property, civic participation, and confidence in enforcement | research-informed design prior; it is not a fitted national distribution and does not assign any pawn a value by identity |
 | United States - turn of the millennium (1995-2005) | The same longitudinal source families support a later comparison point within one society | broader relationship and office acceptance, open membership, strong mobility, private property, and accessible technical knowledge | central positions abstract internal regional and population disagreement into the separately authored diversity setting |
 | United States - contemporary (2017-2024) | Recent GSS, WVS, and ISSP waves support a third period comparison while retaining the same question registry | broad relationship and office acceptance, open work, civic voice, accessible knowledge, and substantial internal disagreement | current-period label bounds the source window; empirical calibration and measurement-invariance review remain pending |
+| English North American colonies (1607-1700) | `LOC` colonial and slavery collections | strong household duty, restricted standing, private property, coerced labor, guarded membership, and severe punishment | represents dominant English colonial settlements, not Indigenous nations, enslaved Africans, other empires, or every colony |
+| The Union (1861-1865) | `LOC` Civil War and emancipation collections | anti-aristocratic civic identity, private property, wartime enforcement, changing membership claims, and broad white male participation | Black, immigrant, Indigenous, dissenting, local, and class cultures remain separate populations |
+| The Confederacy (1861-1865) | `LOC` Civil War and slavery collections | hereditary racial caste, concentrated property, enslaved labor, exclusion, restricted voice, and severe punishment | represents the Confederacy's dominant slaveholding culture, not enslaved people, free Black communities, Indigenous nations, Unionists, or every white Southerner |
+| Freedpeople (1863-1877) | `LOC` Freedmen and emancipation collections | family reunification, freedom from forced labor, mutual aid, education, mobility, public voice, and equal citizenship | represents freedpeople building families and institutions during emancipation and Reconstruction without collapsing every Black American into one profile |
+| Napoleonic France (1804-1815) | `Napoleon` civil-law and administrative dossiers | patriarchal family law, protected private property, merit-linked office, conscription, central enforcement, and legal innovation | metropolitan prior; occupied territories, colonies, classes, and opponents remain distinct |
+| Second French Empire (1852-1870) | `Napoleon` Second Empire law, education, labor, and administration dossiers | plebiscitary executive rule, industrial mobility, public works, private enterprise, regulated dissent, and technical knowledge | spans authoritarian and liberal phases and retains high internal class, regional, religious, and political diversity |
+| Weimar Germany (1919-1933) | `GHDI` Weimar Constitution and period documents | universal suffrage, legal gender equality, abolished birth privilege, protected dissent, social insurance, and plural public life | high diversity represents severe regional, religious, class, ideological, and antidemocratic division |
+| Nazi Germany (1933-1945) | `USHMM` law, education, labor, gender, persecution, and resistance collections | racial heredity, exclusion, state organization, suppressed dissent, coerced labor, severe punishment, and controlled knowledge | represents regime-promoted dominant culture and coercive norms, never the positions of victims, resisters, occupied peoples, or every German |
+| Tokugawa Japan (1800-1867) | `NDLJ` and `AFE` Tokugawa social and educational materials | household duty, hereditary status, divided work, restricted membership, customary enforcement, and respected expertise | domains, classes, cities, villages, outcast communities, Ainu, and Ryukyuan populations remain distinct |
+| Meiji Japan (1868-1912) | `NDLJ` state, education, and political archives | abolished formal estates, rapid mobility, conscription, central enforcement, mass education, expertise, and experimental change | women, classes, regions, political movements, and colonized populations remain distinct |
+| Qing China (1800-1911) | `AFE` late-imperial order and civil-service examination materials | extended-kin duty, entrenched status, examination mobility, literati expertise, restricted voice, and guarded membership | the high diversity setting preserves regional, ethnic, class, religious, gender, rebellion, and reform differences |
+| Ottoman Empire (1839-1876) | `LOC-Law` Ottoman legal history and Tanzimat records | qualified legal equality, retained communal difference, conscription, central administration, secular schools, and changing property rules | proclaimed equality and realized practice remain separate across a highly diverse empire |
+| Mughal Empire (1556-1605) | `Met` Mughal histories and Library of Congress country studies | dynastic rank, imperial service, cross-religious court inclusion, trade, translation, and expert administration | imperial synthesis does not erase caste, locality, religion, gender, class, or communities beyond the court |
 
-Preset values are specified and tested in `CACulturePresetLibrary`. The nine
-complete presets include three periods of the same society, proving that a
-society name is not a timeless Culture identity. Their rationale is transparent
-here; the exact numeric centers are intentionally kept in source so fixed-seed
-receipts can detect drift.
+Preset values are specified and tested in `CACulturePresetLibrary`. The 22
+complete presets include multiple periods and opposing populations within the
+same countries, proving that a country name is not a timeless or uniform Culture
+identity. Their rationale is transparent here; the exact numeric centers are
+intentionally kept in source so fixed-seed receipts can detect drift.
+
+Preset titles use recognized historical society, regime, or population names.
+The separate period field carries the exact date range; summaries and rationale
+carry analytical scope, evidence limits, and exclusions.
 
 ## Causal separation contract
 

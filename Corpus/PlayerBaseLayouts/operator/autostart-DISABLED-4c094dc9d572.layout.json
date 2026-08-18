@@ -1,0 +1,8405 @@
+{
+  "schema": 2,
+  "source": {
+    "kind": "rimworld-save",
+    "fileName": "autostart-DISABLED.rws",
+    "byteLength": 10344094,
+    "sha256": "4C094DC9D5721FBFA68A8AAC3001355BCCDD4511F160EFF1C1108C017F73EA14",
+    "complete": true,
+    "recoveredTruncation": false
+  },
+  "game": {
+    "version": "1.6.4871 rev600",
+    "ticksGame": 25420,
+    "scenario": "The Mechanitor",
+    "modIds": [
+      "brrainz.harmony",
+      "ludeon.rimworld",
+      "ludeon.rimworld.royalty",
+      "ludeon.rimworld.ideology",
+      "ludeon.rimworld.biotech",
+      "xmb.ancienturbanruins.mo",
+      "ih.clean.textures.background",
+      "oskarpotocki.vanillafactionsexpanded.core",
+      "vanillaexpanded.vcef",
+      "regrowth.botr.core",
+      "ih.clean.textures",
+      "redmattis.bettergeneinheritance",
+      "adamas.hospital",
+      "costel.layeredapparel",
+      "m00nl1ght.mappreview",
+      "regrowth.botr.aspenforest",
+      "petetimessix.simplesidearms",
+      "weilbyte.snapout",
+      "arylice.rimworld.automaticstumpchopping",
+      "nals.facialanimation",
+      "edb.preparecarefully",
+      "ferny.progressioneducation",
+      "ferny.progressiontherapy",
+      "ferny.traumaandintegrity",
+      "ellyj3rain.colonistawareness"
+    ],
+    "modNames": [
+      "Harmony",
+      "Core",
+      "Royalty",
+      "Ideology",
+      "Biotech",
+      "Ancient urban ruins",
+      "Clean Textures Background",
+      "Vanilla Expanded Framework",
+      "Vanilla Fishing Expanded",
+      "ReGrowth 2",
+      "Clean Textures",
+      "Better Gene Inheritance",
+      "Hospital",
+      "Layered Apparel",
+      "Map Preview",
+      "ReGrowth 2: Aspen",
+      "Simple sidearms",
+      "Snap Out!",
+      "[ARY] Automatic Stump Chopping [1.5 - 1.6]",
+      "[NL] Facial Animation - WIP",
+      "EdB Prepare Carefully",
+      "Progression: Education",
+      "Progression: Therapy",
+      "Trauma and Integrity",
+      "Colonist Awareness"
+    ]
+  },
+  "playerFactionReferences": [
+    "Faction_13"
+  ],
+  "maps": [
+    {
+      "mapId": "0",
+      "generator": "Base_Player",
+      "size": {
+        "x": 250,
+        "z": 250
+      },
+      "parentReference": "WorldObject_8",
+      "settlementName": "Colony",
+      "tileId": "178",
+      "inferredBiome": "TemperateForest",
+      "population": {
+        "playerPawnThings": 15,
+        "ideologyBearingPlayerPawns": 7,
+        "snapshotPawnCount": 0,
+        "snapshotCorpseCount": 0,
+        "playerPawnDefs": {
+          "Alpaca": 1,
+          "Mech_Constructoid": 2,
+          "Human": 7,
+          "LabradorRetriever": 1,
+          "Mech_Lifter": 2,
+          "Cat": 1,
+          "Mech_Paramedic": 1
+        },
+        "ideologyCounts": {
+          "Ideo_8": 7
+        }
+      },
+      "builtEntities": [
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 168
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 170
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 171
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 172
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 173
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 174
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 175
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 25,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 26,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 27,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 28,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 29,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 30,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 31,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 32,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 24,
+            "z": 179
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 24,
+            "z": 180
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 24,
+            "z": 181
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 24,
+            "z": 183
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 24,
+            "z": 184
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 24,
+            "z": 185
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 25,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 26,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 27,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 28,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 29,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 30,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 31,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 32,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 33,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 34,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 36,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 37,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 39,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 40,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 43,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 45,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 46,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 171
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 172
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 173
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 174
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 175
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 179
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 180
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 181
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 182
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 183
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Autodoor",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 33,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Autodoor",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 34,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Autodoor",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 185
+          },
+          "rotation": "1",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Autodoor",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 184
+          },
+          "rotation": "1",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 23,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 24,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 25,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 23,
+            "z": 170
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 23,
+            "z": 171
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 22,
+            "z": 171
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 22,
+            "z": 172
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 22,
+            "z": 174
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 22,
+            "z": 175
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 21,
+            "z": 175
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 21,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 21,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 20,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 20,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 20,
+            "z": 179
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 19,
+            "z": 179
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 18,
+            "z": 179
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 18,
+            "z": 180
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 17,
+            "z": 181
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 16,
+            "z": 181
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 16,
+            "z": 182
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 16,
+            "z": 183
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 15,
+            "z": 183
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 14,
+            "z": 183
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 13,
+            "z": 183
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 27,
+            "z": 170
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 24,
+            "z": 170
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 25,
+            "z": 170
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 24,
+            "z": 171
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 23,
+            "z": 172
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 24,
+            "z": 172
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 23,
+            "z": 173
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 23,
+            "z": 174
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 23,
+            "z": 175
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 23,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 22,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 22,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 21,
+            "z": 179
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 21,
+            "z": 180
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 19,
+            "z": 180
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 20,
+            "z": 180
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 19,
+            "z": 181
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 17,
+            "z": 182
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 18,
+            "z": 182
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 17,
+            "z": 183
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 12,
+            "z": 184
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 13,
+            "z": 184
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 14,
+            "z": 184
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 15,
+            "z": 184
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 16,
+            "z": 184
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 17,
+            "z": 184
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 18,
+            "z": 181
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 19,
+            "z": 182
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 25,
+            "z": 166
+          },
+          "rotation": "",
+          "stuff": "WoodLog"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 25,
+            "z": 168
+          },
+          "rotation": "",
+          "stuff": "WoodLog"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 21,
+            "z": 174
+          },
+          "rotation": "",
+          "stuff": "WoodLog"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 20,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "WoodLog"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 19,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "WoodLog"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 17,
+            "z": 180
+          },
+          "rotation": "",
+          "stuff": "WoodLog"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 15,
+            "z": 182
+          },
+          "rotation": "",
+          "stuff": "WoodLog"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 13,
+            "z": 182
+          },
+          "rotation": "",
+          "stuff": "WoodLog"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 18,
+            "z": 194
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 19,
+            "z": 195
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 20,
+            "z": 196
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 21,
+            "z": 197
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 22,
+            "z": 198
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 23,
+            "z": 199
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 25,
+            "z": 199
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 24,
+            "z": 199
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 26,
+            "z": 199
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 27,
+            "z": 198
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 28,
+            "z": 197
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 29,
+            "z": 196
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 30,
+            "z": 196
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 32,
+            "z": 198
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 33,
+            "z": 198
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 28,
+            "z": 198
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 27,
+            "z": 199
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 22,
+            "z": 197
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 21,
+            "z": 196
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 20,
+            "z": 195
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 19,
+            "z": 194
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 28,
+            "z": 196
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 31,
+            "z": 196
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 32,
+            "z": 197
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 23,
+            "z": 198
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 12,
+            "z": 222
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 14,
+            "z": 224
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 14,
+            "z": 221
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 11,
+            "z": 220
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 13,
+            "z": 219
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 15,
+            "z": 219
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "TrapIED_Incendiary",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 11,
+            "z": 217
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Incendiary",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 16,
+            "z": 217
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Incendiary",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 13,
+            "z": 215
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Incendiary",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 34,
+            "z": 210
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Incendiary",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 31,
+            "z": 210
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Incendiary",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 31,
+            "z": 208
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Incendiary",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 34,
+            "z": 217
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Incendiary",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 32,
+            "z": 220
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Incendiary",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 29,
+            "z": 221
+          },
+          "rotation": ""
+        },
+        {
+          "def": "Turret_MiniTurret",
+          "class": "Building_TurretGun",
+          "state": "completed",
+          "position": {
+            "x": 45,
+            "z": 214
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Turret_MiniTurret",
+          "class": "Building_TurretGun",
+          "state": "completed",
+          "position": {
+            "x": 45,
+            "z": 212
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Turret_FoamTurret",
+          "class": "Building_TurretFoam",
+          "state": "completed",
+          "position": {
+            "x": 23,
+            "z": 197
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Turret_FoamTurret",
+          "class": "Building_TurretFoam",
+          "state": "completed",
+          "position": {
+            "x": 27,
+            "z": 197
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 157
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 158
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 159
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 160
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 161
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 162
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 166
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 167
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 168
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 170
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 171
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 172
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 173
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 174
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 175
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 179
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 180
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 181
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 182
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 183
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 184
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 185
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 55,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 55,
+            "z": 190
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 55,
+            "z": 191
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 55,
+            "z": 192
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 55,
+            "z": 193
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 55,
+            "z": 194
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 55,
+            "z": 195
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 55,
+            "z": 196
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 55,
+            "z": 197
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 55,
+            "z": 198
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 55,
+            "z": 199
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 55,
+            "z": 200
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 55,
+            "z": 201
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 56,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 57,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 58,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 61,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 62,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 187
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 54,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 54,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 54,
+            "z": 190
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 54,
+            "z": 191
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 54,
+            "z": 192
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 54,
+            "z": 193
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 54,
+            "z": 194
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 54,
+            "z": 195
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 54,
+            "z": 196
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 54,
+            "z": 197
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 54,
+            "z": 198
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 54,
+            "z": 199
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 54,
+            "z": 200
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 54,
+            "z": 201
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 55,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 56,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 62,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 158
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 159
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 160
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 161
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 162
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 163
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 164
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 166
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 167
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 168
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 170
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 171
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 172
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 173
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 174
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 175
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 179
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 180
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 181
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 182
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 184
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 187
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "GeothermalGenerator",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 67,
+            "z": 182
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 39,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 40,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 43,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 45,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 46,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 48,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 49,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 50,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 51,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 52,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 53,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 54,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 55,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 56,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 57,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 58,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 59,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 61,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 62,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 185
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 50,
+            "z": 186
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 50,
+            "z": 187
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerSwitch",
+          "class": "Building_PowerSwitch",
+          "state": "completed",
+          "position": {
+            "x": 50,
+            "z": 189
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 50,
+            "z": 190
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 50,
+            "z": 191
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 50,
+            "z": 192
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 37,
+            "z": 192
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 192
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 39,
+            "z": 192
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 40,
+            "z": 192
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 192
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 192
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 43,
+            "z": 192
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 192
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 45,
+            "z": 192
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 46,
+            "z": 192
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 192
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 48,
+            "z": 192
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 49,
+            "z": 192
+          },
+          "rotation": ""
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 37,
+            "z": 203
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 37,
+            "z": 202
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 202
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 39,
+            "z": 202
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 40,
+            "z": 202
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 43,
+            "z": 202
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 202
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 45,
+            "z": 202
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Door",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 202
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Door",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 202
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Battery",
+          "class": "Building_Battery",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 209
+          },
+          "rotation": "3"
+        },
+        {
+          "def": "Battery",
+          "class": "Building_Battery",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 208
+          },
+          "rotation": "2"
+        },
+        {
+          "def": "Battery",
+          "class": "Building_Battery",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 207
+          },
+          "rotation": "2"
+        },
+        {
+          "def": "Battery",
+          "class": "Building_Battery",
+          "state": "completed",
+          "position": {
+            "x": 40,
+            "z": 206
+          },
+          "rotation": "2"
+        },
+        {
+          "def": "Battery",
+          "class": "Building_Battery",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 205
+          },
+          "rotation": "1"
+        },
+        {
+          "def": "PowerSwitch",
+          "class": "Building_PowerSwitch",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 204
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 43,
+            "z": 208
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 208
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 205
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 206
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 207
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 43,
+            "z": 204
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 204
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 203
+          },
+          "rotation": ""
+        },
+        {
+          "def": "FenceGate",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 26,
+            "z": 167
+          },
+          "rotation": "1",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "FenceGate",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 26,
+            "z": 168
+          },
+          "rotation": "1",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 26,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 22,
+            "z": 173
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 21,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 22,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 26,
+            "z": 170
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 27,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Autodoor",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 24,
+            "z": 182
+          },
+          "rotation": "1",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 32,
+            "z": 179
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 32,
+            "z": 180
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 32,
+            "z": 181
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 32,
+            "z": 183
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 32,
+            "z": 184
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 32,
+            "z": 185
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Autodoor",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 32,
+            "z": 182
+          },
+          "rotation": "1",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 24,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 24,
+            "z": 186
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 191
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 192
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 27,
+            "z": 195
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 29,
+            "z": 195
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 32,
+            "z": 195
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 33,
+            "z": 195
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 37,
+            "z": 194
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 37,
+            "z": 195
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 36,
+            "z": 192
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 190
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 189
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 188
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 187
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 34,
+            "z": 187
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 32,
+            "z": 187
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 30,
+            "z": 187
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 28,
+            "z": 187
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 31,
+            "z": 187
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 29,
+            "z": 187
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 33,
+            "z": 187
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 22,
+            "z": 195
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 23,
+            "z": 195
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 24,
+            "z": 195
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 25,
+            "z": 195
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 26,
+            "z": 195
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 28,
+            "z": 195
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 30,
+            "z": 195
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 31,
+            "z": 195
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 34,
+            "z": 195
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 195
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 36,
+            "z": 195
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 36,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 36,
+            "z": 197
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 36,
+            "z": 198
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 34,
+            "z": 198
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 198
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 34,
+            "z": 199
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 199
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 200
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 36,
+            "z": 200
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 36,
+            "z": 201
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 37,
+            "z": 201
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 201
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 39,
+            "z": 201
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 40,
+            "z": 201
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 201
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 201
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 202
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 36,
+            "z": 193
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 37,
+            "z": 193
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 50,
+            "z": 188
+          },
+          "rotation": ""
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 32,
+            "z": 196
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Turret_MiniTurret",
+          "class": "Building_TurretGun",
+          "state": "completed",
+          "position": {
+            "x": 33,
+            "z": 197
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 165
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 163
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 164
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 165
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "FenceGate",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 59,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "FenceGate",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 60,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 183
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 185
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 61,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 57,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 58,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 46,
+            "z": 201
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 201
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 48,
+            "z": 201
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 49,
+            "z": 201
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 50,
+            "z": 201
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 51,
+            "z": 201
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 52,
+            "z": 201
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 53,
+            "z": 201
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "TrapIED_HighExplosive",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 92,
+            "z": 149
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_HighExplosive",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 97,
+            "z": 148
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_HighExplosive",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 103,
+            "z": 147
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_HighExplosive",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 108,
+            "z": 147
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_HighExplosive",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 112,
+            "z": 148
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_HighExplosive",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 116,
+            "z": 150
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_HighExplosive",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 120,
+            "z": 150
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_HighExplosive",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 122,
+            "z": 148
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Firefoam",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 92,
+            "z": 155
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Firefoam",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 100,
+            "z": 152
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Firefoam",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 107,
+            "z": 155
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Firefoam",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 112,
+            "z": 152
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Firefoam",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 118,
+            "z": 155
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Firefoam",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 120,
+            "z": 152
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Firefoam",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 124,
+            "z": 153
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Firefoam",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 104,
+            "z": 154
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Firefoam",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 96,
+            "z": 154
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_ToxGas",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 107,
+            "z": 151
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_ToxGas",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 113,
+            "z": 150
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_ToxGas",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 102,
+            "z": 150
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_ToxGas",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 96,
+            "z": 151
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_ToxGas",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 91,
+            "z": 152
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_ToxGas",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 117,
+            "z": 153
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Smoke",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 92,
+            "z": 158
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Smoke",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 94,
+            "z": 153
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Smoke",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 94,
+            "z": 148
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Smoke",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 94,
+            "z": 145
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Smoke",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 92,
+            "z": 144
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Smoke",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 90,
+            "z": 146
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Smoke",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 89,
+            "z": 149
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Smoke",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 106,
+            "z": 145
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Smoke",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 99,
+            "z": 145
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Smoke",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 115,
+            "z": 147
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapIED_Smoke",
+          "class": "Building_TrapExplosive",
+          "state": "completed",
+          "position": {
+            "x": 118,
+            "z": 146
+          },
+          "rotation": ""
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 89,
+            "z": 151
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 94,
+            "z": 151
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 92,
+            "z": 146
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 97,
+            "z": 144
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 100,
+            "z": 147
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 104,
+            "z": 149
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 108,
+            "z": 149
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 104,
+            "z": 144
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 109,
+            "z": 145
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 112,
+            "z": 146
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 111,
+            "z": 150
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 115,
+            "z": 152
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 118,
+            "z": 151
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 122,
+            "z": 150
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 106,
+            "z": 153
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 103,
+            "z": 152
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 98,
+            "z": 152
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 36,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 37,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 39,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 40,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 43,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 45,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 46,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 165
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 166
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 167
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 168
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 170
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 171
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 172
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 173
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 174
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 175
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Autodoor",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Autodoor",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 182
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 183
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 184
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 39,
+            "z": 182
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 40,
+            "z": 182
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 182
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 182
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 43,
+            "z": 182
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 182
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 180
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 181
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 180
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 39,
+            "z": 180
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 40,
+            "z": 180
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 180
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 180
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 43,
+            "z": 180
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 172
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 173
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 174
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 175
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 176
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 177
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 178
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 179
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 172
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 173
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 174
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 175
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 176
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 177
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 178
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 179
+          },
+          "rotation": ""
+        },
+        {
+          "def": "BasicRecharger",
+          "class": "Building_MechCharger",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 185
+          },
+          "rotation": "2"
+        },
+        {
+          "def": "BasicRecharger",
+          "class": "Building_MechCharger",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 185
+          },
+          "rotation": "2"
+        },
+        {
+          "def": "BasicRecharger",
+          "class": "Building_MechCharger",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 185
+          },
+          "rotation": "2"
+        },
+        {
+          "def": "BasicRecharger",
+          "class": "Building_MechCharger",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 185
+          },
+          "rotation": "2"
+        },
+        {
+          "def": "MechBooster",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 52,
+            "z": 199
+          },
+          "rotation": ""
+        },
+        {
+          "def": "MechBooster",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 32,
+            "z": 193
+          },
+          "rotation": ""
+        },
+        {
+          "def": "MechBooster",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 18,
+            "z": 183
+          },
+          "rotation": ""
+        },
+        {
+          "def": "MechBooster",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 49,
+            "z": 169
+          },
+          "rotation": ""
+        },
+        {
+          "def": "MechBooster",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 61,
+            "z": 186
+          },
+          "rotation": ""
+        },
+        {
+          "def": "SolarGenerator",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 61,
+            "z": 199
+          },
+          "rotation": ""
+        },
+        {
+          "def": "SolarGenerator",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 68,
+            "z": 199
+          },
+          "rotation": ""
+        },
+        {
+          "def": "SolarGenerator",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 75,
+            "z": 199
+          },
+          "rotation": ""
+        },
+        {
+          "def": "SolarGenerator",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 68,
+            "z": 193
+          },
+          "rotation": ""
+        },
+        {
+          "def": "SolarGenerator",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 61,
+            "z": 193
+          },
+          "rotation": ""
+        },
+        {
+          "def": "SolarGenerator",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 75,
+            "z": 193
+          },
+          "rotation": ""
+        },
+        {
+          "def": "WindTurbine",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 68,
+            "z": 207
+          },
+          "rotation": "1"
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 43,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 45,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 46,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 48,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 49,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 50,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 51,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 52,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 53,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 54,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 55,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 56,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 57,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 59,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 60,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 61,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 62,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 65,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 66,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 67,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 68,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 69,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 70,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 71,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 72,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 73,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 74,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 75,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerSwitch",
+          "class": "Building_PowerSwitch",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 197
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 198
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 199
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 200
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 61,
+            "z": 197
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 75,
+            "z": 197
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 68,
+            "z": 197
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 69,
+            "z": 211
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 67,
+            "z": 211
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 66,
+            "z": 203
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 66,
+            "z": 210
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 58,
+            "z": 203
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 59,
+            "z": 203
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 60,
+            "z": 203
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 61,
+            "z": 203
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 62,
+            "z": 203
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 63,
+            "z": 203
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 64,
+            "z": 203
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 65,
+            "z": 203
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 58,
+            "z": 198
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 58,
+            "z": 199
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 58,
+            "z": 200
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 58,
+            "z": 201
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 58,
+            "z": 202
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerSwitch",
+          "class": "Building_PowerSwitch",
+          "state": "completed",
+          "position": {
+            "x": 58,
+            "z": 197
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerSwitch",
+          "class": "Building_PowerSwitch",
+          "state": "completed",
+          "position": {
+            "x": 58,
+            "z": 196
+          },
+          "rotation": ""
+        },
+        {
+          "def": "WindTurbine",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 68,
+            "z": 215
+          },
+          "rotation": "1"
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 66,
+            "z": 204
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 66,
+            "z": 205
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 66,
+            "z": 206
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 66,
+            "z": 207
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 66,
+            "z": 208
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 66,
+            "z": 209
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 66,
+            "z": 211
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 68,
+            "z": 211
+          },
+          "rotation": ""
+        },
+        {
+          "def": "Turret_MiniTurret",
+          "class": "Building_TurretGun",
+          "state": "completed",
+          "position": {
+            "x": 46,
+            "z": 215
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Turret_MiniTurret",
+          "class": "Building_TurretGun",
+          "state": "completed",
+          "position": {
+            "x": 50,
+            "z": 215
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 0,
+            "z": 168
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 0,
+            "z": 171
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 0,
+            "z": 172
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "FenceGate",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 0,
+            "z": 170
+          },
+          "rotation": "1",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "FenceGate",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 0,
+            "z": 169
+          },
+          "rotation": "1",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 0,
+            "z": 160
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 0,
+            "z": 161
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 0,
+            "z": 162
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 0,
+            "z": 163
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 0,
+            "z": 164
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 0,
+            "z": 165
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 0,
+            "z": 166
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 0,
+            "z": 167
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 1,
+            "z": 160
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 2,
+            "z": 160
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 3,
+            "z": 160
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 4,
+            "z": 160
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 5,
+            "z": 160
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 1,
+            "z": 161
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 2,
+            "z": 163
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 4,
+            "z": 161
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 5,
+            "z": 163
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 3,
+            "z": 165
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "TrapSpike",
+          "class": "Building_TrapDamager",
+          "state": "completed",
+          "position": {
+            "x": 1,
+            "z": 165
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "Autodoor",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 32,
+            "z": 163
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Autodoor",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 33,
+            "z": 163
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 79,
+            "z": 180
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 79,
+            "z": 181
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 79,
+            "z": 182
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 79,
+            "z": 183
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 79,
+            "z": 184
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 79,
+            "z": 185
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 65,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 66,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 67,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 68,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 69,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 70,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 71,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 72,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 73,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 74,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 75,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 76,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 77,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 78,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 79,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 65,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 66,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 67,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 68,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 69,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 70,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 71,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 72,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 73,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 74,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 75,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 76,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 77,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 78,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 79,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 65,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 66,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 67,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 68,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 69,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 70,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 71,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 72,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 73,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 74,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 75,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 76,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 77,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 78,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 79,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 180
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 181
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 182
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 183
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 184
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 185
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 65,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 66,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 67,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 68,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 69,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 70,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 71,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 72,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 73,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 74,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 75,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 76,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 77,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 78,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 79,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 189
+          },
+          "rotation": "",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "FenceGate",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 179
+          },
+          "rotation": "1",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "FenceGate",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 178
+          },
+          "rotation": "1",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "FenceGate",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 186
+          },
+          "rotation": "1",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "FenceGate",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 187
+          },
+          "rotation": "1",
+          "stuff": "BlocksSlate"
+        },
+        {
+          "def": "Autodoor",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 32,
+            "z": 160
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Autodoor",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 33,
+            "z": 160
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Autodoor",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 160
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Autodoor",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 165
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Autodoor",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 44,
+            "z": 165
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Autodoor",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 39,
+            "z": 149
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 37,
+            "z": 151
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 151
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 39,
+            "z": 151
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 40,
+            "z": 151
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Sandbags",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 151
+          },
+          "rotation": "",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Turret_MiniTurret",
+          "class": "Building_TurretGun",
+          "state": "completed",
+          "position": {
+            "x": 34,
+            "z": 154
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "Turret_MiniTurret",
+          "class": "Building_TurretGun",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 154
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "Turret_MiniTurret",
+          "class": "Building_TurretGun",
+          "state": "completed",
+          "position": {
+            "x": 37,
+            "z": 154
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "Turret_MiniTurret",
+          "class": "Building_TurretGun",
+          "state": "completed",
+          "position": {
+            "x": 39,
+            "z": 154
+          },
+          "rotation": "",
+          "stuff": "Uranium"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 36,
+            "z": 152
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 37,
+            "z": 152
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 152
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 39,
+            "z": 152
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 40,
+            "z": 152
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 41,
+            "z": 152
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 42,
+            "z": 152
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 34,
+            "z": 152
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Barricade",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 152
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 161
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 162
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 163
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 164
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 165
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 166
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 167
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 168
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 169
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 170
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 171
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 33,
+            "z": 161
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 34,
+            "z": 161
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 161
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 36,
+            "z": 161
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 37,
+            "z": 161
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 33,
+            "z": 158
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 33,
+            "z": 159
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 33,
+            "z": 160
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 34,
+            "z": 158
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 35,
+            "z": 158
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 36,
+            "z": 158
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 37,
+            "z": 158
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 38,
+            "z": 158
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 24,
+            "z": 187
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 25,
+            "z": 187
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 26,
+            "z": 187
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 27,
+            "z": 187
+          },
+          "rotation": ""
+        }
+      ],
+      "placedThings": [],
+      "terrainCells": [],
+      "roofCells": [],
+      "zones": [],
+      "derived": {
+        "builtEntityCount": 775,
+        "completedEntityCount": 775,
+        "plannedEntityCount": 0,
+        "placedThingCount": 0,
+        "terrainCellCount": 0,
+        "roofCellCount": 0,
+        "zoneCount": 0,
+        "zoneCellCount": 0,
+        "builtAnchorBounds": {
+          "minX": 0,
+          "maxX": 124,
+          "minZ": 144,
+          "maxZ": 224,
+          "width": 125,
+          "height": 81,
+          "area": 10125
+        },
+        "completedAnchorBounds": {
+          "minX": 0,
+          "maxX": 124,
+          "minZ": 144,
+          "maxZ": 224,
+          "width": 125,
+          "height": 81,
+          "area": 10125
+        },
+        "evidenceBounds": {
+          "minX": 0,
+          "maxX": 124,
+          "minZ": 144,
+          "maxZ": 224,
+          "width": 125,
+          "height": 81,
+          "area": 10125
+        },
+        "evidenceDensity": 0.075358,
+        "builtDefCounts": {
+          "Wall": 99,
+          "Autodoor": 16,
+          "Fence": 136,
+          "Barricade": 135,
+          "TrapSpike": 37,
+          "Sandbags": 31,
+          "TrapIED_Incendiary": 9,
+          "Turret_MiniTurret": 9,
+          "Turret_FoamTurret": 2,
+          "GeothermalGenerator": 1,
+          "HiddenConduit": 161,
+          "PowerSwitch": 5,
+          "Door": 2,
+          "Battery": 5,
+          "PowerConduit": 66,
+          "FenceGate": 10,
+          "TrapIED_HighExplosive": 8,
+          "TrapIED_Firefoam": 9,
+          "TrapIED_ToxGas": 6,
+          "TrapIED_Smoke": 11,
+          "BasicRecharger": 4,
+          "MechBooster": 5,
+          "SolarGenerator": 6,
+          "WindTurbine": 2
+        },
+        "placedDefCounts": {},
+        "terrainDefCounts": {},
+        "zoneClassCounts": {}
+      }
+    }
+  ]
+}
