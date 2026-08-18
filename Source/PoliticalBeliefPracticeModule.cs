@@ -5,7 +5,7 @@ using Verse;
 
 namespace ColonistAwareness
 {
-    // Political Beliefs state what a population considers proper. Faction
+    // Political Order states what a population considers proper. Faction
     // structure records realized social order. This bridge compares the two
     // and projects only realized practice into organization customs.
     // Ideoligion remains a separate native system.
@@ -56,11 +56,14 @@ namespace ColonistAwareness
             return PoliticalBeliefsOf(pawn.Faction);
         }
 
-        private static string CurrentKey(List<CAAxisEntry> structure,
+        private static IReadOnlyList<string> CurrentKeys(
+            List<CAAxisEntry> structure,
             CAPoliticalBeliefs beliefs, string axis)
         {
-            return CAFactionAxes.KeyOf(structure, axis)
-                ?? CAFactionAxes.KeyOf(beliefs?.positions, axis);
+            IReadOnlyList<string> current = CAFactionAxes.KeysOf(structure,
+                axis);
+            return current.Count > 0 ? current : CAFactionAxes.KeysOf(
+                beliefs?.positions, axis);
         }
 
         internal static CAFoundingArrangement ShapeDefault(
@@ -71,34 +74,47 @@ namespace ColonistAwareness
             CAFoundingArrangement shaped = situational.Copy();
             bool changed = false;
 
-            string ownership = CurrentKey(structure, beliefs,
+            IReadOnlyList<string> ownership = CurrentKeys(structure, beliefs,
                 CAFactionAxes.Ownership);
-            if (ownership == "private")
+            bool privateProperty = ownership.Contains("private");
+            bool pooledProperty = ownership.Any(value => value == "common"
+                || value == "cooperative" || value == "state");
+            if (privateProperty && !pooledProperty)
             { shaped.sharedSupplies = false; changed = true; }
-            else if (ownership == "common" || ownership == "cooperative"
-                || ownership == "state")
+            else if (pooledProperty && !privateProperty)
             { shaped.sharedSupplies = true; changed = true; }
 
-            string work = CurrentKey(structure, beliefs,
+            IReadOnlyList<string> work = CurrentKeys(structure, beliefs,
                 CAFactionAxes.Work);
-            if (work == "duty")
+            bool requiredWork = work.Contains("duty");
+            bool voluntaryWork = work.Any(value => value == "contract"
+                || value == "organized" || value == "household");
+            if (requiredWork && !voluntaryWork)
             { shaped.workRequired = true; changed = true; }
-            else if (work == "contract" || work == "organized"
-                || work == "household")
+            else if (voluntaryWork && !requiredWork)
             { shaped.workRequired = false; changed = true; }
 
-            string participation = CurrentKey(structure, beliefs,
+            IReadOnlyList<string> participation = CurrentKeys(structure,
+                beliefs,
                 CAFactionAxes.Participation);
-            if (participation == "universal" || participation == "members")
+            bool broadParticipation = participation.Any(value =>
+                value == "universal" || value == "members");
+            bool restrictedParticipation = participation.Any(value =>
+                value == "standing" || value == "heads");
+            if (broadParticipation && !restrictedParticipation)
             { shaped.foundersDecide = true; changed = true; }
-            else if (participation == "standing" || participation == "heads")
+            else if (restrictedParticipation && !broadParticipation)
             { shaped.foundersDecide = false; changed = true; }
 
-            string leadership = CurrentKey(structure, beliefs,
+            IReadOnlyList<string> leadership = CurrentKeys(structure, beliefs,
                 CAFactionAxes.Leadership);
-            if (leadership == "single" || leadership == "council")
+            bool designatedLeader = leadership.Any(value =>
+                value == "single" || value == "council");
+            bool sharedLeadership = leadership.Any(value =>
+                value == "whole" || value == "none");
+            if (designatedLeader && !sharedLeadership)
             { shaped.leaderRule = "chosen"; changed = true; }
-            else if (leadership == "whole" || leadership == "none")
+            else if (sharedLeadership && !designatedLeader)
             { shaped.leaderRule = "none"; changed = true; }
 
             if (shaped.leaderRule == "none" && !shaped.foundersDecide)
@@ -128,81 +144,86 @@ namespace ColonistAwareness
             if (arrangement == null) return rows;
             bool commands = arrangement.leaderRule == "chosen";
 
-            string leadership = CAFactionAxes.KeyOf(beliefs?.positions,
+            IReadOnlyList<string> leadership = CAFactionAxes.KeysOf(
+                beliefs?.positions,
                 CAFactionAxes.Leadership);
+            bool single = leadership.Contains("single");
+            bool shared = leadership.Any(value => value == "whole"
+                || value == "none");
             rows.Add(new CAFoundingBeliefReading
             {
                 title = "Leadership",
-                belief = leadership == "single"
-                    ? "one leader should hold final authority"
-                    : leadership == "whole" || leadership == "none"
-                        ? "no permanent leader should hold final authority"
-                        : leadership == "council" || leadership == "federated"
-                            ? "leadership should be shared" : null,
+                belief = BeliefWords(beliefs, CAFactionAxes.Leadership),
                 adopted = commands ? "one founder decides"
                     : "the founders decide together",
-                conforms = leadership == "single" ? commands
-                    : leadership == "whole" || leadership == "none"
-                        ? !commands : false
+                conforms = leadership.Count > 0
+                    && (!single || commands) && (!shared || !commands)
+                    && !(single && shared)
             });
 
-            string work = CAFactionAxes.KeyOf(beliefs?.positions,
+            IReadOnlyList<string> work = CAFactionAxes.KeysOf(
+                beliefs?.positions,
                 CAFactionAxes.Work);
+            bool duty = work.Contains("duty");
+            bool voluntary = work.Any(value => value == "contract"
+                || value == "organized" || value == "household");
             rows.Add(new CAFoundingBeliefReading
             {
                 title = "Work",
-                belief = work == "duty" ? "members owe required service"
-                    : work == "contract" || work == "organized"
-                        || work == "household"
-                        ? "work should not be assigned by faction leaders"
-                        : null,
+                belief = BeliefWords(beliefs, CAFactionAxes.Work),
                 adopted = arrangement.workRequired
                     ? "work may be assigned" : "work is voluntary",
-                conforms = work == "duty" ? arrangement.workRequired
-                    : !arrangement.workRequired
+                conforms = work.Count > 0
+                    && (!duty || arrangement.workRequired)
+                    && (!voluntary || !arrangement.workRequired)
+                    && !(duty && voluntary)
             });
 
-            string participation = CAFactionAxes.KeyOf(beliefs?.positions,
+            IReadOnlyList<string> participation = CAFactionAxes.KeysOf(
+                beliefs?.positions,
                 CAFactionAxes.Participation);
-            bool broadVote = participation == "universal"
-                || participation == "members";
+            bool broadVote = participation.Any(value => value == "universal"
+                || value == "members");
+            bool narrowVote = participation.Any(value => value == "standing"
+                || value == "heads");
             rows.Add(new CAFoundingBeliefReading
             {
                 title = "Participation",
-                belief = participation == "universal"
-                    ? "all residents should take part"
-                    : participation == "members"
-                        ? "all faction members should take part"
-                        : participation == "standing"
-                            ? "participation should require standing"
-                            : participation == "heads"
-                                ? "households should hold one voice" : null,
+                belief = BeliefWords(beliefs, CAFactionAxes.Participation),
                 adopted = arrangement.foundersDecide
                     ? "every founder votes" : "founders do not all vote",
-                conforms = broadVote ? arrangement.foundersDecide
-                    : !arrangement.foundersDecide
+                conforms = participation.Count > 0
+                    && (!broadVote || arrangement.foundersDecide)
+                    && (!narrowVote || !arrangement.foundersDecide)
+                    && !(broadVote && narrowVote)
             });
 
-            string ownership = CAFactionAxes.KeyOf(beliefs?.positions,
+            IReadOnlyList<string> ownership = CAFactionAxes.KeysOf(
+                beliefs?.positions,
                 CAFactionAxes.Ownership);
-            bool pooled = ownership == "common" || ownership == "cooperative"
-                || ownership == "state";
+            bool privateProperty = ownership.Contains("private");
+            bool pooled = ownership.Any(value => value == "common"
+                || value == "cooperative" || value == "state");
             rows.Add(new CAFoundingBeliefReading
             {
                 title = "Supplies",
-                belief = ownership == "private"
-                    ? "personal property should remain private"
-                    : pooled ? "essential supplies should be pooled"
-                        : ownership == "mixed"
-                            ? "private and shared ownership should coexist"
-                            : null,
+                belief = BeliefWords(beliefs, CAFactionAxes.Ownership),
                 adopted = arrangement.sharedSupplies
                     ? "supplies are pooled" : "each founder keeps their own",
-                conforms = ownership == "private"
-                    ? !arrangement.sharedSupplies
-                    : pooled && arrangement.sharedSupplies
+                conforms = ownership.Count > 0
+                    && (!privateProperty || !arrangement.sharedSupplies)
+                    && (!pooled || arrangement.sharedSupplies)
+                    && !(privateProperty && pooled)
             });
             return rows;
+        }
+
+        private static string BeliefWords(CAPoliticalBeliefs beliefs,
+            string axisKey)
+        {
+            string words = string.Join("; ", CAFactionAxes.OptionsOf(
+                beliefs?.positions, axisKey).Select(option => option.Words));
+            return words.NullOrEmpty() ? null : words;
         }
 
         internal static IEnumerable<string> StandardsHeldBy(Pawn pawn)
@@ -226,40 +247,50 @@ namespace ColonistAwareness
             CAPoliticalBeliefs beliefs)
         {
             if (beliefs == null) yield break;
-            string ownership = CAFactionAxes.KeyOf(beliefs.positions,
-                CAFactionAxes.Ownership);
-            if (ownership == "private") yield return "private holdings";
-            else if (ownership == "common" || ownership == "cooperative")
+            if (CAFactionAxes.HasOption(beliefs.positions,
+                    CAFactionAxes.Ownership, "private"))
+                yield return "private holdings";
+            if (CAFactionAxes.HasOption(beliefs.positions,
+                    CAFactionAxes.Ownership, "common")
+                || CAFactionAxes.HasOption(beliefs.positions,
+                    CAFactionAxes.Ownership, "cooperative"))
                 yield return "property in common";
 
-            string work = CAFactionAxes.KeyOf(beliefs.positions,
-                CAFactionAxes.Work);
-            if (work == "duty") yield return "required work";
-            else if (work == "contract" || work == "organized")
+            if (CAFactionAxes.HasOption(beliefs.positions,
+                    CAFactionAxes.Work, "duty"))
+                yield return "required work";
+            if (CAFactionAxes.HasOption(beliefs.positions,
+                    CAFactionAxes.Work, "contract")
+                || CAFactionAxes.HasOption(beliefs.positions,
+                    CAFactionAxes.Work, "organized"))
                 yield return "voluntary work";
 
-            string participation = CAFactionAxes.KeyOf(beliefs.positions,
-                CAFactionAxes.Participation);
-            if (participation == "universal")
+            if (CAFactionAxes.HasOption(beliefs.positions,
+                    CAFactionAxes.Participation, "universal"))
                 yield return "every voice counts";
 
-            string leadership = CAFactionAxes.KeyOf(beliefs.positions,
-                CAFactionAxes.Leadership);
-            if (leadership == "single") yield return "single leader";
-            else if (leadership == "whole" || leadership == "none")
+            if (CAFactionAxes.HasOption(beliefs.positions,
+                    CAFactionAxes.Leadership, "single"))
+                yield return "single leader";
+            if (CAFactionAxes.HasOption(beliefs.positions,
+                    CAFactionAxes.Leadership, "whole")
+                || CAFactionAxes.HasOption(beliefs.positions,
+                    CAFactionAxes.Leadership, "none"))
                 yield return "shared leadership";
 
-            string warConduct = CAFactionAxes.KeyOf(beliefs.positions,
-                CAFactionAxes.WarConduct);
-            if (warConduct == "strength") yield return "victors decide";
-            else if (warConduct == "quarter")
+            if (CAFactionAxes.HasOption(beliefs.positions,
+                    CAFactionAxes.WarConduct, "strength"))
+                yield return "victors decide";
+            if (CAFactionAxes.HasOption(beliefs.positions,
+                    CAFactionAxes.WarConduct, "quarter"))
                 yield return "surrender accepted";
-            else if (warConduct == "combatants")
+            if (CAFactionAxes.HasOption(beliefs.positions,
+                    CAFactionAxes.WarConduct, "combatants"))
                 yield return "combatants only";
         }
 
         // Organization customs describe current practice. They follow the
-        // realized social order, never political beliefs by themselves.
+        // realized social order, never Political Order by itself.
         internal static void ReconcileCurrentStructure(CAOrganization org,
             List<CAAxisEntry> structure)
         {
@@ -282,27 +313,33 @@ namespace ColonistAwareness
         private static IEnumerable<string> StructureCustoms(
             List<CAAxisEntry> structure)
         {
-            string ownership = CAFactionAxes.KeyOf(structure,
-                CAFactionAxes.Ownership);
-            if (ownership == "private") yield return "private holdings";
-            else if (ownership == "common" || ownership == "cooperative")
+            if (CAFactionAxes.HasOption(structure,
+                    CAFactionAxes.Ownership, "private"))
+                yield return "private holdings";
+            if (CAFactionAxes.HasOption(structure,
+                    CAFactionAxes.Ownership, "common")
+                || CAFactionAxes.HasOption(structure,
+                    CAFactionAxes.Ownership, "cooperative"))
                 yield return "property in common";
 
-            string work = CAFactionAxes.KeyOf(structure,
-                CAFactionAxes.Work);
-            if (work == "duty") yield return "required work";
-            else if (work == "contract" || work == "organized")
+            if (CAFactionAxes.HasOption(structure, CAFactionAxes.Work,
+                    "duty")) yield return "required work";
+            if (CAFactionAxes.HasOption(structure, CAFactionAxes.Work,
+                    "contract") || CAFactionAxes.HasOption(structure,
+                    CAFactionAxes.Work, "organized"))
                 yield return "voluntary work";
 
-            string participation = CAFactionAxes.KeyOf(structure,
-                CAFactionAxes.Participation);
-            if (participation == "universal")
+            if (CAFactionAxes.HasOption(structure,
+                    CAFactionAxes.Participation, "universal"))
                 yield return "every voice counts";
 
-            string leadership = CAFactionAxes.KeyOf(structure,
-                CAFactionAxes.Leadership);
-            if (leadership == "single") yield return "single leader";
-            else if (leadership == "whole" || leadership == "none")
+            if (CAFactionAxes.HasOption(structure,
+                    CAFactionAxes.Leadership, "single"))
+                yield return "single leader";
+            if (CAFactionAxes.HasOption(structure,
+                    CAFactionAxes.Leadership, "whole")
+                || CAFactionAxes.HasOption(structure,
+                    CAFactionAxes.Leadership, "none"))
                 yield return "shared leadership";
         }
 

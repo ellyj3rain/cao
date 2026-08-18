@@ -18,6 +18,11 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [A71 - Canonical governance doc-pack retrofit](A071-2026-08-06-canonical-governance-doc-pack-retrofit.md) - 2026-08-06 08:10–08:32 UTC / 01:10–01:32 PST
 - [A85 - Political architecture ratification](A085-2026-08-07-political-architecture-ratification.md) - 2026-08-07 20:37–22:46 UTC / 13:37–15:46 PST
 
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
+- [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
+
 ### <a id="t-002"></a>T-002 - Builds, deployment, reproducibility, and receipts
 
 - [A2 - Imported awareness and tactical baseline](A002-2026-07-22-imported-awareness-and-tactical-baseline.md) - 2026-07-22
@@ -39,6 +44,17 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
+
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
+
+- [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
 
 ### <a id="t-030"></a>T-030 - Validation and evidence discipline
 
@@ -127,6 +143,17 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
+
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
+
+- [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
 
 ## TF-02 - Pawn cognition and authority
 
@@ -155,6 +182,13 @@ Disposition, knowledge, communication, command, and accountability.
 - [A51 - Stable welfare-observation correction](A051-2026-07-29-stable-welfare-observation-correction.md) - 2026-07-29 01:36 UTC / 18:36 PST
 - [A60 - Pawn-proximal combat topology and retention](A060-2026-07-30-pawn-proximal-combat-topology-and-retention.md) - 2026-07-30 19:18–20:27 UTC / 12:18–13:27 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 ### <a id="t-005"></a>T-005 - Communications and command authority
 
@@ -163,6 +197,9 @@ Disposition, knowledge, communication, command, and accountability.
 - [A6 - Communications media and organization](A006-2026-07-24-communications-media-and-organization.md) - 2026-07-24 04:00 UTC / 21:00 PST
 - [A14 - Pawn-private welfare and conditional accountability](A014-2026-07-25-pawn-private-welfare-and-conditional-accountability.md) - 2026-07-25 00:30–12:40 UTC / 17:30–05:40 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+- [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
 
 ## TF-03 - Combat doctrine
 
@@ -215,6 +252,8 @@ Pawn autonomy, permissions, equipment, and bounded self-directed work.
 - [A49 - Spatial initiative and native shelf construction](A049-2026-07-28-spatial-initiative-and-native-shelf-construction.md) - 2026-07-28 23:20 UTC / 16:20 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
 ## TF-05 - Animals and welfare
 
 Animal cognition and infrastructure plus pawn welfare and clinical evidence.
@@ -227,6 +266,11 @@ Animal cognition and infrastructure plus pawn welfare and clinical evidence.
 - [A51 - Stable welfare-observation correction](A051-2026-07-29-stable-welfare-observation-correction.md) - 2026-07-29 01:36 UTC / 18:36 PST
 - [A63 - Conviction memory and per-issue judgment](A063-2026-08-05-conviction-memory-and-per-issue-judgment.md) - 2026-08-05
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+- [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
 
 ### <a id="t-012"></a>T-012 - Animal cognition and infrastructure
 
@@ -255,6 +299,12 @@ Home planning, space programs, residents, furnishing, and facility siting.
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
 
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
+
 ### <a id="t-014"></a>T-014 - Space programs and residents
 
 - [A26 - Planned room-use layer and placement receipt](A026-2026-07-27-planned-room-use-layer-and-placement-receipt.md) - 2026-07-27 19:52–20:37 UTC / 12:52–13:37 PST
@@ -269,6 +319,12 @@ Home planning, space programs, residents, furnishing, and facility siting.
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
 
 ### <a id="t-015"></a>T-015 - Facility siting and furnishing
 
@@ -292,6 +348,12 @@ Home planning, space programs, residents, furnishing, and facility siting.
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
 
 ## TF-07 - Logistics, waste, and economy
 
@@ -317,6 +379,10 @@ Materials, storage, inventory, toxic waste, transactions, and obligations.
 - [A102 - Faction and settlement ontology convergence](A102-2026-08-10-faction-and-settlement-ontology-convergence.md) - 2026-08-10 04:07 UTC / 21:07 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
 ### <a id="t-017"></a>T-017 - Toxic-waste lifecycle
 
 - [A42 - Facility-siting evidence and comparison](A042-2026-07-28-facility-siting-evidence-and-comparison.md) - 2026-07-28 08:40–08:48 UTC / 01:40–01:48 PST
@@ -330,6 +396,8 @@ Materials, storage, inventory, toxic waste, transactions, and obligations.
 
 - [A69 - Institutional transactions and credit policy](A069-2026-08-05-institutional-transactions-and-credit-policy.md) - 2026-08-05
 - [A97 - Transactions, stock plans, tiers, and threat muster](A097-2026-08-08-transactions-stock-plans-tiers-and-threat-muster.md) - 2026-08-08 22:09 UTC / 15:09 PST
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
 
 ## TF-08 - Regional world simulation
 
@@ -353,6 +421,17 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
+
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
+
+- [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
 
 ### <a id="t-020"></a>T-020 - Regional geometry, projection, and scatter
 
@@ -368,6 +447,8 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [A83 - Regional projection kernel and Screen 2](A083-2026-08-07-regional-projection-kernel-and-screen-2.md) - 2026-08-07 11:21–20:01 UTC / 04:21–13:01 PST
 - [A84 - Screen 2 semantic closure](A084-2026-08-07-screen-2-semantic-closure.md) - 2026-08-07 20:37–21:06 UTC / 13:37–14:06 PST
 - [A90 - Territorial composition](A090-2026-08-08-territorial-composition.md) - 2026-08-08 06:59–07:17 UTC / 23:59–00:17 PST
+
+- [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
 
 ### <a id="t-021"></a>T-021 - Factions, settlements, and population
 
@@ -396,6 +477,16 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
+
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
+
+- [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
 
 ### <a id="t-026"></a>T-026 - World tendencies and geography
 
@@ -410,6 +501,8 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [B1 - Causal world authoring](B001-2026-08-10-causal-world-authoring.md) - 2026-08-10 12:17–12:48 UTC / 05:17–05:48 PST
 
 - [B3 - Creation-flow interaction convergence](B003-2026-08-10-creation-flow-interaction-convergence.md) - 2026-08-10 21:11–23:10 UTC / 14:11–16:10 PST
+
+- [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
 
 ## TF-09 - Political and cultural simulation
 
@@ -437,6 +530,17 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
+
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
+
+- [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
 
 ### <a id="t-023"></a>T-023 - Culture, beliefs, and Ideoligion
 
@@ -463,6 +567,17 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
+
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
+
+- [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
 
 ## TF-10 - Onboarding and authoring
 
@@ -491,6 +606,17 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [B4 - Culture, politics, and responsive authoring](B004-2026-08-11-culture-politics-and-responsive-authoring.md) - 2026-08-10–2026-08-11 UTC / 2026-08-10 PST
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
+
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
+
+- [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
 
 ### <a id="t-025"></a>T-025 - Authoring surfaces and UI grammar
 
@@ -525,6 +651,17 @@ Start flow, world authoring, population composition, UI grammar, and player-faci
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
+
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
+
+- [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
 
 ## TF-11 - Runtime tooling and controls
 
@@ -542,6 +679,8 @@ Time controls, independent input, developer tools, exercise harnesses, and runti
 - [A91 - Runtime exercise harness and map-scale parameterization](A091-2026-08-08-runtime-exercise-harness-and-map-scale-parameterization.md) - 2026-08-08 07:25–08:03 UTC / 00:25–01:03 PST
 - [A99 - Map-size selector diagnosis and verified fix](A099-2026-08-08-map-size-selector-diagnosis-and-verified-fix.md) - 2026-08-08 23:31–2026-08-09 01:29 UTC / 16:31–18:29 PST
 
+- [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
+
 ### <a id="t-029"></a>T-029 - Game controls and developer tools
 
 - [A4 - Half-speed time control and load correction](A004-2026-07-23-half-speed-time-control-and-load-correction.md) - 2026-07-23 23:26–23:40 UTC / 16:26–16:40 PST
@@ -553,6 +692,8 @@ Time controls, independent input, developer tools, exercise harnesses, and runti
 - [A91 - Runtime exercise harness and map-scale parameterization](A091-2026-08-08-runtime-exercise-harness-and-map-scale-parameterization.md) - 2026-08-08 07:25–08:03 UTC / 00:25–01:03 PST
 - [A99 - Map-size selector diagnosis and verified fix](A099-2026-08-08-map-size-selector-diagnosis-and-verified-fix.md) - 2026-08-08 23:31–2026-08-09 01:29 UTC / 16:31–18:29 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+
+- [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
 
 ## TF-12 - Ontology and product coherence
 
@@ -585,3 +726,10 @@ Canonical vocabulary, model convergence, copy register, and product truthfulness
 - [B5 - Contextual cultural expression and settlement development](B005-2026-08-11-contextual-cultural-expression-and-settlement-development.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
 - [B7 - Creation ontology and authoring reconstruction](B007-2026-08-11-creation-ontology-and-authoring-reconstruction.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B8 - Substantive inherited Culture, political composer, and open social-meaning substrate](B008-2026-08-11-substantive-inherited-culture-political-composer-and-open-social-meaning-substrate.md) - 2026-08-11–2026-08-12 UTC / 2026-08-11 PST
+- [B9 - Starting Region Information Architecture and Settlement Program Closure](B009-2026-08-12-starting-region-information-architecture-and-settlement-program-closure.md) - 2026-08-12 UTC / 2026-08-12 PDT
+- [B10 - Causal Closure and Elimination of Synthetic Social State](B010-2026-08-12-causal-closure-and-elimination-of-synthetic-social-state.md) - 2026-08-12 UTC / 2026-08-12 PDT
+- [B11 - Durable Campaign Boundary and Compositional Authoring Closure](B011-2026-08-12-durable-campaign-boundary-and-compositional-authoring-closure.md) - 2026-08-12 to 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B12 - Cultural Cognition, Political Emergence, and Proposition Knowledge](B012-2026-08-13-cultural-cognition-political-emergence-and-proposition-knowledge.md) - 2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT
+- [B13 - Culture Completion and Causal Fidelity](B013-2026-08-13-culture-completion-and-causal-fidelity.md) - 2026-08-13 UTC / 2026-08-13 PDT
+- [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT

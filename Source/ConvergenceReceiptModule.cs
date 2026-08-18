@@ -37,14 +37,14 @@ namespace ColonistAwareness
 
             CARegionalSettlementPlan settlementPlan = plan.settlements.First(b => b != null);
             var firstPopulationGroups = new List<CASettlementPopulationGroup>();
-            var firstProv = new List<CAStartingProvision>();
+            var firstProv = new List<CAProvisionArrangement>();
             var probe = new CARegionalSettlementPlan
             {
                 slot = settlementPlan.slot,
                 factionKey = settlementPlan.factionKey,
                 memberTileId = settlementPlan.memberTileId,
                 populationGroups = firstPopulationGroups,
-                startingProvisions = firstProv
+                provisionArrangements = firstProv
             };
             CASettlementComposition.EnsureDerived(plan, probe);
             var again = new CARegionalSettlementPlan
@@ -65,17 +65,17 @@ namespace ColonistAwareness
                 + (CASettlementComposition.DescribePopulationGroups(probe.populationGroups)
                     == CASettlementComposition.DescribePopulationGroups(
                         again.populationGroups)) + "   EXPECT True");
-            text.AppendLine("      arrangements: " + probe.startingProvisions
-                .Count + " vs " + again.startingProvisions.Count
+            text.AppendLine("      arrangements: " + probe.provisionArrangements
+                .Count + " vs " + again.provisionArrangements.Count
                 + "   EXPECT equal");
 
             text.AppendLine("  [2] THE ACTUAL DRAFT of "
                 + CARegionalPlanUtility.SettlementName(plan, settlementPlan) + ":");
             text.AppendLine("      people: " + CASettlementComposition
                 .DescribePopulationGroups(settlementPlan.populationGroups));
-            foreach (CAStartingProvision arrangement in
-                settlementPlan.startingProvisions.Where(a => a != null && a.active))
-                text.AppendLine("      starting provisions: "
+            foreach (CAProvisionArrangement arrangement in
+                settlementPlan.provisionArrangements.Where(a => a != null && a.active))
+                text.AppendLine("      provision arrangement: "
                     + arrangement.Summary);
 
             CARegionalFactionPlan owner = plan.FactionPlan(
@@ -85,10 +85,10 @@ namespace ColonistAwareness
                 owner.EnsureCultureAndPolitics(plan);
                 text.AppendLine("  [3] FACTION STATE for "
                     + CARegionalPlanUtility.FactionName(owner) + ":");
-                text.AppendLine("      political beliefs: "
+                text.AppendLine("      Political Order: "
                     + CAPoliticalBeliefsModel.Summary(
                         owner.politicalBeliefs));
-                text.AppendLine("      current structure: "
+                text.AppendLine("      represented institutions: "
                     + CAFactionAxes.Characterize(plan, owner));
             }
 
@@ -129,10 +129,10 @@ namespace ColonistAwareness
                     + CACultureModel.Summary(owner.culture));
                 text.AppendLine("      Ideoligion: "
                     + (owner.LivingIdeo?.name ?? "generated with faction"));
-                text.AppendLine("      political beliefs: "
+                text.AppendLine("      Political Order: "
                     + CAPoliticalBeliefsModel.Summary(
                         owner.politicalBeliefs));
-                text.AppendLine("      faction structure: "
+                text.AppendLine("      represented institutions: "
                     + CAFactionAxes.Characterize(plan, owner));
                 text.AppendLine("      settlement authority: "
                     + CARegionalSettlements.SettlementAuthorityWords(
@@ -185,7 +185,8 @@ namespace ColonistAwareness
                 foreach (string entry in record.populationAssignments
                     ?? new List<string>())
                 {
-                    string key = entry.Split(':')[0];
+                    string key = entry.Split(new[] { ':' },
+                        StringSplitOptions.None)[0];
                     int count;
                     byPopulationGroup.TryGetValue(key, out count);
                     byPopulationGroup[key] = count + 1;
@@ -238,19 +239,21 @@ namespace ColonistAwareness
                         + certainty.Max().ToString("F2")
                         + "   EXPECT spread when cohesion differs");
 
-                // [C] starting provisions: operators, assets, funding, water
+                // [C] provision arrangements: operators, assets, funding, water
                 text.AppendLine("  [C] PROVISIONING:");
-                if (record.startingProvisions == null
-                    || record.startingProvisions.Count == 0)
+                if (record.provisionArrangements == null
+                    || record.provisionArrangements.Count == 0)
                     text.AppendLine("      none recorded");
-                foreach (CAStartingProvision arrangement in
-                    record.startingProvisions ?? new List<CAStartingProvision>())
+                foreach (CAProvisionArrangement arrangement in
+                    record.provisionArrangements ?? new List<CAProvisionArrangement>())
                 {
                     if (arrangement == null
                         || arrangement.operatorKind
-                            == CAProvisionOperator.Household) continue;
-                    string orgKey = record.regionalId + "#" + record.slot
-                        + ":prov" + arrangement.key;
+                            == CAProvisionOperator.DomesticUnit
+                        || arrangement?.operatorKind
+                            == CAProvisionOperator.Individual) continue;
+                    string orgKey = CAProvisionArrangements.ProviderKey(record,
+                        arrangement);
                     CAOrganization op = orgs?.ByKey(orgKey);
                     text.AppendLine("      " + arrangement.Summary);
                     text.AppendLine("        operator org: "
@@ -261,7 +264,8 @@ namespace ColonistAwareness
                         == CAProvisionFunding.Taxation)
                     {
                         bool policy = op != null && op.policies.Any(p =>
-                            p != null && p.key == "tax rate");
+                            p != null && p.key == arrangement.policyKey
+                            && p.value == arrangement.policyValue);
                         int now = Find.TickManager?.TicksGame ?? 0;
                         string payerKey = record.regionalId + "#"
                             + record.slot;
@@ -334,7 +338,7 @@ namespace ColonistAwareness
                         + "acts as they occur");
             }
 
-            // [F] Current faction structure in generated settlement state:
+            // [F] Represented institutions in generated settlement state:
             // named officeholders, membership, ownership, staffed posts, and
             // local order.
             CAOrganizationWorldComponent orgComp =
@@ -391,7 +395,8 @@ namespace ColonistAwareness
                 foreach (string asset in record.seededAssets
                     ?? new List<string>())
                 {
-                    string kind = asset.Split('|')[0];
+                    string kind = asset.Split(new[] { '|' },
+                        StringSplitOptions.None)[0];
                     if (!kind.StartsWith("CA_Aperture")
                         && kind != "CA_WindowGlazed") continue;
                     int count;

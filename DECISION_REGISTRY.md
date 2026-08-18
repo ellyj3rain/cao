@@ -2199,3 +2199,312 @@
   societies. Sparse exact exceptions may preserve or forbid a concrete starting
   object when that fact matters, but they remain secondary to realization and
   never become a universal settlement recipe.
+
+- **DR-116** (2026-08-11) - **Culture at T0 contains substantive inherited
+  meanings and practices.** Culture persists identity, constituents, inherited
+  and current social meanings, inherited and lived practices, observations,
+  transitions, maturity, temporal basis, and provenance. Approval, normality,
+  prestige, and salience describe one named social subject; they are not
+  universal Culture axes. Name and native visual tradition alone are invalid.
+
+- **DR-117** (2026-08-11) - **Cultural subjects form an open registered causal
+  contract.** A namespaced subject identifies its owning module, factual source,
+  applicability, player account, and real consumers. Valid unknown keys survive
+  persistence, but editors expose only registered source-and-consumer contracts.
+  Informed pawn reactions and subject-specific group patterns mediate later
+  cultural evidence; no closed topic enum or map-global response owns Culture.
+
+- **DR-118** (2026-08-11) - **Political Beliefs are complete answer vectors,
+  not profile identities.** Player authoring is question-first across the
+  thirteen canonical normative questions. A built-in or saved profile copies a
+  complete transparent vector and leaves every answer editable; the world stores
+  only the answers. NPC derivation uses same-axis realized structure, explicit
+  observed facts, or scored cultural meaning, records stable evidence, and
+  leaves unsupported axes unset rather than filling them arbitrarily.
+
+- **DR-119** (2026-08-11) - **The B8 authoring-data epoch is a destructive
+  pre-release boundary.** Incompatible CA-owned Culture, Political Beliefs,
+  profile, founding-draft, social-interpretation, and regional-authoring state is
+  cleared with one diagnostic. The current runtime contains one schema and does
+  not retain abandoned fields, aliases, partial preset inheritance, profile
+  identity, or migration machinery for unsupported development objects.
+
+- **DR-120** (2026-08-12) - **Objects and Map remain the canonical Starting
+  Region navigation surfaces.** Details is reached from object selection or an
+  explicit map action and shares the same selected object.
+
+- **DR-121** (2026-08-12) - **Details exposes meaningful decisions and essential
+  inspection.** Secondary facts move to object-specific inspectors; persistence
+  alone does not justify permanent UI.
+
+- **DR-122** (2026-08-12) - **One valid option is not an ordinary control.** It
+  becomes a concise readout only when essential; absence becomes visible only
+  when it blocks confirmation.
+
+- **DR-123** (2026-08-12) - **Implementation provenance belongs to
+  diagnostics.** Generated-source labels, schema facts, and receipt language do
+  not appear in ordinary player copy.
+
+- **DR-124** (2026-08-12) - **Setup titles use conventional title
+  composition.** Explicit domain copy owns capitalization; dynamic names are not
+  mechanically title-cased.
+
+- **DR-125** (2026-08-12) - **Established settlement composition is an open
+  derived program.** The seven-bit facility mask and its persistence are retired
+  without alias or migration.
+
+- **DR-126** (2026-08-12) - **Functional loaded assets participate through
+  actual contracts.** Core, expansion, and ported content use the same native
+  evidence; visual appearance or suggestive names alone do not qualify.
+
+- **DR-127** (2026-08-12) - **Provision operators must exist socially,
+  materially, and behaviorally.** A generated arrangement requires a real
+  operator, access, stock, funding, program support, and consumer.
+
+- **DR-128** (2026-08-12) - **Faction technology is faction state.** It is a
+  factual faction readout rather than a settlement setting.
+
+- **DR-129** (2026-08-12) - **Settlement research requires a real research
+  institution.** It appears only when a research program and loaded functional
+  asset support it.
+
+- **DR-130** (2026-08-12) - **Culture is not linear.** Normal authoring uses
+  semantic social interpretation; exact continuous values remain contextual
+  advanced controls and round-trip without loss.
+
+- **DR-131** (2026-08-12) - **Faction Relations is the relational-authoring
+  visual reference.** Relation state is shown directly without generated-source
+  provenance.
+
+- **DR-132** (2026-08-12) - **B9 is the final pre-runtime correction batch.**
+  B10 remains next and cannot begin before the operator validates the deployed
+  creation flow and generated game.
+
+- **DR-133** (2026-08-12) - **Aggregate runtime validation requires causal
+  closure.** Deterministic output, persistence, UI visibility, compilation, and
+  receipts do not establish a simulation when a proxy occupies a foundational
+  entity or process.
+
+- **DR-134** (2026-08-12) - **Hashes and randomness select equivalent forms,
+  not semantic facts.** They may choose names, layouts, visual or material
+  variants, bounded schedules, and eligible tie-breaks only after causal
+  eligibility exists.
+
+- **DR-135** (2026-08-12) - **Domestic units possess persistent factual
+  membership.** Partner, kin, shared residence, or explicit co-residential
+  evidence forms a unit; pawn ordering, adjacency, hash position, and arbitrary
+  group size do not. A resident without a valid unit self-provisions
+  individually.
+
+- **DR-136** (2026-08-12) - **Practiced capability is domain evidence.** Actors,
+  organizations, active work, knowledge, material nodes, history, blockers,
+  confidence, assessment time, and a source signature own the assessment. A
+  random score does not.
+
+- **DR-137** (2026-08-12) - **World tendencies summarize or guide.** They may
+  explain realized facts or pressure an owning generation threshold or
+  placement decision; they never instantiate an institution or program.
+
+- **DR-138** (2026-08-12) - **Settlement programs require complete operational
+  contracts.** Need, operator, standing, knowledge, labor, material, activity,
+  target, access, funding or maintenance, runtime consumer, and failure state
+  precede asset selection and materialization.
+
+- **DR-139** (2026-08-12) - **Culture affects social meaning without granting
+  execution capability.** It may shape demand, legitimacy, participation,
+  prestige, stigma, funding willingness, maintenance, siting, form, adoption,
+  resistance, and historical transition. Authority, knowledge, labor, material,
+  land, organization, and execution remain separate facts.
+
+- **DR-140** (2026-08-12) - **Political Beliefs remain distinct from current
+  order.** Normative change can alter legitimacy, compliance, dissent, reform
+  pressure, and conflict; it cannot directly rewrite offices, policy, ownership,
+  taxation, work, stores, access, or provision.
+
+- **DR-141** (2026-08-12) - **Provision operators exist socially, materially,
+  and behaviorally.** Domestic, communal, and authority arrangements require
+  exact operators and complete labor, stock, access, material, funding, and
+  distribution contracts. Tax support also requires adopted policy and actual
+  collection.
+
+- **DR-142** (2026-08-12) - **Assets are nodes, not institutions.** A building,
+  room, worktable, store, bed, ritual site, or communication object becomes part
+  of an institution only through actual operator, members or target population,
+  authority, work, inputs, outputs, access, and maintenance.
+
+- **DR-143** (2026-08-12) - **The B10 data epoch discards invalid derived
+  state.** Authoring epoch 10 and regional-plan schema 10 preserve compatible intentional
+  identities and B8 social meaning while removing hash-created households,
+  random capability, tendency-created programs, category-created provisions,
+  unsupported instances, and synthetic providers.
+
+- **DR-144** (2026-08-12) - **A repository-wide causal audit closes only after
+  a renewed clean sweep.** Correcting one proxy is insufficient. B10 requires no
+  unresolved Critical or High synthetic-state finding, production-path fixture
+  realization, independent review, a clean build, byte-verified deployment, and
+  then aggregate operator runtime validation.
+
+- **DR-145** (2026-08-12) - **Established operations have an explicit
+  authoring owner.** The Starting Region settlement editor establishes or
+  removes one complete operational fact for one exact population-group
+  operator. The governed fixture uses the same pure formation kernel; neither
+  UI inspection nor fixture code derives a parallel institution model.
+
+- **DR-146** (2026-08-12) - **Program assets retain exact causal identity.**
+  Every placed Thing or zone role persists its program key, operator identity,
+  program signature, role, and native identity. Repair and rebuilding rebind
+  that receipt atomically. A generic placed-asset list is not sufficient
+  evidence for later institutional work.
+
+- **DR-147** (2026-08-12) - **Provision stock and security labor are exclusive
+  factual resources.** Provision stock must be live, on settlement ground,
+  reachable by its actual consumers, and unclaimed by another arrangement.
+  Patrol and security consumers use only armed typed residents assigned by the
+  exact live Defense program; no generic armed-pawn fallback exists.
+
+- **DR-148** (2026-08-12) - **B11 establishes the first durable campaign
+  boundary.** Every live CA state family has one executable schema key, version,
+  owner, validation path, and supported compatibility range. Preflight precedes
+  Scribe mutation, migrations are idempotent, upgrade initialization records its
+  actual time and evidence, and unsupported live state fails visibly. Pending
+  authoring data remains separately replaceable and cannot erase campaign history.
+
+- **DR-149** (2026-08-12) - **Modules are ownership boundaries, not file-size
+  partitions.** A subordinate module is warranted by distinct state, lifecycle,
+  cadence, integration, dependency, failure, or test responsibility. Every
+  mutation and cadence has one owner; derived indexes name authority and
+  invalidation. Coordinators and adapters do not become secondary state owners.
+
+- **DR-150** (2026-08-12) - **Runtime profiling is semantically inert.** The CA
+  module profiler is disabled by default, bounded to known keys, low-allocation,
+  resettable, exportable, and absent from persistence. Enabling or disabling it
+  cannot alter authoritative state, generation, compatibility, or fixture output.
+
+- **DR-151** (2026-08-12) - **Authoring completion has four separate layers.**
+  Representational capacity, current production vocabulary, runtime realization,
+  and control surface are reported independently. An open registry or a set of
+  demonstrations does not establish production breadth.
+
+- **DR-152** (2026-08-12) - **Social subjects, meanings, and practices are
+  different semantic kinds.** A subject is an interpretive referent; a meaning is
+  one population's evaluation of it; a practice is concrete repeated conduct
+  with actors, conditions, operator, evidence, and consumer. A subject key alone
+  is invalid practice state.
+
+- **DR-153** (2026-08-12) - **Political authoring is compositional and
+  temporally exact.** Political Beliefs store normative mechanisms. Current order
+  stores instituted mechanisms. Several compatible mechanisms may coexist, and
+  exclusivity exists only where an explicit mechanical invariant requires it.
+  Institutions, economy, authority, self-identification, and observed practice
+  remain their own facts.
+
+- **DR-154** (2026-08-12) - **Presets are explicit partial copy-on-apply
+  patches.** A belief or current-order set adds only its declared mechanisms,
+  preserves unlisted and compatible authored facts, and retains no shared world
+  authority after application. Named archetypes are optional seeds or derived
+  descriptions, not ontological political types.
+
+- **DR-155** (2026-08-12) - **Player navigation follows author tasks and actual
+  content.** Internal source domains do not automatically become categories.
+  Empty and one-item categories are omitted; groups of two or three remain inline
+  unless a recorded information-architecture need warrants otherwise; top-level
+  navigation requires several substantial human-relevant groups. Shared layout
+  primitives do not justify duplicate semantic authoring surfaces.
+
+- **DR-156** (2026-08-13) - **Culture owns population distributions over
+  explicit questions.** A Culture question names one intelligible normative
+  construct and persists its center, spread, descriptive-norm prior, prestige,
+  salience, tightness, visibility, confidence, divergence tolerance, subgroup
+  mixture, provenance, and evidence. Factual social subjects and concrete
+  practices remain different semantic kinds.
+
+- **DR-157** (2026-08-13) - **Stable psychology, dynamic condition, Culture,
+  Ideoligion, political state, institutions, knowledge, and action are separate
+  causes.** Traits may supply explicit psychology evidence. Unsupported
+  backstory or gene effects are retained as evidence rather than converted into
+  invented personality. Skills affect situated efficacy and competence, not
+  stable personality.
+
+- **DR-158** (2026-08-13) - **Cultural influence is represented, sparse, and
+  bounded.** An influence edge requires actual source and target pawns and keeps
+  the questions actually observed, contact weight, trust, prestige, conformity,
+  payoff visibility, and time. Proximity may establish a possible contact edge,
+  but it cannot transmit a question before a represented exposure.
+  Bounded confidence and repeated exposure may alter an attitude; global faction
+  averages are not a substitute for represented contact.
+
+- **DR-159** (2026-08-13) - **Political cognition emerges in its own durable
+  owner.** Pawn issue positions derive from Culture, psychology, native
+  Ideoligion, material interest, institutional experience, threat, proposition
+  knowledge, learned issue-network support, and represented perceived majority.
+  Issue links require cross-pawn variation and changed evidence. Coalitions are
+  faction-bounded alignments over strong positions and may retain internal
+  disagreement. Political Beliefs and current order remain separate sources.
+
+- **DR-160** (2026-08-13) - **Organizations own institutional legitimacy and
+  sanction history.** Procedure, performance, representation, competence,
+  coercion, Culture, political fit, treatment, trust, and public support are
+  represented separately. Law/custom fit, corruption, and Ideoligion fit remain
+  neutral until comparable facts exist; evidence confidence attenuates the
+  estimate. Enforced order, compelled work or transfer, confiscation, taxation,
+  and custody punishment create persisted bounded sanction appraisals.
+
+- **DR-161** (2026-08-13) - **Proposition knowledge owns claims and research
+  receipts.** A proposition retains holders, sources, channels, contradiction,
+  trust, reliability, expertise, motive, corroboration, plausibility, method,
+  conflicts, access, confidence, transmission, custody, and decay. Direct
+  observation bypasses access norms. Novelty changes attention and transmission,
+  not truth, discovery, or native research completion. Contradiction is an
+  explicit incompatibility relation, not merely two unequal claims on one topic.
+
+- **DR-162** (2026-08-13) - **Culture changes appraisal, not permission.** It
+  may affect public expression, legitimacy, sanction response, relationship
+  approach, knowledge access and transmission, political formation, and the
+  selection of discretionary CA-originated action. Native legality, capability,
+  material conditions, authorization, and direct, relayed, or save-restored
+  operator intent remain authoritative.
+
+- **DR-163** (2026-08-13) - **B12 is a minor capability boundary with explicit
+  evidence limits.** Catalog-2 owners separately persist cultural cognition,
+  political cognition, proposition knowledge, and organization appraisals;
+  schema-10 Culture migration is exact and evidence-preserving. Fixed-seed
+  receipts establish executable causality and isolation, not psychometric
+  validity, empirical calibration, clinical interpretation, predictive accuracy,
+  or operator gameplay acceptance.
+
+- **DR-164** (2026-08-13) - **The production Culture registry contains
+  twenty-four questions in eight categories.** Each category contains three
+  questions and every question has five ordered semantic anchors, represented
+  evidence sources, research provenance, pawn appraisal, a substantive consumer,
+  and a longitudinal feedback route. Survey and research sources justify the
+  construct and ordering; they do not constitute empirical RimWorld calibration.
+
+- **DR-165** (2026-08-13) - **Culture has one authoring object and one visible
+  diversity control.** Manual editing, nine complete historical/social presets,
+  saved profiles, deterministic randomization, and generated completion all
+  write `CACulture` question distributions. No preset mode, custom mode, or
+  blend state exists. Global diversity owns default spread; question-specific
+  spread is an advanced local override and neither moves a question center.
+
+- **DR-166** (2026-08-13) - **Neighboring Culture causes remain separately
+  represented.** Salience owns attention, not conviction. Norm strength and
+  divergence tolerance own perceived social pressure, not expected enforcement.
+  Source confidence owns inherited-prior strength, not knowledge confidence.
+  Visibility owns observation likelihood, not expression compression.
+  Question-specific psychology supplies only a bounded private-position
+  deviation. Demonstrated domain expertise, not status alone, receives weight
+  under expertise deference.
+
+- **DR-167** (2026-08-13) - **Culture changes through represented evidence,
+  never missing-event inference.** Direct observations from unions, offices,
+  work, mixed populations, and sanctions persist before transition. Remaining
+  questions use exact factual-subject adapters. An absent event is not negative
+  evidence, and concrete practice history remains distinct from a Culture
+  question distribution.
+
+- **DR-168** (2026-08-13) - **B13 completes B12 as a kohai capability unit.**
+  Campaign catalog 3 publishes cultural-cognition schema 2 and requires Culture
+  question registry 2. Starting Region and broader non-player faction generation
+  complete missing Culture through the same deterministic kernel; authored
+  player state is never silently randomized. Experimental catalog-2 cognition
+  schema 1 is rejected rather than converted into invented separated causes.

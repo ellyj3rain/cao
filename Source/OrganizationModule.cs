@@ -63,8 +63,6 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref name, "name");
             Scribe_Collections.Look(ref memberIds, "memberIds", LookMode.Value);
             Scribe_Values.Look(ref standing, "standing", 0f);
-            if (Scribe.mode == LoadSaveMode.PostLoadInit && memberIds == null)
-                memberIds = new List<int>();
         }
     }
 
@@ -89,6 +87,9 @@ namespace ColonistAwareness
         public string kindLabel;
         public string name;
         public string assignedOffice;
+        public string programKey;
+        public string operatorIdentity;
+        public string programSignature;
         // The actual guards, by pawn id - a practice without named
         // people is a label; with them, patrol behavior has someone to
         // send around the walls.
@@ -101,11 +102,11 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref kindLabel, "kindLabel");
             Scribe_Values.Look(ref name, "name");
             Scribe_Values.Look(ref assignedOffice, "assignedOffice");
+            Scribe_Values.Look(ref programKey, "programKey");
+            Scribe_Values.Look(ref operatorIdentity, "operatorIdentity");
+            Scribe_Values.Look(ref programSignature, "programSignature");
             Scribe_Collections.Look(ref guardPawnIds, "guardPawnIds",
                 LookMode.Value);
-            if (Scribe.mode == LoadSaveMode.PostLoadInit
-                && guardPawnIds == null)
-                guardPawnIds = new List<int>();
         }
     }
 
@@ -439,7 +440,8 @@ namespace ColonistAwareness
             }
             if (source.organizationKind != CAOrganizationKind.Household
                 || source.organizationKey.NullOrEmpty()) yield break;
-            string[] parts = source.organizationKey.Split(':');
+            string[] parts = source.organizationKey.Split(new[] { ':' },
+                StringSplitOptions.None);
             if (parts.Length < 3 || !int.TryParse(parts[1], out int mapId))
                 yield break;
             foreach (Map map in Find.Maps)
@@ -827,7 +829,8 @@ namespace ColonistAwareness
                 {
                     cost = 0.05f;
                     int fort, train;
-                    CapabilityAxesOf(target.organizationKey, out fort,
+                    CASettlementSecurityFacts.Read(target.organizationKey,
+                        out fort,
                         out train);
                     if (fort + train >= 5)
                     {
@@ -891,21 +894,6 @@ namespace ColonistAwareness
             return null;
         }
 
-        private static void CapabilityAxesOf(string key, out int fort,
-            out int train)
-        {
-            fort = 0; train = 0;
-            CARegionalWorldComponent regional =
-                CARegionalWorldComponent.Current;
-            if (regional == null) return;
-            for (int i = 0; i < regional.Records.Count; i++)
-            {
-                CARegionalSettlementRecord r = regional.Records[i];
-                if (r.regionalId + "#" + r.slot == key)
-                { fort = r.fortification; train = r.training; return; }
-            }
-        }
-
         private static Ideo IdeoOf(CAOrganization organization)
         {
             try
@@ -937,8 +925,168 @@ namespace ColonistAwareness
         Group
     }
 
+    // An organization owns its legitimacy appraisal. Cultural cognition
+    // supplies one evidence-backed fit estimate; it does not copy the
+    // organization into a parallel institution record.
+    public sealed class CAInstitutionLegitimacyAppraisal : IExposable
+    {
+        public string populationScope;
+        public float proceduralFairness = 0.5f;
+        public float outcomePerformance = 0.5f;
+        public float lawAndCustomFit = 0.5f;
+        public float identityRepresentation = 0.5f;
+        public float competence = 0.5f;
+        public float corruption = 0.5f;
+        public float coercion = 0.5f;
+        public float culturalFit = 0.5f;
+        public float ideoligionFit = 0.5f;
+        public float politicalFit = 0.5f;
+        public float personalTreatment = 0.5f;
+        public float trust = 0.5f;
+        public float evidenceConfidence;
+        public float reportedPublicSupport;
+        public float outstandingSupportLoss;
+        public float legitimacy;
+        public string sourceSignature;
+        public int lastUpdatedTick = -1;
+
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref populationScope, "populationScope");
+            Scribe_Values.Look(ref proceduralFairness,
+                "proceduralFairness", 0.5f);
+            Scribe_Values.Look(ref outcomePerformance,
+                "outcomePerformance", 0.5f);
+            Scribe_Values.Look(ref lawAndCustomFit,
+                "lawAndCustomFit", 0.5f);
+            Scribe_Values.Look(ref identityRepresentation,
+                "identityRepresentation", 0.5f);
+            Scribe_Values.Look(ref competence, "competence", 0.5f);
+            Scribe_Values.Look(ref corruption, "corruption", 0.5f);
+            Scribe_Values.Look(ref coercion, "coercion", 0.5f);
+            Scribe_Values.Look(ref culturalFit, "culturalFit", 0.5f);
+            Scribe_Values.Look(ref ideoligionFit, "ideoligionFit", 0.5f);
+            Scribe_Values.Look(ref politicalFit, "politicalFit", 0.5f);
+            Scribe_Values.Look(ref personalTreatment,
+                "personalTreatment", 0.5f);
+            Scribe_Values.Look(ref trust, "trust", 0.5f);
+            Scribe_Values.Look(ref evidenceConfidence,
+                "evidenceConfidence", 0f);
+            Scribe_Values.Look(ref reportedPublicSupport,
+                "reportedPublicSupport", 0f);
+            Scribe_Values.Look(ref outstandingSupportLoss,
+                "outstandingSupportLoss", 0f);
+            Scribe_Values.Look(ref legitimacy, "legitimacy", 0f);
+            Scribe_Values.Look(ref sourceSignature, "sourceSignature");
+            Scribe_Values.Look(ref lastUpdatedTick, "lastUpdatedTick", -1);
+        }
+    }
+
+    public sealed class CAInstitutionSanctionAppraisal : IExposable
+    {
+        public string factIdentity;
+        public string subjectKey;
+        public int pawnId = -1;
+        public string populationScope;
+        public float legitimacy;
+        public float proportionality;
+        public float visibility;
+        public float consistency;
+        public float procedure;
+        public float socialSupport;
+        public float intrinsicMotivation;
+        public float psychologicalReactance;
+        public float deterrence;
+        public float normReinforcement;
+        public float reactance;
+        public float voluntaryCooperation;
+        public int tick = -1;
+
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref factIdentity, "factIdentity");
+            Scribe_Values.Look(ref subjectKey, "subjectKey");
+            Scribe_Values.Look(ref pawnId, "pawnId", -1);
+            Scribe_Values.Look(ref populationScope, "populationScope");
+            Scribe_Values.Look(ref legitimacy, "legitimacy", 0f);
+            Scribe_Values.Look(ref proportionality, "proportionality", 0f);
+            Scribe_Values.Look(ref visibility, "visibility", 0f);
+            Scribe_Values.Look(ref consistency, "consistency", 0f);
+            Scribe_Values.Look(ref procedure, "procedure", 0f);
+            Scribe_Values.Look(ref socialSupport, "socialSupport", 0f);
+            Scribe_Values.Look(ref intrinsicMotivation,
+                "intrinsicMotivation", 0f);
+            Scribe_Values.Look(ref psychologicalReactance,
+                "psychologicalReactance", 0f);
+            Scribe_Values.Look(ref deterrence, "deterrence", 0f);
+            Scribe_Values.Look(ref normReinforcement,
+                "normReinforcement", 0f);
+            Scribe_Values.Look(ref reactance, "reactance", 0f);
+            Scribe_Values.Look(ref voluntaryCooperation,
+                "voluntaryCooperation", 0f);
+            Scribe_Values.Look(ref tick, "tick", -1);
+        }
+    }
+
+    internal static class CAInstitutionSanctionRuntime
+    {
+        internal static void Observe(CASocialFactContext fact, Pawn pawn,
+            string populationScope, string institutionalOrganizationIdentity,
+            CAPersistedSocialReaction reaction)
+        {
+            if (fact == null || pawn == null || reaction == null
+                || !IsSanctionSubject(fact.SubjectKey))
+                return;
+            CAOrganizationWorldComponent owner =
+                CAOrganizationWorldComponent.Current;
+            CAOrganization organization =
+                !institutionalOrganizationIdentity.NullOrEmpty()
+                    ? owner?.ByKey(institutionalOrganizationIdentity) : null;
+            if (organization == null) return;
+            CAInstitutionLegitimacyAppraisal legitimacy = organization
+                .legitimacyAppraisals?.Where(value => value != null)
+                .OrderByDescending(value => value.lastUpdatedTick)
+                .FirstOrDefault();
+            float procedure = Mathf.Clamp01(
+                legitimacy?.proceduralFairness ?? 0.5f);
+            float personalTreatment = Mathf.Clamp01(
+                legitimacy?.personalTreatment ?? 0.5f);
+            int now = fact.Tick >= 0
+                ? fact.Tick : Find.TickManager?.TicksGame ?? 0;
+            int recent = organization.sanctionAppraisals?.Count(value =>
+                value != null && value.subjectKey == fact.SubjectKey
+                && now - value.tick <= 5 * 60000) ?? 0;
+            CAPsychologicalProfile psychology =
+                CACulturalCognitionWorldComponent.Current?.ProfileFor(pawn);
+            organization.RecordSanction(fact.FactIdentity, fact.SubjectKey,
+                pawn.thingIDNumber, populationScope,
+                legitimacy?.legitimacy ?? organization.publicSupport,
+                (procedure + personalTreatment) * 0.5f,
+                Mathf.Clamp01(reaction.Salience / 100f),
+                Mathf.Clamp01(0.35f + recent * 0.15f),
+                procedure,
+                Mathf.Clamp01((reaction.Approval + 100f) / 200f),
+                Mathf.Clamp01((reaction.Approval + 100f) / 200f),
+                psychology?.reactance ?? 0.5f, now);
+        }
+
+        private static bool IsSanctionSubject(string subjectKey)
+        {
+            return subjectKey == CASocialSubjectRegistry.CustodyPunishment
+                || subjectKey == CASocialSubjectRegistry.EnforcedOrder
+                || subjectKey == CASocialSubjectRegistry.CompelledService
+                || subjectKey == CASocialSubjectRegistry.CompulsoryTransfer
+                || subjectKey == CASocialSubjectRegistry.Confiscation
+                || subjectKey == CASocialSubjectRegistry.Taxation;
+        }
+    }
+
     public sealed class CAOrganization : IExposable
     {
+        public const int MaxLegitimacyAppraisals =
+            CACulturalCognitionPureKernel.MaxInstitutionLegitimacyAppraisals;
+        public const int MaxSanctionAppraisals =
+            CACulturalCognitionPureKernel.MaxInstitutionSanctionAppraisals;
         public string organizationKey;
         public CAOrganizationKind organizationKind =
             CAOrganizationKind.Settlement;
@@ -973,12 +1121,16 @@ namespace ColonistAwareness
         public List<int> memberPawnIds = new List<int>();
         public bool affiliatedWithPlayer;
         // Conflicts remain open until current practice matches the faction's
-        // political beliefs. Parallel lists store each key and start tick.
+        // Political Order. Parallel lists store each key and start tick.
         public List<string> openBeliefConflicts = new List<string>();
         public List<int> beliefConflictStartTicks = new List<int>();
         public int lastBeliefCheckTick = -1;
         // Outstanding public support loss from unresolved belief conflicts.
         public float unrecoveredSupportLoss;
+        public List<CAInstitutionLegitimacyAppraisal> legitimacyAppraisals =
+            new List<CAInstitutionLegitimacyAppraisal>();
+        public List<CAInstitutionSanctionAppraisal> sanctionAppraisals =
+            new List<CAInstitutionSanctionAppraisal>();
 
         // Each federation membership records what that member delegated.
         public int sunsetTick = -1;
@@ -1097,29 +1249,128 @@ namespace ColonistAwareness
                 "lastBeliefCheckTick", -1);
             Scribe_Values.Look(ref unrecoveredSupportLoss,
                 "unrecoveredSupportLoss", 0f);
+            Scribe_Collections.Look(ref legitimacyAppraisals,
+                "legitimacyAppraisals", LookMode.Deep);
+            Scribe_Collections.Look(ref sanctionAppraisals,
+                "sanctionAppraisals", LookMode.Deep);
             Scribe_Values.Look(ref affiliatedWithPlayer,
                 "affiliatedWithPlayer", false);
             Scribe_Values.Look(ref sunsetTick, "sunsetTick", -1);
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+        }
+
+        internal void RecordLegitimacy(string populationScope,
+            float culturalFit, string sourceSignature, int tick)
+        {
+            RecordLegitimacy(populationScope,
+                new CAInstitutionLegitimacyInput(
+                    proceduralFairness: 0.5f,
+                    outcomePerformance: Mathf.Clamp01(publicSupport),
+                    lawAndCustomFit: 0.5f,
+                    identityRepresentation: 0.5f,
+                    competence: 0.5f,
+                    corruption: 0.5f,
+                    coercion: 0.5f,
+                    culturalFit: culturalFit,
+                    ideoligionFit: 0.5f,
+                    politicalFit: Mathf.Clamp01(1f
+                        - unrecoveredSupportLoss),
+                    personalTreatment: 0.5f,
+                    trust: 0.5f,
+                    publicSupport: Mathf.Clamp01(publicSupport)),
+                0.35f, sourceSignature, tick);
+        }
+
+        internal void RecordLegitimacy(string populationScope,
+            CAInstitutionLegitimacyInput input, float evidenceConfidence,
+            string sourceSignature, int tick)
+        {
+            if (legitimacyAppraisals == null)
+                legitimacyAppraisals =
+                    new List<CAInstitutionLegitimacyAppraisal>();
+            string scope = populationScope.NullOrEmpty()
+                ? "member population" : populationScope;
+            CAInstitutionLegitimacyAppraisal record = legitimacyAppraisals
+                .FirstOrDefault(value => value != null
+                    && value.populationScope == scope);
+            if (record == null)
             {
-                if (offices == null) offices = new List<CAOffice>();
-                if (groups == null)
-                    groups = new List<CAOrganizationGroup>();
-                if (customs == null)
-                    customs = new List<CAOrganizationCustom>();
-                if (securityPractices == null)
-                    securityPractices = new List<CASecurityPractice>();
-                if (claims == null) claims = new List<CAClaim>();
-                if (policies == null) policies = new List<CAPolicyRecord>();
-                if (decisionHistory == null)
-                    decisionHistory = new List<CADecisionEntry>();
-                if (memberPawnIds == null)
-                    memberPawnIds = new List<int>();
-                if (openBeliefConflicts == null)
-                    openBeliefConflicts = new List<string>();
-                if (beliefConflictStartTicks == null)
-                    beliefConflictStartTicks = new List<int>();
+                record = new CAInstitutionLegitimacyAppraisal
+                    { populationScope = scope };
+                legitimacyAppraisals.Add(record);
             }
+            record.proceduralFairness = Mathf.Clamp01(
+                input.ProceduralFairness);
+            record.outcomePerformance = Mathf.Clamp01(
+                input.OutcomePerformance);
+            record.lawAndCustomFit = Mathf.Clamp01(input.LawAndCustomFit);
+            record.identityRepresentation = Mathf.Clamp01(
+                input.IdentityRepresentation);
+            record.competence = Mathf.Clamp01(input.Competence);
+            record.corruption = Mathf.Clamp01(input.Corruption);
+            record.coercion = Mathf.Clamp01(input.Coercion);
+            record.culturalFit = Mathf.Clamp01(input.CulturalFit);
+            record.ideoligionFit = Mathf.Clamp01(input.IdeoligionFit);
+            record.politicalFit = Mathf.Clamp01(input.PoliticalFit);
+            record.personalTreatment = Mathf.Clamp01(
+                input.PersonalTreatment);
+            record.trust = Mathf.Clamp01(input.Trust);
+            record.evidenceConfidence = Mathf.Clamp01(evidenceConfidence);
+            record.reportedPublicSupport = Mathf.Clamp01(
+                input.PublicSupport);
+            record.outstandingSupportLoss = Mathf.Clamp01(
+                unrecoveredSupportLoss);
+            float estimated = CACulturalCognitionPureKernel
+                .InstitutionLegitimacy(input);
+            record.legitimacy = Mathf.Clamp01(Mathf.Lerp(0.5f, estimated,
+                record.evidenceConfidence));
+            record.sourceSignature = sourceSignature;
+            record.lastUpdatedTick = tick;
+        }
+
+        internal void RecordSanction(string factIdentity, string subjectKey,
+            int pawnId, string populationScope, float legitimacy,
+            float proportionality, float visibility, float consistency,
+            float procedure, float socialSupport, float intrinsicMotivation,
+            float psychologicalReactance, int tick)
+        {
+            if (factIdentity.NullOrEmpty() || pawnId < 0) return;
+            if (sanctionAppraisals == null)
+                sanctionAppraisals =
+                    new List<CAInstitutionSanctionAppraisal>();
+            if (sanctionAppraisals.Any(value => value != null
+                    && value.factIdentity == factIdentity
+                    && value.pawnId == pawnId))
+                return;
+            CASanctionResponseResult result =
+                CACulturalCognitionPureKernel.SanctionResponse(
+                    legitimacy, proportionality, visibility, consistency,
+                    procedure, socialSupport, intrinsicMotivation,
+                    psychologicalReactance);
+            sanctionAppraisals.Add(new CAInstitutionSanctionAppraisal
+            {
+                factIdentity = factIdentity,
+                subjectKey = subjectKey,
+                pawnId = pawnId,
+                populationScope = populationScope.NullOrEmpty()
+                    ? "member population" : populationScope,
+                legitimacy = Mathf.Clamp01(legitimacy),
+                proportionality = Mathf.Clamp01(proportionality),
+                visibility = Mathf.Clamp01(visibility),
+                consistency = Mathf.Clamp01(consistency),
+                procedure = Mathf.Clamp01(procedure),
+                socialSupport = Mathf.Clamp01(socialSupport),
+                intrinsicMotivation = Mathf.Clamp01(intrinsicMotivation),
+                psychologicalReactance = Mathf.Clamp01(
+                    psychologicalReactance),
+                deterrence = result.Deterrence,
+                normReinforcement = result.NormReinforcement,
+                reactance = result.Reactance,
+                voluntaryCooperation = result.VoluntaryCooperation,
+                tick = tick
+            });
+            if (sanctionAppraisals.Count > MaxSanctionAppraisals)
+                sanctionAppraisals.RemoveRange(0,
+                    sanctionAppraisals.Count - MaxSanctionAppraisals);
         }
     }
 
@@ -1288,12 +1539,22 @@ namespace ColonistAwareness
 
     public sealed class CAOrganizationWorldComponent : WorldComponent
     {
+        private int campaignSchemaVersion = 2;
+        private int legacyAuthoringDataEpoch =
+            CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private List<CAOrganization> organizations = new List<CAOrganization>();
+        // Runtime-only owner index. The persisted list remains the single
+        // durable representation and this lookup is rebuilt after load.
+        private Dictionary<string, CAOrganization> organizationIndex;
+        // Runtime-only authority index, rebuilt at the organization owner's
+        // mutation cadence so political cognition never scans all offices.
+        private HashSet<int> officeHolderIndex = new HashSet<int>();
         private List<CAFrontierMapPlan> frontierMapPlans =
             new List<CAFrontierMapPlan>();
         private List<CAAgreement> agreements = new List<CAAgreement>();
         private int nextAgreementId = 1;
         private int lastSyncTick = -99999;
+        private int nextLegitimacyTick = 60000;
 
         public IReadOnlyList<CAAgreement> Agreements
         {
@@ -1504,10 +1765,20 @@ namespace ColonistAwareness
             catch { }
             int seed = Gen.HashCombineInt(worldSeed, tileId,
                 map.Size.x, map.Size.z);
+            CASettlementEnvironmentFacts environment =
+                CASettlementEnvironment.ForTile(tileId);
+            Faction supporter = CAHabitatViability.WorldSupporter(
+                environment);
+            int capabilityTier = supporter == null ? 0
+                : CAHabitatViability.TechnologyTier(supporter);
+            bool viableSite = environment.Valid
+                && CAHabitatViability.FrontierPotential(environment,
+                    capabilityTier).Viable;
             int suitableCapacity = Mathf.Clamp(
                 map.Size.x * map.Size.z / 40000, 2, 8);
+            if (!viableSite) suitableCapacity = 0;
             int count = CAWorldTendencyCausalKernel.FrontierHoldingCount(
-                seed, suitableCapacity, policy.frontierHoldingFrequency);
+                suitableCapacity, policy.frontierHoldingFrequency);
             int landCapacity = FrontierLandCapacity(map);
             var created = new CAFrontierMapPlan
             {
@@ -1515,34 +1786,33 @@ namespace ColonistAwareness
                 mapTileId = tileId,
                 mapWidth = map.Size.x,
                 mapHeight = map.Size.z,
-                realizationSourceHash = CAWorldTendencyCausalKernel
-                    .HashCombineInt(seed,
-                        Mathf.RoundToInt(
-                            policy.frontierHoldingFrequency * 10000f),
-                        Mathf.RoundToInt(
-                            policy.frontierHoldingSize * 10000f),
-                        suitableCapacity)
+                realizationSourceHash = FrontierRealizationSourceHash(
+                    seed, policy, suitableCapacity, environment,
+                    capabilityTier, supporter?.loadID ?? -1),
+                schemaVersion = CAFrontierMapPlan.CurrentSchemaVersion
             };
             for (int i = 0; i < count; i++)
             {
-                int household = CAWorldTendencyCausalKernel
-                    .FrontierHouseholdSize(seed, i, landCapacity,
+                int residents = CAWorldTendencyCausalKernel
+                    .FrontierResidentCount(landCapacity,
                         policy.frontierHoldingSize);
                 int material = CAWorldTendencyCausalKernel
-                    .FrontierMaterialLevel(seed, i, landCapacity,
+                    .FrontierMaterialLevel(landCapacity,
                         policy.frontierHoldingSize);
-                created.holdings.Add(new CAFrontierHoldingPlan
+                var holding = new CAFrontierHoldingPlan
                 {
                     key = i,
                     memberTileId = tileId,
-                    householdSize = household,
+                    residentCount = residents,
                     landCapacity = landCapacity,
                     materialLevel = material,
                     form = CAWorldTendencyCausalKernel.FrontierForm(
-                        household, material),
-                    factionless = CAWorldTendencyCausalKernel.Unit(seed, i,
-                        1414213) < 0.45f
-                });
+                        residents, material)
+                };
+                CAHabitatViability.ApplyFrontier(holding, environment,
+                    capabilityTier, supportingFactionLoadId:
+                        supporter?.loadID ?? -1);
+                created.holdings.Add(holding);
             }
             frontierMapPlans.Add(created);
             return created;
@@ -1551,10 +1821,44 @@ namespace ColonistAwareness
         private static bool ValidFrontierMapPlan(CAFrontierMapPlan plan,
             Map map, int tileId)
         {
-            if (plan == null || plan.mapTileId != tileId
+            if (plan == null
+                || plan.schemaVersion != CAFrontierMapPlan.CurrentSchemaVersion
+                || plan.mapTileId != tileId
                 || plan.mapWidth != map.Size.x
                 || plan.mapHeight != map.Size.z
                 || plan.holdings == null || plan.holdings.Count > 8)
+                return false;
+
+            CARegionalWorldPolicy policy = CARegionalWorldComponent.Current
+                ?.WorldPolicy ?? new CARegionalWorldPolicy();
+            CASettlementEnvironmentFacts environment =
+                CASettlementEnvironment.ForTile(tileId);
+            CAFrontierHoldingPlan first = plan.holdings.FirstOrDefault();
+            Faction supporter = first?.supportingFactionLoadId >= 0
+                ? CARegionalPlanUtility.FactionByLoadId(
+                    first.supportingFactionLoadId)
+                : CAHabitatViability.WorldSupporter(environment);
+            int capabilityTier = supporter == null ? 0
+                : CAHabitatViability.TechnologyTier(supporter);
+            bool viableSite = environment.Valid
+                && CAHabitatViability.FrontierPotential(environment,
+                    capabilityTier).Viable;
+            int suitableCapacity = Mathf.Clamp(
+                map.Size.x * map.Size.z / 40000, 2, 8);
+            if (!viableSite) suitableCapacity = 0;
+            int expectedCount = CAWorldTendencyCausalKernel
+                .FrontierHoldingCount(suitableCapacity,
+                    policy.frontierHoldingFrequency);
+            int worldSeed = 0;
+            try { worldSeed = Verse.Find.World.info.Seed; }
+            catch { }
+            int seed = Gen.HashCombineInt(worldSeed, tileId,
+                map.Size.x, map.Size.z);
+            if (plan.holdings.Count != expectedCount
+                || plan.realizationSourceHash
+                    != FrontierRealizationSourceHash(seed, policy,
+                        suitableCapacity, environment, capabilityTier,
+                        supporter?.loadID ?? -1))
                 return false;
 
             var keys = new HashSet<int>();
@@ -1565,16 +1869,38 @@ namespace ColonistAwareness
                     || !keys.Add(holding.key)
                     || holding.landCapacity < 1
                     || holding.landCapacity > 3
-                    || holding.householdSize < 1
-                    || holding.householdSize > 6
+                    || holding.residentCount < 1
+                    || holding.residentCount > 6
                     || holding.materialLevel < 0
                     || holding.materialLevel > holding.landCapacity
                     || holding.form != CAWorldTendencyCausalKernel
-                        .FrontierForm(holding.householdSize,
-                            holding.materialLevel))
+                        .FrontierForm(holding.residentCount,
+                            holding.materialLevel)
+                    || !CAHabitatViability.ValidateFrontier(holding,
+                        environment, out _)
+                    || holding.supportingFactionKey != -1
+                    || holding.supportingFactionLoadId
+                        != (supporter?.loadID ?? -1)
+                    || holding.capabilityTier != capabilityTier)
                     return false;
             }
             return true;
+        }
+
+        private static int FrontierRealizationSourceHash(int seed,
+            CARegionalWorldPolicy policy, int suitableCapacity,
+            CASettlementEnvironmentFacts environment, int capabilityTier,
+            int supportingFactionLoadId)
+        {
+            int hash = CAWorldTendencyCausalKernel.HashCombineInt(seed,
+                Mathf.RoundToInt(
+                    policy.frontierHoldingFrequency * 10000f),
+                Mathf.RoundToInt(
+                    policy.frontierHoldingSize * 10000f),
+                suitableCapacity);
+            return CAWorldTendencyCausalKernel.HashCombineInt(hash,
+                environment?.SourceHash ?? 0, capabilityTier,
+                supportingFactionLoadId);
         }
 
         private static int FrontierLandCapacity(Map map)
@@ -1594,13 +1920,12 @@ namespace ColonistAwareness
 
         public CAOrganization EnsureColony()
         {
-            for (int i = 0; i < organizations.Count; i++)
-                if (organizations[i].organizationKey == "player")
-                {
-                    organizations[i].organizationKind =
-                        CAOrganizationKind.Colony;
-                    return organizations[i];
-                }
+            CAOrganization existing = ByKey("player");
+            if (existing != null)
+            {
+                existing.organizationKind = CAOrganizationKind.Colony;
+                return existing;
+            }
             CAOrganization org = new CAOrganization
             {
                 organizationKey = "player",
@@ -1613,16 +1938,79 @@ namespace ColonistAwareness
             org.Record("organization record established - inherited from"
                 + " the colony's standing structure");
             organizations.Add(org);
+            AddToOrganizationIndex(org);
             CAOrganizationInheritance.SyncColony(org);
             return org;
         }
 
         public CAOrganization ByKey(string key)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.OrganizationLookup))
+            {
+                if (key.NullOrEmpty())
+                {
+                    CAModuleProfiler.Observe(
+                        CAModuleProfileKey.OrganizationLookup, 0, 1);
+                    return null;
+                }
+                EnsureOrganizationIndex();
+                bool found = organizationIndex.TryGetValue(key,
+                    out CAOrganization organization);
+                CAModuleProfiler.Observe(
+                    CAModuleProfileKey.OrganizationLookup,
+                    found ? 1 : 0, found ? 0 : 1);
+                return organization;
+            }
+        }
+
+        private void EnsureOrganizationIndex()
+        {
+            if (organizationIndex != null) return;
+            organizationIndex = new Dictionary<string, CAOrganization>(
+                StringComparer.Ordinal);
+            if (organizations == null) return;
             for (int i = 0; i < organizations.Count; i++)
-                if (organizations[i].organizationKey == key)
-                    return organizations[i];
-            return null;
+            {
+                CAOrganization organization = organizations[i];
+                if (organization?.organizationKey.NullOrEmpty() != false)
+                    continue;
+                if (!organizationIndex.ContainsKey(
+                        organization.organizationKey))
+                    organizationIndex.Add(organization.organizationKey,
+                        organization);
+            }
+        }
+
+        private void AddToOrganizationIndex(CAOrganization organization)
+        {
+            if (organization?.organizationKey.NullOrEmpty() != false) return;
+            EnsureOrganizationIndex();
+            organizationIndex[organization.organizationKey] = organization;
+        }
+
+        private void InvalidateOrganizationIndex()
+        {
+            organizationIndex = null;
+            officeHolderIndex?.Clear();
+        }
+
+        internal bool HasOfficeHolder(int pawnId)
+        {
+            return pawnId >= 0 && officeHolderIndex?.Contains(pawnId) == true;
+        }
+
+        private void RebuildOfficeHolderIndex()
+        {
+            if (officeHolderIndex == null)
+                officeHolderIndex = new HashSet<int>();
+            else officeHolderIndex.Clear();
+            if (organizations == null) return;
+            foreach (CAOffice office in organizations.Where(value =>
+                         value?.offices != null).SelectMany(value =>
+                         value.offices).Where(value => value != null
+                         && value.holderId >= 0))
+                officeHolderIndex.Add(office.holderId);
         }
 
         public CAOrganization EnsureFor(string key, string name,
@@ -1642,6 +2030,7 @@ namespace ColonistAwareness
                 standingNote = standingNote
             };
             organizations.Add(org);
+            AddToOrganizationIndex(org);
             return org;
         }
 
@@ -1649,16 +2038,210 @@ namespace ColonistAwareness
         {
             base.WorldComponentTick();
             int now = Find.TickManager.TicksGame;
+            if (now >= nextLegitimacyTick)
+            {
+                nextLegitimacyTick = now + 60000;
+                UpdateInstitutionLegitimacy(now);
+            }
             if (now - lastSyncTick < 2500) return;
             lastSyncTick = now;
-            CAOrganization colony = EnsureColony();
-            CAOrganizationInheritance.SyncColony(colony);
-            CAOrganizationInheritance.ColonyPulse(colony);
-            CAOrganizationInheritance.SyncRegionalSettlements(this);
-            CAFrontier.EnsureHoldings(this);
-            ProcessAgreementsAndFederations(now);
-            TickGatherings(now);
-            PulsePoliticalBeliefsUnderBudget(now);
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.FullWorldScan))
+            {
+                CAModuleProfiler.Observe(CAModuleProfileKey.FullWorldScan,
+                    organizations?.Count ?? 0, 0);
+                CAOrganization colony = EnsureColony();
+                CAOrganizationInheritance.SyncColony(colony);
+                CAOrganizationInheritance.ColonyPulse(colony);
+                CAOrganizationInheritance.SyncRegionalSettlements(this);
+                CAFrontier.EnsureHoldings(this);
+                ProcessAgreementsAndFederations(now);
+                TickGatherings(now);
+                PulsePoliticalBeliefsUnderBudget(now);
+                RebuildOfficeHolderIndex();
+            }
+        }
+
+        private void UpdateInstitutionLegitimacy(int now)
+        {
+            CACulturalCognitionWorldComponent cognition =
+                CACulturalCognitionWorldComponent.Current;
+            if (cognition == null) return;
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.InstitutionalLegitimacy))
+            {
+                int examined = 0;
+                foreach (CAOrganization organization in organizations.Where(
+                    value => value != null
+                        && !value.organizationKey.NullOrEmpty()))
+                {
+                    CAInstitutionLegitimacyEvidence evidence = cognition
+                        == null ? MissingInstitutionEvidence()
+                        : InstitutionEvidenceFor(organization, cognition,
+                            CAPoliticalCognitionWorldComponent.Current);
+                    organization.RecordLegitimacy("member population",
+                        evidence.Input, evidence.EvidenceConfidence,
+                        evidence.SourceSignature, now);
+                    examined++;
+                }
+                CAModuleProfiler.Observe(
+                    CAModuleProfileKey.InstitutionalLegitimacy,
+                    objectsExamined: examined,
+                    candidatesAccepted: examined);
+            }
+        }
+
+        private static CAInstitutionLegitimacyEvidence
+            MissingInstitutionEvidence()
+        {
+            return new CAInstitutionLegitimacyEvidence(
+                new CAInstitutionLegitimacyInput(0.5f, 0.5f, 0.5f,
+                    0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+                    0.5f, 0.5f, 0.5f), 0f,
+                "cultural cognition unavailable");
+        }
+
+        private static CAInstitutionLegitimacyEvidence InstitutionEvidenceFor(
+            CAOrganization organization,
+            CACulturalCognitionWorldComponent cognition,
+            CAPoliticalCognitionWorldComponent politics)
+        {
+            if (organization == null) return MissingInstitutionEvidence();
+            float cultural = cognition.InstitutionCulturalFitFor(
+                organization, out string culturalSignature);
+            float procedure = ProcedureEvidence(organization);
+            float performance = PerformanceEvidence(organization);
+            float representation = RepresentationEvidence(organization);
+            float competence = CompetenceEvidence(organization);
+            float corruption = 0.5f;
+            float coercion = CoercionEvidence(organization);
+            float ideoligion = 0.5f;
+            float political = politics?.InstitutionPoliticalFitFor(
+                organization) ?? 0.5f;
+            float treatment = PersonalTreatment(organization);
+            float trust = TrustEvidence(organization);
+            float publicSupport = Mathf.Clamp01(organization.publicSupport);
+            int representedInputs = 1;
+            if (organization.sanctionAppraisals?.Count > 0)
+                representedInputs++;
+            if (organization.memberPawnIds?.Count > 0)
+                representedInputs += 4;
+            if (organization.offices?.Count > 0) representedInputs += 2;
+            if (organization.decisionHistory?.Count > 0)
+                representedInputs += 2;
+            float evidenceConfidence = Mathf.Clamp01(0.20f
+                + representedInputs / 13f * 0.75f);
+            return new CAInstitutionLegitimacyEvidence(
+                new CAInstitutionLegitimacyInput(procedure, performance,
+                    0.5f, representation, competence, corruption, coercion,
+                    cultural, ideoligion, political, treatment, trust,
+                    publicSupport), evidenceConfidence,
+                culturalSignature
+                    + ";procedure=" + procedure.ToString("0.000")
+                    + ";performance=" + performance.ToString("0.000")
+                    + ";representation="
+                    + representation.ToString("0.000")
+                    + ";publicSupport=" + publicSupport.ToString("0.000")
+                    + ";evidenceConfidence="
+                    + evidenceConfidence.ToString("0.000"));
+        }
+
+        private static float ProcedureEvidence(CAOrganization organization)
+        {
+            List<CAInstitutionSanctionAppraisal> represented =
+                (organization?.sanctionAppraisals
+                    ?? new List<CAInstitutionSanctionAppraisal>())
+                .Where(value => value != null).ToList();
+            return represented.Count == 0 ? 0.5f
+                : Mathf.Clamp01(represented.Average(value =>
+                    value.procedure));
+        }
+
+        private static float PerformanceEvidence(CAOrganization organization)
+        {
+            List<CADecisionEntry> represented = (organization?.decisionHistory
+                    ?? new List<CADecisionEntry>())
+                .Where(value => value != null && (value.kind
+                        == "agreement-made" || value.kind == "warning-honored"
+                    || value.kind == "warning-shared"
+                    || value.kind == "agreement-broken"
+                    || value.kind == "warning-ignored"
+                    || value.kind == "losses"))
+                .ToList();
+            if (represented.Count == 0) return 0.5f;
+            int favorable = represented.Count(value => value.kind
+                    == "agreement-made" || value.kind == "warning-honored"
+                || value.kind == "warning-shared");
+            int adverse = represented.Count - favorable;
+            return Mathf.Clamp01(0.5f
+                + (favorable - adverse) / (2f * represented.Count));
+        }
+
+        private static float RepresentationEvidence(
+            CAOrganization organization)
+        {
+            int members = organization?.memberPawnIds?.Count ?? 0;
+            int holders = organization?.offices?.Count(value => value != null
+                && value.holderId >= 0
+                && organization.memberPawnIds.Contains(value.holderId)) ?? 0;
+            int offices = organization?.offices?.Count ?? 0;
+            return offices == 0 ? 0.5f : Mathf.Clamp01(holders
+                / (float)Math.Max(1, offices)
+                * (members > 0 ? 1f : 0.5f));
+        }
+
+        private static float CompetenceEvidence(CAOrganization organization)
+        {
+            List<Pawn> holders = (organization?.offices
+                    ?? new List<CAOffice>()).Where(value => value != null
+                    && value.holderId >= 0).Select(value => PawnByIdForEvidence(
+                        value.holderId)).Where(value => value != null).ToList();
+            return holders.Count == 0 ? 0.5f : Mathf.Clamp01((float)(
+                holders.Average(value => value.skills?.GetSkill(
+                    SkillDefOf.Social)?.Level ?? 0) / 20d));
+        }
+
+        private static float CoercionEvidence(CAOrganization organization)
+        {
+            int enforcement = organization?.decisionHistory?.Count(value =>
+                value != null && (value.kind == "custody"
+                    || value.kind == "security")) ?? 0;
+            int total = organization?.decisionHistory?.Count ?? 0;
+            return total == 0 ? 0.5f : Mathf.Clamp01(
+                enforcement / (float)total);
+        }
+
+        private static float PersonalTreatment(CAOrganization organization)
+        {
+            int favorable = organization?.decisionHistory?.Count(value =>
+                value != null && (value.kind == "care"
+                    || value.kind == "support")) ?? 0;
+            int adverse = organization?.decisionHistory?.Count(value =>
+                value != null && value.kind == "breach") ?? 0;
+            return favorable + adverse == 0 ? 0.5f : Mathf.Clamp01(
+                0.5f + favorable * 0.05f - adverse * 0.10f);
+        }
+
+        private static float TrustEvidence(CAOrganization organization)
+        {
+            List<Pawn> members = (organization?.memberPawnIds
+                    ?? new List<int>()).Select(PawnByIdForEvidence)
+                .Where(value => value != null).ToList();
+            List<Pawn> holders = (organization?.offices
+                    ?? new List<CAOffice>()).Where(value => value != null
+                    && value.holderId >= 0).Select(value => PawnByIdForEvidence(
+                        value.holderId)).Where(value => value != null).ToList();
+            if (members.Count == 0 || holders.Count == 0) return 0.5f;
+            return Mathf.Clamp01((float)members.SelectMany(member =>
+                    holders.Where(holder => holder != member).Select(holder =>
+                        (member.relations?.OpinionOf(holder) ?? 0) / 200f
+                            + 0.5f)).DefaultIfEmpty(0.5f).Average());
+        }
+
+        private static Pawn PawnByIdForEvidence(int id)
+        {
+            return CACulturalCognitionWorldComponent.Current?.CognitionPawns()
+                .FirstOrDefault(value => value?.thingIDNumber == id);
         }
 
         // Player-facing and loaded organizations update every world pulse.
@@ -1743,6 +2326,7 @@ namespace ColonistAwareness
                                 + " at sunset - " + fed.name);
                     }
                     organizations.RemoveAt(i);
+                    InvalidateOrganizationIndex();
                     continue;
                 }
                 for (int m = 0; m < federationMembers.Count; m++)
@@ -1819,8 +2403,8 @@ namespace ColonistAwareness
                                 + regional.Records[r].slot
                             == org.organizationKey)
                         {
-                            fort = regional.Records[r].fortification;
-                            train = regional.Records[r].training;
+                            CASettlementSecurityFacts.Read(
+                                org.organizationKey, out fort, out train);
                             break;
                         }
 
@@ -1901,47 +2485,21 @@ namespace ColonistAwareness
         {
             RunDiplomaticAppraisals(now);
             CAOrganization colony = EnsureColony();
-            // Production fills the treasury each quadrum. Payments are
-            // deducted from that treasury.
+            // Treasuries change only through represented transactions and
+            // adopted collection policy. A capability summary never mints
+            // money. Organizations with no rate or taxable parties collect
+            // nothing.
             for (int i = 0; i < organizations.Count; i++)
             {
                 CAOrganization o = organizations[i];
-                if (o.organizationKey == "player" || o.IsFederation
-                    || o.IsFactionOrganization) continue;
-                if (o.lastIncomeTick < 0) o.lastIncomeTick = now;
-                if (now - o.lastIncomeTick < 900000) continue;
-                o.lastIncomeTick = now;
-                CARegionalWorldComponent regional =
-                    CARegionalWorldComponent.Current;
-                if (regional == null) continue;
-                for (int r = 0; r < regional.Records.Count; r++)
+                if (o.lastIncomeTick < 0)
                 {
-                    CARegionalSettlementRecord rec = regional.Records[r];
-                    if (rec.regionalId + "#" + rec.slot != o.organizationKey)
-                        continue;
-                    o.treasury += 100f + rec.production * 60f;
-                    break;
-                }
-            }
-            // Tax collected from assigned parties, in addition to local
-            // production. An organization with no tax rate adopted
-            // and nobody bound to it collects nothing, which is why
-            // this changes no existing settlement until relations
-            // exist to be assessed.
-            for (int i = 0; i < organizations.Count; i++)
-            {
-                CAOrganization o = organizations[i];
-                if (o.IsFederation || o.IsFactionOrganization)
-                {
-                    // Shared taxation flows through the responsibilities on
-                    // the organization's typed member relations.
-                    if (now - o.lastIncomeTick < 900000) continue;
-                    if (CATaxation.RateOf(o) <= 0f) continue;
                     o.lastIncomeTick = now;
-                    CATaxation.Collect(o, this, now);
                     continue;
                 }
-                if (o.lastIncomeTick != now) continue;
+                if (now - o.lastIncomeTick < 900000) continue;
+                o.lastIncomeTick = now;
+                if (CATaxation.RateOf(o) <= 0f) continue;
                 CATaxation.Collect(o, this, now);
             }
             for (int i = 0; i < agreements.Count; i++)
@@ -2123,16 +2681,10 @@ namespace ColonistAwareness
             for (int i = 0; i < maps.Count; i++)
                 if (maps[i].IsPlayerHome) { home = maps[i]; break; }
             if (home == null) return;
+            // The agreement creates the obligation; actual stored treasury
+            // constrains what can be dispatched. Settlement capability is a
+            // read model and never changes the amount.
             int amount = 80;
-            CARegionalWorldComponent regional =
-                CARegionalWorldComponent.Current;
-            if (regional != null)
-                for (int i = 0; i < regional.Records.Count; i++)
-                {
-                    CARegionalSettlementRecord r = regional.Records[i];
-                    if (r.regionalId + "#" + r.slot == npcKey)
-                    { amount = 80 + r.production * 40; break; }
-                }
             // A protected settlement with enough public support may withhold
             // tribute after imposed policies or broken agreements.
             if (label == "tribute" && comp.kind == "protection"
@@ -2330,53 +2882,239 @@ namespace ColonistAwareness
         // carries the given prefix, so a receipt cannot touch real records.
         internal int RemoveOrganizationsWithPrefix(string prefix)
         {
-            return prefix.NullOrEmpty() ? 0
+            int removed = prefix.NullOrEmpty() ? 0
                 : organizations.RemoveAll(o => o != null
                     && o.organizationKey != null
                     && o.organizationKey.StartsWith(prefix));
+            if (removed > 0) InvalidateOrganizationIndex();
+            return removed;
         }
 
         public override void ExposeData()
         {
             base.ExposeData();
-            Scribe_Values.Look(ref arrivalLoud, "CA_arrivalLoud", false);
-            Scribe_Values.Look(ref arrivalTick, "CA_arrivalTick", -1);
-            Scribe_Values.Look(ref arrivalCell, "CA_arrivalCell",
-                IntVec3.Invalid);
-            Scribe_Collections.Look(ref organizations, "CA_organizations",
-                LookMode.Deep);
-            Scribe_Collections.Look(ref frontierMapPlans,
-                "CA_frontierMapPlans", LookMode.Deep);
-            Scribe_Collections.Look(ref agreements, "CA_agreements",
-                LookMode.Deep);
-            Scribe_Values.Look(ref nextAgreementId, "CA_nextAgreementId", 1);
-            Scribe_Collections.Look(ref breachCases, "CA_breachCases",
-                LookMode.Deep);
-            Scribe_Values.Look(ref nextCaseId, "CA_nextCaseId", 1);
-            Scribe_Collections.Look(ref hostileActs, "CA_hostileActs",
-                LookMode.Deep);
-            Scribe_Collections.Look(ref offers, "CA_offers", LookMode.Deep);
-            Scribe_Collections.Look(ref pendingGatherings,
-                "CA_pendingGatherings", LookMode.Deep);
-            Scribe_Values.Look(ref nextOfferId, "CA_nextOfferId", 1);
-            Scribe_Values.Look(ref lastInitiativeTick,
-                "CA_lastInitiativeTick", -999999);
-            Scribe_Values.Look(ref offMapActivityCursor,
-                "CA_offMapActivityCursor", 0);
-            if (organizations == null)
-                organizations = new List<CAOrganization>();
-            if (frontierMapPlans == null)
-                frontierMapPlans = new List<CAFrontierMapPlan>();
-            if (agreements == null)
-                agreements = new List<CAAgreement>();
-            if (breachCases == null) breachCases = new List<CABreachCase>();
-            if (hostileActs == null)
-                hostileActs = new List<CAHostileActRecord>();
-            if (offers == null) offers = new List<CAAgreementOffer>();
-            if (pendingGatherings == null)
-                pendingGatherings = new List<CAPendingGathering>();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            Scribe_Values.Look(ref campaignSchemaVersion,
+                "CA_organizationSchemaVersion", 0);
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+                Scribe_Values.Look(ref legacyAuthoringDataEpoch,
+                    "CA_authoringDataEpoch", 0);
+            bool readable = CACampaignCompatibility.ShouldReadLiveState(
+                "world.organization", campaignSchemaVersion,
+                legacyAuthoringDataEpoch);
+            if (readable)
+            {
+                Scribe_Values.Look(ref arrivalLoud, "CA_arrivalLoud", false);
+                Scribe_Values.Look(ref arrivalTick, "CA_arrivalTick", -1);
+                Scribe_Values.Look(ref arrivalCell, "CA_arrivalCell",
+                    IntVec3.Invalid);
+                Scribe_Collections.Look(ref organizations,
+                    "CA_organizations", LookMode.Deep);
+                Scribe_Collections.Look(ref frontierMapPlans,
+                    "CA_frontierMapPlans", LookMode.Deep);
+                Scribe_Collections.Look(ref agreements, "CA_agreements",
+                    LookMode.Deep);
+                Scribe_Values.Look(ref nextAgreementId,
+                    "CA_nextAgreementId", 1);
+                Scribe_Collections.Look(ref breachCases, "CA_breachCases",
+                    LookMode.Deep);
+                Scribe_Values.Look(ref nextCaseId, "CA_nextCaseId", 1);
+                Scribe_Collections.Look(ref hostileActs, "CA_hostileActs",
+                    LookMode.Deep);
+                Scribe_Collections.Look(ref offers, "CA_offers",
+                    LookMode.Deep);
+                Scribe_Collections.Look(ref pendingGatherings,
+                    "CA_pendingGatherings", LookMode.Deep);
+                Scribe_Values.Look(ref nextOfferId, "CA_nextOfferId", 1);
+                Scribe_Values.Look(ref lastInitiativeTick,
+                    "CA_lastInitiativeTick", -999999);
+                Scribe_Values.Look(ref offMapActivityCursor,
+                    "CA_offMapActivityCursor", 0);
+                Scribe_Values.Look(ref nextLegitimacyTick,
+                    "CA_nextInstitutionLegitimacyTick", 60000);
+            }
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && readable)
+            {
+                CACampaignCompatibility.CompleteOwnerLoad(
+                    "world.organization", ref campaignSchemaVersion,
+                    legacyAuthoringDataEpoch, ValidateCampaignState,
+                    MigrateCampaignState);
+                InvalidateOrganizationIndex();
+                EnsureOrganizationIndex();
+                RebuildOfficeHolderIndex();
                 CAMembershipValidation.Run(organizations);
+            }
+        }
+
+        private string MigrateCampaignState()
+        {
+            bool fromB11 = campaignSchemaVersion == 1;
+            bool fromB10 = campaignSchemaVersion == 0
+                && legacyAuthoringDataEpoch
+                    == CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
+            if (!fromB11 && !fromB10)
+                return "organization owner schema " + campaignSchemaVersion
+                    + " has no supported migration";
+            string retainedFailure = ValidateCampaignState(
+                requireInstitutionAppraisals: false);
+            if (!retainedFailure.NullOrEmpty()) return retainedFailure;
+            // The retained payload is valid before mutation. The only upgrade
+            // operation is replacing two absent catalog-2 lists with empty
+            // lists, so the following commit cannot invalidate retained state
+            // and never invents appraisal history.
+            foreach (CAOrganization organization in organizations
+                .Where(value => value != null))
+            {
+                if (organization.legitimacyAppraisals == null)
+                    organization.legitimacyAppraisals =
+                        new List<CAInstitutionLegitimacyAppraisal>();
+                if (organization.sanctionAppraisals == null)
+                    organization.sanctionAppraisals =
+                        new List<CAInstitutionSanctionAppraisal>();
+            }
+            return null;
+        }
+
+        private string ValidateCampaignState()
+        {
+            return ValidateCampaignState(requireInstitutionAppraisals: true);
+        }
+
+        private string ValidateCampaignState(bool requireInstitutionAppraisals)
+        {
+            if (organizations == null || frontierMapPlans == null
+                || agreements == null || breachCases == null
+                || hostileActs == null || offers == null
+                || pendingGatherings == null)
+                return "organization owner collections are missing";
+            var organizationKeys = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < organizations.Count; i++)
+            {
+                CAOrganization organization = organizations[i];
+                if (organization == null)
+                    return "organization " + i + " is null";
+                if (organization.organizationKey.NullOrEmpty()
+                    || !organizationKeys.Add(organization.organizationKey))
+                    return "organization key "
+                        + (organization.organizationKey ?? "<missing>")
+                        + " is missing or duplicate";
+                if (organization.offices == null
+                    || organization.groups == null
+                    || organization.customs == null
+                    || organization.securityPractices == null
+                    || organization.claims == null
+                    || organization.policies == null
+                    || organization.decisionHistory == null
+                    || organization.memberPawnIds == null
+                    || organization.openBeliefConflicts == null
+                    || organization.beliefConflictStartTicks == null
+                    || (requireInstitutionAppraisals
+                        && (organization.legitimacyAppraisals == null
+                            || organization.sanctionAppraisals == null)))
+                    return "organization " + organization.organizationKey
+                        + " has missing owned collections";
+                if (organization.offices.Any(item => item == null)
+                    || organization.groups.Any(item => item == null)
+                    || organization.customs.Any(item => item == null)
+                    || organization.securityPractices.Any(item => item == null)
+                    || organization.claims.Any(item => item == null)
+                    || organization.policies.Any(item => item == null)
+                    || organization.decisionHistory.Any(item => item == null)
+                    || (organization.legitimacyAppraisals?.Any(item =>
+                        item == null) == true)
+                    || (organization.sanctionAppraisals?.Any(item =>
+                        item == null) == true))
+                    return "organization " + organization.organizationKey
+                        + " has a null owned record";
+                if (organization.groups.Any(group => group.memberIds == null))
+                    return "organization " + organization.organizationKey
+                        + " has a group without members state";
+                if (organization.securityPractices.Any(practice =>
+                        practice.guardPawnIds == null))
+                    return "organization " + organization.organizationKey
+                        + " has a security practice without guard state";
+                if (organization.legitimacyAppraisals?.Any(appraisal =>
+                        appraisal.populationScope.NullOrEmpty()
+                        || !ValidUnit(appraisal.proceduralFairness)
+                        || !ValidUnit(appraisal.outcomePerformance)
+                        || !ValidUnit(appraisal.lawAndCustomFit)
+                        || !ValidUnit(appraisal.identityRepresentation)
+                        || !ValidUnit(appraisal.competence)
+                        || !ValidUnit(appraisal.corruption)
+                        || !ValidUnit(appraisal.coercion)
+                        || !ValidUnit(appraisal.culturalFit)
+                        || !ValidUnit(appraisal.ideoligionFit)
+                        || !ValidUnit(appraisal.politicalFit)
+                        || !ValidUnit(appraisal.personalTreatment)
+                        || !ValidUnit(appraisal.trust)
+                        || !ValidUnit(appraisal.evidenceConfidence)
+                        || !ValidUnit(appraisal.reportedPublicSupport)
+                        || !ValidUnit(appraisal.outstandingSupportLoss)
+                        || !ValidUnit(appraisal.legitimacy)) == true)
+                    return "organization " + organization.organizationKey
+                        + " has an invalid legitimacy appraisal";
+                if ((organization.legitimacyAppraisals?.Count ?? 0)
+                        > CAOrganization.MaxLegitimacyAppraisals
+                    || organization.legitimacyAppraisals?.GroupBy(value =>
+                            value.populationScope, StringComparer.Ordinal)
+                        .Any(group => group.Count() > 1) == true)
+                    return "organization " + organization.organizationKey
+                        + " exceeds or duplicates legitimacy scopes";
+                if (organization.sanctionAppraisals?.Any(appraisal =>
+                        appraisal.factIdentity.NullOrEmpty()
+                        || appraisal.subjectKey.NullOrEmpty()
+                        || appraisal.pawnId < 0
+                        || appraisal.populationScope.NullOrEmpty()
+                        || !ValidUnit(appraisal.legitimacy)
+                        || !ValidUnit(appraisal.proportionality)
+                        || !ValidUnit(appraisal.visibility)
+                        || !ValidUnit(appraisal.consistency)
+                        || !ValidUnit(appraisal.procedure)
+                        || !ValidUnit(appraisal.socialSupport)
+                        || !ValidUnit(appraisal.intrinsicMotivation)
+                        || !ValidUnit(appraisal.psychologicalReactance)
+                        || !ValidUnit(appraisal.deterrence)
+                        || !ValidUnit(appraisal.normReinforcement)
+                        || !ValidUnit(appraisal.reactance)
+                        || !ValidUnit(appraisal.voluntaryCooperation)) == true)
+                    return "organization " + organization.organizationKey
+                        + " has an invalid sanction appraisal";
+                if ((organization.sanctionAppraisals?.Count ?? 0)
+                        > CAOrganization.MaxSanctionAppraisals
+                    || organization.sanctionAppraisals?.GroupBy(value =>
+                            (value.factIdentity ?? "") + "\0" + value.pawnId,
+                            StringComparer.Ordinal)
+                        .Any(group => group.Count() > 1) == true)
+                    return "organization " + organization.organizationKey
+                        + " exceeds or duplicates sanction appraisals";
+            }
+            var agreementIds = new HashSet<int>();
+            int maxAgreementId = 0;
+            for (int i = 0; i < agreements.Count; i++)
+            {
+                CAAgreement agreement = agreements[i];
+                if (agreement == null)
+                    return "agreement " + i + " is null";
+                if (agreement.id <= 0 || !agreementIds.Add(agreement.id))
+                    return "agreement id " + agreement.id
+                        + " is invalid or duplicate";
+                maxAgreementId = Math.Max(maxAgreementId, agreement.id);
+            }
+            if (nextAgreementId <= maxAgreementId)
+                return "next agreement id " + nextAgreementId
+                    + " does not follow persisted id " + maxAgreementId;
+            if (frontierMapPlans.Any(item => item == null)
+                || breachCases.Any(item => item == null)
+                || hostileActs.Any(item => item == null)
+                || offers.Any(item => item == null)
+                || pendingGatherings.Any(item => item == null))
+                return "an organization-owned record is null";
+            return null;
+        }
+
+        private static bool ValidUnit(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value)
+                && value >= 0f && value <= 1f;
         }
     }
 
@@ -2601,6 +3339,7 @@ namespace ColonistAwareness
                     org.Record("office changed hands - " + held.name + ": "
                         + (held.holderLabel ?? "vacant") + " -> "
                         + current.holderLabel);
+                    held.lastHolderId = held.holderId;
                     held.holderId = current.holderId;
                     authorityChanged = true;
                 }
@@ -2742,25 +3481,6 @@ namespace ColonistAwareness
             if (anySquads) Adopt(org, "squad organization", "practiced");
             if (stackActive) Adopt(org, "stack and breach", "practiced");
 
-            // Skilled fighters can establish basic combat customs in a new
-            // colony before the player has used them there.
-            int bestCombat = 0;
-            for (int i = 0; i < colonists.Count; i++)
-            {
-                var skills = colonists[i].skills;
-                if (skills == null) continue;
-                int s = Mathf.Max(
-                    skills.GetSkill(SkillDefOf.Shooting).Level,
-                    skills.GetSkill(SkillDefOf.Melee).Level);
-                if (s > bestCombat) bestCombat = s;
-            }
-            if (bestCombat >= 6)
-            {
-                Adopt(org, "formation", "known by a skilled fighter");
-                Adopt(org, "line", "known by a skilled fighter");
-            }
-            if (bestCombat >= 10)
-                Adopt(org, "ambush", "known by a skilled fighter");
         }
 
         private static void Adopt(CAOrganization org, string key,
@@ -3055,9 +3775,9 @@ namespace ColonistAwareness
                         knowledgeBasis: "actor-held threat fact",
                         owner: "colony organization");
                     CABehaviorDecision reportDecision =
-                        CABehaviorGate.Evaluate(
+                        CABehaviorGate.EvaluateForSelection(
                             "communication.status_report", reportContext);
-                    if (!reportDecision.Allowed) continue;
+                    if (!reportDecision.SelectionApproved) continue;
                     laceLast[p.thingIDNumber] = now;
                     CATrace.Pawn(p, "LACE (adopted practice): "
                         + CAStatusReport.For(p), anchor: p.Position);
@@ -3080,13 +3800,10 @@ namespace ColonistAwareness
             return false;
         }
 
-        // Regional settlements: every materialized settlement record gets an
-        // organization, seeded from what its materialization actually
-        // produced - resident pawns, capability axes, faction identity. The
-        // populated regional world is already socially organized; this makes
-        // that organization a persistent object. Observation-based (no edits
-        // to the regional lane's files): records with a live map and no org
-        // yet are seeded within one sync cadence of materializing.
+        // This cadence updates organizations that already exist as represented
+        // institutions. A settlement record, map, resident population, or
+        // capability assessment does not constitute an organization and may
+        // not create one here.
         public static void SyncRegionalSettlements(
             CAOrganizationWorldComponent comp)
         {
@@ -3095,9 +3812,6 @@ namespace ColonistAwareness
             if (regional == null) return;
             IReadOnlyList<CARegionalSettlementRecord> records =
                 regional.Records;
-            // Load-smoothing: seed at most TWO settlements per pulse so
-            // the first minute after the big load is a ripple, not a spike.
-            int seededThisPulse = 0;
             for (int i = 0; i < records.Count; i++)
             {
                 CARegionalSettlementRecord record = records[i];
@@ -3105,29 +3819,9 @@ namespace ColonistAwareness
                 Map map = FindMap(record.lastMapId);
                 string key = record.regionalId + "#" + record.slot;
                 CAOrganization org = comp.ByKey(key);
-                if (org == null)
-                {
-                    if (map == null || seededThisPulse >= 2) continue;
-                    seededThisPulse++;
-                    org = comp.EnsureFor(key, record.name,
-                        record.faction.Name + " - "
-                        + record.FactionEraLabel + "; "
-                        + record.OperationalRoleText(),
-                        CAOrganizationKind.Settlement);
-                    SeedSettlementOrg(org, record, map);
-                }
-                else
-                {
-                    // Organization customs follow realized social order even
-                    // while the map is unloaded. Political beliefs remain a
-                    // separate standard against which that order is judged.
-                    CAPoliticalBeliefPractice.ReconcileCurrentStructure(org,
-                        CAFactionStateWorldComponent.Current
-                            ?.Find(record.faction)?.factionStructure);
-                    if (map != null)
-                        RefreshSettlementOrg(org, record, map);
-                }
-                CAStartingProvisions.ReconcileTaxFunding(record);
+                if (org == null) continue;
+                if (map != null)
+                    RefreshSettlementOrg(org, record, map);
             }
             ReconcileHostileAgreements(comp.EnsureColony(), records);
         }
@@ -3165,186 +3859,6 @@ namespace ColonistAwareness
                     "travelers arrived quietly and settled nearby");
         }
 
-        private static void SeedSettlementOrg(CAOrganization org,
-            CARegionalSettlementRecord record, Map map)
-        {
-            NoteArrival(org, record);
-            org.Record("settlement organization established - seeded at"
-                + " materialization of " + record.name);
-
-            // Seed organization customs from the realized social order.
-            CAPoliticalBeliefPractice.ReconcileCurrentStructure(org,
-                CAFactionStateWorldComponent.Current
-                    ?.Find(record.faction)?.factionStructure);
-            if (record.generationSummary != null)
-                org.Record("organization", "starting state: "
-                    + record.generationSummary);
-
-            Pawn head = PickHead(record, map, -1);
-            if (head != null)
-            {
-                string title = record.faction.def.leaderTitle
-                    .NullOrEmpty() ? "leader"
-                    : record.faction.def.leaderTitle;
-                org.offices.Add(new CAOffice
-                {
-                    sourceKey = "head",
-                    name = title.CapitalizeFirst(),
-                    seniority = 900,
-                    holderId = head.thingIDNumber,
-                    holderLabel = head.LabelShort,
-                    grants = "settlement leadership"
-                });
-                org.Record("office established - "
-                    + title.CapitalizeFirst() + ", held by "
-                    + head.LabelShort);
-            }
-
-            List<Pawn> residents = ResidentsOf(record, map);
-            var armedIds = new List<int>();
-            for (int i = 0; i < residents.Count; i++)
-                if (residents[i].equipment?.Primary != null)
-                    armedIds.Add(residents[i].thingIDNumber);
-            if (armedIds.Count > 0)
-                org.groups.Add(new CAOrganizationGroup
-                {
-                    name = "armed group",
-                    memberIds = armedIds,
-                    standing = residents.Count > 0
-                        ? (float)armedIds.Count / residents.Count : 0f
-                });
-            var laborIds = new List<int>();
-            for (int i = 0; i < residents.Count; i++)
-                if (residents[i].equipment?.Primary == null)
-                    laborIds.Add(residents[i].thingIDNumber);
-            if (laborIds.Count > 0)
-                org.groups.Add(new CAOrganizationGroup
-                {
-                    name = "labor",
-                    memberIds = laborIds,
-                    standing = residents.Count > 0
-                        ? (float)laborIds.Count / residents.Count : 0f
-                });
-
-            if (record.training >= 2)
-                SeedCustom(org, "formation");
-            if (record.fortification >= 2)
-                SeedCustom(org, "line");
-            if (record.training >= 3)
-                SeedCustom(org, "ambush");
-
-            // The organization's standing defense as a real arrangement: a
-            // line on its own perimeter, owned by the organization - the
-            // discoverable object the player may find, join the fight over,
-            // or inherit. Only where the record's fortification produced an
-            // actual defended edge.
-            if (record.fortification >= 2
-                && record.localRect != CellRect.Empty)
-            {
-                var comp2 = CAArrangementMapComponent.For(map);
-                if (comp2 != null)
-                {
-                    List<IntVec3> edge = PerimeterCells(record.localRect,
-                        map);
-                    CAArrangement line = comp2.CreateForOrganization(
-                        org.organizationKey, record.name,
-                        CAArrangementKind.Line, edge);
-                    if (line != null)
-                    {
-                        org.securityPractices.Add(new CASecurityPractice
-                        {
-                            mapId = map.uniqueID,
-                            arrangementId = line.id,
-                            kindLabel = "line",
-                            name = line.name,
-                            assignedOffice = org.offices.Count > 0
-                                ? org.offices[0].name : null
-                        });
-                        org.Record("security practice registered - "
-                            + line.name);
-                    }
-                }
-            }
-
-            org.treasury = 200f + record.production * 150f
-                + record.logistics * 50f;
-            org.claims.Add(new CAClaim
-            {
-                kind = "core",
-                label = "settlement ground",
-                area = record.localRect.Area,
-                mapId = map.uniqueID
-            });
-            if (record.cultivatedPlantCount > 0)
-                org.claims.Add(new CAClaim
-                {
-                    kind = "worked land",
-                    label = "cultivation",
-                    area = record.cultivatedPlantCount,
-                    mapId = map.uniqueID
-                });
-            int roadCells = 0;
-            for (int x = record.localRect.minX; x <= record.localRect.maxX;
-                x += 3)
-                for (int z = record.localRect.minZ;
-                    z <= record.localRect.maxZ; z += 3)
-                {
-                    IntVec3 rc = new IntVec3(x, 0, z);
-                    if (!rc.InBounds(map)) continue;
-                    TerrainDef t = rc.GetTerrain(map);
-                    if (t != null && t.IsRoad) roadCells++;
-                }
-            if (roadCells > 0)
-                org.claims.Add(new CAClaim
-                {
-                    kind = "road interest",
-                    label = "road through settlement ground (sampled)",
-                    area = roadCells,
-                    mapId = map.uniqueID
-                });
-
-            CASettlementDevelopmentProposal creationProposal =
-                CASettlementAssetRegistry.CreationFromRecord(record);
-            record.creationSitingEvaluated = true;
-            record.creationSitingFeasible =
-                CASettlementAssetRegistry.CanSiteCreationDemands(map,
-                    record.localRect, creationProposal,
-                    out string creationSitingBlocker);
-            record.creationMaterialFeasible =
-                creationProposal.MaterialFeasible;
-            record.creationProposalSignature =
-                creationProposal.StableSignature();
-            record.creationExecutable = record.creationAuthorized
-                && record.creationMaterialFeasible
-                && record.creationSitingFeasible;
-            record.creationBlocker = record.creationExecutable
-                ? null : creationSitingBlocker ?? record.creationBlocker
-                    ?? "confirmed creation history is not materializable";
-            if (record.creationExecutable)
-            {
-                SeedRepresentativeAssets(org, record, map);
-                CAStartingFacilities.Furnish(org, record, map);
-            }
-            else
-                org.Record("works", "confirmed creation history blocked - "
-                    + record.creationBlocker);
-            // Apply faction structure after residents and furnishings exist:
-            // offices, facility holdings, staffed posts, membership, and
-            // security practices.
-            CAAxisMaterialization.Apply(org, record, map);
-            // Future work now reads the realized institution and current
-            // material settlement. It does not inherit creation feasibility.
-            RefreshDevelopmentAuthority(org, record, map);
-            record.layout = CASettlementLayoutBuilder.Build(record, map);
-            if (record.layout != null && record.layout.gates.Count > 0)
-                org.Record("settlement", "layout recorded - "
-                    + record.layout.gates.Count + " entrances, "
-                    + record.layout.roomRoles.Count + " rooms, "
-                    + record.layout.facilityKinds.Count
-                    + " facilities");
-            LogGraph(record, map);
-        }
-
         internal static void RefreshDevelopmentAuthority(CAOrganization org,
             CARegionalSettlementRecord record, Map map)
         {
@@ -3374,15 +3888,17 @@ namespace ColonistAwareness
             record.developmentProposer = org?.name ?? org?.organizationKey;
             record.developmentApprover = developmentAuthorized
                 ? developmentIntent.AuthorityIdentity : null;
-            record.developmentLaborSource = "current native settlement residents";
-            record.developmentBeneficiaries = map?.mapPawns
-                    ?.SpawnedPawnsInFaction(record.faction)
-                    ?.Where(pawn => pawn != null && !pawn.Dead
+            record.developmentLaborSource = proposal.LaborBasis;
+            record.developmentBeneficiaries = map == null
+                ? new List<string>()
+                : CAPopulationProjection.Residents(record, map)
+                    .Where(pawn => pawn != null && !pawn.Dead
+                        && pawn.Faction == record.faction
                         && pawn.RaceProps.Humanlike && !pawn.IsPrisoner)
                     .Select(pawn => pawn.LabelShort)
                     .Distinct().OrderBy(label => label,
                         StringComparer.Ordinal).ToList()
-                ?? new List<string>();
+                ;
             if (record.developmentBeneficiaries.Count == 0)
                 record.developmentBeneficiaries.Add(
                     "current settlement residents");
@@ -3437,289 +3953,19 @@ namespace ColonistAwareness
             catch { }
         }
 
-        // Place functional organization assets from existing game defs.
-        // Industrial settlements may receive a comms console, fortified
-        // settlements a signal fire, and armed settlements an armory.
-        private static void SeedRepresentativeAssets(CAOrganization org,
-            CARegionalSettlementRecord record, Map map)
-        {
-            try
-            {
-                var interior = new List<IntVec3>();
-                for (int x = record.localRect.minX;
-                    x <= record.localRect.maxX && interior.Count < 12;
-                    x += 2)
-                    for (int z = record.localRect.minZ;
-                        z <= record.localRect.maxZ && interior.Count < 12;
-                        z += 2)
-                    {
-                        IntVec3 c = new IntVec3(x, 0, z);
-                        if (!c.InBounds(map) || !c.Standable(map)
-                            || !c.Roofed(map)) continue;
-                        Room room = c.GetRoom(map);
-                        if (room == null || room.PsychologicallyOutdoors
-                            || room.IsDoorway) continue;
-                        interior.Add(c);
-                    }
 
-                bool industrial = false;
-                try
-                {
-                    industrial = record.faction != null
-                        && (int)record.faction.def.techLevel >= 4;
-                }
-                catch { }
-
-                // Command post: powered comms for the organized industrial;
-                // a council fire for everyone else.
-                if (record.organization >= 2)
-                {
-                    if (industrial && interior.Count >= 2)
-                    {
-                        if (SpawnAsset(map, "CommsConsole", interior[0],
-                                record.faction, null)
-                            && SpawnAsset(map, "WoodFiredGenerator",
-                                Nearby(interior, interior[0], 4f),
-                                record.faction, null))
-                            org.Record("security", "command post raised -"
-                                + " comms console under settlement power");
-                    }
-                    else if (!industrial)
-                    {
-                        IntVec3 fireCell = OutdoorCoreCell(record, map);
-                        if (fireCell.IsValid && SpawnAsset(map, "Campfire",
-                            fireCell, record.faction, null))
-                            org.Record("security",
-                                "council fire lit at the core");
-                    }
-                }
-
-                // Place a signal fire near a defended line.
-                if (record.fortification >= 2)
-                {
-                    IntVec3 lineCell = IntVec3.Invalid;
-                    var arr = CAArrangementMapComponent.For(map);
-                    if (arr != null)
-                        for (int i = 0; i < arr.All.Count
-                            && !lineCell.IsValid; i++)
-                            if (arr.All[i].ownerOrgKey == org.organizationKey)
-                                for (int cc = 0;
-                                    cc < arr.All[i].cells.Count; cc++)
-                                {
-                                    IntVec3 lc = arr.All[i].cells[cc];
-                                    if (lc.InBounds(map) && lc.Standable(map)
-                                        && !lc.Roofed(map))
-                                    { lineCell = lc; break; }
-                                }
-                    if (lineCell.IsValid && SpawnAsset(map, "Campfire",
-                        lineCell, record.faction, null))
-                        org.Record("security",
-                            "signal fire laid by the line");
-                }
-
-                // Armory: a shelf and real weapons; the room reads
-                // "armory" through the native role at four or more.
-                if (record.weapons >= 2 && interior.Count >= 4)
-                {
-                    IntVec3 shelfCell = interior[interior.Count - 1];
-                    ThingDef stuffWood = ThingDef.Named("WoodLog");
-                    SpawnAsset(map, "Shelf", shelfCell, record.faction,
-                        stuffWood);
-                    string weaponDef = industrial
-                        ? "Gun_Revolver" : "MeleeWeapon_Club";
-                    int placed = 0;
-                    for (int i = 0; i < 4; i++)
-                    {
-                        IntVec3 wc = Nearby(interior, shelfCell, 3f);
-                        if (!wc.IsValid) break;
-                        ThingDef wd = DefDatabase<ThingDef>
-                            .GetNamedSilentFail(weaponDef);
-                        if (wd == null) break;
-                        Thing w = wd.MadeFromStuff
-                            ? ThingMaker.MakeThing(wd,
-                                ThingDef.Named("WoodLog"))
-                            : ThingMaker.MakeThing(wd);
-                        GenSpawn.Spawn(w, wc, map);
-                        w.SetForbidden(true, false);
-                        placed++;
-                    }
-                    if (placed >= 4)
-                        org.Record("security", "armory stocked - " + placed
-                            + " weapons warehoused");
-                }
-
-                // Trained settlements warehouse tent
-                // parts (the ported Camping Stuff catalog - pole, cover,
-                // floor). Their patrols have shelter to carry; raiding
-                // their stores yields it. Parts, not assembled bags - an
-                // empty bag without its inner spec is not a real thing.
-                // Settlements with training 3 or higher receive
-                // a real packed tent bag, built through the ported
-                // machinery's own API - parts packed with PackPart, Ready
-                // verified, wrapped in its MinifiedThing. Never a fake:
-                // if assembly does not reach Ready, nothing spawns and the
-                // parts path below covers the stores instead.
-                bool assembledSeeded = false;
-                if (record.training >= 3 && interior.Count >= 1)
-                    assembledSeeded = TrySeedPackedTent(map,
-                        interior[interior.Count >= 3
-                            ? interior.Count - 2 : 0], org);
-                if (record.training >= 2 && interior.Count >= 2
-                    && !assembledSeeded)
-                {
-                    string[] partDefs =
-                    {
-                        "NCS_TentPart_Pole", "NCS_TentPart_Cover_Small",
-                        "NCS_TentPart_Floor"
-                    };
-                    int stocked = 0;
-                    for (int i = 0; i < partDefs.Length; i++)
-                    {
-                        ThingDef pd = DefDatabase<ThingDef>
-                            .GetNamedSilentFail(partDefs[i]);
-                        if (pd == null) continue;
-                        IntVec3 pc = interior[
-                            (i + 1) % interior.Count];
-                        try
-                        {
-                            Thing part = pd.MadeFromStuff
-                                ? ThingMaker.MakeThing(pd,
-                                    GenStuff.DefaultStuffFor(pd))
-                                : ThingMaker.MakeThing(pd);
-                            GenSpawn.Spawn(part, pc, map);
-                            part.SetForbidden(true, false);
-                            stocked++;
-                        }
-                        catch { }
-                    }
-                    if (stocked > 0)
-                        org.Record("security", "expedition stores laid in"
-                            + " - " + stocked + " tent parts warehoused");
-                }
-            }
-            catch (Exception) { }
-        }
-
-        private static bool TrySeedPackedTent(Map map, IntVec3 cell,
-            CAOrganization org)
-        {
-            try
-            {
-                ThingDef bagDef = DefDatabase<ThingDef>
-                    .GetNamedSilentFail("NCS_TentBag");
-                ThingDef miniDef = DefDatabase<ThingDef>
-                    .GetNamedSilentFail("NCS_MiniTentBag");
-                ThingDef coverDef = DefDatabase<ThingDef>
-                    .GetNamedSilentFail("NCS_TentPart_Cover_Small");
-                ThingDef poleDef = DefDatabase<ThingDef>
-                    .GetNamedSilentFail("NCS_TentPart_Pole");
-                ThingDef floorDef = DefDatabase<ThingDef>
-                    .GetNamedSilentFail("NCS_TentPart_Floor");
-                if (bagDef == null || miniDef == null || coverDef == null
-                    || poleDef == null) return false;
-
-                Camping_Stuff.NCS_Tent tent = ThingMaker.MakeThing(bagDef)
-                    as Camping_Stuff.NCS_Tent;
-                if (tent == null) return false;
-                Thing cover = coverDef.MadeFromStuff
-                    ? ThingMaker.MakeThing(coverDef,
-                        GenStuff.DefaultStuffFor(coverDef))
-                    : ThingMaker.MakeThing(coverDef);
-                tent.PackPart(cover);
-                int needPoles = 2;
-                try
-                {
-                    var props = cover.TryGetComp
-                        <Camping_Stuff.TentCoverComp>()?.Props;
-                    if (props != null) needPoles = props.numPoles;
-                }
-                catch { }
-                Thing poles = poleDef.MadeFromStuff
-                    ? ThingMaker.MakeThing(poleDef,
-                        GenStuff.DefaultStuffFor(poleDef))
-                    : ThingMaker.MakeThing(poleDef);
-                poles.stackCount = needPoles;
-                tent.PackPart(poles);
-                if (floorDef != null)
-                {
-                    Thing floor = floorDef.MadeFromStuff
-                        ? ThingMaker.MakeThing(floorDef,
-                            GenStuff.DefaultStuffFor(floorDef))
-                        : ThingMaker.MakeThing(floorDef);
-                    tent.PackPart(floor);
-                }
-                if (!tent.Ready) return false;
-
-                Camping_Stuff.NCS_MiniTent mini =
-                    ThingMaker.MakeThing(miniDef)
-                    as Camping_Stuff.NCS_MiniTent;
-                if (mini == null) return false;
-                mini.Bag = tent;
-                GenSpawn.Spawn(mini, cell, map);
-                mini.SetForbidden(true, false);
-                org.Record("security", "expedition stores laid in - a"
-                    + " packed tent stands ready in the storehouse");
-                return true;
-            }
-            catch (Exception) { return false; }
-        }
-
-        private static bool SpawnAsset(Map map, string defName,
-            IntVec3 cell, Faction faction, ThingDef stuff)
-        {
-            if (!cell.IsValid) return false;
-            ThingDef def = DefDatabase<ThingDef>
-                .GetNamedSilentFail(defName);
-            if (def == null) return false;
-            try
-            {
-                if (cell.GetEdifice(map) != null) return false;
-                Thing t = def.MadeFromStuff
-                    ? ThingMaker.MakeThing(def, stuff
-                        ?? GenStuff.DefaultStuffFor(def))
-                    : ThingMaker.MakeThing(def);
-                if (faction != null && def.CanHaveFaction)
-                    t.SetFaction(faction);
-                GenSpawn.Spawn(t, cell, map);
-                var fuel = t.TryGetComp<CompRefuelable>();
-                if (fuel != null) fuel.Refuel(20f);
-                return true;
-            }
-            catch { return false; }
-        }
-
-        private static IntVec3 Nearby(List<IntVec3> pool, IntVec3 anchor,
-            float maxDist)
-        {
-            for (int i = 0; i < pool.Count; i++)
-                if (pool[i] != anchor
-                    && pool[i].InHorDistOf(anchor, maxDist))
-                    return pool[i];
-            return IntVec3.Invalid;
-        }
-
-        private static IntVec3 OutdoorCoreCell(
-            CARegionalSettlementRecord record, Map map)
-        {
-            IntVec3 center = record.localRect.CenterCell;
-            for (int r = 0; r < 8; r++)
-            {
-                IntVec3 c = center + GenRadial.RadialPattern[r];
-                if (c.InBounds(map) && c.Standable(map) && !c.Roofed(map)
-                    && c.GetEdifice(map) == null)
-                    return c;
-            }
-            return IntVec3.Invalid;
-        }
 
         private static void RefreshSettlementOrg(CAOrganization org,
             CARegionalSettlementRecord record, Map map)
         {
             int now = Find.TickManager.TicksGame;
-            List<Pawn> residents = ResidentsOf(record, map);
+            List<Pawn> residents = CAPopulationProjection.Residents(record,
+                map);
             RefreshDevelopmentAuthority(org, record, map);
 
-            // Fold-back: settlement losses cost their organization standing.
+            // Population loss and warnings are observations of represented
+            // events. This cadence does not appoint successors, create armed
+            // groups, improve defenses, or infer an institution from a score.
             if (org.lastPopulation >= 0
                 && residents.Count < org.lastPopulation)
             {
@@ -3729,209 +3975,34 @@ namespace ColonistAwareness
                 org.Record("losses", "losses suffered - " + lost
                     + " residents fewer; public support now "
                     + org.publicSupport.ToStringPercent());
-                // Neighbors record when a settlement goes silent.
                 if (residents.Count == 0)
                     NotifySettlementSilent(org, record);
             }
             org.lastPopulation = residents.Count;
 
-            // An allied settlement under attack sends a warning and opens a
-            // response deadline.
             if (AlliedToPlayer(org) && now - org.lastWarningTick > 60000
                 && record.localRect != CellRect.Empty
                 && UnderAttack(record, map))
             {
-                CAOrganizationWorldComponent wc =
+                CAOrganizationWorldComponent world =
                     CAOrganizationWorldComponent.Current;
-                if (wc != null && wc.OpenCaseFor(org.organizationKey) == null)
+                if (world != null
+                    && world.OpenCaseFor(org.organizationKey) == null)
                 {
                     org.lastWarningTick = now;
-                    wc.OpenBreachCase("answer the warning", "player",
+                    world.OpenBreachCase("answer the warning", "player",
                         org.organizationKey, now + 60000, -1);
                     Messages.Message("Warning from " + record.name
-                        + " (warning agreement): hostiles at their"
-                        + " settlement.",
+                        + " (warning agreement): hostiles at their settlement.",
                         new LookTargets(record.localRect.CenterCell, map),
                         MessageTypeDefOf.ThreatSmall, false);
-                    wc.EnsureColony().Record("warning-received",
+                    world.EnsureColony().Record("warning-received",
                         "warning received from " + record.name
                         + " - hostiles at their settlement; relief expected");
                 }
             }
             ProcessBreachCase(org, record, map, now);
-
-            // An office vacant for a full quadrum is removed if the settlement
-            // remains orderly without it.
-            for (int i = org.offices.Count - 1; i >= 0; i--)
-            {
-                CAOffice o = org.offices[i];
-                if (o.holderId >= 0 || o.vacantSinceTick <= 0) continue;
-                if (now - o.vacantSinceTick < 900000) continue;
-                if (org.publicSupport < 0.35f) continue;
-                org.Record("office", "the office withered - " + o.name
-                    + " sat vacant a season; none claimed it, none missed"
-                    + " it; the settlement orders itself");
-                org.offices.RemoveAt(i);
-                org.publicSupport = Mathf.Max(org.publicSupport, 0.6f);
-            }
-
-            // A collapsing organization (public support
-            // under 0.35) with an armed strongman outside the head office
-            // is seized - deterministic, inspectable, no dice. The
-            // strongman resets the organization around himself; whether
-            // his line becomes a dynasty is for the successions to say.
-            if (org.publicSupport < 0.35f && org.offices.Count > 0)
-            {
-                CAOffice head = org.offices[0];
-                CAOrganizationGroup armedGroup = null;
-                for (int i = 0; i < org.groups.Count; i++)
-                    if (org.groups[i].name == "armed group")
-                    { armedGroup = org.groups[i]; break; }
-                if (armedGroup != null && armedGroup.memberIds.Count > 0)
-                {
-                    Pawn strongman = null;
-                    float best = -1f;
-                    for (int i = 0; i < armedGroup.memberIds.Count; i++)
-                    {
-                        Pawn p = FindPawn(map, armedGroup.memberIds[i]);
-                        if (p == null || p.Dead
-                            || p.thingIDNumber == head.holderId) continue;
-                        float pow = p.kindDef != null
-                            ? p.kindDef.combatPower : 0f;
-                        if (pow > best) { best = pow; strongman = p; }
-                    }
-                    if (strongman != null)
-                    {
-                        head.lastHolderId = head.holderId;
-                        head.holderId = strongman.thingIDNumber;
-                        head.holderLabel = strongman.LabelShort;
-                        head.usurped = true;
-                        org.publicSupport = 0.5f;
-                        org.Record("office", "COUP - " + strongman.LabelShort
-                            + " of the armed group seized " + head.name
-                            + " amid collapse; the organization resets"
-                            + " around the strongman");
-                    }
-                }
-            }
-
-            // Organizational construction intent, first expression: a
-            // well-fortified settlement maintains and improves its own
-            // standing line during play - sandbags fill the gaps.
-            if (record.fortification >= 3
-                && now - org.lastImproveTick > 180000)
-            {
-                org.lastImproveTick = now;
-                int added = ImproveLine(org, record, map);
-                if (added > 0)
-                    org.Record("defenses improved - " + added
-                        + " sandbag positions added along the line");
-            }
-
-            // Succession: a dead or vanished head is replaced from the
-            // settlement's own living residents - never fabricated, unlike
-            // the engine's stranger-succession. Logged as a decision.
-            for (int i = 0; i < org.offices.Count; i++)
-            {
-                CAOffice office = org.offices[i];
-                if (office.sourceKey != "head") continue;
-                Pawn holder = FindPawn(map, office.holderId);
-                if (holder != null && !holder.Dead && holder.Spawned)
-                    continue;
-                // A stable, lightly militarized collectivist
-                // commune (high public support, barely militarized) does not
-                // refill a fallen head - none step forward, the commune
-                // continues. The office sits vacant; disuse will wither
-                // it, and anarchism becomes readable from lived practice.
-                if (office.holderId < 0 && office.vacantSinceTick > 0)
-                    continue;
-                if (org.publicSupport >= 0.7f && office.holderId >= 0
-                    && HasMeme(record, "Collectivist"))
-                {
-                    CAOrganizationGroup armedGroup = null;
-                    for (int ab = 0; ab < org.groups.Count; ab++)
-                        if (org.groups[ab].name == "armed group")
-                        { armedGroup = org.groups[ab]; break; }
-                    if (armedGroup == null || armedGroup.standing < 0.3f)
-                    {
-                        org.Record("office", "none stepped forward - the"
-                            + " commune continues without a head");
-                        office.lastHolderId = office.holderId;
-                        office.holderId = -1;
-                        office.holderLabel = null;
-                        office.vacantSinceTick = now;
-                        continue;
-                    }
-                }
-                Pawn heir = null;
-                bool byBlood = false;
-                if (office.successionRule == "hereditary"
-                    && office.holderId >= 0)
-                    heir = FindKinHeir(record, map, office.holderId);
-                if (heir != null) byBlood = true;
-                else heir = PickHead(record, map, office.holderId);
-                if (heir != null)
-                {
-                    bool kinOfLast = byBlood
-                        || IsKinOf(heir, office.holderId);
-                    int predecessor = office.holderId;
-                    string predecessorLabel = office.holderLabel;
-                    office.lastHolderId = predecessor;
-                    office.holderId = heir.thingIDNumber;
-                    office.holderLabel = heir.LabelShort;
-                    if (kinOfLast)
-                    {
-                        office.kinSuccessions++;
-                        if (office.usurped)
-                        {
-                            office.usurped = false;
-                            org.Record("office",
-                                "the line is legitimized - blood follows"
-                                + " the usurper; a true dynasty now");
-                        }
-                        if (office.successionRule != "hereditary")
-                        {
-                            office.successionRule = "hereditary";
-                            org.Record("office", "succession by blood is"
-                                + " now the custom - " + office.name
-                                + " passes within the line");
-                        }
-                        org.Record("office", "the office passes by blood"
-                            + " - " + heir.LabelShort + " succeeds "
-                            + (predecessorLabel ?? "the fallen"));
-                    }
-                    else if (office.successionRule == "hereditary")
-                    {
-                        office.usurped = true;
-                        org.publicSupport = Mathf.Max(0.2f,
-                            org.publicSupport - 0.15f);
-                        org.Record("office", "USURPED - no blood heir"
-                            + " stood; " + heir.LabelShort + " seized "
-                            + office.name + " (public support "
-                            + org.publicSupport.ToStringPercent() + ")");
-                    }
-                    else
-                    {
-                        org.Record("office", "office changed hands - "
-                            + office.name + ": "
-                            + (predecessorLabel ?? "vacant") + " -> "
-                            + heir.LabelShort
-                            + (holder == null ? " (predecessor lost)"
-                                : " (predecessor dead)"));
-                    }
-                }
-                else if (office.holderLabel != null)
-                {
-                    org.Record("office", "office vacant - " + office.name
-                        + " has no living successor among residents");
-                    office.holderId = -1;
-                    office.holderLabel = null;
-                    office.vacantSinceTick = now;
-                    org.publicSupport = Mathf.Max(0.2f, org.publicSupport - 0.2f);
-                }
-            }
         }
-
         private static void NotifySettlementSilent(CAOrganization fallen,
             CARegionalSettlementRecord record)
         {
@@ -4122,140 +4193,6 @@ namespace ColonistAwareness
             return CAOrganizationStances.Between(colony, org) == "Ally";
         }
 
-        private static int ImproveLine(CAOrganization org,
-            CARegionalSettlementRecord record, Map map)
-        {
-            var comp = CAArrangementMapComponent.For(map);
-            if (comp == null) return 0;
-            CAArrangement line = null;
-            for (int i = 0; i < org.securityPractices.Count; i++)
-            {
-                CASecurityPractice sp = org.securityPractices[i];
-                if (sp.mapId != map.uniqueID) continue;
-                for (int j = 0; j < comp.All.Count; j++)
-                    if (comp.All[j].id == sp.arrangementId
-                        && comp.All[j].kind == (int)CAArrangementKind.Line)
-                    { line = comp.All[j]; break; }
-                if (line != null) break;
-            }
-            if (line == null) return 0;
-            int added = 0;
-            for (int i = 0; i < line.cells.Count && added < 4; i++)
-            {
-                IntVec3 c = line.cells[i];
-                if (!c.InBounds(map) || !c.Standable(map)) continue;
-                if (c.GetEdifice(map) != null) continue;
-                try
-                {
-                    Thing bags = ThingMaker.MakeThing(ThingDefOf.Sandbags,
-                        ThingDefOf.Cloth);
-                    bags.SetFaction(record.faction);
-                    GenSpawn.Spawn(bags, c, map);
-                    added++;
-                }
-                catch { break; }
-            }
-            return added;
-        }
-
-        private static bool HasMeme(CARegionalSettlementRecord record,
-            string memeDefName)
-        {
-            try
-            {
-                Ideo ideo = record.faction?.ideos?.PrimaryIdeo;
-                if (ideo == null) return false;
-                for (int i = 0; i < ideo.memes.Count; i++)
-                    if (ideo.memes[i].defName == memeDefName) return true;
-            }
-            catch { }
-            return false;
-        }
-
-        private static bool IsKinOf(Pawn candidate, int predecessorId)
-        {
-            if (candidate?.relations == null || predecessorId < 0)
-                return false;
-            try
-            {
-                var rels = candidate.relations.DirectRelations;
-                for (int i = 0; i < rels.Count; i++)
-                    if (rels[i].otherPawn != null
-                        && rels[i].otherPawn.thingIDNumber == predecessorId)
-                        return true;
-            }
-            catch { }
-            return false;
-        }
-
-        private static Pawn FindKinHeir(CARegionalSettlementRecord record,
-            Map map, int predecessorId)
-        {
-            List<Pawn> residents = ResidentsOf(record, map);
-            for (int i = 0; i < residents.Count; i++)
-                if (!residents[i].Dead
-                    && IsKinOf(residents[i], predecessorId))
-                    return residents[i];
-            return null;
-        }
-
-        private static Pawn PickHead(CARegionalSettlementRecord record,
-            Map map, int excludeId)
-        {
-            List<Pawn> residents = ResidentsOf(record, map);
-            Pawn best = null;
-            float bestPower = -1f;
-            for (int i = 0; i < residents.Count; i++)
-            {
-                Pawn p = residents[i];
-                if (p.thingIDNumber == excludeId || p.Dead) continue;
-                if (p.kindDef != null && p.kindDef.factionLeader) return p;
-                float power = p.kindDef != null ? p.kindDef.combatPower : 0f;
-                if (power > bestPower) { bestPower = power; best = p; }
-            }
-            return best;
-        }
-
-        private static List<Pawn> ResidentsOf(
-            CARegionalSettlementRecord record, Map map)
-        {
-            return CAPopulationProjection.Residents(record, map);
-        }
-
-        private static Pawn FindPawn(Map map, int id)
-        {
-            if (map == null || id < 0) return null;
-            List<Pawn> pawns = map.mapPawns.AllPawns;
-            for (int i = 0; i < pawns.Count; i++)
-                if (pawns[i].thingIDNumber == id) return pawns[i];
-            return null;
-        }
-
-        private static List<IntVec3> PerimeterCells(CellRect rect, Map map)
-        {
-            var cells = new List<IntVec3>();
-            int step = 0;
-            foreach (IntVec3 c in rect.EdgeCells)
-            {
-                if (step++ % 2 != 0) continue;
-                if (c.InBounds(map)) cells.Add(c);
-            }
-            return cells;
-        }
-
-        private static void SeedCustom(CAOrganization org, string key)
-        {
-            if (org.HasCustom(key)) return;
-            org.customs.Add(new CAOrganizationCustom
-            {
-                key = key,
-                source = "generated",
-                adoptedTick = Find.TickManager.TicksGame
-            });
-        }
-
-        // Native faction relations are authoritative. Hostility directly
-        // closes agreements without saving a second stance model.
         private static void ReconcileHostileAgreements(
             CAOrganization colony,
             IReadOnlyList<CARegionalSettlementRecord> records)
@@ -4489,12 +4426,14 @@ namespace ColonistAwareness
         {
             int near = colonists.Count(pawn => pawn != null
                 && pawn.Position.InHorDistOf(cell, 12f));
-            int shared = CACultureHistory.PracticeStrength(culture,
-                "shared-public-life");
+            CACulturalMeaningResolution meaning = CACultureModel.Resolve(
+                culture, CASocialSubjectRegistry.PublicGathering);
             // Culture ranks real gathering places only. Standing, attendance,
             // reachability, and the player-authored policy remain unchanged.
-            return CACultureConsumerKernel.GatheringScore(near,
-                cell.DistanceTo(speaker.Position), shared);
+            float affinity = Mathf.Clamp01((meaning.Approval + 100f) / 200f)
+                * Mathf.Clamp01(meaning.Salience / 100f);
+            return near * (1f + affinity * 0.8f)
+                - cell.DistanceTo(speaker.Position) * 0.05f;
         }
 
         public static void Convene(Pawn speaker, IntVec3 spot, Map map,
@@ -5519,19 +5458,18 @@ namespace ColonistAwareness
                 + "the site, buildings fill usable blocks, and walls follow "
                 + "the resulting boundary. Materials, paving, and defenses "
                 + "depend on local resources and development." },
-            new[] { "Starting facilities",
-                "Starting facilities are generated from population, local "
-                + "services, infrastructure, faction knowledge, settlement "
-                + "role, and faction structure. Each facility can be "
-                + "overridden during regional setup." },
-            new[] { "Starting provisions",
-                "Food, medicine, beds, tools, and other starting supplies "
-                + "follow the selected facilities and population. Provision "
-                + "arrangements can be edited separately for each settlement." },
+            new[] { "Settlement composition",
+                "A starting program exists only where its saved contract names "
+                + "the need, operator, labor, knowledge, material, access, and "
+                + "maintenance it requires." },
+            new[] { "Provision arrangements",
+                "Each provision arrangement names its actual operator, funding, "
+                + "stock, material nodes, access rule, and eligible residents. "
+                + "Missing parts block that arrangement." },
             new[] { "Repairs and research",
                 "Residents repair damaged settlement buildings and replace "
-                + "destroyed starting facilities through normal work. Active "
-                + "research facilities can produce equipment and medicine." },
+                + "destroyed program assets through normal work. Active "
+                + "research programs can produce equipment and medicine." },
             new[] { "Guards and patrols",
                 "Fortified settlements can maintain outposts and scheduled "
                 + "patrol routes. Patrol policy determines whether guards "
@@ -5546,7 +5484,7 @@ namespace ColonistAwareness
             new[] { "Frontier holdings",
                 "Frontier sites range from cabins to developed homesteads. "
                 + "They may belong to a faction or remain unaffiliated. "
-                + "Frequency controls holding count. Size controls household "
+                + "Frequency controls holding count. Size controls residents "
                 + "and material form within local land limits." },
             new[] { "Organizations",
                 "Settlements track offices, policies, claims, security "
@@ -5584,12 +5522,13 @@ namespace ColonistAwareness
                 "Payments travel by drop pod, caravan, or pack train. Travel "
                 + "time and interception depend on the delivery method and "
                 + "conditions at the destination." },
-            new[] { "Faction structure",
-                "Political beliefs and current faction structure are separate. "
-                + "The fields are leadership, decisions, participation, "
-                + "dissent, ownership, economy, work, support, membership, "
-                + "status, local order, defense, and war conduct. Settlement "
-                + "authority is set separately." },
+            new[] { "Political Order",
+                "Political Order records the population's commitments about "
+                + "authority, civic life, property, enterprise, exchange, work, "
+                + "provision, security, and conflict. CA generates its name and "
+                + "account from those facts. Established institutions and rules "
+                + "at landing are represented separately, so belief and practice "
+                + "may agree or differ. Settlement authority remains its own fact." },
             new[] { "Warnings",
                 "Allies and agreement partners can share hostile contacts. "
                 + "Garrisons respond according to current policy, and the "

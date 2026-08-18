@@ -67,15 +67,13 @@ namespace ColonistAwareness
                     Summary = CACultureModel.Summary(local.values),
                     CompactSummary = "Saved Culture",
                     Traits = CultureDetails(local.values),
-                    Details = "Applying this Culture copies its inherited "
-                        + "name and optional visual tradition. The target "
-                        + "settlement develops its own local history and lived "
-                        + "practices.",
+                    Details = "Copies this Culture's name, values, and visual "
+                        + "style. The population's existing practices and "
+                        + "history stay unchanged.",
                     Group = "Saved Cultures",
                     Badge = "Saved Culture",
-                    Icon = CACultureModel.Icon(local.values),
                     Accent = CACreationUI.Authored,
-                    Selected = culture?.profileKey == local.key,
+                    Selected = false,
                     ConfirmLabel = "Use saved Culture",
                     Choose = delegate
                     {
@@ -87,70 +85,44 @@ namespace ColonistAwareness
             return choices;
         }
 
-        internal static string CultureIdentity(CACulture culture)
-        {
-            if (culture == null) return "Culture not set";
-            return culture.name ?? "Inherited Culture";
-        }
-
-
-        internal static List<CACreationChoice> PoliticalProfiles(
-            CAPoliticalBeliefs beliefs, string seed, Action changed)
+        internal static List<CACreationChoice> CulturePresets(
+            CACulture culture, string sourceIdentity, Action changed)
         {
             var choices = new List<CACreationChoice>();
-            foreach (CAFactionAxes.PoliticalPreset preset in
-                CAFactionAxes.Presets)
+            foreach (CACulturePresetDef preset in CACulturePresetLibrary.All
+                .OrderBy(item => CultureCatalogOrder(item.CatalogGroup))
+                .ThenBy(item => item.ApproximatePeriod,
+                    StringComparer.Ordinal)
+                .ThenBy(item => item.Label, StringComparer.Ordinal))
             {
-                CAFactionAxes.PoliticalPreset local = preset;
+                CACulturePresetDef local = preset;
                 choices.Add(new CACreationChoice
                 {
                     Key = local.Key,
-                    Name = local.Name,
-                    Summary = local.Description,
-                    CompactSummary = CAPoliticalBeliefsModel.PresetTraits(
-                        local, 2),
-                    Traits = PoliticalFingerprint(local),
-                    Details = CAPoliticalBeliefsModel.PresetDetails(local),
-                    Group = PoliticalFamily(local),
-                    Badge = "Built-in profile",
-                    Icon = CAPoliticalBeliefsModel.Icon(local),
+                    Name = local.Label,
+                    Summary = local.Summary,
+                    CompactSummary = local.Summary,
+                    Traits = "Differences within the population: "
+                        + CultureDiversityWords(local.GlobalDiversity)
+                        + (!local.ReferenceContext.NullOrEmpty()
+                            ? " · " + local.ReferenceContext : "")
+                        + (!local.ApproximatePeriod.NullOrEmpty()
+                            ? " · " + local.ApproximatePeriod : ""),
+                    Details = local.Rationale + "\n\nSources: "
+                        + local.Sources + "\n\nThis preset sets all "
+                        + CACultureQuestionRegistry.FixedQuestionCount
+                        + " cultural values. You can change any result.",
+                    Group = local.CatalogGroup,
+                    Badge = local.ApproximatePeriod.NullOrEmpty()
+                        ? "Social form" : local.ApproximatePeriod,
                     Accent = CACreationUI.Preset,
-                    Selected = CAPoliticalBeliefsModel.UsesPreset(
-                        beliefs, local),
-                    ConfirmLabel = "Apply these beliefs",
+                    Selected = CACulturePresetLibrary.Matches(culture,
+                        local),
+                    ConfirmLabel = "Use preset",
                     Choose = delegate
                     {
-                        CAPoliticalBeliefsModel.ChoosePreset(beliefs, local,
-                            seed + ":political-profile:" + local.Key);
-                        changed?.Invoke();
-                    }
-                });
-            }
-            foreach (CAUserPoliticalProfile profile in
-                CAAuthoringProfileLibrary.Politics.OrderBy(item =>
-                    item.displayName))
-            {
-                CAUserPoliticalProfile local = profile;
-                choices.Add(new CACreationChoice
-                {
-                    Key = local.key,
-                    Name = local.displayName,
-                    Summary = CAPoliticalBeliefsModel.Summary(local.values),
-                    CompactSummary = "Saved political profile",
-                    Traits = PoliticalFingerprint(local.values),
-                    Details = PoliticalDetails(local.values)
-                        + "\n\nApplying this profile copies its values into "
-                        + "the current world draft. Later edits do not change "
-                        + "the saved library copy.",
-                    Group = "Saved",
-                    Badge = "Saved profile",
-                    Icon = CAPoliticalBeliefsModel.Icon(local.values),
-                    Accent = CACreationUI.Authored,
-                    Selected = beliefs?.profileKey == local.key,
-                    ConfirmLabel = "Apply saved profile",
-                    Choose = delegate
-                    {
-                        CAAuthoringProfileLibrary.Apply(local, beliefs);
+                        CACulturePresetLibrary.Apply(culture, local,
+                            sourceIdentity ?? "preset:" + local.Key);
                         changed?.Invoke();
                     }
                 });
@@ -158,81 +130,205 @@ namespace ColonistAwareness
             return choices;
         }
 
+        internal static List<CACreationChoice> SocietyPresets(
+            CACulture culture, CAPoliticalBeliefs politicalOrder,
+            string sourceIdentity, Action changed)
+        {
+            var choices = new List<CACreationChoice>();
+            foreach (CASocietyPreset preset in CASocietyPresetLibrary.Available
+                .OrderBy(item => SocietyCatalogOrder(item.CatalogGroup))
+                .ThenBy(item => item.ApproximatePeriod,
+                    StringComparer.Ordinal)
+                .ThenBy(item => item.Label, StringComparer.Ordinal))
+            {
+                CASocietyPreset local = preset;
+                bool selected = local.Matches(culture, politicalOrder);
+                choices.Add(SocietyPresetChoice(local, selected,
+                    "Use society preset", null, delegate
+                    {
+                        if (!CASocietyPresetLibrary.TryApply(local, culture,
+                                politicalOrder, sourceIdentity,
+                                out string failure))
+                        {
+                            Messages.Message("Could not apply " + local.Label
+                                    + ". " + failure,
+                                MessageTypeDefOf.RejectInput, false);
+                            return false;
+                        }
+                        changed?.Invoke();
+                        Messages.Message(local.Label
+                                + " set Culture and Political Order.",
+                            MessageTypeDefOf.NeutralEvent, false);
+                        return true;
+                    }));
+            }
+            return choices;
+        }
+
+        // Starting Region uses the same society catalog as founding and
+        // faction editing. A placement choice applies the recipe once to a
+        // newly created ordinary faction and settlement; it does not create a
+        // second preset library or a persistent settlement type.
+        internal static List<CACreationChoice> SocietyPlacementPresets(
+            Func<CASocietyPreset, bool> choose)
+        {
+            var choices = new List<CACreationChoice>();
+            foreach (CASocietyPreset preset in CASocietyPresetLibrary.Available
+                .OrderBy(item => SocietyCatalogOrder(item.CatalogGroup))
+                .ThenBy(item => item.ApproximatePeriod,
+                    StringComparer.Ordinal)
+                .ThenBy(item => item.Label, StringComparer.Ordinal))
+            {
+                CASocietyPreset local = preset;
+                choices.Add(SocietyPresetChoice(local, false,
+                    "Place this settlement",
+                    "Creates one new local faction and settlement. Click an "
+                        + "area on the map to place it, then edit it normally.",
+                    delegate { return choose?.Invoke(local) == true; }));
+            }
+            return choices;
+        }
+
+        private static CACreationChoice SocietyPresetChoice(
+            CASocietyPreset preset, bool selected, string confirmLabel,
+            string actionDetails, Func<bool> choose)
+        {
+            CAPoliticalBeliefs politicalPreview =
+                preset.PoliticalPreview();
+            string details = "Culture\n" + preset.CultureSummary
+                + "\n\nPolitical Order\n"
+                + CAPoliticalOrderModel.Description(politicalPreview)
+                + "\n\nThis sets Culture and Political Order together. "
+                + "You can change either afterward.";
+            if (!actionDetails.NullOrEmpty())
+                details += "\n\n" + actionDetails;
+            return new CACreationChoice
+            {
+                Key = preset.Key,
+                Name = preset.Label,
+                Summary = preset.Summary,
+                CompactSummary = preset.Summary,
+                Traits = (!preset.ReferenceRegion.NullOrEmpty()
+                        ? preset.ReferenceRegion + " · " : "")
+                    + "Political Order: "
+                    + CAPoliticalOrderModel.Identity(politicalPreview),
+                Details = details,
+                Group = preset.CatalogGroup,
+                Badge = preset.Saved ? "Saved"
+                    : preset.ApproximatePeriod.NullOrEmpty()
+                        ? "Social form" : preset.ApproximatePeriod,
+                Accent = preset.Saved ? CACreationUI.Authored
+                    : CACreationUI.Preset,
+                Selected = selected,
+                ConfirmLabel = confirmLabel,
+                TryChoose = choose
+            };
+        }
+
+        private static int CultureCatalogOrder(string catalogGroup)
+        {
+            switch (catalogGroup)
+            {
+                case "Social forms": return 0;
+                case "Historical cultures": return 1;
+                default: return int.MaxValue;
+            }
+        }
+
+        private static int SocietyCatalogOrder(string catalogGroup)
+        {
+            switch (catalogGroup)
+            {
+                case "Saved societies": return 0;
+                case "Social forms": return 1;
+                case "Historical societies": return 2;
+                default: return int.MaxValue;
+            }
+        }
+
+        private static string CultureDiversityWords(int value)
+        {
+            string[] labels =
+                { "narrow", "limited", "mixed", "broad", "very broad" };
+            return labels[Mathf.Clamp(value, 0, labels.Length - 1)];
+        }
+
+        internal static string CultureIdentity(CACulture culture)
+        {
+            if (culture == null) return "Culture not set";
+            return culture.name ?? "Unnamed Culture";
+        }
+
+
         internal static string PoliticalIdentity(
             CAPoliticalBeliefs beliefs)
         {
-            if (beliefs == null) return "Political beliefs not set";
-            CAUserPoliticalProfile saved = CAAuthoringProfileLibrary.Politics
-                .FirstOrDefault(item => item.key == beliefs.profileKey);
-            return saved?.displayName
-                ?? CAFactionAxes.Preset(beliefs.presetName)?.Name
-                ?? "Custom political beliefs";
+            if (beliefs == null) return "Political Order not set";
+            if (CAPoliticalOrderModel.HasVariables(beliefs))
+                return CAPoliticalOrderModel.Identity(beliefs);
+            int count = (beliefs.positions ?? new List<CAAxisEntry>())
+                .Count(item => item != null
+                    && item.source != (byte)CAAxisSource.Unset);
+            return count == 0 ? "Political Order not set"
+                : count + " political choice" + (count == 1 ? "" : "s")
+                    + " set";
         }
 
         internal static string CultureDetails(CACulture culture)
         {
-            if (culture == null) return "No Culture recorded.";
+            if (culture == null) return "Culture not set.";
             CultureDef native = CACultureModel.NativeDef(culture);
-            string source = native?.LabelCap.ToString()
+            string visualStyle = native?.LabelCap.ToString()
                 ?? (culture.sourceCultureDefName.NullOrEmpty()
-                    ? "neutral fallback"
+                    ? "neutral"
                     : culture.sourceCultureDefName
-                        + " unavailable; neutral fallback");
-            return "Culture: " + (culture.name ?? "inherited Culture")
-                + ". Visual tradition: " + source + ". Continuity: "
-                + CACultureHistory.ContinuitySummary(culture) + ".";
+                        + " unavailable; neutral style used");
+            List<CACultureQuestionDistribution> questions = CACultureModel
+                .PopulationQuestions(culture).ToList();
+            string mainValues = string.Join(", ", questions
+                .OrderByDescending(item => item.salience)
+                .ThenBy(item => item.questionKey)
+                .Take(3).Select(item =>
+                {
+                    CACultureQuestionDef definition =
+                        CACultureQuestionRegistry.Find(item.questionKey);
+                    CACultureDistributionSummary summary =
+                        CACultureDistributionKernel.Summarize(item,
+                            culture.id ?? item.questionKey);
+                    return (definition?.Label ?? "Cultural value") + ": "
+                        + summary.Anchor;
+                })
+                .ToArray());
+            string result = culture.name ?? "Unnamed Culture";
+            if (!mainValues.NullOrEmpty())
+                result += ". Main values: " + mainValues;
+            CACultureConstituent[] roots = culture.constituents
+                .Where(item => item != null && item.share > 0).ToArray();
+            if (roots.Length > 1)
+                result += ". Cultural mix: " + string.Join(", ", roots
+                    .Select(item => item.share + "% "
+                        + (item.label ?? "unnamed")));
+            return result + ". Visual style: " + visualStyle + ".";
         }
 
-
-        internal static string PoliticalFingerprint(
-            CAFactionAxes.PoliticalPreset preset)
-        {
-            if (preset == null) return "No positions recorded";
-            var temporary = new CAPoliticalBeliefs();
-            CAPoliticalBeliefsModel.ApplyPreset(temporary, preset);
-            return PoliticalFingerprint(temporary);
-        }
-
-        internal static string PoliticalFingerprint(
-            CAPoliticalBeliefs beliefs)
-        {
-            return string.Join(" | ", PoliticalGroups.Select(group =>
-            {
-                int set = group.Axes.Count(axis => !CAFactionAxes.KeyOf(
-                    beliefs?.positions, axis).NullOrEmpty());
-                string initial = new string(group.Label.Where(char.IsLetter)
-                    .Take(1).ToArray()).ToUpperInvariant();
-                return initial + set;
-            }).ToArray());
-        }
 
         internal static string PoliticalDetails(CAPoliticalBeliefs beliefs)
         {
-            if (beliefs == null) return "No political positions recorded.";
+            if (beliefs == null) return "Political Order not set.";
+            if (CAPoliticalOrderModel.HasVariables(beliefs))
+                return CAPoliticalOrderModel.Description(beliefs);
             return string.Join("\n", CAFactionAxes.Axes.Select(axis =>
             {
-                CAAxisOption option = CAFactionAxes.OptionOf(
-                    beliefs.positions, axis.Key);
+                IReadOnlyList<CAAxisOption> options =
+                    CAFactionAxes.OptionsOf(beliefs.positions, axis.Key);
                 return axis.Label + ": "
-                    + (option?.Label ?? "No position chosen") + ". "
-                    + (option?.Words ?? "");
+                    + (options.Count == 0 ? "Open" : string.Join(" + ",
+                        options.Select(option => option.Label))) + ". "
+                    + string.Join("; ", options.Select(option =>
+                        option.Words));
             }).ToArray());
         }
 
-        private static string PoliticalFamily(
-            CAFactionAxes.PoliticalPreset preset)
-        {
-            string leader = preset?.Positions.ContainsKey(
-                CAFactionAxes.Leadership) == true
-                    ? preset.Positions[CAFactionAxes.Leadership] : null;
-            if (leader == "single") return "Central rule";
-            if (leader == "none") return "No central rule";
-            if (preset?.Key == "common_ownership"
-                || preset?.Key == "independent_communes"
-                || preset?.Key == "worker_federation")
-                return "Common and cooperative";
-            return "Councils and federations";
-        }
     }
 
     internal sealed class Dialog_CAProfileName : Window
@@ -295,22 +391,31 @@ namespace ColonistAwareness
             Text.Font = GameFont.Medium;
             Widgets.Label(new Rect(0f, 0f, inRect.width, 34f),
                 cultures ? "Saved Cultures"
-                    : "Saved political profiles");
+                    : "Saved Political Orders");
             Text.Font = GameFont.Small;
             Widgets.Label(new Rect(0f, 38f, inRect.width, 42f),
-                "Saved profiles are global. Loading copies values into this "
-                + "draft; renaming or deleting the library copy does not alter a world.");
+                "Saved presets are global. Loading copies their listed values "
+                + "into this draft; renaming or deleting the library copy does not alter a world.");
             Rect outer = new Rect(0f, 88f, inRect.width,
                 inRect.height - 136f);
             int count = cultures ? CAAuthoringProfileLibrary.Cultures.Count
-                : CAAuthoringProfileLibrary.Politics.Count;
+                : CAAuthoringProfileLibrary.PoliticalOrders.Count;
             bool compactRows = outer.width - 18f < 560f;
             Rect view = new Rect(0f, 0f, outer.width - 18f,
                 Mathf.Max(outer.height,
                     count * (compactRows ? 86f : 48f) + 8f));
             Widgets.BeginScrollView(outer, ref scroll, view);
             rowY = 0f;
-            if (cultures)
+            if (count == 0)
+            {
+                GUI.color = ColoredText.SubtleGrayColor;
+                Widgets.Label(new Rect(8f, 8f, view.width - 16f, 60f),
+                    cultures
+                        ? "No Cultures are saved. Save the current Culture from its editor first."
+                        : "No Political Orders are saved. Save a Political Order from its editor first.");
+                GUI.color = Color.white;
+            }
+            else if (cultures)
             {
                 foreach (CAUserCultureProfile profile in
                     CAAuthoringProfileLibrary.Cultures.ToList())
@@ -318,8 +423,8 @@ namespace ColonistAwareness
             }
             else
             {
-                foreach (CAUserPoliticalProfile profile in
-                    CAAuthoringProfileLibrary.Politics.ToList())
+                foreach (CAUserPoliticalOrderProfile profile in
+                    CAAuthoringProfileLibrary.PoliticalOrders.ToList())
                     DrawPoliticalRow(view.width, profile);
             }
             Widgets.EndScrollView();
@@ -345,14 +450,14 @@ namespace ColonistAwareness
         }
 
         private void DrawPoliticalRow(float width,
-            CAUserPoliticalProfile profile)
+            CAUserPoliticalOrderProfile profile)
         {
             DrawProfileRow(width, profile.displayName, delegate
                 {
                     CAAuthoringProfileLibrary.Apply(profile, beliefs);
                     changed?.Invoke();
                 }, () => Find.WindowStack.Add(new Dialog_CAProfileName(
-                    "Rename political profile", profile.displayName,
+                    "Rename saved Political Order", profile.displayName,
                     value => CAAuthoringProfileLibrary.Rename(profile, value))),
                 () => CAAuthoringProfileLibrary.Duplicate(profile),
                 () => Find.WindowStack.Add(

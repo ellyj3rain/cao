@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Memory |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.3.0.1-alpha` · closed batch tip `B7` · next `B8` |
+| Version | `1.5.0.0-alpha` · closed batch tip `B14` · next `B15` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `MEMORY.md` |
@@ -38,26 +38,26 @@ junction for the operator, not a defect in the index.
 | `CORE.md` | CANONICAL | Project identity, canonical composition, governing constraints. |
 | `ARCHITECTURE.md` | CANONICAL | Ratified framework shape; the four pillars. |
 | `GOVERNANCE.md` | CANONICAL | Operating discipline and model-facing instruction surface. |
-| `DECISION_REGISTRY.md` | CANONICAL, APPEND-ONLY | Ratified decisions DR-1 through DR-115. Later records supersede earlier decisions without rewriting them. |
-| `FINDINGS.md` | CANONICAL, APPEND-ONLY | Verified findings F-1…F-135 and F-151…F-157. Former Git labels F-136…F-150 resolve through the former-label crosswalk and are not reused as finding identifiers. |
+| `DECISION_REGISTRY.md` | CANONICAL, APPEND-ONLY | Ratified decisions DR-1 through DR-168. Later records supersede earlier decisions without rewriting them. |
+| `FINDINGS.md` | CANONICAL, APPEND-ONLY | Verified findings F-1…F-135 and F-151…F-164. Former Git labels F-136…F-150 resolve through the former-label crosswalk and are not reused as finding identifiers. |
 | `BATCH_LOG.md` | REGULATORY | Chronological index for the single append-only batch sequence and the next-batch declaration. |
 | `VERSION_MAP.md` | REGULATORY, GENERATED | Chronological version-unit replay derived from `tools/version-model.mjs`. |
 | `ROADMAP.md` | CANONICAL | Thread map, backlog, live gates. |
 | `SESSION_STATE.md` | CANONICAL | Current operational reality. Read before claiming where anything stands. |
-| `VERSION` | CANONICAL, GENERATED | `1.3.0.1-alpha`, derived from the version replay. |
+| `VERSION` | CANONICAL, GENERATED | `1.4.1.0-alpha`, derived from the version replay. |
 
 ## Batch record system
 
 | Surface | Status | Role |
 |---|---|---|
 | `Batches/README.md` | REGULATORY | Portable-history contract for one alphanumeric batch namespace. |
-| `Batches/[A-Z]*.md` | APPEND-ONLY | The 102 closed A-sequence records and closed `B1-B7` records in one namespace. |
+| `Batches/[A-Z]*.md` | APPEND-ONLY | The 102 closed A-sequence records and closed `B1-B13` records in one namespace. |
 | `Batches/THREADS.md` | REGULATORY | Permanent series-neutral families and many-to-many threads over nonadjacent batches. |
 | `Batches/THREAD_ID_CROSSWALK.md` | REGULATORY | Complete map from temporary `ATF-*` / `AT-*` identifiers to `TF-*` / `T-*`. |
 | `Batches/FORMER_LABELS.md` | REGULATORY | Complete map from all 93 former ledger boundaries to current batches. |
 
-The A sequence closes at `A102`; the chronology continues through closed `B7`,
-and `B8` is next. The governed batch records, chronological catalog, thematic
+The A sequence closes at `A102`; the chronology continues through closed `B13`,
+and `B14` is next after the operator runtime-test boundary. The governed batch records, chronological catalog, thematic
 crosswalks, version map, decisions, findings, receipts, and source provenance are
 the portable project history.
 
@@ -68,8 +68,8 @@ the portable project history.
 | Published forge history | Host-specific distribution record beginning at the canonical snapshot selected for publication. |
 
 The three development layers are separate. Batches record atomic chronological
-work. Threads classify related work across any letter sequence. The 34 version
-units in `VERSION_MAP.md` partition A1-B7 into contiguous capability runs and
+work. Threads classify related work across any letter sequence. The 40 version
+units in `VERSION_MAP.md` partition A1-B13 into contiguous capability runs and
 derive the current root version through the Neo four-coordinate odometer.
 
 ## Engine and distribution
@@ -93,6 +93,25 @@ derive the current root version through the Neo four-coordinate odometer.
 | `ECONOMIC_IMPLEMENTATION_AUDIT.md` | CANONICAL, INCOMPLETE | DR-87 second pass; RimBank deep trace, verdict "split by layer". Closes with "Remaining, not started". |
 | `PARALLEL_ONTOLOGY_AUDIT.md` | **DAMAGED** | The current file is an 89-line consolidation. The complete 394-line original was overwritten 2026-08-05 while untracked, recovered from session transcripts, and is held in `recovery-candidates/` in the preservation package. **Restoration is an open decision.** Current verdicts in the file are accurate; rounds 1–2 per-item consumer tracing is missing from it. |
 | `SETUP_SCOPE_MAP.md` | RECORD, SUPERSEDED | Historical audit of the removed setup screen. Retained for its dead-control and flow evidence; its schema names are not current contracts. |
+| `MODULE_OWNERSHIP.md` | CANONICAL | Module, state, mutation, cadence, index, dependency, consumer, and diagnostics ownership after B13. |
+| `SCHEMA_REGISTRY.md` | CANONICAL | Executable campaign schema catalog, pending-authoring distinction, and validation/migration contract. |
+| `PERSISTENCE_CENSUS.md` | RECORD | Generated source-to-catalog census of every direct Scribe/nested Expose writer and native persisted owner, including narrow non-campaign exclusions. |
+| `CAMPAIGN_COMPATIBILITY.md` | CANONICAL | Operator update, preflight, supported migration, visible failure, backup, and rollback workflow. |
+| `AUTHORING_ONTOLOGY_COVERAGE.md` | CANONICAL | Four-layer authoring coverage, mechanics classification, production vocabulary, semantic kinds, category cardinalities, and duplicate-surface audit. |
+| `B13_CAUSAL_CONTRACT.md`, `CULTURE_RESEARCH_CORPUS.md` | CANONICAL | Current twenty-four-question Culture registry, authoring contract, causal separations, sources, consumers, historical feedback, and calibration limits. |
+| `PLAYER_BASE_PATTERN_CORPUS.md` | CANONICAL, INCOMPLETE | Full-save and structured-snapshot layout corpus, evidence strata, extraction contract, and autonomous-building admission rules. Nine operator saves cover early/combat evidence; the broad Real Ruins screen defines 4,238 complete byte-unique layouts across 80 biome definitions with lineage-safe partitions. Quality/capability classification, complementary mature full saves, and full-save terrain/roof decoding remain open. |
+| `B12_CAUSAL_CONTRACT.md`, `B12_CULTURE_QUESTION_AUDIT.md` | RECORD | B12's original thirteen-question capability boundary and exact former-subject disposition, retained beneath B13. |
+| `CULTURAL_COGNITION_RESEARCH.md` | RECORD | Supplied-package hashes, admitted B12/B13 research constructs, evidence limits, and code provenance. |
+| `B13_B12_FIDELITY_AUDIT.md` | RECORD | Pre-change audit proving which B12 contracts were preserved, extended, or corrected. |
+| `B13_ACCEPTANCE_RECEIPTS.md`, `B13_FIXTURE_RECEIPT.md` | RECORD | Fixed-seed registry, authoring, causal-isolation, persistence, generation, historical-feedback, and current-fixture results. |
+| `B13_BUILD_RECEIPT.md`, `B13_DEPLOYMENT_RECEIPT.md`, `B13_REVIEW_RECEIPT.md` | RECORD | Exact build, deployment, and independent causal/structural/surface review closure evidence. |
+| `B12_ACCEPTANCE_RECEIPTS.md`, `B12_FIXTURE_RECEIPT.md` | RECORD | Fixed-seed causal, isolation, persistence, performance, migration, and governed-fixture results. |
+| `B12_BUILD_RECEIPT.md`, `B12_DEPLOYMENT_RECEIPT.md`, `B12_REVIEW_RECEIPT.md` | RECORD | Exact build, deployment, and five-lens review closure evidence. |
+| `B11_ACCEPTANCE_RECEIPTS.md` | RECORD | Executable B11 ownership, durability, ontology, composition, surface, and regression results. |
+| `B11_COMPATIBILITY_RECEIPT.md` | RECORD | Controlled B10-to-B11 preflight, identity, migration, and idempotence evidence. |
+| `B11_BUILD_RECEIPT.md`, `B11_DEPLOYMENT_RECEIPT.md`, `B11_REVIEW_RECEIPT.md` | RECORD | Exact build, deployment, and five-lens review closure evidence. |
+| `B10_CAUSAL_PROVENANCE_AUDIT.md` | RECORD | Closed B10 ownership, formation, mutation, persistence, and consumer ledger retained as the B11 causal floor. |
+| `B10_ACCEPTANCE_RECEIPTS.md`, `B10_SYNTHETIC_STATE_SWEEP.md` | RECORD | Retained executable causal receipts and repository-wide RNG/hash classification regenerated against the current source. |
 ## Working records
 
 These are retained design records, not current architecture.

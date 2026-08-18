@@ -370,16 +370,13 @@ namespace ColonistAwareness
             Add(list, "logistics.storage_capacity", "Storage capacity", "Adds one capacity furnishing when an authorized stockpile crosses its threshold.", CABehaviorDomain.LogisticsAndProvision, CABehaviorForm.PreventiveReadiness, Player | Spatial, CASettingKey.AutonomousHomePlanning, CAInitiativeTier.Proactive, false, true, true, false, CAKnowledgeRequirement.MaterialDeficit, false, false, 0, CADispositionAxis.Initiative, PlayerOrigins, "native stockpile initiative ceiling", "StorageProgramModule", "native blueprint and hauling", "600-tick spatial pass", "one storage-capacity intent", "capacity pressure clears", "stockpile, ceiling, material, or veto fails");
             Add(list, "logistics.material_staging", "Material staging", "Stages the exact deficit for one authorized construction objective.", CABehaviorDomain.LogisticsAndProvision, CABehaviorForm.PreventiveReadiness, Player | Spatial, CASettingKey.AutonomousHomePlanning, CAInitiativeTier.Proactive, false, true, true, false, CAKnowledgeRequirement.MaterialDeficit, false, false, 0, CADispositionAxis.Discipline | CADispositionAxis.Initiative, PlayerOrigins, "delegated spatial objective", "HomePrerequisiteModule", "native storage and hauling", "600-tick planning pass", "one material-deficit episode", "exact deficit reaches the objective", "objective, stock, storage, authority, or veto fails");
             Add(list, "logistics.material_source", "Material source", "Produces one supported material deficit through bounded native work.", CABehaviorDomain.LogisticsAndProvision, CABehaviorForm.PersistentObjective, Player | Spatial, CASettingKey.AutonomousHomePlanning, CAInitiativeTier.Proactive, false, true, true, false, CAKnowledgeRequirement.MaterialDeficit, false, false, 0, CADispositionAxis.Discipline | CADispositionAxis.Initiative, PlayerOrigins, "delegated source policy", "HomePrerequisiteModule", "native plant cutting and hauling", "600-tick planning pass", "one supported producer objective", "the exact deficit is produced", "producer unsupported, threat, area, ideology, cancellation, or reserve blocks it");
-            Add(list, "spatial.home_essentials", "Home essentials", "Adds one sleeping or eating essential inside valid claimed shelter.", CABehaviorDomain.DomesticAndSpatial, CABehaviorForm.AdaptivePlanning, Player | Spatial, CASettingKey.AutonomousHomePlanning, CAInitiativeTier.Proactive, false, true, true, false, CAKnowledgeRequirement.MaterialDeficit, false, false, 0, CADispositionAxis.Initiative | CADispositionAxis.Discipline, PlayerOrigins, "delegated player home and valid authored program", "AutonomousHomeModule", "native blueprint", "600-tick home pass", "one essential deficiency", "the essential exists", "space, material, capability, cancellation, demolition veto, or authority fails");
-            Add(list, "spatial.home_comfort", "Home comfort", "Adds one modest contextual furnishing after essentials are covered.", CABehaviorDomain.DomesticAndSpatial, CABehaviorForm.AdaptivePlanning, Player | Spatial, CASettingKey.AutonomousHomePlanning, CAInitiativeTier.Autonomous, false, true, true, false, CAKnowledgeRequirement.MaterialDeficit, false, false, 0, CADispositionAxis.Initiative, PlayerOrigins, "delegated player home and valid authored program", "AutonomousHomeModule", "native blueprint", "600-tick home pass", "one contextual deficiency", "the selected provision exists", "essentials, space, material, capability, veto, or authority fails");
+            Add(list, "spatial.home_essentials", "Home essentials", "Adds one sleeping or eating essential inside valid claimed shelter, ranking valid ground by current and seasonal environmental fit.", CABehaviorDomain.DomesticAndSpatial, CABehaviorForm.AdaptivePlanning, Player | Spatial, CASettingKey.AutonomousHomePlanning, CAInitiativeTier.Proactive, false, true, true, false, CAKnowledgeRequirement.MaterialDeficit, false, false, 0, CADispositionAxis.Initiative | CADispositionAxis.Discipline, PlayerOrigins, "delegated player home, valid authored program, and observed environment", "AutonomousHomeModule + SettlementEnvironmentModule", "native blueprint", "600-tick home pass", "one essential deficiency", "the essential exists", "space, climate, material, capability, cancellation, demolition veto, or authority fails");
+            Add(list, "spatial.home_comfort", "Home comfort", "Adds one modest contextual furnishing after essentials are covered; current and seasonal exposure determine whether indoor or outdoor recreation is suitable.", CABehaviorDomain.DomesticAndSpatial, CABehaviorForm.AdaptivePlanning, Player | Spatial, CASettingKey.AutonomousHomePlanning, CAInitiativeTier.Autonomous, false, true, true, false, CAKnowledgeRequirement.MaterialDeficit, false, false, 0, CADispositionAxis.Initiative, PlayerOrigins, "delegated player home, valid authored program, and observed environment", "AutonomousHomeModule + SettlementEnvironmentModule", "native blueprint", "600-tick home pass", "one contextual deficiency", "the selected provision exists", "essentials, climate, space, material, capability, veto, or authority fails");
             Add(list, "spatial.resident_roster_negotiation", "Resident roster choice", "Lets one resident choose a compatible authored sleeping program from current bed and relationship facts.", CABehaviorDomain.DomesticAndSpatial, CABehaviorForm.AdaptivePlanning, Player | Spatial, CASettingKey.AutonomousHomePlanning, CAInitiativeTier.Autonomous, false, true, true, false, CAKnowledgeRequirement.CurrentFact, false, true, 0, CADispositionAxis.Initiative | CADispositionAxis.Conformity, PlayerOrigins, "the resident's own choice inside a player-authored sleeping program", "PlannedUseMapComponent", "saved space-program roster and native bed ownership", "600-tick home pass", "one resident roster episode", "the resident has a compatible sleeping assignment", "program, relationship, capacity, player ownership, or authority changes");
-            Add(list, "spatial.program_furnishing", "Program furnishing", "Furnishes one functional or contextual need inside an authored space program.", CABehaviorDomain.DomesticAndSpatial, CABehaviorForm.AdaptivePlanning, Player | Spatial, CASettingKey.AutonomousHomePlanning, CAInitiativeTier.Proactive, false, true, true, false, CAKnowledgeRequirement.MaterialDeficit, false, false, 0, CADispositionAxis.Initiative | CADispositionAxis.Discipline, PlayerOrigins, "authored space program and effective initiative ceiling", "SpatialFurnishingModule", "B5 asset registry and native blueprint", "600-tick spatial pass", "one program demand", "the demand is satisfied", "program, cells, residents, requirement, material, ceiling, or veto fails");
-            Add(list, "spatial.npc_settlement_development", "NPC settlement development", "Consumes shared settlement demands through an explicit simulated institution.", CABehaviorDomain.InstitutionalDevelopment, CABehaviorForm.InstitutionalAction, Npc | NpcInstitution, CASettingKey.None, CAInitiativeTier.Standard, true, false, false, true, CAKnowledgeRequirement.MaterialDeficit, false, false, 0, CADispositionAxis.None, NpcOrigins, "named household, operator, organization, guild, religious body, military, or government", "SettlementPlanningContextModule", "B5 demand, asset, siting, and material pipeline", "world or settlement simulation cadence", "institutional proposal and commitment", "the demand is satisfied", "approver, owner, labor, funding, material, or siting fails");
+            Add(list, "spatial.program_furnishing", "Program furnishing", "Furnishes one functional or contextual need inside an authored space program.", CABehaviorDomain.DomesticAndSpatial, CABehaviorForm.AdaptivePlanning, Player | Spatial, CASettingKey.AutonomousHomePlanning, CAInitiativeTier.Proactive, false, true, true, false, CAKnowledgeRequirement.MaterialDeficit, false, false, 0, CADispositionAxis.Initiative | CADispositionAxis.Discipline, PlayerOrigins, "authored space program and effective initiative ceiling", "SpatialFurnishingModule", "settlement asset registry and native blueprint", "600-tick spatial pass", "one program demand", "the demand is satisfied", "program, cells, residents, requirement, material, ceiling, or veto fails");
+            Add(list, "spatial.npc_settlement_development", "NPC settlement development", "Consumes shared settlement demands through an explicit simulated institution.", CABehaviorDomain.InstitutionalDevelopment, CABehaviorForm.InstitutionalAction, Npc | NpcInstitution, CASettingKey.None, CAInitiativeTier.Standard, true, false, false, true, CAKnowledgeRequirement.MaterialDeficit, false, false, 0, CADispositionAxis.None, NpcOrigins, "named household, operator, organization, guild, religious body, military, or government", "SettlementPlanningContextModule", "demand, asset, siting, and material pipeline", "world or settlement simulation cadence", "institutional proposal and commitment", "the demand is satisfied", "approver, owner, labor, funding, material, or siting fails");
             Add(list, "culture.longitudinal_update", "Cultural continuity", "Records durable cultural change from lived population, spatial, social, institutional, political, and material history.", CABehaviorDomain.SocialAndPolitical, CABehaviorForm.Observation, Colony | NpcInstitution | CAActorContext.WorldSimulation, CASettingKey.None, CAInitiativeTier.Standard, true, false, false, false, CAKnowledgeRequirement.None, false, false, 0, CADispositionAxis.None, PlayerOrigins | NpcOrigins | CAAuthorityOrigin.WorldAuthoring, "persisted lived evidence at the owning settlement or colony", "CultureLongitudinalModule", "saved Culture evidence and practice transition", "60000-tick historical evaluation", "one evidence period", "a changed evidence period is recorded once", "no meaningful evidence changed", exposeInUi: false);
-            Add(list, "spatial.creation_authoring", "Starting-region authoring", "Writes confirmed creation state directly as simulation history.", CABehaviorDomain.DomesticAndSpatial, CABehaviorForm.DirectOrder, CAActorContext.CreationAuthor, CASettingKey.None, CAInitiativeTier.Standard, true, false, false, false, CAKnowledgeRequirement.None, false, false, 0, CADispositionAxis.None, CAAuthorityOrigin.WorldAuthoring, "creation author confirmation", "RegionalSetupModule", "B5 authoring and materialization pipeline", "creation flow", "confirmed initial state", "the confirmed state materializes", "authoring validation blocks confirmation");
-            Add(list, "institution.frontier_household_activity", "Frontier household activity", "Carries one bounded household movement under the realized frontier holding.", CABehaviorDomain.InstitutionalDevelopment, CABehaviorForm.InstitutionalAction, Npc | NpcInstitution, CASettingKey.None, CAInitiativeTier.Standard, true, true, false, true, CAKnowledgeRequirement.None, false, false, 0, CADispositionAxis.None, CAAuthorityOrigin.Household | CAAuthorityOrigin.Continuation | CAAuthorityOrigin.SaveRestore, "realized frontier household and current household role", "FrontierModule", "native movement job", "bounded frontier household cadence", "one household episode", "the household member reaches the current site objective", "the holding, route, household, or role becomes invalid");
-            Add(list, "survival.frontier_flight", "Frontier flight", "Moves a frontier resident toward a reachable edge under the current household alarm without granting hostile identity.", CABehaviorDomain.SurvivalAndImmediateSafety, CABehaviorForm.Safeguard, Npc, CASettingKey.None, CAInitiativeTier.Standard, true, false, false, false, CAKnowledgeRequirement.None, false, false, 0, CADispositionAxis.Courage | CADispositionAxis.Discipline, CAAuthorityOrigin.Household | CAAuthorityOrigin.NativeDuty, "current frontier household alarm and actor-local survival", "FrontierModule", "native movement job", "frontier threat response", "one flight episode", "the resident clears the holding", "the alarm, route, or holding becomes invalid");
-
+            Add(list, "spatial.creation_authoring", "Starting-region authoring", "Writes confirmed creation state directly as simulation history.", CABehaviorDomain.DomesticAndSpatial, CABehaviorForm.DirectOrder, CAActorContext.CreationAuthor, CASettingKey.None, CAInitiativeTier.Standard, true, false, false, false, CAKnowledgeRequirement.None, false, false, 0, CADispositionAxis.None, CAAuthorityOrigin.WorldAuthoring, "creation author confirmation", "RegionalSetupModule", "authoring and materialization pipeline", "creation flow", "confirmed initial state", "the confirmed state materializes", "authoring validation blocks confirmation");
             // Presentation and diagnostics never authorize simulation.
             Add(list, "presentation.arms", "Arm rendering", "Renders arms without changing simulation state.", CABehaviorDomain.Presentation, CABehaviorForm.Presentation, Player | Npc, CASettingKey.RenderArms, CAInitiativeTier.Standard, true, false, false, false, CAKnowledgeRequirement.None, false, false, 0, CADispositionAxis.None, PlayerOrigins | NpcOrigins, "presentation setting", "ArmsModule", "rendering", "draw pass", "presentation only", "the frame is drawn", "presentation is disabled", exposeInUi: false);
             Add(list, "diagnostic.behavior_trace", "Behavior trace", "Records meaningful behavior transitions without authorizing them.", CABehaviorDomain.Diagnostics, CABehaviorForm.Diagnostic, Player | Npc | Colony | NpcInstitution, CASettingKey.TraceBehavior, CAInitiativeTier.Standard, true, false, false, false, CAKnowledgeRequirement.None, false, false, 0, CADispositionAxis.None, PlayerOrigins | NpcOrigins, "diagnostic setting", "TraceModule", "diagnostic log", "meaningful transition only", "diagnostic only", "the receipt is written", "tracing is disabled", exposeInUi: false);
@@ -689,6 +686,9 @@ namespace ColonistAwareness
         public readonly float KnowledgeUncertainty;
         public readonly string Owner;
         public readonly CAIntentOrigin SuggestedIntentOrigin;
+        public readonly bool CulturalAppraisalApplied;
+        public readonly float CulturalSupport;
+        public readonly CACulturalBehaviorResponse CulturalResponse;
 
         internal CABehaviorDecision(bool allowed, string key,
             CAInitiativeTier current, CAInitiativeTier required,
@@ -697,7 +697,8 @@ namespace ColonistAwareness
             CABehaviorBlockReason primaryBlock, string authorityBasis,
             string knowledgeBasis, int knowledgeAgeTicks,
             float knowledgeConfidence, float knowledgeUncertainty, string owner,
-            CAIntentOrigin origin)
+            CAIntentOrigin origin, bool culturalAppraisalApplied,
+            float culturalSupport, CACulturalBehaviorResponse culturalResponse)
         {
             Allowed = allowed;
             BehaviorKey = key;
@@ -718,11 +719,48 @@ namespace ColonistAwareness
             KnowledgeUncertainty = knowledgeUncertainty;
             Owner = owner;
             SuggestedIntentOrigin = origin;
+            CulturalAppraisalApplied = culturalAppraisalApplied;
+            CulturalSupport = culturalSupport;
+            CulturalResponse = culturalResponse;
         }
 
         public string PrimaryReason
         {
             get { return ReasonFor(PrimaryBlock); }
+        }
+
+        // Authorization and autonomous selection are separate. Culture never
+        // removes knowledge, authority, capability, materials, or native
+        // compatibility. It can change whether a CA-originated discretionary
+        // action is selected; direct operator intent remains authoritative.
+        public bool SelectsAction(CAAuthorityOrigin origin)
+        {
+            if (!Allowed) return false;
+            if ((origin & (CAAuthorityOrigin.OperatorDirect
+                    | CAAuthorityOrigin.OperatorRelay
+                    | CAAuthorityOrigin.SaveRestore)) != 0)
+                return true;
+            return SelectionApproved;
+        }
+
+        public bool SelectionApproved => Allowed
+            && (!CulturalAppraisalApplied
+                || CulturalResponse == CACulturalBehaviorResponse.Volunteer
+                || CulturalResponse == CACulturalBehaviorResponse.Comply);
+
+        internal CABehaviorDecision WithCulturalAppraisal(
+            CACulturalBehaviorAppraisal appraisal)
+        {
+            if (appraisal == null) return this;
+            return new CABehaviorDecision(Allowed, BehaviorKey, CurrentTier,
+                RequiredTier, FeatureEnabled, KnowledgeSatisfied,
+                AuthoritySatisfied, CapabilitySatisfied, MaterialSatisfied,
+                CurrentIntentCompatible, DirectPlayerOwnership, PrimaryBlock,
+                AuthorityBasis, KnowledgeBasis, KnowledgeAgeTicks,
+                KnowledgeConfidence, KnowledgeUncertainty, Owner,
+                SuggestedIntentOrigin, culturalAppraisalApplied: true,
+                culturalSupport: appraisal.support,
+                culturalResponse: appraisal.response);
         }
 
         internal static string ReasonFor(CABehaviorBlockReason block)
@@ -786,6 +824,17 @@ namespace ColonistAwareness
             return Evaluate(definition, context);
         }
 
+        // Required origination boundary: permission is evaluated first, then
+        // represented Culture may affect discretionary selection without
+        // changing the authorization result. Callers that may originate work,
+        // plans, direct effects, or intents consume SelectionApproved.
+        public static CABehaviorDecision EvaluateForSelection(
+            string behaviorKey, CABehaviorContext context)
+        {
+            return CABehaviorSelection.Apply(Evaluate(behaviorKey, context),
+                context);
+        }
+
         public static CABehaviorDecision Evaluate(
             CABehaviorDefinition definition, CABehaviorContext context)
         {
@@ -815,6 +864,9 @@ namespace ColonistAwareness
             CABehaviorDefinition definition, CABehaviorContext context,
             bool permitNativeExecution)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.BehaviorAuthorization))
+            {
             bool feature = CABehaviorSettings.IsEnabled(definition,
                 AwarenessMod.Settings);
             if (!definition.AuthorizesOrigination
@@ -921,12 +973,19 @@ namespace ColonistAwareness
                     CABehaviorBlockReason.CurrentIntent);
             return Decision(true, definition.Key, context,
                 definition.MinimumInitiative, true, CABehaviorBlockReason.None);
+            }
         }
 
         private static CABehaviorDecision Decision(bool allowed, string key,
             CABehaviorContext context, CAInitiativeTier required, bool feature,
             CABehaviorBlockReason block)
         {
+            Pawn pawn = context.Actor;
+            CAModuleProfiler.Observe(
+                CAModuleProfileKey.BehaviorAuthorization,
+                objectsExamined: 1,
+                candidatesAccepted: allowed ? 1 : 0,
+                workSkippedOrDeferred: allowed ? 0 : 1);
             var decision = new CABehaviorDecision(allowed, key,
                 context.Initiative,
                 required, feature, context.KnowledgeSatisfied,
@@ -936,8 +995,9 @@ namespace ColonistAwareness
                 context.KnowledgeBasis, context.KnowledgeAgeTicks,
                 context.KnowledgeConfidence, context.KnowledgeUncertainty,
                 context.Owner,
-                SuggestedOrigin(context.AuthorityOrigin));
-            Pawn pawn = context.Actor;
+                SuggestedOrigin(context.AuthorityOrigin),
+                culturalAppraisalApplied: false, culturalSupport: 0f,
+                culturalResponse: CACulturalBehaviorResponse.Comply);
             if (pawn?.Map != null)
                 CABehaviorIntentMapComponent.For(pawn.Map)?.ObserveDecision(
                     pawn, decision);
@@ -971,6 +1031,33 @@ namespace ColonistAwareness
             if ((origin & CAAuthorityOrigin.WorldAuthoring) != 0)
                 return CAIntentOrigin.WorldAuthoring;
             return CAIntentOrigin.Unknown;
+        }
+    }
+
+    // Authorization is a pure permission decision. Cultural cognition belongs
+    // to discretionary selection after permission has been established, and
+    // direct operator, relay, or restored intent never invokes it.
+    public static class CABehaviorSelection
+    {
+        public static CABehaviorDecision Apply(CABehaviorDecision decision,
+            CABehaviorContext context)
+        {
+            Pawn pawn = context.Actor;
+            if (!decision.Allowed || pawn == null
+                || (context.AuthorityOrigin
+                    & (CAAuthorityOrigin.OperatorDirect
+                        | CAAuthorityOrigin.OperatorRelay
+                        | CAAuthorityOrigin.SaveRestore)) != 0)
+                return decision;
+            CACulturalBehaviorAppraisal appraisal =
+                CACulturalCognitionWorldComponent.Current
+                    ?.AppraiseBehavior(pawn, decision.BehaviorKey, context);
+            CABehaviorDecision selected = decision.WithCulturalAppraisal(
+                appraisal);
+            if (pawn.Map != null)
+                CABehaviorIntentMapComponent.For(pawn.Map)?.ObserveDecision(
+                    pawn, selected);
+            return selected;
         }
     }
 

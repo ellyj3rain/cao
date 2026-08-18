@@ -16,7 +16,7 @@ namespace ColonistAwareness
         public int Share;
         public string IdeoligionSource;
         public string BeliefSource;
-        public bool SeparateQuarter;
+        public bool IdeoligionProtected;
     }
 
     public sealed class CACulturalWeightedBeliefCause
@@ -59,12 +59,10 @@ namespace ColonistAwareness
         public int Trade;
         public int Specialization;
         public int History;
-        public int Facilities;
+        public string SettlementPrograms;
         public int Role = -1;
         public int Scale = -1;
         public int Form = -1;
-        public int Fortification = -1;
-        public int Organization = -1;
         public bool Road;
         public bool River;
         public bool Coast;
@@ -88,71 +86,6 @@ namespace ColonistAwareness
         public string Summary;
         public string Signature;
         public IReadOnlyList<string> Facts;
-    }
-
-    public static class CACultureConsumerKernel
-    {
-        public static float SpatialPreference(float semanticLegibility,
-            float strategicTopology, int sharedPublicLife,
-            int defensiveBoundary)
-        {
-            float shared = Clamp01(sharedPublicLife / 100f);
-            float defense = Clamp01(defensiveBoundary / 100f);
-            return shared * Math.Max(0f, semanticLegibility) * 0.28f
-                + defense * Math.Max(0f, strategicTopology) * 0.18f;
-        }
-
-        public static float GatheringScore(int nearbyResidents,
-            float distanceFromSpeaker, int sharedPublicLife)
-        {
-            float shared = Clamp01(sharedPublicLife / 100f);
-            return nearbyResidents * (1f + shared * 0.8f)
-                - distanceFromSpeaker * 0.05f;
-        }
-
-        public static bool PrioritizeResearch(int researchTradition)
-        {
-            return researchTradition >= 40;
-        }
-
-        public static int PoliticalHabituationTicks(int baseTicks,
-            int sharedPublicLife)
-        {
-            float salience = Clamp01(sharedPublicLife / 100f);
-            return (int)Math.Round(baseTicks * (1f + salience * 0.5f),
-                MidpointRounding.AwayFromZero);
-        }
-
-        public static bool PreferExchangeRoad(bool agreementTargetAvailable,
-            bool existingPostAvailable, int outsiderExchange,
-            int defensiveBoundary)
-        {
-            return agreementTargetAvailable && (!existingPostAvailable
-                || outsiderExchange > defensiveBoundary);
-        }
-
-        private static float Clamp01(float value)
-        {
-            return Math.Max(0f, Math.Min(1f, value));
-        }
-    }
-
-    public sealed class CACultureLegacyMigrationInput
-    {
-        public int SchemaVersion;
-        public string PresetName;
-        public string Name;
-        public string SourceCultureDefName;
-        public bool NameAuthored;
-    }
-
-    public sealed class CACultureLegacyMigrationResult
-    {
-        public int SchemaVersion;
-        public string PresetName;
-        public string Name;
-        public string SourceCultureDefName;
-        public bool ClearLegacyPractices;
     }
 
     // A practice is recorded only when lived evidence establishes it. These
@@ -221,7 +154,7 @@ namespace ColonistAwareness
         public string Label;
         public int Share;
         public bool Inherited;
-        public bool SeparateQuarter;
+        public bool IdeoligionProtected;
     }
 
     public sealed class CACulturalTransitionState
@@ -466,7 +399,7 @@ namespace ColonistAwareness
         }
     }
 
-    // Pure B5 causal operations shared by production adapters and executable
+    // Pure causal operations shared by production adapters and executable
     // receipts. RimWorld-facing code gathers facts; this kernel changes no
     // authored, saved, or materialized state.
     public static class CACulturalExpressionCausalKernel
@@ -488,7 +421,8 @@ namespace ColonistAwareness
                 .OrderByDescending(item => item.Share)
                 .ThenBy(item => item.Identity, StringComparer.Ordinal)
                 .ToList();
-            int quartered = populations.Count(item => item.SeparateQuarter);
+            int protectedIdeoligions = populations.Count(item =>
+                item.IdeoligionProtected);
             int ideologySources = input.PopulationIdeoligionIdentities != null
                 && input.PopulationIdeoligionIdentities.Count > 0
                 ? input.PopulationIdeoligionIdentities
@@ -512,7 +446,7 @@ namespace ColonistAwareness
                 .ThenBy(item => item.Key, StringComparer.Ordinal).ToList();
             bool plural = constituents.Count > 1 || (populations.Count > 1
                 && (ideologySources > 1 || beliefSources > 1
-                    || quartered > 0));
+                    || protectedIdeoligions > 0));
             int status = Status(input.Tension, plural, input.Founding,
                 input.CultureTransitionCount, practices.Count);
 
@@ -542,7 +476,7 @@ namespace ColonistAwareness
                 "Ideoligion=" + (input.Ideoligion ?? "unrecorded"),
                 "Ideoligion commitments=" + JoinValues(
                     input.IdeoligionCommitments),
-                "political beliefs=" + AxisFingerprint(
+                "Political Order=" + AxisFingerprint(
                     input.PoliticalBeliefs),
                 "institutional practice=" + AxisFingerprint(
                     input.InstitutionalPractice),
@@ -559,9 +493,8 @@ namespace ColonistAwareness
                 "residents/land=" + input.Residents + "/" + input.Land,
                 "role/scale/form=" + input.Role + "/" + input.Scale + "/"
                     + input.Form,
-                "fortification/organization=" + input.Fortification + "/"
-                    + input.Organization,
-                "facilities=" + input.Facilities,
+                "settlement programs=" + (input.SettlementPrograms
+                    ?? "none"),
                 "provisions=" + (input.ProvisionFingerprint ?? "none"),
                 "geography=" + input.Road + "/" + input.River + "/"
                     + input.Coast,
@@ -620,7 +553,8 @@ namespace ColonistAwareness
                         ?? "Culture not recorded",
                     Share = group.Sum(item => item.Share),
                     Inherited = group.Any(item => item.Inherited),
-                    SeparateQuarter = group.Any(item => item.SeparateQuarter)
+                    IdeoligionProtected = group.Any(item =>
+                        item.IdeoligionProtected)
                 })
                 .OrderByDescending(item => item.Share)
                 .ThenBy(item => item.CultureId, StringComparer.Ordinal)
@@ -633,7 +567,8 @@ namespace ColonistAwareness
             return string.Join(",", NormalizeConstituents(values).Select(item =>
                 item.CultureId + ":" + item.Share + ":"
                     + (item.Inherited ? "inherited" : "local") + ":"
-                    + (item.SeparateQuarter ? "separate" : "shared")));
+                    + (item.IdeoligionProtected
+                        ? "Ideoligion-protected" : "unprotected")));
         }
 
         public static string PracticeFingerprint(
@@ -661,14 +596,6 @@ namespace ColonistAwareness
                     + (item.PredecessorCultureSignature ?? "unrecorded")
                     + ":" + (item.EvidenceSignature ?? "unrecorded") + ":"
                     + (item.ChangedDomains ?? "unrecorded")));
-        }
-
-        public static int ResolveFacilityMask(int generated, int exceptionMask,
-            int exceptionValues, int allowedMask)
-        {
-            int exceptions = exceptionMask & allowedMask;
-            return ((generated & allowedMask) & ~exceptions)
-                | (exceptionValues & exceptions);
         }
 
         private static int AverageKnown(params int[] values)
@@ -709,7 +636,8 @@ namespace ColonistAwareness
                 .Select(item => item.Share + "%:" + (item.Key ?? "group")
                     + ":" + (item.IdeoligionSource ?? "default") + ":"
                     + (item.BeliefSource ?? "default") + ":"
-                    + (item.SeparateQuarter ? "quarter" : "shared"))
+                    + (item.IdeoligionProtected
+                        ? "Ideoligion-protected" : "unprotected"))
                 .ToArray();
             return normalized.Length == 0 ? "none" : string.Join(",", normalized);
         }
@@ -726,73 +654,4 @@ namespace ColonistAwareness
         }
     }
 
-    public static class CACultureLegacyMigrationKernel
-    {
-        private const int CurrentSchemaVersion = 5;
-
-        private static readonly Dictionary<string, string> LegacyVisualSources =
-            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "hearth_common", "Rustican" },
-                { "Hearth commons", "Rustican" },
-                { "Hearth customs", "Rustican" },
-                { "road_exchange", "Corunan" },
-                { "Road exchange", "Corunan" },
-                { "Traveling customs", "Corunan" },
-                { "memorial_households", "Sophian" },
-                { "Memorial households", "Sophian" },
-                { "Memorial customs", "Sophian" },
-                { "festival_market", "Astropolitan" },
-                { "Festival market", "Astropolitan" },
-                { "Festival customs", "Astropolitan" }
-            };
-
-        public static CACultureLegacyMigrationResult Migrate(
-            CACultureLegacyMigrationInput input)
-        {
-            if (input == null) throw new ArgumentNullException(nameof(input));
-            string source = input.SourceCultureDefName;
-            string name = input.Name;
-            if (input.SchemaVersion < CurrentSchemaVersion
-                && !string.IsNullOrWhiteSpace(input.PresetName))
-            {
-                string visual;
-                if (string.IsNullOrWhiteSpace(source)
-                    && LegacyVisualSources.TryGetValue(input.PresetName,
-                        out visual))
-                    source = visual;
-                if (string.IsNullOrWhiteSpace(name))
-                    name = LegacyCultureName(input.PresetName);
-            }
-            if (input.SchemaVersion < CurrentSchemaVersion
-                && !input.NameAuthored
-                && !string.IsNullOrWhiteSpace(name)
-                && name.EndsWith(" customs",
-                    StringComparison.OrdinalIgnoreCase))
-                name = !string.IsNullOrWhiteSpace(source)
-                    ? source + " Culture"
-                    : LegacyCultureName(name);
-            return new CACultureLegacyMigrationResult
-            {
-                SchemaVersion = CurrentSchemaVersion,
-                PresetName = null,
-                Name = name,
-                SourceCultureDefName = source,
-                ClearLegacyPractices = true
-            };
-        }
-
-        private static string LegacyCultureName(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value)) return "Inherited Culture";
-            if (value.IndexOf("road", StringComparison.OrdinalIgnoreCase) >= 0
-                || value.IndexOf("travel", StringComparison.OrdinalIgnoreCase) >= 0)
-                return "Traveling Culture";
-            if (value.IndexOf("memorial", StringComparison.OrdinalIgnoreCase) >= 0)
-                return "Memorial Culture";
-            if (value.IndexOf("festival", StringComparison.OrdinalIgnoreCase) >= 0)
-                return "Market-town Culture";
-            return "Settled Culture";
-        }
-    }
 }

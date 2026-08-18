@@ -7,8 +7,11 @@ using Verse;
 
 namespace ColonistAwareness
 {
-    // Questions shared by political beliefs and faction structure. Each
-    // answer is keyed and independently authored or generated.
+    // Compatibility questions shared by Political Order projections and
+    // represented institutions. Each entry is
+    // one mechanism. Several mechanisms may coexist on an axis unless the
+    // axis declares a genuine absence invariant (for example no standing
+    // defense cannot coexist with a professional force).
     // Leadership, decisions, participation, dissent, ownership, economy, work,
     // support, membership, status, local order, defense, and war conduct remain
     // separate because they produce different game state.
@@ -17,7 +20,6 @@ namespace ColonistAwareness
         Unset = 0,
         Generated = 1,
         Authored = 2,
-        Preset = 3,
     }
 
     public sealed class CAAxisEntry : IExposable
@@ -49,6 +51,7 @@ namespace ColonistAwareness
         public string Key;
         public string Label;
         public string Question;
+        public string Consumers;
         public CAAxisOption[] Options;
     }
 
@@ -73,7 +76,8 @@ namespace ColonistAwareness
             new CAAxisDef
             {
                 Key = Leadership, Label = "Leadership",
-                Question = "Faction leadership.",
+                Question = "Who should lead the faction?",
+                Consumers = "Faction governance, offices, and founding suggestions.",
                 Options = new[]
                 {
                     new CAAxisOption("single", "single leader",
@@ -91,7 +95,8 @@ namespace ColonistAwareness
             new CAAxisDef
             {
                 Key = Decisions, Label = "Decisions",
-                Question = "Faction-wide decision method.",
+                Question = "How should faction-wide decisions be made?",
+                Consumers = "Faction decisions, institutional legitimacy, and political reactions.",
                 Options = new[]
                 {
                     new CAAxisOption("decree", "decree",
@@ -107,7 +112,8 @@ namespace ColonistAwareness
             new CAAxisDef
             {
                 Key = Participation, Label = "Participation",
-                Question = "Participation in faction decisions.",
+                Question = "Who should take part in faction decisions?",
+                Consumers = "Founding terms, public voice, and political conflict.",
                 Options = new[]
                 {
                     new CAAxisOption("universal", "all residents",
@@ -123,7 +129,8 @@ namespace ColonistAwareness
             new CAAxisDef
             {
                 Key = Dissent, Label = "Dissent",
-                Question = "Treatment of political dissent.",
+                Question = "How should political dissent be treated?",
+                Consumers = "Political conflict, organization membership, and social response.",
                 Options = new[]
                 {
                     new CAAxisOption("plural", "protected",
@@ -139,7 +146,8 @@ namespace ColonistAwareness
             new CAAxisDef
             {
                 Key = Ownership, Label = "Ownership",
-                Question = "Ownership of farms and workshops.",
+                Question = "Who should own farms and workshops?",
+                Consumers = "Founding supplies, property acts, and economic organization.",
                 Options = new[]
                 {
                     new CAAxisOption("private", "private owners",
@@ -149,15 +157,14 @@ namespace ColonistAwareness
                     new CAAxisOption("common", "shared ownership",
                         "productive property is held in common"),
                     new CAAxisOption("state", "faction ownership",
-                        "the faction owns farms and workshops"),
-                    new CAAxisOption("mixed", "mixed ownership",
-                        "private, cooperative, and shared ownership coexist")
+                        "the faction owns farms and workshops")
                 }
             },
             new CAAxisDef
             {
                 Key = Economy, Label = "Economy",
-                Question = "Distribution of goods and work.",
+                Question = "How should goods and work be distributed?",
+                Consumers = "Trade, distribution, settlement economies, and organizations.",
                 Options = new[]
                 {
                     new CAAxisOption("market", "trade",
@@ -165,15 +172,14 @@ namespace ColonistAwareness
                     new CAAxisOption("planned", "planned distribution",
                         "leaders allocate goods and work"),
                     new CAAxisOption("communal", "shared stores",
-                        "goods are pooled and shared"),
-                    new CAAxisOption("mixed", "mixed economy",
-                        "trade, planning, and shared stores coexist")
+                        "goods are pooled and shared")
                 }
             },
             new CAAxisDef
             {
                 Key = Work, Label = "Work",
-                Question = "Assignment of work.",
+                Question = "How should work be assigned?",
+                Consumers = "Founding work rules, work assignment, and compelled-work reactions.",
                 Options = new[]
                 {
                     new CAAxisOption("contract", "hired work",
@@ -189,7 +195,8 @@ namespace ColonistAwareness
             new CAAxisDef
             {
                 Key = Support, Label = "Support",
-                Question = "Food, shelter, and care during hardship.",
+                Question = "Who should provide food, shelter, and care during hardship?",
+                Consumers = "Emergency support, provisions, and shared-provision reactions.",
                 Options = new[]
                 {
                     new CAAxisOption("private", "self-provided",
@@ -199,15 +206,14 @@ namespace ColonistAwareness
                     new CAAxisOption("communal", "shared stores",
                         "common stores supply basic needs"),
                     new CAAxisOption("charitable", "charity",
-                        "religious and voluntary groups provide support"),
-                    new CAAxisOption("mixed", "mixed support",
-                        "several systems operate together")
+                        "religious and voluntary groups provide support")
                 }
             },
             new CAAxisDef
             {
                 Key = Membership, Label = "Membership",
-                Question = "Requirements for faction membership.",
+                Question = "Who should be allowed to join the faction?",
+                Consumers = "Faction membership, population affiliation, and organizations.",
                 Options = new[]
                 {
                     new CAAxisOption("open", "open",
@@ -223,7 +229,8 @@ namespace ColonistAwareness
             new CAAxisDef
             {
                 Key = Status, Label = "Status",
-                Question = "Source of social rank.",
+                Question = "What should determine social rank?",
+                Consumers = "Offices, succession, rank, and social influence.",
                 Options = new[]
                 {
                     new CAAxisOption("equal", "broadly equal",
@@ -239,7 +246,8 @@ namespace ColonistAwareness
             new CAAxisDef
             {
                 Key = LocalOrder, Label = "Local order",
-                Question = "Enforcement inside settlements.",
+                Question = "Who should enforce order inside settlements?",
+                Consumers = "Settlement guards, enforcement acts, and local institutions.",
                 Options = new[]
                 {
                     new CAAxisOption("none", "no standing watch",
@@ -255,7 +263,8 @@ namespace ColonistAwareness
             new CAAxisDef
             {
                 Key = Defense, Label = "Defense",
-                Question = "Faction defense.",
+                Question = "Who should defend the faction?",
+                Consumers = "Defense organizations, military service, and settlement defense.",
                 Options = new[]
                 {
                     new CAAxisOption("none", "no standing defense",
@@ -273,7 +282,8 @@ namespace ColonistAwareness
             new CAAxisDef
             {
                 Key = WarConduct, Label = "Treatment in war",
-                Question = "Treatment of defeated enemies and noncombatants.",
+                Question = "How should defeated enemies and noncombatants be treated?",
+                Consumers = "Combat conduct, surrender and quarter, and conflict legitimacy.",
                 Options = new[]
                 {
                     new CAAxisOption("quarter", "surrender accepted",
@@ -295,61 +305,113 @@ namespace ColonistAwareness
 
         // ---- keyed state access ----------------------------------------
 
-        internal static CAAxisEntry EntryOf(List<CAAxisEntry> axes,
+        internal static List<CAAxisEntry> EntriesOf(List<CAAxisEntry> axes,
             string axisKey)
         {
-            if (axes == null) return null;
-            for (int i = 0; i < axes.Count; i++)
-                if (axes[i] != null && axes[i].axisKey == axisKey)
-                    return axes[i];
-            return null;
+            return (axes ?? new List<CAAxisEntry>())
+                .Where(entry => entry != null && entry.axisKey == axisKey
+                    && entry.source != (byte)CAAxisSource.Unset
+                    && !entry.optionKey.NullOrEmpty())
+                .GroupBy(entry => entry.optionKey, StringComparer.Ordinal)
+                .Select(group => group.OrderByDescending(entry =>
+                    entry.source).First()).ToList();
         }
 
         internal static CAAxisSource StateOf(List<CAAxisEntry> axes,
             string axisKey)
         {
-            CAAxisEntry entry = EntryOf(axes, axisKey);
-            return entry == null ? CAAxisSource.Unset
-                : (CAAxisSource)entry.source;
+            List<CAAxisEntry> entries = EntriesOf(axes, axisKey);
+            if (entries.Count == 0) return CAAxisSource.Unset;
+            return entries.Any(entry => entry.source
+                    == (byte)CAAxisSource.Authored)
+                ? CAAxisSource.Authored : CAAxisSource.Generated;
         }
 
-        internal static string KeyOf(List<CAAxisEntry> axes,
+        internal static IReadOnlyList<string> KeysOf(List<CAAxisEntry> axes,
             string axisKey)
         {
-            CAAxisEntry entry = EntryOf(axes, axisKey);
-            return entry == null
-                || entry.source == (byte)CAAxisSource.Unset
-                ? null : entry.optionKey;
-        }
-
-        internal static CAAxisOption OptionOf(List<CAAxisEntry> axes,
-            string axisKey)
-        {
-            string key = KeyOf(axes, axisKey);
-            if (key == null) return null;
             CAAxisDef def = AxisDef(axisKey);
-            return def?.Options.FirstOrDefault(o => o.Key == key);
+            var keys = new HashSet<string>(EntriesOf(axes, axisKey)
+                .Select(entry => entry.optionKey), StringComparer.Ordinal);
+            return def == null ? keys.OrderBy(value => value,
+                    StringComparer.Ordinal).ToList()
+                : def.Options.Where(option => keys.Contains(option.Key))
+                    .Select(option => option.Key).ToList();
+        }
+
+        internal static IReadOnlyList<CAAxisOption> OptionsOf(
+            List<CAAxisEntry> axes, string axisKey)
+        {
+            CAAxisDef def = AxisDef(axisKey);
+            if (def == null) return new List<CAAxisOption>();
+            var keys = new HashSet<string>(KeysOf(axes, axisKey),
+                StringComparer.Ordinal);
+            return def.Options.Where(option => keys.Contains(option.Key))
+                .ToList();
+        }
+
+        internal static bool HasOption(List<CAAxisEntry> axes,
+            string axisKey, string optionKey)
+        {
+            return EntriesOf(axes, axisKey).Any(entry =>
+                entry.optionKey == optionKey);
         }
 
         internal static void Set(List<CAAxisEntry> axes, string axisKey,
             string optionKey, CAAxisSource source)
         {
-            CAAxisEntry entry = EntryOf(axes, axisKey);
-            if (entry == null)
-            {
-                entry = new CAAxisEntry { axisKey = axisKey };
-                axes.Add(entry);
-            }
-            entry.optionKey = optionKey;
-            entry.source = (byte)source;
+            if (axes == null) return;
+            axes.RemoveAll(entry => entry != null
+                && entry.axisKey == axisKey);
+            Add(axes, axisKey, optionKey, source);
+        }
+
+        internal static void Add(List<CAAxisEntry> axes, string axisKey,
+            string optionKey, CAAxisSource source)
+        {
+            if (axes == null || AxisDef(axisKey)?.Options.All(option =>
+                    option.Key != optionKey) != false) return;
+            if (IsAbsenceOption(axisKey, optionKey))
+                axes.RemoveAll(entry => entry != null
+                    && entry.axisKey == axisKey);
+            else
+                axes.RemoveAll(entry => entry != null
+                    && entry.axisKey == axisKey
+                    && IsAbsenceOption(axisKey, entry.optionKey));
+            CAAxisEntry existing = axes.FirstOrDefault(entry => entry != null
+                && entry.axisKey == axisKey
+                && entry.optionKey == optionKey);
+            if (existing == null)
+                axes.Add(new CAAxisEntry
+                {
+                    axisKey = axisKey,
+                    optionKey = optionKey,
+                    source = (byte)source
+                });
+            else if (source == CAAxisSource.Authored)
+                existing.source = (byte)source;
+        }
+
+        internal static void Remove(List<CAAxisEntry> axes, string axisKey,
+            string optionKey)
+        {
+            axes?.RemoveAll(entry => entry != null
+                && entry.axisKey == axisKey
+                && entry.optionKey == optionKey);
+        }
+
+        private static bool IsAbsenceOption(string axisKey,
+            string optionKey)
+        {
+            return optionKey == "none" && (axisKey == Leadership
+                || axisKey == LocalOrder || axisKey == Defense);
         }
 
         internal static void Release(List<CAAxisEntry> axes,
             string axisKey)
         {
-            CAAxisEntry entry = EntryOf(axes, axisKey);
-            if (entry != null)
-                entry.source = (byte)CAAxisSource.Unset;
+            axes?.RemoveAll(entry => entry != null
+                && entry.axisKey == axisKey);
         }
 
         internal static int CountByState(List<CAAxisEntry> axes,
@@ -363,103 +425,22 @@ namespace ColonistAwareness
 
         // ---- generation ------------------------------------------------
         //
-        // Each generated field uses only related facts. Status does not decide
-        // dissent or membership; each field rolls independently.
+        // Current structure has one generator. This entry point establishes
+        // Culture and Political Order first, then delegates every unset
+        // structure field to that generator. It never bypasses an explicitly
+        // incomplete institutional state.
         internal static int Derive(CARegionalPlan plan,
             CARegionalFactionPlan group)
         {
-            group?.EnsureCultureAndPolitics(plan);
-            int tier = TechTier(group);
-            bool conflict = plan?.relations != null
-                && plan.relations.Any(relation => relation != null
-                    && relation.relation == FactionRelationKind.Hostile
-                    && (relation.leftFactionKey == group.key
-                        || relation.rightFactionKey == group.key));
-            int filled = 0;
-            Rand.PushState(Gen.HashCombineInt(GenText.StableStringHash(
-                (plan?.candidateId ?? "ca") + ":faction-structure"),
-                group.key * 397));
-            try
-            {
-                string Lean(string axisKey, string generated)
-                {
-                    string ideal = KeyOf(group?.politicalBeliefs?.positions,
-                        axisKey);
-                    // Political beliefs influence generated faction structure
-                    // without forcing it to match.
-                    return ideal != null && Rand.Chance(0.76f)
-                        ? ideal : generated;
-                }
-
-                filled += Fill(group, Leadership, Lean(Leadership,
-                    Pick("council", "whole", 0.5f)));
-                filled += Fill(group, Decisions, Lean(Decisions,
-                    KeyOf(group.factionStructure, Leadership) == "single"
-                        ? Pick("decree", "majority", 0.7f)
-                        : KeyOf(group.factionStructure, Leadership) == "whole"
-                            ? Pick("consensus", "majority", 0.6f)
-                            : Pick("majority", "custom", 0.6f)));
-                filled += Fill(group, Participation, Lean(Participation,
-                    Pick("universal", "members", 0.55f)));
-                filled += Fill(group, Dissent, Lean(Dissent,
-                    KeyOf(group.factionStructure, Participation) == "universal"
-                        ? Pick("plural", "majoritarian", 0.55f)
-                        : Pick("customary", "majoritarian", 0.55f)));
-                filled += Fill(group, Ownership, Lean(Ownership,
-                    Pick("mixed", "private", 0.5f)));
-                filled += Fill(group, Economy, Lean(Economy,
-                    Pick("market", "mixed", 0.7f)));
-                filled += Fill(group, Work, Lean(Work,
-                    Pick("contract", "household", 0.7f)));
-                filled += Fill(group, Support, Lean(Support,
-                    Pick("mixed", "private", 0.55f)));
-                filled += Fill(group, Membership,
-                    Lean(Membership, Pick("open", "vetted",
-                        tier == 0 ? 0.5f : 0.65f)));
-                filled += Fill(group, Status,
-                    Lean(Status, tier == 0
-                        ? Pick("earned", "equal", 0.55f)
-                        : Pick("earned", "hereditary", 0.6f)));
-                filled += Fill(group, LocalOrder, Lean(LocalOrder,
-                    tier >= 1
-                        ? Pick("constabulary", "watch", 0.55f)
-                        : Pick("watch", "rulers", 0.7f)));
-                filled += Fill(group, Defense, Lean(Defense,
-                    conflict
-                        ? Pick("militia", "professional",
-                            tier >= 1 ? 0.5f : 0.8f)
-                        : Pick("levy", "militia", 0.6f)));
-                filled += Fill(group, WarConduct, Lean(WarConduct,
-                    Pick("quarter", "strength", 0.6f)));
-            }
-            finally { Rand.PopState(); }
-            return filled;
-        }
-
-        private static int TechTier(CARegionalFactionPlan group)
-        {
-            TechLevel tech = group.ResolvedFactionDef?.techLevel
-                ?? TechLevel.Neolithic;
-            return (int)tech >= (int)TechLevel.Industrial ? 2
-                : (int)tech == (int)TechLevel.Medieval ? 1 : 0;
-        }
-
-        private static string Pick(string a, string b, float chanceA)
-        {
-            return Rand.Chance(chanceA) ? a : b;
-        }
-
-        private static int Fill(CARegionalFactionPlan group,
-            string axisKey, string optionKey)
-        {
-            if (StateOf(group.factionStructure, axisKey)
-                != CAAxisSource.Unset) return 0;
-            CAAxisDef def = AxisDef(axisKey);
-            if (def == null
-                || !def.Options.Any(o => o.Key == optionKey)) return 0;
-            Set(group.factionStructure, axisKey, optionKey,
-                CAAxisSource.Generated);
-            return 1;
+            if (group == null) return 0;
+            group.EnsureCultureAndPolitics(plan);
+            if (group.institutionalStateIncomplete) return 0;
+            int generated = CAFactionStructureModel.PreserveEstablishedUnset(
+                group.factionStructure);
+            if (Axes.Any(axis => StateOf(group.factionStructure, axis.Key)
+                    == CAAxisSource.Unset))
+                group.institutionalStateIncomplete = true;
+            return generated;
         }
 
         internal static void Author(CARegionalFactionPlan group,
@@ -474,14 +455,16 @@ namespace ColonistAwareness
         {
             int specified = Axes.Length
                 - CountByState(group.factionStructure, CAAxisSource.Unset);
-            if (specified == 0) return "Faction structure not set";
+            if (specified == 0) return "No established institutions represented";
             var parts = new List<string>();
-            CAAxisOption leadership = OptionOf(group.factionStructure, Leadership);
-            CAAxisOption ownership = OptionOf(group.factionStructure, Ownership);
-            CAAxisOption defense = OptionOf(group.factionStructure, Defense);
-            if (leadership != null) parts.Add(leadership.Label);
-            if (ownership != null) parts.Add(ownership.Label);
-            if (defense != null) parts.Add(defense.Label);
+            foreach (string axisKey in new[] { Leadership, Ownership, Defense })
+            {
+                IReadOnlyList<CAAxisOption> mechanisms = OptionsOf(
+                    group.factionStructure, axisKey);
+                if (mechanisms.Count > 0)
+                    parts.Add(string.Join(" + ", mechanisms.Select(option =>
+                        option.Label)));
+            }
 
             CASettlementAuthority authority =
                 CARegionalSettlements.SettlementAuthorityOf(plan, group);
@@ -494,233 +477,12 @@ namespace ColonistAwareness
                 parts.Add((Axes.Length - specified) + " fields unset");
 
             string joined = string.Join(", ", parts.ToArray());
-            return joined.NullOrEmpty() ? "Faction structure not set"
+            return joined.NullOrEmpty() ? "No established institutions represented"
                 : joined.CapitalizeFirst();
         }
 
-        // Presets fill only the fields they define. Variants inherit a base
-        // preset and replace individual answers. Explicit answers survive.
-        internal sealed class PoliticalPreset
-        {
-            internal string Key;
-            internal string Name;
-            internal string[] Aliases = new string[0];
-            internal string Description;
-            internal string Parent;
-            internal Dictionary<string, string> Positions =
-                new Dictionary<string, string>();
-        }
-
-        internal static readonly PoliticalPreset[] Presets =
-        {
-            new PoliticalPreset
-            {
-                Key = "civic_council",
-                Name = "Elected council and public support",
-                Description = "Open civic government with elected leadership, "
-                    + "public support, mixed property, and protected dissent.",
-                Positions = new Dictionary<string, string>
-                {
-                    { Leadership, "council" }, { Decisions, "majority" },
-                    { Participation, "universal" }, { Dissent, "plural" },
-                    { Ownership, "mixed" }, { Economy, "market" },
-                    { Work, "organized" }, { Support, "public" },
-                    { Membership, "open" }
-                },
-            },
-            new PoliticalPreset
-            {
-                Key = "cooperative_council",
-                Name = "Elected council and worker ownership",
-                Description = "Elected civic government joined to cooperative "
-                    + "ownership and organized work.",
-                Parent = "civic_council",
-                Positions = new Dictionary<string, string>
-                {
-                    { Ownership, "cooperative" },
-                    { Economy, "mixed" }
-                },
-            },
-            new PoliticalPreset
-            {
-                Key = "worker_federation",
-                Name = "Worker councils",
-                Description = "Delegated worker councils coordinate cooperative "
-                    + "production, shared support, and protected dissent.",
-                Positions = new Dictionary<string, string>
-                {
-                    { Leadership, "federated" }, { Decisions, "majority" },
-                    { Participation, "members" }, { Dissent, "plural" },
-                    { Ownership, "cooperative" },
-                    { Economy, "mixed" }, { Work, "organized" },
-                    { Support, "communal" }
-                }
-            },
-            new PoliticalPreset
-            {
-                Key = "common_ownership",
-                Name = "Common ownership",
-                Description = "Productive property, distribution, work, and "
-                    + "support are held as common obligations.",
-                Positions = new Dictionary<string, string>
-                {
-                    { Ownership, "common" }, { Economy, "planned" },
-                    { Work, "duty" }, { Support, "communal" }
-                },
-            },
-            new PoliticalPreset
-            {
-                Key = "independent_communes",
-                Name = "Independent communes",
-                Description = "Self-governing communes delegate limited authority "
-                    + "while retaining shared stores and common ownership.",
-                Parent = "common_ownership",
-                Positions = new Dictionary<string, string>
-                {
-                    { Leadership, "federated" }, { Decisions, "majority" },
-                    { Participation, "members" }, { Economy, "communal" }
-                },
-            },
-            new PoliticalPreset
-            {
-                Key = "central_party",
-                Name = "Central party rule",
-                Description = "A single party directs common property, work, "
-                    + "distribution, doctrine, and internal order.",
-                Parent = "common_ownership",
-                Positions = new Dictionary<string, string>
-                {
-                    { Leadership, "single" }, { Decisions, "decree" },
-                    { Participation, "members" }, { Dissent, "orthodoxy" },
-                    { LocalOrder, "constabulary" }
-                }
-            },
-            new PoliticalPreset
-            {
-                Key = "market_council",
-                Name = "Elected council and private trade",
-                Description = "Open elected government protects dissent while "
-                    + "private ownership and market trade organize work.",
-                Positions = new Dictionary<string, string>
-                {
-                    { Leadership, "council" }, { Decisions, "majority" },
-                    { Participation, "universal" }, { Dissent, "plural" },
-                    { Ownership, "private" }, { Economy, "market" },
-                    { Work, "contract" }, { Membership, "open" }
-                },
-            },
-            new PoliticalPreset
-            {
-                Key = "command_state",
-                Name = "Dictatorial state",
-                Description = "Central command directs political life, planned "
-                    + "work, internal order, and professional defense.",
-                Positions = new Dictionary<string, string>
-                {
-                    { Leadership, "single" }, { Decisions, "decree" },
-                    { Participation, "members" }, { Dissent, "orthodoxy" },
-                    { Ownership, "mixed" }, { Economy, "planned" },
-                    { Work, "duty" }, { Membership, "closed" },
-                    { Status, "earned" },
-                    { LocalOrder, "rulers" }, { Defense, "professional" }
-                }
-            },
-            new PoliticalPreset
-            {
-                Key = "stateless_pluralism",
-                Name = "No central rule",
-                Description = "No permanent central ruler; membership is open, "
-                    + "rank is limited, and local order is voluntary.",
-                Positions = new Dictionary<string, string>
-                {
-                    { Leadership, "none" }, { Dissent, "plural" },
-                    { Membership, "open" },
-                    { Status, "equal" }, { LocalOrder, "none" }
-                }
-            },
-            new PoliticalPreset
-            {
-                Key = "free_commons",
-                Name = "Common stores, no rulers",
-                Description = "Consensus, common stores, shared ownership, and "
-                    + "general defense operate without permanent rulers.",
-                Parent = "stateless_pluralism",
-                Positions = new Dictionary<string, string>
-                {
-                    { Decisions, "consensus" }, { Participation, "universal" },
-                    { Ownership, "common" }, { Economy, "communal" },
-                    { Support, "communal" }, { Defense, "levy" }
-                },
-            },
-            new PoliticalPreset
-            {
-                Key = "free_trade_custom",
-                Name = "Private trade, no rulers",
-                Description = "Private exchange and household custom organize an "
-                    + "open society without central rule.",
-                Parent = "stateless_pluralism",
-                Positions = new Dictionary<string, string>
-                {
-                    { Decisions, "custom" }, { Participation, "heads" },
-                    { Dissent, "customary" }, { Ownership, "private" },
-                    { Economy, "market" }, { Work, "contract" },
-                    { Support, "private" }, { LocalOrder, "watch" }
-                }
-            },
-            new PoliticalPreset
-            {
-                Key = "hereditary_rule",
-                Name = "Hereditary ruler",
-                Description = "Inherited rank supports a single ruler and a "
-                    + "household-based social order.",
-                Positions = new Dictionary<string, string>
-                {
-                    { Leadership, "single" }, { Participation, "standing" },
-                    { Dissent, "customary" },
-                    { Status, "hereditary" },
-                    { LocalOrder, "rulers" }
-                },
-            },
-            new PoliticalPreset
-            {
-                Key = "landed_houses",
-                Name = "Landed houses",
-                Description = "Hereditary houses govern through custom, service, "
-                    + "levies, and inherited membership.",
-                Parent = "hereditary_rule",
-                Positions = new Dictionary<string, string>
-                {
-                    { Decisions, "custom" },
-                    { Membership, "hereditary" },
-                    { Work, "duty" }, { Defense, "levy" },
-                    { Support, "charitable" }
-                }
-            },
-            new PoliticalPreset
-            {
-                Key = "absolute_rule",
-                Name = "Absolute ruler",
-                Description = "A hereditary ruler governs by decree with planned "
-                    + "distribution and professional force.",
-                Parent = "hereditary_rule",
-                Positions = new Dictionary<string, string>
-                {
-                    { Decisions, "decree" },
-                    { Economy, "planned" },
-                    { Defense, "professional" }
-                }
-            }
-        };
-
-        internal static PoliticalPreset Preset(string keyOrAlias)
-        {
-            if (keyOrAlias.NullOrEmpty()) return null;
-            return Presets.FirstOrDefault(item => item.Key == keyOrAlias
-                || item.Name == keyOrAlias
-                || (item.Aliases?.Contains(keyOrAlias) ?? false));
-        }
-
-        // Political-belief and current-structure differences are preserved.
+        // Political commitments and represented-institution differences are
+        // preserved.
         internal static List<string> Conflicts(
             CARegionalFactionPlan group)
         {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using RimWorld.Planet;
 using Verse;
 
@@ -10,6 +11,10 @@ namespace ColonistAwareness
     // replace only records it owns.
     public sealed class CAOrganizationRelationsWorldComponent : WorldComponent
     {
+        private int campaignSchemaVersion =
+            CACampaignCompatibilityKernel.CurrentBoundaryVersion;
+        private int legacyAuthoringDataEpoch =
+            CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private List<CARelation> relations = new List<CARelation>();
         private List<CAFacilityHolding> holdings =
             new List<CAFacilityHolding>();
@@ -29,22 +34,84 @@ namespace ColonistAwareness
         public override void ExposeData()
         {
             base.ExposeData();
-            Scribe_Collections.Look(ref relations, "CA_relations",
-                LookMode.Deep);
-            Scribe_Collections.Look(ref holdings, "CA_holdings",
-                LookMode.Deep);
-            Scribe_Collections.Look(ref removedRecords, "CA_removedRecords",
-                LookMode.Deep);
-            Scribe_Values.Look(ref nextId, "CA_nextRelationId", 1);
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            Scribe_Values.Look(ref campaignSchemaVersion,
+                "CA_organizationRelationsSchemaVersion", 0);
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+                Scribe_Values.Look(ref legacyAuthoringDataEpoch,
+                    "CA_authoringDataEpoch", 0);
+            bool readable = CACampaignCompatibility.ShouldReadLiveState(
+                "world.organization-relations", campaignSchemaVersion,
+                legacyAuthoringDataEpoch);
+            if (readable)
             {
-                if (relations == null)
-                    relations = new List<CARelation>();
-                if (holdings == null)
-                    holdings = new List<CAFacilityHolding>();
-                if (removedRecords == null)
-                    removedRecords = new List<CARemovedRecord>();
+                Scribe_Collections.Look(ref relations, "CA_relations",
+                    LookMode.Deep);
+                Scribe_Collections.Look(ref holdings, "CA_holdings",
+                    LookMode.Deep);
+                Scribe_Collections.Look(ref removedRecords,
+                    "CA_removedRecords", LookMode.Deep);
+                Scribe_Values.Look(ref nextId, "CA_nextRelationId", 1);
             }
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && readable)
+            {
+                CACampaignCompatibility.CompleteOwnerLoad(
+                    "world.organization-relations",
+                    ref campaignSchemaVersion,
+                    legacyAuthoringDataEpoch, ValidateCampaignState);
+            }
+        }
+
+        private string ValidateCampaignState()
+        {
+            if (relations == null || holdings == null
+                || removedRecords == null)
+                return "organization-relation owner collections are missing";
+            var ids = new HashSet<int>();
+            var signatures = new HashSet<string>(StringComparer.Ordinal);
+            int maxId = 0;
+            for (int i = 0; i < relations.Count; i++)
+            {
+                CARelation relation = relations[i];
+                if (relation == null) return "relation " + i + " is null";
+                if (relation.id <= 0 || !ids.Add(relation.id))
+                    return "relation id " + relation.id + " is invalid or duplicate";
+                if (relation.orgKey.NullOrEmpty() || !relation.PartyConsistent)
+                    return "relation " + relation.id + " has an invalid party";
+                if (relation.delegatedResponsibilities == null
+                    || relation.retainedResponsibilities == null)
+                    return "relation " + relation.id
+                        + " has missing responsibility collections";
+                if (!signatures.Add(Signature(relation)))
+                    return "relation " + relation.id + " duplicates a stable identity";
+                maxId = Math.Max(maxId, relation.id);
+            }
+            for (int i = 0; i < holdings.Count; i++)
+            {
+                CAFacilityHolding holding = holdings[i];
+                if (holding == null) return "holding " + i + " is null";
+                if (holding.id <= 0 || !ids.Add(holding.id))
+                    return "holding id " + holding.id + " is invalid or duplicate";
+                if (!signatures.Add(Signature(holding)))
+                    return "holding " + holding.id + " duplicates a stable identity";
+                if (holding.beneficiaries == null)
+                    return "holding " + holding.id
+                        + " has a missing beneficiary collection";
+                maxId = Math.Max(maxId, holding.id);
+            }
+            if (nextId <= maxId)
+                return "next relation id " + nextId
+                    + " does not follow persisted id " + maxId;
+            var removed = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < removedRecords.Count; i++)
+            {
+                CARemovedRecord record = removedRecords[i];
+                if (record == null || record.recordKey.NullOrEmpty())
+                    return "removed relation record " + i + " is incomplete";
+                if (!removed.Add(record.recordKey))
+                    return "removed relation identity " + record.recordKey
+                        + " is duplicated";
+            }
+            return null;
         }
 
         public int TakeId() { return nextId++; }
@@ -199,7 +266,8 @@ namespace ColonistAwareness
         internal static string Signature(CAFacilityHolding h)
         {
             return "hold|" + h.facilityKind + "|" + h.mapId + "|"
-                + h.cell;
+                + h.cell + "|" + (h.programSignature ?? "") + "|"
+                + (h.assetRole ?? "");
         }
 
         private bool WasRemoved(string signature)
@@ -261,6 +329,49 @@ namespace ColonistAwareness
         internal void RemoveDerivedRelation(CARelation r)
         {
             relations.Remove(r);
+        }
+
+        internal void RemoveDerivedHolding(CAFacilityHolding holding)
+        {
+            holdings.Remove(holding);
+        }
+
+        // The relations owner alone mutates holding identity. Program-asset
+        // rebuilding asks for one validated atomic rebind rather than editing
+        // the exposed read-only collection.
+        internal bool TryRebindProgramAsset(string programSignature,
+            string assetRole, Thing rebuilt, out string failure)
+        {
+            failure = null;
+            if (programSignature.NullOrEmpty() || assetRole.NullOrEmpty()
+                || rebuilt == null || !rebuilt.Spawned)
+            {
+                failure = "holding rebind lacks an exact live program asset";
+                return false;
+            }
+            List<CAFacilityHolding> matches = holdings.Where(item =>
+                item != null && item.programSignature == programSignature
+                && item.assetRole == assetRole).ToList();
+            if (matches.Count > 1)
+            {
+                failure = "several holdings claim one program asset role";
+                return false;
+            }
+            if (matches.Count == 0) return true;
+            CAFacilityHolding holding = matches[0];
+            string targetSignature = "hold|" + holding.facilityKind + "|"
+                + rebuilt.Map.uniqueID + "|" + rebuilt.Position + "|"
+                + programSignature + "|" + assetRole;
+            if (holdings.Any(item => item != null && item != holding
+                    && Signature(item) == targetSignature))
+            {
+                failure = "the rebuilt holding identity already exists";
+                return false;
+            }
+            holding.thingId = rebuilt.thingIDNumber;
+            holding.mapId = rebuilt.Map.uniqueID;
+            holding.cell = rebuilt.Position;
+            return true;
         }
 
         private void RecordRemoval(string signature, string originKey)

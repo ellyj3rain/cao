@@ -1,0 +1,3971 @@
+{
+  "schema": 2,
+  "source": {
+    "kind": "rimworld-save",
+    "fileName": "The Sixth-Seventh Reich 2.rws",
+    "byteLength": 18547836,
+    "sha256": "FB79390F8FA949253B95F941AB2A1A1A67DFD6108589DB78042CF9D2B5146390",
+    "complete": true,
+    "recoveredTruncation": false
+  },
+  "game": {
+    "version": "1.6.4871 rev591",
+    "ticksGame": 5260947,
+    "scenario": "The Sanguophage",
+    "modIds": [
+      "brrainz.harmony",
+      "ludeon.rimworld",
+      "ludeon.rimworld.royalty",
+      "ludeon.rimworld.ideology",
+      "ludeon.rimworld.biotech",
+      "xmb.ancienturbanruins.mo",
+      "ih.clean.textures.background",
+      "oskarpotocki.vanillafactionsexpanded.core",
+      "vanillaexpanded.vcef",
+      "regrowth.botr.core",
+      "ih.clean.textures",
+      "redmattis.bettergeneinheritance",
+      "adamas.hospital",
+      "costel.layeredapparel",
+      "m00nl1ght.mappreview",
+      "regrowth.botr.aspenforest",
+      "petetimessix.simplesidearms",
+      "weilbyte.snapout",
+      "arylice.rimworld.automaticstumpchopping",
+      "nals.facialanimation",
+      "edb.preparecarefully",
+      "ferny.progressioneducation",
+      "ferny.progressiontherapy",
+      "ferny.traumaandintegrity"
+    ],
+    "modNames": [
+      "Harmony",
+      "Core",
+      "Royalty",
+      "Ideology",
+      "Biotech",
+      "Ancient urban ruins",
+      "Clean Textures Background",
+      "Vanilla Expanded Framework",
+      "Vanilla Fishing Expanded",
+      "ReGrowth 2",
+      "Clean Textures",
+      "Better Gene Inheritance",
+      "Hospital",
+      "Layered Apparel",
+      "Map Preview",
+      "ReGrowth 2: Aspen",
+      "Simple sidearms",
+      "Snap Out!",
+      "[ARY] Automatic Stump Chopping [1.5 - 1.6]",
+      "[NL] Facial Animation - WIP",
+      "EdB Prepare Carefully",
+      "Progression: Education",
+      "Progression: Therapy",
+      "Trauma and Integrity"
+    ]
+  },
+  "playerFactionReferences": [
+    "Faction_27"
+  ],
+  "maps": [
+    {
+      "mapId": "0",
+      "generator": "Base_Player",
+      "size": {
+        "x": 250,
+        "z": 250
+      },
+      "parentReference": "WorldObject_1424",
+      "settlementName": "New Berlin",
+      "tileId": "403306",
+      "inferredBiome": "TropicalRainforest",
+      "population": {
+        "playerPawnThings": 11,
+        "ideologyBearingPlayerPawns": 9,
+        "snapshotPawnCount": 0,
+        "snapshotCorpseCount": 0,
+        "playerPawnDefs": {
+          "Mech_Constructoid": 1,
+          "Human": 9,
+          "Mech_Lifter": 1
+        },
+        "ideologyCounts": {
+          "Ideo_19": 4,
+          "Ideo_17": 1,
+          "Ideo_16": 4
+        }
+      },
+      "builtEntities": [
+        {
+          "def": "Column",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 171,
+            "z": 114
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 93,
+            "z": 207
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 97,
+            "z": 207
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 94,
+            "z": 207
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 92,
+            "z": 207
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Door",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 96,
+            "z": 207
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Door",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 95,
+            "z": 207
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 99,
+            "z": 207
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 98,
+            "z": 207
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 99,
+            "z": 208
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 102,
+            "z": 205
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 103,
+            "z": 205
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 101,
+            "z": 205
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 99,
+            "z": 205
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 99,
+            "z": 206
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 96,
+            "z": 211
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 100,
+            "z": 205
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 104,
+            "z": 205
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 98,
+            "z": 206
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 97,
+            "z": 206
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 105,
+            "z": 205
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 96,
+            "z": 210
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 96,
+            "z": 207
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 106,
+            "z": 205
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 96,
+            "z": 212
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 108,
+            "z": 205
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 108,
+            "z": 206
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 96,
+            "z": 209
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 108,
+            "z": 207
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 96,
+            "z": 208
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 107,
+            "z": 205
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 96,
+            "z": 206
+          },
+          "rotation": ""
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 100,
+            "z": 208
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Door",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 101,
+            "z": 211
+          },
+          "rotation": "1",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Door",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 101,
+            "z": 210
+          },
+          "rotation": "1",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Cooler",
+          "class": "Building_Cooler",
+          "state": "completed",
+          "position": {
+            "x": 106,
+            "z": 210
+          },
+          "rotation": "1"
+        },
+        {
+          "def": "AM_DiningChair",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 90,
+            "z": 209
+          },
+          "rotation": ""
+        },
+        {
+          "def": "AM_DiningChair",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 105,
+            "z": 216
+          },
+          "rotation": "3"
+        },
+        {
+          "def": "AM_DiningChair",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 103,
+            "z": 216
+          },
+          "rotation": "1"
+        },
+        {
+          "def": "AM_DiningChair",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 102,
+            "z": 216
+          },
+          "rotation": "3"
+        },
+        {
+          "def": "AM_DiningChair",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 102,
+            "z": 217
+          },
+          "rotation": "3"
+        },
+        {
+          "def": "AM_DiningChair",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 103,
+            "z": 217
+          },
+          "rotation": "1"
+        },
+        {
+          "def": "AM_DiningChair",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 100,
+            "z": 217
+          },
+          "rotation": "1"
+        },
+        {
+          "def": "AM_DiningChair",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 105,
+            "z": 217
+          },
+          "rotation": "3"
+        },
+        {
+          "def": "AM_DiningChair",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 100,
+            "z": 216
+          },
+          "rotation": "1"
+        },
+        {
+          "def": "CraftingSpot",
+          "class": "Building_WorkTable",
+          "state": "completed",
+          "position": {
+            "x": 86,
+            "z": 210
+          },
+          "rotation": "3"
+        },
+        {
+          "def": "Door",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 108,
+            "z": 225
+          },
+          "rotation": "1",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Stool",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 86,
+            "z": 209
+          },
+          "rotation": "3",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Brazier",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 112,
+            "z": 227
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 193
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 192
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 194
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 195
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 196
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 197
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 103,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 102,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 104,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 101,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 100,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 99,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 98,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 97,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 96,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 95,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 94,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 93,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 92,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 91,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 90,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 89,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 88,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 87,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 85,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 86,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 198
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 79,
+            "z": 199
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 79,
+            "z": 198
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 103,
+            "z": 182
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 103,
+            "z": 173
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 103,
+            "z": 172
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 105,
+            "z": 170
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 110,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 109,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 111,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 108,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 107,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 106,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 105,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 124,
+            "z": 170
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 125,
+            "z": 170
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 123,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 125,
+            "z": 171
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 125,
+            "z": 172
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 125,
+            "z": 173
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 122,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 121,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 120,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 119,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 118,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 117,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 116,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 115,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 114,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 113,
+            "z": 169
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 125,
+            "z": 175
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 125,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 125,
+            "z": 177
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "FenceGate",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 125,
+            "z": 179
+          },
+          "rotation": "1",
+          "stuff": "Steel"
+        },
+        {
+          "def": "PE_SchoolBell",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 93,
+            "z": 213
+          },
+          "rotation": ""
+        },
+        {
+          "def": "Throne",
+          "class": "Building_Throne",
+          "state": "completed",
+          "position": {
+            "x": 116,
+            "z": 227
+          },
+          "rotation": "3",
+          "stuff": "BlocksMarble"
+        },
+        {
+          "def": "AM_DiningChair",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 92,
+            "z": 211
+          },
+          "rotation": "3"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 84,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 83,
+            "z": 188
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 190
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Fence",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 80,
+            "z": 191
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 109,
+            "z": 207
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 111,
+            "z": 208
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Wall",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 111,
+            "z": 207
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Door",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 110,
+            "z": 207
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 109,
+            "z": 207
+          },
+          "rotation": ""
+        },
+        {
+          "def": "Door",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 102,
+            "z": 226
+          },
+          "rotation": "1",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Door",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 108,
+            "z": 207
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 118,
+            "z": 220
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 123,
+            "z": 216
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 123,
+            "z": 217
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 123,
+            "z": 218
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 123,
+            "z": 219
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 123,
+            "z": 220
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 110,
+            "z": 207
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 111,
+            "z": 206
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 121,
+            "z": 209
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 121,
+            "z": 208
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 110,
+            "z": 206
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 122,
+            "z": 207
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 112,
+            "z": 206
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 121,
+            "z": 207
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 122,
+            "z": 206
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 122,
+            "z": 205
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 122,
+            "z": 204
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 122,
+            "z": 203
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 121,
+            "z": 203
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 114,
+            "z": 206
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 113,
+            "z": 206
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 121,
+            "z": 210
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 121,
+            "z": 211
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 115,
+            "z": 205
+          },
+          "rotation": ""
+        },
+        {
+          "def": "HiddenConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 115,
+            "z": 206
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 121,
+            "z": 212
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 116,
+            "z": 204
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 116,
+            "z": 205
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 121,
+            "z": 213
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 117,
+            "z": 204
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 121,
+            "z": 214
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 118,
+            "z": 203
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 121,
+            "z": 215
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 117,
+            "z": 203
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 121,
+            "z": 216
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 122,
+            "z": 216
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 119,
+            "z": 203
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 119,
+            "z": 201
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 119,
+            "z": 202
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 120,
+            "z": 201
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 121,
+            "z": 201
+          },
+          "rotation": ""
+        },
+        {
+          "def": "PowerConduit",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 121,
+            "z": 202
+          },
+          "rotation": ""
+        },
+        {
+          "def": "AnimalBed",
+          "class": "Building_Bed",
+          "state": "completed",
+          "position": {
+            "x": 96,
+            "z": 212
+          },
+          "rotation": "",
+          "stuff": "Leather_GuineaPig"
+        },
+        {
+          "def": "AnimalBed",
+          "class": "Building_Bed",
+          "state": "completed",
+          "position": {
+            "x": 98,
+            "z": 212
+          },
+          "rotation": "",
+          "stuff": "Leather_Panthera"
+        },
+        {
+          "def": "Door",
+          "class": "Building_Door",
+          "state": "completed",
+          "position": {
+            "x": 109,
+            "z": 229
+          },
+          "rotation": "1",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Sarcophagus",
+          "class": "Building_Sarcophagus",
+          "state": "completed",
+          "position": {
+            "x": 105,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "BlocksGranite"
+        },
+        {
+          "def": "Sarcophagus",
+          "class": "Building_Sarcophagus",
+          "state": "completed",
+          "position": {
+            "x": 123,
+            "z": 178
+          },
+          "rotation": "",
+          "stuff": "BlocksGranite"
+        },
+        {
+          "def": "Grave",
+          "class": "Building_Grave",
+          "state": "completed",
+          "position": {
+            "x": 43,
+            "z": 236
+          },
+          "rotation": "2"
+        },
+        {
+          "def": "Shelf",
+          "class": "Building_Storage",
+          "state": "completed",
+          "position": {
+            "x": 104,
+            "z": 212
+          },
+          "rotation": "2",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Shelf",
+          "class": "Building_Storage",
+          "state": "completed",
+          "position": {
+            "x": 105,
+            "z": 211
+          },
+          "rotation": "3",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Shelf",
+          "class": "Building_Storage",
+          "state": "completed",
+          "position": {
+            "x": 105,
+            "z": 209
+          },
+          "rotation": "3",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Shelf",
+          "class": "Building_Storage",
+          "state": "completed",
+          "position": {
+            "x": 103,
+            "z": 209
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "SchoolDesk",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 89,
+            "z": 210
+          },
+          "rotation": "",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Blackboard",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 90,
+            "z": 212
+          },
+          "rotation": "2",
+          "stuff": "WoodLog"
+        },
+        {
+          "def": "Table1x2c",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 104,
+            "z": 217
+          },
+          "rotation": "2",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Table1x2c",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 101,
+            "z": 217
+          },
+          "rotation": "2",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Grave",
+          "class": "Building_Grave",
+          "state": "completed",
+          "position": {
+            "x": 27,
+            "z": 236
+          },
+          "rotation": "2"
+        },
+        {
+          "def": "Sarcophagus",
+          "class": "Building_Sarcophagus",
+          "state": "completed",
+          "position": {
+            "x": 94,
+            "z": 205
+          },
+          "rotation": "3",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "Bed",
+          "class": "Building_Bed",
+          "state": "completed",
+          "position": {
+            "x": 98,
+            "z": 221
+          },
+          "rotation": "2",
+          "stuff": "WoodLog"
+        },
+        {
+          "def": "Grave",
+          "class": "Building_Grave",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 236
+          },
+          "rotation": "2"
+        },
+        {
+          "def": "Grave",
+          "class": "Building_Grave",
+          "state": "completed",
+          "position": {
+            "x": 45,
+            "z": 236
+          },
+          "rotation": "2"
+        },
+        {
+          "def": "Bed",
+          "class": "Building_Bed",
+          "state": "completed",
+          "position": {
+            "x": 97,
+            "z": 217
+          },
+          "rotation": "",
+          "stuff": "WoodLog"
+        },
+        {
+          "def": "Bedroll",
+          "class": "Building_Bed",
+          "state": "completed",
+          "position": {
+            "x": 95,
+            "z": 214
+          },
+          "rotation": "2",
+          "stuff": "Leather_Light"
+        },
+        {
+          "def": "Bed",
+          "class": "Building_Bed",
+          "state": "completed",
+          "position": {
+            "x": 95,
+            "z": 218
+          },
+          "rotation": "2",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Grave",
+          "class": "Building_Grave",
+          "state": "completed",
+          "position": {
+            "x": 47,
+            "z": 233
+          },
+          "rotation": "2"
+        },
+        {
+          "def": "Grave",
+          "class": "Building_Grave",
+          "state": "completed",
+          "position": {
+            "x": 45,
+            "z": 233
+          },
+          "rotation": "2"
+        },
+        {
+          "def": "Grave",
+          "class": "Building_Grave",
+          "state": "completed",
+          "position": {
+            "x": 43,
+            "z": 233
+          },
+          "rotation": "2"
+        },
+        {
+          "def": "SchoolDesk",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 91,
+            "z": 210
+          },
+          "rotation": "3",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Grave",
+          "class": "Building_Grave",
+          "state": "completed",
+          "position": {
+            "x": 49,
+            "z": 236
+          },
+          "rotation": "2"
+        },
+        {
+          "def": "Battery",
+          "class": "Building_Battery",
+          "state": "completed",
+          "position": {
+            "x": 109,
+            "z": 208
+          },
+          "rotation": "1"
+        },
+        {
+          "def": "Grave",
+          "class": "Building_Grave",
+          "state": "completed",
+          "position": {
+            "x": 51,
+            "z": 236
+          },
+          "rotation": "2"
+        },
+        {
+          "def": "Grave",
+          "class": "Building_Grave",
+          "state": "completed",
+          "position": {
+            "x": 49,
+            "z": 233
+          },
+          "rotation": "2"
+        },
+        {
+          "def": "SleepingSpot",
+          "class": "Building_Bed",
+          "state": "completed",
+          "position": {
+            "x": 91,
+            "z": 218
+          },
+          "rotation": "1"
+        },
+        {
+          "def": "Bed",
+          "class": "Building_Bed",
+          "state": "completed",
+          "position": {
+            "x": 107,
+            "z": 230
+          },
+          "rotation": "1",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Bed",
+          "class": "Building_Bed",
+          "state": "completed",
+          "position": {
+            "x": 115,
+            "z": 229
+          },
+          "rotation": "3",
+          "stuff": "Steel"
+        },
+        {
+          "def": "Battery",
+          "class": "Building_Battery",
+          "state": "completed",
+          "position": {
+            "x": 110,
+            "z": 209
+          },
+          "rotation": "3"
+        },
+        {
+          "def": "SteleLarge",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 173,
+            "z": 114
+          },
+          "rotation": "",
+          "stuff": "BlocksGranite"
+        },
+        {
+          "def": "Table2x2c",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 107,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksLimestone"
+        },
+        {
+          "def": "Table2x2c",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 120,
+            "z": 176
+          },
+          "rotation": "",
+          "stuff": "BlocksLimestone"
+        },
+        {
+          "def": "DoubleBed",
+          "class": "Building_Bed",
+          "state": "completed",
+          "position": {
+            "x": 112,
+            "z": 230
+          },
+          "rotation": "2",
+          "stuff": "Plasteel"
+        },
+        {
+          "def": "TableStonecutter",
+          "class": "Building_WorkTable_HeatPush",
+          "state": "completed",
+          "position": {
+            "x": 98,
+            "z": 206
+          },
+          "rotation": "",
+          "stuff": "Steel"
+        },
+        {
+          "def": "ElectricStove",
+          "class": "Building_WorkTable_HeatPush",
+          "state": "completed",
+          "position": {
+            "x": 101,
+            "z": 214
+          },
+          "rotation": "2"
+        },
+        {
+          "def": "TableButcher",
+          "class": "Building_WorkTable",
+          "state": "completed",
+          "position": {
+            "x": 104,
+            "z": 214
+          },
+          "rotation": "2",
+          "stuff": "Steel"
+        },
+        {
+          "def": "ElectricTailoringBench",
+          "class": "Building_WorkTable",
+          "state": "completed",
+          "position": {
+            "x": 93,
+            "z": 208
+          },
+          "rotation": "2",
+          "stuff": "WoodLog"
+        },
+        {
+          "def": "SimpleResearchBench",
+          "class": "Building_ResearchBench",
+          "state": "completed",
+          "position": {
+            "x": 85,
+            "z": 209
+          },
+          "rotation": "3",
+          "stuff": "Steel"
+        },
+        {
+          "def": "NatureShrine_Large",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 91,
+            "z": 203
+          },
+          "rotation": "",
+          "stuff": "WoodLog"
+        },
+        {
+          "def": "SolarGenerator",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 110,
+            "z": 203
+          },
+          "rotation": ""
+        },
+        {
+          "def": "SolarGenerator",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 125,
+            "z": 214
+          },
+          "rotation": ""
+        },
+        {
+          "def": "SolarGenerator",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 120,
+            "z": 219
+          },
+          "rotation": ""
+        },
+        {
+          "def": "SolarGenerator",
+          "class": "Building",
+          "state": "completed",
+          "position": {
+            "x": 115,
+            "z": 219
+          },
+          "rotation": ""
+        },
+        {
+          "def": "Blueprint_StylingStation",
+          "class": "Blueprint_Build",
+          "state": "blueprint",
+          "position": {
+            "x": 114,
+            "z": 225
+          },
+          "rotation": "2"
+        }
+      ],
+      "placedThings": [],
+      "terrainCells": [],
+      "roofCells": [],
+      "zones": [
+        {
+          "class": "Zone_Stockpile",
+          "label": "Stockpile zone 1",
+          "cells": [
+            {
+              "x": 103,
+              "z": 226
+            },
+            {
+              "x": 103,
+              "z": 223
+            },
+            {
+              "x": 101,
+              "z": 223
+            },
+            {
+              "x": 103,
+              "z": 222
+            },
+            {
+              "x": 104,
+              "z": 224
+            },
+            {
+              "x": 106,
+              "z": 226
+            },
+            {
+              "x": 103,
+              "z": 225
+            },
+            {
+              "x": 102,
+              "z": 224
+            },
+            {
+              "x": 104,
+              "z": 225
+            },
+            {
+              "x": 102,
+              "z": 222
+            },
+            {
+              "x": 104,
+              "z": 223
+            },
+            {
+              "x": 101,
+              "z": 224
+            },
+            {
+              "x": 105,
+              "z": 224
+            },
+            {
+              "x": 106,
+              "z": 225
+            },
+            {
+              "x": 106,
+              "z": 224
+            },
+            {
+              "x": 102,
+              "z": 223
+            },
+            {
+              "x": 104,
+              "z": 226
+            },
+            {
+              "x": 105,
+              "z": 223
+            },
+            {
+              "x": 105,
+              "z": 226
+            },
+            {
+              "x": 103,
+              "z": 224
+            },
+            {
+              "x": 101,
+              "z": 222
+            },
+            {
+              "x": 105,
+              "z": 225
+            }
+          ]
+        },
+        {
+          "class": "Zone_Stockpile",
+          "label": "Dumping stockpile zone 1",
+          "cells": [
+            {
+              "x": 99,
+              "z": 202
+            },
+            {
+              "x": 105,
+              "z": 202
+            },
+            {
+              "x": 103,
+              "z": 205
+            },
+            {
+              "x": 100,
+              "z": 204
+            },
+            {
+              "x": 103,
+              "z": 204
+            },
+            {
+              "x": 102,
+              "z": 202
+            },
+            {
+              "x": 104,
+              "z": 203
+            },
+            {
+              "x": 100,
+              "z": 205
+            },
+            {
+              "x": 104,
+              "z": 202
+            },
+            {
+              "x": 103,
+              "z": 203
+            },
+            {
+              "x": 104,
+              "z": 204
+            },
+            {
+              "x": 99,
+              "z": 205
+            },
+            {
+              "x": 102,
+              "z": 203
+            },
+            {
+              "x": 105,
+              "z": 204
+            },
+            {
+              "x": 105,
+              "z": 203
+            },
+            {
+              "x": 106,
+              "z": 203
+            },
+            {
+              "x": 101,
+              "z": 203
+            },
+            {
+              "x": 106,
+              "z": 202
+            },
+            {
+              "x": 100,
+              "z": 203
+            },
+            {
+              "x": 101,
+              "z": 205
+            },
+            {
+              "x": 106,
+              "z": 204
+            },
+            {
+              "x": 99,
+              "z": 203
+            },
+            {
+              "x": 105,
+              "z": 205
+            },
+            {
+              "x": 106,
+              "z": 205
+            },
+            {
+              "x": 104,
+              "z": 205
+            },
+            {
+              "x": 100,
+              "z": 202
+            },
+            {
+              "x": 101,
+              "z": 202
+            },
+            {
+              "x": 99,
+              "z": 204
+            },
+            {
+              "x": 103,
+              "z": 202
+            },
+            {
+              "x": 102,
+              "z": 205
+            },
+            {
+              "x": 101,
+              "z": 204
+            },
+            {
+              "x": 102,
+              "z": 204
+            }
+          ]
+        },
+        {
+          "class": "Zone_Growing",
+          "label": "Growing zone 1",
+          "cells": [
+            {
+              "x": 89,
+              "z": 199
+            },
+            {
+              "x": 92,
+              "z": 199
+            },
+            {
+              "x": 93,
+              "z": 200
+            },
+            {
+              "x": 89,
+              "z": 198
+            },
+            {
+              "x": 93,
+              "z": 198
+            },
+            {
+              "x": 94,
+              "z": 199
+            },
+            {
+              "x": 90,
+              "z": 199
+            },
+            {
+              "x": 89,
+              "z": 200
+            },
+            {
+              "x": 91,
+              "z": 199
+            },
+            {
+              "x": 93,
+              "z": 199
+            },
+            {
+              "x": 92,
+              "z": 198
+            },
+            {
+              "x": 94,
+              "z": 200
+            },
+            {
+              "x": 91,
+              "z": 200
+            },
+            {
+              "x": 94,
+              "z": 198
+            },
+            {
+              "x": 91,
+              "z": 198
+            },
+            {
+              "x": 90,
+              "z": 200
+            },
+            {
+              "x": 90,
+              "z": 198
+            },
+            {
+              "x": 92,
+              "z": 200
+            }
+          ]
+        },
+        {
+          "class": "Zone_Growing",
+          "label": "Growing zone 2",
+          "cells": [
+            {
+              "x": 94,
+              "z": 194
+            },
+            {
+              "x": 90,
+              "z": 195
+            },
+            {
+              "x": 94,
+              "z": 196
+            },
+            {
+              "x": 89,
+              "z": 194
+            },
+            {
+              "x": 92,
+              "z": 196
+            },
+            {
+              "x": 93,
+              "z": 196
+            },
+            {
+              "x": 93,
+              "z": 195
+            },
+            {
+              "x": 91,
+              "z": 195
+            },
+            {
+              "x": 90,
+              "z": 196
+            },
+            {
+              "x": 91,
+              "z": 196
+            },
+            {
+              "x": 94,
+              "z": 195
+            },
+            {
+              "x": 89,
+              "z": 196
+            },
+            {
+              "x": 93,
+              "z": 194
+            },
+            {
+              "x": 92,
+              "z": 194
+            },
+            {
+              "x": 92,
+              "z": 195
+            },
+            {
+              "x": 90,
+              "z": 194
+            },
+            {
+              "x": 91,
+              "z": 194
+            },
+            {
+              "x": 89,
+              "z": 195
+            }
+          ]
+        },
+        {
+          "class": "Zone_Growing",
+          "label": "Growing zone 3",
+          "cells": [
+            {
+              "x": 85,
+              "z": 194
+            },
+            {
+              "x": 86,
+              "z": 199
+            },
+            {
+              "x": 87,
+              "z": 196
+            },
+            {
+              "x": 85,
+              "z": 199
+            },
+            {
+              "x": 85,
+              "z": 196
+            },
+            {
+              "x": 85,
+              "z": 197
+            },
+            {
+              "x": 87,
+              "z": 197
+            },
+            {
+              "x": 87,
+              "z": 198
+            },
+            {
+              "x": 87,
+              "z": 200
+            },
+            {
+              "x": 87,
+              "z": 195
+            },
+            {
+              "x": 86,
+              "z": 195
+            },
+            {
+              "x": 87,
+              "z": 194
+            },
+            {
+              "x": 86,
+              "z": 196
+            },
+            {
+              "x": 87,
+              "z": 199
+            },
+            {
+              "x": 86,
+              "z": 200
+            },
+            {
+              "x": 85,
+              "z": 198
+            },
+            {
+              "x": 86,
+              "z": 197
+            },
+            {
+              "x": 86,
+              "z": 198
+            },
+            {
+              "x": 85,
+              "z": 195
+            },
+            {
+              "x": 86,
+              "z": 194
+            },
+            {
+              "x": 85,
+              "z": 200
+            }
+          ]
+        },
+        {
+          "class": "Zone_Growing",
+          "label": "Growing zone 4",
+          "cells": [
+            {
+              "x": 93,
+              "z": 191
+            },
+            {
+              "x": 93,
+              "z": 190
+            },
+            {
+              "x": 94,
+              "z": 192
+            },
+            {
+              "x": 98,
+              "z": 191
+            },
+            {
+              "x": 87,
+              "z": 190
+            },
+            {
+              "x": 86,
+              "z": 192
+            },
+            {
+              "x": 97,
+              "z": 192
+            },
+            {
+              "x": 95,
+              "z": 190
+            },
+            {
+              "x": 92,
+              "z": 191
+            },
+            {
+              "x": 85,
+              "z": 191
+            },
+            {
+              "x": 89,
+              "z": 192
+            },
+            {
+              "x": 98,
+              "z": 190
+            },
+            {
+              "x": 85,
+              "z": 190
+            },
+            {
+              "x": 91,
+              "z": 192
+            },
+            {
+              "x": 90,
+              "z": 191
+            },
+            {
+              "x": 87,
+              "z": 192
+            },
+            {
+              "x": 96,
+              "z": 192
+            },
+            {
+              "x": 97,
+              "z": 190
+            },
+            {
+              "x": 90,
+              "z": 190
+            },
+            {
+              "x": 92,
+              "z": 190
+            },
+            {
+              "x": 93,
+              "z": 192
+            },
+            {
+              "x": 88,
+              "z": 191
+            },
+            {
+              "x": 89,
+              "z": 191
+            },
+            {
+              "x": 90,
+              "z": 192
+            },
+            {
+              "x": 92,
+              "z": 192
+            },
+            {
+              "x": 86,
+              "z": 191
+            },
+            {
+              "x": 91,
+              "z": 191
+            },
+            {
+              "x": 89,
+              "z": 190
+            },
+            {
+              "x": 96,
+              "z": 190
+            },
+            {
+              "x": 91,
+              "z": 190
+            },
+            {
+              "x": 94,
+              "z": 190
+            },
+            {
+              "x": 88,
+              "z": 190
+            },
+            {
+              "x": 95,
+              "z": 191
+            },
+            {
+              "x": 95,
+              "z": 192
+            },
+            {
+              "x": 98,
+              "z": 192
+            },
+            {
+              "x": 96,
+              "z": 191
+            },
+            {
+              "x": 97,
+              "z": 191
+            },
+            {
+              "x": 94,
+              "z": 191
+            },
+            {
+              "x": 86,
+              "z": 190
+            },
+            {
+              "x": 88,
+              "z": 192
+            },
+            {
+              "x": 87,
+              "z": 191
+            },
+            {
+              "x": 85,
+              "z": 192
+            }
+          ]
+        },
+        {
+          "class": "Zone_Growing",
+          "label": "Growing zone 5",
+          "cells": [
+            {
+              "x": 98,
+              "z": 196
+            },
+            {
+              "x": 96,
+              "z": 197
+            },
+            {
+              "x": 98,
+              "z": 200
+            },
+            {
+              "x": 97,
+              "z": 198
+            },
+            {
+              "x": 98,
+              "z": 194
+            },
+            {
+              "x": 96,
+              "z": 196
+            },
+            {
+              "x": 96,
+              "z": 198
+            },
+            {
+              "x": 97,
+              "z": 197
+            },
+            {
+              "x": 97,
+              "z": 194
+            },
+            {
+              "x": 97,
+              "z": 200
+            },
+            {
+              "x": 97,
+              "z": 196
+            },
+            {
+              "x": 97,
+              "z": 195
+            },
+            {
+              "x": 97,
+              "z": 199
+            },
+            {
+              "x": 96,
+              "z": 195
+            },
+            {
+              "x": 96,
+              "z": 200
+            },
+            {
+              "x": 96,
+              "z": 194
+            },
+            {
+              "x": 98,
+              "z": 195
+            },
+            {
+              "x": 98,
+              "z": 199
+            },
+            {
+              "x": 96,
+              "z": 199
+            },
+            {
+              "x": 98,
+              "z": 197
+            }
+          ]
+        },
+        {
+          "class": "Zone_Growing",
+          "label": "Growing zone 6",
+          "cells": [
+            {
+              "x": 100,
+              "z": 191
+            },
+            {
+              "x": 100,
+              "z": 194
+            },
+            {
+              "x": 100,
+              "z": 190
+            },
+            {
+              "x": 100,
+              "z": 198
+            },
+            {
+              "x": 102,
+              "z": 190
+            },
+            {
+              "x": 102,
+              "z": 199
+            },
+            {
+              "x": 102,
+              "z": 195
+            },
+            {
+              "x": 100,
+              "z": 196
+            },
+            {
+              "x": 101,
+              "z": 192
+            },
+            {
+              "x": 102,
+              "z": 196
+            },
+            {
+              "x": 100,
+              "z": 195
+            },
+            {
+              "x": 101,
+              "z": 191
+            },
+            {
+              "x": 101,
+              "z": 200
+            },
+            {
+              "x": 102,
+              "z": 191
+            },
+            {
+              "x": 102,
+              "z": 200
+            },
+            {
+              "x": 102,
+              "z": 197
+            },
+            {
+              "x": 101,
+              "z": 199
+            },
+            {
+              "x": 101,
+              "z": 195
+            },
+            {
+              "x": 101,
+              "z": 196
+            },
+            {
+              "x": 102,
+              "z": 192
+            },
+            {
+              "x": 102,
+              "z": 198
+            },
+            {
+              "x": 100,
+              "z": 193
+            },
+            {
+              "x": 100,
+              "z": 192
+            },
+            {
+              "x": 102,
+              "z": 194
+            },
+            {
+              "x": 101,
+              "z": 193
+            },
+            {
+              "x": 101,
+              "z": 194
+            },
+            {
+              "x": 100,
+              "z": 197
+            },
+            {
+              "x": 100,
+              "z": 199
+            },
+            {
+              "x": 102,
+              "z": 193
+            },
+            {
+              "x": 101,
+              "z": 197
+            },
+            {
+              "x": 101,
+              "z": 190
+            },
+            {
+              "x": 101,
+              "z": 198
+            }
+          ]
+        },
+        {
+          "class": "Zone_Growing",
+          "label": "Growing zone 7",
+          "cells": [
+            {
+              "x": 107,
+              "z": 199
+            },
+            {
+              "x": 106,
+              "z": 200
+            },
+            {
+              "x": 111,
+              "z": 200
+            },
+            {
+              "x": 105,
+              "z": 199
+            },
+            {
+              "x": 114,
+              "z": 198
+            },
+            {
+              "x": 113,
+              "z": 198
+            },
+            {
+              "x": 112,
+              "z": 200
+            },
+            {
+              "x": 111,
+              "z": 198
+            },
+            {
+              "x": 109,
+              "z": 199
+            },
+            {
+              "x": 110,
+              "z": 198
+            },
+            {
+              "x": 112,
+              "z": 199
+            },
+            {
+              "x": 109,
+              "z": 200
+            },
+            {
+              "x": 106,
+              "z": 198
+            },
+            {
+              "x": 104,
+              "z": 200
+            },
+            {
+              "x": 113,
+              "z": 200
+            },
+            {
+              "x": 109,
+              "z": 198
+            },
+            {
+              "x": 114,
+              "z": 200
+            },
+            {
+              "x": 104,
+              "z": 199
+            },
+            {
+              "x": 105,
+              "z": 200
+            },
+            {
+              "x": 112,
+              "z": 198
+            },
+            {
+              "x": 111,
+              "z": 199
+            },
+            {
+              "x": 105,
+              "z": 198
+            },
+            {
+              "x": 113,
+              "z": 199
+            },
+            {
+              "x": 108,
+              "z": 199
+            },
+            {
+              "x": 107,
+              "z": 198
+            },
+            {
+              "x": 108,
+              "z": 198
+            },
+            {
+              "x": 107,
+              "z": 200
+            },
+            {
+              "x": 110,
+              "z": 200
+            },
+            {
+              "x": 104,
+              "z": 198
+            },
+            {
+              "x": 110,
+              "z": 199
+            },
+            {
+              "x": 108,
+              "z": 200
+            },
+            {
+              "x": 106,
+              "z": 199
+            },
+            {
+              "x": 114,
+              "z": 199
+            }
+          ]
+        },
+        {
+          "class": "Zone_Growing",
+          "label": "Growing zone 8",
+          "cells": [
+            {
+              "x": 105,
+              "z": 196
+            },
+            {
+              "x": 110,
+              "z": 194
+            },
+            {
+              "x": 107,
+              "z": 195
+            },
+            {
+              "x": 109,
+              "z": 195
+            },
+            {
+              "x": 109,
+              "z": 196
+            },
+            {
+              "x": 111,
+              "z": 195
+            },
+            {
+              "x": 113,
+              "z": 194
+            },
+            {
+              "x": 114,
+              "z": 195
+            },
+            {
+              "x": 109,
+              "z": 194
+            },
+            {
+              "x": 107,
+              "z": 196
+            },
+            {
+              "x": 104,
+              "z": 195
+            },
+            {
+              "x": 114,
+              "z": 196
+            },
+            {
+              "x": 105,
+              "z": 194
+            },
+            {
+              "x": 114,
+              "z": 194
+            },
+            {
+              "x": 108,
+              "z": 195
+            },
+            {
+              "x": 107,
+              "z": 194
+            },
+            {
+              "x": 106,
+              "z": 196
+            },
+            {
+              "x": 110,
+              "z": 196
+            },
+            {
+              "x": 104,
+              "z": 194
+            },
+            {
+              "x": 112,
+              "z": 195
+            },
+            {
+              "x": 111,
+              "z": 196
+            },
+            {
+              "x": 108,
+              "z": 196
+            },
+            {
+              "x": 110,
+              "z": 195
+            },
+            {
+              "x": 113,
+              "z": 196
+            },
+            {
+              "x": 104,
+              "z": 196
+            },
+            {
+              "x": 108,
+              "z": 194
+            },
+            {
+              "x": 105,
+              "z": 195
+            },
+            {
+              "x": 106,
+              "z": 195
+            },
+            {
+              "x": 106,
+              "z": 194
+            },
+            {
+              "x": 112,
+              "z": 194
+            },
+            {
+              "x": 113,
+              "z": 195
+            },
+            {
+              "x": 111,
+              "z": 194
+            },
+            {
+              "x": 112,
+              "z": 196
+            }
+          ]
+        },
+        {
+          "class": "Zone_Growing",
+          "label": "Growing zone 9",
+          "cells": [
+            {
+              "x": 82,
+              "z": 197
+            },
+            {
+              "x": 81,
+              "z": 192
+            },
+            {
+              "x": 82,
+              "z": 192
+            },
+            {
+              "x": 82,
+              "z": 193
+            },
+            {
+              "x": 83,
+              "z": 194
+            },
+            {
+              "x": 82,
+              "z": 190
+            },
+            {
+              "x": 81,
+              "z": 191
+            },
+            {
+              "x": 83,
+              "z": 193
+            },
+            {
+              "x": 81,
+              "z": 198
+            },
+            {
+              "x": 81,
+              "z": 197
+            },
+            {
+              "x": 82,
+              "z": 196
+            },
+            {
+              "x": 81,
+              "z": 195
+            },
+            {
+              "x": 81,
+              "z": 194
+            },
+            {
+              "x": 82,
+              "z": 191
+            },
+            {
+              "x": 83,
+              "z": 198
+            },
+            {
+              "x": 83,
+              "z": 191
+            },
+            {
+              "x": 81,
+              "z": 196
+            },
+            {
+              "x": 83,
+              "z": 192
+            },
+            {
+              "x": 82,
+              "z": 198
+            },
+            {
+              "x": 83,
+              "z": 196
+            },
+            {
+              "x": 81,
+              "z": 193
+            },
+            {
+              "x": 81,
+              "z": 190
+            },
+            {
+              "x": 83,
+              "z": 190
+            },
+            {
+              "x": 83,
+              "z": 197
+            },
+            {
+              "x": 82,
+              "z": 194
+            },
+            {
+              "x": 82,
+              "z": 195
+            },
+            {
+              "x": 83,
+              "z": 195
+            }
+          ]
+        },
+        {
+          "class": "Zone_Stockpile",
+          "label": "Dumping stockpile zone 2",
+          "cells": [
+            {
+              "x": 78,
+              "z": 156
+            },
+            {
+              "x": 72,
+              "z": 159
+            },
+            {
+              "x": 75,
+              "z": 161
+            },
+            {
+              "x": 81,
+              "z": 157
+            },
+            {
+              "x": 81,
+              "z": 161
+            },
+            {
+              "x": 78,
+              "z": 159
+            },
+            {
+              "x": 74,
+              "z": 160
+            },
+            {
+              "x": 80,
+              "z": 156
+            },
+            {
+              "x": 77,
+              "z": 160
+            },
+            {
+              "x": 82,
+              "z": 160
+            },
+            {
+              "x": 78,
+              "z": 160
+            },
+            {
+              "x": 73,
+              "z": 160
+            },
+            {
+              "x": 73,
+              "z": 159
+            },
+            {
+              "x": 82,
+              "z": 158
+            },
+            {
+              "x": 83,
+              "z": 161
+            },
+            {
+              "x": 84,
+              "z": 161
+            },
+            {
+              "x": 77,
+              "z": 161
+            },
+            {
+              "x": 73,
+              "z": 161
+            },
+            {
+              "x": 80,
+              "z": 160
+            },
+            {
+              "x": 78,
+              "z": 158
+            },
+            {
+              "x": 77,
+              "z": 156
+            },
+            {
+              "x": 81,
+              "z": 160
+            },
+            {
+              "x": 79,
+              "z": 159
+            },
+            {
+              "x": 72,
+              "z": 161
+            },
+            {
+              "x": 78,
+              "z": 161
+            },
+            {
+              "x": 81,
+              "z": 158
+            },
+            {
+              "x": 84,
+              "z": 160
+            },
+            {
+              "x": 80,
+              "z": 158
+            },
+            {
+              "x": 83,
+              "z": 160
+            },
+            {
+              "x": 79,
+              "z": 157
+            },
+            {
+              "x": 77,
+              "z": 157
+            },
+            {
+              "x": 83,
+              "z": 159
+            },
+            {
+              "x": 77,
+              "z": 159
+            },
+            {
+              "x": 78,
+              "z": 157
+            },
+            {
+              "x": 72,
+              "z": 160
+            },
+            {
+              "x": 79,
+              "z": 158
+            },
+            {
+              "x": 79,
+              "z": 160
+            },
+            {
+              "x": 79,
+              "z": 161
+            },
+            {
+              "x": 77,
+              "z": 158
+            },
+            {
+              "x": 79,
+              "z": 156
+            },
+            {
+              "x": 82,
+              "z": 159
+            },
+            {
+              "x": 85,
+              "z": 161
+            },
+            {
+              "x": 82,
+              "z": 161
+            },
+            {
+              "x": 80,
+              "z": 159
+            },
+            {
+              "x": 74,
+              "z": 158
+            },
+            {
+              "x": 76,
+              "z": 161
+            },
+            {
+              "x": 80,
+              "z": 157
+            },
+            {
+              "x": 74,
+              "z": 159
+            },
+            {
+              "x": 80,
+              "z": 161
+            },
+            {
+              "x": 81,
+              "z": 159
+            },
+            {
+              "x": 74,
+              "z": 161
+            },
+            {
+              "x": 76,
+              "z": 160
+            }
+          ]
+        },
+        {
+          "class": "Zone_Stockpile",
+          "label": "Stockpile zone 2",
+          "cells": [
+            {
+              "x": 88,
+              "z": 161
+            },
+            {
+              "x": 93,
+              "z": 161
+            },
+            {
+              "x": 92,
+              "z": 161
+            },
+            {
+              "x": 87,
+              "z": 160
+            },
+            {
+              "x": 91,
+              "z": 161
+            },
+            {
+              "x": 88,
+              "z": 160
+            },
+            {
+              "x": 90,
+              "z": 161
+            },
+            {
+              "x": 87,
+              "z": 161
+            },
+            {
+              "x": 89,
+              "z": 161
+            }
+          ]
+        },
+        {
+          "class": "Zone_Stockpile",
+          "label": "Stockpile zone 3",
+          "cells": [
+            {
+              "x": 92,
+              "z": 159
+            }
+          ]
+        }
+      ],
+      "derived": {
+        "builtEntityCount": 214,
+        "completedEntityCount": 213,
+        "plannedEntityCount": 1,
+        "placedThingCount": 0,
+        "terrainCellCount": 0,
+        "roofCellCount": 0,
+        "zoneCount": 14,
+        "zoneCellCount": 360,
+        "builtAnchorBounds": {
+          "minX": 27,
+          "maxX": 173,
+          "minZ": 114,
+          "maxZ": 236,
+          "width": 147,
+          "height": 123,
+          "area": 18081
+        },
+        "completedAnchorBounds": {
+          "minX": 27,
+          "maxX": 173,
+          "minZ": 114,
+          "maxZ": 236,
+          "width": 147,
+          "height": 123,
+          "area": 18081
+        },
+        "evidenceBounds": {
+          "minX": 27,
+          "maxX": 173,
+          "minZ": 114,
+          "maxZ": 236,
+          "width": 147,
+          "height": 123,
+          "area": 18081
+        },
+        "evidenceDensity": 0.030972,
+        "builtDefCounts": {
+          "Column": 1,
+          "Wall": 11,
+          "Door": 9,
+          "PowerConduit": 53,
+          "HiddenConduit": 12,
+          "Cooler": 1,
+          "AM_DiningChair": 10,
+          "CraftingSpot": 1,
+          "Stool": 1,
+          "Brazier": 1,
+          "Fence": 63,
+          "FenceGate": 1,
+          "PE_SchoolBell": 1,
+          "Throne": 1,
+          "AnimalBed": 2,
+          "Sarcophagus": 3,
+          "Grave": 10,
+          "Shelf": 4,
+          "SchoolDesk": 2,
+          "Blackboard": 1,
+          "Table1x2c": 2,
+          "Bed": 5,
+          "Bedroll": 1,
+          "Battery": 2,
+          "SleepingSpot": 1,
+          "SteleLarge": 1,
+          "Table2x2c": 2,
+          "DoubleBed": 1,
+          "TableStonecutter": 1,
+          "ElectricStove": 1,
+          "TableButcher": 1,
+          "ElectricTailoringBench": 1,
+          "SimpleResearchBench": 1,
+          "NatureShrine_Large": 1,
+          "SolarGenerator": 4,
+          "Blueprint_StylingStation": 1
+        },
+        "placedDefCounts": {},
+        "terrainDefCounts": {},
+        "zoneClassCounts": {
+          "Zone_Stockpile": 5,
+          "Zone_Growing": 9
+        }
+      }
+    }
+  ]
+}

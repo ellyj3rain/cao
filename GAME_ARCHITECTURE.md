@@ -555,3 +555,74 @@ pending facility because it tests adding a link against `maxSimultaneous`;
 completed records validate the reciprocal `CompFacility.LinkedBuildings` graph.
 Revoking authority cancels only the tracked pending blueprint; completed
 buildings remain player property while stale CA associations retire.
+
+## 15. Settlement Programs Over Loaded Functional Contracts
+
+Established-settlement composition uses the loaded definition graph rather than
+a CA facility enum. `Building_WorkTable` plus recipes establishes production;
+`Building_Storage` and storage settings establish storage; research benches,
+medical and prison beds, gathering and ritual targets, recreation buildings,
+communication buildings, animal-pen contracts, room roles,
+`CompProperties_Facility`, and reciprocal affected-by-facility links establish
+their respective functions. Native placement acceptance remains the final
+physical authority.
+
+This evidence can come from Core, an expansion, or a ported content pack without
+changing the settlement-program ontology. B9's loaded-definition audit admits
+`Anon2CushionedChair` and `DankPyon_Bust` through the same functional evidence as
+native candidates. A name, texture, or decorative plant spot alone is not a
+functional contract. The saved program entry records the selected defs and the
+placed identities so reload and generation consume one realized fact.
+
+Faction era is a ceiling, never proof of a settlement facility. A research
+program requires an active project or question, qualified worker, supporting
+organization, relevant knowledge, and either a real bench or an explicit
+non-bench research contract. A bench is a work node, not a research institution.
+Likewise, a provision arrangement is valid only after its exact operator, stock,
+access, labor, funding, material nodes, and distribution behavior exist. The
+generator does not fabricate vendor, religious, dues, or abstract operator
+institutions to make a supply record possible.
+
+## 16. Causal Ownership of Social State
+
+Native pawn relations and assigned beds are evidence available to domestic
+formation. They do not imply that every nearby or similarly ordered pawn shares
+a household. CA persists factual domestic units, their source-scoped members,
+residential and provision bindings, and represented transition history. A pawn
+without a valid multi-pawn unit retains individual self-provision.
+
+Native work, skills, buildings, stocks, transactions, research projects,
+policies, offices, routes, and histories provide domain evidence for practiced
+capability. The capability resolver may summarize that evidence, but no score,
+random perturbation, stable hash, ThingDef, room role, Culture value, Political
+Belief, or world tendency creates the practice itself. Hashes and randomness
+remain valid only after eligibility for equivalent names, layouts, visual forms,
+material candidates, or bounded scheduling has been established.
+
+World generation consumes one persisted realization. UI drawing and navigation
+cannot form memberships, adopt policies, assign operators, or reroll semantic
+facts. The governed fixture contains intentional authoring facts only and enters
+the same production realization path as an operator-authored draft.
+
+## 17. Durable serialization and compositional authoring seam
+
+RimWorld's Scribe loader mutates objects while loading them, so CA campaign
+compatibility is decided by a streaming read-only preflight before the normal
+load path. The executable schema manifest then validates one semantic version and
+owner per state family. Pending creation XML remains replaceable pre-campaign
+state; it is not a mechanism for clearing realized world, map, organization,
+Culture, political, knowledge, or behavior history.
+
+Native factions, Ideoligions, relations, things, rooms, work, policies, and acts
+remain the factual sources for CA authoring and interpretation. The social-subject
+registry names what a population evaluates. Cultural meanings store that
+evaluation. Concrete practices store repeated represented conduct and identify
+the native or CA evidence adapter and runtime consumer. Political Beliefs store
+normative mechanisms, while current order stores instituted mechanisms. Shared
+editor layout does not merge those records or grant authority to presentation.
+
+The authoring projection caches immutable registry slices and applies category
+navigation only when multiple human-relevant groups contain enough entries to
+improve discovery. Source-module taxonomies are diagnostic metadata, not the
+player's ontology. Partial sets copy their exact mechanisms into the selected
+owner and retain no shared runtime authority afterward.

@@ -27,6 +27,10 @@ namespace ColonistAwareness
         internal bool Selected;
         internal bool Disabled;
         internal Action Choose;
+        // Choices that can fail validation keep the dialog open and report the
+        // failure at their owning surface. Ordinary choices continue to use
+        // Choose.
+        internal Func<bool> TryChoose;
     }
 
     internal static class CACreationUI
@@ -55,7 +59,6 @@ namespace ColonistAwareness
             switch (source)
             {
                 case CAAxisSource.Authored: return "Chosen";
-                case CAAxisSource.Preset: return "Preset";
                 case CAAxisSource.Generated: return "Generated";
                 default: return "Unset";
             }
@@ -66,7 +69,6 @@ namespace ColonistAwareness
             switch (source)
             {
                 case CAAxisSource.Authored: return Authored;
-                case CAAxisSource.Preset: return Preset;
                 case CAAxisSource.Generated: return Generated;
                 default: return Unset;
             }
@@ -299,9 +301,18 @@ namespace ColonistAwareness
 
         private float DrawGroups(Rect inRect, float y)
         {
-            List<string> groups = choices.Select(item => item.Group)
-                .Where(item => !item.NullOrEmpty()).Distinct().ToList();
-            if (groups.Count <= 1) return y;
+            List<string> groups = CAAuthoringCategoryPolicy.NavigableGroups(
+                choices.Where(item => !item.Group.NullOrEmpty())
+                    .GroupBy(item => item.Group, StringComparer.Ordinal)
+                    .Select(items => new KeyValuePair<string, int>(
+                        items.Key, items.Count()))).ToList();
+            if (groups.Count == 0)
+            {
+                group = null;
+                return y;
+            }
+            if (!group.NullOrEmpty() && !groups.Contains(group))
+                group = null;
             groups.Insert(0, "All");
             int selected = group.NullOrEmpty() ? 0
                 : Mathf.Max(0, groups.IndexOf(group));
@@ -606,8 +617,15 @@ namespace ColonistAwareness
             if (Widgets.ButtonText(use, confirm, true, true,
                     !choice.Disabled) && !choice.Disabled)
             {
-                choice.Choose?.Invoke();
-                Close();
+                bool accepted;
+                if (choice.TryChoose != null)
+                    accepted = choice.TryChoose();
+                else
+                {
+                    accepted = choice.Choose != null;
+                    choice.Choose?.Invoke();
+                }
+                if (accepted) Close();
             }
         }
     }

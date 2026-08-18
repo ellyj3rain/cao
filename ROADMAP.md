@@ -1,7 +1,7 @@
 # Colonist Awareness - roadmap
 
-The A sequence is closed at `A102`; the chronology is complete through `B7`,
-and `B8` is the next development batch.
+The A sequence is closed at `A102`; the chronology is complete through `B13`,
+and `B14` is the next development batch after the operator runtime test.
 Historical batch identifiers below use the current sequence. Thematic `T-*`
 identifiers link continuing work across nonadjacent batches. The chronological
 catalog is [`BATCH_LOG.md`](BATCH_LOG.md); thematic links are in
@@ -804,12 +804,12 @@ judgment is the eventual built composition after native work supplies the Bed.
 ## Regional living-world program — T-019–T-026
 
 The current regional implementation uses one direct model: regions contain
-factions and settlements. Factions own carried cultural background, Ideoligion,
-political beliefs, faction structure, settlement authority, and faction era.
-Settlements own population groups, form, role, relative development, starting
-facilities and exact overrides, infrastructure, economic and trade conditions,
-history, provisions, and derived capability. Contextual cultural expression,
-settlement pattern, and urban scale are realized results, not independent
+factions and settlements. Factions own substantive inherited Culture, optional
+visual tradition, native Ideoligion, Political Beliefs, instituted current order,
+settlement authority, and faction era. Settlements own population groups, form,
+role, explicit established operations, realized infrastructure, economic and
+trade conditions, history, provisions, local Culture, and derived capability.
+Settlement pattern and urban scale are realized results, not independent
 authoring categories.
 
 Built and statically verified:
@@ -819,21 +819,24 @@ Built and statically verified:
    Settlement positions resolve on valid visual land.
 2. **Current pending-plan persistence.** One keyed file per world identity and
    its active mirror store the same confirmed candidate directly as `factions`,
-   `settlements`, relations, population groups, development profiles,
-   facilities, infrastructure, provisions, and founding state. The current
-   authored composition is converted to schema 4.
-3. **Faction and settlement authoring.** Carried cultural background,
-   Ideoligion, political beliefs, faction structure, settlement authority,
-   settlement form, relative development, facilities,
-   infrastructure, population groups, and provision distribution are independently
-   readable and editable where they affect generation. Settlement placement,
+   `settlements`, relations, population groups, Culture, Political Beliefs,
+   current order, established operations, provisions, and founding state.
+   The current authored composition is generated directly under regional-plan
+   schema 11 and pending-authoring epoch 11.
+3. **Faction and settlement authoring.** Substantive Culture, native
+   Ideoligion, Political Beliefs, current order, settlement authority,
+   settlement form, population groups, provisions, and explicit complete
+   established operations are independently readable and editable where they own
+   real facts.
+   Settlement placement,
    relations, population, land, access, services, civic development, economic and
    trade conditions, specialization, regional role, and history produce the saved
    settlement pattern and scale.
-4. **Cultural expression and materialization.** One typed causal kernel derives
-   each settlement's cultural expression from its actual people, beliefs,
-   institutions, material state, geography, relations, and history. The
-   confirmed candidate creates native factions,
+4. **Culture and materialization.** Forty-five production social referents and
+   thirty concrete repeated practices connect factual sources to
+   substantive meanings, informed pawn response, group patterns, longitudinal
+   Culture, and named consumers. The confirmed
+   candidate creates native factions,
    settlements, residents, Ideoligions, organizations, buildings, provisions,
    geography, and faction relations. Derived capability reads faction era and
    local supports.
@@ -853,11 +856,11 @@ Immediate runtime gates, in operator order:
    incomplete” or “select an arrival area” failures.
 3. Confirm that the generated map matches the preview's visual land shape and
    that selected geographic features resolve inside it.
-4. Confirm that settlement identifiers, buildings, residents, contextual
-   cultural expression, facilities, and provisions appear on the intended land
+4. Confirm that settlement identifiers, buildings, residents, Culture,
+   facilities, and provisions appear on the intended land
    and reflect the authored settings.
-5. Compare Minimal, Contextual, and Extensive development; confirm explicit
-   infrastructure and exact per-facility overrides retain their ownership.
+5. Inspect derived infrastructure and confirm explicit established operations
+   retain their ownership without restoring a general development profile.
 6. Record performance and generation receipts for the selected 350-cell local
    scale and multi-area backing map.
 
@@ -1442,7 +1445,7 @@ The next evidence is the operator's runtime test of hierarchy, copy fit,
 Back/Next stability, native Ideoligion editing, preset/custom continuity,
 belief-versus-arrangement clarity, and materialization in the real colony flow.
 
-## Contextual cultural expression and settlement development - B5 / T-015, T-019, T-021, T-023, T-025
+## Historical B5 boundary, superseded by B7-B8 - T-015, T-019, T-021, T-023, T-025
 
 B5 corrects the B4 Culture model at its ownership boundary. A population carries
 background identity and an optional native visual tradition; it does not carry a
@@ -1452,17 +1455,14 @@ material conditions, geography, relations, and history. Starting Region,
 established-faction summaries, materialized records, loaded maps, and world
 markers consume that same deterministic reading.
 
-Settlement development is now relative. Minimal, Contextual, and Extensive
-shift only generated access, services, and civic development within bounded
-limits. Explicit infrastructure wins, and every starting facility independently
-remains Generated or receives an Include or Omit override. Plan schema 4 and
-Culture schema 3 preserve the authored composition across both active fixture
-surfaces.
+At B5, settlement development used Minimal, Contextual, and Extensive profiles
+and per-facility Generated, Include, and Omit overrides under plan schema 4 and
+Culture schema 3. B7 removed those invalid authoring abstractions; B8 replaced
+the Culture and persistence boundary. This paragraph is historical context, not
+the current settlement contract.
 
-The verified assembly is deployed. The current gate is the operator's runtime
-test of the preserved three-faction/four-settlement plan, settlement-scoped
-cultural readings, relative development, exact facility provenance, generation,
-and materialized readback.
+B5's verified assembly was deployed at that historical boundary. The current
+runtime gate is recorded under B8 below.
 
 ## Behavior contract, authority, and playable runtime convergence - B6 / T-003–T-010, T-012, T-013, T-015, T-019, T-021, T-022, T-025
 
@@ -1527,4 +1527,150 @@ later compatible-region run.
 
 B7's deterministic receipts and frozen-tree reviews close the static gate. The
 verified assembly is deployed for operator cases 97-103 and 105 on the selected
-fixture. `B8` is the next development batch.
+fixture.
+
+## Substantive inherited Culture and political composer - B8 / T-002, T-004, T-006, T-019, T-021-T-025, T-028, T-030
+
+B8 completes the authoring correction before runtime. Culture at T0 now contains
+substantive inherited meanings and practices over open namespaced social
+subjects. Its composer separates social meaning, lived practice, and optional
+visual tradition, and the same model serves founder, faction, and settlement
+authoring at their proper temporal boundaries.
+
+Political authoring is question-first across all thirteen positions. Five
+complete profiles copy transparent vectors without owning political identity;
+NPC derivation records axis-specific evidence and leaves unsupported positions
+unset. Informed pawn responses aggregate into subject-specific social patterns,
+which can contribute to qualified later Culture transitions without creating
+knowledge, authority, or material capability.
+
+Authoring epoch 8 discards incompatible pre-release state rather than migrating
+the invalid B4-B7 objects. Exact B8 receipts, retained creation and behavior
+suites, five review lenses, a clean Release build, and byte-verified deployment
+close that static gate.
+
+B11 supersedes this historical B8 profile shape. Political mechanisms are now
+multi-valued and independently composable; twelve normative belief sets and ten
+current-order sets apply explicit partial patches, and no active Political
+Profile remains.
+
+## Starting Region Information Architecture and Settlement Program Closure - B9 / T-002, T-013-T-016, T-019, T-021-T-025, T-028, T-030
+
+B9 preserves Objects and Map while making Details a legible comparison surface.
+It removes one-option controls, backend provenance, and permanent architectural
+exposition; aligns faction, settlement, region, and Culture information with the
+scope that owns it; and replaces fixed row heights with measured layout.
+
+The seven-bit Starting Facilities model is retired. An open 22-program registry
+records established-settlement composition over loaded functional asset
+contracts. B10 subsequently corrects its causal ownership: only complete direct
+operational evidence may activate an entry, while unsupported contracts remain
+absent. Culture onboarding is semantic by default with exact-value fine tuning
+retained contextually.
+
+## Causal Closure and Elimination of Synthetic Social State - B10 / T-002, T-004-T-006, T-010, T-013-T-016, T-018-T-025, T-028, T-030
+
+B10 audits the aggregate social, political, cultural, institutional, behavioral,
+material, spatial, authoring, persistence, and fixture paths before aggregate
+runtime validation. Persistent domestic units replace hash-selected households;
+domain evidence replaces random capability; direct operational contracts replace
+tendency-created programs; exact operators replace provision categories; and
+normative belief, practiced order, Culture, authority, work, knowledge, material,
+and assets remain causally separate.
+
+The B10 causal-provenance ledger covers every mechanically significant state
+family and records the 22 program outcomes and institution-asset classifications.
+The renewed synthetic-state sweep classifies 152 active RNG/hash occurrences
+with no unresolved Critical or High finding. Seventy-five acceptance receipts
+prove domestic identity, capability evidence, explicit program formation, exact
+program/operator/asset continuity, provision stock and access, produced security
+assignments, Culture and political boundaries, persistence, UI non-authority,
+and fixture/runtime equivalence. Authoring epoch 10 and plan schema 10 discard
+incompatible pre-release derived state while preserving the intentional
+three-faction/four-settlement composition and its 19 established operations.
+
+That aggregate test was superseded as the immediate boundary by the authorized
+B11 durability and authoring closure. The B10 causal receipts remain the retained
+regression floor.
+
+## Durable Campaign Boundary and Compositional Authoring Closure - B11 / T-001, T-002, T-004, T-019, T-021-T-025, T-028, T-030
+
+B11 establishes explicit module, mutation, cadence, index, schema, migration,
+preflight, update, and rollback ownership around the closed B10 causal model.
+The runtime profiler is disabled by default, bounded, resettable, exportable, and
+excluded from save causality. The executable schema catalog recognizes current
+B11 state and one controlled B10 upgrade envelope without rerunning creation or
+inventing history. Pending authoring reset remains separate from realized
+campaign persistence.
+
+The B11 addendum separates ontology capacity, production vocabulary, runtime
+realization, and control surface. The mechanically grounded vocabulary now has
+45 social referents and 30 concrete repeated practices, with 36 observable fact
+families classified and no uncovered core mechanic. Culture uses distinct
+constituent, meaning, practice, disagreement, continuity, and transition
+operations. Category navigation is content-driven and no longer exposes source
+domains or one-item tabs.
+
+Political Beliefs and current order remain separate, independently composable
+mechanism sets. The old full Political Profile surface and synthetic `mixed`
+values are removed. Twelve belief sets and ten current-order sets are explicit
+partial copy-on-apply patches that preserve unrelated and compatible authored
+facts. The governed fixture advances to pending epoch 11, regional-plan schema
+11, and Culture/Political Beliefs schema 9 while retaining its current identity,
+3 factions, 4 settlements, 9 population groups, and 19 established operations.
+
+That B11 boundary remains the durable regression floor for B12.
+
+## Cultural Cognition, Political Emergence, and Proposition Knowledge - B12 / T-001, T-002, T-004-T-006, T-019, T-022-T-025, T-028, T-030
+
+B12 makes Culture a population distribution over thirteen explicit questions.
+Pawns persist private and public attitudes, perceived descriptive and injunctive
+norms, confidence, moral conviction, uncertainty, and sparse represented
+influence. Traits supply explicit psychology evidence; unsupported backstory and
+gene effects remain evidence, and skills affect situated efficacy rather than
+personality.
+
+Political cognition, proposition knowledge, and cultural cognition have separate
+world owners. Organizations retain legitimacy and sanction appraisals. Political
+positions emerge from represented Culture, psychology, Ideoligion, material,
+institutional, threat, knowledge, and influence facts. Proposition records retain
+source, trust, access, confidence, transmission, research, custody, and decay.
+Culture affects appraisal and discretionary CA action selection without changing
+native legality or direct player authority.
+
+Culture schema 10 maps B11 meanings only through exact ordered-question adapters
+and preserves all dimensions and unmatched subjects as evidence. The epoch-12,
+regional-plan-schema-11 fixture keeps the same identity, 3 factions, 4
+settlements, 9 population groups, and 19 established operations while adding 22
+question distributions and 26 legacy evidence records. The 113-case B12 suite,
+retained regressions, five review lenses, clean build, publication, and
+byte-verified deployment close static acceptance. The next action is the
+operator's RimWorld runtime test.
+
+## Culture Completion and Causal Fidelity - B13 / T-001, T-002, T-004, T-006, T-019, T-021-T-025, T-028, T-030
+
+B13 completes B12's Culture capability without replacing its durable owner.
+Twenty-four questions now form eight categories with three questions each.
+Every question owns five semantic anchors, evidence and research provenance,
+question-specific pawn appraisal, substantive consumers, and a historical
+feedback route. Nine complete historical/social presets, saved profiles, manual
+editing, deterministic randomization, and generated completion write the same
+Culture object. One global diversity control owns default population spread;
+per-question spread remains advanced.
+
+The cognition path keeps neighboring causes separate: salience affects
+attention rather than manufacturing conviction; norm strength and divergence
+tolerance affect social pressure rather than expected enforcement; source
+confidence affects inherited-prior strength rather than knowledge confidence;
+visibility affects observation likelihood rather than compressing expression;
+and psychology supplies only a bounded question-specific private deviation.
+Starting Region and broader non-player faction generation use the same Culture
+completion kernel, while player Culture is never silently rerolled.
+
+Campaign catalog 3 carries cultural-cognition schema 2 and Culture registry 2.
+The governed fixture retains its exact identity and composition while eight
+Culture records carry 192 complete root distributions, two authored local rows,
+and 26 evidence records. Sixty-seven B13 receipts join the retained 75 B10, 78 B11,
+and 113 B12 assertions. Independent causal, structural, and surface review, a
+clean build, and byte-verified deployment close static acceptance. The next
+action is the operator's RimWorld runtime test; `B14` remains next.

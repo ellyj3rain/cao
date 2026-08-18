@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Core |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.3.0.1-alpha` · closed batch tip `B7` · next `B8` |
+| Version | `1.5.0.0-alpha` · closed batch tip `B14` · next `B15` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `CORE.md` |
@@ -78,7 +78,7 @@ remains authoritative at every tier.
 
 The regional work is not a detached map-size mod. It is the physical theater for
 the same framework. Regions contain factions, settlements, population groups,
-persistent local Culture, Ideoligion, Political Beliefs, social order, starting
+persistent local Culture, Ideoligion, Political Order, represented institutions, starting
 conditions, relationships, operations, economies, diplomacy, and conflict.
 Loaded maps are detailed materializations and native physical executors. The
 projection rule:
@@ -89,26 +89,50 @@ contract → native world/incident/quest/map/Lord projection → reconciled outc
 Native RimWorld physical execution remains authoritative while materialized; this
 mod owns the persistent organizational reason and continuity.
 
-Culture is persistent longitudinal social-historical state. A local Culture
-retains inherited origin, local identity, constituent populations, lived
-observations, recognized practices, transitions, and provenance. Bounded
-historical evaluations derive `Culture(T+1)` from `Culture(T)` and intervening
-evidence. Spatial, social, institutional, political, and settlement-development
-consumers may rank otherwise valid choices from that state, but Culture creates
-neither permission nor material capability. Cultural expression is a read-only
-interpretation of the relationship between Culture and current society; native
-`CultureDef` is one optional visual inheritance.
+Culture is persistent longitudinal social-historical state with a substantive
+inherited baseline. Its current normative authority is a population distribution
+over twenty-four admitted Culture questions in eight categories, not a broad
+meaning row or factual social subject. A distribution owns its center, spread,
+descriptive norm, prestige, salience, norm pressure, visibility, inherited-prior
+confidence, divergence tolerance, subgroup mixture, provenance, and evidence
+signature. Social subjects remain factual
+referents and practices remain concrete repeated conduct with evidence and
+consumers. Exact B11 meanings migrate only where an ordered question exists;
+only weighted approval and salience acquire current question semantics, and
+every former dimension otherwise remains explicit legacy evidence.
+
+Pawns retain deterministic private and public attitudes, attention, inherited-
+prior strength, perceived norms and social pressure, observation likelihood,
+knowledge confidence, moral conviction, and uncertainty. Question-specific
+psychology supplies only a bounded private deviation. Sparse represented influence may
+move those attitudes over time. Persistent psychology, Culture, native
+Ideoligion, Political Order, represented institutions, organizations, proposition
+knowledge, acts, and practices are separate causes and durable owners. Culture
+contributes appraisal and discretionary CA action selection without changing
+native legality, direct player authority, knowledge, office, material capacity,
+or completed research. Native `CultureDef` is an optional visual tradition only.
 
 Existing societies and player founding use the same Culture, native Ideoligion,
-Political Beliefs, and social-order concepts at different points in time.
+Political Order, and institutional concepts at different points in time.
 Existing faction and settlement records describe a society already present:
 established Culture, realized institutions, material conditions, and an explicit
 temporal basis. Player authoring records the inherited Culture, Ideoligion, and
-Political Beliefs the founders bring and the exact rules they adopt at landing.
+Political Order the founders bring and the exact rules they adopt at landing.
 Later local Culture, institutions, and practice must be produced by play rather
-than fabricated as pre-existing event history. Political Beliefs judge what is
-practiced; they do not become organization customs or broader institutions merely
-because the founders hold them.
+than fabricated as pre-existing event history. Political Order records what the
+population considers proper; it does not become an organization custom or broader
+institution merely because the founders hold it.
+
+A society preset is an independently identified two-component recipe: one
+Culture reference and one frozen complete Political Order composition. One validated
+operation copies both into their canonical faction-owned objects. The recipe
+supplies a coherent starting point without merging component ownership or
+materializing Ideoligion, institutions, practice, or history, and its identity
+does not persist in the authored faction. Culture and Political Order presets
+remain independent component substitutions. Starting Region may use the same
+Society recipe while creating an ordinary local faction and settlement; the
+page separately owns its explicit scenario population and broad-area map
+assignment. The applied recipe does not survive as a settlement type or mode.
 
 ## Governing constraints
 
@@ -125,14 +149,67 @@ because the founders hold them.
   credit. An obligation is created by a basis, never by an empty purse.
 - **DR-106 through DR-115.** Authoring exposes meaningful persistent causes,
   not every analytical category the simulation can derive. Culture is persistent
-  longitudinal social history; Ideoligion, Political Beliefs, institutions,
+  longitudinal social history; Ideoligion, Political Order, institutions,
   adopted rules, and practice remain distinct; established societies and new
   founders retain their different temporal boundaries. Contextual explanation
   belongs to the owning decision, and Starting Region preserves its spatial map
   without universal detail, development-intensity, or facility-bundle controls.
+- **DR-116 through DR-119, as superseded by DR-148 through DR-168.** Culture at
+  T0 contains substantive question distributions and concrete practices with
+  real source-and-consumer contracts. Political Order is a complete composition
+  over concrete questions; represented institutions remain separate factual
+  state. Presets and deterministic generation fill the same complete variables
+  and remain editable. Pending-authoring epoch 12 may reject incompatible
+  unconfirmed drafts, while realized campaign state follows the durable B11
+  boundary and current owner-specific compatibility rules. Manual, preset,
+  profile, random, and generated Culture share one object; causal fields remain
+  separate and authored player state is never silently rerolled.
 - Stitching controls geographic continuity only, never population or political
   intensity. Vanilla `OverallPopulation` stays authoritative for major-settlement
   abundance.
+
+## Starting Region and Settlement Composition
+
+Starting Region has one shared selection across Region, Map, and Details.
+Region lists the region, its factions, and their settlements. Map selects those
+same facts, assigns broad settlement and arrival areas, and can begin the same
+settlement-placement operation. Details owns the selected subject's decisions
+and essential inspection. A field becomes a control only when more than one
+valid choice exists. Generated-source labels, schema facts, receipts, and
+architectural explanation remain outside ordinary player copy.
+
+An established settlement owns an open causal settlement program. Each active
+entry begins with a concrete need and records its actual operator, standing,
+knowledge, labor, material inputs, nodes, target population, access, funding,
+maintenance, behavior consumer, and failure condition. Broad tendencies and
+capability scores are summaries or planning pressures; they never instantiate a
+program. Loaded functional assets are selected only after the social and
+operational contract exists. A room, building, or worktable is a material node,
+not an institution.
+
+Domestic provision belongs to actual pawns or persistent domestic units formed
+from represented partner, kin, residence, or retained co-residential facts.
+Unresolved residents self-provision individually rather than becoming a
+hash-selected household. Communal and authority provision require actual
+organizations, workers, stock, access, funding, and distribution. Tax-funded
+provision additionally requires a legitimate authority, adopted tax policy,
+tax base, collection, and expenditure. Political Order remains normative;
+it does not create represented institutions or provision systems.
+
+Practiced capability is a domain-specific evidence assessment over actors,
+organizations, active work, knowledge, material nodes, history, blockers, and
+confidence. It contains no random jitter and cannot be the sole cause of the
+programs it summarizes. These causal-ownership constraints are ratified in the
+B10 audit and DR-133 through DR-144.
+
+Culture authoring begins with descriptive anchors for population distributions
+and keeps concrete practices and historical evidence distinct. Exact continuous
+values remain available as contextual fine tuning, not the default description
+of a population. Faction Relations remains the visual reference for relational
+authoring. The production vocabulary, question registry, category policy,
+political composition, and duplicate-surface constraints are inventoried in
+`AUTHORING_ONTOLOGY_COVERAGE.md`, `B13_CAUSAL_CONTRACT.md`, and
+`CULTURE_RESEARCH_CORPUS.md`.
 
 ## Ownership
 

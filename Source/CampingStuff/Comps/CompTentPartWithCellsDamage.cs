@@ -39,7 +39,7 @@ internal class SketchEntityComparer : IEqualityComparer<SketchEntity>
 /// </summary>
 public class CompTentPartWithCellsDamage : CompTentPartDamage
 {
-	public CompProperties_CompTentPartWithCellsDamage Props => (CompProperties_CompTentPartWithCellsDamage)this.props;
+	public new CompProperties_CompTentPartWithCellsDamage Props => (CompProperties_CompTentPartWithCellsDamage)this.props;
 
 	protected HashSet<SketchEntity> damagedCells = new HashSet<SketchEntity>(new SketchEntityComparer());
 

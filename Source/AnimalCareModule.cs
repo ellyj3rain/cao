@@ -125,7 +125,8 @@ namespace ColonistAwareness
                 knowledgeBasis: "current visible animal care state",
                 owner: "animal care work");
             if (!register)
-                return CABehaviorGate.Evaluate(behaviorKey, context).Allowed
+                return CABehaviorGate.EvaluateForSelection(behaviorKey,
+                    context).SelectionApproved
                     ? job : null;
             CABehaviorDecision decision;
             CAIntentContext intent;
@@ -304,8 +305,9 @@ namespace ColonistAwareness
                 knowledgeBasis: "current visible downed animal",
                 owner: "animal care work");
             if (!register)
-                return CABehaviorGate.Evaluate("animal.emergency_care",
-                    context).Allowed ? job : null;
+                return CABehaviorGate.EvaluateForSelection(
+                    "animal.emergency_care", context).SelectionApproved
+                    ? job : null;
             CABehaviorDecision decision;
             CAIntentContext intent;
             return CABehaviorJobOrigin.TryAuthorizeAndRegister(pawn, job,

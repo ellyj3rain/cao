@@ -7,44 +7,8 @@ using Verse;
 
 namespace ColonistAwareness
 {
-    internal static class CAStartingFacilityCatalog
-    {
-        internal sealed class Program
-        {
-            internal int Bit;
-            internal string Label;
-            internal string Description;
-            internal string IconPath;
-        }
-
-        internal static readonly Program[] All =
-        {
-            new Program { Bit = CAStartingFacilities.MaskHearth,
-                Label = "Hearth", Description = "A working kitchen or communal hearth.",
-                IconPath = "Rimshare/WorldMapIcons/flowers" },
-            new Program { Bit = CAStartingFacilities.MaskStores,
-                Label = "Stores", Description = "Shelving and preserved reserves; enables emergency provisions.",
-                IconPath = "Rimshare/WorldMapIcons/divided-square" },
-            new Program { Bit = CAStartingFacilities.MaskInfirmary,
-                Label = "Infirmary", Description = "A dedicated room for local medical care.",
-                IconPath = "Rimshare/WorldMapIcons/american-shield" },
-            new Program { Bit = CAStartingFacilities.MaskWorkshop,
-                Label = "Workshop", Description = "Supports local production.",
-                IconPath = "Rimshare/WorldMapIcons/factory" },
-            new Program { Bit = CAStartingFacilities.MaskJail,
-                Label = "Jail", Description = "A secure holding room.",
-                IconPath = "Rimshare/WorldMapIcons/caged-ball" },
-            new Program { Bit = CAStartingFacilities.MaskDining,
-                Label = "Dining hall", Description = "Tables for shared meals.",
-                IconPath = "Rimshare/WorldMapIcons/carnival-mask" },
-            new Program { Bit = CAStartingFacilities.MaskLab,
-                Label = "Laboratory", Description = "Supports local research.",
-                IconPath = "Rimshare/WorldMapIcons/atom" }
-        };
-    }
-
     // One population group, one editor, one independent control per fact.
-    // Affiliation, Ideoligion, and political belief intentionally do not
+    // Affiliation, Ideoligion, and Political Order intentionally do not
     // infer or overwrite one another.
     internal sealed class Dialog_CAPopulationGroupEditor : Window
     {
@@ -90,7 +54,7 @@ namespace ColonistAwareness
             Text.Font = GameFont.Small;
             GUI.color = new Color(0.74f, 0.78f, 0.82f);
             const string introduction = "Set the group's size, settlement "
-                + "pattern, affiliation, Ideoligion, and political beliefs. "
+                + "pattern, affiliation, Ideoligion, and Political Order. "
                 + "Belief sources may follow affiliation or remain independent.";
             float introductionHeight = Text.CalcHeight(introduction,
                 inRect.width);
@@ -151,13 +115,14 @@ namespace ColonistAwareness
                 });
 
             if (!main)
-                SegmentRow(ref y, view.width, "Settlement pattern",
-                    "A separate quarter keeps distinct households, gathering "
-                        + "space, and provision nodes.",
-                    new[] { "Mixed throughout", "Separate quarter" },
-                    population.quarter ? 1 : 0, index =>
+                SegmentRow(ref y, view.width, "Ideoligion protection",
+                    "Protection preserves this population's distinct "
+                        + "Ideoligion when local orthodoxy would otherwise "
+                        + "suppress it. It does not assign residential ground.",
+                    new[] { "No protection", "Protected" },
+                    population.ideoligionProtected ? 1 : 0, index =>
                     {
-                        population.quarter = index == 1;
+                        population.ideoligionProtected = index == 1;
                         MarkChanged();
                     });
 
@@ -171,10 +136,10 @@ namespace ColonistAwareness
                 IdeoligionWords(),
                 "Sets religious and moral belief only.", OpenIdeoligions,
                 IdeoligionSourceState());
-            ChoiceRow(ref y, view.width, "Political beliefs",
+            ChoiceRow(ref y, view.width, "Political Order",
                 PoliticalWords(),
                 "Sets what this population considers proper; it does not "
-                    + "change the settlement's current rules.", OpenPolitics,
+                    + "change represented settlement institutions.", OpenPolitics,
                 PoliticalSourceState());
 
             viewHeight = y + 8f;
@@ -188,7 +153,7 @@ namespace ColonistAwareness
                 {
                     Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
                         "Remove " + (population.label ?? "this population group")
-                        + " and its starting provisions?", delegate
+                        + " and its provision arrangements?", delegate
                         {
                             remove();
                             Close();
@@ -302,8 +267,11 @@ namespace ColonistAwareness
 
         private string IdeoligionWords()
         {
-            if (population.independentIdeoligionKey >= 0)
-                return "Independent Ideoligion";
+            if (population.nativeIdeoligionId >= 0)
+                return Find.IdeoManager?.IdeosListForReading?
+                    .FirstOrDefault(ideo => ideo != null
+                        && ideo.id == population.nativeIdeoligionId)?.name
+                    ?? "Selected Ideoligion unavailable";
             CARegionalFactionPlan source = plan.FactionPlan(
                 CACreationFlowContracts.EffectiveSourceKey(
                     population.ideoligionFactionKey, population.factionKey));
@@ -327,7 +295,7 @@ namespace ColonistAwareness
 
         private string IdeoligionSourceState()
         {
-            return population.independentIdeoligionKey < 0
+            return population.nativeIdeoligionId < 0
                 && CACreationFlowContracts.FollowsAffiliation(
                     population.ideoligionFactionKey)
                 ? "Follows affiliation" : "Independent";
@@ -355,7 +323,7 @@ namespace ColonistAwareness
                     Summary = local.TechnologySummary,
                     Traits = CAFactionAxes.Characterize(plan, local),
                     Details = "Changes faction membership. Ideoligion and "
-                        + "political beliefs change only when their source is "
+                        + "Political Order changes only when its source is "
                         + "set to Use faction affiliation.",
                     Badge = "Faction affiliation",
                     Accent = CARegionalWorldOverlay.FactionColor(local.key),
@@ -380,7 +348,6 @@ namespace ColonistAwareness
                 Details = "Belief sources set to Use faction affiliation "
                     + "become individual until another affiliation is chosen.",
                 Badge = "Faction affiliation",
-                Icon = CACreationUI.Icon("Rimshare/WorldMapIcons/anarchy"),
                 Accent = CACreationUI.Unset,
                 Selected = population.factionKey < 0,
                 ConfirmLabel = "Leave unaffiliated",
@@ -393,7 +360,7 @@ namespace ColonistAwareness
                 }
             });
             CACreationUI.OpenChoices("Faction affiliation",
-                "Choose membership. Ideoligion and political beliefs follow "
+                "Choose membership. Ideoligion and Political Order follow "
                 + "only when their source is set to Use faction affiliation.",
                 options);
         }
@@ -410,12 +377,12 @@ namespace ColonistAwareness
                 Icon = plan.FactionPlan(population.factionKey)?.LivingIdeo?.Icon,
                 Accent = CACreationUI.Generated,
                 Selected = population.ideoligionFactionKey < 0
-                    && population.independentIdeoligionKey < 0,
+                    && population.nativeIdeoligionId < 0,
                 ConfirmLabel = "Use affiliated Ideoligion",
                 Choose = delegate
                 {
                     population.ideoligionFactionKey = -1;
-                    population.independentIdeoligionKey = -1;
+                    population.nativeIdeoligionId = -1;
                     MarkChanged();
                 }
             });
@@ -432,38 +399,48 @@ namespace ColonistAwareness
                     Badge = "Ideoligion source",
                     Icon = local.LivingIdeo?.Icon,
                     Accent = CARegionalWorldOverlay.FactionColor(local.key),
-                    Selected = population.independentIdeoligionKey < 0
+                    Selected = population.nativeIdeoligionId < 0
                         && population.ideoligionFactionKey == local.key,
                     ConfirmLabel = "Use this Ideoligion",
                     Choose = delegate
                     {
                         population.ideoligionFactionKey = local.key;
-                        population.independentIdeoligionKey = -1;
+                        population.nativeIdeoligionId = -1;
                         MarkChanged();
                     }
                 });
             }
-            options.Add(new CACreationChoice
+            HashSet<int> factionIdeos = new HashSet<int>(plan.factions
+                .Where(item => item?.LivingIdeo != null)
+                .Select(item => item.LivingIdeo.id));
+            foreach (Ideo existing in (Find.IdeoManager?.IdeosListForReading
+                         ?? new List<Ideo>()).Where(ideo => ideo != null
+                         && !factionIdeos.Contains(ideo.id))
+                     .OrderBy(ideo => ideo.name))
             {
-                Key = "independent",
-                Name = "Independent Ideoligion",
-                Summary = "Generate a separate Ideoligion for this group.",
-                Badge = "Ideoligion source",
-                Icon = CACreationUI.Icon("Rimshare/WorldMapIcons/forward-sun"),
-                Accent = CACreationUI.Authored,
-                Selected = population.independentIdeoligionKey >= 0,
-                ConfirmLabel = "Use an independent Ideoligion",
-                Choose = delegate
+                Ideo local = existing;
+                options.Add(new CACreationChoice
                 {
-                    population.independentIdeoligionKey =
-                        settlement.slot * 100 + population.key;
-                    population.ideoligionFactionKey = -1;
-                    MarkChanged();
-                }
-            });
+                    Key = "ideo:" + local.id,
+                    Name = local.name ?? "Ideoligion #" + local.id,
+                    Summary = "Use this existing Ideoligion independently "
+                        + "of faction affiliation.",
+                    Badge = "Existing Ideoligion",
+                    Icon = local.Icon,
+                    Accent = CACreationUI.Authored,
+                    Selected = population.nativeIdeoligionId == local.id,
+                    ConfirmLabel = "Use this Ideoligion",
+                    Choose = delegate
+                    {
+                        population.nativeIdeoligionId = local.id;
+                        population.ideoligionFactionKey = -1;
+                        MarkChanged();
+                    }
+                });
+            }
             CACreationUI.OpenChoices("Ideoligion",
                 "Choose religious and moral belief only. Faction affiliation "
-                + "and political beliefs remain unchanged.", options);
+                + "and Political Order remain unchanged.", options);
         }
 
         private void OpenPolitics()
@@ -473,12 +450,12 @@ namespace ColonistAwareness
             {
                 Key = "affiliation",
                 Name = "Use faction affiliation",
-                Summary = "Use the political beliefs of the affiliated faction.",
-                Badge = "Political-belief source",
+                Summary = "Use the Political Order of the affiliated faction.",
+                Badge = "Political Order source",
                 Accent = CACreationUI.Generated,
                 Selected = population.politicalBeliefsFactionKey < 0
                     && population.politicalBeliefsId.NullOrEmpty(),
-                ConfirmLabel = "Use affiliated beliefs",
+                ConfirmLabel = "Use affiliated Political Order",
                 Choose = delegate
                 {
                     population.politicalBeliefsFactionKey = -1;
@@ -495,17 +472,15 @@ namespace ColonistAwareness
                     Key = local.key.ToString(),
                     Name = CAPoliticalBeliefsModel.Summary(
                         local.politicalBeliefs),
-                    Summary = "Political beliefs of "
+                    Summary = "Political Order of "
                         + CARegionalPlanUtility.FactionName(local) + ".",
-                    Traits = CAPoliticalBeliefsModel.PresetTraits(
-                        CAFactionAxes.Preset(
-                            local.politicalBeliefs?.presetName), 3),
-                    Badge = "Political-belief source",
-                    Icon = CAPoliticalBeliefsModel.Icon(local.politicalBeliefs),
+                    Traits = CAPoliticalBeliefsModel.Summary(
+                        local.politicalBeliefs),
+                    Badge = "Political Order source",
                     Accent = CARegionalWorldOverlay.FactionColor(local.key),
                     Selected = population.politicalBeliefsFactionKey
                         == local.key,
-                    ConfirmLabel = "Use these political beliefs",
+                    ConfirmLabel = "Use this Political Order",
                     Choose = delegate
                     {
                         population.politicalBeliefsFactionKey = local.key;
@@ -514,10 +489,10 @@ namespace ColonistAwareness
                     }
                 });
             }
-            CACreationUI.OpenChoices("Political beliefs",
+            CACreationUI.OpenChoices("Political Order",
                 "Choose what this population considers proper. Ideoligion, "
-                + "faction affiliation, and current settlement rules remain "
-                + "unchanged.", options);
+                + "faction affiliation, and institutions stay unchanged.",
+                options);
         }
     }
 

@@ -275,9 +275,9 @@ namespace ColonistAwareness
                     : "current NPC combat duty",
                 knowledgeBasis: "current direct sight of a close hostile",
                 owner: "one weapon transition");
-            CABehaviorDecision decision = CABehaviorGate.Evaluate(
+            CABehaviorDecision decision = CABehaviorGate.EvaluateForSelection(
                 "operations.weapon_transition", gateContext);
-            if (!decision.Allowed) return;
+            if (!decision.SelectionApproved) return;
 
             int primaryId = primary.thingIDNumber;
             bool swapped = false;
@@ -550,9 +550,10 @@ namespace ColonistAwareness
                     knowledgeBasis: "current direct sight of "
                         + visibleThreat.LabelShort,
                     owner: "weapon-transition episode " + episode);
-                CABehaviorDecision decision = CABehaviorGate.Evaluate(
+                CABehaviorDecision decision = CABehaviorGate
+                    .EvaluateForSelection(
                     "operations.weapon_transition", context);
-                if (decision.Allowed && cand != null
+                if (decision.SelectionApproved && cand != null
                     && OffhandComponent.SetOffhand(p, cand))
                 {
                     automaticOffhand[p.thingIDNumber] = cand.thingIDNumber;

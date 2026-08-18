@@ -78,8 +78,8 @@
 				<label>recovering</label>
 				<vomitMtbDays>1</vomitMtbDays>
 				<statOffsets>
-					<BladderRateMultiplier>0.1</BladderRateMultiplier>
-					<ThirstRateMultiplier>0.1</ThirstRateMultiplier>
+					<CA_BladderRateMultiplier>0.1</CA_BladderRateMultiplier>
+					<CA_ThirstRateMultiplier>0.1</CA_ThirstRateMultiplier>
 				</statOffsets>
 				<capMods>
 					<li>
@@ -93,8 +93,8 @@
 				<minSeverity>0.2</minSeverity>
 				<vomitMtbDays>0.75</vomitMtbDays>
 				<statOffsets>
-					<BladderRateMultiplier>1</BladderRateMultiplier>
-					<ThirstRateMultiplier>1</ThirstRateMultiplier>
+					<CA_BladderRateMultiplier>1</CA_BladderRateMultiplier>
+					<CA_ThirstRateMultiplier>1</CA_ThirstRateMultiplier>
 				</statOffsets>
 				<capMods>
 					<li>
@@ -108,8 +108,8 @@
 				<minSeverity>0.8</minSeverity>
 				<vomitMtbDays>0.75</vomitMtbDays>
 				<statOffsets>
-					<BladderRateMultiplier>0.25</BladderRateMultiplier>
-					<ThirstRateMultiplier>0.25</ThirstRateMultiplier>
+					<CA_BladderRateMultiplier>0.25</CA_BladderRateMultiplier>
+					<CA_ThirstRateMultiplier>0.25</CA_ThirstRateMultiplier>
 				</statOffsets>
 				<capMods>
 					<li>
@@ -146,7 +146,7 @@
 			<li>
 				<label>minor</label>
 				<statOffsets>
-					<ThirstRateMultiplier>0.25</ThirstRateMultiplier>
+					<CA_ThirstRateMultiplier>0.25</CA_ThirstRateMultiplier>
 				</statOffsets>
 				<capMods>
 					<li>
@@ -168,7 +168,7 @@
 				<label>major</label>
 				<vomitMtbDays>1.5</vomitMtbDays>
 				<statOffsets>
-					<ThirstRateMultiplier>0.5</ThirstRateMultiplier>
+					<CA_ThirstRateMultiplier>0.5</CA_ThirstRateMultiplier>
 				</statOffsets>
 				<capMods>
 					<li>
@@ -192,7 +192,7 @@
 				<vomitMtbDays>0.75</vomitMtbDays>
 				<painOffset>0.05</painOffset>
 				<statOffsets>
-					<ThirstRateMultiplier>1</ThirstRateMultiplier>
+					<CA_ThirstRateMultiplier>1</CA_ThirstRateMultiplier>
 				</statOffsets>
 				<capMods>
 					<li>
@@ -237,7 +237,7 @@
 				<label>minor</label>
 				<painOffset>0.2</painOffset>
 				<statOffsets>
-					<ThirstRateMultiplier>0.25</ThirstRateMultiplier>
+					<CA_ThirstRateMultiplier>0.25</CA_ThirstRateMultiplier>
 				</statOffsets>
 				<capMods>
 					<li>
@@ -255,7 +255,7 @@
 				<label>major</label>
 				<painOffset>0.35</painOffset>
 				<statOffsets>
-					<ThirstRateMultiplier>0.5</ThirstRateMultiplier>
+					<CA_ThirstRateMultiplier>0.5</CA_ThirstRateMultiplier>
 				</statOffsets>
 				<capMods>
 					<li>
@@ -273,7 +273,7 @@
 				<label>extreme</label>
 				<painOffset>0.6</painOffset>
 				<statOffsets>
-					<ThirstRateMultiplier>1</ThirstRateMultiplier>
+					<CA_ThirstRateMultiplier>1</CA_ThirstRateMultiplier>
 				</statOffsets>
 				<capMods>
 					<li>
@@ -292,7 +292,7 @@
 				<lifeThreatening>true</lifeThreatening>
 				<painOffset>0.85</painOffset>
 				<statOffsets>
-					<ThirstRateMultiplier>1.5</ThirstRateMultiplier>
+					<CA_ThirstRateMultiplier>1.5</CA_ThirstRateMultiplier>
 				</statOffsets>
 				<capMods>
 					<li>

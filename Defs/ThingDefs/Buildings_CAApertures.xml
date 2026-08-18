@@ -19,6 +19,7 @@
     <category>Building</category>
     <altitudeLayer>Building</altitudeLayer>
     <passability>Impassable</passability>
+    <disableImpassableShotOverConfigError>true</disableImpassableShotOverConfigError>
     <blockWind>false</blockWind>
     <castEdgeShadows>true</castEdgeShadows>
     <blockLight>false</blockLight>

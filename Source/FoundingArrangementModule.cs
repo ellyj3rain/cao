@@ -8,7 +8,7 @@ namespace ColonistAwareness
 {
     // Creates the colony's initial ownership, work, decision, and membership
     // records. An authored arrangement wins; otherwise the scenario, faction
-    // structure, and political beliefs determine the starting choice.
+    // represented institutions and Political Order determine the starting choice.
     [HarmonyPatch(typeof(GameComponentUtility),
         nameof(GameComponentUtility.StartedNewGame))]
     internal static class CAFoundingArrangementPatch
@@ -200,8 +200,8 @@ namespace ColonistAwareness
             string scenario = Find.Scenario?.name ?? "unknown";
             int now = Find.TickManager.TicksGame;
 
-            // The founders carry culture and political beliefs. Their wider
-            // faction structure remains empty until institutions actually
+            // The founders carry Culture and Political Order. Their wider
+            // represented institutions remain empty until institutions actually
             // develop; only the exact arrangement below is instituted now.
             CAPlayerFoundingPlan founding = CAPlayerFoundingSession
                 .ConfirmedForRuntime();
@@ -225,8 +225,7 @@ namespace ColonistAwareness
             {
                 preset = founding.arrangement;
                 arrangementAuthored = founding.ArrangementSource
-                    == CAAxisSource.Authored
-                    || founding.ArrangementSource == CAAxisSource.Preset;
+                    == CAAxisSource.Authored;
             }
             if (preset == null)
                 preset = CAPoliticalBeliefPractice.ShapeDefault(
@@ -249,7 +248,7 @@ namespace ColonistAwareness
                     + (founding.culture?.name ?? "not recorded")
                     + ". Ideoligion: "
                     + (founding.nativeIdeoName ?? "not active")
-                    + ". Political beliefs: "
+                    + ". Political Order: "
                     + CAPoliticalBeliefsModel.Summary(playerBeliefs) + ".");
 
             // Record the applied arrangement and its effect.
@@ -257,7 +256,7 @@ namespace ColonistAwareness
                 + preset.label + " - " + preset.premise);
 
             // Record only differences between the starting arrangement and
-            // the faction's political beliefs. The founders, Ideoligion, and
+            // the faction's Political Order. The founders, Ideoligion, and
             // site are all final at this point.
             foreach (CAPoliticalBeliefPractice.CAFoundingBeliefReading axis
                 in CAPoliticalBeliefPractice.ReadAgainstPoliticalBeliefs(
@@ -265,8 +264,8 @@ namespace ColonistAwareness
             {
                 if (axis.Silent || axis.conforms) continue;
                 colony.Record("organization", "the founding terms"
-                    + " differs from"
-                    + " political beliefs on " + axis.title.ToLower()
+                    + " differ from the Political Order on "
+                    + axis.title.ToLower()
                     + ": they hold " + axis.belief
                     + ", and landed under " + axis.adopted);
             }
@@ -293,8 +292,8 @@ namespace ColonistAwareness
             return false;
         }
 
-        // Apply the selected arrangement to every founder. Starting provisions
-        // and facilities are materialized by their own saved parameters.
+        // Apply the selected arrangement to every founder. Provision and
+        // settlement programs materialize from their own saved facts.
         private static void ApplyArrangement(
             CAOrganizationRelationsWorldComponent ledger,
             CAOrganization colony, List<Pawn> founders,

@@ -501,9 +501,9 @@ namespace ColonistAwareness
                                 owner: "hold episode "
                                     + (ownedHold ? parent.EpisodeId : 0));
                             CABehaviorDecision decision =
-                                CABehaviorGate.Evaluate(
+                                CABehaviorGate.EvaluateForSelection(
                                     "combat.hold_deviation", gateContext);
-                            if (decision.Allowed)
+                            if (decision.SelectionApproved)
                             {
                                 holds[kv.Key] = clean;
                                 approachCompleted.Remove(kv.Key);
@@ -805,9 +805,10 @@ namespace ColonistAwareness
                     : "no currently visible actor-held threat fact",
                 owner: "hold episode "
                     + (ownedHold ? priorHoldContext.EpisodeId : 0));
-            CABehaviorDecision deviationDecision = CABehaviorGate.Evaluate(
+            CABehaviorDecision deviationDecision = CABehaviorGate
+                .EvaluateForSelection(
                 "combat.hold_deviation", gateContext);
-            if (!deviationDecision.Allowed)
+            if (!deviationDecision.SelectionApproved)
             {
                 CATrace.Skip(p, "hold deviation",
                     deviationDecision.PrimaryReason,

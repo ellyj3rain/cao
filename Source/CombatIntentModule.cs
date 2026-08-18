@@ -129,7 +129,7 @@ namespace ColonistAwareness
     }
 
     // One causal identity carried by an order or decision. The original four
-    // fields retain their numeric save identities; B6 adds catalog identity and
+    // fields retain their numeric save identities; the catalog adds identity and
     // authority/ownership facts so UI, trace, persistence and tests name the same
     // commitment.
     public readonly struct CAIntentContext

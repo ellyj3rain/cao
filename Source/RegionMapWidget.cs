@@ -116,20 +116,29 @@ namespace ColonistAwareness
         // are sorted by tile ID so constituent ordering cannot change it.
         private static long Signature(CARegionalPlan plan)
         {
-            long value = 17L;
-            value = value * 31L + plan.bundleRootTileId;
-            value = value * 31L + plan.mapSize;
+            ulong value = 14695981039346656037UL;
+            value = SignatureStep(value, plan.bundleRootTileId);
+            value = SignatureStep(value, plan.mapSize);
             IntVec3 backing = plan.BackingMapSize;
-            value = value * 31L + backing.x;
-            value = value * 31L + backing.z;
-            value = value * 31L + plan.memberTileIds.Count;
-            long members = 0L;
-            for (int i = 0; i < plan.memberTileIds.Count; i++)
+            value = SignatureStep(value, backing.x);
+            value = SignatureStep(value, backing.z);
+            value = SignatureStep(value, plan.memberTileIds.Count);
+            // Hash the sorted identity sequence. The old sum-of-squares key
+            // allowed different area sets with equal sums to reuse the wrong
+            // projection, which violates composition ownership even though it
+            // is rare on a particular world.
+            foreach (int id in plan.memberTileIds.OrderBy(id => id))
+                value = SignatureStep(value, id);
+            return unchecked((long)value);
+        }
+
+        private static ulong SignatureStep(ulong value, int item)
+        {
+            unchecked
             {
-                long id = plan.memberTileIds[i] + 1L;
-                members += id * id * 2654435761L;
+                value ^= (uint)item;
+                return value * 1099511628211UL;
             }
-            return value * 31L + members;
         }
 
         private static void EnsureCurrent(CARegionalPlan plan)
@@ -152,12 +161,17 @@ namespace ColonistAwareness
             cachedGround = Paint(cachedKernel);
             cachedFacts = new CARegionalCandidateFacts(cachedKernel,
                 plan.memberTileIds);
+            CARegionalGeographyComposition composition =
+                CARegionalGeographyContract.Inspect(plan, cachedKernel);
             Log.Message("[CA][Regional][Preview] candidate projection "
                 + cachedKernel.Size.x + "x" + cachedKernel.Size.z
                 + " at resolution "
                 + cachedKernel.Resolution.ToString("F3") + " of "
                 + plan.BackingMapSize.x + "x" + plan.BackingMapSize.z
-                + "; " + cachedKernel.PerformanceSummary);
+                + "; composition " + composition.Signature + "; "
+                + (composition.IsValid ? "contract valid" : "contract FAILED: "
+                    + string.Join("; ", composition.Failures)) + "; "
+                + cachedKernel.PerformanceSummary);
         }
 
         // AREA DIAGRAM, not a generated-map preview. The screen reports only
@@ -512,6 +526,7 @@ namespace ColonistAwareness
     internal enum CARegionSelectionKind
     {
         Region,
+        Arrival,
         Settlement,
         Faction,
         Feature,
@@ -544,6 +559,33 @@ namespace ColonistAwareness
         // eventual in-map coordinate.
         internal static int awaitingSlot = -1;
 
+        // Arrival uses the same broad-area interaction. It remains distinct
+        // from settlement placement because the arrival must occupy valid,
+        // unclaimed ground inside the current region.
+        internal static bool awaitingArrivalArea;
+
+        // Labels are visual projections of canonical objects, but they are
+        // also real hit targets. Keeping their frame-local rectangles here
+        // lets a click select the label it visibly landed on instead of
+        // guessing from whichever constituent lies beneath the label.
+        private enum LabelHitKind
+        {
+            Settlement,
+            Arrival
+        }
+
+        private sealed class LabelHit
+        {
+            internal LabelHitKind Kind;
+            internal int SettlementSlot;
+            internal Rect Rect;
+        }
+
+        // Appended in paint order and resolved in reverse paint order, so the
+        // label visibly on top always owns an overlapping click.
+        private static readonly List<LabelHit> labelHits =
+            new List<LabelHit>();
+
         internal static void SelectRegion()
         {
             selectedKind = CARegionSelectionKind.Region;
@@ -558,6 +600,13 @@ namespace ColonistAwareness
         {
             selectedKind = CARegionSelectionKind.Settlement;
             selectedSlot = slot;
+            selectionChangedAt = Time.realtimeSinceStartup;
+        }
+
+        internal static void SelectArrival(int tileId)
+        {
+            selectedKind = CARegionSelectionKind.Arrival;
+            selectedTileId = tileId;
             selectionChangedAt = Time.realtimeSinceStartup;
         }
 
@@ -587,7 +636,9 @@ namespace ColonistAwareness
         {
             SelectRegion();
             awaitingSlot = -1;
+            awaitingArrivalArea = false;
             hoveredSlot = -1;
+            labelHits.Clear();
         }
 
         // Ground is the base. The faction layer tints each area by its holder
@@ -638,6 +689,8 @@ namespace ColonistAwareness
             hoveredSlot = -1;
             emphasisFactionKey = -1;
             awaitingSlot = -1;
+            awaitingArrivalArea = false;
+            labelHits.Clear();
             overlayMode = 0;
             overlayChangedAt = 0f;
             selectionChangedAt = 0f;
@@ -656,7 +709,8 @@ namespace ColonistAwareness
         }
 
         internal static void Draw(Rect rect, CARegionalPlan plan,
-            Action changed)
+            Action changed, Action viewDetails = null,
+            Action placeSettlement = null)
         {
             Widgets.DrawMenuSection(rect);
             Rect inner = rect.ContractedBy(6f);
@@ -671,11 +725,20 @@ namespace ColonistAwareness
 
             CARegionalCandidateFacts facts =
                 CARegionalProjectionPreview.FactsFor(plan);
+            labelHits.Clear();
             string contextText = ContextStripText(plan, facts);
             GameFont priorFont = Text.Font;
             Text.Font = GameFont.Tiny;
+            float stripButton = ContextActionWidth(viewDetails,
+                placeSettlement);
+            float stripMarker = selectedKind == CARegionSelectionKind.Settlement
+                    || selectedKind == CARegionSelectionKind.Faction
+                ? 10f : 0f;
+            float stripTextWidth = Mathf.Max(80f, inner.width - stripMarker
+                - stripButton - (stripButton > 0f ? 6f : 0f));
+            float minimumStripHeight = stripButton > 0f ? 30f : 22f;
             float stripHeight = Mathf.Clamp(Text.CalcHeight(contextText,
-                inner.width), 22f, 44f);
+                stripTextWidth), minimumStripHeight, 66f);
             Text.Font = priorFont;
             Rect strip = new Rect(inner.x, inner.yMax - stripHeight,
                 inner.width, stripHeight);
@@ -705,7 +768,8 @@ namespace ColonistAwareness
             TooltipHandler.TipRegion(diagramBadge, "This shows which broad "
                 + "world area contains each object. It is not a generated "
                 + "map, a beauty or suitability score, or an exact in-map "
-                + "placement surface.");
+                + "placement surface. Select a settlement or the arrival "
+                + "label to change its broad area here.");
             if (overlayMode == 1)
             {
                 Texture2D overlay = FactionOverlayFor(plan, kernel);
@@ -735,7 +799,8 @@ namespace ColonistAwareness
             // dense region, and "whatever GUI saw first" is not an order
             // anyone can predict from looking at the screen.
             HandleClicks(map, kernel, plan, facts, changed);
-            DrawContextStrip(strip, contextText);
+            DrawContextStrip(strip, plan, contextText, viewDetails,
+                placeSettlement);
         }
 
         private static void DrawLayerButtons(ref Rect area)
@@ -896,6 +961,10 @@ namespace ColonistAwareness
                     colors[selected.memberTileId] =
                         new Color(1f, 0.88f, 0.34f, 0.38f);
             }
+            else if (selectedKind == CARegionSelectionKind.Arrival
+                && plan.memberTileIds.Contains(plan.startTileId))
+                colors[plan.startTileId] =
+                    new Color(0.42f, 0.90f, 1f, 0.38f);
             else if (selectedKind == CARegionSelectionKind.Feature
                 && selectedTileId >= 0)
                 colors[selectedTileId] =
@@ -910,6 +979,10 @@ namespace ColonistAwareness
                     colors[moving.memberTileId] =
                         new Color(0.50f, 0.90f, 1f, 0.35f);
             }
+            if (awaitingArrivalArea
+                && plan.memberTileIds.Contains(plan.startTileId))
+                colors[plan.startTileId] =
+                    new Color(0.42f, 0.90f, 1f, 0.38f);
             if (colors.Count == 0) return null;
 
             long signature = plan.bundleRootTileId;
@@ -983,8 +1056,8 @@ namespace ColonistAwareness
                     Widgets.DrawLine(hub, at, new Color(1f, 0.95f, 0.6f,
                         0.55f * alpha), 2f);
                 }
-                bool regionReach = settlementPlan.startingProvisions != null
-                    && settlementPlan.startingProvisions.Any(a => a != null
+                bool regionReach = settlementPlan.provisionArrangements != null
+                    && settlementPlan.provisionArrangements.Any(a => a != null
                         && a.active
                         && a.reach == CAProvisionReach.Region);
                 if (regionReach)
@@ -1250,12 +1323,20 @@ namespace ColonistAwareness
 
                 Vector2 point = ToGui(map, kernel,
                     AreaCentroid(kernel, group.Key));
-                const float lineHeight = 24f;
                 int arrivalOffset = group.Key == plan.startTileId ? 1 : 0;
-                float blockHeight = (settlements.Count + arrivalOffset)
-                    * lineHeight;
+                Text.Font = GameFont.Tiny;
+                float maxBadgeWidth = Mathf.Max(82f,
+                    Mathf.Min(320f, map.width * 0.62f));
+                var badgeHeights = settlements.Select(settlement =>
+                    Mathf.Max(22f, Text.CalcHeight(
+                        CARegionalPlanUtility.SettlementName(plan, settlement),
+                        maxBadgeWidth - 12f) + 6f)).ToList();
+                float arrivalHeight = arrivalOffset > 0 ? 24f : 0f;
+                float blockHeight = arrivalHeight + badgeHeights.Sum()
+                    + Mathf.Max(0, badgeHeights.Count - 1) * 2f;
                 float blockY = Mathf.Clamp(point.y - blockHeight * 0.5f,
                     map.y + 36f, map.yMax - blockHeight - 4f);
+                float badgeY = blockY + arrivalHeight;
                 for (int i = 0; i < settlements.Count; i++)
                 {
                     CARegionalSettlementPlan settlement = settlements[i];
@@ -1267,12 +1348,22 @@ namespace ColonistAwareness
                     bool hovered = hoveredSlot == settlement.slot;
                     Text.Font = GameFont.Tiny;
                     float width = Mathf.Clamp(Text.CalcSize(label).x + 16f,
-                        82f, Mathf.Min(250f, map.width * 0.62f));
+                        82f, maxBadgeWidth);
                     Rect badge = new Rect(point.x - width * 0.5f,
-                        blockY + (i + arrivalOffset) * lineHeight,
-                        width, 22f);
+                        badgeY, width, badgeHeights[i]);
                     badge.x = Mathf.Clamp(badge.x, map.x + 4f,
                         map.xMax - badge.width - 4f);
+                    labelHits.Add(new LabelHit
+                    {
+                        Kind = LabelHitKind.Settlement,
+                        SettlementSlot = settlement.slot,
+                        Rect = badge
+                    });
+                    if (Mouse.IsOver(badge))
+                    {
+                        hoveredSlot = settlement.slot;
+                        hovered = true;
+                    }
                     Widgets.DrawBoxSolid(badge, selected || hovered
                         ? new Color(0.12f, 0.16f, 0.17f, 0.96f)
                         : emphasized
@@ -1283,9 +1374,10 @@ namespace ColonistAwareness
                     Widgets.Label(badge, label);
                     Text.Anchor = TextAnchor.UpperLeft;
                     TooltipHandler.TipRegion(badge,
-                        "Assigned area: " + CARegionalPlanUtility.TileWords(
-                            settlement.memberTileId)
+                        "Click to select this settlement. Assigned area: "
+                        + CARegionalPlanUtility.TileWords(settlement.memberTileId)
                         + ". Exact site is chosen from generated terrain.");
+                    badgeY += badge.height + 2f;
                 }
                 Text.Font = GameFont.Small;
             }
@@ -1326,10 +1418,19 @@ namespace ColonistAwareness
                 map.xMax - hit.width - 4f);
             hit.y = Mathf.Clamp(hit.y, map.y + 36f,
                 map.yMax - hit.height - 4f);
+            labelHits.Add(new LabelHit
+            {
+                Kind = LabelHitKind.Arrival,
+                SettlementSlot = -1,
+                Rect = hit
+            });
+            bool selected = selectedKind == CARegionSelectionKind.Arrival;
             Widgets.DrawBoxSolid(hit,
-                new Color(0.04f, 0.10f, 0.13f, 0.92f));
+                selected
+                    ? new Color(0.08f, 0.20f, 0.24f, 0.98f)
+                    : new Color(0.04f, 0.10f, 0.13f, 0.92f));
             GUI.color = new Color(0.55f, 0.95f, 1f);
-            Widgets.DrawBox(hit, 1);
+            Widgets.DrawBox(hit, selected ? 2 : 1);
             Text.Font = GameFont.Tiny;
             Text.Anchor = TextAnchor.MiddleCenter;
             Widgets.Label(hit, "Arrival area");
@@ -1337,8 +1438,9 @@ namespace ColonistAwareness
             Text.Font = GameFont.Small;
             GUI.color = Color.white;
             if (Mouse.IsOver(hit))
-                TooltipHandler.TipRegion(hit, "Starting world area. The exact "
-                    + "arrival cell is chosen from generated terrain.");
+                TooltipHandler.TipRegion(hit, "Click to select the arrival "
+                    + "area. The exact arrival cell is chosen from generated "
+                    + "terrain.");
         }
 
         // Selection and placement, resolved in one pass and in one order:
@@ -1365,10 +1467,34 @@ namespace ColonistAwareness
                 if (moving != null && tileId >= 0
                     && plan.memberTileIds.Contains(tileId))
                 {
-                    if (moving.memberTileId != tileId)
-                        moving.siteClusterKey = moving.slot;
-                    moving.memberTileId = tileId;
-                    changed?.Invoke();
+                    if (tileId == plan.startTileId)
+                    {
+                        Messages.Message("The arrival area occupies this "
+                            + "ground. Move the arrival first, then place "
+                            + "the settlement here.",
+                            MessageTypeDefOf.RejectInput, false);
+                    }
+                    else if (moving.memberTileId != tileId)
+                    {
+                        if (!CAHabitatViability.CanPotentiallySettle(plan,
+                                moving.factionKey, tileId,
+                                out string habitatFailure))
+                            Messages.Message(habitatFailure,
+                                MessageTypeDefOf.RejectInput, false);
+                        else
+                        {
+                            ReopenForMapAuthoring(plan);
+                            moving.siteClusterKey = moving.slot;
+                            moving.memberTileId = tileId;
+                            changed?.Invoke();
+                            Messages.Message(
+                                CARegionalPlanUtility.SettlementName(plan,
+                                    moving) + " now belongs to "
+                                    + CARegionalPlanUtility.TileWords(tileId)
+                                    + ".",
+                                MessageTypeDefOf.TaskCompletion, false);
+                        }
+                    }
                 }
                 else if (tileId >= 0)
                     Messages.Message("That ground belongs to "
@@ -1380,6 +1506,69 @@ namespace ColonistAwareness
                         + "settlement's broad area.",
                         MessageTypeDefOf.RejectInput, false);
                 awaitingSlot = -1;
+                Event.current.Use();
+                return;
+            }
+
+            if (awaitingArrivalArea)
+            {
+                int tileId = TileUnderMouse(map, kernel);
+                if (tileId < 0 || !plan.memberTileIds.Contains(tileId))
+                    Messages.Message("Choose visible land inside this "
+                        + "region for the arrival area.",
+                        MessageTypeDefOf.RejectInput, false);
+                else if (plan.settlements.Any(item => item != null
+                    && item.memberTileId == tileId))
+                    Messages.Message("That ground already contains a "
+                        + "settlement. Move the settlement first, then place "
+                        + "the arrival here.",
+                        MessageTypeDefOf.RejectInput, false);
+                else
+                {
+                    PlanetTile tile = CARegionalPlanUtility.SurfaceTile(tileId);
+                    var reason = new System.Text.StringBuilder();
+                    if (tile.Valid && TileFinder.IsValidTileForNewSettlement(
+                            tile, reason))
+                    {
+                        if (plan.startTileId != tileId)
+                        {
+                            ReopenForMapAuthoring(plan);
+                            plan.startTileId = tileId;
+                            changed?.Invoke();
+                        }
+                        SelectArrival(tileId);
+                        Messages.Message("Arrival area: "
+                            + CARegionalPlanUtility.TileSummary(tileId),
+                            MessageTypeDefOf.TaskCompletion, false);
+                    }
+                    else
+                        Messages.Message(reason.Length > 0
+                                ? reason.ToString()
+                                : "This area cannot be used for arrival.",
+                            MessageTypeDefOf.RejectInput, false);
+                }
+                awaitingArrivalArea = false;
+                Event.current.Use();
+                return;
+            }
+
+            // The visible object itself wins over the broad area behind it.
+            // This matters when a label is clamped away from its centroid or
+            // several labels share one constituent.
+            for (int i = labelHits.Count - 1; i >= 0; i--)
+            {
+                LabelHit hit = labelHits[i];
+                if (!hit.Rect.Contains(mouse)) continue;
+                if (hit.Kind == LabelHitKind.Arrival)
+                {
+                    if (selectedKind == CARegionSelectionKind.Arrival)
+                        SelectRegion();
+                    else SelectArrival(plan.startTileId);
+                }
+                else if (selectedKind == CARegionSelectionKind.Settlement
+                    && selectedSlot == hit.SettlementSlot)
+                    SelectRegion();
+                else SelectSettlement(hit.SettlementSlot);
                 Event.current.Use();
                 return;
             }
@@ -1426,6 +1615,7 @@ namespace ColonistAwareness
                 Event.current.Use();
                 return;
             }
+
             if (settlements.Count > 1)
             {
                 var options = new List<FloatMenuOption>();
@@ -1441,8 +1631,28 @@ namespace ColonistAwareness
                 return;
             }
 
+            if (clickedTileId == plan.startTileId)
+            {
+                SelectArrival(plan.startTileId);
+                Event.current.Use();
+                return;
+            }
+
             SelectRegion();
             Event.current.Use();
+        }
+
+        // Returning to this page after a previous confirmation reopens the
+        // candidate before any causal input changes. SavePending can then
+        // realize the new draft once; a confirmed plan is never mutated while
+        // retaining results derived from its former settlement geography.
+        private static void ReopenForMapAuthoring(CARegionalPlan plan)
+        {
+            if (plan == null) return;
+            plan.confirmed = false;
+            plan.developerExercise = false;
+            plan.operatorAuthored = true;
+            CARegionalSettlements.Invalidate(plan);
         }
 
         internal static int TileUnderMouse(Rect map,
@@ -1464,12 +1674,121 @@ namespace ColonistAwareness
 
         // ---- the strip under the map ---------------------------------------
 
-        private static void DrawContextStrip(Rect strip, string text)
+        private static bool ShowPlaceSettlement(Action placeSettlement)
+        {
+            return placeSettlement != null && awaitingSlot < 0
+                && !awaitingArrivalArea
+                && (selectedKind == CARegionSelectionKind.Region
+                    || selectedKind == CARegionSelectionKind.Faction);
+        }
+
+        private static float ContextActionWidth(Action viewDetails,
+            Action placeSettlement)
+        {
+            bool move = selectedKind == CARegionSelectionKind.Settlement
+                || selectedKind == CARegionSelectionKind.Arrival
+                || awaitingSlot >= 0 || awaitingArrivalArea;
+            bool details = selectedKind != CARegionSelectionKind.Region
+                && viewDetails != null;
+            bool place = ShowPlaceSettlement(placeSettlement);
+            int count = (move ? 1 : 0) + (details ? 1 : 0)
+                + (place ? 1 : 0);
+            if (count == 0) return 0f;
+            return (move ? 104f : 0f) + (details ? 104f : 0f)
+                + (place ? 126f : 0f) + (count - 1) * 6f;
+        }
+
+        private static void DrawContextStrip(Rect strip, CARegionalPlan plan,
+            string text, Action viewDetails, Action placeSettlement)
         {
             Text.Font = GameFont.Tiny;
+            bool hasFactionMarker = selectedKind
+                    == CARegionSelectionKind.Settlement
+                || selectedKind == CARegionSelectionKind.Faction;
+            float markerWidth = hasFactionMarker ? 10f : 0f;
+            if (hasFactionMarker)
+            {
+                int factionKey = selectedKind == CARegionSelectionKind.Faction
+                    ? selectedFactionKey : plan?.settlements?.FirstOrDefault(
+                            item => item != null && item.slot == selectedSlot)
+                        ?.factionKey ?? -1;
+                Widgets.DrawBoxSolid(new Rect(strip.x, strip.y + 3f, 4f,
+                    Mathf.Max(4f, strip.height - 6f)),
+                    CARegionalWorldOverlay.FactionColor(factionKey));
+            }
+            bool move = selectedKind == CARegionSelectionKind.Settlement
+                || selectedKind == CARegionSelectionKind.Arrival
+                || awaitingSlot >= 0 || awaitingArrivalArea;
+            bool details = selectedKind != CARegionSelectionKind.Region
+                && viewDetails != null;
+            bool place = ShowPlaceSettlement(placeSettlement);
+            float actionsWidth = ContextActionWidth(viewDetails,
+                placeSettlement);
             GUI.color = new Color(0.78f, 0.81f, 0.85f);
-            Widgets.Label(strip, text);
-            TooltipHandler.TipRegion(strip, text);
+            Rect textRect = new Rect(strip.x + markerWidth, strip.y,
+                strip.width - markerWidth - actionsWidth
+                    - (actionsWidth > 0f ? 6f : 0f),
+                strip.height);
+            Widgets.Label(textRect, text);
+            GUI.color = Color.white;
+
+            float right = strip.xMax;
+            if (details)
+            {
+                Rect detailsRect = new Rect(right - 104f, strip.y, 104f,
+                    strip.height);
+                if (Widgets.ButtonText(detailsRect, "View details"))
+                    viewDetails();
+                right = detailsRect.x - 6f;
+            }
+            if (move)
+            {
+                bool movingSettlement = awaitingSlot >= 0;
+                bool movingArrival = awaitingArrivalArea;
+                string label = movingSettlement || movingArrival
+                    ? "Cancel move"
+                    : selectedKind == CARegionSelectionKind.Arrival
+                        ? "Move arrival" : "Move area";
+                Rect moveRect = new Rect(right - 104f, strip.y, 104f,
+                    strip.height);
+                if (Widgets.ButtonText(moveRect, label))
+                {
+                    if (movingSettlement || movingArrival)
+                    {
+                        awaitingSlot = -1;
+                        awaitingArrivalArea = false;
+                    }
+                    else if (selectedKind == CARegionSelectionKind.Arrival)
+                    {
+                        awaitingArrivalArea = true;
+                        awaitingSlot = -1;
+                    }
+                    else if (selectedKind
+                        == CARegionSelectionKind.Settlement)
+                    {
+                        awaitingSlot = selectedSlot;
+                        awaitingArrivalArea = false;
+                    }
+                }
+                TooltipHandler.TipRegion(moveRect,
+                    selectedKind == CARegionSelectionKind.Arrival
+                        || movingArrival
+                        ? "Choose another unoccupied area inside this region."
+                        : "Choose the broad area this settlement belongs to. "
+                            + "Its exact site is chosen from generated terrain.");
+                right = moveRect.x - 6f;
+            }
+            if (place)
+            {
+                Rect placeRect = new Rect(right - 126f, strip.y, 126f,
+                    strip.height);
+                if (Widgets.ButtonText(placeRect, "Place settlement"))
+                    placeSettlement();
+                TooltipHandler.TipRegion(placeRect, "Choose an existing "
+                    + "faction or a starting society, then assign the new "
+                    + "settlement to a broad area on this map.");
+            }
+            TooltipHandler.TipRegion(textRect, text);
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
         }
@@ -1480,16 +1799,56 @@ namespace ColonistAwareness
             string text;
             if (awaitingSlot >= 0)
                 text = "Choose the broad area this settlement belongs to.";
+            else if (awaitingArrivalArea)
+                text = "Choose unoccupied land inside this region for arrival.";
+            else if (selectedKind == CARegionSelectionKind.Arrival)
+                text = "Arrival area: "
+                    + CARegionalPlanUtility.TileWords(plan.startTileId)
+                    + "; the exact arrival cell is chosen from generated terrain.";
             else if (selectedKind == CARegionSelectionKind.Settlement)
             {
                 CARegionalSettlementPlan settlement = plan.settlements
                     .FirstOrDefault(item => item != null
                         && item.slot == selectedSlot);
                 text = settlement == null ? "Settlement"
-                    : CARegionalPlanUtility.SettlementName(plan, settlement)
+                    : "Settlement: "
+                        + CARegionalPlanUtility.SettlementName(plan, settlement)
                         + " - assigned to "
                         + CARegionalPlanUtility.TileWords(settlement.memberTileId)
                         + "; its exact site is chosen from generated terrain.";
+            }
+            else if (selectedKind == CARegionSelectionKind.Faction)
+            {
+                CARegionalFactionPlan faction = plan.FactionPlan(
+                    selectedFactionKey);
+                int held = plan.settlements.Count(item => item != null
+                    && item.factionKey == selectedFactionKey);
+                text = faction == null ? "Faction"
+                    : "Faction - " + CARegionalPlanUtility.FactionName(faction)
+                        + " - " + held + " settlement"
+                        + (held == 1 ? "" : "s");
+            }
+            else if (selectedKind == CARegionSelectionKind.Feature)
+            {
+                CARegionalCandidateFacts.Feature feature = facts?.Features
+                    .FirstOrDefault(item => item != null
+                        && item.Tile.tileId == selectedTileId
+                        && (selectedFeatureDefName.NullOrEmpty()
+                            || item.Def?.defName == selectedFeatureDefName));
+                text = feature == null ? "Selected feature"
+                    : feature.Name + " - "
+                        + CARegionalPlanUtility.TileWords(
+                            feature.Tile.tileId);
+            }
+            else if (selectedKind == CARegionSelectionKind.Neighbor)
+            {
+                CARegionalCandidateFacts.Neighbor neighbor = facts?.Neighbors
+                    .FirstOrDefault(item => item != null
+                        && item.Tile.tileId == selectedTileId);
+                text = neighbor?.Object == null ? "Selected neighboring site"
+                    : neighbor.Object.LabelCap + " - "
+                        + neighbor.WorldDistanceTiles.ToString("F0")
+                        + " tiles from the region";
             }
             else if (overlayMode == 2)
                 text = "Connections are schematic links between assigned "

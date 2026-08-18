@@ -51,7 +51,8 @@ namespace ColonistAwareness
                 // the non-fort outpost faces - real assets, spawned by
                 // the ported machinery, no-op for every other form.
                 CASecurityStructures.MaterializeVariantExtras(map, plan,
-                    rect, faction, CAStartingFacilities.TechTier(faction));
+                    rect, faction,
+                    CASettlementProgramMaterializer.TechTier(faction));
                 GroundCulture(map, plan, body, palette, seed,
                     offX, offZ, receipt);
                 // Piers are DERIVED, not toggled. BuildPier already has to
@@ -87,7 +88,7 @@ namespace ColonistAwareness
         }
 
         // Form follows organization: the same tier boundaries the
-        // organizational furnisher uses (CAStartingFacilities.TechTier).
+        // settlement program materializer uses the same technology tier.
         // The form a FACTION would build by default. Settlements must
         // use the overload below - a settlement's form is its own axis
         // and may have been authored away from what its technology
@@ -693,7 +694,7 @@ namespace ColonistAwareness
 
         private static Palette PaletteFor(Map map, Faction faction)
         {
-            int tier = CAStartingFacilities.TechTier(faction);
+            int tier = CASettlementProgramMaterializer.TechTier(faction);
             // material coherence: every stone this adapter lays is
             // native to the tile. Walk the tile's own rock kinds
             // for one with cut blocks and a flagstone before any

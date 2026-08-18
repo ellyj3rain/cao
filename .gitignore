@@ -18,3 +18,7 @@ tools/**/bin/
 
 # never commit decompiled game source (lives outside the repo; keep it that way)
 rimworld-decompiled/
+
+# Local native-layout corpus cache. Exact public snapshots are reproducible
+# from the governed screening index and are not forge artifacts.
+Corpus/PlayerBaseLayouts/.cache/

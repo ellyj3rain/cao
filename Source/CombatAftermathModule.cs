@@ -92,9 +92,10 @@ namespace ColonistAwareness
                 authorityBasis: "delegated local field security",
                 knowledgeBasis: "personally confirmed downed hostile",
                 owner: "field custody intake");
-            CABehaviorDecision secureDecision = CABehaviorGate.Evaluate(
+            CABehaviorDecision secureDecision = CABehaviorGate
+                .EvaluateForSelection(
                 "aftermath.secure_hostile", secureContext);
-            if (!secureDecision.Allowed)
+            if (!secureDecision.SelectionApproved)
             {
                 CATrace.Pawn(actor, "field custody BLOCKED - "
                     + secureDecision.PrimaryReason,
@@ -371,9 +372,9 @@ namespace ColonistAwareness
                 owner: impulsive ? "character accountability"
                     : "custody institution",
                 authorityCeiling: CAInitiativeTier.Autonomous);
-            CABehaviorDecision decision = CABehaviorGate.Evaluate(key,
-                gateContext);
-            if (!decision.Allowed)
+            CABehaviorDecision decision = CABehaviorGate
+                .EvaluateForSelection(key, gateContext);
+            if (!decision.SelectionApproved)
             {
                 reason = decision.PrimaryReason;
                 return false;

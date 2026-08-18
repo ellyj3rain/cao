@@ -21,7 +21,8 @@ namespace ColonistAwareness
         Research = 7,
         Defense = 8,
         Maintenance = 9,
-        Access = 10
+        Access = 10,
+        Cultivation = 11
     }
 
     // A settlement proposal names needs and native assets before authority is
@@ -34,10 +35,19 @@ namespace ColonistAwareness
             new List<CASettlementDemandKind>();
         internal readonly List<string> AssetCandidates =
             new List<string>();
+        // Creation is governed by the open settlement-program keyspace.
+        // These receipts are not collapsed into the later-development demand
+        // enum, which remains a separate runtime work vocabulary.
+        internal readonly List<string> ProgramKeys = new List<string>();
+        internal readonly List<string> ProgramAssetRoles = new List<string>();
+        internal readonly List<string> ProgramSpatialRequirements =
+            new List<string>();
+        internal bool RequiresGroupProvisionRoom;
         internal string FundingBasis;
         internal string MaterialBasis;
         internal bool FundingFeasible;
         internal bool MaterialFeasible;
+        internal string LaborBasis;
 
         internal bool HasCandidate(CASettlementDemandKind demand)
         {
@@ -62,7 +72,14 @@ namespace ColonistAwareness
 
         internal string StableSignature()
         {
-            return string.Join(",", Demands.OrderBy(demand => (int)demand)
+            return string.Join(",", ProgramKeys.OrderBy(key => key,
+                    StringComparer.Ordinal).ToArray())
+                + ":roles=" + string.Join(",", ProgramAssetRoles
+                    .OrderBy(role => role, StringComparer.Ordinal).ToArray())
+                + ":spatial=" + string.Join(",", ProgramSpatialRequirements
+                    .OrderBy(item => item, StringComparer.Ordinal).ToArray())
+                + ":groupProvisionRoom=" + RequiresGroupProvisionRoom
+                + ":demands=" + string.Join(",", Demands.OrderBy(demand => (int)demand)
                     .Select(demand => ((int)demand).ToString()).ToArray())
                 + ":" + string.Join(",", AssetCandidates
                     .OrderBy(candidate => candidate, StringComparer.Ordinal)
@@ -147,6 +164,45 @@ namespace ColonistAwareness
             return CASettlementDemandKind.Unknown;
         }
 
+        // The open settlement-program key remains the creation authority.
+        // This projection exposes only the narrower semantic demands that the
+        // later development and player-planning paths genuinely share. An
+        // unmapped program stays explicit instead of being coerced into a
+        // convenient demand kind.
+        internal static CASettlementDemandKind DemandForProgram(
+            string programKey)
+        {
+            if (programKey == CASettlementProgramRegistry.FoodPreparation
+                || programKey
+                    == CASettlementProgramRegistry.DomesticProvision)
+                return CASettlementDemandKind.FoodPreparation;
+            if (programKey == CASettlementProgramRegistry.Storage
+                || programKey
+                    == CASettlementProgramRegistry.AuthorityProvision)
+                return CASettlementDemandKind.Storage;
+            if (programKey == CASettlementProgramRegistry.Medicine)
+                return CASettlementDemandKind.Medicine;
+            if (programKey == CASettlementProgramRegistry.Production
+                || programKey
+                    == CASettlementProgramRegistry.SpecializedIndustry)
+                return CASettlementDemandKind.Production;
+            if (programKey == CASettlementProgramRegistry.Custody)
+                return CASettlementDemandKind.Custody;
+            if (programKey == CASettlementProgramRegistry.Gathering
+                || programKey
+                    == CASettlementProgramRegistry.CommunalProvision)
+                return CASettlementDemandKind.Dining;
+            if (programKey == CASettlementProgramRegistry.Research)
+                return CASettlementDemandKind.Research;
+            if (programKey == CASettlementProgramRegistry.Defense)
+                return CASettlementDemandKind.Defense;
+            if (programKey == CASettlementProgramRegistry.Trade
+                || programKey == CASettlementProgramRegistry.Communications
+                || programKey == CASettlementProgramRegistry.Transport)
+                return CASettlementDemandKind.Access;
+            return CASettlementDemandKind.Unknown;
+        }
+
         internal static ThingDef Resolve(CASettlementDemandKind demand,
             string preferredDefName)
         {
@@ -191,46 +247,95 @@ namespace ColonistAwareness
         }
 
         internal static CASettlementDevelopmentProposal BuildCreationProposal(
-            int facilityMask, int economicCapacity, int landCapacity)
+            CASettlementProgram program, int landCapacity,
+            IEnumerable<CAProvisionArrangement> provisions = null)
         {
-            var proposal = new CASettlementDevelopmentProposal
+            List<CASettlementProgramEntry> activeEntries = (program?.entries
+                    ?? new List<CASettlementProgramEntry>())
+                .Where(entry => entry != null && entry.blocker.NullOrEmpty())
+                .ToList();
+            string[] fundingSources = activeEntries
+                .Where(entry => entry.requiresFunding)
+                .Select(entry => entry.fundingSource)
+                .Where(source => !source.NullOrEmpty()).Distinct().ToArray();
+            string[] materialSources = activeEntries
+                .Where(entry => entry.requiresMaterial)
+                .Select(entry => entry.materialSource)
+                .Where(source => !source.NullOrEmpty()).Distinct().ToArray();
+            var proposal = new CASettlementDevelopmentProposal();
+            proposal.FundingFeasible = activeEntries.Count > 0
+                && activeEntries.All(entry => !entry.requiresFunding
+                    || !entry.fundingSource.NullOrEmpty());
+            proposal.FundingBasis = activeEntries.Count == 0
+                ? "no active settlement program"
+                : fundingSources.Length == 0
+                    ? "active programs require no separate funding contract"
+                    : string.Join("; ", fundingSources);
+            proposal.MaterialBasis = landCapacity > 0
+                ? (materialSources.Length == 0
+                    ? "no complete material source is recorded"
+                    : string.Join("; ", materialSources))
+                : "no usable authored settlement ground";
+            proposal.RequiresGroupProvisionRoom = (provisions
+                    ?? Enumerable.Empty<CAProvisionArrangement>()).Any(item =>
+                        item != null && item.active
+                        && item.populationGroupKey >= 0);
+            foreach (CASettlementProgramEntry entry in activeEntries)
             {
-                FundingFeasible = economicCapacity >= 0,
-                FundingBasis = economicCapacity >= 0
-                    ? "authored historical economic capacity "
-                        + economicCapacity
-                    : "no historical funding capacity",
-                MaterialBasis = landCapacity >= 0
-                    ? "native buildable definitions and authored land capacity "
-                        + landCapacity
-                    : "no authored land capacity"
-            };
-            AddDemand(proposal, facilityMask, CAStartingFacilities.MaskHearth,
-                CASettlementDemandKind.FoodPreparation);
-            AddDemand(proposal, facilityMask, CAStartingFacilities.MaskStores,
-                CASettlementDemandKind.Storage);
-            AddDemand(proposal, facilityMask,
-                CAStartingFacilities.MaskInfirmary,
-                CASettlementDemandKind.Medicine);
-            AddDemand(proposal, facilityMask,
-                CAStartingFacilities.MaskWorkshop,
-                CASettlementDemandKind.Production);
-            AddDemand(proposal, facilityMask, CAStartingFacilities.MaskJail,
-                CASettlementDemandKind.Custody);
-            AddDemand(proposal, facilityMask, CAStartingFacilities.MaskDining,
-                CASettlementDemandKind.Dining);
-            AddDemand(proposal, facilityMask, CAStartingFacilities.MaskLab,
-                CASettlementDemandKind.Research);
+                if (entry == null || !entry.blocker.NullOrEmpty()) continue;
+                proposal.ProgramKeys.Add(entry.programKey);
+                CASettlementProgramDef definition =
+                    CASettlementProgramRegistry.Find(entry.programKey);
+                CASettlementDemandKind demand = DemandForProgram(
+                    entry.programKey);
+                if (demand != CASettlementDemandKind.Unknown
+                    && !proposal.Demands.Contains(demand))
+                    proposal.Demands.Add(demand);
+                if (definition?.MaterializeSpatialContract == true)
+                    proposal.ProgramSpatialRequirements.Add(entry.programKey
+                        + "|" + Math.Max(entry.count, entry.extent));
+                int repetitions = Math.Max(1,
+                    Math.Max(entry.count, entry.extent));
+                for (int repetition = 0; repetition < repetitions;
+                    repetition++)
+                {
+                    int role = 0;
+                    foreach (string candidate in entry.selectedCandidates
+                        ?? new List<string>())
+                    {
+                        proposal.ProgramAssetRoles.Add(entry.programKey + "|"
+                            + repetition + "|" + role++ + "|" + candidate
+                            + "|" + (entry.scope ?? "settlement"));
+                        ThingDef resolved = Resolve(demand, candidate);
+                        string demandCandidate = ((int)demand) + "|"
+                            + resolved?.defName;
+                        if (demand != CASettlementDemandKind.Unknown
+                            && resolved != null
+                            && !proposal.AssetCandidates.Contains(
+                                demandCandidate))
+                            proposal.AssetCandidates.Add(demandCandidate);
+                    }
+                }
+            }
 
-            // An explicit empty starting-facility selection is a complete
-            // creation fact. There is nothing to place, so candidate and stuff
-            // feasibility are vacuously satisfied; valid authored ground is the
-            // only material condition that remains.
-            proposal.MaterialFeasible = landCapacity >= 0
-                && proposal.Demands.All(proposal.HasCandidate)
-                && proposal.Demands.All(demand => proposal.Candidates(demand)
-                    .Any(def => !def.MadeFromStuff
-                        || GenStuff.DefaultStuffFor(def) != null));
+            proposal.MaterialFeasible = landCapacity > 0
+                && proposal.ProgramKeys.Count > 0
+                && activeEntries.All(entry => !entry.requiresMaterial
+                    || !entry.materialSource.NullOrEmpty())
+                && proposal.ProgramKeys.All(key =>
+                    CASettlementProgramRegistry.Find(key) != null)
+                && proposal.ProgramAssetRoles.All(role =>
+                {
+                    string[] parts = role.Split(new[] { '|' },
+                        StringSplitOptions.None);
+                    string defName = parts.Length > 3 ? parts[3] : null;
+                    ThingDef def = Resolve(DemandForProgram(parts[0]),
+                        defName);
+                    return def != null && def.category == ThingCategory.Building
+                        && def.BuildableByPlayer && def.blueprintDef != null
+                        && (!def.MadeFromStuff
+                            || GenStuff.DefaultStuffFor(def) != null);
+                });
             return proposal;
         }
 
@@ -242,35 +347,29 @@ namespace ColonistAwareness
                 FundingBasis = "no creation record",
                 MaterialBasis = "no creation record"
             };
-            int mask = record.startingFacilityMask >= 0
-                ? record.startingFacilityMask : CAStartingFacilities
-                    .DerivedMask(record);
-            return BuildCreationProposal(mask, record.economicCapacity,
-                record.landCapacity);
+            return BuildCreationProposal(record.settlementProgram,
+                record.landCapacity, record.provisionArrangements);
         }
 
-        // Creation history is deterministically derived from the authored
-        // starting-facility selection. It never rewrites the independent facts
+        // Creation history is deterministically derived from the confirmed
+        // settlement program. It never rewrites the independent facts
         // recorded for later institutional development.
         internal static bool ReconcileRecord(CARegionalSettlementRecord record,
             out string correction)
         {
             correction = null;
             if (record == null) return false;
-            int mask = record.startingFacilityMask >= 0
-                ? record.startingFacilityMask
-                : CAStartingFacilities.DerivedMask(record);
-            CASettlementDevelopmentProposal expected = BuildCreationProposal(mask,
-                record.economicCapacity, record.landCapacity);
+            CASettlementDevelopmentProposal expected = BuildCreationProposal(
+                record.settlementProgram,
+                record.landCapacity,
+                record.provisionArrangements);
             string signature = expected.StableSignature();
-            bool mismatch = record.startingFacilityMask != mask
-                || record.creationProposalSignature != signature
+            bool mismatch = record.creationProposalSignature != signature
                 || record.creationMaterialFeasible
                     != expected.MaterialFeasible;
             if (mismatch)
             {
-                correction = "starting-facility mask, loaded candidates, and creation signature were re-derived";
-                record.startingFacilityMask = mask;
+                correction = "settlement-program candidates and creation signature were reconciled";
             }
             record.creationProposalSignature = signature;
             record.creationMaterialFeasible = expected.MaterialFeasible;
@@ -287,37 +386,147 @@ namespace ColonistAwareness
                 blocker = "no materialized settlement ground";
                 return false;
             }
-            foreach (CASettlementDemandKind demand in proposal.Demands)
+            var reserved = new HashSet<IntVec3>();
+            List<Room> insideRooms = rect.Cells
+                .Where(cell => cell.InBounds(map) && cell.Roofed(map))
+                .Select(cell => cell.GetRoom(map)).Where(room => room != null
+                    && !room.PsychologicallyOutdoors && !room.IsDoorway
+                    && room.CellCount >= 6).Distinct().ToList();
+            if (proposal.RequiresGroupProvisionRoom
+                && insideRooms.Count < 2)
             {
-                bool found = false;
-                foreach (ThingDef def in proposal.Candidates(demand))
+                blocker = "group-specific provision requires a second "
+                    + "realized indoor room";
+                return false;
+            }
+            foreach (IGrouping<string, string> contract in proposal
+                .ProgramAssetRoles.GroupBy(role =>
                 {
-                    ThingDef stuff = def.MadeFromStuff
-                        ? GenStuff.DefaultStuffFor(def) : null;
-                    foreach (IntVec3 cell in rect)
+                    string[] parts = role.Split(new[] { '|' },
+                        StringSplitOptions.None);
+                    return (parts.Length > 0 ? parts[0] : "program") + "|"
+                        + (parts.Length > 1 ? parts[1] : "0");
+                }).OrderBy(group => group.Key, StringComparer.Ordinal))
+            {
+                string firstRole = contract.First();
+                string[] firstParts = firstRole.Split(new[] { '|' },
+                    StringSplitOptions.None);
+                string programKey = firstParts[0];
+                string scope = firstParts.Length > 4 ? firstParts[4]
+                    : "settlement";
+                bool indoor = scope != "settlement perimeter"
+                    && scope != "usable settlement ground"
+                    && scope != "workable settlement ground";
+                IEnumerable<Room> candidateRooms = indoor
+                    ? insideRooms : new Room[] { null };
+                bool contractFound = false;
+                foreach (Room contractRoom in candidateRooms)
+                {
+                    var trial = new HashSet<IntVec3>(reserved);
+                    IntVec3 powerAnchor = IntVec3.Invalid;
+                    bool rolesFit = true;
+                    foreach (string role in contract.OrderBy(item =>
                     {
-                        if (CASettlementSitingConstraints.CanPlaceNativeBlueprint(
-                                map, def, cell, Rot4.South, stuff).Accepted)
+                        string[] parts = item.Split(new[] { '|' },
+                            StringSplitOptions.None);
+                        ThingDef d = DefDatabase<ThingDef>.GetNamedSilentFail(
+                            parts.Length > 3 ? parts[3] : null);
+                        return d?.EverTransmitsPower == true ? 0 : 1;
+                    }).ThenByDescending(item =>
+                    {
+                        string[] parts = item.Split(new[] { '|' },
+                            StringSplitOptions.None);
+                        return DefDatabase<ThingDef>.GetNamedSilentFail(
+                            parts.Length > 3 ? parts[3] : null)?.size.Area ?? 0;
+                    }))
+                    {
+                        string[] parts = role.Split(new[] { '|' },
+                            StringSplitOptions.None);
+                        string defName = parts.Length > 3 ? parts[3] : null;
+                        ThingDef def = DefDatabase<ThingDef>
+                            .GetNamedSilentFail(defName);
+                        if (def == null) { rolesFit = false; break; }
+                        ThingDef stuff = def.MadeFromStuff
+                            ? GenStuff.DefaultStuffFor(def) : null;
+                        IEnumerable<IntVec3> cells = scope
+                                == "settlement perimeter"
+                            ? rect.Cells.Where(cell =>
+                                cell.x <= rect.minX + 2
+                                || cell.x >= rect.maxX - 2
+                                || cell.z <= rect.minZ + 2
+                                || cell.z >= rect.maxZ - 2)
+                            : scope == "usable settlement ground"
+                                || scope == "workable settlement ground"
+                                ? rect.Cells.Where(cell => cell.InBounds(map)
+                                    && !cell.Roofed(map))
+                                : contractRoom?.Cells
+                                    ?? Enumerable.Empty<IntVec3>();
+                        if (powerAnchor.IsValid)
+                            cells = cells.Where(cell =>
+                                cell.DistanceToSquared(powerAnchor) <= 36)
+                                .OrderBy(cell => cell.DistanceToSquared(
+                                    powerAnchor));
+                        IntVec3 selected = IntVec3.Invalid;
+                        foreach (IntVec3 cell in cells)
                         {
-                            found = true;
+                            CellRect footprint = GenAdj.OccupiedRect(cell,
+                                Rot4.South, def.size);
+                            if (footprint.Cells.Any(trial.Contains)) continue;
+                            if (!CASettlementSitingConstraints
+                                .CanPlaceNativeBlueprint(map, def, cell,
+                                    Rot4.South, stuff).Accepted) continue;
+                            selected = cell;
+                            foreach (IntVec3 occupied in footprint)
+                                trial.Add(occupied);
                             break;
                         }
+                        if (!selected.IsValid) { rolesFit = false; break; }
+                        if (def.EverTransmitsPower) powerAnchor = selected;
                     }
-                    if (found) break;
+                    if (!rolesFit) continue;
+                    reserved = trial;
+                    contractFound = true;
+                    break;
                 }
-                if (!found)
+                if (!contractFound)
                 {
-                    blocker = "no native placement for " + demand;
+                    blocker = "no same-site native placement for "
+                        + programKey + " contract";
                     return false;
+                }
+            }
+            foreach (string requirement in proposal
+                .ProgramSpatialRequirements)
+            {
+                string[] parts = requirement.Split(new[] { '|' },
+                    StringSplitOptions.None);
+                string key = parts[0];
+                int extent = parts.Length > 1
+                    && int.TryParse(parts[1], out int parsed) ? parsed : 1;
+                if (key == CASettlementProgramRegistry.Agriculture)
+                {
+                    int wanted = Mathf.Clamp(extent * 6, 6, 30);
+                    int suitable = rect.Cells.Count(cell => cell.InBounds(map)
+                        && cell.Standable(map) && !cell.Roofed(map)
+                        && map.zoneManager.ZoneAt(cell) == null
+                        && cell.GetFertility(map) >= 0.7f
+                        && !reserved.Contains(cell)
+                        && !cell.GetThingList(map).Any(thing => thing.def
+                            .category == ThingCategory.Building));
+                    if (suitable < wanted)
+                    {
+                        blocker = "no native cultivation ground for " + key;
+                        return false;
+                    }
                 }
             }
             return true;
         }
 
-        // Later development is a fact about the settlement that exists now,
-        // not a replay of its starting-facility selection. Maintenance is
-        // available over current faction structures, access over current
-        // settlement ground, and research only where a real bench exists.
+        // Later development consumes exact work that is available now. Saved
+        // program contracts continue to authorize their own research,
+        // cultivation, and transport work; damaged or missing represented
+        // assets create a maintenance demand. Generic presence creates none.
         internal static CASettlementDevelopmentProposal
             BuildInstitutionalProposal(CARegionalSettlementRecord record,
                 CAOrganization organization, Map map)
@@ -327,77 +536,138 @@ namespace ColonistAwareness
                 && map != null && record.faction != null
                 && !record.faction.IsPlayer
                 && record.localRect != CellRect.Empty;
-            int residents = 0;
-            int structures = 0;
-            int researchBenches = 0;
-            int usableCells = 0;
-            var seenStructures = new HashSet<int>();
-            if (validGround)
-            {
-                IReadOnlyList<Pawn> pawns = map.mapPawns
-                    .SpawnedPawnsInFaction(record.faction);
-                for (int i = 0; i < pawns.Count; i++)
-                {
-                    Pawn pawn = pawns[i];
-                    if (pawn != null && !pawn.Dead && pawn.RaceProps.Humanlike
-                        && !pawn.IsPrisoner)
-                        residents++;
-                }
-                foreach (IntVec3 cell in record.localRect)
-                {
-                    if (!cell.InBounds(map)) continue;
-                    if (cell.Walkable(map)) usableCells++;
-                    List<Thing> things = cell.GetThingList(map);
-                    for (int i = 0; i < things.Count; i++)
-                    {
-                        Building building = things[i] as Building;
-                        if (building == null
-                            || building.Faction != record.faction
-                            || !seenStructures.Add(
-                                building.thingIDNumber)) continue;
-                        structures++;
-                        if (building.def?.defName == "SimpleResearchBench")
-                            researchBenches++;
-                    }
-                }
-            }
+            List<Pawn> residents = validGround
+                ? CAPopulationProjection.Residents(record, map)
+                    .Where(pawn => pawn != null && !pawn.Dead
+                        && pawn.Faction == record.faction
+                        && pawn.RaceProps.Humanlike && !pawn.IsPrisoner)
+                    .ToList()
+                : new List<Pawn>();
+            int usableCells = validGround ? record.localRect.Cells.Count(
+                cell => cell.InBounds(map) && cell.Walkable(map)) : 0;
+            int maintenanceTargets = validGround
+                ? MaintenanceTargetCount(record, map) : 0;
+            CASettlementProgramEntry research = OperationalProgram(record,
+                CASettlementProgramRegistry.Research);
+            bool qualifiedResearcher = residents.Any(pawn =>
+                pawn.skills?.GetSkill(SkillDefOf.Intellectual)?.Level > 0);
+            bool researchBench = research != null && HasPlacedAsset(record, map,
+                research, thing => thing is Building
+                    && thing.def?.defName == "SimpleResearchBench"
+                    && thing.Faction == record.faction);
+            CASettlementProgramEntry agriculture = OperationalProgram(record,
+                CASettlementProgramRegistry.Agriculture);
+            bool cultivation = agriculture != null
+                && HasPlacedCultivation(record, map, agriculture);
+            CASettlementProgramEntry transport = OperationalProgram(record,
+                CASettlementProgramRegistry.Transport);
 
-            proposal.FundingFeasible = organization != null;
+            proposal.FundingFeasible = organization?.treasury > 0f;
             proposal.FundingBasis = organization == null
-                ? "no current settlement institution"
+                ? "no current settlement organization"
+                : organization.treasury <= 0f
+                    ? "the current settlement organization has no recorded funds"
                 : "current institutional treasury "
                     + organization.treasury.ToString("F0")
                     + "; job-specific costs remain action-bound";
-            proposal.MaterialFeasible = validGround && residents > 0
-                && usableCells > 0;
-            proposal.MaterialBasis = !validGround
-                ? "no current materialized settlement ground"
-                : "current settlement ground with " + residents
-                    + " resident workers, " + structures
-                    + " faction structures, and " + usableCells
-                    + " usable cells";
-            if (validGround && usableCells > 0)
-            {
-                proposal.Demands.Add(CASettlementDemandKind.Access);
-                proposal.AssetCandidates.Add(((int)
-                    CASettlementDemandKind.Access)
-                    + "|current-ground:" + usableCells);
-            }
-            if (structures > 0 || record?.seededAssets?.Count > 0)
+            if (maintenanceTargets > 0)
             {
                 proposal.Demands.Add(CASettlementDemandKind.Maintenance);
                 proposal.AssetCandidates.Add(((int)
                     CASettlementDemandKind.Maintenance)
-                    + "|current-structures:" + structures);
+                    + "|represented-targets:" + maintenanceTargets);
             }
-            if (researchBenches > 0)
+            if (research != null && researchBench && qualifiedResearcher)
             {
                 proposal.Demands.Add(CASettlementDemandKind.Research);
                 proposal.AssetCandidates.Add(((int)
                     CASettlementDemandKind.Research)
-                    + "|current-benches:" + researchBenches);
+                    + "|program:" + research.signature);
             }
+            if (agriculture != null && cultivation)
+            {
+                proposal.Demands.Add(CASettlementDemandKind.Cultivation);
+                proposal.AssetCandidates.Add(((int)
+                    CASettlementDemandKind.Cultivation)
+                    + "|program:" + agriculture.signature);
+            }
+            if (transport != null)
+            {
+                proposal.Demands.Add(CASettlementDemandKind.Access);
+                proposal.AssetCandidates.Add(((int)
+                    CASettlementDemandKind.Access)
+                    + "|program:" + transport.signature);
+            }
+            proposal.MaterialFeasible = validGround && residents.Count > 0
+                && usableCells > 0 && proposal.Demands.Count > 0;
+            proposal.LaborBasis = residents.Count == 0
+                ? "no typed current settlement residents"
+                : "typed settlement residence: " + string.Join(", ",
+                    residents.Select(pawn => "pawn:" + pawn.thingIDNumber)
+                        .OrderBy(value => value, StringComparer.Ordinal));
+            proposal.MaterialBasis = !validGround
+                ? "no current materialized settlement ground"
+                : "current settlement ground with " + residents.Count
+                    + " typed resident workers, " + maintenanceTargets
+                    + " maintenance targets, and " + usableCells
+                    + " usable cells";
             return proposal;
+        }
+
+        private static CASettlementProgramEntry OperationalProgram(
+            CARegionalSettlementRecord record, string key)
+        {
+            return record?.settlementProgram?.Entries(key).FirstOrDefault(
+                entry => entry.blocker.NullOrEmpty()
+                    && (entry.materializationState == "materialized"
+                        || entry.materializationState
+                            == "present in saved geography"));
+        }
+
+        private static bool HasPlacedAsset(CARegionalSettlementRecord record,
+            Map map,
+            CASettlementProgramEntry entry, Func<Thing, bool> predicate)
+        {
+            var ids = new HashSet<string>(
+                CASettlementProgramAssets.AssetIds(record, entry),
+                StringComparer.Ordinal);
+            return ids.Count > 0 && map.listerThings.AllThings.Any(thing =>
+                thing != null && ids.Contains(thing.ThingID)
+                    && predicate(thing));
+        }
+
+        private static bool HasPlacedCultivation(
+            CARegionalSettlementRecord record, Map map,
+            CASettlementProgramEntry entry)
+        {
+            var ids = new HashSet<int>(CASettlementProgramAssets
+                .AssetIds(record, entry).Where(value => value != null
+                        && value.StartsWith("zone:",
+                            StringComparison.Ordinal))
+                .Select(value => int.TryParse(value.Substring(5),
+                    out int id) ? id : -1).Where(id => id >= 0));
+            return ids.Count > 0 && map.zoneManager.AllZones.Any(zone =>
+                zone is Zone_Growing && ids.Contains(zone.ID));
+        }
+
+        private static int MaintenanceTargetCount(
+            CARegionalSettlementRecord record, Map map)
+        {
+            var represented = new HashSet<string>((record.settlementProgram
+                    ?.entries ?? new List<CASettlementProgramEntry>())
+                .Where(entry => entry != null)
+                .SelectMany(entry => CASettlementProgramAssets.AssetIds(
+                    record, entry)).Where(value => value != null
+                    && !value.StartsWith("zone:",
+                        StringComparison.Ordinal)), StringComparer.Ordinal);
+            int damaged = map.listerThings.AllThings.OfType<Building>().Count(
+                building => represented.Contains(building.ThingID)
+                    && building.Faction == record.faction
+                    && building.def.useHitPoints
+                    && building.HitPoints < building.MaxHitPoints);
+            int missing = represented.Count(id => !map.listerThings.AllThings
+                .Any(thing => thing?.ThingID == id));
+            return damaged + missing;
         }
 
         internal static bool CanExerciseInstitutionalDevelopment(Map map,
@@ -442,15 +712,6 @@ namespace ColonistAwareness
             if (!sitingFeasible) record.developmentBlocker = sitingBlocker;
         }
 
-        private static void AddDemand(CASettlementDevelopmentProposal proposal,
-            int mask, int bit, CASettlementDemandKind demand)
-        {
-            if ((mask & bit) == 0) return;
-            proposal.Demands.Add(demand);
-            foreach (ThingDef def in Candidates(demand))
-                proposal.AssetCandidates.Add(((int)demand) + "|"
-                    + def.defName);
-        }
     }
 
     // Confirmed creation history and later NPC development are separate causal
@@ -486,9 +747,9 @@ namespace ColonistAwareness
                     + candidate,
                 knowledgeBasis: proposal?.StableSignature(),
                 owner: "creation author");
-            decision = CABehaviorGate.Evaluate("spatial.creation_authoring",
-                context);
-            if (!decision.Allowed) return false;
+            decision = CABehaviorGate.EvaluateForSelection(
+                "spatial.creation_authoring", context);
+            if (!decision.SelectionApproved) return false;
             intent = CACombatIntent.Authorized(null,
                 CAIntentController.SettlementDevelopment,
                 "spatial.creation_authoring", CAAuthorityOrigin.WorldAuthoring,
@@ -499,7 +760,9 @@ namespace ColonistAwareness
         }
 
         internal static bool TryAuthorizeJob(CARegionalSettlementRecord record,
-            Pawn worker, Job job, string targetOrDemand,
+            CASettlementProgramEntry program, Pawn worker, Job job,
+            CASettlementDemandKind demand, string targetOrDemand,
+            bool requireMaterializedAssets,
             out CABehaviorDecision decision, out CAIntentContext intent)
         {
             intent = default(CAIntentContext);
@@ -520,20 +783,32 @@ namespace ColonistAwareness
                 && !record.developmentAuthorityIdentity.NullOrEmpty();
             bool material = proposal.FundingFeasible
                 && proposal.MaterialFeasible && currentSiting;
+            bool exactDemand = proposal.Demands.Contains(demand);
+            bool exactProgram = CASettlementProgramRuntimeContract.TryResolve(
+                record, currentMap, program, requireMaterializedAssets,
+                out CASettlementProgramRuntimeResolution runtime);
+            bool residentWorker = exactProgram
+                && CASettlementProgramRuntimeContract.WorkerAuthorized(
+                    runtime, worker);
+            bool qualified = demand != CASettlementDemandKind.Research
+                || worker?.skills?.GetSkill(SkillDefOf.Intellectual)?.Level > 0;
             var context = CABehaviorContext.ForPawn(worker,
                 CAAuthorityOrigin.Continuation,
                 authoritySatisfied: validAuthority,
-                knowledgeSatisfied: proposal.Demands.Count > 0,
+                knowledgeSatisfied: exactDemand && exactProgram,
                 knowledgeFresh: true, liveValidated: true,
                 knowledgeRelayed: false, knowledgeAgeTicks: 0,
                 knowledgeConfidence: 1f, knowledgeUncertainty: 0f,
-                capabilitySatisfied: worker != null && job != null,
-                materialSatisfied: material,
+                capabilitySatisfied: residentWorker && qualified
+                    && job != null,
+                materialSatisfied: material && exactDemand && exactProgram,
                 currentIntentCompatible: worker != null
                     && !worker.Drafted && !worker.InMentalState,
                 directPlayerOwnership: false,
                 authorityBasis: record?.developmentAuthorityIdentity,
-                knowledgeBasis: proposal.StableSignature(),
+                knowledgeBasis: exactDemand && exactProgram
+                    ? demand + " under program " + program.signature
+                    : "no current " + demand + " contract",
                 owner: record?.developmentOwner
                     ?? "existing settlement institution");
             return CABehaviorJobOrigin.TryAuthorizeAndRegister(worker, job,
@@ -551,6 +826,8 @@ namespace ColonistAwareness
         // receipt restored by CABehaviorIntentMapComponent.
         internal static bool TryReauthorizeCompletion(
             CARegionalSettlementRecord record, Map map, Pawn worker, Job job,
+            string programKey, string operatorIdentity,
+            string programSignature, bool requireMaterializedAssets,
             string behaviorKey, int episodeId,
             CAAuthorityOrigin savedAuthorityOrigin,
             string authorityIdentity, string owner, string targetOrDemand,
@@ -571,6 +848,17 @@ namespace ColonistAwareness
             bool savedOriginValid = (savedAuthorityOrigin
                     & (institutionalOrigins | CAAuthorityOrigin.Continuation
                         | CAAuthorityOrigin.SaveRestore)) != 0;
+            CASettlementProgramEntry exactProgram = record?.settlementProgram
+                ?.Entries(programKey).FirstOrDefault(entry => entry != null
+                    && entry.operatorIdentity == operatorIdentity
+                    && entry.signature == programSignature);
+            bool programOperational =
+                CASettlementProgramRuntimeContract.TryResolve(record, map,
+                    exactProgram, requireMaterializedAssets,
+                    out CASettlementProgramRuntimeResolution runtime)
+                && (worker == null
+                    || CASettlementProgramRuntimeContract.WorkerAuthorized(
+                        runtime, worker));
             bool currentAuthority = record != null && map != null
                 && organization != null && record.faction != null
                 && !record.faction.IsPlayer && record.developmentAuthorized
@@ -583,7 +871,9 @@ namespace ColonistAwareness
                 && record.developmentOwner == owner
                 && organization.organizationKey == owner
                 && !authorityIdentity.NullOrEmpty()
-                && !owner.NullOrEmpty();
+                && !owner.NullOrEmpty()
+                && programOperational
+                && CommitmentStillExists(record, map, targetOrDemand);
 
             bool ownedJob = job == null && worker == null;
             if (job != null || worker != null)
@@ -622,8 +912,9 @@ namespace ColonistAwareness
                 knowledgeBasis: "exact saved institutional commitment for "
                     + (targetOrDemand ?? "native completion"),
                 owner: owner);
-            decision = CABehaviorGate.Evaluate(behaviorKey, context);
-            return decision.Allowed;
+            decision = CABehaviorGate.EvaluateForSelection(behaviorKey,
+                context);
+            return decision.SelectionApproved;
         }
 
         internal static bool TryAuthorizeLaterDevelopment(
@@ -635,7 +926,8 @@ namespace ColonistAwareness
             string authorityIdentity = record?.faction?.Name
                 ?? organization?.name ?? "unnamed settlement";
             bool valid = record != null && organization != null
-                && record.faction != null && !record.faction.IsPlayer;
+                && record.faction != null && !record.faction.IsPlayer
+                && proposal?.Demands?.Count > 0;
             var context = new CABehaviorContext(null,
                 CAActorContext.NPCSettlement | CAActorContext.NPCInstitution,
                 CAInitiativeTier.Standard, CAAuthorityOrigin.Institutional,
@@ -645,7 +937,7 @@ namespace ColonistAwareness
                 knowledgeFresh: true, liveValidated: true,
                 knowledgeRelayed: false, knowledgeAgeTicks: 0,
                 knowledgeConfidence: 1f, knowledgeUncertainty: 0f,
-                capabilitySatisfied: valid,
+                capabilitySatisfied: valid && proposal.MaterialFeasible,
                 materialSatisfied: proposal != null
                     && proposal.FundingFeasible
                     && proposal.MaterialFeasible
@@ -656,9 +948,9 @@ namespace ColonistAwareness
                     + " settlement institution",
                 knowledgeBasis: proposal?.StableSignature(),
                 owner: organization?.organizationKey);
-            decision = CABehaviorGate.Evaluate(
+            decision = CABehaviorGate.EvaluateForSelection(
                 "spatial.npc_settlement_development", context);
-            if (!decision.Allowed) return false;
+            if (!decision.SelectionApproved) return false;
             bool existing = record.developmentAuthorized
                 && record.developmentEpisodeId > 0
                 && record.developmentBehaviorKey
@@ -691,6 +983,34 @@ namespace ColonistAwareness
                     ownerId: record.faction.loadID);
             }
             return true;
+        }
+
+        private static bool CommitmentStillExists(
+            CARegionalSettlementRecord record, Map map,
+            string targetOrDemand)
+        {
+            if (record == null || map == null) return false;
+            string target = targetOrDemand ?? "";
+            string key = target.IndexOf("research",
+                    StringComparison.OrdinalIgnoreCase) >= 0
+                ? CASettlementProgramRegistry.Research
+                : target.IndexOf("cultivation",
+                    StringComparison.OrdinalIgnoreCase) >= 0
+                    ? CASettlementProgramRegistry.Agriculture
+                    : target.IndexOf("road",
+                        StringComparison.OrdinalIgnoreCase) >= 0
+                        ? CASettlementProgramRegistry.Transport : null;
+            if (key != null)
+                return record.settlementProgram?.Entries(key).Any(entry =>
+                    entry.blocker.NullOrEmpty()) == true;
+            // Repair and rebuilding commitments are represented by their saved
+            // program-asset ledger and survive completion of the work itself.
+            if (target.IndexOf("repair", StringComparison.OrdinalIgnoreCase)
+                    >= 0
+                || target.IndexOf("rebuild",
+                    StringComparison.OrdinalIgnoreCase) >= 0)
+                return record.seededAssets?.Count > 0;
+            return false;
         }
     }
 
@@ -866,6 +1186,25 @@ namespace ColonistAwareness
         private int sampledContextCells;
         private int sampledWaterCells;
         private int sampledNaturalRoofCells;
+        private int sampledCultivableCells;
+
+        private string environmentalBiomes;
+        private int environmentalSourceTiles;
+        private int environmentalGrowingTwelfths;
+        private float environmentalAverageTemperature;
+        private float environmentalMinimumTemperature;
+        private float environmentalMaximumTemperature;
+        private float environmentalRainfall;
+        private float environmentalForageability;
+        private float environmentalPlantDensity;
+        private float environmentalDiseasePerYear;
+        private float environmentalFoodSupport;
+        private float environmentalThermalPressure;
+        private int environmentalLandCapacity;
+        private int environmentalHabitatRequirementMask;
+        private int environmentalRequiredCapabilityTier;
+        private int environmentalFoodRoute;
+        private int environmentalSourceHash;
 
         private List<CASettlementIdeoligionEvidence> ideoligions =
             new List<CASettlementIdeoligionEvidence>();
@@ -881,6 +1220,14 @@ namespace ColonistAwareness
         public int Revision => revision;
         internal int FirstObservedTick => firstObservedTick;
         internal string EvidenceSignature => signature;
+
+        internal bool PreferIndoorActivity(Pawn pawn)
+        {
+            if (pawn == null) return environmentalThermalPressure >= 0.55f;
+            FloatRange safe = pawn.SafeTemperatureRange();
+            return environmentalThermalPressure >= 0.55f
+                || !safe.Includes(map.mapTemperature.OutdoorTemp);
+        }
 
         internal CASettlementPlacementEvidence ScoreSleepPlacement(
             Pawn planner, CASpaceProgram program, Room room, IntVec3 cell,
@@ -929,6 +1276,30 @@ namespace ColonistAwareness
             else if (naturalRoofShare <= 0.10f)
                 result.environmentalFit = naturalRoof ? -0.20f : 0.35f;
 
+            // Current room temperature and the represented tiles' full
+            // seasonal range are independent facts. The first protects the
+            // resident now; the second lets placement anticipate a climate
+            // that is temporarily mild without inventing a new plan.
+            if (planner != null)
+            {
+                FloatRange comfort = planner.ComfortableTemperatureRange();
+                float roomTemperature = room.Temperature;
+                if (comfort.Includes(roomTemperature))
+                    result.environmentalFit += 0.75f;
+                else
+                {
+                    float distance = roomTemperature < comfort.min
+                        ? comfort.min - roomTemperature
+                        : roomTemperature - comfort.max;
+                    result.environmentalFit -= Mathf.Min(3f,
+                        0.12f * distance);
+                }
+            }
+            if (environmentalThermalPressure > 0f)
+                result.environmentalFit += room.UsesOutdoorTemperature
+                    ? -1.50f * environmentalThermalPressure
+                    : 0.80f * environmentalThermalPressure;
+
             result.operationalCoherence = Mathf.Clamp(
                 1.20f - Mathf.Abs(doorDistance - 4f) * 0.25f,
                 -1.50f, 1.20f);
@@ -952,13 +1323,14 @@ namespace ColonistAwareness
             // program, supplies material, or bypasses a native constraint.
             CACulture culture = CACultureLongitudinalMapComponent.For(map)
                 ?.PlayerLocalCulture;
-            int shared = CACultureHistory.PracticeStrength(culture,
-                "shared-public-life");
-            int defense = CACultureHistory.PracticeStrength(culture,
-                "defensive-boundary");
-            result.culturalExpression = CACultureConsumerKernel
-                .SpatialPreference(result.semanticLegibility,
-                    result.strategicTopology, shared, defense);
+            CACulturalMeaningResolution shared = CACultureModel.Resolve(culture,
+                CASocialSubjectRegistry.PublicGathering);
+            CACulturalMeaningResolution defense = CACultureModel.Resolve(culture,
+                CASocialSubjectRegistry.DefendedBoundary);
+            result.culturalExpression = Mathf.Clamp01(shared.Salience / 100f)
+                    * Mathf.Max(0f, result.semanticLegibility) * 0.28f
+                + Mathf.Clamp01(defense.Salience / 100f)
+                    * Mathf.Max(0f, result.strategicTopology) * 0.18f;
             return result;
         }
 
@@ -1175,6 +1547,42 @@ namespace ColonistAwareness
                 "CA_settlementContextSampledWaterCells", 0);
             Scribe_Values.Look(ref sampledNaturalRoofCells,
                 "CA_settlementContextSampledNaturalRoofCells", 0);
+            Scribe_Values.Look(ref sampledCultivableCells,
+                "CA_settlementContextSampledCultivableCells", 0);
+            Scribe_Values.Look(ref environmentalBiomes,
+                "CA_settlementContextEnvironmentalBiomes");
+            Scribe_Values.Look(ref environmentalSourceTiles,
+                "CA_settlementContextEnvironmentalSourceTiles", 0);
+            Scribe_Values.Look(ref environmentalGrowingTwelfths,
+                "CA_settlementContextEnvironmentalGrowingTwelfths", 0);
+            Scribe_Values.Look(ref environmentalAverageTemperature,
+                "CA_settlementContextEnvironmentalAverageTemperature", 0f);
+            Scribe_Values.Look(ref environmentalMinimumTemperature,
+                "CA_settlementContextEnvironmentalMinimumTemperature", 0f);
+            Scribe_Values.Look(ref environmentalMaximumTemperature,
+                "CA_settlementContextEnvironmentalMaximumTemperature", 0f);
+            Scribe_Values.Look(ref environmentalRainfall,
+                "CA_settlementContextEnvironmentalRainfall", 0f);
+            Scribe_Values.Look(ref environmentalForageability,
+                "CA_settlementContextEnvironmentalForageability", 0f);
+            Scribe_Values.Look(ref environmentalPlantDensity,
+                "CA_settlementContextEnvironmentalPlantDensity", 0f);
+            Scribe_Values.Look(ref environmentalDiseasePerYear,
+                "CA_settlementContextEnvironmentalDiseasePerYear", 0f);
+            Scribe_Values.Look(ref environmentalFoodSupport,
+                "CA_settlementContextEnvironmentalFoodSupport", 0f);
+            Scribe_Values.Look(ref environmentalThermalPressure,
+                "CA_settlementContextEnvironmentalThermalPressure", 0f);
+            Scribe_Values.Look(ref environmentalLandCapacity,
+                "CA_settlementContextEnvironmentalLandCapacity", 0);
+            Scribe_Values.Look(ref environmentalHabitatRequirementMask,
+                "CA_settlementContextEnvironmentalHabitatRequirementMask", 0);
+            Scribe_Values.Look(ref environmentalRequiredCapabilityTier,
+                "CA_settlementContextEnvironmentalRequiredCapabilityTier", 0);
+            Scribe_Values.Look(ref environmentalFoodRoute,
+                "CA_settlementContextEnvironmentalFoodRoute", 0);
+            Scribe_Values.Look(ref environmentalSourceHash,
+                "CA_settlementContextEnvironmentalSourceHash", 0);
             Scribe_Collections.Look(ref ideoligions,
                 "CA_settlementContextIdeoligions", LookMode.Deep);
 
@@ -1469,17 +1877,50 @@ namespace ColonistAwareness
             sampledContextCells = 0;
             sampledWaterCells = 0;
             sampledNaturalRoofCells = 0;
+            sampledCultivableCells = 0;
+            var environmentalCells = new List<IntVec3>();
             for (int x = sampleMinX; x <= sampleMaxX; x++)
             {
                 for (int z = sampleMinZ; z <= sampleMaxZ; z++)
                 {
                     var cell = new IntVec3(x, 0, z);
+                    environmentalCells.Add(cell);
                     sampledContextCells++;
                     if (cell.GetTerrain(map).IsWater) sampledWaterCells++;
                     if (cell.GetRoof(map)?.isNatural == true)
                         sampledNaturalRoofCells++;
+                    if (!cell.GetTerrain(map).IsWater
+                        && !cell.Roofed(map)
+                        && cell.GetFertility(map) >= 0.7f)
+                        sampledCultivableCells++;
                 }
             }
+
+            CASettlementEnvironmentFacts environment =
+                CASettlementEnvironment.ForMap(map, environmentalCells);
+            environmentalBiomes = environment.Biomes;
+            environmentalSourceTiles = environment.SourceTiles;
+            environmentalGrowingTwelfths = environment.GrowingTwelfths;
+            environmentalAverageTemperature =
+                environment.AverageTemperature;
+            environmentalMinimumTemperature =
+                environment.MinimumTemperature;
+            environmentalMaximumTemperature =
+                environment.MaximumTemperature;
+            environmentalRainfall = environment.Rainfall;
+            environmentalForageability = environment.Forageability;
+            environmentalPlantDensity = environment.PlantDensity;
+            environmentalDiseasePerYear = environment.DiseasePerYear;
+            environmentalFoodSupport = environment.FoodSupport;
+            environmentalThermalPressure =
+                environment.SeasonalThermalPressure;
+            environmentalLandCapacity = environment.LandCapacity;
+            environmentalHabitatRequirementMask =
+                environment.HabitatRequirementMask;
+            environmentalRequiredCapabilityTier =
+                environment.RequiredCapabilityTier;
+            environmentalFoodRoute = (int)environment.FoodRoute;
+            environmentalSourceHash = environment.SourceHash;
         }
 
         private string BuildSignature(
@@ -1506,7 +1947,34 @@ namespace ColonistAwareness
                 .Append(waterHomeCells).Append('|')
                 .Append(sampledContextCells).Append('|')
                 .Append(sampledWaterCells).Append('|')
-                .Append(sampledNaturalRoofCells);
+                .Append(sampledNaturalRoofCells).Append('|')
+                .Append(sampledCultivableCells).Append('|')
+                .Append(environmentalBiomes).Append('|')
+                .Append(environmentalSourceTiles).Append('|')
+                .Append(environmentalGrowingTwelfths).Append('|')
+                .Append(environmentalAverageTemperature.ToString("F2",
+                    System.Globalization.CultureInfo.InvariantCulture))
+                .Append('|').Append(environmentalMinimumTemperature.ToString(
+                    "F2", System.Globalization.CultureInfo.InvariantCulture))
+                .Append('|').Append(environmentalMaximumTemperature.ToString(
+                    "F2", System.Globalization.CultureInfo.InvariantCulture))
+                .Append('|').Append(environmentalRainfall.ToString("F2",
+                    System.Globalization.CultureInfo.InvariantCulture))
+                .Append('|').Append(environmentalForageability.ToString("F4",
+                    System.Globalization.CultureInfo.InvariantCulture))
+                .Append('|').Append(environmentalPlantDensity.ToString("F4",
+                    System.Globalization.CultureInfo.InvariantCulture))
+                .Append('|').Append(environmentalDiseasePerYear.ToString("F4",
+                    System.Globalization.CultureInfo.InvariantCulture))
+                .Append('|').Append(environmentalFoodSupport.ToString("F4",
+                    System.Globalization.CultureInfo.InvariantCulture))
+                .Append('|').Append(environmentalThermalPressure.ToString("F4",
+                    System.Globalization.CultureInfo.InvariantCulture))
+                .Append('|').Append(environmentalLandCapacity).Append('|')
+                .Append(environmentalHabitatRequirementMask).Append('|')
+                .Append(environmentalRequiredCapabilityTier).Append('|')
+                .Append(environmentalFoodRoute).Append('|')
+                .Append(environmentalSourceHash);
             for (int i = 0; i < ideoligionEvidence.Count; i++)
                 builder.Append('|').Append(
                     ideoligionEvidence[i].StableSignature());
@@ -1550,7 +2018,38 @@ namespace ColonistAwareness
                 + naturalRoofHomeCells + ", water " + waterHomeCells
                 + "); settlement margin " + sampledContextCells
                 + " cells (natural roof " + sampledNaturalRoofCells
-                + ", water " + sampledWaterCells + ")"
+                + ", water " + sampledWaterCells + ", cultivable "
+                + sampledCultivableCells + ")"
+                + "\n  biome/climate evidence: "
+                + (environmentalBiomes ?? "unknown") + " across "
+                + environmentalSourceTiles + " represented source tile"
+                + (environmentalSourceTiles == 1 ? "" : "s")
+                + "; annual "
+                + environmentalMinimumTemperature.ToString("F1") + " to "
+                + environmentalMaximumTemperature.ToString("F1") + "C"
+                + ", current "
+                + map.mapTemperature.OutdoorTemp.ToString("F1")
+                + "C, outdoor growing "
+                + (environmentalGrowingTwelfths * 5) + "/60 days, rain "
+                + environmentalRainfall.ToString("F0") + "mm, forage "
+                + environmentalForageability.ToStringPercent()
+                + ", plant density "
+                + environmentalPlantDensity.ToStringPercent()
+                + ", disease "
+                + environmentalDiseasePerYear.ToString("F1")
+                + "/year, food support "
+                + environmentalFoodSupport.ToStringPercent()
+                + ", site capacity " + environmentalLandCapacity + "/3"
+                + "\n  habitat requirements: "
+                + string.Join(", ", CAHabitatViabilityCausalKernel
+                    .Enumerate(environmentalHabitatRequirementMask)
+                    .Select(CAHabitatViabilityCausalKernel.RequirementWords)
+                    .ToArray())
+                + "; food route " + CAHabitatViabilityCausalKernel
+                    .FoodRouteWords((CAHabitatFoodRoute)
+                        environmentalFoodRoute)
+                + "; minimum capability tier "
+                + environmentalRequiredCapabilityTier
                 + "\n  historical-continuity evidence: saved context revision "
                 + revision + " since tick " + firstObservedTick
                 + "; new Autonomous Bed proposals inside player-authored sleep "

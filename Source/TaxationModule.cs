@@ -65,7 +65,7 @@ namespace ColonistAwareness
                 if (paid + 0.01f < owed)
                     source.Record("relations", "tax to " + org.name
                         + " met only in part");
-                // Record the transfer so political beliefs can judge it.
+                // Record the transfer so Political Order can judge it.
                 CAActLedger.Current?.Emit("taxation",
                     org.organizationKey, -1, r.PawnPartyId,
                     "tax of " + (int)paid + " silver for "

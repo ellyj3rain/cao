@@ -16,8 +16,10 @@ namespace ColonistAwareness
             string ownershipScope = null, int lifetimeTicks = 60000)
         {
             intent = default(CAIntentContext);
-            decision = CABehaviorGate.Evaluate(behaviorKey, context);
-            if (!decision.Allowed || pawn == null || job == null
+            decision = CABehaviorGate.EvaluateForSelection(behaviorKey,
+                context);
+            if (!decision.SelectionApproved
+                || pawn == null || job == null
                 || pawn.Map == null || context.Actor != pawn)
                 return false;
 
@@ -80,8 +82,10 @@ namespace ColonistAwareness
             int lifetimeTicks = 60000)
         {
             intent = default(CAIntentContext);
-            decision = CABehaviorGate.Evaluate(behaviorKey, context);
-            if (!decision.Allowed || pawn == null || job == null
+            decision = CABehaviorGate.EvaluateForSelection(behaviorKey,
+                context);
+            if (!decision.SelectionApproved
+                || pawn == null || job == null
                 || pawn.Map == null || context.Actor != pawn
                 || episodeId <= 0) return false;
             intent = CACombatIntent.Authorized(pawn, controller, behaviorKey,
@@ -112,8 +116,10 @@ namespace ColonistAwareness
             int lifetimeTicks = 60000)
         {
             intent = default(CAIntentContext);
-            decision = CABehaviorGate.Evaluate(behaviorKey, context);
-            if (!decision.Allowed || pawn == null || job == null
+            decision = CABehaviorGate.EvaluateForSelection(behaviorKey,
+                context);
+            if (!decision.SelectionApproved
+                || pawn == null || job == null
                 || pawn.Map == null || context.Actor != pawn
                 || !prototype.IsValid) return false;
             CAAuthorityOrigin authority = context.AuthorityOrigin;
@@ -275,6 +281,8 @@ namespace ColonistAwareness
                 new CABehaviorDecisionObservation(decision.BehaviorKey,
                     decision.Allowed, decision.PrimaryBlock,
                     decision.SuggestedIntentOrigin, decision.AuthorityBasis,
+                    decision.CulturalAppraisalApplied,
+                    decision.CulturalResponse, decision.CulturalSupport,
                     Find.TickManager?.TicksGame ?? 0);
         }
 
@@ -372,18 +380,26 @@ namespace ColonistAwareness
         public readonly CABehaviorBlockReason PrimaryBlock;
         public readonly CAIntentOrigin SuggestedIntentOrigin;
         public readonly string AuthorityBasis;
+        public readonly bool CulturalAppraisalApplied;
+        public readonly CACulturalBehaviorResponse CulturalResponse;
+        public readonly float CulturalSupport;
         public readonly int ObservedTick;
 
         public CABehaviorDecisionObservation(string behaviorKey, bool allowed,
             CABehaviorBlockReason primaryBlock,
             CAIntentOrigin suggestedIntentOrigin, string authorityBasis,
-            int observedTick)
+            bool culturalAppraisalApplied,
+            CACulturalBehaviorResponse culturalResponse,
+            float culturalSupport, int observedTick)
         {
             BehaviorKey = behaviorKey;
             Allowed = allowed;
             PrimaryBlock = primaryBlock;
             SuggestedIntentOrigin = suggestedIntentOrigin;
             AuthorityBasis = authorityBasis;
+            CulturalAppraisalApplied = culturalAppraisalApplied;
+            CulturalResponse = culturalResponse;
+            CulturalSupport = culturalSupport;
             ObservedTick = observedTick;
         }
 

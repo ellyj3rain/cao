@@ -452,6 +452,9 @@ namespace ColonistAwareness
 
         private bool TryPlanNow(out string outcome)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.AutonomousHomePlanning))
+            {
             outcome = "no plan";
             AwarenessSettings settings = AwarenessMod.Settings;
             if (settings == null)
@@ -636,6 +639,7 @@ namespace ColonistAwareness
             return Finish(blocker.NullOrEmpty()
                 ? "the claimed home already has this slice's furnishings"
                 : blocker, out outcome);
+            }
         }
 
         private bool Finish(string text, out string outcome)
@@ -1415,10 +1419,16 @@ namespace ColonistAwareness
                     + SkillLevel(planner, SkillDefOf.Melee);
                 int reflective = SkillLevel(planner, SkillDefOf.Intellectual)
                     + SkillLevel(planner, SkillDefOf.Artistic);
+                CASettlementPlanningContextMapComponent environment =
+                    CASettlementPlanningContextMapComponent.For(map);
+                environment?.Refresh();
+                bool preferIndoor = environment?.PreferIndoorActivity(planner)
+                    == true;
                 CASpaceProgram recreationProgram = PreferredProgramFor(
                     CAHomePlanKind.Recreation);
 
-                if (physical > reflective && horseshoes != null)
+                if (physical > reflective && horseshoes != null
+                    && !preferIndoor)
                 {
                     if (TryMakeOutdoorPlan(planner, horseshoes,
                         "the household lacks recreation and " + planner.LabelShort
@@ -1436,11 +1446,16 @@ namespace ColonistAwareness
                 {
                     if (chess != null && TryMakeIndoorPlan(planner, chess,
                         CAHomePlanKind.Recreation,
-                        "the household lacks recreation and " + planner.LabelShort
-                            + " favors a thinking game", null, recreationProgram,
+                        preferIndoor
+                            ? "the household lacks recreation and the local climate favors an indoor game"
+                            : "the household lacks recreation and "
+                                + planner.LabelShort
+                                + " favors a thinking game",
+                        null, recreationProgram,
                         out plan, out blocker))
                         return true;
-                    if (horseshoes != null && TryMakeOutdoorPlan(planner, horseshoes,
+                    if (!preferIndoor && horseshoes != null
+                        && TryMakeOutdoorPlan(planner, horseshoes,
                         "the household lacks recreation", recreationProgram,
                         out plan, out blocker))
                         return true;
@@ -1798,6 +1813,9 @@ namespace ColonistAwareness
             out IntVec3 bestCell, out Rot4 bestRot,
             out string placementEvidence)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.SpatialSearch))
+            {
             bestCell = IntVec3.Invalid;
             bestRot = Rot4.Invalid;
             placementEvidence = null;
@@ -1825,7 +1843,7 @@ namespace ColonistAwareness
                     && program != null
                     && program.author == CASpaceAuthor.Player
                     && CABehaviorGate.StableProfileAllows(planner,
-                        "spatial.home_comfort")
+                        "spatial.home_essentials")
                 ? CASettlementPlanningContextMapComponent.For(map) : null;
             settlementContext?.Refresh();
             for (int pass = 0; pass < 2; pass++)
@@ -1966,11 +1984,15 @@ namespace ColonistAwareness
             else if (bestCell.IsValid)
                 placementEvidence = fengShuiEvidence;
             return bestCell.IsValid;
+            }
         }
 
         private bool TryFindSeatPlacement(Pawn planner, ThingDef def, ThingDef stuff,
             out IntVec3 bestCell, out Rot4 bestRot)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.SpatialSearch))
+            {
             bestCell = IntVec3.Invalid;
             bestRot = Rot4.Invalid;
             float bestScore = float.MinValue;
@@ -2017,11 +2039,15 @@ namespace ColonistAwareness
                 }
             }
             return bestCell.IsValid;
+            }
         }
 
         private bool TryFindSeatBeside(Pawn planner, ThingDef def, ThingDef stuff,
             Building target, out IntVec3 bestCell, out Rot4 bestRot)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.SpatialSearch))
+            {
             bestCell = IntVec3.Invalid;
             bestRot = Rot4.Invalid;
             CASpaceProgram program = PlannedUseMapComponent.For(map)
@@ -2050,12 +2076,16 @@ namespace ColonistAwareness
                 return true;
             }
             return false;
+            }
         }
 
         private bool TryFindOutdoorPlacement(Pawn planner, ThingDef def,
             ThingDef stuff, CASpaceProgram program,
             out IntVec3 bestCell, out Rot4 bestRot)
         {
+            using (CAModuleProfiler.Measure(
+                CAModuleProfileKey.SpatialSearch))
+            {
             bestCell = IntVec3.Invalid;
             bestRot = def.defaultPlacingRot;
             float bestScore = float.MinValue;
@@ -2078,6 +2108,7 @@ namespace ColonistAwareness
                 }
             }
             return bestCell.IsValid;
+            }
         }
 
         private bool EligibleHomeRoom(Room room)
@@ -3016,11 +3047,11 @@ namespace ColonistAwareness
                         ? plan.authorityIdentity : authorityBasis,
                 knowledgeBasis: deficitBasis,
                 owner: nameof(AutonomousHomeMapComponent));
-            CABehaviorDecision decision = CABehaviorGate.Evaluate(
+            CABehaviorDecision decision = CABehaviorGate.EvaluateForSelection(
                 expectedKey, context);
             CABehaviorIntentMapComponent.For(map)?.ObserveDecision(
                 planner, decision);
-            if (!decision.Allowed)
+            if (!decision.SelectionApproved)
             {
                 outcome = expectedKey + " blocked: "
                     + decision.PrimaryReason;

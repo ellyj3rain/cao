@@ -3201,3 +3201,221 @@
   mutators remain an explicitly stamped transient developer exercise. It may
   exercise cases 97-103 and 105 without inventing durable compatibility. Case
   104 requires a separate compatible-region save/reload run.
+
+- **F-158** (2026-08-11–2026-08-12 UTC / 2026-08-11 PST) - **B8 makes the
+  inherited cultural and political authoring boundary substantive before
+  runtime.** The frozen source at
+  `1560c2ed16f27eb3d258fd57962ea2c0fdb3e68a` introduces authoring epoch 8,
+  twelve open registered social subjects, persistent meaning dimensions and
+  practices, the full Culture composer, five complete thirteen-answer political
+  profiles, question-first authoring, causal NPC derivation, pawn-local social
+  interpretation, subject-specific group aggregation, and generic longitudinal
+  and consumer paths. Invalid pre-B8 authoring objects are discarded rather
+  than migrated.
+
+  The exact B8 runner passes 57/57 receipts. Retained suites pass 185 World
+  tendencies, 48 player-founding, and 58 creation-flow assertions; behavior
+  convergence passes 98 static assertions with nine named operator-runtime cases
+  pending. Ontology, causality, UI, structural, and playability reviews leave no
+  unresolved Critical or High finding. A clean Release rebuild succeeds with
+  zero errors and twelve inherited warnings. Its 3,321,344-byte assembly,
+  SHA-256
+  `995C8123DA81EB083C311C2C792223077B0A13B11FA7FB583531F704F563A6BF`,
+  is byte-identical at the active project target after closed-process deployment.
+
+  Both active fixture surfaces are byte-identical at SHA-256
+  `4BEF806DADF9A40F83E4E8684B55BBC6335C8BC078119132D66BCA3769BC9093`.
+  They retain the intentional world, region, confirmed candidate, arrival tile,
+  map scale, three factions, four settlements, and nine population groups under
+  regional plan schema 6, Culture and Political Beliefs schema 8, and player
+  founding schema 3. The transient developer-exercise boundary and the separate
+  compatible-region requirement for behavior case 104 remain explicit.
+
+- **F-159** (2026-08-12 UTC / 2026-08-12 PDT) - **B9 closes Starting Region
+  information architecture and settlement programs at the static boundary.**
+  Source commit `20b181413a13a2b168c9c5d8dc23fb20241909c4` preserves Objects and
+  Map, adds shared selection and compact settlement comparison, reconstructs
+  region/faction/settlement Details around object-owned facts, removes
+  one-option controls and backend exposition, and measures wrap-sensitive rows.
+  Culture onboarding uses semantic meaning cards and guided editing while exact
+  continuous values remain contextual and lossless.
+
+  The seven persisted facility bits and exception masks are gone. A 22-program
+  namespaced registry spans 16 functional domains and resolves native,
+  expansion, and ported candidates from loaded contracts. Provision generation
+  now admits only household, communal, and authority operators backed by actual
+  social, material, funding, access, stock, and consumer evidence. Confirmed
+  plans materialize saved programs and counts rather than rerolling tendencies.
+
+  Exact B9 acceptance records 79 statically verified cases and five named
+  operator-runtime observations. Retained suites pass 57/57 B8 receipts, 185
+  World-tendency assertions, 48 player-founding assertions, 54 creation-flow
+  assertions, and 98/107 behavior cases with nine operator observations. Five
+  review lenses leave no unresolved Critical or High finding. The clean Release
+  build succeeds with zero errors and twelve inherited warnings. Its
+  3,404,288-byte assembly, SHA-256
+  `9AD4EE62359CF1961FFCB55A7C45C946914F99E264FD7C819F74342E51D0EE19`,
+  is byte-identical at the active project target after closed-process deployment.
+
+  Both fixture surfaces are byte-identical at SHA-256
+  `1DDAA4CD9ADC2CD557471B01D754BA37AE191A3588155645B1A872680D8ED4D2`.
+  Regional schema 8 and settlement-program schema 1 retain three factions, four
+  settlements, nine population groups, the current world/region/candidate/
+  arrival/scale identity, and per-settlement program/provision counts. Visual
+  layout, selection feel, Faction Relations, fine-tune reopening, and the
+  generated game remain operator judgments.
+
+- **F-160** (2026-08-12 UTC / 2026-08-12 PDT) - **The aggregate framework
+  contained deterministic and random proxies in causal ownership positions.**
+  The B10 ledger found hash-selected households, random capability jitter,
+  tendency-created programs, category-created provision arrangements,
+  Political Beliefs copied into current structure, a hash-selected independent
+  Ideoligion, random local factions and relations, hash-created specialization,
+  assets standing in for institutions, parallel fixture derivation, and a tax
+  editor that rolled an institutional decision. All were Critical or High
+  because they asserted semantic state without the process that makes it exist.
+
+  B10 replaces those paths with persistent domestic-unit membership and
+  represented transitions; eight domain-specific capability evidence records;
+  complete settlement-program operational evidence; factual domestic,
+  communal, and authority provision contracts; exact Ideoligion and relation
+  identities; and separate normative belief, instituted order, Culture,
+  authority, material, and behavior state. Unsupported programs and provision
+  forms remain absent. ThingDefs and rooms are classified as material, work,
+  storage, access, communication, symbolic, or spatial nodes rather than proof
+  of an institution.
+
+  The renewed source sweep classifies all 152 active C# RNG/hash occurrences
+  and leaves no unresolved Critical or High synthetic-state finding. B10
+  acceptance passes 75/75 against the production kernels. The final convergence
+  adds an explicit established-program authoring owner, exact per-role program
+  asset receipts, atomic rebuild rebinding, exclusive and reachable provision
+  stock, exact provision-kind matching, live Defense labor assignments, and
+  exact program continuity through later work.
+
+  The active and keyed fixture surfaces are byte-identical at 65,717 bytes and
+  SHA-256
+  `F539239672875C668F750A09CCC370B4B6AFD8165B0F6FA7D37543AFE8391440`.
+  They preserve three factions, four settlements, nine population groups, 19
+  explicit established-program facts, and the current world, region, candidate,
+  arrival, and map-scale identity under authoring epoch 10 and regional-plan
+  schema 10. The clean Release assembly is 3,415,040 bytes at SHA-256
+  `DD0EC6DB5C7D0C3B607C1D6FFBE813F6469CD4796CAB10E5C0D70D4223FFDF60`.
+  RimWorld was closed for deployment, and the active Steam-mod target is
+  byte-identical to that assembly. Aggregate look and play remain pending
+  operator evidence.
+
+- **F-161** (2026-08-12 UTC / 2026-08-12 PDT) - **The post-B10 tree supports a
+  durable campaign boundary, but the inherited authoring vocabulary did not yet
+  meet that boundary.** The structural audit found one coherent owner per live
+  schema and cadence after narrow extraction of compatibility, profiling,
+  pending-authoring, and settlement-wealth responsibilities. Streaming preflight,
+  a complete executable manifest, idempotent controlled B10 upgrade, stable-ID
+  receipts, truthful additive provenance, visible rejection, and rollback
+  documentation establish the first retainable campaign baseline without a
+  general destructive migration framework.
+
+  The addendum audit distinguished four completion layers and classified 36
+  mechanically observable social fact families. The former production surface
+  had 12 social-subject examples and no distinct concrete-practice vocabulary.
+  The corrected build has 45 sourced and consumed social referents and 33 sourced
+  and consumed repeated practices. Subject, meaning, and practice records and
+  candidate universes are distinct; invalid subject-shaped pending practices are
+  accepted only when actual longitudinal evidence establishes their concrete
+  conduct.
+
+  Political Beliefs and current order now retain several independent mechanisms
+  per subject. Synthetic `mixed` values, first-value views, complete Political
+  Profiles, and authority bundles mislabeled as beliefs are absent. Twelve belief
+  sets and ten current-order sets declare exact additive patches and preserve
+  unrelated or compatible state. Culture and political authoring use
+  content-driven sections; source-domain and one-item tab projection is gone.
+
+  The governed fixture advances to pending epoch 11, regional-plan schema 11,
+  and Culture/Political Beliefs schema 9 while retaining its existing identity,
+  three factions, four settlements, nine population groups, and nineteen
+  established operations. Exact receipt, review, build, commit, and deployment
+  evidence is recorded in the B11 evidence files and append-only batch record.
+  Look, interaction, campaign start, save, and later update remain operator
+  runtime evidence rather than static claims.
+
+- **F-162** (2026-08-13 UTC / 2026-08-12 to 2026-08-13 PDT) - **The B11 Culture
+  surface had representational breadth but not the integrated causal cognition
+  required by the supplied design package.** Its social meanings could preserve
+  approval, normality, prestige, and salience, but they did not own a coherent
+  population distribution, pawn-private/public attitude, sparse social network,
+  emergent political cognition, institution appraisal, or proposition-knowledge
+  lifecycle. Treating those absent systems as documentation-only work would have
+  left the declared ontology without runtime owners.
+
+  B12 replaces former meaning rows as current normative authority with thirteen
+  explicit Culture questions and population distributions. Twenty-one former
+  social-subject records map through exact adapters to eight questions. Only
+  weighted approval and salience acquire new question semantics; all former
+  dimensions and unmatched subjects remain `CACultureLegacyEvidence`.
+  The governed fixture demonstrates 22 distributions and 26 evidence records
+  across eight Culture instances without changing its world, region, candidate,
+  arrival, scale, 3-faction, 4-settlement, 9-group, or 19-operation identity.
+
+  `world.cultural-cognition` owns stable psychology evidence, dynamic condition,
+  private/public attitudes, perceived norms, and sparse influence. A separate
+  `world.political-cognition` owner forms issue positions, links, perceived
+  majorities, and faction-bounded coalitions. `world.proposition-knowledge` owns
+  claims, sources, access, confidence, transmission, research receipts, custody,
+  and decay. Organization schema 2 owns legitimacy and sanction appraisals.
+  Culture influences appraisal and discretionary CA action selection without
+  changing native legality or direct operator authority.
+
+  The expanded fixed-seed suite passes 113/113 assertions spanning distribution,
+  semantics, psychology, networks, behavior, politics, institutions, knowledge,
+  migration, history, fixture round trip, and performance bounds. That evidence
+  establishes implementation contracts and causal isolation. Psychometric
+  validity, empirical calibration, visual quality, and gameplay acceptance remain
+  outside the static claim and await operator runtime evidence.
+
+- **F-163** (2026-08-13 UTC / 2026-08-13 PDT) - **Independent report evidence
+  requires a different reporter and holder.** Final causal review found that the
+  first B12 report fan-out could route an organization member's already-known
+  claim back to that same member. The route was delivered once, but proposition
+  knowledge would have counted the holder as a second source after the holder had
+  learned only from somebody else. Production ingress now rejects every reported
+  route where reporter and holder are the same pawn, both at the act-record
+  authority boundary and at organization fan-out. The executable knowledge
+  receipt demonstrates two distinct reporters reaching one holder while the
+  holder's self-route is rejected; all 113 B12 receipts and the retained B10/B11
+  regression suites pass after the correction.
+
+- **F-164** (2026-08-13 UTC / 2026-08-13 PDT) - **B12 established durable
+  cultural cognition, but its thirteen-question authoring set and several
+  adjacent field semantics did not complete the intended Culture capability.**
+  The pre-change fidelity audit found a sound owner, migration boundary,
+  private/public attitude model, sparse influence, political and knowledge
+  separation, and authoring editor. It also found incomplete historical/social
+  presets, no complete broader-world Culture generation path, and causal
+  conflations between salience and conviction, norm pressure and enforcement,
+  inherited source confidence and current knowledge confidence, and visibility
+  and public expression.
+
+  B13 retains that ownership architecture and expands the production registry to
+  twenty-four questions in eight categories. Nine complete presets, manual edits,
+  deterministic randomization, saved profiles, and missing-row completion write
+  one `CACulture` object. One global diversity control owns default spread and
+  expanded questions may override only their own spread. Practices remain
+  observed history. Non-player Starting Region and broader world-faction paths
+  use the same completion kernel without rerolling authored player state.
+
+  Cultural cognition schema 2 persists attention, inherited-prior strength,
+  perceived social pressure, and observation likelihood as separate facts.
+  Represented enforcement and direct evidence own their corresponding outcomes;
+  psychology supplies bounded question-specific private deviation; demonstrated
+  expertise changes source weighting. Seven direct represented-fact routes and
+  seventeen exact adapters provide historical feedback without treating absence
+  as disapproval.
+
+  The governed fixture retains its world, region, candidate, arrival, scale,
+  three factions, four settlements, nine population groups, and nineteen
+  established operations. Eight Culture records now contain 192 complete root
+  distributions, two authored local rows, and 26 evidence records. Sixty-seven B13
+  assertions and retained 75/78/113 B10-B12 suites establish static causal,
+  persistence, generation, and serialization contracts. Operator runtime
+  acceptance remains separate.

@@ -9,6 +9,7 @@ namespace ColonistAwareness
 {
     public class AwarenessSettings : ModSettings
     {
+        private int authoringDataEpoch = CAPendingAuthoringDataEpoch.Current;
         public bool eatSmart = true;
         public bool criticalHauling = true;
         public bool lifeSafety = true;
@@ -49,8 +50,10 @@ namespace ColonistAwareness
         public int autonomousHomePlanningResetGeneration;
         public List<CAUserCultureProfile> cultureProfiles =
             new List<CAUserCultureProfile>();
-        public List<CAUserPoliticalProfile> politicalProfiles =
-            new List<CAUserPoliticalProfile>();
+        public List<CAUserPoliticalOrderProfile> politicalOrderProfiles =
+            new List<CAUserPoliticalOrderProfile>();
+        public List<CAUserSocietyProfile> societyProfiles =
+            new List<CAUserSocietyProfile>();
         // A behavior system without its causal receipts cannot be evaluated during
         // ordinary play. Tracing is therefore the default operating posture; the
         // player may still disable it explicitly from the mod settings.
@@ -59,6 +62,8 @@ namespace ColonistAwareness
         public override void ExposeData()
         {
             base.ExposeData();
+            Scribe_Values.Look(ref authoringDataEpoch,
+                "authoringDataEpoch", 0);
             Scribe_Values.Look(ref eatSmart, "eatSmart", true);
             Scribe_Values.Look(ref criticalHauling, "criticalHauling", true);
             Scribe_Values.Look(ref lifeSafety, "lifeSafety", true);
@@ -105,13 +110,30 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref autonomousHomePlanning, "autonomousHomePlanning", false);
             Scribe_Values.Look(ref autonomousHomePlanningResetGeneration,
                 "autonomousHomePlanningResetGeneration", 0);
-            Scribe_Collections.Look(ref cultureProfiles, "cultureProfiles",
-                LookMode.Deep);
-            Scribe_Collections.Look(ref politicalProfiles,
-                "politicalProfiles", LookMode.Deep);
+            bool currentAuthoringData = Scribe.mode == LoadSaveMode.Saving
+                || CAPendingAuthoringDataEpoch.IsCurrent(authoringDataEpoch);
+            if (currentAuthoringData)
+            {
+                Scribe_Collections.Look(ref cultureProfiles,
+                    "cultureProfiles", LookMode.Deep);
+                Scribe_Collections.Look(ref politicalOrderProfiles,
+                    "politicalOrderProfiles", LookMode.Deep);
+                Scribe_Collections.Look(ref societyProfiles,
+                    "societyProfiles", LookMode.Deep);
+            }
             Scribe_Values.Look(ref traceBehavior, "traceBehavior", true);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
+                if (!CAPendingAuthoringDataEpoch.IsCurrent(authoringDataEpoch))
+                {
+                    cultureProfiles = new List<CAUserCultureProfile>();
+                    politicalOrderProfiles =
+                        new List<CAUserPoliticalOrderProfile>();
+                    societyProfiles = new List<CAUserSocietyProfile>();
+                    authoringDataEpoch = CAPendingAuthoringDataEpoch.Current;
+                    CAPendingAuthoringDataEpoch.RecordDiscard(
+                        "saved profiles");
+                }
                 if (initiativeSchema
                     < AutonomyComponent.CurrentInitiativeSchema)
                 {

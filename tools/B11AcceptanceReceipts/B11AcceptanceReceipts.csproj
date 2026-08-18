@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RollForward>Major</RollForward>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Source\SocialMeaningKernel.cs"
+             Link="SocialMeaningKernel.cs" />
+    <Compile Include="..\..\Source\AuthoringOntologyKernel.cs"
+             Link="AuthoringOntologyKernel.cs" />
+    <Compile Include="..\..\Source\CampaignCompatibilityKernel.cs"
+             Link="CampaignCompatibilityKernel.cs" />
+    <Compile Include="..\..\Source\CampaignCompatibilityPreflightKernel.cs"
+             Link="CampaignCompatibilityPreflightKernel.cs" />
+    <Compile Include="..\..\Source\CulturalCognitionKernel.cs"
+             Link="CulturalCognitionKernel.cs" />
+    <Compile Include="..\..\Source\CulturalCognitionPureKernel.cs"
+             Link="CulturalCognitionPureKernel.cs" />
+    <Compile Include="..\B12CulturalCognitionReceipts\VerseStubs.cs"
+             Link="VerseStubs.cs" />
+    <Compile Include="..\..\Source\ModuleProfilerCore.cs"
+             Link="ModuleProfilerCore.cs" />
+  </ItemGroup>
+</Project>

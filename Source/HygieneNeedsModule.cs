@@ -39,6 +39,13 @@ namespace ColonistAwareness
             return 1f / (daysToEmpty * IntervalsPerDay);
         }
 
+        internal static float PawnStatMultiplier(Pawn pawn, StatDef stat)
+        {
+            if (pawn == null || stat == null) return 1f;
+            try { return Mathf.Max(0f, pawn.GetStatValue(stat)); }
+            catch { return 1f; }
+        }
+
         // Work and heat both raise water loss. Exertion is read off
         // what the body is doing, not off a job whitelist, so drafted
         // marching, hauling and mining all count without being listed.
@@ -137,6 +144,9 @@ namespace ColonistAwareness
 
         public override void SetInitialLevel()
         {
+            // Need's constructor calls this before Pawn_NeedsTracker assigns
+            // the NeedDef, then calls it again after assignment.
+            if (def == null) return;
             CurLevel = def.baseLevel;
             deprivation = 0f;
         }
@@ -184,7 +194,9 @@ namespace ColonistAwareness
 
         protected override float FallPerInterval =>
             CANeedTuning.PerInterval(CANeedTuning.ThirstDaysToEmpty)
-                * CANeedTuning.ThirstMultiplier(pawn);
+                * CANeedTuning.ThirstMultiplier(pawn)
+                * CANeedTuning.PawnStatMultiplier(pawn,
+                    CAWaterDefOf.CA_ThirstRateMultiplier);
 
         protected override HediffDef BodyState =>
             DefDatabase<HediffDef>.GetNamedSilentFail("CA_Dehydration");
@@ -234,7 +246,9 @@ namespace ColonistAwareness
         public CANeed_Bladder(Pawn pawn) : base(pawn) { }
 
         protected override float FallPerInterval =>
-            CANeedTuning.PerInterval(CANeedTuning.BladderDaysToEmpty);
+            CANeedTuning.PerInterval(CANeedTuning.BladderDaysToEmpty)
+                * CANeedTuning.PawnStatMultiplier(pawn,
+                    CAWaterDefOf.CA_BladderRateMultiplier);
 
         public override void ExposeData()
         {

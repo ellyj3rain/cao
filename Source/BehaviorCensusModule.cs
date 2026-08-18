@@ -108,6 +108,14 @@ namespace ColonistAwareness
                     ? (candidate?.Key ?? observedDecision.BehaviorKey
                         ?? "unregistered") + (observedDecision.Allowed
                             ? " authorized" : " blocked")
+                        + (observedDecision.CulturalAppraisalApplied
+                            ? "; response "
+                                + observedDecision.CulturalResponse.ToString()
+                                    .ToLowerInvariant()
+                                + " ("
+                                + observedDecision.CulturalSupport
+                                    .ToString("0.00") + ")"
+                            : "")
                     : "none observed";
             string primaryReason = hasIntent
                 ? "registered owned intent is active"

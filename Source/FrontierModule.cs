@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -11,6 +12,8 @@ namespace ColonistAwareness
     // processed. Regional maps use the holding rows saved on their region plan.
     public sealed class CAFrontierMapPlan : IExposable
     {
+        public const int CurrentSchemaVersion = 2;
+        public int schemaVersion = CurrentSchemaVersion;
         public int mapId = -1;
         public int mapTileId = -1;
         public int mapWidth;
@@ -21,6 +24,8 @@ namespace ColonistAwareness
 
         public void ExposeData()
         {
+            Scribe_Values.Look(ref schemaVersion, "schemaVersion",
+                CurrentSchemaVersion);
             Scribe_Values.Look(ref mapId, "mapId", -1);
             Scribe_Values.Look(ref mapTileId, "mapTileId", -1);
             Scribe_Values.Look(ref mapWidth, "mapWidth", 0);
@@ -69,9 +74,14 @@ namespace ColonistAwareness
                 Map map = maps[m];
                 if (!map.IsPlayerHome) continue;
                 int existing = 0;
-                for (int i = 0; i < comp.Organizations.Count; i++)
-                    if (comp.Organizations[i].organizationKey.StartsWith(
-                        "frontier:" + map.uniqueID + ":")) existing++;
+                for (int index = 0; index < HoldingsFor(comp, map); index++)
+                {
+                    CAFrontierHoldingPlan holding = HoldingPlanFor(comp, map,
+                        index);
+                    if (holding?.materialized == true
+                        && holding.materializedMapId == map.uniqueID)
+                        existing++;
+                }
                 int want = HoldingsFor(comp, map);
                 // New maps seed saved holdings promptly. Older maps add one
                 // saved holding per pulse after the initial delay.
@@ -86,416 +96,60 @@ namespace ColonistAwareness
                     // visible freeze. Four pulses inside the window
                     // seat the full complement.
                     var taken = new List<IntVec3>();
-                    for (int k = 0; k < 2 && existing + k < want; k++)
+                    int spawned = 0;
+                    for (int index = 0; index < want && spawned < 2;
+                        index++)
                     {
-                        int index = existing + k;
-                        if (!TrySeedHolding(comp, map, index,
-                                HoldingPlanFor(comp, map, index), taken)) break;
+                        CAFrontierHoldingPlan holding = HoldingPlanFor(comp,
+                            map, index);
+                        if (holding == null || holding.materialized) continue;
+                        if (!TrySeedHolding(map, holding, taken)) break;
+                        spawned++;
                     }
                 }
                 else if (existing < want
                     && Find.TickManager.TicksGame > 120000)
-                    TrySeedHolding(comp, map, existing,
-                        HoldingPlanFor(comp, map, existing));
-                Parley(comp, map);
+                {
+                    for (int index = 0; index < want; index++)
+                    {
+                        CAFrontierHoldingPlan holding = HoldingPlanFor(comp,
+                            map, index);
+                        if (holding == null || holding.materialized) continue;
+                        TrySeedHolding(map, holding);
+                        break;
+                    }
+                }
             }
         }
 
-        // A threatened holding chooses whether to pay, withdraw, or defend.
-        // The result governs the holding's people and remains open to player
-        // intervention; it does not issue orders to the attacking faction.
-        private static void Parley(CAOrganizationWorldComponent comp,
-            Map map)
-        {
-            int now = Find.TickManager.TicksGame;
-            for (int i = 0; i < comp.Organizations.Count; i++)
-            {
-                CAOrganization org = comp.Organizations[i];
-                if (!org.organizationKey.StartsWith(
-                    "frontier:" + map.uniqueID + ":")) continue;
-                if (org.memberPawnIds.Count == 0) continue;
-
-                Pawn householder = null;
-                var folk = new List<Pawn>();
-                var spawned = map.mapPawns.AllPawnsSpawned;
-                for (int p = 0; p < spawned.Count; p++)
-                    if (org.memberPawnIds.Contains(
-                        spawned[p].thingIDNumber) && !spawned[p].Dead)
-                    {
-                        folk.Add(spawned[p]);
-                        if (org.offices.Count > 0
-                            && spawned[p].thingIDNumber
-                                == org.offices[0].holderId)
-                            householder = spawned[p];
-                    }
-                if (folk.Count == 0) continue;
-                if (householder == null) householder = folk[0];
-                IntVec3 hearth = householder.Position;
-
-                var enemies = new List<Pawn>();
-                for (int p = 0; p < spawned.Count; p++)
-                {
-                    Pawn e = spawned[p];
-                    if (e.Downed || e.Faction == null
-                        || folk.Contains(e)) continue;
-                    if (!e.Position.InHorDistOf(hearth, 26f)) continue;
-                    try
-                    {
-                        bool againstThem = householder.Faction != null
-                            ? e.Faction.HostileTo(householder.Faction)
-                            : e.Faction.HostileTo(Faction.OfPlayer);
-                        if (againstThem && e.Faction != Faction.OfPlayer)
-                            enemies.Add(e);
-                    }
-                    catch { }
-                }
-
-                // Record whether the colony arrived before the deadline.
-                if (org.pendingAidDeadline > 0)
-                {
-                    bool relieved = false;
-                    var cols = map.mapPawns.FreeColonistsSpawned;
-                    for (int c = 0; c < cols.Count; c++)
-                        if (cols[c].Position.InHorDistOf(hearth, 30f))
-                        { relieved = true; break; }
-                    if (enemies.Count == 0)
-                    {
-                        org.pendingAidDeadline = -1;
-                        org.Record("relations",
-                            "the threat passed us by");
-                        continue;
-                    }
-                    if (relieved)
-                    {
-                        // Relief CHANGES THE FACTS; it does not end the
-                        // confrontation by decree. Both sides reassess -
-                        // and a fanatical or overwhelming enemy may press
-                        // on regardless of who just rode up.
-                        CAOrganization colonyR = comp.EnsureColony();
-                        org.Record("warning-honored",
-                            colonyR.name + " rode out and stood with us -"
-                            + " the ground has changed");
-                        colonyR.Record("warning-honored",
-                            "relieved " + org.name
-                            + " under threat - they will not forget");
-                        org.publicSupport = Mathf.Min(1f,
-                            org.publicSupport + 0.1f);
-                    }
-                    if (now < org.pendingAidDeadline) continue;
-                    Resolve(comp, org, householder, folk, enemies, map,
-                        relieved);
-                    org.pendingAidDeadline = -1;
-                    continue;
-                }
-
-                if (enemies.Count == 0) continue;
-                if (now - org.lastWarningTick < 60000) continue;
-                org.lastWarningTick = now;
-                org.pendingAidDeadline = now + 1250;
-                org.Record("relations", "an armed party stands on our"
-                    + " ground - " + enemies.Count + " of them, "
-                    + folk.Count + " of us");
-                comp.EnsureColony().Record("warning-received",
-                    org.name + " is confronted by " + enemies.Count
-                    + " armed strangers");
-                // WHETHER ANYONE WALKS OUT IS AGENCY, never a posture
-                // the system forces. Nerve, a voice worth using, the
-                // weight of responsibility for the household, and the
-                // sheer odds all argue - and plenty of people go to
-                // ground instead, which is its own honest answer.
-                string walkBasis;
-                bool walks = WillWalk(householder, org, folk.Count,
-                    enemies.Count, out walkBasis);
-                if (!walks)
-                {
-                    org.pendingAidDeadline = -1;
-                    org.Record("relations", "no one walked out - the"
-                        + " household went to ground [" + walkBasis
-                        + "]");
-                    Flee(folk, map);
-                    Messages.Message(org.name + " goes to ground before "
-                        + enemies.Count + " armed strangers - nobody"
-                        + " walks out. (" + walkBasis + ")",
-                        new LookTargets(hearth, map),
-                        MessageTypeDefOf.ThreatSmall, false);
-                    continue;
-                }
-                try
-                {
-                    Job walk = JobMaker.MakeJob(JobDefOf.Goto,
-                        enemies[0].Position);
-                    walk.playerForced = false;
-                    var context = CABehaviorContext.ForPawn(householder,
-                        CAAuthorityOrigin.Household,
-                        authoritySatisfied: true,
-                        capabilitySatisfied: householder.CanReach(
-                            enemies[0].Position, PathEndMode.OnCell,
-                            Danger.Deadly),
-                        materialSatisfied: enemies[0].Position
-                            .Standable(map),
-                        currentIntentCompatible: householder.CurJob == null
-                            || !householder.CurJob.playerForced,
-                        directPlayerOwnership: householder.CurJob != null
-                            && householder.CurJob.playerForced,
-                        authorityBasis: "frontier household " + org.name,
-                        knowledgeBasis:
-                            "householder directly confronts the visible armed party",
-                        owner: org.name + " household");
-                    CABehaviorDecision decision;
-                    CAIntentContext intent;
-                    if (CABehaviorJobOrigin.TryAuthorizeAndRegister(
-                            householder, walk,
-                            "institution.frontier_household_activity",
-                            CAIntentController.Frontier, context,
-                            out decision, out intent,
-                            "meet armed party at " + enemies[0].Position,
-                            org.name + " household", 1800))
-                        householder.jobs.TryTakeOrderedJob(walk);
-                }
-                catch { }
-                Messages.Message(householder.LabelShort + " walks out to"
-                    + " meet " + enemies.Count + " armed strangers at "
-                    + org.name + " (" + walkBasis + ") - there is time to"
-                    + " ride out.",
-                    new LookTargets(hearth, map),
-                    MessageTypeDefOf.ThreatSmall, false);
-            }
-        }
-
-        // Agency: does this person walk into the open at all?
-        private static bool WillWalk(Pawn who, CAOrganization org,
-            int ours, int theirs, out string basis)
-        {
-            float nerve = 0.5f;
-            float voice = 0.5f;
-            try
-            {
-                DispositionProfile d = Disposition.Of(who);
-                nerve = d.discipline * 0.5f + d.aggression * 0.3f
-                    + 0.2f;
-            }
-            catch { }
-            try
-            {
-                voice = who.GetStatValue(StatDefOf.NegotiationAbility);
-            }
-            catch { }
-            bool responsible = org.offices.Count > 0
-                && org.offices[0].holderId == who.thingIDNumber;
-            float odds = Mathf.Clamp((theirs - ours) * 0.05f, 0f, 0.4f);
-            float will = nerve * 0.5f + voice * 0.3f
-                + (responsible ? 0.2f : 0f) - odds;
-            basis = "nerve " + nerve.ToString("0.00") + ", voice "
-                + voice.ToString("0.00")
-                + (responsible ? ", theirs to answer for" : "")
-                + ", odds -" + odds.ToString("0.00");
-            return will >= 0.5f;
-        }
-
-        // The armed faction may read an unarmed approach as good faith or
-        // weakness.
-        internal static float ReadUnarmed(Faction aggressor,
-            out string note)
-        {
-            note = null;
-            if (aggressor?.def == null) return 0f;
-            try
-            {
-                if (aggressor.def.permanentEnemy
-                    || !aggressor.def.humanlikeFaction)
-                {
-                    note = "they read an unarmed figure as prey -0.10";
-                    return -0.1f;
-                }
-                if (aggressor.def.naturalEnemy)
-                {
-                    note = "they read it as weakness -0.05";
-                    return -0.05f;
-                }
-                Ideo ideo = aggressor.ideos?.PrimaryIdeo;
-                if (ideo != null)
-                    for (int i = 0; i < ideo.memes.Count; i++)
-                    {
-                        string dn = ideo.memes[i].defName;
-                        if (dn == "Raider" || dn == "Supremacist")
-                        {
-                            note = "their creed reads it as weakness"
-                                + " -0.10";
-                            return -0.1f;
-                        }
-                    }
-                note = "they read it as good faith +0.10";
-                return 0.1f;
-            }
-            catch { note = null; return 0f; }
-        }
-
-        private static void Resolve(CAOrganizationWorldComponent comp,
-            CAOrganization org, Pawn householder, List<Pawn> folk,
-            List<Pawn> enemies, Map map, bool relieved)
-        {
-            CAOrganization colony = comp.EnsureColony();
-            var parts = new System.Text.StringBuilder();
-            float standing = 0f;
-            float negotiation = 0.5f;
-            try
-            {
-                negotiation = householder.GetStatValue(
-                    StatDefOf.NegotiationAbility);
-            }
-            catch { }
-            standing += negotiation * 0.5f;
-            parts.Append("their voice " + (negotiation * 0.5f)
-                .ToString("+0.00"));
-            float supportScore = (org.publicSupport - 0.5f) * 0.4f;
-            standing += supportScore;
-            parts.Append(", public support "
-                + supportScore.ToString("+0.00;-0.00"));
-            bool protectedByPlayer = comp.HasActiveAgreement("player",
-                org.organizationKey, "defense", "protection")
-                || org.affiliatedWithPlayer;
-            if (protectedByPlayer)
-            {
-                standing += 0.3f;
-                parts.Append(", the colony's protection +0.30");
-            }
-            float disparity = Mathf.Min(0.5f,
-                (enemies.Count - folk.Count) * 0.08f);
-            if (disparity > 0f)
-            {
-                standing -= disparity;
-                parts.Append(", against " + enemies.Count + " of them -"
-                    + disparity.ToString("0.00"));
-            }
-            // The unarmed signal, read by THEM.
-            if (householder.equipment?.Primary == null)
-            {
-                string note;
-                float read = ReadUnarmed(enemies[0].Faction, out note);
-                if (note != null)
-                {
-                    standing += read;
-                    parts.Append(", " + note);
-                }
-            }
-            // Relief is a FACT ON THE GROUND, weighed - not a verdict.
-            // Against a fanatical or overwhelming aggressor it may not be
-            // enough, and that refusal is theirs to make.
-            if (relieved)
-            {
-                float reliefWeight = 0.35f;
-                string temper = "";
-                try
-                {
-                    Faction agg = enemies[0].Faction;
-                    if (agg.def.permanentEnemy
-                        || !agg.def.humanlikeFaction)
-                    {
-                        reliefWeight = 0.05f;
-                        temper = " (they do not bargain)";
-                    }
-                    else if (enemies.Count >= folk.Count * 4)
-                    {
-                        reliefWeight = 0.15f;
-                        temper = " (they still hold the numbers)";
-                    }
-                }
-                catch { }
-                standing += reliefWeight;
-                parts.Append(", guns at our back +"
-                    + reliefWeight.ToString("0.00") + temper);
-            }
-
-            string outcome;
-            if (standing >= 0.5f)
-            {
-                int paid = (int)Mathf.Min(org.treasury, 60f);
-                org.treasury -= paid;
-                outcome = "bought their lives - " + paid
-                    + " silver and a promise";
-                Flee(folk, map);
-            }
-            else if (standing >= 0.25f)
-            {
-                int paid = (int)org.treasury;
-                org.treasury = 0f;
-                outcome = "stripped bare - " + paid
-                    + " silver, everything they had";
-                org.publicSupport = Mathf.Max(0.2f, org.publicSupport - 0.1f);
-                Flee(folk, map);
-            }
-            else
-            {
-                outcome = "the parley failed - they stand on their ground";
-                org.publicSupport = Mathf.Max(0.2f, org.publicSupport - 0.05f);
-            }
-            org.Record("relations", "PARLEY: " + outcome + " ["
-                + parts + "]");
-            colony.Record("relations", org.name + " parleyed with armed"
-                + " strangers - " + outcome);
-            Messages.Message(householder.LabelShort + " at " + org.name
-                + ": " + outcome + ". (" + parts + ")",
-                new LookTargets(householder.Position, map),
-                standing >= 0.25f
-                    ? MessageTypeDefOf.NeutralEvent
-                    : MessageTypeDefOf.NegativeEvent, false);
-        }
-
-        private static void Flee(List<Pawn> folk, Map map)
-        {
-            for (int i = 0; i < folk.Count; i++)
-            {
-                try
-                {
-                    IntVec3 edge;
-                    if (!CellFinder.TryFindRandomEdgeCellWith(
-                        c => c.Standable(map)
-                            && map.reachability.CanReach(
-                                folk[i].Position, c, PathEndMode.OnCell,
-                                TraverseParms.For(folk[i])),
-                        map, CellFinder.EdgeRoadChance_Neutral,
-                        out edge)) continue;
-                    Job go = JobMaker.MakeJob(JobDefOf.Goto, edge);
-                    Pawn resident = folk[i];
-                    var context = CABehaviorContext.ForPawn(resident,
-                        CAAuthorityOrigin.Household,
-                        authoritySatisfied: true,
-                        capabilitySatisfied: resident.CanReach(edge,
-                            PathEndMode.OnCell, Danger.Deadly),
-                        materialSatisfied: edge.Standable(map),
-                        currentIntentCompatible: resident.CurJob == null
-                            || !resident.CurJob.playerForced,
-                        directPlayerOwnership: resident.CurJob != null
-                            && resident.CurJob.playerForced,
-                        authorityBasis: "current frontier household alarm",
-                        knowledgeBasis:
-                            "household alarm; no hostile identity granted",
-                        owner: "frontier household survival");
-                    CABehaviorDecision decision;
-                    CAIntentContext intent;
-                    if (CABehaviorJobOrigin.TryAuthorizeAndRegister(resident,
-                            go, "survival.frontier_flight",
-                            CAIntentController.Frontier, context,
-                            out decision, out intent,
-                            "clear holding toward edge " + edge,
-                            "frontier household survival", 1800))
-                        resident.jobs.TryTakeOrderedJob(go);
-                }
-                catch { }
-            }
-        }
-
-        private static bool TrySeedHolding(
-            CAOrganizationWorldComponent comp, Map map, int index,
+        private static bool TrySeedHolding(Map map,
             CAFrontierHoldingPlan holding, List<IntVec3> taken = null)
         {
-            if (holding == null) return false;
-            bool factionless = holding.factionless;
-            Faction flag = factionless ? null : PickFlag();
-            if (!factionless && flag == null) factionless = true;
+            if (map == null || holding == null) return false;
+            CARegionalPlan region = CARegionalWorldComponent.Current
+                ?.FindRegionForMap(map);
+            CASettlementEnvironmentFacts environment =
+                CASettlementEnvironment.ForTile(holding.memberTileId);
+            if (!CAHabitatViability.ValidateFrontier(holding, environment,
+                    out string habitatFailure))
+                return BlockMaterialization(holding, habitatFailure);
+
+            bool supportDeclared = holding.supportingFactionKey >= 0
+                || holding.supportingFactionLoadId >= 0;
+            Faction flag = CAHabitatViability.ResolveSupporter(region,
+                holding);
+            if (supportDeclared && flag == null)
+                return BlockMaterialization(holding,
+                    "the saved supporting faction is unavailable");
+            int resolvedTier = flag == null ? 0
+                : CAHabitatViability.TechnologyTier(flag);
+            if (resolvedTier != holding.capabilityTier)
+                return BlockMaterialization(holding,
+                    "the saved supporting capability no longer matches its faction");
+
             IntVec3 site;
             IntVec3 preferred = IntVec3.Invalid;
-            if (holding != null && holding.memberTileId >= 0)
+            if (holding.memberTileId >= 0)
                 preferred = map.GetComponent<CARegionalProjectionMapComponent>()
                     ?.CenterForMember(holding.memberTileId)
                     ?? IntVec3.Invalid;
@@ -505,12 +159,20 @@ namespace ColonistAwareness
             Rand.PushState(siteSeed);
             try
             {
-                if (!TryFindSite(map, out site, taken, preferred)) return false;
+                if (!TryFindSite(map, holding, environment, out site,
+                        taken, preferred))
+                    return BlockMaterialization(holding,
+                        "no site can hold the required compact habitat");
             }
             finally { Rand.PopState(); }
 
+            if (!TryMaterializeHabitat(map, site, flag, holding,
+                    environment, out List<Thing> habitat,
+                    out List<IntVec3> roofs, out habitatFailure))
+                return BlockMaterialization(holding, habitatFailure);
+
             var folk = new List<Pawn>();
-            int count = Mathf.Clamp(holding.householdSize, 1, 6);
+            int count = Mathf.Clamp(holding.residentCount, 1, 6);
             PawnKindDef kind = PawnKindDefOf.Villager;
             if (flag != null)
                 try
@@ -534,111 +196,101 @@ namespace ColonistAwareness
                 }
                 catch { }
             }
-            if (folk.Count == 0) return false;
+            if (folk.Count == 0)
+            {
+                RollBackHabitat(map, habitat, roofs);
+                return BlockMaterialization(holding,
+                    "no resident could be materialized for the saved habitat");
+            }
             taken?.Add(site);
 
-            // Form selects the physical layout. Material level adds saved
-            // furnishings and storage independently of faction ownership.
-            bool materialized = false;
-            if (flag != null)
-                try
-                {
-                    CAMorphologyAdapter.Materialize(map,
-                        CellRect.CenteredOn(site, 26, 26)
-                            .ClipInsideMap(map),
-                        holding.form == 1
-                            ? CAMorphForm.FrontierHomestead
-                            : CAMorphForm.Cabin,
-                        site.GetHashCode(), flag);
-                    materialized = true;
-                }
-                catch { }
-            if (materialized)
-                SpawnMaterialDetails(map, site, flag, holding.materialLevel);
-            else
-                SpawnHomestead(map, site, flag, folk.Count,
-                    holding.materialLevel, holding.form);
-
-            string family = folk[0].Name != null
-                ? folk[0].Name.ToStringShort : "frontier";
-            CAOrganization org = comp.EnsureFor(
-                "frontier:" + map.uniqueID + ":" + index,
-                family + "'s holding",
-                factionless
-                    ? "Unaffiliated frontier household."
-                    : "Frontier household affiliated with " + flag.Name
-                    + ".", CAOrganizationKind.Household);
-            org.offices.Add(new CAOffice
+            // The compact habitat above is the viability proof. Morphology
+            // expands it into the saved cabin or homestead form, but cannot
+            // turn a failed shelter, food, water, or medical path into a
+            // successful holding.
+            try
             {
-                sourceKey = "householder",
-                name = "householder",
-                seniority = 200,
-                holderId = folk[0].thingIDNumber,
-                holderLabel = folk[0].LabelShort,
-                grants = "represents this household"
-            });
-            var handIds = new List<int>();
+                CAMorphologyAdapter.Materialize(map,
+                    CellRect.CenteredOn(site, 26, 26).ClipInsideMap(map),
+                    holding.form == 1
+                        ? CAMorphForm.FrontierHomestead
+                        : CAMorphForm.Cabin,
+                    siteSeed, flag);
+            }
+            catch { }
+
+            var residentIds = new List<int>();
             for (int i = 0; i < folk.Count; i++)
-                handIds.Add(folk[i].thingIDNumber);
-            org.groups.Add(new CAOrganizationGroup
-            {
-                name = "labor",
-                memberIds = handIds,
-                standing = 1f
-            });
-            org.claims.Add(new CAClaim
-            {
-                kind = "core",
-                label = "homestead ground",
-                area = 49,
-                mapId = map.uniqueID
-            });
-            org.treasury = 60f;
-            org.lastPopulation = folk.Count;
-            org.memberPawnIds = new List<int>(handIds);
-            org.Record("relations", "Holding established: "
-                + folk.Count + (factionless
-                    ? " unaffiliated residents"
-                    : " residents affiliated with " + flag.Name)
-                + "; material level " + (holding?.materialLevel ?? 1)
-                + "; " + ((holding?.form ?? 0) == 1
-                    ? "established homestead" : "cabin"));
+                residentIds.Add(folk[i].thingIDNumber);
+            holding.materialized = true;
+            holding.materializedMapId = map.uniqueID;
+            holding.site = site;
+            holding.residentPawnIds = residentIds;
+            holding.materializationFailure = null;
 
-            CAOrganization colony = comp.EnsureColony();
-            colony.Record("relations", "Nearby frontier holding: " + org.name);
-            Messages.Message((factionless
-                ? "Unaffiliated frontier folk have raised a holding"
-                + " nearby: " : "Frontier folk have raised a holding"
-                + " nearby: ") + org.name
-                + (factionless ? " (no flag - they may be invited to"
-                    + " affiliate)" : "") + ".",
+            Messages.Message((flag == null
+                ? "An unaffiliated frontier site has been established nearby"
+                : "A frontier site affiliated with " + flag.Name
+                    + " has been established nearby")
+                + ": " + folk.Count + (folk.Count == 1
+                    ? " resident." : " residents."),
                 new LookTargets(site, map),
                 MessageTypeDefOf.NeutralEvent, false);
             return true;
         }
 
-        private static Faction PickFlag()
+        private static bool BlockMaterialization(
+            CAFrontierHoldingPlan holding, string failure)
         {
-            List<Faction> all = Find.FactionManager
-                .AllFactionsListForReading;
-            for (int i = 0; i < all.Count; i++)
-            {
-                Faction f = all[i];
-                if (f.IsPlayer || f.defeated || f.Hidden
-                    || f.temporary) continue;
-                if (f.def == null || !f.def.humanlikeFaction) continue;
-                try
-                {
-                    if (f.PlayerRelationKind
-                        == FactionRelationKind.Hostile) continue;
-                }
-                catch { continue; }
-                return f;
-            }
-            return null;
+            if (holding != null)
+                holding.materializationFailure = failure.NullOrEmpty()
+                    ? "frontier habitat materialization failed" : failure;
+            return false;
         }
 
-        private static bool TryFindSite(Map map, out IntVec3 site,
+        // Battlefield parley consumes this faction-side reading of an
+        // unarmed approach. It does not create frontier social state.
+        internal static float ReadUnarmed(Faction aggressor, out string note)
+        {
+            note = null;
+            if (aggressor?.def == null) return 0f;
+            try
+            {
+                if (aggressor.def.permanentEnemy
+                    || !aggressor.def.humanlikeFaction)
+                {
+                    note = "they read an unarmed figure as prey -0.10";
+                    return -0.1f;
+                }
+                if (aggressor.def.naturalEnemy)
+                {
+                    note = "they read it as weakness -0.05";
+                    return -0.05f;
+                }
+                Ideo ideo = aggressor.ideos?.PrimaryIdeo;
+                if (ideo != null)
+                    for (int i = 0; i < ideo.memes.Count; i++)
+                    {
+                        string defName = ideo.memes[i].defName;
+                        if (defName == "Raider" || defName == "Supremacist")
+                        {
+                            note = "their creed reads it as weakness -0.10";
+                            return -0.1f;
+                        }
+                    }
+                note = "they read it as good faith +0.10";
+                return 0.1f;
+            }
+            catch
+            {
+                note = null;
+                return 0f;
+            }
+        }
+
+        private static bool TryFindSite(Map map,
+            CAFrontierHoldingPlan holding,
+            CASettlementEnvironmentFacts environment, out IntVec3 site,
             List<IntVec3> taken = null,
             IntVec3 preferredCenter = default(IntVec3))
         {
@@ -655,6 +307,9 @@ namespace ColonistAwareness
             // Reachability floods are the expensive check on a giant map:
             // fewer attempts there, and every cheap filter runs first.
             int maxTries = map.Size.x * map.Size.z > 1000000 ? 80 : 220;
+            bool found = false;
+            CAAutonomousBuildingPatternEvidence best =
+                default(CAAutonomousBuildingPatternEvidence);
             for (int tries = 0; tries < maxTries; tries++)
             {
                 IntVec3 c = IntVec3.Invalid;
@@ -669,6 +324,8 @@ namespace ColonistAwareness
                 if (!c.Standable(map) || c.Fogged(map)) continue;
                 if (c.Roofed(map)) continue;
                 if (c.DistanceTo(home) < 60f) continue;
+                if (!CanHoldCompactHabitat(map, c, holding?.form ?? 0))
+                    continue;
                 // Birth batches pick several sites in one pass: keep
                 // sibling homesteads off each other's ground.
                 bool crowded = false;
@@ -690,128 +347,508 @@ namespace ColonistAwareness
                 if (nearSettlement) continue;
                 if (!map.reachability.CanReachMapEdge(c,
                     TraverseParms.For(TraverseMode.PassDoors))) continue;
-                site = c;
-                return true;
+                CAAutonomousBuildingPatternEvidence evidence =
+                    FrontierPatternEvidence(map, c, holding, environment,
+                        tries);
+                if (!found || CAAutonomousBuildingPatternKernel
+                    .PreferFrontier(evidence, best))
+                {
+                    found = true;
+                    site = c;
+                    best = evidence;
+                }
+            }
+            if (found)
+                Log.Message("[CA] frontier autonomous siting chose " + site
+                    + ": " + best.Receipt());
+            return found;
+        }
+
+        private static bool CanHoldCompactHabitat(Map map, IntVec3 center,
+            int form)
+        {
+            int radius = form == 1 ? 5 : 4;
+            CellRect rect = CellRect.CenteredOn(center,
+                radius * 2 + 1, radius * 2 + 1);
+            if (rect != rect.ClipInsideMap(map)) return false;
+            foreach (IntVec3 cell in rect)
+            {
+                if (!cell.InBounds(map) || cell.Fogged(map)
+                    || cell.Roofed(map) || !cell.Walkable(map))
+                    return false;
+                TerrainDef terrain = cell.GetTerrain(map);
+                if (terrain == null || terrain.IsWater) return false;
+                List<Thing> things = cell.GetThingList(map);
+                for (int i = 0; i < things.Count; i++)
+                    if (things[i] is Pawn
+                        || things[i].def.category == ThingCategory.Building
+                        || things[i].def.category == ThingCategory.Item)
+                        return false;
+            }
+            return true;
+        }
+
+        private static CAAutonomousBuildingPatternEvidence
+            FrontierPatternEvidence(Map map, IntVec3 center,
+                CAFrontierHoldingPlan holding,
+                CASettlementEnvironmentFacts environment, int stableOrder)
+        {
+            int fit = 0, circulation = 0, expansion = 0;
+            int fertile = 0, naturalCover = 0, obstacles = 0;
+            int northEast = 0, northWest = 0;
+            int southEast = 0, southWest = 0;
+            for (int dz = -12; dz <= 12; dz++)
+                for (int dx = -12; dx <= 12; dx++)
+                {
+                    IntVec3 cell = center + new IntVec3(dx, 0, dz);
+                    if (!cell.InBounds(map)) continue;
+                    int distance = Math.Max(Math.Abs(dx), Math.Abs(dz));
+                    TerrainDef terrain = cell.GetTerrain(map);
+                    bool open = cell.Walkable(map) && !cell.Fogged(map)
+                        && terrain != null && !terrain.IsWater
+                        && cell.GetEdifice(map) == null;
+                    if (distance <= 5 && open) fit++;
+                    if (distance <= 7 && open) circulation++;
+                    if (distance >= 7 && distance <= 12 && open)
+                        expansion++;
+                    if (distance <= 10 && open
+                        && map.fertilityGrid.FertilityAt(cell) >= 0.70f)
+                        fertile++;
+                    Building edifice = cell.GetEdifice(map);
+                    if (distance >= 5 && distance <= 10
+                        && edifice?.def?.building?.isNaturalRock == true)
+                        naturalCover++;
+                    if (distance <= 5 && !open) obstacles++;
+                    if (distance <= 7 && open)
+                    {
+                        if (dx >= 0 && dz >= 0) northEast++;
+                        else if (dx < 0 && dz >= 0) northWest++;
+                        else if (dx >= 0) southEast++;
+                        else southWest++;
+                    }
+                }
+            CAHabitatFoodRoute route = holding == null
+                ? environment?.FoodRoute
+                    ?? CAHabitatFoodRoute.OutdoorCultivation
+                : (CAHabitatFoodRoute)holding.habitatFoodRoute;
+            int adjacency = route == CAHabitatFoodRoute.OutdoorCultivation
+                ? fertile : route == CAHabitatFoodRoute.ForageAndHunt
+                    ? Mathf.RoundToInt((environment?.FoodSupport ?? 0f)
+                        * 100f) : 100;
+            int cardinalOpen = 0;
+            for (int i = 0; i < GenAdj.CardinalDirections.Length; i++)
+            {
+                IntVec3 direction = GenAdj.CardinalDirections[i];
+                bool lane = true;
+                for (int step = 1; step <= 4; step++)
+                {
+                    IntVec3 cell = center + direction * step;
+                    if (!cell.InBounds(map) || !cell.Walkable(map)
+                        || cell.GetEdifice(map) != null)
+                    { lane = false; break; }
+                }
+                if (lane) cardinalOpen++;
+            }
+            return new CAAutonomousBuildingPatternEvidence
+            {
+                ValidGround = CanHoldCompactHabitat(map, center,
+                    holding?.form ?? 0),
+                UnmetRequirements = holding == null ? 0
+                    : CountBits(holding.missingHabitatRequirementMask),
+                TerrainFit = fit,
+                FunctionalAdjacency = adjacency,
+                Throughput = cardinalOpen,
+                Circulation = circulation,
+                Expansion = expansion,
+                EnvironmentalBuffer = naturalCover,
+                DefensiveSeparation = naturalCover,
+                VisualOrder = CAAutonomousBuildingPatternKernel.Balance(
+                    northEast, northWest, southEast, southWest),
+                MaterialCost = obstacles,
+                StableOrder = stableOrder
+            };
+        }
+
+        private static int CountBits(int value)
+        {
+            int count = 0;
+            uint bits = unchecked((uint)value);
+            while (bits != 0)
+            {
+                count += (int)(bits & 1u);
+                bits >>= 1;
+            }
+            return count;
+        }
+
+        private static bool TryMaterializeHabitat(Map map, IntVec3 site,
+            Faction faction, CAFrontierHoldingPlan holding,
+            CASettlementEnvironmentFacts environment,
+            out List<Thing> spawned, out List<IntVec3> roofs,
+            out string failure)
+        {
+            spawned = new List<Thing>();
+            roofs = new List<IntVec3>();
+            failure = null;
+            int requirements = holding.habitatRequirementMask;
+            if (Requires(requirements,
+                    CAHabitatRequirement.BreathableInterior))
+            {
+                failure = "no autonomous frontier builder can yet prove a sealed breathable interior";
+                return false;
+            }
+            if (!TryBuildCompactShell(map, site, faction, holding.form,
+                    spawned, roofs))
+            {
+                RollBackHabitat(map, spawned, roofs);
+                failure = "the selected ground could not hold an enclosed, roofed habitat";
+                return false;
+            }
+
+            ThingDef wood = DefDatabase<ThingDef>.GetNamedSilentFail(
+                "WoodLog");
+            ThingDef cloth = DefDatabase<ThingDef>.GetNamedSilentFail(
+                "Cloth");
+            int residents = Mathf.Clamp(holding.residentCount, 1, 6);
+            for (int i = 0; i < residents; i++)
+                if (!TrySpawnNearbyTracked(map, site, "Bedroll", faction,
+                        cloth, 0f, 3 + i * 11, 5f, spawned))
+                {
+                    RollBackHabitat(map, spawned, roofs);
+                    failure = "the habitat could not provide one sheltered bed per resident";
+                    return false;
+                }
+
+            if (!TrySpawnNearbyTracked(map, site, "Campfire", faction,
+                    null, 35f, 2, 4f, spawned)
+                || !TrySpawnNearbyTracked(map, site, "Table1x2c", faction,
+                    wood, 0f, 19, 5f, spawned)
+                || !TrySpawnNearbyTracked(map, site, "Stool", faction,
+                    wood, 0f, 29, 5f, spawned))
+            {
+                RollBackHabitat(map, spawned, roofs);
+                failure = "the habitat could not provide food preparation and ordinary living space";
+                return false;
+            }
+
+            bool reserveRequired = Requires(requirements,
+                CAHabitatRequirement.FoodReserve)
+                || (CAHabitatFoodRoute)holding.habitatFoodRoute
+                    == CAHabitatFoodRoute.StoredAndSupported;
+            if (reserveRequired
+                && !TrySpawnNearbyTracked(map, site, "Shelf", faction,
+                    wood, 0f, 37, 5f, spawned))
+            {
+                RollBackHabitat(map, spawned, roofs);
+                failure = "the habitat could not provide protected stores";
+                return false;
+            }
+
+            string foodDef = holding.capabilityTier >= 2
+                ? "MealSurvivalPack" : "Pemmican";
+            int foodUnits = Math.Max(30, residents * (reserveRequired
+                ? 35 : 20));
+            if (!TrySpawnStock(map, site, foodDef, foodUnits, spawned))
+            {
+                RollBackHabitat(map, spawned, roofs);
+                failure = "the habitat could not materialize its saved food reserve";
+                return false;
+            }
+
+            CAHabitatFoodRoute route = (CAHabitatFoodRoute)
+                holding.habitatFoodRoute;
+            if (route == CAHabitatFoodRoute.OutdoorCultivation
+                && !TrySowFoodPatch(map, site, Math.Max(12,
+                    residents * 4), spawned))
+            {
+                RollBackHabitat(map, spawned, roofs);
+                failure = "the outdoor-cultivation route has no cultivable ground at the selected site";
+                return false;
+            }
+            if ((route == CAHabitatFoodRoute.StoredAndSupported
+                    || Requires(requirements,
+                        CAHabitatRequirement.SecuredFoodSupply))
+                && faction == null)
+            {
+                RollBackHabitat(map, spawned, roofs);
+                failure = "the saved outside-supply route has no supporting faction";
+                return false;
+            }
+
+            if (Requires(requirements, CAHabitatRequirement.MedicalCare)
+                && (!TrySpawnStock(map, site, "MedicineHerbal",
+                        Math.Max(8, residents * 3), spawned)
+                    || !TrySpawnMedicalBed(map, site, faction, cloth,
+                        spawned)))
+            {
+                RollBackHabitat(map, spawned, roofs);
+                failure = "the habitat could not provide its required medical stock and treatment bed";
+                return false;
+            }
+
+            if (Requires(requirements, CAHabitatRequirement.ThermalControl))
+            {
+                bool heatReady = environment.MinimumTemperature >= 0f
+                    || spawned.Any(thing => thing?.def?.defName
+                        == "Campfire");
+                bool coolReady = environment.MaximumTemperature <= 35f
+                    || TrySpawnNearbyTracked(map, site, "PassiveCooler",
+                        faction, wood, 0f, 43, 5f, spawned);
+                if (!heatReady || !coolReady)
+                {
+                    RollBackHabitat(map, spawned, roofs);
+                    failure = "the habitat could not provide the required seasonal heating and cooling";
+                    return false;
+                }
+            }
+
+            if (Requires(requirements,
+                    CAHabitatRequirement.ArtificialLight)
+                && !TrySpawnNearbyTracked(map, site, "TorchLamp", faction,
+                    wood, 30f, 47, 5f, spawned))
+            {
+                RollBackHabitat(map, spawned, roofs);
+                failure = "the habitat could not provide light through permanent darkness";
+                return false;
+            }
+
+            if (Requires(requirements, CAHabitatRequirement.WaterTreatment))
+            {
+                bool well = TrySpawnNearbyTracked(map, site, "CA_WellDug",
+                    faction, wood, 0f, 53, 8f, spawned)
+                    || TrySpawnNearbyTracked(map, site, "CA_WellBored",
+                        faction, null, 0f, 53, 8f, spawned);
+                bool raw = TrySpawnStock(map, site, "CA_WaterBrackish",
+                    20, spawned)
+                    || TrySpawnStock(map, site, "CA_WaterSaline", 20,
+                        spawned);
+                bool potable = TrySpawnStock(map, site,
+                    "CA_WaterPotable", Math.Max(12, residents * 4),
+                    spawned);
+                if (!well || !raw || !potable)
+                {
+                    RollBackHabitat(map, spawned, roofs);
+                    failure = "the habitat could not materialize a well, distillation input, and potable reserve";
+                    return false;
+                }
+            }
+
+            int roofMinimum = holding.form == 1 ? 49 : 25;
+            int roofed = roofs.Count(cell => cell.Roofed(map));
+            if (roofed < roofMinimum)
+            {
+                RollBackHabitat(map, spawned, roofs);
+                failure = "the completed habitat does not retain enough enclosed roofed space";
+                return false;
+            }
+            Log.Message("[CA] frontier autonomous habitat closed "
+                + CAHabitatViabilityCausalKernel.FoodRouteWords(route)
+                + " at " + site + ": " + residents + " beds, "
+                + foodUnits + " food units, " + roofed
+                + " roofed cells; requirements " + requirements);
+            return true;
+        }
+
+        private static bool TrySpawnMedicalBed(Map map, IntVec3 site,
+            Faction faction, ThingDef cloth, List<Thing> spawned)
+        {
+            int before = spawned.Count;
+            if (!TrySpawnNearbyTracked(map, site, "Bedroll", faction,
+                    cloth, 0f, 59, 5f, spawned)
+                || spawned.Count <= before)
+                return false;
+            Building_Bed bed = spawned[spawned.Count - 1] as Building_Bed;
+            if (bed == null) return false;
+            bed.Medical = true;
+            return true;
+        }
+
+        private static bool TryBuildCompactShell(Map map, IntVec3 site,
+            Faction faction, int form, List<Thing> spawned,
+            List<IntVec3> roofs)
+        {
+            ThingDef wall = DefDatabase<ThingDef>.GetNamedSilentFail("Wall");
+            ThingDef door = DefDatabase<ThingDef>.GetNamedSilentFail("Door");
+            ThingDef wood = DefDatabase<ThingDef>.GetNamedSilentFail(
+                "WoodLog");
+            if (wall == null || door == null || wood == null
+                || RoofDefOf.RoofConstructed == null)
+                return false;
+            int radius = form == 1 ? 5 : 4;
+            for (int dz = -radius; dz <= radius; dz++)
+                for (int dx = -radius; dx <= radius; dx++)
+                {
+                    if (Math.Abs(dx) != radius
+                        && Math.Abs(dz) != radius) continue;
+                    bool entrance = dx == 0 && dz == -radius;
+                    if (!TrySpawnDefTracked(map,
+                            site + new IntVec3(dx, 0, dz),
+                            entrance ? door : wall, faction, wood, 0f,
+                            Rot4.North, spawned))
+                        return false;
+                }
+            for (int dz = -radius + 1; dz <= radius - 1; dz++)
+                for (int dx = -radius + 1; dx <= radius - 1; dx++)
+                {
+                    IntVec3 cell = site + new IntVec3(dx, 0, dz);
+                    if (!cell.InBounds(map) || cell.Roofed(map)) continue;
+                    map.roofGrid.SetRoof(cell, RoofDefOf.RoofConstructed);
+                    roofs.Add(cell);
+                }
+            return true;
+        }
+
+        private static bool Requires(int mask,
+            CAHabitatRequirement requirement)
+        {
+            return (mask & (int)requirement) != 0;
+        }
+
+        private static bool TrySpawnNearbyTracked(Map map, IntVec3 center,
+            string defName, Faction faction, ThingDef stuff, float fuel,
+            int start, float radius, List<Thing> spawned)
+        {
+            ThingDef def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
+            if (def == null) return false;
+            int cells = GenRadial.NumCellsInRadius(radius);
+            for (int offset = 0; offset < cells; offset++)
+            {
+                int index = 1 + (start + offset) % Math.Max(1, cells - 1);
+                if (TrySpawnDefTracked(map,
+                        center + GenRadial.RadialPattern[index], def,
+                        faction, stuff, fuel, Rot4.North, spawned))
+                    return true;
             }
             return false;
         }
 
-        private static void SpawnHomestead(Map map, IntVec3 site,
-            Faction flag, int householdSize, int materialLevel, int form)
-        {
-            if (form == 1) SpawnEstablishedShell(map, site, flag);
-            TrySpawn(map, site, "Campfire", flag, null, 20f);
-            ThingDef bedroll = DefDatabase<ThingDef>.GetNamedSilentFail(
-                "Bedroll");
-            ThingDef cloth = DefDatabase<ThingDef>.GetNamedSilentFail(
-                "Cloth");
-            for (int i = 1; i <= Math.Max(1, householdSize); i++)
-            {
-                int radial = Math.Min(GenRadial.NumCellsInRadius(4f) - 1,
-                    i * 2);
-                IntVec3 c = site + GenRadial.RadialPattern[radial];
-                if (bedroll != null) TrySpawnDef(map, c, bedroll, flag,
-                    cloth, 0f);
-            }
-            SpawnMaterialDetails(map, site, flag, materialLevel);
-            ThingDef mini = DefDatabase<ThingDef>.GetNamedSilentFail(
-                "NCS_TentBag");
-            if (mini != null)
-            {
-                ThingDef pole = DefDatabase<ThingDef>.GetNamedSilentFail(
-                    "NCS_TentPart_Pole");
-                ThingDef cover = DefDatabase<ThingDef>.GetNamedSilentFail(
-                    "NCS_TentPart_Cover_Small");
-                IntVec3 c = site + GenRadial.RadialPattern[7];
-                if (pole != null) TrySpawnDef(map, c, pole, null, null, 0f);
-                if (cover != null) TrySpawnDef(map,
-                    site + GenRadial.RadialPattern[8], cover, null, null,
-                    0f);
-            }
-        }
-
-        private static void SpawnEstablishedShell(Map map, IntVec3 site,
-            Faction flag)
-        {
-            ThingDef wall = DefDatabase<ThingDef>.GetNamedSilentFail("Wall");
-            ThingDef door = DefDatabase<ThingDef>.GetNamedSilentFail("Door");
-            ThingDef wood = DefDatabase<ThingDef>.GetNamedSilentFail("WoodLog");
-            if (wall == null) return;
-            for (int dx = -3; dx <= 3; dx++)
-                for (int dz = -3; dz <= 3; dz++)
-                {
-                    if (Math.Abs(dx) != 3 && Math.Abs(dz) != 3) continue;
-                    IntVec3 cell = site + new IntVec3(dx, 0, dz);
-                    if (dx == 0 && dz == -3 && door != null)
-                        TrySpawnDef(map, cell, door, flag, wood, 0f);
-                    else
-                        TrySpawnDef(map, cell, wall, flag, wood, 0f);
-                }
-        }
-
-        private static void SpawnMaterialDetails(Map map, IntVec3 site,
-            Faction flag, int materialLevel)
-        {
-            ThingDef wood = DefDatabase<ThingDef>.GetNamedSilentFail(
-                "WoodLog");
-            if (materialLevel >= 1)
-                TrySpawnNearby(map, site, "Stool", flag, wood, 0f, 5);
-            if (materialLevel >= 2)
-                TrySpawnNearby(map, site, "Table1x2c", flag, wood, 0f, 11);
-            if (materialLevel >= 3)
-            {
-                TrySpawnNearby(map, site, "Shelf", flag, wood, 0f, 17);
-                TrySpawnNearby(map, site, "TorchLamp", flag, wood, 20f, 23);
-            }
-        }
-
-        private static bool TrySpawn(Map map, IntVec3 c, string defName,
-            Faction faction, ThingDef stuff, float fuel)
-        {
-            ThingDef def = DefDatabase<ThingDef>.GetNamedSilentFail(
-                defName);
-            return def != null
-                && TrySpawnDef(map, c, def, faction, stuff, fuel);
-        }
-
-        private static void TrySpawnNearby(Map map, IntVec3 center,
-            string defName, Faction faction, ThingDef stuff, float fuel,
-            int start)
-        {
-            ThingDef def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
-            if (def == null) return;
-            int cells = GenRadial.NumCellsInRadius(7f);
-            for (int offset = 0; offset < cells; offset++)
-            {
-                int index = 1 + (start + offset) % Math.Max(1, cells - 1);
-                if (TrySpawnDef(map, center + GenRadial.RadialPattern[index],
-                        def, faction, stuff, fuel))
-                    return;
-            }
-        }
-
-        private static bool TrySpawnDef(Map map, IntVec3 c, ThingDef def,
-            Faction faction, ThingDef stuff, float fuel)
+        private static bool TrySpawnDefTracked(Map map, IntVec3 c,
+            ThingDef def, Faction faction, ThingDef stuff, float fuel,
+            Rot4 rotation, List<Thing> spawned)
         {
             try
             {
-                if (!c.InBounds(map) || !c.Standable(map)) return false;
-                if (c.GetEdifice(map) != null) return false;
-                Thing t = def.MadeFromStuff
+                if (def == null || !c.InBounds(map)) return false;
+                CellRect occupied = GenAdj.OccupiedRect(c, rotation,
+                    def.Size);
+                foreach (IntVec3 cell in occupied)
+                {
+                    if (!cell.InBounds(map) || !cell.Standable(map)
+                        || cell.GetEdifice(map) != null) return false;
+                    List<Thing> things = cell.GetThingList(map);
+                    for (int i = 0; i < things.Count; i++)
+                        if (things[i] is Pawn
+                            || things[i].def.category
+                                == ThingCategory.Item)
+                            return false;
+                }
+                foreach (IntVec3 cell in occupied)
+                    ClearNaturalCover(cell, map);
+                Thing thing = def.MadeFromStuff
                     ? ThingMaker.MakeThing(def, stuff
                         ?? GenStuff.DefaultStuffFor(def))
                     : ThingMaker.MakeThing(def);
+                thing.Rotation = rotation;
                 if (faction != null && def.CanHaveFaction)
-                    t.SetFaction(faction);
-                GenSpawn.Spawn(t, c, map);
+                    thing.SetFaction(faction);
+                GenSpawn.Spawn(thing, c, map, rotation);
                 if (fuel > 0f)
                 {
-                    var comp = t.TryGetComp<CompRefuelable>();
-                    if (comp != null) comp.Refuel(fuel);
+                    CompRefuelable refuelable = thing
+                        .TryGetComp<CompRefuelable>();
+                    if (refuelable != null) refuelable.Refuel(fuel);
                 }
+                spawned.Add(thing);
                 return true;
             }
             catch { return false; }
+        }
+
+        private static bool TrySpawnStock(Map map, IntVec3 center,
+            string defName, int count, List<Thing> spawned)
+        {
+            ThingDef def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
+            if (def == null || count <= 0) return false;
+            int remaining = count;
+            int cells = GenRadial.NumCellsInRadius(6f);
+            for (int i = 1; i < cells && remaining > 0; i++)
+            {
+                IntVec3 cell = center + GenRadial.RadialPattern[i];
+                if (!cell.InBounds(map) || !cell.Standable(map)
+                    || cell.GetEdifice(map) != null
+                    || cell.GetThingList(map).Any(thing => thing is Pawn))
+                    continue;
+                try
+                {
+                    Thing stock = ThingMaker.MakeThing(def);
+                    stock.stackCount = Math.Min(remaining,
+                        Math.Max(1, def.stackLimit));
+                    GenSpawn.Spawn(stock, cell, map);
+                    spawned.Add(stock);
+                    remaining -= stock.stackCount;
+                }
+                catch { }
+            }
+            return remaining == 0;
+        }
+
+        private static bool TrySowFoodPatch(Map map, IntVec3 center,
+            int wanted, List<Thing> spawned)
+        {
+            ThingDef crop = DefDatabase<ThingDef>.GetNamedSilentFail(
+                "Plant_Potato");
+            if (crop == null) return false;
+            int planted = 0;
+            int cells = GenRadial.NumCellsInRadius(13f);
+            for (int i = 1; i < cells && planted < wanted; i++)
+            {
+                IntVec3 cell = center + GenRadial.RadialPattern[i];
+                if (!cell.InBounds(map) || cell.Roofed(map)
+                    || cell.GetEdifice(map) != null
+                    || !crop.CanEverPlantAt(cell, map)) continue;
+                try
+                {
+                    ClearNaturalCover(cell, map);
+                    Plant plant = ThingMaker.MakeThing(crop) as Plant;
+                    if (plant == null) continue;
+                    plant.Growth = 0.55f;
+                    plant.sown = true;
+                    GenSpawn.Spawn(plant, cell, map);
+                    spawned.Add(plant);
+                    planted++;
+                }
+                catch { }
+            }
+            return planted >= wanted;
+        }
+
+        private static void ClearNaturalCover(IntVec3 cell, Map map)
+        {
+            List<Thing> things = cell.GetThingList(map).ToList();
+            for (int i = 0; i < things.Count; i++)
+            {
+                Thing thing = things[i];
+                if (thing == null || thing.Destroyed) continue;
+                if (thing.def.category == ThingCategory.Plant
+                    || thing.def.category == ThingCategory.Filth)
+                    thing.Destroy(DestroyMode.Vanish);
+            }
+        }
+
+        private static void RollBackHabitat(Map map, List<Thing> spawned,
+            List<IntVec3> roofs)
+        {
+            for (int i = (spawned?.Count ?? 0) - 1; i >= 0; i--)
+            {
+                Thing thing = spawned[i];
+                if (thing != null && !thing.Destroyed)
+                    thing.Destroy(DestroyMode.Vanish);
+            }
+            for (int i = 0; i < (roofs?.Count ?? 0); i++)
+                if (roofs[i].InBounds(map)
+                    && map.roofGrid.RoofAt(roofs[i])
+                        == RoofDefOf.RoofConstructed)
+                    map.roofGrid.SetRoof(roofs[i], null);
         }
     }
 }

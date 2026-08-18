@@ -19,8 +19,8 @@ export const KOHAI_HARD_CAP = 16;
 export const PATCH_HARD_CAP = 24;
 export const MATURITY_LADDER = Object.freeze(["pre-alpha", "alpha", "beta", "rc"]);
 export const ROOT_REPLAY_START_VERSION = "0.1.0.0-pre-alpha";
-export const CLOSED_BATCH_TIP = "B7";
-export const NEXT_BATCH = "B8";
+export const CLOSED_BATCH_TIP = "B14";
+export const NEXT_BATCH = "B15";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_REPO_ROOT = resolve(here, "..");
@@ -373,6 +373,83 @@ export const VERSION_UNITS = Object.freeze([
     threads: ["T-002", "T-013", "T-014", "T-015", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
     rationale: "B7 repairs acceptance failures in the B5/B6 creation capability without opening a new capability boundary. It removes universal information-detail and settlement-intensity controls, restores an integrated Culture, native Ideoligion, Political Beliefs, and founding-order flow, establishes persistent longitudinal local Culture with provenance and substantive spatial, social, institutional, political, and settlement-development consumers, migrates the authored fixture, and replaces receipts that had accepted derived prose or categorical shims as Culture. The unit is therefore an in-place corrective patch.",
   },
+  {
+    id: "VU-035",
+    series: "B",
+    first: 8,
+    last: 8,
+    dates: "2026-08-11 to 2026-08-12",
+    tier: "patch",
+    name: "Substantive inherited Culture, political composer, and open social-meaning substrate",
+    threads: ["T-002", "T-004", "T-006", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
+    rationale: "B8 completes the corrective B7 creation boundary by replacing name-and-style Culture with substantive inherited meanings and practices, replacing partial political presets and arbitrary completion with question-first complete vectors and causal NPC derivation, and connecting registered social facts through pawn response, group pattern, and longitudinal Culture transition. It deliberately resets unsupported pre-release authoring data rather than migrating invalid objects. This repairs the existing capability in place and therefore carries the patch tier.",
+  },
+  {
+    id: "VU-036",
+    series: "B",
+    first: 9,
+    last: 9,
+    dates: "2026-08-12",
+    tier: "patch",
+    name: "Starting Region information architecture and settlement program closure",
+    threads: ["T-002", "T-013", "T-014", "T-015", "T-016", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
+    rationale: "B9 closes the remaining pre-runtime faults in the B6-B8 creation capability. It makes Starting Region selection and comparison coherent, removes non-decisions and implementation provenance from ordinary Details, replaces the fixed starting-facility mask with an open causal settlement-program registry and exact materialization contract, makes provision operators socially and materially real, and presents Culture through semantic meanings with contextual exact values. This is an in-place correction of the existing authoring and generation boundary, so the unit carries the patch tier.",
+  },
+  {
+    id: "VU-037",
+    series: "B",
+    first: 10,
+    last: 10,
+    dates: "2026-08-12",
+    tier: "patch",
+    name: "Causal closure and elimination of synthetic social state",
+    threads: ["T-002", "T-004", "T-005", "T-006", "T-010", "T-013", "T-014", "T-015", "T-016", "T-018", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
+    rationale: "B10 audits and repairs the aggregate B6-B9 framework in place. Persistent factual domestic units replace hash-created households; domain evidence replaces random capability; direct operational contracts replace tendency-created programs; exact operators and funding replace provision categories; and Culture, Political Beliefs, assets, and fixture tools return to their proper causal roles. This closes proxies inside the existing capability boundary and therefore carries the patch tier.",
+  },
+  {
+    id: "VU-038",
+    series: "B",
+    first: 11,
+    last: 11,
+    dates: "2026-08-12 to 2026-08-13",
+    tier: "patch",
+    name: "Durable campaign boundary and compositional authoring closure",
+    threads: ["T-001", "T-002", "T-004", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
+    rationale: "B11 establishes the first durable campaign boundary over the B10 causal model: one executable schema catalog, preflight and idempotent migration receipts, explicit module and cadence ownership, and disabled-by-default bounded profiling. Its authoring addendum closes the same boundary by distinguishing social subjects, meanings, and concrete repeated practices; expanding the production vocabulary from actual mechanics; making Political Beliefs and current order independently compositional; and enforcing partial copy-on-apply sets and content-driven authoring. These are structural and corrective closures of the existing capability rather than a new gameplay capability, so the unit carries the patch tier.",
+  },
+  {
+    id: "VU-039",
+    series: "B",
+    first: 12,
+    last: 12,
+    dates: "2026-08-13",
+    tier: "minor",
+    name: "Cultural cognition, political emergence, and proposition knowledge",
+    threads: ["T-001", "T-002", "T-004", "T-005", "T-006", "T-019", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
+    rationale: "B12 adds a new simulation capability across authoring and runtime: Culture becomes population distributions over explicit questions; pawns retain private and public attitudes, sparse influence, and bounded psychology; political positions and coalitions emerge from represented evidence; organizations own legitimacy and sanction history; and proposition knowledge owns claims, access, transmission, research receipts, and decay. Separate durable owners, exact B11 migration evidence, direct consumers, fixed-seed causal receipts, and a current-schema fixture make this a minor capability boundary rather than another corrective patch.",
+  },
+  {
+    id: "VU-040",
+    series: "B",
+    first: 13,
+    last: 13,
+    dates: "2026-08-13",
+    tier: "kohai",
+    name: "Culture completion and causal fidelity",
+    threads: ["T-001", "T-002", "T-004", "T-006", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
+    rationale: "B13 completes and matures B12's Culture capability without replacing its durable ownership architecture. It expands the production registry to twenty-four questions in eight player-legible categories, supplies complete historical and social presets, puts manual editing, presets, and random generation through one Culture object, and separates salience from conviction, norm strength from expected enforcement, source confidence from knowledge confidence, and visibility from public-expression compression. Question-specific psychology, represented observations, downstream consumers, world-faction completion, schema-2 cognition persistence, fixed-seed receipts, and the converted current fixture close the same capability as a coherent integration unit, so the unit carries the kohai tier.",
+  },
+  {
+    id: "VU-041",
+    series: "B",
+    first: 14,
+    last: 14,
+    dates: "2026-08-14 to 2026-08-17",
+    tier: "minor",
+    name: "Regional world and Society creation convergence",
+    threads: ["T-001", "T-002", "T-013", "T-014", "T-015", "T-019", "T-020", "T-021", "T-022", "T-023", "T-024", "T-025", "T-026", "T-027", "T-028", "T-029", "T-030"],
+    rationale: "B14 establishes a new end-to-end creation capability across regional geography, settlement viability, and coherent Society authoring. Preview, confirmation, and generation now share one exact geography composition; hostile environments derive concrete habitat requirements; and autonomous construction ranks task-owned spatial evidence. Culture and Political Order remain canonical sibling owners while an independent Society recipe atomically initializes both, supports reusable saved snapshots, and leaves no persistent preset ownership. Starting Region placement, current-schema persistence, startup integration, offline creator tooling, fixed-cause receipts, reproducible builds, and byte-verified deployment close the capability as one minor unit.",
+  },
 ]);
 
 function parseVersion(version) {
@@ -520,7 +597,7 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | Hard caps | minor ${MINOR_HARD_CAP}; kohai ${KOHAI_HARD_CAP}; patch ${PATCH_HARD_CAP} |
 | Replay start | \`${ROOT_REPLAY_START_VERSION}\` |
 | Current version | \`${replay.currentVersion}\` |
-| Closed chronology | \`A1-B7\` |
+| Closed chronology | \`A1-${CLOSED_BATCH_TIP}\` |
 | Next batch | \`${NEXT_BATCH}\` |
 | Executable source | [\`tools/version-model.mjs\`](tools/version-model.mjs) |
 
@@ -614,9 +691,16 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     "B5",
     "B6",
     "B7",
+    "B8",
+    "B9",
+    "B10",
+    "B11",
+    "B12",
+    "B13",
+    "B14",
   ];
   if (JSON.stringify(covered) !== JSON.stringify(expected)) {
-    errors.push("version units must cover A1-B7 exactly once, contiguously, and in order");
+    errors.push("version units must cover A1-B14 exactly once, contiguously, and in order");
   }
   VERSION_UNITS.forEach((unit, index) => {
     const expectedId = `VU-${String(index + 1).padStart(3, "0")}`;
@@ -631,19 +715,19 @@ export function validateRepository(repoRoot = DEFAULT_REPO_ROOT) {
     .sort((left, right) => left[0].localeCompare(right[0])
       || Number(left.slice(1)) - Number(right.slice(1)));
   if (JSON.stringify(closedIds) !== JSON.stringify(expected)) {
-    errors.push("Batches/ must contain exactly the closed A001-A102 and B001-B007 record set");
+    errors.push("Batches/ must contain exactly the closed A001-A102 and B001-B014 record set");
   }
-  if (batchFiles.some((name) => /^B0*8-.*\.md$/.test(name))) {
-    errors.push("B8 must remain unconsumed until the next development batch");
+  if (batchFiles.some((name) => /^B0*15-.*\.md$/.test(name))) {
+    errors.push("B15 must remain unconsumed until the next development batch");
   }
 
   const batchLog = readFileSync(join(repoRoot, "BATCH_LOG.md"), "utf8");
   const logIds = [...batchLog.matchAll(/^\| \[([A-Z])(\d+)\]/gm)]
     .map((match) => `${match[1]}${Number(match[2])}`);
   if (JSON.stringify(logIds) !== JSON.stringify(closedIds)) {
-    errors.push("BATCH_LOG.md must index A1-B7 exactly once and in order");
+    errors.push("BATCH_LOG.md must index A1-B14 exactly once and in order");
   }
-  if (/^\| \[B8\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B8 record yet");
+  if (/^\| \[B15\]/m.test(batchLog)) errors.push("BATCH_LOG.md must not contain a B15 record yet");
 
   const threads = readFileSync(join(repoRoot, "Batches", "THREADS.md"), "utf8");
   const declaredThreads = new Set([...threads.matchAll(/<a id="t-(\d{3})"><\/a>T-(\d{3})/g)].map((match) => `T-${match[1]}`));
@@ -728,7 +812,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (args.has("--write")) writeGenerated(DEFAULT_REPO_ROOT);
   const result = validateRepository(DEFAULT_REPO_ROOT);
   if (args.has("--json")) console.log(JSON.stringify(result, null, 2));
-  else if (result.ok) console.log(`version-model: OK — ${result.currentVersion}; ${result.unitCount} units cover A1-B7; ${result.nextBatch} remains next`);
+  else if (result.ok) console.log(`version-model: OK — ${result.currentVersion}; ${result.unitCount} units cover A1-${CLOSED_BATCH_TIP}; ${result.nextBatch} remains next`);
   else result.errors.forEach((error) => console.error(`version-model: ${error}`));
   process.exit(result.ok ? 0 : 1);
 }

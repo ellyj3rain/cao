@@ -13,6 +13,8 @@ using Verse.AI.Group;
 
 namespace ColonistAwareness
 {
+    // RimWorld assigns DefOf fields through reflection during initialization.
+#pragma warning disable CS0649
     [DefOf]
     internal static class CARegionalDefOf
     {
@@ -118,14 +120,18 @@ namespace ColonistAwareness
         private static bool sizesInstalled;
         private static bool footprintLayerInstalled;
         private static bool previewInstalled;
+        private static bool previewInstallDeferred;
         private static Delegate previousPreviewSizeOverride;
         private static Type previewApiType;
         private static PropertyInfo previewGeneratingProperty;
         private static FieldInfo previewGeneratingField;
         private static MethodInfo previewRefreshMethod;
         private static MethodInfo previewDetermineMapSizeMethod;
+        private static FieldInfo previewMaxMapSizeField;
+        private static FieldInfo previewSizeOverrideField;
         private static FieldInfo previewWidgetField;
         private static PropertyInfo previewTextureProperty;
+        private static string lastPreviewRequestSignature;
 
         internal static void TryInstall()
         {
@@ -139,8 +145,13 @@ namespace ColonistAwareness
             if (footprintLayerInstalled) return;
             try
             {
-                PlanetLayerDef surface = PlanetLayerDefOf.Surface
-                    ?? DefDatabase<PlanetLayerDef>.GetNamedSilentFail("Surface");
+                // This installer also runs from the Mod constructor, before
+                // DefOf initialization.  Resolve directly from the database so
+                // an early verification can defer without touching the DefOf
+                // static constructor; the scheduled post-load pass will find
+                // Surface once defs are ready.
+                PlanetLayerDef surface = DefDatabase<PlanetLayerDef>
+                    .GetNamedSilentFail("Surface");
                 List<Type> layers = surface?.worldDrawLayers;
                 if (layers == null)
                 {
@@ -234,6 +245,23 @@ namespace ColonistAwareness
         private static void TryInstallMapPreviewCompatibility()
         {
             if (previewInstalled) return;
+            // AwarenessMod is constructed on RimWorld's play-load worker.
+            // Map Preview's toolbar static constructor reads DefOf state and
+            // loads textures, so touching it there permanently poisons the
+            // type. ModEntry already schedules this installer on the main
+            // thread; wait for that call and for DefOf binding to complete.
+            if (ModsConfig.IsActive("m00nl1ght.mappreview")
+                && (!UnityData.IsInMainThread
+                    || OptionCategoryDefOf.General == null))
+            {
+                if (!previewInstallDeferred)
+                {
+                    previewInstallDeferred = true;
+                    Log.Message("[CA][Regional] Map Preview compatibility "
+                        + "deferred until main-thread DefOf initialization");
+                }
+                return;
+            }
             try
             {
                 Type sizeType = FindType("MapPreview.MapSizeUtility");
@@ -242,29 +270,38 @@ namespace ColonistAwareness
 
                 if (sizeType != null)
                 {
-                    FieldInfo max = AccessTools.Field(sizeType, "MaxMapSize");
-                    if (max != null)
+                    previewMaxMapSizeField = AccessTools.Field(sizeType,
+                        "MaxMapSize");
+                    if (previewMaxMapSizeField != null)
                     {
-                        IntVec2 existing = max.GetValue(null) is IntVec2 value
+                        IntVec2 existing = previewMaxMapSizeField.GetValue(null)
+                            is IntVec2 value
                             ? value
                             : new IntVec2(0, 0);
-                        max.SetValue(null, new IntVec2(
+                        previewMaxMapSizeField.SetValue(null, new IntVec2(
                             Math.Max(existing.x,
                                 RegionalPreviewInitialDimension),
                             Math.Max(existing.z,
                                 RegionalPreviewInitialDimension)));
                     }
-                    FieldInfo sizeOverride = AccessTools.Field(sizeType,
-                        "MapSizeOverride");
-                    if (sizeOverride != null)
+                    // Map Preview 1.6 names this GameInitMapSizeOverride. Keep
+                    // the old name as a narrow fallback for earlier releases,
+                    // but never report the current hook healthy unless one of
+                    // the actual fields was found.
+                    previewSizeOverrideField = AccessTools.Field(sizeType,
+                            "GameInitMapSizeOverride")
+                        ?? AccessTools.Field(sizeType, "MapSizeOverride");
+                    if (previewSizeOverrideField != null)
                     {
-                        previousPreviewSizeOverride = sizeOverride.GetValue(null)
-                            as Delegate;
+                        previousPreviewSizeOverride = previewSizeOverrideField
+                            .GetValue(null) as Delegate;
                         Delegate regionalOverride = Delegate.CreateDelegate(
-                            sizeOverride.FieldType, AccessTools.Method(
+                            previewSizeOverrideField.FieldType,
+                            AccessTools.Method(
                                 typeof(CARegionalCompatibility),
                                 nameof(PreviewMapSizeOverride)));
-                        sizeOverride.SetValue(null, regionalOverride);
+                        previewSizeOverrideField.SetValue(null,
+                            regionalOverride);
                     }
                 }
                 if (previewApiType != null)
@@ -299,7 +336,10 @@ namespace ColonistAwareness
                             typeof(CARegionalCompatibility),
                             nameof(PreviewMinimalComponentsPostfix)));
                 previewDetermineMapSizeMethod = AccessTools.Method(sizeType,
-                    "DetermineMapSize");
+                    "DetermineMapSize", new[]
+                    {
+                        typeof(World), typeof(PlanetTile), typeof(MapParent)
+                    });
                 if (previewDetermineMapSizeMethod != null)
                     previewHarmony.Patch(previewDetermineMapSizeMethod,
                         postfix: new HarmonyMethod(
@@ -307,8 +347,13 @@ namespace ColonistAwareness
                             nameof(PreviewDetermineMapSizePostfix)));
                 Type previewWindowType = FindType(
                     "MapPreview.MapPreviewWindow");
+                Type previewToolbarType = FindType(
+                    "MapPreview.MapPreviewToolbar");
                 MethodInfo tileSelected = AccessTools.Method(
-                    previewWindowType, "OnWorldTileSelected");
+                    previewWindowType, "OnWorldTileSelected", new[]
+                    {
+                        typeof(World), typeof(PlanetTile), typeof(MapParent)
+                    });
                 previewWidgetField = AccessTools.Field(previewWindowType,
                     "_previewWidget");
                 previewTextureProperty = AccessTools.Property(FindType(
@@ -320,22 +365,60 @@ namespace ColonistAwareness
                     previewHarmony.Patch(tileSelected,
                         prefix: new HarmonyMethod(
                             typeof(CARegionalCompatibility),
-                            nameof(PreviewWindowTileSelectedPrefix)));
+                            nameof(PreviewWindowTileSelectedPrefix)),
+                        postfix: new HarmonyMethod(
+                            typeof(CARegionalCompatibility),
+                            nameof(PreviewWindowTileSelectedPostfix)));
                 }
                 else
                 {
                     Log.Warning("[CA][Regional] Map Preview exact-size texture "
                         + "compatibility could not be installed");
                 }
+                MethodInfo previewPreClose = AccessTools.Method(
+                    previewWindowType, "PreClose", Type.EmptyTypes);
+                if (previewPreClose != null)
+                    previewHarmony.Patch(previewPreClose,
+                        prefix: new HarmonyMethod(
+                            typeof(CARegionalCompatibility),
+                            nameof(PreviewWindowPreClosePrefix)));
+                MethodInfo toolbarPreClose = AccessTools.Method(
+                    previewToolbarType, "PreClose", Type.EmptyTypes);
+                if (toolbarPreClose != null)
+                    previewHarmony.Patch(toolbarPreClose,
+                        prefix: new HarmonyMethod(
+                            typeof(CARegionalCompatibility),
+                            nameof(PreviewToolbarPreClosePrefix)));
                 previewRefreshMethod = AccessTools.Method(
                     FindType("MapPreview.WorldInterfaceManager"),
                     "RefreshPreview");
                 previewInstalled = true;
-                Log.Message("[CA][Regional] Map Preview compatibility installed; "
-                    + "regional requests use aggregate bounds and projection "
-                    + "steps; preview textures resize to each exact backing "
-                    + "frame; inhabited settlement materialization remains "
-                    + "preview-inert");
+                bool exactSizeHealthy = previewMaxMapSizeField != null
+                    && previewSizeOverrideField != null
+                    && previewDetermineMapSizeMethod != null
+                    && tileSelected != null && previewWidgetField != null
+                    && previewTextureProperty != null;
+                if (exactSizeHealthy && collect != null
+                    && constructMinimal != null)
+                    Log.Message("[CA][Regional] Map Preview compatibility "
+                        + "installed against the 1.6 three-argument size API; "
+                        + "regional requests use the selected composition's "
+                        + "exact backing frame and shared projection steps; "
+                        + "inhabited settlement materialization remains "
+                        + "preview-inert");
+                else
+                    Log.Warning("[CA][Regional] Map Preview compatibility is "
+                        + "partial: max=" + (previewMaxMapSizeField != null)
+                        + ", game-init override="
+                        + (previewSizeOverrideField != null)
+                        + ", determine-size-3="
+                        + (previewDetermineMapSizeMethod != null)
+                        + ", tile-selected-3=" + (tileSelected != null)
+                        + ", widget=" + (previewWidgetField != null)
+                        + ", texture=" + (previewTextureProperty != null)
+                        + ", collect=" + (collect != null)
+                        + ", minimal-components="
+                        + (constructMinimal != null));
             }
             catch (Exception ex)
             {
@@ -346,8 +429,7 @@ namespace ColonistAwareness
 
         private static IntVec2 PreviewMapSizeOverride()
         {
-            CARegionalPlan plan = CARegionalSetupSession
-                .PendingForCurrentWorld;
+            CARegionalPlan plan = CARegionalSetupSession.ActivePreviewPlan;
             if (plan != null)
                 return new IntVec2(plan.BackingMapSize.x,
                     plan.BackingMapSize.z);
@@ -368,13 +450,18 @@ namespace ColonistAwareness
                 || previewTextureProperty == null) return;
             try
             {
-                CARegionalPlan plan = CARegionalWorldComponent.Current
-                    ?.FindRegionContaining(tileId);
-                CARegionalPlan pending = CARegionalSetupSession
-                    .PendingForCurrentWorld;
-                if (plan == null && pending?.memberTileIds != null
-                    && pending.memberTileIds.Contains(tileId.tileId))
-                    plan = pending;
+                // The external window persists its current position while it
+                // handles a tile change. Present its own undocked position for
+                // that write, then the postfix returns it to CA's temporary
+                // page layout. This keeps Map Preview's saved preference intact.
+                CARegionalPreviewDock.BeforeExternalSelection(
+                    __instance as Window);
+                // The global Map Preview size delegate has no tile argument.
+                // Clear the preceding request first so a native tile outside
+                // the selected composition cannot inherit a regional frame or
+                // regional gensteps from the last click.
+                CARegionalSetupSession.ClearPreviewBinding();
+                CARegionalPlan plan = ResolvePreviewPlan(world, tileId);
                 if (plan != null)
                 {
                     CARegionalSetupSession.BindPreviewPlan(plan);
@@ -388,26 +475,35 @@ namespace ColonistAwareness
                             mapParent = canonicalParent;
                     }
                 }
-                object rawSize = previewDetermineMapSizeMethod.Invoke(null,
-                    new object[] { world, mapParent });
-                if (!(rawSize is IntVec2 size) || size.x <= 0 || size.z <= 0)
-                    return;
+                if (plan == null) return;
+                IntVec2 size = new IntVec2(plan.BackingMapSize.x,
+                    plan.BackingMapSize.z);
+                EnsurePreviewMaximum(size);
                 object widget = previewWidgetField.GetValue(__instance);
                 Texture2D texture = widget == null ? null
                     : previewTextureProperty.GetValue(widget, null)
                         as Texture2D;
-                if (texture == null
-                    || (texture.width == size.x && texture.height == size.z))
-                    return;
-                if (!texture.Reinitialize(size.x, size.z))
+                if (texture != null
+                    && (texture.width != size.x || texture.height != size.z)
+                    && !texture.Reinitialize(size.x, size.z))
                 {
                     Log.Warning("[CA][Regional] Map Preview texture rejected "
                         + "exact regional backing " + size.x + "x" + size.z);
                     return;
                 }
-                Log.Message("[CA][Regional] Map Preview texture resized to "
-                    + size.x + "x" + size.z
-                    + " for the exact regional backing frame");
+                CARegionalGeographyComposition composition =
+                    CARegionalGeographyContract.Inspect(plan);
+                if (lastPreviewRequestSignature != composition.Signature)
+                {
+                    lastPreviewRequestSignature = composition.Signature;
+                    Log.Message("[CA][Regional][Preview] request "
+                        + composition.Signature + " bound to candidate "
+                        + (plan.candidateId ?? "unknown") + "; arrival "
+                        + plan.startTileId + "; exact backing " + size.x + "x"
+                        + size.z + "; texture "
+                        + (texture == null ? "unavailable" : texture.width
+                            + "x" + texture.height));
+                }
             }
             catch (Exception ex)
             {
@@ -417,10 +513,27 @@ namespace ColonistAwareness
             }
         }
 
-        private static void PreviewDetermineMapSizePostfix(World world,
-            MapParent mapParent, ref IntVec2 __result)
+        private static void PreviewWindowTileSelectedPostfix()
         {
-            PlanetTile tile = mapParent?.Tile
+            CARegionalPreviewDock.AfterExternalSelection();
+        }
+
+        private static void PreviewWindowPreClosePrefix(object __instance)
+        {
+            CARegionalPreviewDock.BeforeExternalPreviewClose(
+                __instance as Window);
+        }
+
+        private static void PreviewToolbarPreClosePrefix(object __instance)
+        {
+            CARegionalPreviewDock.BeforeExternalToolbarClose(
+                __instance as Window);
+        }
+
+        private static void PreviewDetermineMapSizePostfix(World world,
+            PlanetTile tile, MapParent mapParent, ref IntVec2 __result)
+        {
+            if (!tile.Valid) tile = mapParent?.Tile
                 ?? Verse.Find.WorldInterface.SelectedTile;
             if (!tile.Valid || tile.Layer != Verse.Find.WorldGrid.Surface)
                 return;
@@ -431,6 +544,7 @@ namespace ColonistAwareness
                 CARegionalSetupSession.BindPreviewPlan(existing);
                 __result = new IntVec2(existing.BackingMapSize.x,
                     existing.BackingMapSize.z);
+                EnsurePreviewMaximum(__result);
                 return;
             }
             CARegionalPlan pending = CARegionalSetupSession
@@ -440,6 +554,7 @@ namespace ColonistAwareness
             {
                 __result = new IntVec2(pending.BackingMapSize.x,
                     pending.BackingMapSize.z);
+                EnsurePreviewMaximum(__result);
                 return;
             }
             CAExpandedLandmassProfile profile =
@@ -473,13 +588,65 @@ namespace ColonistAwareness
                     ?? CAWorldTendenciesSession.Policy;
                 int available = Math.Max(1, CARegionalBundleBuilder.Build(
                     tile, 12).Count);
-                count = policy.ResolveRequestedExtent(tile, available);
+                count = CARegionalSetupSession.StickyRegionTileCount > 0
+                    ? CARegionalSetupSession.StickyRegionTileCount
+                    : policy.ResolveRequestedExtent(tile, available);
             }
             CARegionalPlan plan = CARegionalSetupSession.EnsurePreviewPlan(
                 tile, profile, count);
             if (plan == null) return;
+            CARegionalSetupSession.BindPreviewPlan(plan);
             __result = new IntVec2(plan.BackingMapSize.x,
                 plan.BackingMapSize.z);
+            EnsurePreviewMaximum(__result);
+        }
+
+        private static CARegionalPlan ResolvePreviewPlan(World world,
+            PlanetTile tile)
+        {
+            if (world == null || !tile.Valid) return null;
+            CARegionalPlan plan = CARegionalWorldComponent.Current
+                ?.FindRegionContaining(tile);
+            CARegionalPlan pending = CARegionalSetupSession
+                .PendingForCurrentWorld;
+            if (plan == null && pending?.memberTileIds != null
+                && pending.memberTileIds.Contains(tile.tileId))
+                plan = pending;
+            if (plan != null) return plan;
+
+            CAExpandedLandmassProfile profile;
+            int localSize = Verse.Find.GameInitData?.mapSize ?? 0;
+            bool hasProfile = CAExpandedLandmassProfile.TryFor(localSize,
+                out profile);
+            if (!hasProfile && world.info != null)
+            {
+                IntVec3 initial = world.info.initialMapSize;
+                hasProfile = initial.x == initial.z
+                    && CAExpandedLandmassProfile.TryFor(initial.x,
+                        out profile);
+            }
+            if (!hasProfile) return null;
+            CARegionalWorldPolicy policy = pending?.worldPolicy
+                ?? CARegionalWorldComponent.Current?.WorldPolicy
+                ?? CAWorldTendenciesSession.Policy;
+            int available = Math.Max(1,
+                CARegionalBundleBuilder.Build(tile, 12).Count);
+            int count = CARegionalSetupSession.StickyRegionTileCount > 0
+                ? CARegionalSetupSession.StickyRegionTileCount
+                : policy.ResolveRequestedExtent(tile, available);
+            return CARegionalSetupSession.EnsurePreviewPlan(tile, profile,
+                count);
+        }
+
+        private static void EnsurePreviewMaximum(IntVec2 size)
+        {
+            if (previewMaxMapSizeField == null || size.x <= 0 || size.z <= 0)
+                return;
+            IntVec2 existing = previewMaxMapSizeField.GetValue(null)
+                is IntVec2 value ? value : new IntVec2(0, 0);
+            if (existing.x >= size.x && existing.z >= size.z) return;
+            previewMaxMapSizeField.SetValue(null, new IntVec2(
+                Math.Max(existing.x, size.x), Math.Max(existing.z, size.z)));
         }
 
         private static bool IsRegionalPreviewStep(GenStepDef def)
@@ -504,6 +671,8 @@ namespace ColonistAwareness
                 + plan.startTileId + "; members "
                 + string.Join(",", plan.memberTileIds) + "; backing "
                 + plan.BackingMapSize.x + "x" + plan.BackingMapSize.z
+                + "; composition "
+                + CARegionalGeographyContract.Inspect(plan).Signature
                 + "; queued projection and world links before texture");
         }
 
@@ -572,19 +741,28 @@ namespace ColonistAwareness
     {
         public int thingId = -1;
         public string thingDefName;
-        public string providerOrgKey;
+        public string providerIdentity;
+        public int provisionArrangementKey;
+        public int provisionNodeIndex = -1;
+        public int count;
 
         public void ExposeData()
         {
             Scribe_Values.Look(ref thingId, "thingId", -1);
             Scribe_Values.Look(ref thingDefName, "thingDefName");
-            Scribe_Values.Look(ref providerOrgKey, "providerOrgKey");
+            Scribe_Values.Look(ref providerIdentity, "providerIdentity");
+            Scribe_Values.Look(ref provisionArrangementKey,
+                "provisionArrangementKey", 0);
+            Scribe_Values.Look(ref provisionNodeIndex,
+                "provisionNodeIndex", -1);
+            Scribe_Values.Look(ref count, "count", 0);
         }
     }
+#pragma warning restore CS0649
 
     public sealed class CARegionalSettlementRecord : IExposable
     {
-        public const int CurrentSchemaVersion = 3;
+        public const int CurrentSchemaVersion = 8;
         public int schemaVersion = CurrentSchemaVersion;
         public string regionalId;
         public string name;
@@ -609,14 +787,11 @@ namespace ColonistAwareness
         public string factionDefName;
         public string relationAtMaterialization;
         public int goodwillAtMaterialization;
-        public int communications;
-        public int medicine;
-        public int production;
-        public int logistics;
-        public int fortification;
-        public int weapons;
-        public int training;
-        public int organization;
+        // Domain capability is a persisted evidence-backed read model. It is
+        // reconciled only from actors, organizations, operations, knowledge,
+        // and material state that already exist.
+        public List<CASettlementCapabilityAssessment> capabilities =
+            new List<CASettlementCapabilityAssessment>();
         public CellRect localRect = CellRect.Empty;
         public int lastMapId = -1;
         public int populationBaseline;
@@ -625,27 +800,31 @@ namespace ColonistAwareness
         public int infrastructureCount;
         public int cultivatedPlantCount;
         public List<string> residentIds = new List<string>();
-        // Starting facilities, infrastructure, and research are separate
-        // settlement state.
-        public int startingFacilityMask = -1;
+        // Infrastructure and the realized open settlement program are
+        // separate from faction knowledge.
         public int accessInfrastructure;
         public int serviceInfrastructure;
         public int civicInfrastructure;
-        public int facilityExceptionMask;
-        public string migrationEvidence;
-        private int legacyFacilityAuthoredMask;
-        private CALegacySettlementDevelopmentProfile
-            legacyDevelopmentProfile =
-                CALegacySettlementDevelopmentProfile.Contextual;
-        private int legacyAuthoredAccess = -1;
-        private int legacyAuthoredServices = -1;
-        private int legacyAuthoredCivic = -1;
-        // Population groups and starting provisions are copied from the plan
+        // Population groups and provision arrangements are copied from the plan
         // and resolved into pawns, ideoligions, and organizations.
         public List<CASettlementPopulationGroup> populationGroups =
             new List<CASettlementPopulationGroup>();
-        public List<CAStartingProvision> startingProvisions =
-            new List<CAStartingProvision>();
+        public List<CASettlementResidenceAssignment> residenceAssignments =
+            new List<CASettlementResidenceAssignment>();
+        public List<CAProvisionArrangement> provisionArrangements =
+            new List<CAProvisionArrangement>();
+        public List<CADomesticProvisionDemand> domesticProvisionDemands =
+            new List<CADomesticProvisionDemand>();
+        public List<CADomesticUnit> domesticUnits =
+            new List<CADomesticUnit>();
+        public List<CADomesticMembershipTransition>
+            domesticMembershipTransitions =
+                new List<CADomesticMembershipTransition>();
+        public int nextDomesticUnitSequence = 1;
+        public List<CASettlementOperationalFact> operationalFacts =
+            new List<CASettlementOperationalFact>();
+        public CASettlementProgram settlementProgram =
+            new CASettlementProgram();
         public CACulture culture;
         public List<string> populationAssignments = new List<string>();
         // Material wealth and the era represented by the original buildings.
@@ -664,6 +843,8 @@ namespace ColonistAwareness
         public string culturalExpressionSourceSignature;
         public byte culturalExpressionStatus;
         public List<string> seededAssets = new List<string>();
+        public List<CASettlementProgramAssetReceipt> programAssets =
+            new List<CASettlementProgramAssetReceipt>();
         public List<CAStartingStockRecord> startingStock =
             new List<CAStartingStockRecord>();
         public int researchStock;
@@ -756,14 +937,8 @@ namespace ColonistAwareness
                 "relationAtMaterialization");
             Scribe_Values.Look(ref goodwillAtMaterialization,
                 "goodwillAtMaterialization", 0);
-            Scribe_Values.Look(ref communications, "communications", 0);
-            Scribe_Values.Look(ref medicine, "medicine", 0);
-            Scribe_Values.Look(ref production, "production", 0);
-            Scribe_Values.Look(ref logistics, "logistics", 0);
-            Scribe_Values.Look(ref fortification, "fortification", 0);
-            Scribe_Values.Look(ref weapons, "weapons", 0);
-            Scribe_Values.Look(ref training, "training", 0);
-            Scribe_Values.Look(ref organization, "organization", 0);
+            Scribe_Collections.Look(ref capabilities, "capabilities",
+                LookMode.Deep);
             Scribe_Values.Look(ref localRect, "localRect");
             Scribe_Values.Look(ref lastMapId, "lastMapId", -1);
             Scribe_Values.Look(ref populationBaseline, "populationBaseline", 0);
@@ -775,35 +950,29 @@ namespace ColonistAwareness
                 "cultivatedPlantCount", 0);
             Scribe_Collections.Look(ref residentIds, "residentIds",
                 LookMode.Value);
-            Scribe_Values.Look(ref startingFacilityMask,
-                "startingFacilityMask", -1);
             Scribe_Values.Look(ref accessInfrastructure,
                 "accessInfrastructure", 0);
             Scribe_Values.Look(ref serviceInfrastructure,
                 "serviceInfrastructure", 0);
             Scribe_Values.Look(ref civicInfrastructure,
                 "civicInfrastructure", 0);
-            Scribe_Values.Look(ref facilityExceptionMask,
-                "facilityExceptionMask", 0);
-            Scribe_Values.Look(ref migrationEvidence,
-                "migrationEvidence");
-            if (Scribe.mode == LoadSaveMode.LoadingVars)
-            {
-                Scribe_Values.Look(ref legacyFacilityAuthoredMask,
-                    "startingFacilityAuthoredMask", 0);
-                Scribe_Values.Look(ref legacyDevelopmentProfile,
-                    "developmentProfile",
-                    CALegacySettlementDevelopmentProfile.Contextual);
-                Scribe_Values.Look(ref legacyAuthoredAccess,
-                    "authoredAccessInfrastructure", -1);
-                Scribe_Values.Look(ref legacyAuthoredServices,
-                    "authoredServiceInfrastructure", -1);
-                Scribe_Values.Look(ref legacyAuthoredCivic,
-                    "authoredCivicInfrastructure", -1);
-            }
             Scribe_Collections.Look(ref populationGroups, "populationGroups", LookMode.Deep);
-            Scribe_Collections.Look(ref startingProvisions, "startingProvisions",
+            Scribe_Collections.Look(ref residenceAssignments,
+                "residenceAssignments", LookMode.Deep);
+            Scribe_Collections.Look(ref provisionArrangements,
+                "provisionArrangements",
                 LookMode.Deep);
+            Scribe_Collections.Look(ref domesticProvisionDemands,
+                "domesticProvisionDemands", LookMode.Deep);
+            Scribe_Collections.Look(ref domesticUnits, "domesticUnits",
+                LookMode.Deep);
+            Scribe_Collections.Look(ref domesticMembershipTransitions,
+                "domesticMembershipTransitions", LookMode.Deep);
+            Scribe_Values.Look(ref nextDomesticUnitSequence,
+                "nextDomesticUnitSequence", 1);
+            Scribe_Collections.Look(ref operationalFacts,
+                "operationalFacts", LookMode.Deep);
+            Scribe_Deep.Look(ref settlementProgram, "settlementProgram");
             Scribe_Deep.Look(ref culture, "culture");
             Scribe_Collections.Look(ref populationAssignments,
                 "populationAssignments", LookMode.Value);
@@ -811,25 +980,6 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref constructionEra, "constructionEra", -1);
             Scribe_Collections.Look(ref statusAssignments,
                 "statusAssignments", LookMode.Value);
-            if (populationGroups == null) populationGroups = new List<CASettlementPopulationGroup>();
-            if (startingProvisions == null)
-                startingProvisions = new List<CAStartingProvision>();
-            if (populationAssignments == null)
-                populationAssignments = new List<string>();
-            if (statusAssignments == null)
-                statusAssignments = new List<string>();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-            {
-                if (facilityExceptionMask == 0)
-                    facilityExceptionMask = legacyFacilityAuthoredMask;
-                if (schemaVersion < CurrentSchemaVersion)
-                {
-                    migrationEvidence = "B5/B6 realized material state and "
-                        + "facility exceptions preserved; retired profile and "
-                        + "ordinal authoring no longer govern this record.";
-                    schemaVersion = CurrentSchemaVersion;
-                }
-            }
             Scribe_Values.Look(ref factionEra, "factionEra", -1);
             Scribe_Values.Look(ref settlementForm, "settlementForm", -1);
             Scribe_Values.Look(ref generationSummary, "generationSummary");
@@ -841,6 +991,8 @@ namespace ColonistAwareness
                 "culturalExpressionStatus", (byte)0);
             Scribe_Collections.Look(ref seededAssets, "seededAssets",
                 LookMode.Value);
+            Scribe_Collections.Look(ref programAssets, "programAssets",
+                LookMode.Deep);
             Scribe_Collections.Look(ref startingStock, "startingStock",
                 LookMode.Deep);
             Scribe_Values.Look(ref researchStock, "researchStock", 0);
@@ -943,33 +1095,6 @@ namespace ColonistAwareness
                 "developmentProposalSignature");
             Scribe_Values.Look(ref developmentBlocker,
                 "developmentBlocker");
-            if (Scribe.mode == LoadSaveMode.PostLoadInit && residentIds == null)
-                residentIds = new List<string>();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit
-                && seededAssets == null)
-                seededAssets = new List<string>();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit
-                && startingStock == null)
-                startingStock = new List<CAStartingStockRecord>();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit
-                && developmentDemandKinds == null)
-                developmentDemandKinds = new List<int>();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit
-                && developmentAssetCandidates == null)
-                developmentAssetCandidates = new List<string>();
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-            {
-                if (creationBeneficiaries == null)
-                    creationBeneficiaries = new List<string>();
-                if (developmentBeneficiaries == null)
-                    developmentBeneficiaries = new List<string>();
-                if (CASettlementAssetRegistry.ReconcileRecord(this,
-                        out string correction))
-                    Log.Warning("[CA][Regional] " + (regionalId ?? "settlement")
-                        + " readback correction: " + correction);
-                CACombatIntent.ObserveEpisode(creationEpisodeId);
-                CACombatIntent.ObserveEpisode(developmentEpisodeId);
-            }
         }
 
         internal string FactionEraLabel
@@ -983,10 +1108,7 @@ namespace ColonistAwareness
 
         internal string CapabilityText()
         {
-            return "comms " + communications + ", medicine " + medicine
-                + ", production " + production + ", logistics " + logistics
-                + ", fortification " + fortification + ", weapons " + weapons
-                + ", training " + training + ", organization " + organization;
+            return CASettlementCapabilityInspection.Summary(this);
         }
 
         internal string OperationalRoleText()
@@ -997,6 +1119,15 @@ namespace ColonistAwareness
 
     public sealed class CARegionalWorldComponent : WorldComponent
     {
+        private sealed class ReservationClaim
+        {
+            internal CARegionalPlan Region;
+            internal int MemberIndex;
+        }
+
+        private int campaignSchemaVersion = 2;
+        private int legacyAuthoringDataEpoch =
+            CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private List<CARegionalSettlementRecord> records =
             new List<CARegionalSettlementRecord>();
         private List<CARegionalPlan> regions = new List<CARegionalPlan>();
@@ -1060,20 +1191,465 @@ namespace ColonistAwareness
 
         public override void ExposeData()
         {
-            Scribe_Collections.Look(ref records, "CA_regionalSettlements",
-                LookMode.Deep);
-            Scribe_Collections.Look(ref regions, "CA_regionalPlans",
-                LookMode.Deep);
-            Scribe_Deep.Look(ref worldPolicy, "CA_regionalWorldPolicy");
-            Scribe_Deep.Look(ref groundwater, "CA_groundwaterTuning");
-            if (records == null) records = new List<CARegionalSettlementRecord>();
-            if (regions == null) regions = new List<CARegionalPlan>();
-            if (worldPolicy == null) worldPolicy = new CARegionalWorldPolicy();
-            // A world saved before this existed keeps the values that
-            // were in force when it was made, which are the defaults.
-            if (groundwater == null)
-                groundwater = new CAGroundwaterTuning();
+            Scribe_Values.Look(ref campaignSchemaVersion,
+                "CA_regionalSchemaVersion", 0);
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+                Scribe_Values.Look(ref legacyAuthoringDataEpoch,
+                    "CA_authoringDataEpoch", 0);
+            bool readable = CACampaignCompatibility.ShouldReadLiveState(
+                "world.regional", campaignSchemaVersion,
+                legacyAuthoringDataEpoch);
+            if (readable)
+            {
+                Scribe_Collections.Look(ref records,
+                    "CA_regionalSettlements", LookMode.Deep);
+                Scribe_Collections.Look(ref regions,
+                    "CA_regionalPlans", LookMode.Deep);
+                Scribe_Deep.Look(ref worldPolicy, "CA_regionalWorldPolicy");
+                Scribe_Deep.Look(ref groundwater, "CA_groundwaterTuning");
+            }
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && readable)
+            {
+                CACampaignCompatibility.CompleteOwnerLoad(
+                    "world.regional", ref campaignSchemaVersion,
+                    legacyAuthoringDataEpoch, ValidateCampaignState,
+                    MigrateB10State);
+                RebuildAcceptedReadModels();
+            }
             base.ExposeData();
+        }
+
+        private string ValidateCampaignState()
+        {
+            string structureFailure = ValidateOwnerStructure(
+                CARegionalPlan.CurrentSchemaVersion);
+            if (!structureFailure.NullOrEmpty()) return structureFailure;
+            for (int i = 0; i < regions.Count; i++)
+            {
+                CARegionalPlan region = regions[i];
+                for (int factionIndex = 0;
+                    factionIndex < region.factions.Count; factionIndex++)
+                {
+                    CARegionalFactionPlan faction =
+                        region.factions[factionIndex];
+                    if (faction == null)
+                        return "regional plan " + region.regionalId
+                            + " has null faction " + factionIndex;
+                    string cultureFailure = CACultureModel.ValidationFailure(
+                        faction.culture, requireSubstantive: true);
+                    if (!cultureFailure.NullOrEmpty())
+                        return "regional faction " + faction.key
+                            + " Culture: " + cultureFailure;
+                    if (faction.politicalBeliefs == null
+                        || faction.politicalBeliefs.schemaVersion
+                            != CAPoliticalBeliefs.CurrentSchemaVersion)
+                        return "regional faction " + faction.key
+                            + " has a missing or incompatible Political Order";
+                    string beliefFailure = CAPoliticalBeliefsModel
+                        .ValidationFailure(faction.politicalBeliefs,
+                            allowExactLegacy: false);
+                    if (!beliefFailure.NullOrEmpty())
+                        return "regional faction " + faction.key
+                            + " Political Order: " + beliefFailure;
+                    string orderFailure = CAPoliticalBeliefsModel
+                        .ValidationFailure(faction.factionStructure);
+                    if (!orderFailure.NullOrEmpty())
+                        return "regional faction " + faction.key
+                            + " represented institutions: " + orderFailure;
+                }
+                for (int settlementIndex = 0;
+                    settlementIndex < region.settlements.Count;
+                    settlementIndex++)
+                {
+                    CARegionalSettlementPlan settlement =
+                        region.settlements[settlementIndex];
+                    if (settlement == null)
+                        return "regional plan " + region.regionalId
+                            + " has null settlement " + settlementIndex;
+                    string cultureFailure = CACultureModel.ValidationFailure(
+                        settlement.localCulture,
+                        requireSubstantive: true);
+                    if (!cultureFailure.NullOrEmpty())
+                        return "regional settlement " + settlement.slot
+                            + " Culture: " + cultureFailure;
+                }
+                string foundingFailure = CAPlayerFoundingModel
+                    .ValidationFailure(region.playerFounding,
+                        requireConfirmed: true);
+                if (!foundingFailure.NullOrEmpty())
+                    return "regional plan " + region.regionalId
+                        + " founding copy: " + foundingFailure;
+            }
+            for (int i = 0; i < records.Count; i++)
+            {
+                CARegionalSettlementRecord record = records[i];
+                string key = (record.regionalId ?? "") + "#" + record.slot;
+                string cultureFailure = CACultureModel.ValidationFailure(
+                    record.culture, requireSubstantive: true);
+                if (!cultureFailure.NullOrEmpty())
+                    return "regional settlement " + key + " Culture: "
+                        + cultureFailure;
+            }
+            return null;
+        }
+
+        private string ValidateOwnerStructure(int expectedRegionSchema)
+        {
+            if (regions == null || records == null || worldPolicy == null
+                || groundwater == null)
+                return "regional owner collections are missing";
+            var regionIds = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < regions.Count; i++)
+            {
+                CARegionalPlan region = regions[i];
+                if (region == null) return "regional plan " + i + " is null";
+                if (region.regionalId.NullOrEmpty()
+                    || !regionIds.Add(region.regionalId))
+                    return "regional plan identity "
+                        + (region.regionalId ?? "<missing>")
+                        + " is missing or duplicate";
+                if (region.schemaVersion != expectedRegionSchema)
+                    return "regional plan " + region.regionalId + " schema is "
+                        + region.schemaVersion + ", expected "
+                        + expectedRegionSchema;
+                string collectionFailure = ValidatePlanCollections(region);
+                if (!collectionFailure.NullOrEmpty())
+                    return "regional plan " + region.regionalId + ": "
+                        + collectionFailure;
+                if (!CARegionalPlanUtility.TryValidateStableIdentities(region,
+                        expectedRegionSchema, out string identityFailure))
+                    return "regional plan " + region.regionalId + ": "
+                        + identityFailure;
+                if (region.playerFounding == null)
+                    return "regional plan " + region.regionalId
+                        + " founding copy is missing";
+                if (region.playerFounding.schemaVersion
+                    != CAPlayerFoundingPlan.CurrentSchemaVersion)
+                    return "regional founding-plan schema is "
+                        + region.playerFounding.schemaVersion;
+            }
+            var recordIds = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < records.Count; i++)
+            {
+                CARegionalSettlementRecord record = records[i];
+                if (record == null)
+                    return "regional settlement record " + i + " is null";
+                string key = (record.regionalId ?? "") + "#" + record.slot;
+                if (record.regionalId.NullOrEmpty() || !recordIds.Add(key))
+                    return "regional settlement identity " + key
+                        + " is missing or duplicate";
+                if (record.schemaVersion
+                    != CARegionalSettlementRecord.CurrentSchemaVersion)
+                    return "regional settlement " + key + " schema is "
+                        + record.schemaVersion + ", expected "
+                        + CARegionalSettlementRecord.CurrentSchemaVersion;
+                string collectionFailure = ValidateRecordCollections(record);
+                if (!collectionFailure.NullOrEmpty())
+                    return "regional settlement " + key + ": "
+                        + collectionFailure;
+            }
+            return null;
+        }
+
+        private static string ValidatePlanCollections(CARegionalPlan region)
+        {
+            if (region.memberTileIds == null
+                || region.footprintTileIds == null
+                || region.factions == null || region.settlements == null
+                || region.relations == null || region.frontierHoldings == null
+                || region.consumedSources == null || region.worldPolicy == null
+                || region.groundwater == null)
+                return "owned collections or policy state are missing";
+            if (region.relations.Any(item => item == null)
+                || region.frontierHoldings.Any(item => item == null))
+                return "a relation or frontier holding is null";
+            for (int i = 0; i < region.factions.Count; i++)
+            {
+                CARegionalFactionPlan faction = region.factions[i];
+                if (faction == null) return "faction " + i + " is null";
+                if (faction.factionStructure == null)
+                    return "faction " + faction.key
+                        + " represented-institution collection is missing";
+                CASettlementAuthority authority =
+                    (CASettlementAuthority)faction.settlementAuthority;
+                if (!CARegionalSettlements.ActiveSettlementAuthorities
+                        .Contains(authority))
+                    return "faction " + faction.key
+                        + " has invalid settlement authority "
+                        + faction.settlementAuthority;
+            }
+            for (int i = 0; i < region.settlements.Count; i++)
+            {
+                CARegionalSettlementPlan settlement = region.settlements[i];
+                if (settlement == null)
+                    return "settlement " + i + " is null";
+                string failure = ValidateSettlementPlanCollections(settlement);
+                if (!failure.NullOrEmpty())
+                    return "settlement " + settlement.slot + ": " + failure;
+            }
+            for (int i = 0; i < region.frontierHoldings.Count; i++)
+                if (region.frontierHoldings[i].residentPawnIds == null)
+                    return "frontier holding "
+                        + region.frontierHoldings[i].key
+                        + " resident collection is missing";
+            return null;
+        }
+
+        private static string ValidateSettlementPlanCollections(
+            CARegionalSettlementPlan settlement)
+        {
+            if (settlement.populationGroups == null
+                || settlement.provisionArrangements == null
+                || settlement.domesticProvisionDemands == null
+                || settlement.operationalFacts == null
+                || settlement.settlementProgram == null
+                || settlement.settlementProgram.entries == null)
+                return "owned composition or program state is missing";
+            if (settlement.populationGroups.Any(item => item == null)
+                || settlement.provisionArrangements.Any(item => item == null)
+                || settlement.domesticProvisionDemands.Any(item => item == null)
+                || settlement.operationalFacts.Any(item => item == null)
+                || settlement.settlementProgram.entries.Any(item => item == null))
+                return "an owned composition or program record is null";
+            foreach (CASettlementOperationalFact fact in
+                     settlement.operationalFacts)
+                if (fact.culturalSubjects == null)
+                    return "operational fact " + (fact.factKey ?? "<missing>")
+                        + " has no Culture-subject collection";
+            foreach (CASettlementProgramEntry entry in
+                     settlement.settlementProgram.entries)
+                if (entry.selectedCandidates == null
+                    || entry.culturalSubjects == null)
+                    return "program " + (entry.programKey ?? "<missing>")
+                        + " has missing authoritative collections";
+            return null;
+        }
+
+        private static string ValidateRecordCollections(
+            CARegionalSettlementRecord record)
+        {
+            if (record.capabilities == null || record.residentIds == null
+                || record.populationGroups == null
+                || record.residenceAssignments == null
+                || record.provisionArrangements == null
+                || record.domesticProvisionDemands == null
+                || record.domesticUnits == null
+                || record.domesticMembershipTransitions == null
+                || record.operationalFacts == null
+                || record.populationAssignments == null
+                || record.statusAssignments == null
+                || record.seededAssets == null || record.programAssets == null
+                || record.startingStock == null
+                || record.creationBeneficiaries == null
+                || record.developmentBeneficiaries == null
+                || record.developmentDemandKinds == null
+                || record.developmentAssetCandidates == null
+                || record.settlementProgram == null
+                || record.settlementProgram.entries == null)
+                return "owned collections or settlement program are missing";
+            if (record.capabilities.Any(item => item == null)
+                || record.populationGroups.Any(item => item == null)
+                || record.residenceAssignments.Any(item => item == null)
+                || record.provisionArrangements.Any(item => item == null)
+                || record.domesticProvisionDemands.Any(item => item == null)
+                || record.domesticUnits.Any(item => item == null)
+                || record.domesticMembershipTransitions.Any(item => item == null)
+                || record.operationalFacts.Any(item => item == null)
+                || record.programAssets.Any(item => item == null)
+                || record.startingStock.Any(item => item == null)
+                || record.settlementProgram.entries.Any(item => item == null))
+                return "an owned settlement record is null";
+            foreach (CASettlementCapabilityAssessment capability in
+                     record.capabilities)
+                if (capability.actorIdentities == null
+                    || capability.organizationIdentities == null
+                    || capability.operationIdentities == null
+                    || capability.knowledgeEvidence == null
+                    || capability.materialEvidence == null
+                    || capability.historicalEvidence == null)
+                    return "capability " + (capability.domain ?? "<missing>")
+                        + " has missing evidence collections";
+            foreach (CADomesticUnit unit in record.domesticUnits)
+            {
+                if (unit.sharedProvisionNodeKeys == null
+                    || unit.memberships == null)
+                    return "domestic unit "
+                        + (unit.unitIdentity ?? "<missing>")
+                        + " has missing owned collections";
+                if (unit.memberships.Any(item => item == null))
+                    return "domestic unit "
+                        + (unit.unitIdentity ?? "<missing>")
+                        + " has a null membership";
+            }
+            int maxFormationSequence = record.domesticUnits.Count == 0 ? 0
+                : record.domesticUnits.Max(unit => unit.formationSequence);
+            if (record.nextDomesticUnitSequence <= maxFormationSequence)
+                return "next domestic-unit sequence does not follow persisted "
+                    + "unit " + maxFormationSequence;
+            foreach (CASettlementOperationalFact fact in
+                     record.operationalFacts)
+                if (fact.culturalSubjects == null)
+                    return "operational fact " + (fact.factKey ?? "<missing>")
+                        + " has no Culture-subject collection";
+            foreach (CASettlementProgramEntry entry in
+                     record.settlementProgram.entries)
+                if (entry.selectedCandidates == null
+                    || entry.culturalSubjects == null)
+                    return "program " + (entry.programKey ?? "<missing>")
+                        + " has missing authoritative collections";
+            if (record.layout != null
+                && (record.layout.gates == null
+                    || record.layout.gateWidths == null
+                    || record.layout.ways == null
+                    || record.layout.facilityKinds == null
+                    || record.layout.facilityCells == null
+                    || record.layout.roads == null
+                    || record.layout.roomCells == null
+                    || record.layout.roomRoles == null
+                    || record.layout.utilities == null
+                    || record.layout.utilityKinds == null
+                    || record.layout.approaches == null))
+                return "settlement layout has missing owned collections";
+            return null;
+        }
+
+        // Derived views are rebuilt only after the complete persisted owner
+        // graph has passed compatibility migration and validation. No load-time
+        // path may manufacture missing authoritative campaign state.
+        private void RebuildAcceptedReadModels()
+        {
+            for (int i = 0; i < records.Count; i++)
+            {
+                CARegionalSettlementRecord record = records[i];
+                CASettlementResidenceState.RebuildReadModel(record);
+                CASettlementProgramAssets.SyncDerivedViews(record);
+                CACombatIntent.ObserveEpisode(record.creationEpisodeId);
+                CACombatIntent.ObserveEpisode(record.developmentEpisodeId);
+            }
+        }
+
+        private string MigrateB10State()
+        {
+            int savedRegionSchema = regions.Count == 0
+                ? CARegionalPlan.CurrentSchemaVersion
+                : regions[0]?.schemaVersion ?? -1;
+            if (savedRegionSchema != 10
+                && savedRegionSchema != CARegionalPlan.CurrentSchemaVersion)
+                return "regional plan schema " + savedRegionSchema
+                    + " has no supported B12 migration";
+            string structureFailure = ValidateOwnerStructure(
+                savedRegionSchema);
+            if (!structureFailure.NullOrEmpty()) return structureFailure;
+            var commits = new List<Action>();
+            for (int regionIndex = 0; regionIndex < regions.Count;
+                regionIndex++)
+            {
+                CARegionalPlan region = regions[regionIndex];
+                if (region == null)
+                    return "regional plan " + regionIndex + " is null";
+                if (region.schemaVersion != savedRegionSchema)
+                    return "regional plan " + region.regionalId + " schema is "
+                        + region.schemaVersion + ", expected "
+                        + savedRegionSchema;
+                if (region.factions == null || region.settlements == null)
+                    return "regional plan " + region.regionalId
+                        + " has missing social collections";
+                foreach (CARegionalFactionPlan faction in region.factions)
+                {
+                    if (faction == null)
+                        return "regional plan " + region.regionalId
+                            + " has a null faction";
+                    if (!CACultureModel.TryUpgradeFromB10(faction.culture,
+                            out CACulture culture,
+                            out string cultureFailure))
+                        return "regional faction " + faction.key
+                            + " Culture: " + cultureFailure;
+                    if (!CAPoliticalBeliefsModel.TryUpgradeFromB10(
+                            faction.politicalBeliefs,
+                            out CAPoliticalBeliefs beliefs,
+                            out string beliefFailure))
+                        return "regional faction " + faction.key
+                            + " Political Order: " + beliefFailure;
+                    if (!CAPoliticalBeliefsModel
+                            .TryUpgradeMechanismsFromB10(
+                                faction.factionStructure,
+                                out List<CAAxisEntry> order,
+                                out string orderFailure))
+                        return "regional faction " + faction.key
+                            + " represented institutions: " + orderFailure;
+                    CARegionalFactionPlan target = faction;
+                    commits.Add(() =>
+                    {
+                        target.culture = culture;
+                        target.politicalBeliefs = beliefs;
+                        target.factionStructure = order;
+                    });
+                }
+                foreach (CARegionalSettlementPlan settlement in
+                         region.settlements)
+                {
+                    if (settlement == null)
+                        return "regional plan " + region.regionalId
+                            + " has a null settlement";
+                    if (!CACultureModel.TryUpgradeFromB10(
+                            settlement.localCulture,
+                            out CACulture localCulture,
+                            out string localFailure))
+                        return "regional settlement " + settlement.slot
+                            + " Culture: " + localFailure;
+                    CARegionalSettlementPlan target = settlement;
+                    commits.Add(() => target.localCulture = localCulture);
+                }
+                if (region.playerFounding == null)
+                    return "regional plan " + region.regionalId
+                        + " founding copy is missing";
+                if (region.playerFounding.schemaVersion
+                    != CAPlayerFoundingPlan.CurrentSchemaVersion)
+                    return "regional founding-plan schema is "
+                        + region.playerFounding.schemaVersion;
+                if (!CACultureModel.TryUpgradeFromB10(
+                        region.playerFounding.culture,
+                        out CACulture foundingCulture,
+                        out string foundingCultureFailure))
+                    return "regional founding Culture: "
+                        + foundingCultureFailure;
+                if (!CAPoliticalBeliefsModel.TryUpgradeFromB10(
+                        region.playerFounding.politicalBeliefs,
+                        out CAPoliticalBeliefs foundingBeliefs,
+                        out string foundingBeliefFailure))
+                    return "regional founding Political Order: "
+                        + foundingBeliefFailure;
+                CAPlayerFoundingPlan foundingCandidate =
+                    region.playerFounding.Copy();
+                foundingCandidate.culture = foundingCulture;
+                foundingCandidate.politicalBeliefs = foundingBeliefs;
+                string foundingFailure = CAPlayerFoundingModel
+                    .ValidationFailure(foundingCandidate,
+                        requireConfirmed: true);
+                if (!foundingFailure.NullOrEmpty())
+                    return "regional founding copy: " + foundingFailure;
+                CARegionalPlan targetRegion = region;
+                commits.Add(() =>
+                {
+                    targetRegion.playerFounding.culture = foundingCulture;
+                    targetRegion.playerFounding.politicalBeliefs =
+                        foundingBeliefs;
+                    targetRegion.schemaVersion =
+                        CARegionalPlan.CurrentSchemaVersion;
+                });
+            }
+            foreach (CARegionalSettlementRecord record in records)
+            {
+                if (record == null) return "regional settlement record is null";
+                if (!CACultureModel.TryUpgradeFromB10(record.culture,
+                        out CACulture culture, out string cultureFailure))
+                    return "regional settlement record " + record.regionalId
+                        + "#" + record.slot + " Culture: " + cultureFailure;
+                CARegionalSettlementRecord target = record;
+                commits.Add(() => target.culture = culture);
+            }
+            foreach (Action commit in commits) commit();
+            return null;
         }
 
         public override void FinalizeInit(bool fromLoad)
@@ -1085,18 +1661,10 @@ namespace ColonistAwareness
             // the once-per-subject guard would silence the second world played
             // in a session.
             CARegionalEngineRoot.ForgetAnnouncements();
-            if (!fromLoad || regions == null || regions.Count == 0) return;
-            foreach (CARegionalPlan region in regions.Where(item =>
-                item != null))
-            {
-                if (region.worldPolicy == null)
-                    region.worldPolicy = WorldPolicy.Copy();
-                string failure;
-                if (!TryReserveRegion(region, out failure, true))
-                    Log.Error("[CA][Regional] could not restore reservation "
-                        + "for " + (region.regionalId ?? "unknown") + ": "
-                        + failure);
-            }
+            if (!fromLoad || regions == null) return;
+            if (!ReconcileReservationRegistry(out string failure))
+                throw new InvalidOperationException(
+                    "Regional reservation registry is invalid: " + failure);
         }
 
         internal CARegionalPlan FindRegion(PlanetTile mapTile, int mapSize)
@@ -1266,6 +1834,70 @@ namespace ColonistAwareness
             return true;
         }
 
+        // Regional plans own the intended footprint. Reservation WorldObjects
+        // are the engine-bound subordinate registry and are reconciled to that
+        // exact set; they never become a second plan authority.
+        internal bool ReconcileReservationRegistry(out string failure)
+        {
+            failure = null;
+            if (Verse.Find.WorldObjects == null)
+            {
+                failure = "the world-object registry is unavailable";
+                return false;
+            }
+            var desired = new Dictionary<int, ReservationClaim>();
+            foreach (CARegionalPlan region in regions
+                ?? new List<CARegionalPlan>())
+            {
+                if (region?.ReservedTileIds == null) continue;
+                for (int i = 0; i < region.ReservedTileIds.Count; i++)
+                {
+                    int tileId = region.ReservedTileIds[i];
+                    if (tileId == region.startTileId) continue;
+                    if (desired.ContainsKey(tileId))
+                    {
+                        failure = "several durable regions claim member tile "
+                            + tileId;
+                        return false;
+                    }
+                    desired.Add(tileId, new ReservationClaim
+                    {
+                        Region = region,
+                        MemberIndex = i
+                    });
+                }
+            }
+
+            var kept = new HashSet<int>();
+            List<WorldObject_CARegionalMemberReservation> existing =
+                Verse.Find.WorldObjects.AllWorldObjects
+                    .OfType<WorldObject_CARegionalMemberReservation>()
+                    .ToList();
+            foreach (WorldObject_CARegionalMemberReservation reservation in
+                existing)
+            {
+                int tileId = reservation.Tile.tileId;
+                bool valid = desired.TryGetValue(tileId,
+                        out ReservationClaim claim)
+                    && reservation.regionalId == claim.Region.regionalId
+                    && reservation.anchorTileId == claim.Region.startTileId
+                    && reservation.mapSize == claim.Region.mapSize
+                    && kept.Add(tileId);
+                if (!valid)
+                {
+                    Verse.Find.WorldObjects.Remove(reservation);
+                    continue;
+                }
+                reservation.memberIndex = claim.MemberIndex;
+            }
+            foreach (CARegionalPlan region in regions
+                ?? new List<CARegionalPlan>())
+                if (region != null && !TryReserveRegion(region, out failure,
+                        restoration: true))
+                    return false;
+            return true;
+        }
+
         internal int ReservationCount(CARegionalPlan region)
         {
             if (region == null || Verse.Find.WorldObjects == null) return 0;
@@ -1345,6 +1977,10 @@ namespace ColonistAwareness
                     // this world is made of, once
                     if (region.groundwater != null)
                         groundwater = region.groundwater.Copy();
+                    if (!ReconcileReservationRegistry(out string failure))
+                        throw new InvalidOperationException(
+                            "Replacement regional footprint is invalid: "
+                            + failure);
                     return region;
                 }
                 ValidateDurableRegion(existing);
@@ -1473,15 +2109,19 @@ namespace ColonistAwareness
             int localMapSize = localRegion?.mapSize ?? map.Size.x;
             if (localRegion != null && settlement != null)
             {
-                CARegionalSettlements.EnsureSettlementPattern(localRegion);
-                CASettlementStartingState.Sync(localRegion, settlement,
-                    faction?.def);
-                CASettlementComposition.EnsureDerived(localRegion,
-                    settlement);
+                string realizationFailure;
+                string programFailure = null;
+                bool realizationValid = CARegionalSettlements
+                    .TryValidateRealization(localRegion,
+                        out realizationFailure);
+                bool programValid = realizationValid
+                    && CASettlementProgramRegistry.TryValidateSaved(
+                        localRegion, settlement, out programFailure);
+                if (!realizationValid || !programValid)
+                    throw new InvalidOperationException(
+                        "confirmed settlement state is invalid: "
+                        + (realizationFailure ?? programFailure));
             }
-            int resolvedFacilities = settlement == null ? -1
-                : CASettlementStartingState.ResolveFacilityMask(localRegion,
-                    settlement, faction?.def);
             int resolvedAccess = settlement == null ? 0
                 : CASettlementStartingState.Access(localRegion, settlement);
             int resolvedServices = settlement == null ? 0
@@ -1490,15 +2130,13 @@ namespace ColonistAwareness
                 : CASettlementStartingState.Civic(localRegion, settlement);
             CARegionalFactionPlan factionGroup = localRegion?.FactionPlan(
                 settlement?.factionKey ?? -1);
-            if (factionGroup != null)
-                factionGroup.EnsureCultureAndPolitics(localRegion);
             CABehaviorDecision creationDecision;
             CAIntentContext creationIntent;
             CASettlementDevelopmentProposal creationProposal =
                 CASettlementAssetRegistry.BuildCreationProposal(
-                    resolvedFacilities,
-                    settlement?.economicCapacity ?? -1,
-                    settlement?.landCapacity ?? -1);
+                    settlement?.settlementProgram,
+                    settlement?.landCapacity ?? -1,
+                    settlement?.provisionArrangements);
             bool creationAuthorized =
                 CASettlementInstitutionalAuthorization
                     .TryAuthorizeCreationHistory(localRegion, settlement,
@@ -1520,12 +2158,10 @@ namespace ColonistAwareness
                     .OrderBy(label => label, StringComparer.Ordinal).ToList();
             if (beneficiaries.Count == 0)
                 beneficiaries.Add("settlement residents");
-            int seed = Gen.HashCombineInt(world.info.Seed,
-                GenText.StableStringHash(regionKey));
-            seed = Gen.HashCombineInt(seed, localMapSize, slot, 0);
             var record = new CARegionalSettlementRecord
             {
-                regionalId = "CA-RS-" + unchecked((uint)seed).ToString("X8"),
+                regionalId = "CA-RS-" + (localRegion?.regionalId
+                    ?? regionKey ?? "region") + "-" + slot,
                 regionKey = regionKey,
                 slot = slot,
                 mapSize = localMapSize,
@@ -1542,12 +2178,11 @@ namespace ColonistAwareness
                 urbanSupport = settlement?.urbanSupport ?? -1,
                 realizedRole = settlement?.realizedRole ?? (byte)0,
                 realizedScale = settlement?.realizedScale ?? (byte)0,
-                startingFacilityMask = resolvedFacilities,
                 accessInfrastructure = resolvedAccess,
                 serviceInfrastructure = resolvedServices,
                 civicInfrastructure = resolvedCivic,
-                facilityExceptionMask = settlement
-                    ?.facilityExceptionMask ?? 0,
+                settlementProgram = settlement?.settlementProgram?.Copy()
+                    ?? new CASettlementProgram(),
                 culture = settlement?.localCulture?.Copy(),
                 persistent = settlement?.persistent ?? true,
                 faction = faction,
@@ -1630,29 +2265,55 @@ namespace ColonistAwareness
                                 populationGroup),
                             ideoligionCertainty = populationGroup.ideoligionCertainty,
                             ideoligionFactionKey = populationGroup.ideoligionFactionKey,
-                            independentIdeoligionKey = populationGroup.independentIdeoligionKey,
-                            quarter = populationGroup.quarter,
+                            nativeIdeoligionId = populationGroup.nativeIdeoligionId,
+                            ideoligionProtected =
+                                populationGroup.ideoligionProtected,
                             authored = populationGroup.authored
                         });
-            if (settlement?.startingProvisions != null)
-                foreach (CAStartingProvision arrangement in
-                    settlement.startingProvisions)
+            if (settlement?.provisionArrangements != null)
+                foreach (CAProvisionArrangement arrangement in
+                    settlement.provisionArrangements)
                     if (arrangement != null && arrangement.active)
-                        record.startingProvisions.Add(new CAStartingProvision
+                        record.provisionArrangements.Add(
+                            new CAProvisionArrangement
                         {
                             key = arrangement.key,
                             operatorKind = arrangement.operatorKind,
+                            operatorIdentity = arrangement.operatorIdentity,
+                            operatorSource = arrangement.operatorSource,
                             populationGroupKey = arrangement.populationGroupKey,
                             access = arrangement.access,
+                            accessSource = arrangement.accessSource,
                             funding = arrangement.funding,
+                            fundingSource = arrangement.fundingSource,
                             distribution = arrangement.distribution,
+                            distributionSource =
+                                arrangement.distributionSource,
+                            laborSource = arrangement.laborSource,
+                            knowledgeSource = arrangement.knowledgeSource,
+                            materialSource = arrangement.materialSource,
+                            stockSource = arrangement.stockSource,
+                            policyKey = arrangement.policyKey,
+                            policyValue = arrangement.policyValue,
+                            collectionPath = arrangement.collectionPath,
                             basisKey = arrangement.basisKey,
                             basisLabel = arrangement.basisLabel,
                             active = true,
+                            operational = arrangement.operational,
                             waterSecured = arrangement.waterSecured,
                             nodes = arrangement.nodes,
                             reach = arrangement.reach
                         });
+            if (settlement?.domesticProvisionDemands != null)
+                foreach (CADomesticProvisionDemand demand in
+                    settlement.domesticProvisionDemands)
+                    if (demand != null)
+                        record.domesticProvisionDemands.Add(demand.Copy());
+            if (settlement?.operationalFacts != null)
+                foreach (CASettlementOperationalFact fact in
+                    settlement.operationalFacts)
+                    if (fact != null && fact.active)
+                        record.operationalFacts.Add(fact.Copy());
 
             CACulturalExpression culturalExpression =
                 CACulturalExpressionModel.ForSettlement(localRegion,
@@ -1663,71 +2324,33 @@ namespace ColonistAwareness
             record.culturalExpressionStatus =
                 (byte)culturalExpression.Status;
 
-            Rand.PushState(seed);
-            try
-            {
-                // Knowledge comes from the faction; local practice comes from
-                // the settlement's facilities and infrastructure.
-                TechLevel knowledge = CASettlementAxes.TemplateEraPrior(
-                    faction);
-                bool roadLinked = CARegionalPlanUtility.ConstituentHasRoad(
-                    settlement?.memberTileId ?? -1);
-                bool coastal = CARegionalPlanUtility.ConstituentIsCoastal(
-                    settlement?.memberTileId ?? -1);
-                int ceiling = CASettlementAxes.LocalPracticeCeiling(
-                    record.startingFacilityMask, record.accessInfrastructure,
-                    record.serviceInfrastructure,
-                    record.civicInfrastructure, knowledge);
-                record.factionEra = (int)knowledge;
-                record.settlementForm = (int)CASettlementAxes.Form(
-                    settlement?.authoredForm ?? CASettlementAxes.Derive,
-                    knowledge);
-                record.generationSummary = CASettlementAxes.Provenance(
-                    settlement?.authoredForm ?? CASettlementAxes.Derive,
-                    record.facilityExceptionMask)
-                    + "; facilities " + record.startingFacilityMask
-                    + "; practice ceiling " + ceiling
-                    + (roadLinked ? "; road present" : "; no road")
-                    + (coastal ? "; coast present" : "; inland");
-                record.communications = CASettlementAxes.PracticedCapability(
-                    CASettlementAxes.CapCommunications, knowledge,
-                    ceiling);
-                record.medicine = CASettlementAxes.PracticedCapability(
-                    CASettlementAxes.CapMedicine, knowledge, ceiling);
-                record.production = CASettlementAxes.PracticedCapability(
-                    CASettlementAxes.CapProduction, knowledge, ceiling);
-                record.logistics = CASettlementAxes.PracticedCapability(
-                    CASettlementAxes.CapLogistics, knowledge, ceiling);
-                record.fortification = CASettlementAxes.PracticedCapability(
-                    CASettlementAxes.CapFortification, knowledge,
-                    ceiling);
-                record.weapons = CASettlementAxes.PracticedCapability(
-                    CASettlementAxes.CapWeapons, knowledge, ceiling);
-                record.training = CASettlementAxes.PracticedCapability(
-                    CASettlementAxes.CapTraining, knowledge, ceiling);
-                record.organization = CASettlementAxes.PracticedCapability(
-                    CASettlementAxes.CapOrganization, knowledge,
-                    ceiling);
-                // Preview and materialization use the same wealth derivation.
-                // Candidate identity is preferred; records without a plan use
-                // the regional identity.
-                CASettlementWealth.Derive(
-                    localRegion?.candidateId ?? record.regionalId,
-                    record.slot, record.startingFacilityMask,
-                    record.accessInfrastructure,
-                    record.serviceInfrastructure,
-                    record.civicInfrastructure, knowledge,
-                    out record.wealth, out record.constructionEra);
-                // Preserve an authored settlement name.
-                record.name = settlement != null
-                    && !settlement.customName.NullOrEmpty()
-                        ? settlement.customName
-                        : GenerateSettlementName(faction, records);
-            }
-            finally
-            {
-                Rand.PopState();
-            }
+            // Knowledge and physical form are facts; capability is assessed
+            // later from actual actors, operations, organizations, and
+            // material state.
+            TechLevel knowledge = CASettlementAxes.TemplateEraPrior(faction);
+            bool roadLinked = settlement?.hasRoadAccess == true;
+            bool coastal = settlement?.hasCoastalAccess == true;
+            record.factionEra = (int)knowledge;
+            record.settlementForm = (int)CASettlementAxes.Form(
+                settlement?.authoredForm ?? CASettlementAxes.Derive,
+                knowledge);
+            record.generationSummary = CASettlementAxes.Provenance(
+                settlement?.authoredForm ?? CASettlementAxes.Derive,
+                record.settlementProgram)
+                + "; settlement program "
+                + record.settlementProgram?.sourceSignature
+                + "; capabilities await factual runtime evidence"
+                + (roadLinked ? "; road present" : "; no road")
+                + (coastal ? "; coast present" : "; inland");
+            CASettlementWealth.Derive(record.settlementProgram,
+                record.accessInfrastructure, record.serviceInfrastructure,
+                record.civicInfrastructure, knowledge,
+                out record.wealth, out record.constructionEra);
+            // Preserve an authored settlement name.
+            record.name = settlement != null
+                && !settlement.customName.NullOrEmpty()
+                    ? settlement.customName
+                    : GenerateSettlementName(faction, records);
             records.Add(record);
             return record;
         }
@@ -1742,7 +2365,6 @@ namespace ColonistAwareness
                 : populationGroup?.factionKey ?? -1;
             CARegionalFactionPlan source = plan?.FactionPlan(key);
             if (source == null) return null;
-            source.EnsureCultureAndPolitics(plan);
             return source.politicalBeliefs?.id;
         }
 
@@ -1799,10 +2421,54 @@ namespace ColonistAwareness
             if (reason != "interval")
                 CARegionalSettlementGenerationAudit.Audit(map, reason);
             int now = Find.TickManager.TicksGame;
-            foreach (CARegionalSettlementRecord record in world.ForMap(map))
+            List<CARegionalSettlementRecord> allRecords = world.ForMap(map)
+                .Where(record => record != null).ToList();
+            List<CARegionalSettlementRecord> records = allRecords
+                .Where(record => record != null
+                    && record.localRect != CellRect.Empty).ToList();
+            int[] buildings = new int[records.Count];
+            int[] infrastructure = new int[records.Count];
+            int[] cultivated = new int[records.Count];
+            int matched = 0;
+            List<Thing> all = map.listerThings.AllThings;
+            using (CAModuleProfiler.Measure(CAModuleProfileKey.FullMapScan))
             {
-                if (record.localRect == CellRect.Empty) continue;
-                ReconcileRecord(record, map);
+                for (int thingIndex = 0; thingIndex < all.Count; thingIndex++)
+                {
+                    Thing thing = all[thingIndex];
+                    if (thing == null || !thing.Spawned) continue;
+                    for (int recordIndex = 0; recordIndex < records.Count;
+                        recordIndex++)
+                    {
+                        CARegionalSettlementRecord record =
+                            records[recordIndex];
+                        if (!record.localRect.Contains(thing.Position))
+                            continue;
+                        matched++;
+                        Building building = thing as Building;
+                        if (building != null
+                            && building.Faction == record.faction)
+                        {
+                            buildings[recordIndex]++;
+                            if (building.TryGetComp<CompPower>() != null
+                                || building.def.IsDoor
+                                || building is Building_Bed)
+                                infrastructure[recordIndex]++;
+                        }
+                        Plant plant = thing as Plant;
+                        if (plant != null && plant.sown)
+                            cultivated[recordIndex]++;
+                    }
+                }
+                CAModuleProfiler.Observe(CAModuleProfileKey.FullMapScan,
+                    all.Count, matched);
+            }
+            for (int recordIndex = 0; recordIndex < records.Count;
+                recordIndex++)
+            {
+                CARegionalSettlementRecord record = records[recordIndex];
+                ReconcileRecord(record, map, buildings[recordIndex],
+                    infrastructure[recordIndex], cultivated[recordIndex]);
                 ReconcileCulturalExpression(record, map);
                 record.lastMapId = map.uniqueID;
                 record.lastReconciliationTick = now;
@@ -1815,7 +2481,7 @@ namespace ColonistAwareness
                         + record.infrastructureCount + ", cultivated plants "
                         + record.cultivatedPlantCount);
             }
-            CARegionalSettlementMarkers.Ensure(region, world.ForMap(map));
+            CARegionalSettlementMarkers.Ensure(region, allRecords);
             if (reason == "map-generated")
                 CARegionalSettlementGenerationAudit.Finish(map);
         }
@@ -1824,36 +2490,61 @@ namespace ColonistAwareness
             Map map)
         {
             if (record == null || map == null || record.faction == null) return;
+            int buildings = 0;
+            int infrastructure = 0;
+            int cultivated = 0;
+            int matched = 0;
+            List<Thing> all = map.listerThings.AllThings;
+            using (CAModuleProfiler.Measure(CAModuleProfileKey.FullMapScan))
+            {
+                for (int i = 0; i < all.Count; i++)
+                {
+                    Thing thing = all[i];
+                    if (thing == null || !thing.Spawned
+                        || !record.localRect.Contains(thing.Position))
+                        continue;
+                    matched++;
+                    Building building = thing as Building;
+                    if (building != null && building.Faction == record.faction)
+                    {
+                        buildings++;
+                        if (building.TryGetComp<CompPower>() != null
+                            || building.def.IsDoor
+                            || building is Building_Bed)
+                            infrastructure++;
+                    }
+                    Plant plant = thing as Plant;
+                    if (plant != null && plant.sown) cultivated++;
+                }
+                CAModuleProfiler.Observe(CAModuleProfileKey.FullMapScan,
+                    all.Count, matched);
+            }
+            ReconcileRecord(record, map, buildings, infrastructure,
+                cultivated);
+        }
+
+        private static void ReconcileRecord(
+            CARegionalSettlementRecord record, Map map, int buildings,
+            int infrastructure, int cultivated)
+        {
+            CASettlementResidenceState.ReconcileNativeEvents(record, map);
             List<Pawn> residents = CAPopulationProjection.Residents(record,
                 map);
             record.residentIds = residents.Select(pawn =>
                 pawn.GetUniqueLoadID()).ToList();
             record.populationCurrent = residents.Count;
 
-            int buildings = 0;
-            int infrastructure = 0;
-            int cultivated = 0;
-            List<Thing> all = map.listerThings.AllThings;
-            for (int i = 0; i < all.Count; i++)
-            {
-                Thing thing = all[i];
-                if (thing == null || !thing.Spawned
-                    || !record.localRect.Contains(thing.Position)) continue;
-                Building building = thing as Building;
-                if (building != null && building.Faction == record.faction)
-                {
-                    buildings++;
-                    if (building.TryGetComp<CompPower>() != null
-                        || building.def.IsDoor
-                        || building is Building_Bed)
-                        infrastructure++;
-                }
-                Plant plant = thing as Plant;
-                if (plant != null && plant.sown) cultivated++;
-            }
             record.buildingCount = buildings;
             record.infrastructureCount = infrastructure;
             record.cultivatedPlantCount = cultivated;
+            CADomesticUnitFormation.Reconcile(record, map);
+            CAOrganization organization = CAOrganizationWorldComponent.Current
+                ?.ByKey(record.regionalId + "#" + record.slot);
+            CASettlementProgramRuntimeContract.Reconcile(record, map);
+            CAProvisionRuntimeResolver.Reconcile(record, map);
+            CASettlementSecurityAssignments.Reconcile(record, map,
+                organization);
+            CASettlementCapabilities.Reconcile(record, map, organization);
         }
 
         internal static void ReconcileCulturalExpression(
@@ -1873,12 +2564,6 @@ namespace ColonistAwareness
                     CACultureHistory.EnsureSettlementCulture(region,
                         settlement);
                     record.culture = settlement.localCulture?.Copy();
-                    if (record.culture != null)
-                        record.migrationEvidence =
-                            (record.migrationEvidence.NullOrEmpty() ? ""
-                                : record.migrationEvidence + " ")
-                            + "B7 settlement Culture recovered from the "
-                            + "authoritative regional plan.";
                 }
             }
             CACulturalExpression expression =
@@ -2036,6 +2721,143 @@ namespace ColonistAwareness
         }
     }
 
+    internal static class CARegionalGenerationReceipt
+    {
+        private const string FileName =
+            "CA-B14-regional-generation-receipt.txt";
+
+        internal static void Write(CARegionalPlan region, Map map,
+            CARegionalWorldComponent world, HashSet<int> materializedSlots,
+            string gateFailure = null)
+        {
+            List<CARegionalSettlementPlan> settlements = (region?.settlements
+                    ?? new List<CARegionalSettlementPlan>())
+                .Where(item => item != null).OrderBy(item => item.slot)
+                .ToList();
+            var expectedSlots = new HashSet<int>(settlements.Select(
+                item => item.slot));
+            var actualSlots = materializedSlots ?? new HashSet<int>();
+            Dictionary<int, CARegionalSettlementRecord> records = world == null
+                || map == null
+                ? new Dictionary<int, CARegionalSettlementRecord>()
+                : world.ForMap(map).Where(item => item != null)
+                    .GroupBy(item => item.slot)
+                    .ToDictionary(group => group.Key, group => group.Last());
+
+            int ownershipResolved = settlements.Count(settlement =>
+                records.TryGetValue(settlement.slot,
+                    out CARegionalSettlementRecord record)
+                && record.factionKey == settlement.factionKey
+                && CARegionalPlanUtility.MatchesFaction(record.faction,
+                    region.FactionPlan(settlement.factionKey)));
+            int populationsResolved = settlements.Count(settlement =>
+                records.TryGetValue(settlement.slot,
+                    out CARegionalSettlementRecord record)
+                && PopulationMatches(settlement.populationGroups,
+                    record.populationGroups));
+
+            bool relationsValid = true;
+            bool unsupportedSourceRejected = true;
+            var relationFacts = new List<string>();
+            foreach (CARegionalRelationPlan relation in (region?.relations
+                         ?? new List<CARegionalRelationPlan>())
+                     .Where(item => item != null)
+                     .OrderBy(item => item.leftFactionKey)
+                     .ThenBy(item => item.rightFactionKey))
+            {
+                string sourceFailure;
+                bool valid = CARegionalPlanUtility.TryValidateRelationSource(
+                    region, relation, out sourceFailure);
+                relationsValid &= valid;
+                relationFacts.Add(relation.leftFactionKey + "-"
+                    + relation.rightFactionKey + ":" + relation.source + ":"
+                    + relation.relation + (valid ? "" : ":INVALID(" +
+                        sourceFailure + ")"));
+            }
+            CARegionalRelationPlan representedRelation = (region?.relations
+                    ?? new List<CARegionalRelationPlan>())
+                .FirstOrDefault(item => item != null);
+            if (representedRelation != null)
+            {
+                var unsupported = new CARegionalRelationPlan
+                {
+                    leftFactionKey = representedRelation.leftFactionKey,
+                    rightFactionKey = representedRelation.rightFactionKey,
+                    relation = representedRelation.relation,
+                    source = CARegionalRelationSource.Unset
+                };
+                unsupportedSourceRejected = !CARegionalPlanUtility
+                    .TryValidateRelationSource(region, unsupported,
+                        out string _);
+            }
+
+            bool gatePassed = gateFailure.NullOrEmpty();
+            bool slotsComplete = actualSlots.SetEquals(expectedSlots);
+            bool passed = gatePassed && slotsComplete
+                && ownershipResolved == settlements.Count
+                && populationsResolved == settlements.Count
+                && relationsValid && unsupportedSourceRejected;
+            string receipt = "[CA][B14][GenerationReceipt] "
+                + (passed ? "PASS" : "FAIL") + " region="
+                + (region?.regionalId ?? "unknown") + " gate="
+                + (gatePassed ? "pass" : gateFailure) + " expected="
+                + settlements.Count + " materialized=" + actualSlots.Count
+                + " slots=" + string.Join(",", actualSlots.OrderBy(value =>
+                    value)) + " ownership=" + ownershipResolved + "/"
+                + settlements.Count + " populations=" + populationsResolved
+                + "/" + settlements.Count + " relations="
+                + string.Join(",", relationFacts) + " unsupportedSourceProbe="
+                + (unsupportedSourceRejected ? "rejected" : "accepted");
+            if (passed) Log.Message(receipt);
+            else Log.Error(receipt);
+            try
+            {
+                System.IO.Directory.CreateDirectory(
+                    GenFilePaths.DevOutputFolderPath);
+                System.IO.File.WriteAllText(System.IO.Path.Combine(
+                    GenFilePaths.DevOutputFolderPath, FileName), receipt
+                    + Environment.NewLine);
+            }
+            catch (Exception exception)
+            {
+                Log.Warning("[CA][B14][GenerationReceipt] could not write "
+                    + "the external receipt: " + exception.Message);
+            }
+        }
+
+        private static bool PopulationMatches(
+            List<CASettlementPopulationGroup> planned,
+            List<CASettlementPopulationGroup> recorded)
+        {
+            planned = planned ?? new List<CASettlementPopulationGroup>();
+            recorded = recorded ?? new List<CASettlementPopulationGroup>();
+            if (planned.Count != recorded.Count) return false;
+            foreach (CASettlementPopulationGroup expected in planned)
+            {
+                if (expected == null) return false;
+                CASettlementPopulationGroup actual = recorded.SingleOrDefault(
+                    item => item != null && item.key == expected.key);
+                if (actual == null || actual.kind != expected.kind
+                    || actual.label != expected.label
+                    || actual.share != expected.share
+                    || actual.factionKey != expected.factionKey
+                    || actual.politicalBeliefsFactionKey
+                        != expected.politicalBeliefsFactionKey
+                    || actual.ideoligionCertainty
+                        != expected.ideoligionCertainty
+                    || actual.ideoligionFactionKey
+                        != expected.ideoligionFactionKey
+                    || actual.nativeIdeoligionId
+                        != expected.nativeIdeoligionId
+                    || actual.ideoligionProtected
+                        != expected.ideoligionProtected
+                    || actual.authored != expected.authored)
+                    return false;
+            }
+            return true;
+        }
+    }
+
     public sealed class GenStep_CARegionalSettlements : GenStep
     {
         private sealed class Placement
@@ -2068,6 +2890,8 @@ namespace ColonistAwareness
             if (!CARegionalPlanUtility.TryValidateStableIdentities(region,
                     out identityFailure))
             {
+                CARegionalGenerationReceipt.Write(region, map, world,
+                    new HashSet<int>(), "stable identity: " + identityFailure);
                 Log.Error("[CA][Regional] refused settlement materialization "
                     + "for " + (region.regionalId ?? "unknown") + ": "
                     + identityFailure);
@@ -2076,10 +2900,38 @@ namespace ColonistAwareness
             CAExpandedLandmassProfile profile;
             if (!CAExpandedLandmassProfile.TryFor(region.mapSize,
                     out profile)) return;
+            string realizationFailure;
+            if (!CARegionalSettlements.TryValidateRealization(region,
+                    out realizationFailure))
+            {
+                CARegionalGenerationReceipt.Write(region, map, world,
+                    new HashSet<int>(), "realization: " + realizationFailure);
+                Log.Error("[CA][Regional] refused settlement materialization "
+                    + "for " + (region.regionalId ?? "unknown") + ": "
+                    + realizationFailure);
+                return;
+            }
+            foreach (CARegionalSettlementPlan settlement in region.settlements)
+            {
+                if (settlement != null
+                    && !CASettlementProgramRegistry.TryValidateSaved(region,
+                        settlement, out string programFailure))
+                {
+                    CARegionalGenerationReceipt.Write(region, map, world,
+                        new HashSet<int>(), "settlement " + settlement.slot
+                        + " program: " + programFailure);
+                    Log.Error("[CA][Regional] refused settlement "
+                        + "materialization for "
+                        + (region.regionalId ?? "unknown") + ": settlement "
+                        + settlement.slot + " program: " + programFailure);
+                    return;
+                }
+            }
             CARegionalPlanResolver.Resolve(region);
             CARegionalProjectionMapComponent projection = map.GetComponent<
                 CARegionalProjectionMapComponent>();
             int materialized = 0;
+            var seenSlots = new HashSet<int>();
             var materializedSlots = new HashSet<int>();
             var physicalClusters = new Dictionary<string, List<CellRect>>();
             for (int index = 0; index < region.settlements.Count; index++)
@@ -2087,7 +2939,7 @@ namespace ColonistAwareness
                 CARegionalSettlementPlan settlement = region.settlements[index];
                 if (settlement == null) continue;
                 int slot = settlement.slot;
-                if (slot < 0 || !materializedSlots.Add(slot))
+                if (slot < 0 || !seenSlots.Add(slot))
                 {
                     Log.Warning("[CA][Regional] skipped authored settlement row "
                         + index + " because stable slot " + slot
@@ -2120,14 +2972,6 @@ namespace ColonistAwareness
                         + record.regionalId + " will not rematerialize");
                     continue;
                 }
-                // A settlement whose panel was never opened still gets a
-                // real composition and a real settlement position:
-                // derivation is completion, and it completes here at the
-                // latest. The realized profile persists on the plan, so
-                // this is a read for a confirmed candidate, never a
-                // re-roll.
-                CARegionalSettlements.EnsureSettlementPattern(region);
-                CASettlementComposition.EnsureDerived(region, settlement);
                 if (record == null)
                     record = world.Create(map, slot, faction, settlement);
                 else if (record.faction != faction)
@@ -2179,6 +3023,7 @@ namespace ColonistAwareness
                     Math.Max(1, districts)); // [morphology lane]
                 clusterRects.Add(rect);
                 materialized++;
+                materializedSlots.Add(slot);
             }
 
             // Each multi-settlement faction's authority becomes member
@@ -2189,6 +3034,8 @@ namespace ColonistAwareness
                 world.ForMap(map));
             // The world map shows one faction-colored marker per settlement.
             CARegionalSettlementMarkers.Ensure(region, world.ForMap(map));
+            CARegionalGenerationReceipt.Write(region, map, world,
+                materializedSlots);
 
             Log.Message("[CA][Regional] materialized " + materialized + "/"
                 + region.settlements.Count + " authored settlements on "
@@ -2206,8 +3053,10 @@ namespace ColonistAwareness
             List<CellRect> physicalCluster, out CellRect rect)
         {
             rect = CellRect.Empty;
+            int activePrograms = record.settlementProgram?.entries?.Count(
+                entry => entry != null && entry.blocker.NullOrEmpty()) ?? 0;
             int size = Mathf.Clamp(44 + record.realizedScale * 6
-                + record.production * 2 + record.organization, 44, 86);
+                + Math.Min(12, activePrograms), 44, 86);
             List<CellRect> used = MapGenerator.UsedRects;
 
             if (record.localRect != CellRect.Empty
@@ -2377,9 +3226,7 @@ namespace ColonistAwareness
                 // in this generated settlement encounter.
                 points = Mathf.Clamp(420f
                     + Mathf.Sqrt(Mathf.Max(0, record.residentPopulation)) * 28f
-                    + record.realizedScale * 110f
-                    + record.training * 110f
-                    + record.organization * 70f, 500f, 2400f),
+                    + record.realizedScale * 110f, 500f, 2400f),
                 seed = Gen.HashCombineInt(
                     GenText.StableStringHash(record.regionalId),
                     record.materializationCount)
@@ -2399,6 +3246,17 @@ namespace ColonistAwareness
 
             // Apply the authored population groups to spawned residents.
             CAPopulationProjection.Apply(record, map);
+
+            // Materialize only programs whose exact runtime operator resolves.
+            // A settlement map no longer creates an organization as a side
+            // effect of reaching this point.
+            CADomesticUnitFormation.Reconcile(record, map);
+            CAOrganization programOperator =
+                CAOrganizationWorldComponent.Current?.ByKey(
+                    record.regionalId + "#" + record.slot);
+            CASettlementProgramMaterializer.Materialize(programOperator,
+                record, map);
+            CAProvisionRuntimeResolver.Reconcile(record, map);
 
             CARegionalSettlementMapComponent.ReconcileRecord(record, map);
             CARegionalSettlementGenerationAudit.Capture(record, map);
@@ -2724,20 +3582,14 @@ namespace ColonistAwareness
                     + "; stitched-region size "
                     + policy.stitchedRegionSizeMin + "-"
                     + policy.stitchedRegionSizeMax
-                    + "; unaffiliated population "
-                    + policy.unaffiliatedPopulationShare.ToStringPercent()
                     + "; settlement concentration "
                     + policy.settlementConcentration.ToStringPercent()
                     + "; frontier holding frequency "
                     + policy.frontierHoldingFrequency.ToStringPercent()
                     + "; frontier holding size "
                     + policy.frontierHoldingSize.ToStringPercent()
-                    + "; settlement ownership variety "
+                    + "; settlement source variety "
                     + policy.reallocationSourceVariety.ToStringPercent()
-                    + "; local faction formation "
-                    + policy.localFactionChance.ToStringPercent()
-                    + "; regional conflict "
-                    + policy.regionalConflictChance.ToStringPercent()
                     + "; urban growth propensity "
                     + policy.urbanGrowthPropensity.ToStringPercent()
                     + "; off-map activity rate "
@@ -2754,9 +3606,7 @@ namespace ColonistAwareness
                     Log.Message("[CA][Regional] faction relation "
                         + relation.leftFactionKey + "-" + relation.rightFactionKey
                         + "; " + relation.relation + "; source "
-                        + (relation.authorRelation
-                            ? "starting-region override"
-                            : "realized default"));
+                        + relation.source);
             }
             else if (expanded)
                 Log.Warning("[CA][Regional] census found no regional plan for "

@@ -99,7 +99,7 @@ namespace ColonistAwareness
 
             sb.AppendLine("  " + p.LabelShort + ": " + mine.Count
                 + " grievances across " + byBelief.Count
-                + " political beliefs");
+                + " Political Orders");
 
             var groups = new List<Thought>();
             p.needs.mood.thoughts.GetDistinctMoodThoughtGroups(groups);
@@ -170,7 +170,7 @@ namespace ColonistAwareness
                 + "set for the player faction.");
         }
 
-        // Add distinct synthetic acts across several political beliefs.
+        // Add distinct synthetic acts across several Political Orders.
         [DebugAction("Colonist Awareness",
             "Political belief stress: 40 distinct acts",
             actionType = DebugActionType.Action,
@@ -227,7 +227,7 @@ namespace ColonistAwareness
                     continue;
                 }
                 // cycle the families so one witness accumulates
-                // grievances under several unrelated political beliefs
+                // grievances under several unrelated Political Orders
                 switch (i % 4)
                 {
                     case 0:

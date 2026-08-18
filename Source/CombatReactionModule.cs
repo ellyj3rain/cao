@@ -579,9 +579,9 @@ namespace ColonistAwareness
                     ? "relayed acoustic report with preserved source age"
                     : "directly heard acoustic event",
                 owner: "one acoustic investigation");
-            CABehaviorDecision gate = CABehaviorGate.Evaluate(
+            CABehaviorDecision gate = CABehaviorGate.EvaluateForSelection(
                 "knowledge.acoustic_investigation", gateContext);
-            if (!gate.Allowed)
+            if (!gate.SelectionApproved)
             {
                 cues.MarkConsidered(pawn, cue.EventId);
                 CATrace.Skip(pawn, "gunfire investigation",

@@ -72,7 +72,8 @@ namespace ColonistAwareness
                 if (string.IsNullOrEmpty(armed)) return;
                 if (armed != "1" && armed.Contains("x"))
                 {
-                    string[] parts = armed.Split('x');
+                    string[] parts = armed.Split(new[] { 'x' },
+                        StringSplitOptions.None);
                     int size, count;
                     if (parts.Length == 2
                         && int.TryParse(parts[0], out size)
@@ -232,9 +233,8 @@ namespace ColonistAwareness
                     ?? new CARegionalWorldPolicy();
                 // History axes that guarantee an interesting composition.
                 plan.worldPolicy.reallocationSourceVariety = 1f;
-                plan.worldPolicy.unaffiliatedPopulationShare = 0.6f;
 
-                // Two factions with different political beliefs.
+                // Two factions with different complete Political Orders.
                 var councilFaction = new CARegionalFactionPlan
                 {
                     key = 1,
@@ -266,21 +266,16 @@ namespace ColonistAwareness
                 plan.factions.Add(tradeFaction);
                 councilFaction.EnsureCultureAndPolitics(plan);
                 tradeFaction.EnsureCultureAndPolitics(plan);
-                CAPoliticalBeliefsModel.ApplyPreset(
+                CAPoliticalOrderModel.ApplyPreset(
                     councilFaction.politicalBeliefs,
-                    CAFactionAxes.Presets.First(profileItem =>
-                        profileItem.Name == "Worker councils"));
-                CAPoliticalBeliefsModel.ApplyPreset(
+                    "cooperative-commonwealth", CAAxisSource.Authored);
+                CAPoliticalOrderModel.ApplyPreset(
                     tradeFaction.politicalBeliefs,
-                    CAFactionAxes.Presets.First(profileItem =>
-                        profileItem.Name
-                            == "Elected council and private trade"));
-                CAFactionAxes.Derive(plan, councilFaction);
-                CAFactionAxes.Derive(plan, tradeFaction);
+                    "civic-market", CAAxisSource.Authored);
 
                 // Three settlements: the council faction holds two, the trade
                 // faction one. The first has a concentrated minority whose
-                // affiliation, culture, Ideoligion, and political beliefs are
+                // affiliation, Culture, Ideoligion, and Political Order are
                 // explicitly sourced independently.
                 // Settlements use non-root areas: the root is the
                 // landing tile, and validation rightly refuses an arrival
@@ -325,10 +320,10 @@ namespace ColonistAwareness
                         ideoligionFactionKey = 2,
                         politicalBeliefsFactionKey = 2,
                         ideoligionCertainty = 1,
-                        quarter = true,
+                        ideoligionProtected = true,
                         authored = true
                     });
-                    first.startingProvisions.Clear();
+                    first.provisionArrangements.Clear();
                     CASettlementComposition.EnsureDerived(plan, first);
                 }
                 CARegionalSettlements.EnsureSettlementPattern(plan);
