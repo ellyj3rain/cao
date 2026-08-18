@@ -6,8 +6,8 @@
 | Purpose | Native layout evidence for autonomous construction and settlement materialization |
 | Status | Active; 4,238 complete structured snapshots and nine operator saves extracted; capability and quality curation remains open |
 | Extractor | `tools/PlayerBaseLayoutExtractor` |
-| Normalized data | `Corpus/PlayerBaseLayouts/operator/`; broad clean manifest and profile under `Corpus/PlayerBaseLayouts/external/` |
-| Selection metadata | `Corpus/PlayerBaseLayouts/corpus-manifest.json` |
+| Local corpus payload | Ignored `Corpus/PlayerBaseLayouts/` paths hold normalized layouts, exact cohort membership, screening rows, partitions, and caches. |
+| Public evidence | `DATASET_GOVERNANCE.md` and the aggregate-only `Corpus/PlayerBaseLayouts/external/real-ruins-broad-profile.json` |
 
 The learned object is the layout serialized in a RimWorld save: built and planned
 entities, zones, occupied ground, spatial extent, population context, biome
@@ -19,8 +19,10 @@ The extractor is read-only. It accepts full RimWorld `.rws` saves and Real Ruins
 `.bp` snapshots, hashes each source, omits source paths and pawn names, and emits
 deterministic schema-2 JSON. The normalized records retain entity definitions and
 coordinates because those relationships are the data the builder needs to study.
-The source saves and external snapshots themselves are not copied into the
-repository.
+Source saves, external snapshots, normalized layouts, and per-layout selection
+records remain local and ignored by Git. The repository carries the extractor,
+schema, methodology, aggregate statistics, governed receipts, and
+non-reconstructive dataset accounting instead.
 
 ## Evidence strata
 
@@ -103,15 +105,17 @@ Those clean layouts span 80 exact biome definitions and 16 source version
 strings. Another 5,760 files end mid-XML and remain a separate fragment pool; two
 downloads failed. Neither fragments nor failures enter complete-base evidence.
 
-`Corpus/PlayerBaseLayouts/external/real-ruins-broad-clean-manifest.json` is the
-portable clean cohort. It records exact external identity, source and lineage
-hashes, environment, capture geometry, structural counts, a cohort-relative
-size quartile, and a deterministic lineage-safe partition for every clean row.
-The corresponding aggregate evidence is in
-`real-ruins-broad-profile.json`. Generation of both files is byte-deterministic.
-Raw `.bp` files and the 46 MB acquisition index remain in the ignored local
-cache; the repository carries the exact re-downloadable cohort definition rather
-than copying the archive.
+The ignored local
+`Corpus/PlayerBaseLayouts/external/real-ruins-broad-clean-manifest.json` records
+exact external identity, source and lineage hashes, environment, capture
+geometry, structural counts, cohort-relative size quartiles, and deterministic
+lineage-safe partitions for every clean row. The corresponding tracked public
+evidence is the non-reconstructive aggregate profile at
+`Corpus/PlayerBaseLayouts/external/real-ruins-broad-profile.json`. Raw `.bp`
+files, the 46 MB acquisition index, and exact cohort membership all remain in
+the local corpus. `DATASET_GOVERNANCE.md` identifies the cohort and its purpose;
+the ignored compliance manifest preserves exact hashes and model/build use
+lineage without publishing individual examples.
 
 This archive supplies broad, real spatial data. It does not identify the builder,
 prove quality, carry a full research state, or establish progression stage from

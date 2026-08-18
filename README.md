@@ -75,7 +75,8 @@ and structured Real Ruins `.bp` snapshots. The operator's early/combat-precarity
 evidence remains distinct from broad anonymous layout screening and from the
 complementary mature mid/end-game evidence it does not supply. The current broad
 screen contains 4,238 complete byte-unique layouts across 80 biome definitions,
-with a portable exact cohort manifest and lineage-safe experimental partitions;
+with an exact local cohort manifest and lineage-safe experimental partitions;
+the repository publishes only aggregate evidence and dataset governance, while
 source-truncated fragments remain quarantined from complete-base evidence.
 
 Culture is persistent social history with substantive inherited state. Its
@@ -229,7 +230,8 @@ changes require a full RimWorld restart.
 | `CULTURE_RESEARCH_CORPUS.md` | Current Culture research and playable-mechanics corpus: B13 source basis plus B16 reverse ownership audit, causal separations, consumers, feedback, and calibration limits |
 | `REGIONAL_GEOGRAPHY_CONTRACT.md` | Shared B14 preview and generation identity, supported geography combinations, and fail-closed realization rules |
 | `B15_TECHNOLOGICAL_KNOWLEDGE_CONTRACT.md` | Faction-owned technological domains, Society composition, native translation, and standard/distributed availability |
-| `PLAYER_BASE_PATTERN_CORPUS.md`, `Corpus/PlayerBaseLayouts/`, `tools/PlayerBaseLayoutExtractor/` | Full-save and structured-snapshot layouts, exact provenance and evidence limits, normalized spatial data, and reusable construction relationships; no copied plan or style mode |
+| `DATASET_GOVERNANCE.md` | Public corpus strata, provenance, acquisition, processing, privacy, IP, cohort, and use-accounting boundary; underlying examples remain local |
+| `PLAYER_BASE_PATTERN_CORPUS.md`, `Corpus/PlayerBaseLayouts/`, `tools/PlayerBaseLayoutExtractor/` | Layout methodology, evidence limits, aggregate profile, extraction schema, and reusable construction relationships; normalized spatial records and exact cohort membership remain local and ignored |
 | `CULTURAL_COGNITION_RESEARCH.md`, `B12_CULTURE_QUESTION_AUDIT.md` | B12 research and migration evidence retained beneath the B13 completion |
 | `B13_ACCEPTANCE_RECEIPTS.md`, `B13_REVIEW_RECEIPT.md`, `Receipts/B14/`, `Receipts/B15/`, `Receipts/B16/` | Executable closure, retained-regression, review, fixture, build, and deployment evidence |
 
