@@ -8,19 +8,103 @@ using Verse;
 
 namespace ColonistAwareness
 {
+    // Typed payload for the affiliation fact family. Ownership, support, and
+    // resident affiliation remain independently reportable even when a pawn's
+    // version is incomplete or wrong. A relay copies this payload; it never
+    // reconstructs it from the live site.
+    public sealed class CASiteAffiliationKnowledgePayload : IExposable
+    {
+        public string siteIdentity;
+        public CASiteFactionReferenceKind ownership;
+        public int ownerRegionalFactionKey = -1;
+        public int ownerWorldFactionLoadId = -1;
+        public CASiteFactionReferenceKind support;
+        public int supportRegionalFactionKey = -1;
+        public int supportWorldFactionLoadId = -1;
+        public List<int> populationRegionalFactionKeys = new List<int>();
+        public bool includesUnaffiliatedResidents;
+
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref siteIdentity, "siteIdentity");
+            Scribe_Values.Look(ref ownership, "ownership",
+                CASiteFactionReferenceKind.None);
+            Scribe_Values.Look(ref ownerRegionalFactionKey,
+                "ownerRegionalFactionKey", -1);
+            Scribe_Values.Look(ref ownerWorldFactionLoadId,
+                "ownerWorldFactionLoadId", -1);
+            Scribe_Values.Look(ref support, "support",
+                CASiteFactionReferenceKind.None);
+            Scribe_Values.Look(ref supportRegionalFactionKey,
+                "supportRegionalFactionKey", -1);
+            Scribe_Values.Look(ref supportWorldFactionLoadId,
+                "supportWorldFactionLoadId", -1);
+            Scribe_Collections.Look(ref populationRegionalFactionKeys,
+                "populationRegionalFactionKeys", LookMode.Value);
+            Scribe_Values.Look(ref includesUnaffiliatedResidents,
+                "includesUnaffiliatedResidents", false);
+        }
+
+        internal CASiteAffiliationKnowledgePayload Copy()
+        {
+            return new CASiteAffiliationKnowledgePayload
+            {
+                siteIdentity = siteIdentity,
+                ownership = ownership,
+                ownerRegionalFactionKey = ownerRegionalFactionKey,
+                ownerWorldFactionLoadId = ownerWorldFactionLoadId,
+                support = support,
+                supportRegionalFactionKey = supportRegionalFactionKey,
+                supportWorldFactionLoadId = supportWorldFactionLoadId,
+                populationRegionalFactionKeys =
+                    new List<int>(populationRegionalFactionKeys
+                        ?? new List<int>()),
+                includesUnaffiliatedResidents =
+                    includesUnaffiliatedResidents
+            };
+        }
+
+        internal string ValidationFailure()
+        {
+            if (siteIdentity.NullOrEmpty()) return "site identity is missing";
+            var links = new CASiteFactionLinks
+            {
+                ownership = ownership,
+                ownerRegionalFactionKey = ownerRegionalFactionKey,
+                ownerWorldFactionLoadId = ownerWorldFactionLoadId,
+                support = support,
+                supportRegionalFactionKey = supportRegionalFactionKey,
+                supportWorldFactionLoadId = supportWorldFactionLoadId
+            };
+            string linkFailure = links.ValidationFailure();
+            if (!linkFailure.NullOrEmpty()) return linkFailure;
+            if (populationRegionalFactionKeys == null
+                || populationRegionalFactionKeys.Any(key => key < 0))
+                return "population affiliation is invalid";
+            return null;
+        }
+    }
+
     public sealed class CAKnowledgePropositionRecord : IExposable
     {
+        public CAKnowledgeFactKind factKind =
+            CAKnowledgeFactKind.SocialEvent;
+        public CAKnowledgePersistenceClass persistenceClass =
+            CAKnowledgePersistenceClass.Working;
+        public string subjectIdentity;
         public string identity;
         public string topic;
         public string claim;
         public string content;
         public string holderIdentity;
         public string sourceIdentity;
+        public string immediateReporterIdentity;
         public string sourceType;
         public string acquisitionChannel;
         public string provenance;
         public List<string> provenanceChain = new List<string>();
         public float confidence;
+        public float uncertainty = 0.5f;
         public List<string> evidence = new List<string>();
         public List<string> contradictions = new List<string>();
         public List<string> corroboratingSources = new List<string>();
@@ -45,19 +129,35 @@ namespace ColonistAwareness
         public string politicalOptionKey;
         public float politicalSupport;
         public int acquiredTick = -1;
+        public int sourceEventTick = -1;
+        public int lastReportedTick = -1;
         public int lastConfirmedTick = -1;
         public int lastDecayTick = -1;
         public float decayRate;
         public string custodianIdentity;
+        public int staleAfterTick = -1;
+        public int revision = 1;
+        public string supersedesIdentity;
+        public string supersededByIdentity;
+        public string spatialScope;
+        public string socialScope;
+        public CASiteAffiliationKnowledgePayload siteAffiliation;
 
         public void ExposeData()
         {
+            Scribe_Values.Look(ref factKind, "factKind",
+                CAKnowledgeFactKind.SocialEvent);
+            Scribe_Values.Look(ref persistenceClass, "persistenceClass",
+                CAKnowledgePersistenceClass.Working);
+            Scribe_Values.Look(ref subjectIdentity, "subjectIdentity");
             Scribe_Values.Look(ref identity, "identity");
             Scribe_Values.Look(ref topic, "topic");
             Scribe_Values.Look(ref claim, "claim");
             Scribe_Values.Look(ref content, "content");
             Scribe_Values.Look(ref holderIdentity, "holderIdentity");
             Scribe_Values.Look(ref sourceIdentity, "sourceIdentity");
+            Scribe_Values.Look(ref immediateReporterIdentity,
+                "immediateReporterIdentity");
             Scribe_Values.Look(ref sourceType, "sourceType");
             Scribe_Values.Look(ref acquisitionChannel,
                 "acquisitionChannel");
@@ -65,6 +165,7 @@ namespace ColonistAwareness
             Scribe_Collections.Look(ref provenanceChain,
                 "provenanceChain", LookMode.Value);
             Scribe_Values.Look(ref confidence, "confidence", 0f);
+            Scribe_Values.Look(ref uncertainty, "uncertainty", 0.5f);
             Scribe_Collections.Look(ref evidence, "evidence", LookMode.Value);
             Scribe_Collections.Look(ref contradictions, "contradictions",
                 LookMode.Value);
@@ -105,12 +206,28 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref politicalSupport,
                 "politicalSupport", 0f);
             Scribe_Values.Look(ref acquiredTick, "acquiredTick", -1);
+            Scribe_Values.Look(ref sourceEventTick, "sourceEventTick", -1);
+            Scribe_Values.Look(ref lastReportedTick, "lastReportedTick", -1);
             Scribe_Values.Look(ref lastConfirmedTick,
                 "lastConfirmedTick", -1);
             Scribe_Values.Look(ref lastDecayTick, "lastDecayTick", -1);
             Scribe_Values.Look(ref decayRate, "decayRate", 0f);
             Scribe_Values.Look(ref custodianIdentity,
                 "custodianIdentity");
+            Scribe_Values.Look(ref staleAfterTick, "staleAfterTick", -1);
+            Scribe_Values.Look(ref revision, "revision", 1);
+            Scribe_Values.Look(ref supersedesIdentity,
+                "supersedesIdentity");
+            Scribe_Values.Look(ref supersededByIdentity,
+                "supersededByIdentity");
+            Scribe_Values.Look(ref spatialScope, "spatialScope");
+            Scribe_Values.Look(ref socialScope, "socialScope");
+            Scribe_Deep.Look(ref siteAffiliation, "siteAffiliation");
+        }
+
+        internal bool IsStale(int tick)
+        {
+            return staleAfterTick >= 0 && tick >= staleAfterTick;
         }
     }
 
@@ -166,9 +283,10 @@ namespace ColonistAwareness
     // contradiction, institutional custody, and represented research lineage.
     public sealed class CAPropositionKnowledgeWorldComponent : WorldComponent
     {
-        public const int CurrentSchemaVersion = 1;
+        public const int CurrentOwnerSchemaVersion = 2;
+        public const int CurrentSchemaVersion = 2;
         private int campaignSchemaVersion =
-            CACampaignCompatibilityKernel.CurrentBoundaryVersion;
+            CurrentOwnerSchemaVersion;
         private int schemaVersion = CurrentSchemaVersion;
         private int nextKnowledgeTick = 60000;
         private int nextLongTick = 600000;
@@ -231,6 +349,13 @@ namespace ColonistAwareness
             }
             if (Scribe.mode == LoadSaveMode.PostLoadInit && readable)
             {
+                if (schemaVersion == 1)
+                {
+                    foreach (CAKnowledgePropositionRecord record in
+                        propositions ?? new List<CAKnowledgePropositionRecord>())
+                        NormalizeCurrentRecord(record);
+                    schemaVersion = CurrentSchemaVersion;
+                }
                 CACampaignCompatibility.CompleteOwnerLoad(
                     "world.proposition-knowledge",
                     ref campaignSchemaVersion, 0, ValidateCampaignState,
@@ -247,7 +372,29 @@ namespace ColonistAwareness
                 propositions = new List<CAKnowledgePropositionRecord>();
             if (researchPrograms == null)
                 researchPrograms = new List<CAResearchProgramReceipt>();
+            foreach (CAKnowledgePropositionRecord record in propositions)
+                NormalizeCurrentRecord(record);
             return ValidateCampaignState();
+        }
+
+        private static void NormalizeCurrentRecord(
+            CAKnowledgePropositionRecord record)
+        {
+            if (record == null) return;
+            if (record.subjectIdentity.NullOrEmpty())
+                record.subjectIdentity = record.topic;
+            if (record.immediateReporterIdentity.NullOrEmpty())
+                record.immediateReporterIdentity = record.sourceIdentity;
+            if (record.sourceEventTick < 0)
+                record.sourceEventTick = record.acquiredTick;
+            if (record.lastReportedTick < 0)
+                record.lastReportedTick = record.acquiredTick;
+            record.revision = Math.Max(1, record.revision);
+            record.uncertainty = Mathf.Clamp01(record.uncertainty);
+            if (record.persistenceClass
+                    == CAKnowledgePersistenceClass.Transient
+                && record.staleAfterTick < 0 && record.acquiredTick >= 0)
+                record.staleAfterTick = record.acquiredTick + 2500;
         }
 
         private string ValidateCampaignState()
@@ -269,8 +416,10 @@ namespace ColonistAwareness
             if (propositions.Any(value => value == null
                     || value.identity.NullOrEmpty()
                     || value.topic.NullOrEmpty() || value.claim.NullOrEmpty()
+                    || value.subjectIdentity.NullOrEmpty()
                     || value.holderIdentity.NullOrEmpty()
                     || value.sourceIdentity.NullOrEmpty()
+                    || value.immediateReporterIdentity.NullOrEmpty()
                     || value.sourceType.NullOrEmpty()
                     || value.acquisitionChannel.NullOrEmpty()
                     || value.provenanceChain == null
@@ -290,6 +439,7 @@ namespace ColonistAwareness
                     || value.contradictions.Any(item => item == null)
                     || value.corroboratingSources.Any(item => item == null)
                     || !Unit(value.confidence)
+                    || !Unit(value.uncertainty)
                     || !Unit(value.transmissibility)
                     || !Unit(value.sourceReliability)
                     || !Unit(value.sourceTrust) || !Unit(value.expertise)
@@ -309,6 +459,12 @@ namespace ColonistAwareness
                     || float.IsInfinity(value.decayRate)
                     || value.decayRate < 0f))
                 return "a knowledge proposition is incomplete";
+            if (propositions.Any(value => value.revision < 1
+                    || (value.factKind == CAKnowledgeFactKind.SiteAffiliation
+                        && (value.siteAffiliation == null
+                            || !value.siteAffiliation.ValidationFailure()
+                                .NullOrEmpty()))))
+                return "a typed knowledge proposition is incomplete";
             if (propositions.GroupBy(value => value.identity,
                     StringComparer.Ordinal).Any(group => group.Count() > 1))
                 return "a knowledge proposition identity is duplicated";
@@ -379,6 +535,12 @@ namespace ColonistAwareness
             {
                 SyncFinishedResearch(now);
                 SyncInstitutionalRecords(now);
+                if (AwarenessMod.Settings
+                        ?.experimentalBroaderPawnKnowledge == true)
+                {
+                    ObserveNearbySettlementAffiliations(now);
+                    RelayBroaderPawnKnowledge(now);
+                }
                 ApplyRetention(now);
                 CAModuleProfiler.Observe(
                     CAModuleProfileKey.PropositionKnowledge,
@@ -479,6 +641,14 @@ namespace ColonistAwareness
                         ?.privateAttitude ?? 0f));
             CAPoliticalEvidenceMap.TryFor(fact, out string politicalAxis,
                 out string politicalOption, out float politicalSupport);
+            CASocialSubjectDef representedSubject =
+                CASocialSubjectRegistry.Find(fact.SubjectKey);
+            CAKnowledgeFactKind representedKind = representedSubject
+                    ?.Consumers?.Any(value => string.Equals(value,
+                        "political conflict", StringComparison.Ordinal))
+                    == true
+                ? CAKnowledgeFactKind.Conflict
+                : CAKnowledgeFactKind.SocialEvent;
             CAKnowledgePropositionRecord record = Acquire("fact:"
                     + fact.FactIdentity + ":holder:"
                     + holder.thingIDNumber,
@@ -493,7 +663,17 @@ namespace ColonistAwareness
                 tick, decayRate: 0.02f,
                 politicalAxisKey: politicalAxis,
                 politicalOptionKey: politicalOption,
-                politicalSupport: politicalSupport);
+                politicalSupport: politicalSupport,
+                factKind: representedKind,
+                persistenceClass: CAKnowledgePersistenceClass.Working,
+                subjectIdentity: fact.FactIdentity,
+                immediateReporterIdentity: "pawn:"
+                    + holder.thingIDNumber,
+                sourceEventTick: tick,
+                staleAfterTick: tick + 10 * 60000,
+                spatialScope: holder.Map == null ? null
+                    : "map:" + holder.Map.uniqueID,
+                socialScope: "pawn:" + holder.thingIDNumber);
             if (record != null)
             {
                 record.access = KnowledgeAccessRule(holder);
@@ -517,7 +697,17 @@ namespace ColonistAwareness
             string politicalAxisKey = null,
             string politicalOptionKey = null,
             float politicalSupport = 0f,
-            string contradictsIdentity = null)
+            string contradictsIdentity = null,
+            CAKnowledgeFactKind factKind = CAKnowledgeFactKind.SocialEvent,
+            CAKnowledgePersistenceClass persistenceClass =
+                CAKnowledgePersistenceClass.Working,
+            string subjectIdentity = null,
+            string immediateReporterIdentity = null,
+            int sourceEventTick = -1,
+            int staleAfterTick = -1,
+            string spatialScope = null,
+            string socialScope = null,
+            CASiteAffiliationKnowledgePayload siteAffiliation = null)
         {
             if (identity.NullOrEmpty() || topic.NullOrEmpty()
                 || claim.NullOrEmpty() || holderIdentity.NullOrEmpty()
@@ -529,12 +719,17 @@ namespace ColonistAwareness
             {
                 record = new CAKnowledgePropositionRecord
                 {
+                    factKind = factKind,
+                    persistenceClass = persistenceClass,
+                    subjectIdentity = subjectIdentity ?? topic,
                     identity = identity,
                     topic = topic,
                     claim = claim,
                     content = content,
                     holderIdentity = holderIdentity,
                     sourceIdentity = sourceIdentity,
+                    immediateReporterIdentity = immediateReporterIdentity
+                        ?? sourceIdentity,
                     sourceType = sourceType ?? "represented source",
                     acquisitionChannel = acquisitionChannel
                         ?? "represented acquisition",
@@ -544,8 +739,16 @@ namespace ColonistAwareness
                     contradictions = new List<string>(),
                     corroboratingSources = new List<string>(),
                     acquiredTick = tick,
+                    sourceEventTick = sourceEventTick >= 0
+                        ? sourceEventTick : tick,
+                    lastReportedTick = tick,
                     decayRate = Math.Max(0f, decayRate),
-                    custodianIdentity = custodianIdentity ?? holderIdentity
+                    custodianIdentity = custodianIdentity ?? holderIdentity,
+                    staleAfterTick = staleAfterTick,
+                    revision = 1,
+                    spatialScope = spatialScope,
+                    socialScope = socialScope,
+                    siteAffiliation = siteAffiliation?.Copy()
                 };
                 propositions.Add(record);
                 propositionByIdentity[identity] = record;
@@ -559,10 +762,27 @@ namespace ColonistAwareness
             }
             if (record.corroboratingSources == null)
                 record.corroboratingSources = new List<string>();
+            record.factKind = factKind;
+            record.persistenceClass = persistenceClass;
+            record.subjectIdentity = subjectIdentity ?? record.subjectIdentity
+                ?? topic;
+            record.immediateReporterIdentity = immediateReporterIdentity
+                ?? record.immediateReporterIdentity ?? sourceIdentity;
+            if (sourceEventTick >= 0)
+                record.sourceEventTick = sourceEventTick;
+            record.staleAfterTick = staleAfterTick;
+            record.spatialScope = spatialScope ?? record.spatialScope;
+            record.socialScope = socialScope ?? record.socialScope;
+            if (factKind != CAKnowledgeFactKind.SiteAffiliation)
+                record.siteAffiliation = null;
+            else if (siteAffiliation != null)
+                record.siteAffiliation = siteAffiliation.Copy();
             float independentCorroboration = CACulturalCognitionPureKernel
                 .RecordIndependentKnowledgeSource(
                     record.corroboratingSources, sourceIdentity);
             record.sourceIdentity = sourceIdentity;
+            record.immediateReporterIdentity = immediateReporterIdentity
+                ?? sourceIdentity;
             record.sourceType = sourceType ?? "represented source";
             record.acquisitionChannel = acquisitionChannel
                 ?? "represented acquisition";
@@ -590,6 +810,7 @@ namespace ColonistAwareness
             record.politicalSupport = Mathf.Clamp(politicalSupport,
                 -1f, 1f);
             record.lastConfirmedTick = tick;
+            record.lastReportedTick = tick;
             string link = (sourceType ?? "source") + ":"
                 + sourceIdentity + " via "
                 + (acquisitionChannel ?? "acquisition");
@@ -605,6 +826,654 @@ namespace ColonistAwareness
             ApplyRetention(tick);
             return propositionByIdentity.TryGetValue(identity,
                 out CAKnowledgePropositionRecord retained) ? retained : null;
+        }
+
+        internal IReadOnlyList<CAKnowledgePropositionRecord> ForPawn(
+            Pawn pawn)
+        {
+            if (pawn == null) return Array.Empty<
+                CAKnowledgePropositionRecord>();
+            string holder = "pawn:" + pawn.thingIDNumber;
+            return propositions.Where(value => value != null
+                    && value.holderIdentity == holder)
+                .OrderByDescending(value => value.sourceEventTick)
+                .ThenByDescending(value => value.acquiredTick)
+                .ThenBy(value => value.topic, StringComparer.Ordinal)
+                .ToList();
+        }
+
+        internal CAKnowledgePropositionRecord RecordSiteAffiliation(
+            Pawn holder, CARegionalSettlementRecord site, int tick,
+            string acquisitionChannel = "direct observation",
+            string sourceIdentity = null, int sourceEventTick = -1)
+        {
+            if (holder == null || site == null) return null;
+            string siteIdentity = site.regionalId + "#" + site.slot;
+            var payload = new CASiteAffiliationKnowledgePayload
+            {
+                siteIdentity = siteIdentity,
+                ownership = site.factionLinks?.ownership
+                    ?? CASiteFactionReferenceKind.None,
+                ownerRegionalFactionKey = site.factionLinks
+                    ?.ownerRegionalFactionKey ?? -1,
+                ownerWorldFactionLoadId = site.factionLinks
+                    ?.ownerWorldFactionLoadId ?? -1,
+                support = site.factionLinks?.support
+                    ?? CASiteFactionReferenceKind.None,
+                supportRegionalFactionKey = site.factionLinks
+                    ?.supportRegionalFactionKey ?? -1,
+                supportWorldFactionLoadId = site.factionLinks
+                    ?.supportWorldFactionLoadId ?? -1,
+                populationRegionalFactionKeys = (site.populationGroups
+                        ?? new List<CASettlementPopulationGroup>())
+                    .Where(value => value?.factionKey >= 0)
+                    .Select(value => value.factionKey).Distinct()
+                    .OrderBy(value => value).ToList(),
+                includesUnaffiliatedResidents = (site.populationGroups
+                    ?? new List<CASettlementPopulationGroup>()).Any(value =>
+                        value != null && (value.factionKey < 0
+                            || value.kind
+                                == CAPopulationGroupKind.Unaffiliated))
+            };
+            return RecordSiteAffiliation(holder, payload, tick,
+                acquisitionChannel, sourceIdentity ?? siteIdentity,
+                sourceEventTick >= 0 ? sourceEventTick
+                    : Math.Max(site.firstMaterializationTick,
+                        site.lastReconciliationTick) >= 0
+                        ? Math.Max(site.firstMaterializationTick,
+                            site.lastReconciliationTick) : tick);
+        }
+
+        internal CAKnowledgePropositionRecord RecordSiteAffiliation(
+            Pawn holder, CASiteAffiliationKnowledgePayload payload, int tick,
+            string acquisitionChannel, string sourceIdentity,
+            int sourceEventTick)
+        {
+            if (holder == null || payload == null
+                || !payload.ValidationFailure().NullOrEmpty()) return null;
+            string holderIdentity = "pawn:" + holder.thingIDNumber;
+            string signature = SiteAffiliationSignature(payload);
+            List<CAKnowledgePropositionRecord> active = ForPawn(holder)
+                .Where(value => value.factKind
+                        == CAKnowledgeFactKind.SiteAffiliation
+                    && value.subjectIdentity == payload.siteIdentity
+                    && value.supersededByIdentity.NullOrEmpty())
+                .OrderByDescending(value => value.revision)
+                .ThenByDescending(value => value.acquiredTick)
+                .ToList();
+            CAKnowledgePropositionRecord current = active.FirstOrDefault();
+            if (current != null && current.content == signature)
+            {
+                current.lastConfirmedTick = tick;
+                return current;
+            }
+            int revision = (current?.revision ?? 0) + 1;
+            string identity = "site-affiliation:" + payload.siteIdentity
+                + ":holder:" + holder.thingIDNumber + ":revision:"
+                + revision;
+            bool direct = acquisitionChannel == "direct observation";
+            var appraisal = new CAKnowledgeAcceptanceInput(
+                direct ? 0.95f : 0.60f, direct ? 1f : 0.65f,
+                0.55f, 0.35f, 0.35f, 0.75f, 0.50f, 0.70f,
+                0.50f, direct ? 0.95f : 0.55f, 0.50f, 1f,
+                CACulturalCognitionWorldComponent.Current
+                    ?.ProfileFor(holder)?.epistemicVigilance ?? 0.5f,
+                CACulturalCognitionWorldComponent.Current?.AttitudeFor(
+                    holder, CACultureQuestionRegistry.NoveltyAcceptance)
+                    ?.privateAttitude ?? 0f);
+            CAKnowledgePropositionRecord record = Acquire(identity,
+                "settlement affiliation", SiteAffiliationClaim(payload),
+                signature, holderIdentity, sourceIdentity,
+                direct ? "observed settlement" : "reported settlement",
+                acquisitionChannel, appraisal,
+                direct ? "visible inhabited site"
+                    : "reported site affiliation",
+                "site:" + payload.siteIdentity + ":event:"
+                    + sourceEventTick, tick, decayRate: 0.0025f,
+                custodianIdentity: holderIdentity,
+                factKind: CAKnowledgeFactKind.SiteAffiliation,
+                persistenceClass: CAKnowledgePersistenceClass.Durable,
+                subjectIdentity: payload.siteIdentity,
+                immediateReporterIdentity: direct ? holderIdentity
+                    : sourceIdentity,
+                sourceEventTick: sourceEventTick,
+                staleAfterTick: tick + 60 * 60000,
+                spatialScope: payload.siteIdentity,
+                socialScope: holderIdentity,
+                siteAffiliation: payload);
+            if (record == null) return null;
+            record.revision = revision;
+            if (current != null)
+            {
+                record.supersedesIdentity = current.identity;
+                if (current.content != record.content)
+                    LinkExplicitContradiction(record.identity,
+                        current.identity);
+            }
+            foreach (CAKnowledgePropositionRecord prior in active)
+            {
+                prior.supersededByIdentity = record.identity;
+                prior.lastConfirmedTick = Math.Min(
+                    prior.lastConfirmedTick, sourceEventTick);
+            }
+            return record;
+        }
+
+        private CAKnowledgePropositionRecord RecordRepresentedSiteFact(
+            Pawn holder, CAKnowledgeFactKind factKind, string siteIdentity,
+            string topic, string claim, string content, int sourceEventTick,
+            int tick, CAKnowledgePersistenceClass persistenceClass =
+                CAKnowledgePersistenceClass.Durable)
+        {
+            if (holder == null || siteIdentity.NullOrEmpty()
+                || topic.NullOrEmpty() || claim.NullOrEmpty()) return null;
+            string normalizedContent = content ?? "not recorded";
+            List<CAKnowledgePropositionRecord> active = ForPawn(holder)
+                .Where(value => value.factKind == factKind
+                    && value.subjectIdentity == siteIdentity
+                    && value.supersededByIdentity.NullOrEmpty())
+                .OrderByDescending(value => value.revision)
+                .ThenByDescending(value => value.acquiredTick).ToList();
+            CAKnowledgePropositionRecord current = active.FirstOrDefault();
+            if (current != null && current.content == normalizedContent)
+            {
+                current.lastConfirmedTick = tick;
+                return current;
+            }
+            int revision = (current?.revision ?? 0) + 1;
+            string identity = "site-fact:" + factKind + ":"
+                + siteIdentity + ":holder:" + holder.thingIDNumber
+                + ":revision:" + revision;
+            string holderIdentity = "pawn:" + holder.thingIDNumber;
+            var appraisal = new CAKnowledgeAcceptanceInput(
+                0.92f, 1f, 0.55f, 0.35f, 0.35f, 0.80f, 0.55f,
+                0.75f, 0.50f, 0.92f, 0.50f, 1f,
+                CACulturalCognitionWorldComponent.Current
+                    ?.ProfileFor(holder)?.epistemicVigilance ?? 0.5f,
+                CACulturalCognitionWorldComponent.Current?.AttitudeFor(
+                    holder, CACultureQuestionRegistry.NoveltyAcceptance)
+                    ?.privateAttitude ?? 0f);
+            CAKnowledgePropositionRecord record = Acquire(identity,
+                topic, claim, normalizedContent, holderIdentity,
+                siteIdentity, "observed settlement", "direct observation",
+                appraisal, "visible represented site",
+                "site:" + siteIdentity + ":event:" + sourceEventTick,
+                tick, decayRate: 0.0025f,
+                custodianIdentity: holderIdentity, factKind: factKind,
+                persistenceClass: persistenceClass,
+                subjectIdentity: siteIdentity,
+                immediateReporterIdentity: holderIdentity,
+                sourceEventTick: sourceEventTick,
+                staleAfterTick: tick + 60 * 60000,
+                spatialScope: siteIdentity, socialScope: holderIdentity);
+            if (record == null) return null;
+            record.revision = revision;
+            if (current != null)
+            {
+                record.supersedesIdentity = current.identity;
+                if (current.content != record.content)
+                    LinkExplicitContradiction(record.identity,
+                        current.identity);
+            }
+            foreach (CAKnowledgePropositionRecord prior in active)
+                prior.supersededByIdentity = record.identity;
+            return record;
+        }
+
+        internal CAKnowledgePropositionRecord Relay(
+            CAKnowledgePropositionRecord source, Pawn teller, Pawn receiver,
+            CommunicationChannel channel, int tick)
+        {
+            if (source == null || teller == null || receiver == null
+                || source.holderIdentity != "pawn:" + teller.thingIDNumber
+                || channel == CommunicationChannel.None) return null;
+            string receiverIdentity = "pawn:" + receiver.thingIDNumber;
+            List<CAKnowledgePropositionRecord> priorRecords =
+                ForPawn(receiver).Where(value => value != null
+                    && value.factKind == source.factKind
+                    && value.subjectIdentity == source.subjectIdentity
+                    && value.supersededByIdentity.NullOrEmpty()).ToList();
+            string relayIdentity = "relay:" + source.identity
+                + ":holder:" + receiver.thingIDNumber;
+            float trust = Mathf.Clamp01((receiver.relations
+                    ?.OpinionOf(teller) ?? 0) / 200f + 0.5f);
+            var appraisal = new CAKnowledgeAcceptanceInput(
+                source.confidence, trust, source.expertise,
+                source.prestige, source.authority,
+                source.motiveIntegrity, source.corroboration,
+                source.plausibility, source.priorCongruence,
+                channel == CommunicationChannel.Voice ? 0.70f : 0.80f,
+                source.observedPayoff, source.conflictFreedom,
+                CACulturalCognitionWorldComponent.Current
+                    ?.ProfileFor(receiver)?.epistemicVigilance ?? 0.5f,
+                CACulturalCognitionWorldComponent.Current?.AttitudeFor(
+                    receiver, CACultureQuestionRegistry.NoveltyAcceptance)
+                    ?.privateAttitude ?? 0f);
+            CAKnowledgePropositionRecord received = Acquire(relayIdentity,
+                source.topic, source.claim, source.content,
+                receiverIdentity, source.sourceIdentity,
+                "report of " + source.sourceType,
+                channel.ToString().ToLowerInvariant(), appraisal,
+                source.provenance, source.identity, tick,
+                decayRate: source.decayRate,
+                custodianIdentity: receiverIdentity,
+                politicalAxisKey: source.politicalAxisKey,
+                politicalOptionKey: source.politicalOptionKey,
+                politicalSupport: source.politicalSupport,
+                factKind: source.factKind,
+                persistenceClass: source.persistenceClass,
+                subjectIdentity: source.subjectIdentity,
+                immediateReporterIdentity: "pawn:"
+                    + teller.thingIDNumber,
+                sourceEventTick: source.sourceEventTick,
+                staleAfterTick: source.staleAfterTick,
+                spatialScope: source.spatialScope,
+                socialScope: receiverIdentity,
+                siteAffiliation: source.siteAffiliation);
+            if (received == null) return null;
+            received.revision = source.revision;
+            received.confidence = Math.Min(received.confidence,
+                source.confidence * 0.95f);
+            received.uncertainty = Math.Max(received.uncertainty,
+                source.uncertainty);
+            received.provenanceChain = new List<string>(
+                source.provenanceChain ?? new List<string>());
+            AddBounded(received.provenanceChain,
+                "pawn:" + teller.thingIDNumber + " via "
+                    + channel.ToString().ToLowerInvariant(),
+                CACulturalCognitionPureKernel.MaxKnowledgeProvenance);
+            foreach (CAKnowledgePropositionRecord other in priorRecords)
+            {
+                bool newerRevision = received.revision > other.revision
+                    && received.sourceEventTick >= other.sourceEventTick;
+                if (newerRevision)
+                {
+                    other.supersededByIdentity = received.identity;
+                    if (received.supersedesIdentity.NullOrEmpty())
+                        received.supersedesIdentity = other.identity;
+                }
+                else if (other.claim != received.claim
+                    || other.content != received.content)
+                    LinkExplicitContradiction(received.identity,
+                        other.identity);
+            }
+            source.lastReportedTick = tick;
+            return received;
+        }
+
+        private static string SiteAffiliationClaim(
+            CASiteAffiliationKnowledgePayload payload)
+        {
+            string ownership = payload.ownership
+                    == CASiteFactionReferenceKind.None
+                ? "has no faction owner"
+                : payload.ownership
+                    == CASiteFactionReferenceKind.RegionalFaction
+                    ? "is owned by regional faction "
+                        + payload.ownerRegionalFactionKey
+                    : "is owned by world faction "
+                        + payload.ownerWorldFactionLoadId;
+            return payload.siteIdentity + " " + ownership + ".";
+        }
+
+        private static string SiteAffiliationSignature(
+            CASiteAffiliationKnowledgePayload payload)
+        {
+            return string.Join("|", payload.siteIdentity,
+                payload.ownership, payload.ownerRegionalFactionKey,
+                payload.ownerWorldFactionLoadId, payload.support,
+                payload.supportRegionalFactionKey,
+                payload.supportWorldFactionLoadId,
+                string.Join(",", payload.populationRegionalFactionKeys
+                    ?? new List<int>()),
+                payload.includesUnaffiliatedResidents);
+        }
+
+        private sealed class CAKnowledgeRelayDelivery
+        {
+            internal CAKnowledgePropositionRecord source;
+            internal Pawn teller;
+            internal Pawn receiver;
+            internal CommunicationChannel channel;
+        }
+
+        private void ObserveNearbySettlementAffiliations(int now)
+        {
+            CARegionalWorldComponent regional =
+                CARegionalWorldComponent.Current;
+            foreach (Map map in Find.Maps)
+            {
+                List<CARegionalSettlementRecord> sites = regional?.ForMap(map)
+                    .Where(value => value != null
+                        && value.localRect != CellRect.Empty).ToList()
+                    ?? new List<CARegionalSettlementRecord>();
+                List<CAFrontierHoldingPlan> holdings = FrontierHoldingsFor(
+                    regional, map);
+                if (sites.Count == 0 && holdings.Count == 0) continue;
+                foreach (Pawn pawn in map.mapPawns.AllPawnsSpawned.Where(
+                    value => value != null && !value.Dead && !value.Downed
+                        && value.Awake() && value.RaceProps?.Humanlike == true))
+                {
+                    foreach (CARegionalSettlementRecord site in sites)
+                        if (site.localRect.ExpandedBy(12)
+                            .Contains(pawn.Position))
+                        {
+                            RecordSiteAffiliation(pawn, site, now);
+                            ObserveRepresentedSiteFacts(pawn, site, now);
+                        }
+                    foreach (CAFrontierHoldingPlan holding in holdings)
+                        if (holding.residentPawnIds?.Contains(
+                                pawn.thingIDNumber) == true
+                            || holding.site.IsValid
+                                && holding.site.InHorDistOf(
+                                    pawn.Position, 24f))
+                            ObserveFrontierSiteFacts(pawn, holding, map, now);
+                }
+            }
+        }
+
+        private static List<CAFrontierHoldingPlan> FrontierHoldingsFor(
+            CARegionalWorldComponent regional, Map map)
+        {
+            var result = new List<CAFrontierHoldingPlan>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            CARegionalPlan plan = regional?.FindRegionForMap(map);
+            foreach (CAFrontierHoldingPlan holding in plan?.frontierHoldings
+                ?? new List<CAFrontierHoldingPlan>())
+            {
+                if (holding?.materialized != true
+                    || holding.materializedMapId != map.uniqueID) continue;
+                string identity = "frontier:" + map.uniqueID + ":"
+                    + holding.key;
+                if (seen.Add(identity)) result.Add(holding);
+            }
+            foreach (CAFrontierHoldingPlan holding in
+                CAOrganizationWorldComponent.Current?.FrontierHoldings
+                    ?? Enumerable.Empty<CAFrontierHoldingPlan>())
+            {
+                if (holding?.materialized != true
+                    || holding.materializedMapId != map.uniqueID) continue;
+                string identity = "frontier:" + map.uniqueID + ":"
+                    + holding.key;
+                if (seen.Add(identity)) result.Add(holding);
+            }
+            return result;
+        }
+
+        private void ObserveFrontierSiteFacts(Pawn pawn,
+            CAFrontierHoldingPlan holding, Map map, int now)
+        {
+            string siteIdentity = "frontier:" + map.uniqueID + ":"
+                + holding.key;
+            string name = holding.siteName.NullOrEmpty()
+                ? holding.form == 1 ? "Frontier homestead"
+                    : "Frontier cabin"
+                : holding.siteName;
+            List<CASettlementPopulationGroup> groups = holding
+                .populationGroups ?? new List<CASettlementPopulationGroup>();
+            var affiliation = new CASiteAffiliationKnowledgePayload
+            {
+                siteIdentity = siteIdentity,
+                ownership = holding.factionLinks?.ownership
+                    ?? CASiteFactionReferenceKind.None,
+                ownerRegionalFactionKey = holding.factionLinks
+                    ?.ownerRegionalFactionKey ?? -1,
+                ownerWorldFactionLoadId = holding.factionLinks
+                    ?.ownerWorldFactionLoadId ?? -1,
+                support = holding.factionLinks?.support
+                    ?? CASiteFactionReferenceKind.None,
+                supportRegionalFactionKey = holding.factionLinks
+                    ?.supportRegionalFactionKey ?? -1,
+                supportWorldFactionLoadId = holding.factionLinks
+                    ?.supportWorldFactionLoadId ?? -1,
+                populationRegionalFactionKeys = groups.Where(value =>
+                        value?.factionKey >= 0)
+                    .Select(value => value.factionKey).Distinct()
+                    .OrderBy(value => value).ToList(),
+                includesUnaffiliatedResidents = groups.Any(value =>
+                    value != null && (value.factionKey < 0
+                        || value.kind == CAPopulationGroupKind.Unaffiliated))
+            };
+            int sourceTick = holding.firstMaterializationTick >= 0
+                ? holding.firstMaterializationTick : now;
+            RecordSiteAffiliation(pawn, affiliation, now,
+                "direct observation", siteIdentity, sourceTick);
+            RecordRepresentedSiteFact(pawn,
+                CAKnowledgeFactKind.Geography, siteIdentity,
+                "frontier location", name + " exists at the observed place.",
+                "map " + map.uniqueID + "; tile " + holding.memberTileId
+                    + "; cell " + holding.site.x + "," + holding.site.z,
+                sourceTick, now);
+
+            string population = string.Join("; ", groups
+                .Where(value => value != null).OrderBy(value => value.key)
+                .Select(value => value.share + "% "
+                    + (value.label ?? value.kind.ToString())
+                    + " [affiliation " + (value.factionKey < 0
+                        ? "none" : value.factionKey.ToString()) + "]"));
+            RecordRepresentedSiteFact(pawn,
+                CAKnowledgeFactKind.SitePopulation, siteIdentity,
+                "frontier population", name + " has the observed residents.",
+                population, sourceTick, now);
+            RecordRepresentedSiteFact(pawn, CAKnowledgeFactKind.Culture,
+                siteIdentity, "frontier culture",
+                name + " has the observed local culture.",
+                CACultureModel.Summary(holding.localCulture), sourceTick,
+                now);
+            string ideoligions = string.Join("; ", groups
+                .Where(value => value != null).OrderBy(value => value.key)
+                .Select(value => value.nativeIdeoligionId < 0
+                    ? "not recorded (" + value.share + "%)"
+                    : "Ideoligion " + value.nativeIdeoligionId + " ("
+                        + value.share + "%)"));
+            RecordRepresentedSiteFact(pawn,
+                CAKnowledgeFactKind.Ideoligion, siteIdentity,
+                "frontier ideoligions",
+                name + " has the observed Ideoligions.", ideoligions,
+                sourceTick, now);
+            RecordRepresentedSiteFact(pawn,
+                CAKnowledgeFactKind.PoliticalOrder, siteIdentity,
+                "frontier political order",
+                name + " has the observed political order.",
+                CAPoliticalBeliefsModel.Summary(
+                    holding.localSociety?.politicalOrder), sourceTick, now);
+            RecordRepresentedSiteFact(pawn,
+                CAKnowledgeFactKind.TechnologicalKnowledge, siteIdentity,
+                "frontier technological knowledge",
+                name + " has the observed technological knowledge.",
+                CATechnologicalKnowledgeModel.Summary(
+                    holding.localSociety?.technologicalKnowledge),
+                sourceTick, now,
+                CAKnowledgePersistenceClass.Institutional);
+            RecordRepresentedSiteFact(pawn,
+                CAKnowledgeFactKind.Institution, siteIdentity,
+                "frontier institutions",
+                name + " has the observed institutions.",
+                CAFactionStructureModel.Summary(
+                    holding.localSociety?.institutions), sourceTick, now,
+                CAKnowledgePersistenceClass.Institutional);
+            ObserveOrganizationFacts(pawn, siteIdentity, name, sourceTick,
+                now);
+        }
+
+        private void ObserveRepresentedSiteFacts(Pawn pawn,
+            CARegionalSettlementRecord site, int now)
+        {
+            string siteIdentity = site.regionalId + "#" + site.slot;
+            int sourceTick = Math.Max(site.firstMaterializationTick,
+                site.lastReconciliationTick);
+            if (sourceTick < 0) sourceTick = now;
+            RecordRepresentedSiteFact(pawn,
+                CAKnowledgeFactKind.Geography, siteIdentity,
+                "settlement location",
+                site.name + " exists at the observed place.",
+                "map " + (pawn.Map?.uniqueID ?? -1) + "; tile "
+                    + site.memberTileId + "; center "
+                    + site.localRect.CenterCell.x + ","
+                    + site.localRect.CenterCell.z,
+                sourceTick, now);
+            if ((site.layout?.roads?.Count ?? 0) > 0)
+                RecordRepresentedSiteFact(pawn,
+                    CAKnowledgeFactKind.Route, siteIdentity,
+                    "settlement routes",
+                    site.name + " has observed internal routes.",
+                    site.layout.roads.Count + " represented road cells; "
+                        + (site.layout.gates?.Count ?? 0) + " gates",
+                    sourceTick, now);
+
+            string population = string.Join("; ", (site.populationGroups
+                    ?? new List<CASettlementPopulationGroup>())
+                .Where(value => value != null)
+                .OrderBy(value => value.key).Select(value =>
+                    value.share + "% " + (value.label ?? value.kind.ToString())
+                    + " [affiliation " + (value.factionKey < 0
+                        ? "none" : value.factionKey.ToString()) + "]"));
+            RecordRepresentedSiteFact(pawn,
+                CAKnowledgeFactKind.SitePopulation, siteIdentity,
+                "settlement population",
+                site.name + " has the observed resident groups.",
+                population, sourceTick, now);
+
+            RecordRepresentedSiteFact(pawn, CAKnowledgeFactKind.Culture,
+                siteIdentity, "settlement culture",
+                site.name + " has the observed local culture.",
+                CACultureModel.Summary(site.culture), sourceTick, now);
+
+            string ideoligions = string.Join("; ", (site.populationGroups
+                    ?? new List<CASettlementPopulationGroup>())
+                .Where(value => value != null)
+                .OrderBy(value => value.key).Select(value =>
+                {
+                    Ideo ideo = value.nativeIdeoligionId < 0 ? null
+                        : Find.IdeoManager?.IdeosListForReading
+                            ?.FirstOrDefault(item => item != null
+                                && item.id == value.nativeIdeoligionId);
+                    return (ideo?.name ?? (value.nativeIdeoligionId < 0
+                            ? "not recorded" : "Ideoligion "
+                                + value.nativeIdeoligionId))
+                        + " (" + value.share + "%)";
+                }));
+            RecordRepresentedSiteFact(pawn,
+                CAKnowledgeFactKind.Ideoligion, siteIdentity,
+                "settlement ideoligions",
+                site.name + " has the observed Ideoligions.",
+                ideoligions, sourceTick, now);
+
+            CAFactionState factionState = CAFactionStateWorldComponent
+                .Current?.Find(site.faction);
+            bool local = !CASiteState.HasOwner(site.factionLinks)
+                || site.localSociety?.explicitLocalDivergence == true;
+            CAPoliticalBeliefs political = local
+                ? site.localSociety?.politicalOrder
+                : factionState?.politicalBeliefs;
+            CATechnologicalKnowledge knowledge = local
+                ? site.localSociety?.technologicalKnowledge
+                : factionState?.technologicalKnowledge;
+            List<CAAxisEntry> institutions = local
+                ? site.localSociety?.institutions
+                : factionState?.factionStructure;
+            RecordRepresentedSiteFact(pawn,
+                CAKnowledgeFactKind.PoliticalOrder, siteIdentity,
+                "settlement political order",
+                site.name + " has the observed political order.",
+                CAPoliticalBeliefsModel.Summary(political), sourceTick, now);
+            RecordRepresentedSiteFact(pawn,
+                CAKnowledgeFactKind.TechnologicalKnowledge, siteIdentity,
+                "settlement technological knowledge",
+                site.name + " has the observed technological knowledge.",
+                CATechnologicalKnowledgeModel.Summary(knowledge),
+                sourceTick, now,
+                CAKnowledgePersistenceClass.Institutional);
+            RecordRepresentedSiteFact(pawn,
+                CAKnowledgeFactKind.Institution, siteIdentity,
+                "settlement institutions",
+                site.name + " has the observed institutions.",
+                CAFactionStructureModel.Summary(institutions),
+                sourceTick, now,
+                CAKnowledgePersistenceClass.Institutional);
+
+            ObserveOrganizationFacts(pawn, siteIdentity, site.name,
+                sourceTick, now);
+        }
+
+        private void ObserveOrganizationFacts(Pawn pawn,
+            string siteIdentity, string siteName, int sourceTick, int now)
+        {
+            CAOrganization organization = CAOrganizationWorldComponent
+                .Current?.ByKey(siteIdentity);
+            if (organization == null) return;
+            RecordRepresentedSiteFact(pawn,
+                CAKnowledgeFactKind.Organization, siteIdentity,
+                "settlement organization",
+                siteName + " has the observed local organization.",
+                (organization.name ?? siteName) + "; support "
+                    + organization.publicSupport.ToString("0.00"),
+                sourceTick, now,
+                CAKnowledgePersistenceClass.Institutional);
+            string offices = string.Join("; ", (organization.offices
+                    ?? new List<CAOffice>()).Where(value => value != null)
+                .OrderBy(value => value.seniority)
+                .ThenBy(value => value.sourceKey, StringComparer.Ordinal)
+                .Select(value => (value.name ?? "office") + ": "
+                    + (value.holderLabel ?? (value.holderId < 0
+                        ? "vacant" : "pawn " + value.holderId))));
+            RecordRepresentedSiteFact(pawn,
+                CAKnowledgeFactKind.Officeholder, siteIdentity,
+                "settlement officeholders",
+                siteName + " has the observed officeholders.", offices,
+                sourceTick, now,
+                CAKnowledgePersistenceClass.Institutional);
+        }
+
+        private void RelayBroaderPawnKnowledge(int now)
+        {
+            var deliveries = new List<CAKnowledgeRelayDelivery>();
+            var scheduledReceivers = new HashSet<int>();
+            foreach (Map map in Find.Maps)
+            {
+                List<Pawn> pawns = map.mapPawns.AllPawnsSpawned.Where(value =>
+                        value != null && !value.Dead && !value.Downed
+                        && value.Awake() && value.RaceProps?.Humanlike == true)
+                    .ToList();
+                foreach (Pawn teller in pawns)
+                {
+                    CAKnowledgePropositionRecord source = ForPawn(teller)
+                        .Where(value => value != null
+                            && !value.IsStale(now)
+                            && value.supersededByIdentity.NullOrEmpty()
+                            && value.transmissibility >= 0.25f
+                            && value.lastReportedTick < now)
+                        .OrderByDescending(value => value.confidence
+                            * value.transmissibility)
+                        .ThenBy(value => value.identity,
+                            StringComparer.Ordinal).FirstOrDefault();
+                    if (source == null) continue;
+                    foreach (Pawn receiver in pawns)
+                    {
+                        if (receiver == teller
+                            || scheduledReceivers.Contains(
+                                receiver.thingIDNumber)) continue;
+                        if (!CommsModule.TryGetBroaderKnowledgeChannel(teller,
+                                receiver, 18f,
+                                out CommunicationChannel channel))
+                            continue;
+                        deliveries.Add(new CAKnowledgeRelayDelivery
+                        {
+                            source = source,
+                            teller = teller,
+                            receiver = receiver,
+                            channel = channel
+                        });
+                        scheduledReceivers.Add(receiver.thingIDNumber);
+                        break;
+                    }
+                }
+            }
+            // Sample every teller first. A report crosses one represented edge
+            // per cadence and cannot become a same-tick truth broadcast.
+            foreach (CAKnowledgeRelayDelivery delivery in deliveries)
+                Relay(delivery.source, delivery.teller, delivery.receiver,
+                    delivery.channel, now);
         }
 
         internal bool LinkExplicitContradiction(string leftIdentity,
@@ -649,6 +1518,8 @@ namespace ColonistAwareness
                         expertiseDeference
                             ?? ExpertiseDeferenceFor(record)));
             record.confidence = accepted.Confidence;
+            record.uncertainty = Mathf.Clamp01(1f - accepted.Confidence
+                + (1f - record.conflictFreedom) * 0.25f);
             record.transmissibility = accepted.Transmissibility;
         }
 
@@ -740,7 +1611,14 @@ namespace ColonistAwareness
                             CACultureQuestionRegistry.NoveltyAcceptance)
                         ?.privateAttitude ?? 0f),
                 "settlement research completion", evidence, tick,
-                custodianIdentity: work.operatorIdentity);
+                custodianIdentity: work.operatorIdentity,
+                factKind: CAKnowledgeFactKind.Research,
+                persistenceClass: CAKnowledgePersistenceClass.Institutional,
+                subjectIdentity: work.programKey,
+                immediateReporterIdentity: "pawn:" + worker.thingIDNumber,
+                sourceEventTick: tick,
+                spatialScope: work.settlementKey,
+                socialScope: work.operatorIdentity);
             if (milestone != null)
             {
                 milestone.access = KnowledgeAccessRule(worker);
@@ -779,7 +1657,14 @@ namespace ColonistAwareness
                             CACultureQuestionRegistry.NoveltyAcceptance)),
                     "native ResearchManager finished project",
                     "ResearchProjectDef.IsFinished", now,
-                    custodianIdentity: "player research program");
+                    custodianIdentity: "player research program",
+                    factKind: CAKnowledgeFactKind.Research,
+                    persistenceClass:
+                        CAKnowledgePersistenceClass.Institutional,
+                    subjectIdentity: project.defName,
+                    immediateReporterIdentity: "player research program",
+                    sourceEventTick: now,
+                    socialScope: "player research program");
                 propositionByIdentity.TryGetValue(identity,
                     out CAKnowledgePropositionRecord record);
                 if (record == null) continue;
@@ -821,7 +1706,15 @@ namespace ColonistAwareness
                         "organization decision history",
                         "decision:" + decision.tick, now,
                         decayRate: 0.005f,
-                        custodianIdentity: organization.organizationKey);
+                        custodianIdentity: organization.organizationKey,
+                        factKind: CAKnowledgeFactKind.Institution,
+                        persistenceClass:
+                            CAKnowledgePersistenceClass.Institutional,
+                        subjectIdentity: organization.organizationKey,
+                        immediateReporterIdentity:
+                            organization.organizationKey,
+                        sourceEventTick: decision.tick,
+                        socialScope: organization.organizationKey);
                     if (record != null)
                     {
                         float access = MeanOrganizationQuestion(organization,
@@ -957,6 +1850,22 @@ namespace ColonistAwareness
                 .Where(value => value?.priorKnowledgeKeys != null)
                 .SelectMany(value => value.priorKnowledgeKeys)
                 .Where(value => !value.NullOrEmpty()), StringComparer.Ordinal);
+            foreach (CAKnowledgePropositionRecord value in propositions
+                .Where(value => value != null))
+            {
+                if (!value.supersedesIdentity.NullOrEmpty())
+                    referenced.Add(value.supersedesIdentity);
+                if (!value.supersededByIdentity.NullOrEmpty())
+                    referenced.Add(value.supersededByIdentity);
+                if (value.persistenceClass
+                    >= CAKnowledgePersistenceClass.Durable)
+                    referenced.Add(value.identity);
+            }
+            propositions.RemoveAll(value => value == null
+                || (value.persistenceClass
+                        == CAKnowledgePersistenceClass.Transient
+                    && value.IsStale(now)
+                    && !referenced.Contains(value.identity)));
             HashSet<string> retained = CACulturalCognitionPureKernel
                 .RetainedKnowledgeIdentities(propositions.Where(value =>
                         value != null).Select(value =>
@@ -993,8 +1902,20 @@ namespace ColonistAwareness
 
         private static Pawn PawnById(int id)
         {
-            return PawnsFinder.AllMapsWorldAndTemporary_Alive
-                .FirstOrDefault(value => value?.thingIDNumber == id);
+            if (id < 0) return null;
+            try
+            {
+                return PawnsFinder.AllMapsWorldAndTemporary_Alive
+                    .FirstOrDefault(value => value?.thingIDNumber == id);
+            }
+            catch
+            {
+                // Saved proposition validation and contradiction repair can
+                // run while no live game/world pawn registry exists. The
+                // record's stored appraisal remains authoritative until a
+                // represented pawn is actually available again.
+                return null;
+            }
         }
 
         private static float ExpertiseFor(Pawn pawn, string subjectKey)

@@ -128,9 +128,15 @@ namespace ColonistAwareness
             if (settlement == null)
                 return Missing("Settlement facts are unavailable.");
             CARegionalFactionPlan faction = plan?.FactionPlan(
-                settlement.factionKey);
+                settlement.OwningFactionKey);
+            CATechnologicalKnowledge technologicalKnowledge =
+                CASiteState.Knowledge(plan, settlement);
+            CAPoliticalBeliefs politicalOrder = CASiteState.PoliticalOrder(
+                plan, settlement);
+            List<CAAxisEntry> institutions = CASiteState.Institutions(
+                plan, settlement);
             TechLevel knowledge = CATechnologicalKnowledgeModel
-                .CompatibilityTechLevel(faction?.technologicalKnowledge);
+                .CompatibilityTechLevel(technologicalKnowledge);
             int access = CASettlementStartingState.Access(plan, settlement);
             int services = CASettlementStartingState.Services(plan, settlement);
             int civic = CASettlementStartingState.Civic(plan, settlement);
@@ -140,8 +146,9 @@ namespace ColonistAwareness
                 ?? new List<CARegionalRelationPlan>())
             {
                 if (relation == null || (relation.leftFactionKey
-                        != settlement.factionKey && relation.rightFactionKey
-                        != settlement.factionKey)) continue;
+                        != settlement.OwningFactionKey
+                    && relation.rightFactionKey
+                        != settlement.OwningFactionKey)) continue;
                 if (relation.relation == FactionRelationKind.Hostile) hostile++;
                 else if (relation.relation == FactionRelationKind.Neutral)
                     neutral++;
@@ -158,12 +165,12 @@ namespace ColonistAwareness
                     faction?.LivingIdeo),
                 IdeoligionCommitmentLabels = IdeoligionCommitmentLabels(
                     faction?.LivingIdeo),
-                Beliefs = CopyAxes(faction?.politicalBeliefs?.positions),
-                Institutions = CopyAxes(faction?.factionStructure),
+                Beliefs = CopyAxes(politicalOrder?.positions),
+                Institutions = CopyAxes(institutions),
                 Populations = CopyPopulations(settlement.populationGroups),
                 PopulationBeliefs = PopulationBeliefs(plan,
                     settlement.populationGroups,
-                    faction?.politicalBeliefs?.positions, false),
+                    politicalOrder?.positions, false),
                 PopulationIdeoligions = PopulationIdeoligions(plan,
                     settlement.populationGroups, faction?.LivingIdeo),
                 Provisions = CopyProvisions(settlement.provisionArrangements),
@@ -205,10 +212,20 @@ namespace ColonistAwareness
                 ?.Regions.FirstOrDefault(item => item != null
                     && item.regionalId == settlement.regionKey);
             CARegionalFactionPlan plannedFaction = plan?.FactionPlan(
-                settlement.factionKey);
+                settlement.OwningFactionKey);
+            bool local = !CASiteState.HasOwner(settlement.factionLinks)
+                || settlement.localSociety?.explicitLocalDivergence == true;
+            CAPoliticalBeliefs politicalOrder = local
+                ? settlement.localSociety?.politicalOrder
+                : faction?.politicalBeliefs
+                    ?? plannedFaction?.politicalBeliefs;
+            List<CAAxisEntry> institutions = local
+                ? settlement.localSociety?.institutions
+                : faction?.factionStructure
+                    ?? plannedFaction?.factionStructure;
             int hostile = 0;
             int neutral = 0;
-            CountRelations(plan, settlement.factionKey, ref hostile,
+            CountRelations(plan, settlement.OwningFactionKey, ref hostile,
                 ref neutral);
             if (string.Equals(settlement.relationAtMaterialization,
                     FactionRelationKind.Hostile.ToString(),
@@ -229,15 +246,12 @@ namespace ColonistAwareness
                     settlement.faction?.ideos?.PrimaryIdeo),
                 IdeoligionCommitmentLabels = IdeoligionCommitmentLabels(
                     settlement.faction?.ideos?.PrimaryIdeo),
-                Beliefs = CopyAxes(faction?.politicalBeliefs?.positions
-                    ?? plannedFaction?.politicalBeliefs?.positions),
-                Institutions = CopyAxes(faction?.factionStructure
-                    ?? plannedFaction?.factionStructure),
+                Beliefs = CopyAxes(politicalOrder?.positions),
+                Institutions = CopyAxes(institutions),
                 Populations = CopyPopulations(settlement.populationGroups),
                 PopulationBeliefs = PopulationBeliefs(plan,
                     settlement.populationGroups,
-                    faction?.politicalBeliefs?.positions
-                        ?? plannedFaction?.politicalBeliefs?.positions, true),
+                    politicalOrder?.positions, true),
                 PopulationIdeoligions = MaterializedIdeoligions(settlement,
                     map) ?? PopulationIdeoligions(plan,
                         settlement.populationGroups,
@@ -315,7 +329,7 @@ namespace ColonistAwareness
             if (plan?.settlements == null || faction == null)
                 return new List<CACulturalExpression>();
             return plan.settlements.Where(item => item != null
-                    && item.factionKey == faction.key)
+                    && item.OwningFactionKey == faction.key)
                 .OrderBy(item => item.slot)
                 .Select(item => ForSettlement(plan, item)).ToList();
         }

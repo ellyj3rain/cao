@@ -991,7 +991,7 @@ internal static class Program
             first.Mean == second.Mean && first.Salience == second.Salience,
             $"mean={first.Mean:0.000}; salience={first.Salience:0.000}; normality and prestige have no adapter parameter");
         Add("catalog retains the B12 cognition owner",
-            CACampaignSchemaCatalog.CurrentCatalogVersion == 5
+            CACampaignSchemaCatalog.CurrentCatalogVersion == 6
                 && CACampaignSchemaCatalog.TryFind("world.cultural-cognition",
                     out CACampaignSchemaDefinition cognition)
                 && cognition.CurrentVersion == 2
@@ -1006,9 +1006,10 @@ internal static class Program
                 && CACampaignSchemaCatalog.TryFind(
                     "world.proposition-knowledge",
                     out CACampaignSchemaDefinition knowledge)
-                && knowledge.CurrentVersion == 1
+                && knowledge.CurrentVersion == 2
+                && knowledge.MinimumCompatibleVersion == 1
                 && knowledge.IntroducedCatalogVersion == 2,
-            "catalog 2 introduces both schema-1 owners additively");
+            "catalog 2 introduced separate owners; proposition knowledge now carries the additive schema-2 epistemic record");
         Add("durable Culture catalog admits exact nine-to-ten migration",
             CACampaignCompatibilityKernel.EvaluateSchema(
                     "model.culture", 9).CanLoad
@@ -1021,9 +1022,9 @@ internal static class Program
         Add("organization schema adds owner-held institutional appraisals",
             CACampaignSchemaCatalog.TryFind("world.organization",
                     out CACampaignSchemaDefinition organization)
-                && organization.CurrentVersion == 2
+                && organization.CurrentVersion == 3
                 && organization.MinimumCompatibleVersion == 1,
-            "world.organization 1 -> 2 carries legitimacy and sanction appraisals");
+            "world.organization retains legitimacy and sanction appraisals through the additive schema-3 frontier affiliation state");
         string organizationSource = S("Source/OrganizationModule.cs");
         Add("organization one-to-two migration initializes new owned lists",
             organizationSource.Contains("MigrateCampaignState",
@@ -1223,7 +1224,7 @@ internal static class Program
             activeBytes.SequenceEqual(mirrorBytes),
             $"SHA-256={activeHash}; mirror={mirrorHash}");
         Add("fixture carries the current authoring epoch",
-            Value(document.Root, "authoringDataEpoch") == "14",
+            Value(document.Root, "authoringDataEpoch") == "15",
             "authoringDataEpoch="
                 + Value(document.Root, "authoringDataEpoch"));
         XElement[] settlements = Items(plan, "settlements").ToArray();
@@ -1262,7 +1263,7 @@ internal static class Program
             CACultureQuestionRegistry.All.Select(value => value.Key),
             StringComparer.Ordinal);
         Add("fixture uses current Culture schema",
-            cultures.Length == 8
+            cultures.Length == 11
                 && cultures.All(value => Value(value, "schemaVersion") == "11")
                 && cultures.All(value => Value(value,
                     "questionRegistryVersion") == "3")
@@ -1279,10 +1280,10 @@ internal static class Program
                                     .SetEquals(currentQuestionKeys)))
                 && !document.Descendants("inheritedMeanings").Any()
                 && !document.Descendants("localMeanings").Any(),
-            $"8 schema-11/registry-3 records; {questionCount} distributions; every represented inherited population scope has 48 questions; obsolete meaning payloads absent");
+            $"11 schema-11/registry-3 records; {questionCount} distributions; every represented population scope contains the 48-question registry; obsolete meaning payloads absent");
         Add("migration evidence survives serialization",
             questionCount >= 192
-                && b12QuestionCount + quarantinedB12Count == 22
+                && b12QuestionCount == 30
                 && quarantinedB12Count == 1
                 && evidenceCount >= 26
                 && cultures.SelectMany(value => Items(value,

@@ -469,7 +469,7 @@ namespace ColonistAwareness
             CASettlementAuthority authority =
                 CARegionalSettlements.SettlementAuthorityOf(plan, group);
             int held = plan.settlements.Count(b => b != null
-                && b.factionKey == group.key);
+                && b.OwningFactionKey == group.key);
             if (held > 1)
                 parts.Add(CARegionalSettlements.SettlementAuthorityWords(authority)
                     + " between settlements");

@@ -378,9 +378,9 @@ internal static class Program
                 && culture.Contains("A later explicit rename sets NameField"),
             "the faction owns applied Culture; each settlement's explicit local-history record references that parent and refreshes inherited baselines until a local field is authored");
         C("Region authoring remains the current schema",
-            Value(plan, "schemaVersion") == "15"
-                && regional.Contains("CurrentSchemaVersion = 15"),
-            "regional plan schema 15 retains the existing geography and composition while carrying the current faction-owned authored state");
+            Value(plan, "schemaVersion") == "16"
+                && regional.Contains("CurrentSchemaVersion = 16"),
+            "regional plan schema 16 retains the existing geography and composition while carrying typed site affiliation and complete local state where required");
 
         string receiptPath = Path.Combine(repo, "Receipts", "B14",
             "B14_AUTHORING_CONVERGENCE_STATIC_RECEIPT.md");

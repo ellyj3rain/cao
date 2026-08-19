@@ -762,7 +762,7 @@ namespace ColonistAwareness
 
     public sealed class CARegionalSettlementRecord : IExposable
     {
-        public const int CurrentSchemaVersion = 9;
+        public const int CurrentSchemaVersion = 10;
         public int schemaVersion = CurrentSchemaVersion;
         public string regionalId;
         public string name;
@@ -771,7 +771,7 @@ namespace ColonistAwareness
         public int slot;
         public int mapSize;
         public int memberTileId = -1;
-        public int factionKey;
+        public CASiteFactionLinks factionLinks = new CASiteFactionLinks();
         public int operationalRoleMask;
         public int residentPopulation = -1;
         public int landCapacity = -1;
@@ -783,8 +783,11 @@ namespace ColonistAwareness
         public byte realizedRole;
         public byte realizedScale;
         public bool persistent = true;
+        // Native owner reference. Null is valid when the site is explicitly
+        // unaffiliated; the CA record remains the durable site owner.
         public Faction faction;
-        public string factionDefName;
+        public string generationFactionDefName;
+        public CASiteLocalSocietyState localSociety;
         public string relationAtMaterialization;
         public int goodwillAtMaterialization;
         // Domain capability is a persisted evidence-backed read model. It is
@@ -832,11 +835,12 @@ namespace ColonistAwareness
         public int constructionEra = -1;
         // Status assignments persist after their first materialization.
         public List<string> statusAssignments = new List<string>();
-        // Receipt of the faction-owned knowledge used at materialization.
-        // The faction remains the owner; the settlement stores no second copy.
-        public string factionKnowledgeId;
-        public int factionKnowledgeRevision = -1;
-        public int factionKnowledgeTier = -1;
+        // Receipt of the canonical technological knowledge used at
+        // materialization. It may resolve from the owning faction or from the
+        // site itself; this receipt is not a second authority.
+        public string technologicalKnowledgeId;
+        public int technologicalKnowledgeRevision = -1;
+        public int technologicalKnowledgeTier = -1;
         public int settlementForm = -1;
         public string generationSummary;
         // Receipt of the deterministic cultural read at materialization. The
@@ -916,7 +920,19 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref slot, "slot", -1);
             Scribe_Values.Look(ref mapSize, "mapSize", 0);
             Scribe_Values.Look(ref memberTileId, "memberTileId", -1);
-            Scribe_Values.Look(ref factionKey, "factionKey", 0);
+            int legacyFactionKey = -1;
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+                Scribe_Values.Look(ref legacyFactionKey, "factionKey", -1);
+            Scribe_Deep.Look(ref factionLinks, "factionLinks");
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                if (factionLinks == null)
+                    factionLinks = new CASiteFactionLinks();
+                if (legacyFactionKey >= 0
+                    && factionLinks.ownership
+                        == CASiteFactionReferenceKind.None)
+                    factionLinks.SetRegionalOwner(legacyFactionKey);
+            }
             Scribe_Values.Look(ref operationalRoleMask,
                 "operationalRoleMask", 0);
             Scribe_Values.Look(ref residentPopulation,
@@ -934,7 +950,12 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref realizedScale, "realizedScale", (byte)0);
             Scribe_Values.Look(ref persistent, "persistent", true);
             Scribe_References.Look(ref faction, "faction");
-            Scribe_Values.Look(ref factionDefName, "factionDefName");
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+                Scribe_Values.Look(ref generationFactionDefName,
+                    "factionDefName");
+            Scribe_Values.Look(ref generationFactionDefName,
+                "generationFactionDefName");
+            Scribe_Deep.Look(ref localSociety, "localSociety");
             Scribe_Values.Look(ref relationAtMaterialization,
                 "relationAtMaterialization");
             Scribe_Values.Look(ref goodwillAtMaterialization,
@@ -982,12 +1003,21 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref constructionEra, "constructionEra", -1);
             Scribe_Collections.Look(ref statusAssignments,
                 "statusAssignments", LookMode.Value);
-            Scribe_Values.Look(ref factionKnowledgeId,
-                "factionKnowledgeId");
-            Scribe_Values.Look(ref factionKnowledgeRevision,
-                "factionKnowledgeRevision", -1);
-            Scribe_Values.Look(ref factionKnowledgeTier,
-                "factionKnowledgeTier", -1);
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                Scribe_Values.Look(ref technologicalKnowledgeId,
+                    "factionKnowledgeId");
+                Scribe_Values.Look(ref technologicalKnowledgeRevision,
+                    "factionKnowledgeRevision", -1);
+                Scribe_Values.Look(ref technologicalKnowledgeTier,
+                    "factionKnowledgeTier", -1);
+            }
+            Scribe_Values.Look(ref technologicalKnowledgeId,
+                "technologicalKnowledgeId");
+            Scribe_Values.Look(ref technologicalKnowledgeRevision,
+                "technologicalKnowledgeRevision", -1);
+            Scribe_Values.Look(ref technologicalKnowledgeTier,
+                "technologicalKnowledgeTier", -1);
             Scribe_Values.Look(ref settlementForm, "settlementForm", -1);
             Scribe_Values.Look(ref generationSummary, "generationSummary");
             Scribe_Values.Look(ref culturalExpressionSummary,
@@ -1104,12 +1134,27 @@ namespace ColonistAwareness
                 "developmentBlocker");
         }
 
-        internal string FactionKnowledgeLabel
+        internal string TechnologicalKnowledgeLabel
         {
             get
             {
-                return factionKnowledgeTier >= 0
-                    ? "knowledge tier " + factionKnowledgeTier : "unknown";
+                return technologicalKnowledgeTier >= 0
+                    ? "knowledge tier " + technologicalKnowledgeTier
+                    : "unknown";
+            }
+        }
+
+        internal int OwningFactionKey
+        {
+            get => factionLinks?.ownership
+                    == CASiteFactionReferenceKind.RegionalFaction
+                ? factionLinks.ownerRegionalFactionKey : -1;
+            set
+            {
+                if (factionLinks == null)
+                    factionLinks = new CASiteFactionLinks();
+                if (value < 0) factionLinks.SetNoOwner();
+                else factionLinks.SetRegionalOwner(value);
             }
         }
 
@@ -1132,7 +1177,7 @@ namespace ColonistAwareness
             internal int MemberIndex;
         }
 
-        private int campaignSchemaVersion = 4;
+        private int campaignSchemaVersion = 5;
         private int legacyAuthoringDataEpoch =
             CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private List<CARegionalSettlementRecord> records =
@@ -1228,9 +1273,45 @@ namespace ColonistAwareness
 
         private string ValidateCampaignState()
         {
+            return ValidateRegionalState(
+                CARegionalPlan.CurrentSchemaVersion,
+                CARegionalSettlementRecord.CurrentSchemaVersion,
+                requireCurrentSiteState: true);
+        }
+
+        private string ValidateRegionalState(int expectedRegionSchema,
+            int expectedRecordSchema, bool requireCurrentSiteState)
+        {
             string structureFailure = ValidateOwnerStructure(
-                CARegionalPlan.CurrentSchemaVersion);
+                expectedRegionSchema,
+                CAPlayerFoundingPlan.CurrentSchemaVersion,
+                expectedRecordSchema);
             if (!structureFailure.NullOrEmpty()) return structureFailure;
+            if (requireCurrentSiteState)
+            {
+                for (int i = 0; i < regions.Count; i++)
+                {
+                    string siteFailure = CASiteAffiliationMigration
+                        .ValidateCurrentRegionalPlan(regions[i],
+                            requireCompleteSites: true);
+                    if (!siteFailure.NullOrEmpty())
+                        return "regional plan " + regions[i].regionalId
+                            + " site state: " + siteFailure;
+                }
+                for (int i = 0; i < records.Count; i++)
+                {
+                    CARegionalPlan region = regions.FirstOrDefault(value =>
+                        value != null && value.regionalId
+                            == records[i]?.regionalId);
+                    string siteFailure = CASiteAffiliationMigration
+                        .ValidateCurrentRegionalRecord(records[i], region);
+                    if (!siteFailure.NullOrEmpty())
+                        return "regional settlement "
+                            + (records[i]?.regionalId ?? "<missing>") + "#"
+                            + (records[i]?.slot ?? -1) + " site state: "
+                            + siteFailure;
+                }
+            }
             for (int i = 0; i < regions.Count; i++)
             {
                 CARegionalPlan region = regions[i];
@@ -1302,11 +1383,11 @@ namespace ColonistAwareness
                 if (!cultureFailure.NullOrEmpty())
                     return "regional settlement " + key + " Culture: "
                         + cultureFailure;
-                if (record.factionKnowledgeId.NullOrEmpty()
-                    || record.factionKnowledgeRevision < 0
-                    || record.factionKnowledgeTier < 0)
+                if (record.technologicalKnowledgeId.NullOrEmpty()
+                    || record.technologicalKnowledgeRevision < 0
+                    || record.technologicalKnowledgeTier < 0)
                     return "regional settlement " + key
-                        + " has no faction-owned knowledge receipt";
+                        + " has no technological-knowledge receipt";
             }
             return null;
         }
@@ -1553,10 +1634,12 @@ namespace ColonistAwareness
         private string MigrateSupportedState()
         {
             if (campaignSchemaVersion != 2
-                && campaignSchemaVersion != 3)
+                && campaignSchemaVersion != 3
+                && campaignSchemaVersion != 4)
                 return "regional owner schema " + campaignSchemaVersion
                     + " has no supported migration";
-            int expectedRegionSchema = campaignSchemaVersion == 2 ? 13 : 14;
+            int expectedRegionSchema = campaignSchemaVersion == 2 ? 13
+                : campaignSchemaVersion == 3 ? 14 : 15;
             int expectedFoundingSchema = campaignSchemaVersion == 2 ? 3 : 4;
             int expectedRecordSchema = campaignSchemaVersion == 2 ? 8 : 9;
             int savedRegionSchema = regions.Count == 0
@@ -1570,6 +1653,9 @@ namespace ColonistAwareness
                 savedRegionSchema, expectedFoundingSchema,
                 expectedRecordSchema);
             if (!structureFailure.NullOrEmpty()) return structureFailure;
+            if (campaignSchemaVersion == 4)
+                return MigrateB16SiteState(savedRegionSchema,
+                    expectedRecordSchema);
             var commits = new List<Action>();
             var knowledgeByFaction =
                 new Dictionary<string, CATechnologicalKnowledge>(
@@ -1587,6 +1673,14 @@ namespace ColonistAwareness
                 if (region.factions == null || region.settlements == null)
                     return "regional plan " + region.regionalId
                         + " has missing social collections";
+                if (!CASiteAffiliationMigration.TryPrepareRegionalPlan(
+                        region, savedRegionSchema,
+                        requireCompleteSites: true,
+                        out List<Action> siteCommits,
+                        out string siteFailure))
+                    return "regional plan " + region.regionalId + ": "
+                        + siteFailure;
+                commits.AddRange(siteCommits);
                 foreach (CARegionalFactionPlan faction in region.factions)
                 {
                     if (faction == null)
@@ -1704,11 +1798,25 @@ namespace ColonistAwareness
             foreach (CARegionalSettlementRecord record in records)
             {
                 if (record == null) return "regional settlement record is null";
+                CARegionalPlan recordRegion = regions.FirstOrDefault(value =>
+                    value != null && value.regionalId == record.regionalId);
+                if (recordRegion == null)
+                    return "regional settlement record " + record.regionalId
+                        + "#" + record.slot + " has no regional plan";
+                if (!CASiteAffiliationMigration.TryPrepareRegionalRecord(
+                        record, recordRegion, out Action siteCommit,
+                        out string siteFailure))
+                    return siteFailure;
+                commits.Add(siteCommit);
                 if (!CACultureModel.TryUpgradeToCurrent(record.culture,
                         out CACulture culture, out string cultureFailure))
                     return "regional settlement record " + record.regionalId
                         + "#" + record.slot + " Culture: " + cultureFailure;
                 CATechnologicalKnowledge technology = null;
+                if (record.localSociety?.technologicalKnowledge?.domains
+                        ?.Count > 0)
+                    technology = record.localSociety
+                        .technologicalKnowledge;
                 CAFactionState liveState = record.faction == null ? null
                     : CAFactionStateWorldComponent.Current?.Find(
                         record.faction);
@@ -1716,24 +1824,66 @@ namespace ColonistAwareness
                     technology = liveState.technologicalKnowledge;
                 if (technology == null)
                     knowledgeByFaction.TryGetValue(
-                        (record.regionalId ?? "") + "#" + record.factionKey,
+                        (record.regionalId ?? "") + "#"
+                            + record.OwningFactionKey,
                         out technology);
                 if (technology == null)
                     return "regional settlement record " + record.regionalId
                         + "#" + record.slot
-                        + " cannot resolve its faction's Technological Knowledge";
+                        + " cannot resolve its Technological Knowledge";
                 CARegionalSettlementRecord target = record;
                 commits.Add(() =>
                 {
                     target.culture = culture;
-                    target.factionKnowledgeId = technology.id;
-                    target.factionKnowledgeRevision = technology.revision;
-                    target.factionKnowledgeTier =
+                    target.technologicalKnowledgeId = technology.id;
+                    target.technologicalKnowledgeRevision = technology.revision;
+                    target.technologicalKnowledgeTier =
                         CATechnologicalKnowledgeModel.CompatibilityTier(
                             technology);
                     target.schemaVersion =
                         CARegionalSettlementRecord.CurrentSchemaVersion;
                 });
+            }
+            foreach (Action commit in commits) commit();
+            return null;
+        }
+
+        private string MigrateB16SiteState(int expectedRegionSchema,
+            int expectedRecordSchema)
+        {
+            string retainedFailure = ValidateRegionalState(
+                expectedRegionSchema, expectedRecordSchema,
+                requireCurrentSiteState: false);
+            if (!retainedFailure.NullOrEmpty()) return retainedFailure;
+
+            var commits = new List<Action>();
+            for (int i = 0; i < regions.Count; i++)
+            {
+                CARegionalPlan region = regions[i];
+                if (!CASiteAffiliationMigration.TryPrepareRegionalPlan(
+                        region, expectedRegionSchema,
+                        requireCompleteSites: true,
+                        out List<Action> siteCommits,
+                        out string siteFailure))
+                    return "regional plan " + region.regionalId + ": "
+                        + siteFailure;
+                commits.AddRange(siteCommits);
+                commits.Add(() => region.schemaVersion =
+                    CARegionalPlan.CurrentSchemaVersion);
+            }
+            for (int i = 0; i < records.Count; i++)
+            {
+                CARegionalSettlementRecord record = records[i];
+                CARegionalPlan region = regions.FirstOrDefault(value =>
+                    value != null && value.regionalId == record.regionalId);
+                if (region == null)
+                    return "regional settlement " + record.regionalId + "#"
+                        + record.slot + " has no owning regional plan";
+                if (!CASiteAffiliationMigration.TryPrepareRegionalRecord(
+                        record, region, out Action recordCommit,
+                        out string recordFailure))
+                    return recordFailure;
+                commits.Add(recordCommit);
             }
             foreach (Action commit in commits) commit();
             return null;
@@ -2216,7 +2366,7 @@ namespace ColonistAwareness
             int resolvedCivic = settlement == null ? 0
                 : CASettlementStartingState.Civic(localRegion, settlement);
             CARegionalFactionPlan factionGroup = localRegion?.FactionPlan(
-                settlement?.factionKey ?? -1);
+                settlement?.OwningFactionKey ?? -1);
             CABehaviorDecision creationDecision;
             CAIntentContext creationIntent;
             CASettlementDevelopmentProposal creationProposal =
@@ -2229,13 +2379,18 @@ namespace ColonistAwareness
                     .TryAuthorizeCreationHistory(localRegion, settlement,
                         creationProposal, out creationDecision,
                         out creationIntent);
-            string culturalBasis = factionGroup?.culture == null
+            CACulture siteCulture = settlement?.localCulture
+                ?? factionGroup?.culture;
+            CAPoliticalBeliefs sitePoliticalOrder = settlement == null
+                ? factionGroup?.politicalBeliefs
+                : CASiteState.PoliticalOrder(localRegion, settlement);
+            string culturalBasis = siteCulture == null
                 ? "no carried cultural basis"
-                : CACultureModel.Summary(factionGroup.culture);
-            string politicalBasis = factionGroup?.politicalBeliefs == null
+                : CACultureModel.Summary(siteCulture);
+            string politicalBasis = sitePoliticalOrder == null
                 ? "no recorded political basis"
                 : CAPoliticalBeliefsModel.Summary(
-                    factionGroup.politicalBeliefs);
+                    sitePoliticalOrder);
             List<string> beneficiaries = settlement?.populationGroups == null
                 ? new List<string> { "settlement residents" }
                 : settlement.populationGroups.Where(group => group != null)
@@ -2253,7 +2408,7 @@ namespace ColonistAwareness
                 slot = slot,
                 mapSize = localMapSize,
                 memberTileId = settlement?.memberTileId ?? -1,
-                factionKey = settlement?.factionKey ?? 0,
+                OwningFactionKey = settlement?.OwningFactionKey ?? -1,
                 operationalRoleMask = settlement?.operationalRoleMask ?? 0,
                 residentPopulation = settlement?.residentPopulation ?? -1,
                 landCapacity = settlement?.landCapacity ?? -1,
@@ -2273,9 +2428,15 @@ namespace ColonistAwareness
                 culture = settlement?.localCulture?.Copy(),
                 persistent = settlement?.persistent ?? true,
                 faction = faction,
-                factionDefName = faction?.def?.defName ?? "none",
+                factionLinks = settlement?.factionLinks?.Copy()
+                    ?? new CASiteFactionLinks(),
+                localSociety = settlement?.localSociety?.Copy(),
+                generationFactionDefName = settlement?.generationFactionDefName
+                    ?? faction?.def?.defName,
                 materializationSummary = "world seed + bundled world-tile member + "
-                    + "operator-authored faction; native faction settlement "
+                    + (faction == null ? "unaffiliated site; "
+                        : "operator-authored faction; ")
+                    + "native settlement "
                     + "generation; " + (creationAuthorized
                         ? "confirmed history authored by "
                             + creationIntent.AuthorityIdentity
@@ -2342,13 +2503,14 @@ namespace ColonistAwareness
                         {
                             key = populationGroup.key,
                             kind = populationGroup.kind,
+                            isPrimary = populationGroup.isPrimary,
                             label = populationGroup.label,
                             share = populationGroup.share,
                             factionKey = populationGroup.factionKey,
                             politicalBeliefsFactionKey =
                                 populationGroup.politicalBeliefsFactionKey,
                             politicalBeliefsId = ResolvePoliticalBeliefsId(
-                                localRegion,
+                                localRegion, settlement,
                                 populationGroup),
                             ideoligionCertainty = populationGroup.ideoligionCertainty,
                             ideoligionFactionKey = populationGroup.ideoligionFactionKey,
@@ -2414,18 +2576,29 @@ namespace ColonistAwareness
             // Knowledge and physical form are facts; capability is assessed
             // later from actual actors, operations, organizations, and
             // material state.
-            CATechnologicalKnowledge knowledge =
-                CATechnologicalKnowledgeRuntime.ForFaction(faction);
-            int knowledgeTier = CATechnologicalKnowledgeRuntime
-                .CanonicalCompatibilityTier(faction);
-            TechLevel compatibilityLevel =
-                CATechnologicalKnowledgeRuntime.CanonicalBuildTechLevel(
-                    faction);
+            CATechnologicalKnowledge knowledge = settlement == null
+                ? CATechnologicalKnowledgeRuntime.ForFaction(faction)
+                : CASiteState.Knowledge(localRegion, settlement);
+            bool usesLiveFactionKnowledge = faction != null
+                && (settlement == null
+                    || (CASiteState.HasOwner(settlement.factionLinks)
+                        && settlement.localSociety
+                            ?.explicitLocalDivergence != true));
+            int knowledgeTier = usesLiveFactionKnowledge
+                ? CATechnologicalKnowledgeRuntime
+                    .CanonicalCompatibilityTier(faction)
+                : CATechnologicalKnowledgeModel.CompatibilityTier(
+                    knowledge);
+            TechLevel compatibilityLevel = usesLiveFactionKnowledge
+                ? CATechnologicalKnowledgeRuntime
+                    .CanonicalBuildTechLevel(faction)
+                : CATechnologicalKnowledgeModel.CompatibilityTechLevel(
+                    knowledge);
             bool roadLinked = settlement?.hasRoadAccess == true;
             bool coastal = settlement?.hasCoastalAccess == true;
-            record.factionKnowledgeId = knowledge?.id;
-            record.factionKnowledgeRevision = knowledge?.revision ?? -1;
-            record.factionKnowledgeTier = knowledgeTier;
+            record.technologicalKnowledgeId = knowledge?.id;
+            record.technologicalKnowledgeRevision = knowledge?.revision ?? -1;
+            record.technologicalKnowledgeTier = knowledgeTier;
             record.settlementForm = (int)CASettlementAxes.Form(
                 settlement?.authoredForm ?? CASettlementAxes.Derive,
                 compatibilityLevel);
@@ -2445,12 +2618,15 @@ namespace ColonistAwareness
             record.name = settlement != null
                 && !settlement.customName.NullOrEmpty()
                     ? settlement.customName
-                    : GenerateSettlementName(faction, records);
+                    : GenerateSettlementName(faction,
+                        DefDatabase<FactionDef>.GetNamedSilentFail(
+                            record.generationFactionDefName), records);
             records.Add(record);
             return record;
         }
 
         private static string ResolvePoliticalBeliefsId(CARegionalPlan plan,
+            CARegionalSettlementPlan settlement,
             CASettlementPopulationGroup populationGroup)
         {
             if (populationGroup != null && !populationGroup.politicalBeliefsId.NullOrEmpty())
@@ -2459,18 +2635,25 @@ namespace ColonistAwareness
                 ? populationGroup.politicalBeliefsFactionKey
                 : populationGroup?.factionKey ?? -1;
             CARegionalFactionPlan source = plan?.FactionPlan(key);
-            if (source == null) return null;
-            return source.politicalBeliefs?.id;
+            if (source != null) return source.politicalBeliefs?.id;
+            return populationGroup?.isPrimary == true
+                    && (!CASiteState.HasOwner(settlement?.factionLinks)
+                        || settlement?.localSociety
+                            ?.explicitLocalDivergence == true)
+                ? settlement?.localSociety?.politicalOrder?.id : null;
         }
 
         private static string GenerateSettlementName(Faction faction,
+            FactionDef generationDef,
             List<CARegionalSettlementRecord> records)
         {
             try
             {
-                if (faction?.def?.settlementNameMaker != null)
+                RulePackDef nameMaker = faction?.def?.settlementNameMaker
+                    ?? generationDef?.settlementNameMaker;
+                if (nameMaker != null)
                     return NameGenerator.GenerateName(
-                        faction.def.settlementNameMaker,
+                        nameMaker,
                         records.Where(r => r != null && !r.name.NullOrEmpty())
                             .Select(r => r.name), true);
             }
@@ -2479,7 +2662,8 @@ namespace ColonistAwareness
                 Log.Warning("[CA][Regional] local settlement naming fell back: "
                     + ex.Message);
             }
-            return (faction?.Name ?? "Regional settlement") + " "
+            return (faction?.Name ?? generationDef?.label
+                    ?? "Independent settlement") + " "
                 + (records.Count + 1);
         }
     }
@@ -2584,7 +2768,7 @@ namespace ColonistAwareness
         internal static void ReconcileRecord(CARegionalSettlementRecord record,
             Map map)
         {
-            if (record == null || map == null || record.faction == null) return;
+            if (record == null || map == null) return;
             int buildings = 0;
             int infrastructure = 0;
             int cultivated = 0;
@@ -2738,7 +2922,7 @@ namespace ColonistAwareness
             CARegionalSettlementRecord record, Map map)
         {
             var result = new Dictionary<string, string>();
-            if (record?.faction == null || map == null) return result;
+            if (record == null || map == null) return result;
             List<Thing> all = map.listerThings.AllThings;
             for (int i = 0; i < all.Count; i++)
             {
@@ -2842,9 +3026,11 @@ namespace ColonistAwareness
             int ownershipResolved = settlements.Count(settlement =>
                 records.TryGetValue(settlement.slot,
                     out CARegionalSettlementRecord record)
-                && record.factionKey == settlement.factionKey
-                && CARegionalPlanUtility.MatchesFaction(record.faction,
-                    region.FactionPlan(settlement.factionKey)));
+                && record.OwningFactionKey == settlement.OwningFactionKey
+                && (settlement.HasFactionOwner
+                    ? CARegionalPlanUtility.MatchesFaction(record.faction,
+                        region.FactionPlan(settlement.OwningFactionKey))
+                    : record.faction == null));
             int populationsResolved = settlements.Count(settlement =>
                 records.TryGetValue(settlement.slot,
                     out CARegionalSettlementRecord record)
@@ -2933,6 +3119,7 @@ namespace ColonistAwareness
                 CASettlementPopulationGroup actual = recorded.SingleOrDefault(
                     item => item != null && item.key == expected.key);
                 if (actual == null || actual.kind != expected.kind
+                    || actual.isPrimary != expected.isPrimary
                     || actual.label != expected.label
                     || actual.share != expected.share
                     || actual.factionKey != expected.factionKey
@@ -3044,22 +3231,18 @@ namespace ColonistAwareness
                 CARegionalSettlementRecord record = world.Find(
                     CARegionalWorldComponent.RegionKeyFor(region, map), slot,
                     region.mapSize);
-                CARegionalFactionPlan group = region.FactionPlan(
-                    settlement.factionKey);
-                Faction faction = group?.resolvedFaction;
-                if (!CARegionalPlanUtility.MatchesFaction(faction, group))
-                    faction = record?.faction;
-                if (!CARegionalPlanUtility.MatchesFaction(faction, group))
-                    faction = null;
-                else if (group.resolvedFaction != faction)
-                    group.resolvedFaction = faction;
-                if (faction == null)
+                CARegionalFactionPlan group = CASiteState.OwnerPlan(region,
+                    settlement.factionLinks);
+                Faction faction = CASiteState.ResolveOwner(region,
+                    settlement.factionLinks);
+                if (settlement.HasFactionOwner && faction == null)
                 {
-                    Log.Warning("[CA][Regional] authored faction "
-                        + settlement.factionKey + " did not resolve for "
+                    Log.Warning("[CA][Regional] authored owner did not resolve for "
                         + "settlement " + slot);
                     continue;
                 }
+                if (group != null && group.resolvedFaction != faction)
+                    group.resolvedFaction = faction;
                 if (record != null && !record.persistent
                     && record.materializationCount > 0)
                 {
@@ -3069,15 +3252,23 @@ namespace ColonistAwareness
                 }
                 if (record == null)
                     record = world.Create(map, slot, faction, settlement);
-                else if (record.faction != faction)
+                else if (record.faction != faction
+                    || record.OwningFactionKey
+                        != settlement.OwningFactionKey)
                 {
                     record.faction = faction;
-                    record.factionDefName = faction.def.defName;
-                    record.materializationSummary += "; faction reference reconciled at "
+                    record.factionLinks = settlement.factionLinks?.Copy()
+                        ?? new CASiteFactionLinks();
+                    record.generationFactionDefName = settlement
+                        .generationFactionDefName ?? faction?.def?.defName;
+                    record.localSociety = settlement.localSociety?.Copy();
+                    record.materializationSummary += "; site affiliation reconciled at "
                         + Find.TickManager.TicksGame;
                 }
                 record.memberTileId = settlement.memberTileId;
-                record.factionKey = settlement.factionKey;
+                record.factionLinks = settlement.factionLinks?.Copy()
+                    ?? new CASiteFactionLinks();
+                record.localSociety = settlement.localSociety?.Copy();
                 record.operationalRoleMask = settlement.operationalRoleMask;
                 record.residentPopulation = settlement.residentPopulation;
                 record.landCapacity = settlement.landCapacity;
@@ -3294,9 +3485,11 @@ namespace ColonistAwareness
             if (record.firstMaterializationTick < 0)
                 record.firstMaterializationTick = now;
             record.materializationCount++;
-            record.relationAtMaterialization = record.faction
-                .PlayerRelationKind.ToString();
-            record.goodwillAtMaterialization = record.faction.PlayerGoodwill;
+            record.relationAtMaterialization = record.faction == null
+                ? "Unaffiliated"
+                : record.faction.PlayerRelationKind.ToString();
+            record.goodwillAtMaterialization = record.faction?.PlayerGoodwill
+                ?? 0;
             Lord lord = LordMaker.MakeNewLord(record.faction,
                 new LordJob_CARegionalSettlement(record.faction,
                     rect.CenterCell), map);
@@ -3309,38 +3502,55 @@ namespace ColonistAwareness
             CAApertures.CutApertures(map, record);
             MapGenerator.UsedRects.Add(rect);
 
-            var groupParms = new PawnGroupMakerParms
+            if (record.faction == null)
+                MaterializeIndependentResidents(record, rect, map, lord);
+            else
             {
-                tile = map.Tile,
-                faction = record.faction,
-                groupKind = PawnGroupKindDefOf.Settlement,
-                inhabitants = true,
-                // The map population is a playable projection of the saved
-                // regional population, not a fresh population roll. Scale,
-                // training, and organization determine how much of it appears
-                // in this generated settlement encounter.
-                points = Mathf.Clamp(420f
-                    + Mathf.Sqrt(Mathf.Max(0, record.residentPopulation)) * 28f
-                    + record.realizedScale * 110f, 500f, 2400f),
-                seed = Gen.HashCombineInt(
-                    GenText.StableStringHash(record.regionalId),
-                    record.materializationCount)
-            };
-            var resolve = new ResolveParams
-            {
-                rect = rect,
-                faction = record.faction,
-                singlePawnLord = lord,
-                pawnGroupKindDef = PawnGroupKindDefOf.Settlement,
-                pawnGroupMakerParams = groupParms,
-                attackWhenPlayerBecameEnemy = true
-            };
-            BaseGen.globalSettings.map = map;
-            BaseGen.symbolStack.Push("pawnGroup", resolve);
-            BaseGen.Generate();
+                var groupParms = new PawnGroupMakerParms
+                {
+                    tile = map.Tile,
+                    faction = record.faction,
+                    groupKind = PawnGroupKindDefOf.Settlement,
+                    inhabitants = true,
+                    // The map population is a playable projection of the saved
+                    // regional population, not a fresh population roll. Scale,
+                    // training, and organization determine how much of it appears
+                    // in this generated settlement encounter.
+                    points = Mathf.Clamp(420f
+                        + Mathf.Sqrt(Mathf.Max(0, record.residentPopulation)) * 28f
+                        + record.realizedScale * 110f, 500f, 2400f),
+                    seed = Gen.HashCombineInt(
+                        GenText.StableStringHash(record.regionalId),
+                        record.materializationCount)
+                };
+                var resolve = new ResolveParams
+                {
+                    rect = rect,
+                    faction = record.faction,
+                    singlePawnLord = lord,
+                    pawnGroupKindDef = PawnGroupKindDefOf.Settlement,
+                    pawnGroupMakerParams = groupParms,
+                    attackWhenPlayerBecameEnemy = true
+                };
+                BaseGen.globalSettings.map = map;
+                BaseGen.symbolStack.Push("pawnGroup", resolve);
+                BaseGen.Generate();
+            }
 
             // Apply the authored population groups to spawned residents.
             CAPopulationProjection.Apply(record, map);
+
+            // The confirmed composition owns creation authority. The selected
+            // map rect supplies the remaining siting fact. Only their exact
+            // conjunction makes the starting program executable.
+            CASettlementDevelopmentProposal creationProposal =
+                CASettlementAssetRegistry.CreationFromRecord(record);
+            bool creationSitingFeasible = CASettlementAssetRegistry
+                .CanSiteCreationDemands(map, rect, creationProposal,
+                    out string creationSitingBlocker);
+            CASettlementAssetRegistry.RecordCreationFacts(record,
+                creationProposal, creationSitingFeasible,
+                creationSitingBlocker);
 
             // Materialize only programs whose exact runtime operator resolves.
             // A settlement map no longer creates an organization as a side
@@ -3362,14 +3572,54 @@ namespace ColonistAwareness
             record.lastReconciliationTick = now;
             Log.Message("[CA][Regional] settlement " + record.regionalId
                 + " materialized: " + record.name + " of "
-                + record.faction.Name + " at " + rect + "; native relation "
+                + (record.faction?.Name ?? "no faction") + " at " + rect
+                + "; native relation "
                 + record.relationAtMaterialization + " goodwill "
                 + record.goodwillAtMaterialization + "; tech "
-                + record.FactionKnowledgeLabel + "; " + record.CapabilityText()
+                + record.TechnologicalKnowledgeLabel + "; "
+                + record.CapabilityText()
                 + "; declared operational roles "
                 + record.OperationalRoleText()
                 + "; population " + record.populationCurrent + ", buildings "
                 + record.buildingCount);
+        }
+
+        private static void MaterializeIndependentResidents(
+            CARegionalSettlementRecord record, CellRect rect, Map map,
+            Lord lord)
+        {
+            FactionDef recipe = DefDatabase<FactionDef>.GetNamedSilentFail(
+                record.generationFactionDefName);
+            PawnKindDef kind = recipe?.pawnGroupMakers?
+                .Where(maker => maker?.kindDef
+                    == PawnGroupKindDefOf.Settlement)
+                .SelectMany(maker => maker.options
+                    ?? new List<PawnGenOption>())
+                .Where(option => option?.kind?.RaceProps?.Humanlike == true)
+                .OrderByDescending(option => option.selectionWeight)
+                .Select(option => option.kind).FirstOrDefault()
+                ?? PawnKindDefOf.Villager;
+            int count = Mathf.Clamp(Mathf.CeilToInt(Mathf.Sqrt(
+                Mathf.Max(1, record.residentPopulation))), 2, 12);
+            Rand.PushState(Gen.HashCombineInt(
+                GenText.StableStringHash(record.regionalId),
+                record.materializationCount, 17021, record.slot));
+            try
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    Pawn pawn = PawnGenerator.GeneratePawn(kind, null);
+                    IntVec3 cell;
+                    if (!CellFinder.TryFindRandomCellInsideWith(
+                            rect, cellCandidate => cellCandidate.Standable(map),
+                            out cell))
+                        cell = CellFinder.RandomClosewalkCellNear(
+                            rect.CenterCell, map, 18);
+                    GenSpawn.Spawn(pawn, cell, map);
+                    lord?.AddPawn(pawn);
+                }
+            }
+            finally { Rand.PopState(); }
         }
     }
 
@@ -3657,7 +3907,9 @@ namespace ColonistAwareness
                     string assignments = region.settlements
                         .Where(item => item.memberTileId == memberTileId)
                         .Select(item => "settlement " + (item.slot + 1)
-                            + "/faction " + item.factionKey + "/"
+                            + "/owner " + (item.HasFactionOwner
+                                ? item.OwningFactionKey.ToString()
+                                : "none") + "/"
                             + (item.persistent ? "persistent" : "encounter"))
                         .ToCommaList();
                     Log.Message("[CA][Regional] member tile " + memberTileId
@@ -3720,10 +3972,12 @@ namespace ColonistAwareness
                     string culture = factionState?.culture?.name ?? "unknown";
                     Log.Message("[CA][Regional] " + record.regionalId + " "
                         + record.name + "; faction "
-                        + (record.faction?.Name ?? record.factionDefName)
+                        + (record.faction?.Name
+                            ?? record.generationFactionDefName
+                            ?? "unaffiliated settlement")
                         + "; relation " + record.relationAtMaterialization
                         + " goodwill " + record.goodwillAtMaterialization
-                        + "; " + record.FactionKnowledgeLabel + "; "
+                        + "; " + record.TechnologicalKnowledgeLabel + "; "
                         + record.CapabilityText() + "; declared operational "
                         + "roles " + record.OperationalRoleText() + "; rect "
                         + record.localRect + "; population "

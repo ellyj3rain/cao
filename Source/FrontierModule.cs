@@ -12,7 +12,7 @@ namespace ColonistAwareness
     // processed. Regional maps use the holding rows saved on their region plan.
     public sealed class CAFrontierMapPlan : IExposable
     {
-        public const int CurrentSchemaVersion = 2;
+        public const int CurrentSchemaVersion = 3;
         public int schemaVersion = CurrentSchemaVersion;
         public int mapId = -1;
         public int mapTileId = -1;
@@ -134,18 +134,25 @@ namespace ColonistAwareness
                     out string habitatFailure, region))
                 return BlockMaterialization(holding, habitatFailure);
 
-            bool supportDeclared = holding.supportingFactionKey >= 0
-                || holding.supportingFactionLoadId >= 0;
-            Faction flag = CAHabitatViability.ResolveSupporter(region,
+            bool supportDeclared = holding.factionLinks?.support
+                != CASiteFactionReferenceKind.None;
+            bool ownerDeclared = CASiteState.HasOwner(holding.factionLinks);
+            Faction owner = CASiteState.ResolveOwner(region,
+                holding.factionLinks);
+            Faction supporter = CAHabitatViability.ResolveSupporter(region,
                 holding);
-            if (supportDeclared && flag == null)
+            if (ownerDeclared && owner == null)
+                return BlockMaterialization(holding,
+                    "the saved owning faction is unavailable");
+            if (supportDeclared && supporter == null)
                 return BlockMaterialization(holding,
                     "the saved supporting faction is unavailable");
-            int resolvedTier = flag == null ? 0
-                : CAHabitatViability.KnowledgeCompatibilityTier(flag);
+            int resolvedTier = CATechnologicalKnowledgeModel
+                .CompatibilityTier(
+                    holding.localSociety?.technologicalKnowledge);
             if (resolvedTier != holding.capabilityTier)
                 return BlockMaterialization(holding,
-                    "the saved supporting capability no longer matches its faction");
+                    "the saved capability no longer matches this site's knowledge");
 
             IntVec3 site;
             IntVec3 preferred = IntVec3.Invalid;
@@ -166,7 +173,7 @@ namespace ColonistAwareness
             }
             finally { Rand.PopState(); }
 
-            if (!TryMaterializeHabitat(map, site, flag, holding,
+            if (!TryMaterializeHabitat(map, site, owner, supporter, holding,
                     environment, out List<Thing> habitat,
                     out List<IntVec3> roofs, out habitatFailure))
                 return BlockMaterialization(holding, habitatFailure);
@@ -174,10 +181,20 @@ namespace ColonistAwareness
             var folk = new List<Pawn>();
             int count = Mathf.Clamp(holding.residentCount, 1, 6);
             PawnKindDef kind = PawnKindDefOf.Villager;
-            if (flag != null)
+            FactionDef generationDef = DefDatabase<FactionDef>
+                .GetNamedSilentFail(holding.generationFactionDefName)
+                ?? owner?.def ?? supporter?.def;
+            if (generationDef != null)
                 try
                 {
-                    PawnKindDef fk = flag.RandomPawnKind();
+                    PawnKindDef fk = generationDef.pawnGroupMakers?
+                        .SelectMany(value => value.options
+                            ?? new List<PawnGenOption>())
+                        .Select(value => value.kind)
+                        .FirstOrDefault(value => value?.RaceProps
+                            ?.Humanlike == true)
+                        ?? owner?.RandomPawnKind()
+                        ?? supporter?.RandomPawnKind();
                     if (fk != null && fk.RaceProps != null
                         && fk.RaceProps.Humanlike) kind = fk;
                 }
@@ -186,7 +203,10 @@ namespace ColonistAwareness
             {
                 try
                 {
-                    Pawn p = PawnGenerator.GeneratePawn(kind, flag);
+                    // A material supporter does not thereby own the site or
+                    // its residents. Native faction is assigned only from
+                    // the explicit site owner at this adapter boundary.
+                    Pawn p = PawnGenerator.GeneratePawn(kind, owner);
                     IntVec3 spot;
                     if (!CellFinder.TryFindRandomCellNear(site, map, 4,
                         c => c.Standable(map) && !c.Fogged(map),
@@ -215,7 +235,7 @@ namespace ColonistAwareness
                     holding.form == 1
                         ? CAMorphForm.FrontierHomestead
                         : CAMorphForm.Cabin,
-                    siteSeed, flag);
+                    siteSeed, owner);
             }
             catch { }
 
@@ -224,14 +244,45 @@ namespace ColonistAwareness
                 residentIds.Add(folk[i].thingIDNumber);
             holding.materialized = true;
             holding.materializedMapId = map.uniqueID;
+            if (holding.firstMaterializationTick < 0)
+                holding.firstMaterializationTick =
+                    Find.TickManager?.TicksGame ?? 0;
             holding.site = site;
             holding.residentPawnIds = residentIds;
+            CAPopulationProjection.ProjectFrontier(holding, map, folk,
+                region);
             holding.materializationFailure = null;
 
-            Messages.Message((flag == null
-                ? "An unaffiliated frontier site has been established nearby"
-                : "A frontier site affiliated with " + flag.Name
-                    + " has been established nearby")
+            string organizationKey = "frontier:" + map.uniqueID + ":"
+                + holding.key;
+            string holdingName = holding.siteName.NullOrEmpty()
+                ? (holding.form == 1 ? "Frontier homestead "
+                    : "Frontier cabin ") + (holding.key + 1)
+                : holding.siteName;
+            string standing = owner != null
+                ? "Owned by " + owner.Name
+                : supporter != null
+                    ? "Unaffiliated; material support from " + supporter.Name
+                    : "Unaffiliated local holding";
+            CAOrganization organization = CAOrganizationWorldComponent.Current
+                ?.EnsureFor(organizationKey, holdingName, standing,
+                    CAOrganizationKind.Settlement);
+            if (organization != null)
+            {
+                organization.name = holdingName;
+                organization.standingNote = standing;
+                organization.memberPawnIds = new List<int>(residentIds);
+                CAPoliticalBeliefPractice.ReconcileCurrentStructure(
+                    organization, holding.localSociety?.institutions);
+            }
+
+            Messages.Message((owner != null
+                ? "A frontier site owned by " + owner.Name
+                    + " has been established nearby"
+                : supporter != null
+                    ? "An unaffiliated frontier site supported by "
+                        + supporter.Name + " has been established nearby"
+                    : "An unaffiliated frontier site has been established nearby")
                 + ": " + folk.Count + (folk.Count == 1
                     ? " resident." : " residents."),
                 new LookTargets(site, map),
@@ -482,7 +533,8 @@ namespace ColonistAwareness
         }
 
         private static bool TryMaterializeHabitat(Map map, IntVec3 site,
-            Faction faction, CAFrontierHoldingPlan holding,
+            Faction faction, Faction supporter,
+            CAFrontierHoldingPlan holding,
             CASettlementEnvironmentFacts environment,
             out List<Thing> spawned, out List<IntVec3> roofs,
             out string failure)
@@ -491,13 +543,16 @@ namespace ColonistAwareness
             roofs = new List<IntVec3>();
             failure = null;
             int requirements = holding.habitatRequirementMask;
+            CATechnologicalKnowledge siteKnowledge = holding.localSociety
+                ?.technologicalKnowledge;
             if (Requires(requirements,
                     CAHabitatRequirement.BreathableInterior))
             {
                 failure = "no autonomous frontier builder can yet prove a sealed breathable interior";
                 return false;
             }
-            if (!TryBuildCompactShell(map, site, faction, holding.form,
+            if (!TryBuildCompactShell(map, site, faction, siteKnowledge,
+                    holding.form,
                     spawned, roofs))
             {
                 RollBackHabitat(map, spawned, roofs);
@@ -512,7 +567,7 @@ namespace ColonistAwareness
             int residents = Mathf.Clamp(holding.residentCount, 1, 6);
             for (int i = 0; i < residents; i++)
                 if (!TrySpawnNearbyTracked(map, site, "Bedroll", faction,
-                        cloth, 0f, 3 + i * 11, 5f, spawned))
+                        siteKnowledge, cloth, 0f, 3 + i * 11, 5f, spawned))
                 {
                     RollBackHabitat(map, spawned, roofs);
                     failure = "the habitat could not provide one sheltered bed per resident";
@@ -520,11 +575,11 @@ namespace ColonistAwareness
                 }
 
             if (!TrySpawnNearbyTracked(map, site, "Campfire", faction,
-                    null, 35f, 2, 4f, spawned)
+                    siteKnowledge, null, 35f, 2, 4f, spawned)
                 || !TrySpawnNearbyTracked(map, site, "Table1x2c", faction,
-                    wood, 0f, 19, 5f, spawned)
+                    siteKnowledge, wood, 0f, 19, 5f, spawned)
                 || !TrySpawnNearbyTracked(map, site, "Stool", faction,
-                    wood, 0f, 29, 5f, spawned))
+                    siteKnowledge, wood, 0f, 29, 5f, spawned))
             {
                 RollBackHabitat(map, spawned, roofs);
                 failure = "the habitat could not provide food preparation and ordinary living space";
@@ -537,7 +592,7 @@ namespace ColonistAwareness
                     == CAHabitatFoodRoute.StoredAndSupported;
             if (reserveRequired
                 && !TrySpawnNearbyTracked(map, site, "Shelf", faction,
-                    wood, 0f, 37, 5f, spawned))
+                    siteKnowledge, wood, 0f, 37, 5f, spawned))
             {
                 RollBackHabitat(map, spawned, roofs);
                 failure = "the habitat could not provide protected stores";
@@ -546,10 +601,10 @@ namespace ColonistAwareness
 
             // This is the realization of an already-established saved
             // holding. Its initial material form is authorized by canonical
-            // faction knowledge; once residents exist, ordinary work queries
+            // site knowledge; once residents exist, ordinary work queries
             // local distributed availability.
             int logistics = CATechnologicalKnowledgeRuntime.CanonicalRank(
-                faction, CATechnologyDomains.Logistics,
+                siteKnowledge, CATechnologyDomains.Logistics,
                 CATechnologyCompetencies.Maintain);
             string foodDef = logistics >= 3
                 ? "MealSurvivalPack" : "Pemmican";
@@ -566,7 +621,7 @@ namespace ColonistAwareness
                 holding.habitatFoodRoute;
             if (route == CAHabitatFoodRoute.OutdoorCultivation
                 && !TrySowFoodPatch(map, site, Math.Max(12,
-                    residents * 4), faction, spawned))
+                    residents * 4), faction, siteKnowledge, spawned))
             {
                 RollBackHabitat(map, spawned, roofs);
                 failure = "the outdoor-cultivation route has no cultivable ground at the selected site";
@@ -575,7 +630,7 @@ namespace ColonistAwareness
             if ((route == CAHabitatFoodRoute.StoredAndSupported
                     || Requires(requirements,
                         CAHabitatRequirement.SecuredFoodSupply))
-                && faction == null)
+                && supporter == null)
             {
                 RollBackHabitat(map, spawned, roofs);
                 failure = "the saved outside-supply route has no supporting faction";
@@ -586,7 +641,7 @@ namespace ColonistAwareness
                 && (!TrySpawnStock(map, site, "MedicineHerbal",
                         Math.Max(8, residents * 3), spawned)
                     || !TrySpawnMedicalBed(map, site, faction, cloth,
-                        spawned)))
+                        siteKnowledge, spawned)))
             {
                 RollBackHabitat(map, spawned, roofs);
                 failure = "the habitat could not provide its required medical stock and treatment bed";
@@ -600,7 +655,7 @@ namespace ColonistAwareness
                         == "Campfire");
                 bool coolReady = environment.MaximumTemperature <= 35f
                     || TrySpawnNearbyTracked(map, site, "PassiveCooler",
-                        faction, wood, 0f, 43, 5f, spawned);
+                        faction, siteKnowledge, wood, 0f, 43, 5f, spawned);
                 if (!heatReady || !coolReady)
                 {
                     RollBackHabitat(map, spawned, roofs);
@@ -612,7 +667,7 @@ namespace ColonistAwareness
             if (Requires(requirements,
                     CAHabitatRequirement.ArtificialLight)
                 && !TrySpawnNearbyTracked(map, site, "TorchLamp", faction,
-                    wood, 30f, 47, 5f, spawned))
+                    siteKnowledge, wood, 30f, 47, 5f, spawned))
             {
                 RollBackHabitat(map, spawned, roofs);
                 failure = "the habitat could not provide light through permanent darkness";
@@ -622,9 +677,9 @@ namespace ColonistAwareness
             if (Requires(requirements, CAHabitatRequirement.WaterTreatment))
             {
                 bool well = TrySpawnNearbyTracked(map, site, "CA_WellDug",
-                    faction, wood, 0f, 53, 8f, spawned)
+                    faction, siteKnowledge, wood, 0f, 53, 8f, spawned)
                     || TrySpawnNearbyTracked(map, site, "CA_WellBored",
-                        faction, null, 0f, 53, 8f, spawned);
+                        faction, siteKnowledge, null, 0f, 53, 8f, spawned);
                 bool raw = TrySpawnStock(map, site, "CA_WaterBrackish",
                     20, spawned)
                     || TrySpawnStock(map, site, "CA_WaterSaline", 20,
@@ -657,11 +712,12 @@ namespace ColonistAwareness
         }
 
         private static bool TrySpawnMedicalBed(Map map, IntVec3 site,
-            Faction faction, ThingDef cloth, List<Thing> spawned)
+            Faction faction, ThingDef cloth,
+            CATechnologicalKnowledge siteKnowledge, List<Thing> spawned)
         {
             int before = spawned.Count;
             if (!TrySpawnNearbyTracked(map, site, "Bedroll", faction,
-                    cloth, 0f, 59, 5f, spawned)
+                    siteKnowledge, cloth, 0f, 59, 5f, spawned)
                 || spawned.Count <= before)
                 return false;
             Building_Bed bed = spawned[spawned.Count - 1] as Building_Bed;
@@ -671,7 +727,8 @@ namespace ColonistAwareness
         }
 
         private static bool TryBuildCompactShell(Map map, IntVec3 site,
-            Faction faction, int form, List<Thing> spawned,
+            Faction faction, CATechnologicalKnowledge siteKnowledge,
+            int form, List<Thing> spawned,
             List<IntVec3> roofs)
         {
             ThingDef wall = DefDatabase<ThingDef>.GetNamedSilentFail("Wall");
@@ -690,7 +747,8 @@ namespace ColonistAwareness
                     bool entrance = dx == 0 && dz == -radius;
                     if (!TrySpawnDefTracked(map,
                             site + new IntVec3(dx, 0, dz),
-                            entrance ? door : wall, faction, wood, 0f,
+                            entrance ? door : wall, faction, siteKnowledge,
+                            wood, 0f,
                             Rot4.North, spawned))
                         return false;
                 }
@@ -712,7 +770,9 @@ namespace ColonistAwareness
         }
 
         private static bool TrySpawnNearbyTracked(Map map, IntVec3 center,
-            string defName, Faction faction, ThingDef stuff, float fuel,
+            string defName, Faction faction,
+            CATechnologicalKnowledge siteKnowledge, ThingDef stuff,
+            float fuel,
             int start, float radius, List<Thing> spawned)
         {
             ThingDef def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
@@ -723,21 +783,24 @@ namespace ColonistAwareness
                 int index = 1 + (start + offset) % Math.Max(1, cells - 1);
                 if (TrySpawnDefTracked(map,
                         center + GenRadial.RadialPattern[index], def,
-                        faction, stuff, fuel, Rot4.North, spawned))
+                        faction, siteKnowledge, stuff, fuel, Rot4.North,
+                        spawned))
                     return true;
             }
             return false;
         }
 
         private static bool TrySpawnDefTracked(Map map, IntVec3 c,
-            ThingDef def, Faction faction, ThingDef stuff, float fuel,
+            ThingDef def, Faction faction,
+            CATechnologicalKnowledge siteKnowledge, ThingDef stuff,
+            float fuel,
             Rot4 rotation, List<Thing> spawned)
         {
             try
             {
                 if (def == null || !c.InBounds(map)) return false;
                 if (!CATechnologicalKnowledgeRuntime.CanConstructCanonical(
-                        faction, def, out _)) return false;
+                        siteKnowledge, def, out _)) return false;
                 CellRect occupied = GenAdj.OccupiedRect(c, rotation,
                     def.Size);
                 foreach (IntVec3 cell in occupied)
@@ -802,13 +865,14 @@ namespace ColonistAwareness
         }
 
         private static bool TrySowFoodPatch(Map map, IntVec3 center,
-            int wanted, Faction faction, List<Thing> spawned)
+            int wanted, Faction faction,
+            CATechnologicalKnowledge siteKnowledge, List<Thing> spawned)
         {
             ThingDef crop = DefDatabase<ThingDef>.GetNamedSilentFail(
                 "Plant_Potato");
             if (crop == null
                 || !CATechnologicalKnowledgeRuntime.CanGrowCanonical(
-                    faction, crop, out _)) return false;
+                    siteKnowledge, crop, out _)) return false;
             int planted = 0;
             int cells = GenRadial.NumCellsInRadius(13f);
             for (int i = 1; i < cells && planted < wanted; i++)

@@ -161,7 +161,7 @@ namespace ColonistAwareness
             if (world == null) return;
             foreach (CARegionalSettlementRecord record in world.ForMap(map))
             {
-                if (record?.faction == null || record.faction.IsPlayer
+                if (record == null || record.faction?.IsPlayer == true
                     || record.localRect == CellRect.Empty) continue;
                 string key = record.regionalId + "#" + record.slot;
 
@@ -200,22 +200,21 @@ namespace ColonistAwareness
         {
             try
             {
+                if (record == null) return;
                 int last;
                 string key = record.regionalId + "#" + record.slot;
                 if (lastAlarm.TryGetValue(key, out last)
                     && now - last < AlarmCooldown) return;
                 CellRect approaches = record.localRect.ExpandedBy(45);
-                bool threatened = map.attackTargetsCache
-                    .TargetsHostileToFaction(record.faction)
-                    .Any(t => t.Thing is Pawn tp && !tp.Downed
-                        && tp.Spawned
-                        && approaches.Contains(tp.Position));
+                bool threatened = CASiteThreats.Within(record, map,
+                    approaches).Count > 0;
                 if (!threatened) return;
                 lastAlarm[key] = now;
                 List<Lord> lords = map.lordManager.lords;
                 for (int l = 0; l < lords.Count; l++)
                 {
-                    if (lords[l].faction != record.faction) continue;
+                    if (!CASiteThreats.LordServes(record, map, lords[l]))
+                        continue;
                     var toil = lords[l].CurLordToil
                         as LordToil_CAOrganizationDefense;
                     if (toil == null) continue;
@@ -484,10 +483,8 @@ namespace ColonistAwareness
                 if (p == null || p.Downed || p.Dead || !p.Awake()
                     || p.IsPrisoner || !p.RaceProps.Humanlike) continue;
                 if (p.InMentalState || p.InAggroMentalState) continue;
-                if (map.attackTargetsCache
-                        .TargetsHostileToFaction(record.faction)
-                        .Any(t => t.Thing is Pawn tp && !tp.Downed
-                            && tp.Position.InHorDistOf(p.Position, 40f)))
+                CellRect contactArea = CellRect.CenteredOn(p.Position, 40);
+                if (CASiteThreats.Within(record, map, contactArea).Count > 0)
                     continue;
                 if (!p.Position.InHorDistOf(
                     record.localRect.CenterCell, 90f)) continue;
@@ -595,7 +592,7 @@ namespace ColonistAwareness
                 CAPatrolCircuit circuit = CircuitFor(a.key);
                 Pawn p = a.pawn;
                 if (p == null || p.Dead || !p.Spawned || p.Map != map
-                    || p.Downed || p.InMentalState || p.Faction == null
+                    || p.Downed || p.InMentalState
                     || a.waypoint >= a.route.Count)
                 {
                     if (p != null && !p.Dead && p.Spawned
@@ -615,10 +612,10 @@ namespace ColonistAwareness
                 }
                 // hostiles near the walker: CONTACT - what happens
                 // next is the settlement's posture, not a constant
-                if (map.attackTargetsCache
-                        .TargetsHostileToFaction(p.Faction)
-                        .Any(t => t.Thing is Pawn tp && !tp.Downed
-                            && tp.Position.InHorDistOf(p.Position, 40f)))
+                CARegionalSettlementRecord record = RecordFor(a.key);
+                CellRect contactArea = CellRect.CenteredOn(p.Position, 40);
+                if (record != null && CASiteThreats.Within(record, map,
+                        contactArea).Count > 0)
                 {
                     OnContact(i, a, circuit, p, now);
                     continue;
@@ -694,7 +691,7 @@ namespace ColonistAwareness
                 ReleaseToGarrison(p);
                 org?.Record("security", "patrol sighted hostiles near "
                     + post + " - fell back and reported");
-                StandGarrisonTo(p.Faction, org);
+                StandGarrisonTo(RecordFor(a.key), org);
             }
             Drop(index, circuit, now + RetryDelay);
         }
@@ -750,15 +747,17 @@ namespace ColonistAwareness
         // all of it living on StandTo itself
         // (LordToil_CAOrganizationDefense.StandTo -> CADefenceMuster),
         // so every escalation path behaves the same.
-        private void StandGarrisonTo(Faction faction, CAOrganization org)
+        private void StandGarrisonTo(CARegionalSettlementRecord record,
+            CAOrganization org)
         {
             try
             {
-                if (faction == null) return;
+                if (record == null) return;
                 List<Lord> lords = map.lordManager.lords;
                 for (int l = 0; l < lords.Count; l++)
                 {
-                    if (lords[l].faction != faction) continue;
+                    if (!CASiteThreats.LordServes(record, map, lords[l]))
+                        continue;
                     var toil = lords[l].CurLordToil
                         as LordToil_CAOrganizationDefense;
                     if (toil == null) continue;

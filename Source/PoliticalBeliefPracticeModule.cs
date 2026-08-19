@@ -42,6 +42,15 @@ namespace ColonistAwareness
                     CAPoliticalBeliefs sourced = region.FactionPlan(sourceKey)
                         ?.politicalBeliefs;
                     if (sourced != null) return sourced;
+                    CAPoliticalBeliefs local = record.localSociety
+                        ?.politicalOrder;
+                    if (local != null && (populationGroup.politicalBeliefsId
+                            == local.id
+                        || populationGroup.isPrimary
+                            && (!CASiteState.HasOwner(record.factionLinks)
+                                || record.localSociety
+                                    .explicitLocalDivergence)))
+                        return local;
                     if (!populationGroup.politicalBeliefsId.NullOrEmpty())
                     {
                         sourced = region.factions
@@ -53,7 +62,30 @@ namespace ColonistAwareness
                     }
                 }
             }
+            CAFrontierHoldingPlan frontier = FrontierHoldingFor(pawn);
+            if (frontier?.localSociety?.politicalOrder != null)
+                return frontier.localSociety.politicalOrder;
             return PoliticalBeliefsOf(pawn.Faction);
+        }
+
+        private static CAFrontierHoldingPlan FrontierHoldingFor(Pawn pawn)
+        {
+            if (pawn == null) return null;
+            int id = pawn.thingIDNumber;
+            CARegionalWorldComponent regional = CARegionalWorldComponent
+                .Current;
+            foreach (CARegionalPlan plan in regional?.Regions
+                ?? Enumerable.Empty<CARegionalPlan>())
+            {
+                CAFrontierHoldingPlan holding = (plan.frontierHoldings
+                        ?? new List<CAFrontierHoldingPlan>())
+                    .FirstOrDefault(value => value?.residentPawnIds
+                        ?.Contains(id) == true);
+                if (holding != null) return holding;
+            }
+            return CAOrganizationWorldComponent.Current?
+                .FrontierHoldings.FirstOrDefault(value => value
+                    ?.residentPawnIds?.Contains(id) == true);
         }
 
         private static IReadOnlyList<string> CurrentKeys(

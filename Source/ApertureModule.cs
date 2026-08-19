@@ -191,15 +191,14 @@ namespace ColonistAwareness
             try
             {
                 if (map == null || record == null
-                    || record.localRect == CellRect.Empty
-                    || record.faction == null) return;
+                    || record.localRect == CellRect.Empty) return;
                 ThingDef wall = ThingDefOf.Wall;
                 // Initial settlement fabric is realized before its residents
                 // exist on the map. Use the faction's canonical authored
                 // capability here; local distributed availability governs
                 // later operation and maintenance after carriers exist.
                 int tier = CASettlementProgramMaterializer
-                    .CanonicalTechTier(record.faction);
+                    .CanonicalTechTier(record);
                 CAMorphForm form = CAMorphologyAdapter.FormFor(record);
                 bool defensive = form == CAMorphForm.Outpost;
 
@@ -221,8 +220,9 @@ namespace ColonistAwareness
                 float climate = map.TileInfo.temperature;
                 CAFactionState factionState = CAFactionStateWorldComponent.Current
                     ?.Find(record.faction);
-                List<CAAxisEntry> currentOrder =
-                    factionState?.factionStructure;
+                List<CAAxisEntry> currentOrder = record.faction == null
+                    ? record.localSociety?.institutions
+                    : factionState?.factionStructure;
                 bool rulerGuard = CAFactionAxes.HasOption(currentOrder,
                     CAFactionAxes.LocalOrder, "rulers");
                 bool pluralDissent = CAFactionAxes.HasOption(currentOrder,

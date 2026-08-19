@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using RimWorld;
 using Verse;
 using Verse.AI.Group;
@@ -213,22 +214,41 @@ namespace ColonistAwareness
             float voiceRange, out CommunicationChannel channel)
         {
             return TryGetKnowledgeChannel(teller, listener, voiceRange,
-                strategicEscalation: false, out channel);
+                strategicEscalation: false,
+                allowRepresentedCoResidents: false, out channel);
+        }
+
+        // The optional broader epistemic mode may carry ordinary reports
+        // between people who live at the same represented independent site.
+        // This leaves the tactical, command, welfare, and default knowledge
+        // routes on their existing same-faction contract.
+        public static bool TryGetBroaderKnowledgeChannel(Pawn teller,
+            Pawn listener, float voiceRange,
+            out CommunicationChannel channel)
+        {
+            return TryGetKnowledgeChannel(teller, listener, voiceRange,
+                strategicEscalation: false,
+                allowRepresentedCoResidents: true, out channel);
         }
 
         public static bool TryGetStrategicChannel(Pawn teller, Pawn listener,
             float voiceRange, out CommunicationChannel channel)
         {
             return TryGetKnowledgeChannel(teller, listener, voiceRange,
-                strategicEscalation: true, out channel);
+                strategicEscalation: true,
+                allowRepresentedCoResidents: false, out channel);
         }
 
         private static bool TryGetKnowledgeChannel(Pawn teller, Pawn listener,
             float voiceRange, bool strategicEscalation,
+            bool allowRepresentedCoResidents,
             out CommunicationChannel channel)
         {
             channel = CommunicationChannel.None;
-            if (!SameFactionMap(teller, listener)) return false;
+            bool sameFaction = SameFactionMap(teller, listener);
+            if (!sameFaction && (!allowRepresentedCoResidents
+                || !SameRepresentedIndependentSite(teller, listener)))
+                return false;
 
             AwarenessSettings settings = AwarenessMod.Settings;
             if (settings != null && settings.commsSystem
@@ -248,7 +268,9 @@ namespace ColonistAwareness
                 return true;
             }
 
-            if (settings == null || !settings.commsSystem
+            // Remote force-structure channels still require their native
+            // same-faction graph. Co-residence only opens direct voice.
+            if (!sameFaction || settings == null || !settings.commsSystem
                 || !HasHeadset(teller) || !HasHeadset(listener)
                 || !ReportDirectionAllowed(teller, listener, strategicEscalation)
                 || !HasRadioLine(teller, listener)) return false;
@@ -262,6 +284,43 @@ namespace ColonistAwareness
             return first != null && second != null && first != second
                 && first.Map != null && first.Map == second.Map
                 && first.Faction != null && first.Faction == second.Faction;
+        }
+
+        private static bool SameRepresentedIndependentSite(Pawn first,
+            Pawn second)
+        {
+            if (first == null || second == null || first == second
+                || first.Map == null || first.Map != second.Map)
+                return false;
+            CARegionalWorldComponent regional =
+                CARegionalWorldComponent.Current;
+            if (regional == null) return false;
+            foreach (CARegionalSettlementRecord site in regional
+                .ForMap(first.Map).Where(value => value != null
+                    && !CASiteState.HasOwner(value.factionLinks)))
+            {
+                List<Pawn> residents = CAPopulationProjection.Residents(
+                    site, first.Map);
+                if (residents.Contains(first) && residents.Contains(second))
+                    return true;
+            }
+            CARegionalPlan plan = regional.FindRegionForMap(first.Map);
+            IEnumerable<CAFrontierHoldingPlan> holdings =
+                (plan?.frontierHoldings
+                    ?? new List<CAFrontierHoldingPlan>())
+                .Concat(CAOrganizationWorldComponent.Current
+                    ?.FrontierHoldings
+                    ?? Enumerable.Empty<CAFrontierHoldingPlan>());
+            foreach (CAFrontierHoldingPlan holding in holdings)
+                if (holding?.materialized == true
+                    && holding.materializedMapId == first.Map.uniqueID
+                    && !CASiteState.HasOwner(holding.factionLinks)
+                    && holding.residentPawnIds?.Contains(
+                        first.thingIDNumber) == true
+                    && holding.residentPawnIds.Contains(
+                        second.thingIDNumber))
+                    return true;
+            return false;
         }
 
         private static bool IsFireteamLead(Pawn pawn, int squad, Map map)

@@ -48,6 +48,7 @@ namespace ColonistAwareness
         public bool operationalAccess = true;
         public bool autonomousHomePlanning = false;
         public bool experimentalDistributedKnowledge = false;
+        public bool experimentalBroaderPawnKnowledge = false;
         public int autonomousHomePlanningResetGeneration;
         public List<CAUserCultureProfile> cultureProfiles =
             new List<CAUserCultureProfile>();
@@ -111,6 +112,8 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref autonomousHomePlanning, "autonomousHomePlanning", false);
             Scribe_Values.Look(ref experimentalDistributedKnowledge,
                 "experimentalDistributedKnowledge", false);
+            Scribe_Values.Look(ref experimentalBroaderPawnKnowledge,
+                "experimentalBroaderPawnKnowledge", false);
             Scribe_Values.Look(ref autonomousHomePlanningResetGeneration,
                 "autonomousHomePlanningResetGeneration", 0);
             Scribe_Collections.Look(ref cultureProfiles,
@@ -228,6 +231,18 @@ namespace ColonistAwareness
             listing.Label(distributed
                 ? "Practical capability follows the knowledge currently available through the faction's pawns and retained records."
                 : "Faction knowledge is socially available. Individual carriers are not required.");
+            bool broader = Settings.experimentalBroaderPawnKnowledge;
+            listing.CheckboxLabeled("Experimental broader pawn knowledge",
+                ref broader,
+                "Pawns keep separate, revisable records of represented social, political, geographic, and settlement facts. Reports carry the teller's remembered version through a real communication route.");
+            if (broader != Settings.experimentalBroaderPawnKnowledge)
+            {
+                Settings.experimentalBroaderPawnKnowledge = broader;
+                WriteSettings();
+            }
+            listing.Label(broader
+                ? "Expanded pawn knowledge is active. This does not hide information from the player."
+                : "Existing tactical and welfare knowledge remains active; broader social and world knowledge is not simulated per pawn.");
             listing.GapLine(10f);
 
             listing.Label("Pawn initiative");

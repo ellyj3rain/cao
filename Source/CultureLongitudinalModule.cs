@@ -15,7 +15,7 @@ namespace ColonistAwareness
     // work on behalf of either the player or an NPC institution.
     public sealed class CACultureLongitudinalMapComponent : MapComponent
     {
-        private int campaignSchemaVersion = 3;
+        private int campaignSchemaVersion = 4;
         private int legacyAuthoringDataEpoch =
             CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private const int EvaluationCadence = 60000;
@@ -84,11 +84,30 @@ namespace ColonistAwareness
         {
             if (map == null) return "Culture history owner map is missing";
             if (campaignSchemaVersion != 0
-                && campaignSchemaVersion != 2)
+                && campaignSchemaVersion != 2
+                && campaignSchemaVersion != 3)
                 return "unsupported Culture history predecessor schema "
                     + campaignSchemaVersion;
-            var candidateEvents = new List<CANativeCultureEventRecord>(
-                nativeEvents ?? Enumerable.Empty<CANativeCultureEventRecord>());
+            var candidateEvents = (nativeEvents
+                    ?? new List<CANativeCultureEventRecord>())
+                .Where(value => value != null)
+                .Select(value => value.Copy()).ToList();
+            foreach (CANativeCultureEventRecord record in candidateEvents)
+            {
+                if (record.schemaVersion ==
+                    CANativeCultureEventPersistenceContract
+                        .PreviousRecordSchemaVersion)
+                {
+                    if (record.factionLoadId < 0)
+                        return "legacy native Culture event has no faction "
+                            + "payload";
+                    record.actorFactionReference =
+                        CASiteFactionReferenceKind.WorldFaction;
+                    record.schemaVersion =
+                        CANativeCultureEventPersistenceContract
+                            .CurrentRecordSchemaVersion;
+                }
+            }
             CANativeCultureEventRetentionKernel.TrimAll(candidateEvents);
             string eventFailure = CANativeCultureEventRetentionKernel
                 .ValidationFailure(candidateEvents);
@@ -132,7 +151,7 @@ namespace ColonistAwareness
         {
             HistoryEventDef definition = historyEvent.def;
             Map heldMap = pawn?.MapHeld;
-            if (definition == null || pawn?.Faction == null
+            if (definition == null || pawn == null
                 || heldMap == null || adapter == null) return null;
             nativeEvents = nativeEvents
                 ?? new List<CANativeCultureEventRecord>();
@@ -163,9 +182,12 @@ namespace ColonistAwareness
                 targetIdentity = targetIdentity,
                 tick = tick,
                 pawnId = pawn.thingIDNumber,
-                factionLoadId = pawn.Faction.loadID,
+                actorFactionReference = pawn.Faction == null
+                    ? CASiteFactionReferenceKind.None
+                    : CASiteFactionReferenceKind.WorldFaction,
+                factionLoadId = pawn.Faction?.loadID ?? -1,
                 mapId = heldMap.uniqueID,
-                localityKey = NativeLocalityKey(heldMap, pawn.Faction, cell),
+                localityKey = NativeLocalityKey(heldMap, pawn, cell),
                 cellX = cell.x,
                 cellZ = cell.z
             };
@@ -174,18 +196,37 @@ namespace ColonistAwareness
             return record;
         }
 
-        private static string NativeLocalityKey(Map heldMap, Faction faction,
+        private static string NativeLocalityKey(Map heldMap, Pawn pawn,
             IntVec3 cell)
         {
             CARegionalSettlementRecord[] matches =
                 (CARegionalWorldComponent.Current?.ForMap(heldMap)
                     ?? Enumerable.Empty<CARegionalSettlementRecord>())
-                .Where(value => value != null && value.faction == faction
+                .Where(value => value != null
                     && value.localRect != CellRect.Empty
                     && value.localRect.Contains(cell)).ToArray();
-            return matches.Length == 1
-                ? "settlement:" + matches[0].regionalId + "#"
-                    + matches[0].slot
+            CARegionalSettlementRecord residentMatch = matches.FirstOrDefault(
+                value => CASettlementResidenceState.Active(value,
+                    pawn.thingIDNumber) != null);
+            if (residentMatch != null)
+                return "settlement:" + residentMatch.regionalId + "#"
+                    + residentMatch.slot;
+            if (matches.Length == 1)
+                return "settlement:" + matches[0].regionalId + "#"
+                    + matches[0].slot;
+            CARegionalPlan region = CARegionalWorldComponent.Current
+                ?.FindRegionForMap(heldMap);
+            CAFrontierHoldingPlan frontier = (region?.frontierHoldings
+                    ?? new List<CAFrontierHoldingPlan>())
+                .Concat(CAOrganizationWorldComponent.Current
+                    ?.FrontierHoldings
+                    ?? Enumerable.Empty<CAFrontierHoldingPlan>())
+                .FirstOrDefault(value => value?.materialized == true
+                        && value.materializedMapId == heldMap.uniqueID
+                        && value.residentPawnIds?.Contains(
+                            pawn.thingIDNumber) == true);
+            return frontier != null
+                ? "frontier:" + heldMap.uniqueID + ":" + frontier.key
                 : "map:" + heldMap.uniqueID;
         }
 
@@ -312,6 +353,90 @@ namespace ColonistAwareness
                     + culture.revision + " from "
                     + culture.lastTransitionCause + ".");
             }
+            EvaluateFrontierHoldings(now, organizations, regional);
+            }
+        }
+
+        private void EvaluateFrontierHoldings(int now,
+            CAOrganizationWorldComponent organizations,
+            CARegionalWorldComponent regional)
+        {
+            CARegionalPlan region = regional?.FindRegionForMap(map);
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            IEnumerable<CAFrontierHoldingPlan> holdings =
+                (region?.frontierHoldings
+                    ?? new List<CAFrontierHoldingPlan>())
+                .Concat(organizations?.FrontierHoldings
+                    ?? Enumerable.Empty<CAFrontierHoldingPlan>());
+            foreach (CAFrontierHoldingPlan holding in holdings)
+            {
+                if (holding?.materialized != true
+                    || holding.materializedMapId != map.uniqueID
+                    || holding.localCulture == null) continue;
+                string organizationKey = "frontier:" + map.uniqueID + ":"
+                    + holding.key;
+                if (!seen.Add(organizationKey)) continue;
+                CAOrganization organization = organizations?.ByKey(
+                    organizationKey);
+                List<Pawn> residents = map.mapPawns.AllPawns.Where(value =>
+                    value != null && !value.Dead
+                    && holding.residentPawnIds?.Contains(
+                        value.thingIDNumber) == true).ToList();
+                CellRect bounds = holding.site.IsValid
+                    ? CellRect.CenteredOn(holding.site, 26, 26)
+                        .ClipInsideMap(map)
+                    : CellRect.Empty;
+                Faction owner = CASiteState.ResolveOwner(region,
+                    holding.factionLinks);
+                List<Thing> buildings = Buildings(owner,
+                    bounds == CellRect.Empty ? (CellRect?)null : bounds);
+                CACultureEvidenceSnapshot evidence = Snapshot(now,
+                    "residents=" + residents.Count + ";ids="
+                        + string.Join(",", residents.Select(value =>
+                            value.thingIDNumber).OrderBy(value => value)),
+                    "buildings=" + Bucket(buildings.Count, 3)
+                        + ";form=" + holding.form,
+                    "agreements=" + (organizations
+                        ?.ActiveAgreementsInvolving(organizationKey).Count
+                            ?? 0),
+                    "offices=" + StableOffices(organization)
+                        + ";customs=" + StableCustoms(organization),
+                    "beliefs=" + StableAxes(holding.localSociety
+                        ?.politicalOrder?.positions)
+                        + ";practice=" + StableAxes(holding.localSociety
+                            ?.institutions),
+                    "material=" + holding.materialLevel
+                        + ";knowledge=" + holding.localSociety
+                            ?.technologicalKnowledge?.revision);
+                var practices = new List<CACulturalPracticeEvidence>();
+                int recentStart = Math.Max(0, now - RecentPracticeTicks);
+                AddActPractices(practices, organizationKey,
+                    organizationKey, recentStart, now);
+                AddInstitutionalPractices(practices, organization,
+                    organizationKey, organizationKey, recentStart, now);
+                AddNativePractices(practices, organizationKey,
+                    residents.Select(value => value.thingIDNumber).ToList(),
+                    bounds == CellRect.Empty ? (CellRect?)null : bounds,
+                    recentStart, now);
+                bool practiceChanged = CACultureHistory.EvaluateTransition(
+                    holding.localCulture, evidence, practices,
+                    holding.siteName ?? organizationKey, now);
+                List<CASocialGroupPattern> patterns =
+                    CASocialReactionWorldComponent.Current?.PatternsFor(
+                        organizationKey, residents.Count, now)
+                    ?? new List<CASocialGroupPattern>();
+                patterns.AddRange(DirectQuestionPatterns(
+                    holding.localCulture, residents, organization,
+                    holding.populationGroups, owner, map, buildings,
+                    holding.siteName ?? organizationKey, now));
+                bool meaningChanged = CACultureHistory
+                    .EvaluateMeaningTransition(holding.localCulture,
+                        patterns, holding.siteName ?? organizationKey, now);
+                if (practiceChanged || meaningChanged)
+                    Log.Message("[CA][Culture] "
+                        + (holding.siteName ?? organizationKey)
+                        + " advanced to revision "
+                        + holding.localCulture.revision + ".");
             }
         }
 
@@ -428,6 +553,14 @@ namespace ColonistAwareness
                 + StableProvisions(settlement.provisionArrangements);
             CAFactionState factionState = CAFactionStateWorldComponent.Current
                 ?.Find(settlement.faction);
+            bool local = !CASiteState.HasOwner(settlement.factionLinks)
+                || settlement.localSociety?.explicitLocalDivergence == true;
+            CAPoliticalBeliefs politicalOrder = local
+                ? settlement.localSociety?.politicalOrder
+                : factionState?.politicalBeliefs;
+            List<CAAxisEntry> institutions = local
+                ? settlement.localSociety?.institutions
+                : factionState?.factionStructure;
             string institutional = "offices=" + StableOffices(organization)
                 + ";customs=" + StableCustoms(organization)
                 + ";development=" + (settlement.developmentAuthorized
@@ -435,8 +568,8 @@ namespace ColonistAwareness
                 + (settlement.developmentExecutable
                     ? "executable" : "not-executable");
             string political = "beliefs=" + StableAxes(
-                    factionState?.politicalBeliefs?.positions)
-                + ";practice=" + StableAxes(factionState?.factionStructure)
+                    politicalOrder?.positions)
+                + ";practice=" + StableAxes(institutions)
                 + ";conflicts=" + StableStrings(
                     organization?.openBeliefConflicts)
                 + ";relation=" + (settlement.relationAtMaterialization
@@ -494,7 +627,9 @@ namespace ColonistAwareness
                 organization?.organizationKey ?? "player", owner,
                 recentStart, evidence.tick);
             AddNativePractices(result, owner,
-                Faction.OfPlayer?.loadID ?? -1, null, recentStart,
+                map.mapPawns.FreeColonistsSpawned
+                    .Select(value => value.thingIDNumber).ToList(),
+                null, recentStart,
                 evidence.tick);
             return result;
         }
@@ -565,20 +700,25 @@ namespace ColonistAwareness
             AddInstitutionalPractices(result, organization, owner, owner,
                 recentStart, evidence.tick);
             AddNativePractices(result, owner,
-                settlement.faction?.loadID ?? -1, settlement.localRect,
+                CAPopulationProjection.Residents(settlement, map)
+                    .Select(value => value.thingIDNumber).ToList(),
+                settlement.localRect,
                 recentStart, evidence.tick);
             return result;
         }
 
         private void AddNativePractices(
             List<CACulturalPracticeEvidence> result, string owner,
-            int factionLoadId, CellRect? locality, int recentStart,
+            IReadOnlyCollection<int> residentPawnIds, CellRect? locality,
+            int recentStart,
             int observedTick)
         {
-            if (factionLoadId < 0 || nativeEvents == null) return;
+            if (residentPawnIds == null || residentPawnIds.Count == 0
+                || nativeEvents == null) return;
             foreach (IGrouping<string, CANativeCultureEventRecord> practice in
                 nativeEvents.Where(value => CANativeCultureOccurrenceKernel
-                        .Matches(value, factionLoadId, locality, recentStart,
+                        .MatchesResidents(value, residentPawnIds, locality,
+                            recentStart,
                             observedTick))
                     .GroupBy(value => value.practiceKey,
                         StringComparer.Ordinal))

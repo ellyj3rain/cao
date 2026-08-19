@@ -46,7 +46,7 @@ namespace ColonistAwareness
     // source reorganization does not change a schema; a persisted contract does.
     public static class CACampaignSchemaCatalog
     {
-        public const int CurrentCatalogVersion = 5;
+        public const int CurrentCatalogVersion = 6;
 
         public static readonly CACampaignSchemaDefinition[] All =
         {
@@ -61,17 +61,17 @@ namespace ColonistAwareness
             D("map.combat-aftermath", 1),
             D("game.combat-spatial-log", 1),
             D("game.combat-topology", 1),
-            D("map.culture-longitudinal", 3, 2, 1),
+            D("map.culture-longitudinal", 4, 3, 1),
             D("map.equipment-transition", 1),
             D("game.hidden-things", 1),
             D("world.faction-state", 4, 2, 1),
             D("world.player-founding", 4, 2, 1),
-            D("world.organization", 2, 1, 1),
+            D("world.organization", 3, 1, 1),
             D("world.organization-relations", 1),
-            D("world.regional", 4, 2, 1),
+            D("world.regional", 5, 2, 1),
             D("world.cultural-cognition", 2, 2, 2),
             D("world.political-cognition", 1, 1, 2),
-            D("world.proposition-knowledge", 1, 1, 2),
+            D("world.proposition-knowledge", 2, 1, 2),
             D("world.social-reactions", 1),
             D("world.transaction-ledger", 1),
             D("map.home-space-program", 1),
@@ -116,12 +116,15 @@ namespace ColonistAwareness
             D("model.represented-institutions", 1),
             D("model.founding-arrangement", 1),
             D("model.player-founding-plan", 4, 3, 1),
-            D("model.regional-plan", 15, 13, 1),
-            D("model.regional-settlement-record", 9, 8, 1),
-            D("model.settlement-population-group", 1),
+            D("model.regional-plan", 16, 13, 1),
+            D("model.regional-settlement-record", 10, 8, 1),
+            D("model.settlement-population-group", 2, 1, 1),
             D("model.domestic-unit", 1),
             D("model.domestic-provision-demand", 1),
-            D("model.frontier-map-plan", 2),
+            D("model.frontier-map-plan", 3, 2, 1),
+            D("model.frontier-holding", 2, 1, 6),
+            D("model.site-faction-links", 1, 1, 6),
+            D("model.site-local-society", 1, 1, 6),
             D("model.groundwater-tuning", 1),
             D("model.settlement-residence", 1),
             D("model.settlement-capability", 2),

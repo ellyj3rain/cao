@@ -41,7 +41,7 @@ namespace ColonistAwareness
             var probe = new CARegionalSettlementPlan
             {
                 slot = settlementPlan.slot,
-                factionKey = settlementPlan.factionKey,
+                OwningFactionKey = settlementPlan.OwningFactionKey,
                 memberTileId = settlementPlan.memberTileId,
                 populationGroups = firstPopulationGroups,
                 provisionArrangements = firstProv
@@ -50,7 +50,7 @@ namespace ColonistAwareness
             var again = new CARegionalSettlementPlan
             {
                 slot = settlementPlan.slot,
-                factionKey = settlementPlan.factionKey,
+                OwningFactionKey = settlementPlan.OwningFactionKey,
                 memberTileId = settlementPlan.memberTileId
             };
             CASettlementComposition.EnsureDerived(plan, again);
@@ -79,7 +79,7 @@ namespace ColonistAwareness
                     + arrangement.Summary);
 
             CARegionalFactionPlan owner = plan.FactionPlan(
-                settlementPlan.factionKey);
+                settlementPlan.OwningFactionKey);
             if (owner != null)
             {
                 owner.EnsureCultureAndPolitics(plan);
@@ -472,13 +472,13 @@ namespace ColonistAwareness
                 world.ForMap(map).Where(r => r?.faction != null).ToList();
             CARegionalFactionPlan group = plan.factions
                 .FirstOrDefault(g => g != null && records.Count(r =>
-                    r.factionKey == g.key) >= 2);
+                    r.OwningFactionKey == g.key) >= 2);
             if (group == null)
                 return text.Append("  no faction holds two settlements "
                     + "here - the shift needs a multi-settlement faction")
                     .ToString();
             Faction faction = records.First(r =>
-                r.factionKey == group.key).faction;
+                r.OwningFactionKey == group.key).faction;
             string factionKey = "faction:" + faction.loadID;
 
             Func<string> relationWords = delegate
@@ -494,13 +494,13 @@ namespace ColonistAwareness
             {
                 int buildings = 0;
                 foreach (CARegionalSettlementRecord record in records)
-                    if (record.factionKey == group.key)
+                    if (record.OwningFactionKey == group.key)
                         foreach (IntVec3 cell in record.localRect)
                             if (cell.InBounds(map)
                                 && cell.GetEdifice(map) != null)
                                 buildings++;
                 return buildings + " standing edifices across "
-                    + records.Count(r => r.factionKey == group.key)
+                    + records.Count(r => r.OwningFactionKey == group.key)
                     + " settlement rect(s)";
             };
 

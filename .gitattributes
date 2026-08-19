@@ -9,3 +9,4 @@ Batches/*.md text eol=lf
 global.json text eol=lf
 Source/packages.lock.json text eol=lf
 tools/ci/* text eol=lf
+Receipts/B17/evidence/*.xml binary

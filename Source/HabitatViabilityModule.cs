@@ -120,13 +120,55 @@ namespace ColonistAwareness
             return false;
         }
 
+        internal static bool CanPotentiallySettle(CARegionalPlan plan,
+            CARegionalSettlementPlan settlement, int tileId,
+            out string failure)
+        {
+            failure = null;
+            CASettlementEnvironmentFacts facts = CASettlementEnvironment
+                .ForTile(tileId);
+            if (!facts.Valid)
+            {
+                failure = "this ground cannot hold a settlement";
+                return false;
+            }
+            CARegionalFactionPlan owner = CASiteState.OwnerPlan(plan,
+                settlement?.factionLinks);
+            FactionDef generationDef = owner?.ResolvedFactionDef
+                ?? DefDatabase<FactionDef>.GetNamedSilentFail(
+                    settlement?.generationFactionDefName);
+            if (generationDef?.humanlikeFaction != true
+                || generationDef.pawnGroupMakers == null
+                || generationDef.pawnGroupMakers.Count == 0)
+            {
+                failure = "choose a settlement population before assigning this ground";
+                return false;
+            }
+            CATechnologicalKnowledge knowledge = CASiteState.Knowledge(plan,
+                settlement);
+            int tier = CATechnologicalKnowledgeModel.CompatibilityTier(
+                knowledge);
+            CAHabitatViabilityResult result = SettlementPotential(facts,
+                Math.Max(tier, facts.RequiredCapabilityTier));
+            bool knowsHow = SatisfiesKnowledge(facts, knowledge, false, null,
+                out CATechnologyRequirement missingKnowledge);
+            if (result.Viable && knowsHow) return true;
+            failure = "this population cannot establish a viable habitat "
+                + "here: " + (!knowsHow
+                    ? MissingKnowledgeWords(missingKnowledge)
+                    : "missing " + MissingWords(
+                        result.MissingRequirementMask));
+            return false;
+        }
+
         internal static CAHabitatViabilityResult EvaluateSettlement(
             CARegionalPlan plan, CARegionalSettlementPlan settlement,
             CASettlementEnvironmentFacts facts)
         {
-            CARegionalFactionPlan faction = plan?.FactionPlan(
-                settlement?.factionKey ?? -1);
-            int tier = KnowledgeCompatibilityTier(faction);
+            CATechnologicalKnowledge knowledge = CASiteState.Knowledge(plan,
+                settlement);
+            int tier = CATechnologicalKnowledgeModel.CompatibilityTier(
+                knowledge);
             HashSet<string> programs = CompletePrograms(plan, settlement);
             bool foodPreparation = programs.Contains(
                 CASettlementProgramRegistry.FoodPreparation)
@@ -162,10 +204,10 @@ namespace ColonistAwareness
                     CASettlementProgramRegistry.DomesticProvision);
 
             CAHabitatFoodRoute route = RealizedFoodRoute(facts, programs,
-                faction?.technologicalKnowledge);
+                knowledge);
             bool protectedCultivationKnowledge =
                 CATechnologicalKnowledgeModel.Rank(
-                    faction?.technologicalKnowledge,
+                    knowledge,
                     CATechnologyDomains.Agriculture,
                     CATechnologyCompetencies.Operate) >= 2;
             bool foodSource;
@@ -216,7 +258,7 @@ namespace ColonistAwareness
             CAHabitatViabilityResult result =
                 CAHabitatViabilityCausalKernel.Evaluate(
                 Requirements(facts), capability);
-            if (!SatisfiesKnowledge(facts, faction?.technologicalKnowledge,
+            if (!SatisfiesKnowledge(facts, knowledge,
                     false, null, out _))
                 result.Viable = false;
             return result;
@@ -239,8 +281,8 @@ namespace ColonistAwareness
             settlement.habitatFoodRoute = (byte)RealizedFoodRoute(plan,
                 settlement, facts);
             settlement.habitatViable = result.Viable;
-            SatisfiesKnowledge(facts, plan?.FactionPlan(
-                    settlement.factionKey)?.technologicalKnowledge,
+            SatisfiesKnowledge(facts, CASiteState.Knowledge(plan,
+                    settlement),
                 false, null, out CATechnologyRequirement missingKnowledge);
             settlement.habitatBlocker = result.Viable ? null
                 : result.MissingRequirementMask != 0
@@ -251,21 +293,79 @@ namespace ColonistAwareness
         }
 
         internal static void ApplyFrontier(CAFrontierHoldingPlan holding,
-            CASettlementEnvironmentFacts facts, int technologyTier,
+            CASettlementEnvironmentFacts facts,
             int supportingFactionKey = -1,
-            int supportingFactionLoadId = -1)
+            int supportingFactionLoadId = -1,
+            CATechnologicalKnowledge initialKnowledge = null)
         {
             if (holding == null || facts == null) return;
-            bool supported = supportingFactionKey >= 0
-                || supportingFactionLoadId >= 0;
-            // A bare number is not an operating population. Frontier
-            // capability above the unaffiliated baseline exists only when an
-            // exact saved faction owns it.
-            int effectiveTier = supported ? technologyTier : 0;
+            string seed = "frontier:" + holding.memberTileId + ":"
+                + holding.key;
+            if (holding.siteName.NullOrEmpty())
+                holding.siteName = (holding.form == 1 ? "Frontier homestead "
+                    : "Frontier cabin ") + (holding.key + 1);
+            if (holding.factionLinks == null)
+                holding.factionLinks = new CASiteFactionLinks();
+            if (supportingFactionKey >= 0)
+                holding.factionLinks.SetRegionalSupport(
+                    supportingFactionKey);
+            else if (supportingFactionLoadId >= 0)
+                holding.factionLinks.SetWorldSupport(
+                    supportingFactionLoadId);
+            else
+                holding.factionLinks.SetNoSupport();
+            if (holding.localSociety == null)
+                holding.localSociety = new CASiteLocalSocietyState
+                {
+                    explicitLocalDivergence = true,
+                    technologicalKnowledge = initialKnowledge?.Copy()
+                        ?? BaselineFrontierKnowledge(),
+                    politicalOrder = new CAPoliticalBeliefs(),
+                    institutions = new List<CAAxisEntry>()
+                };
+            holding.localSociety.explicitLocalDivergence = true;
+            if (holding.localSociety.politicalOrder == null)
+                holding.localSociety.politicalOrder =
+                    new CAPoliticalBeliefs();
+            CAPoliticalBeliefsModel.Ensure(
+                holding.localSociety.politicalOrder, seed + ":politics");
+            if (holding.localSociety.technologicalKnowledge == null)
+                holding.localSociety.technologicalKnowledge =
+                    initialKnowledge?.Copy() ?? BaselineFrontierKnowledge();
+            CATechnologicalKnowledgeModel.Ensure(
+                holding.localSociety.technologicalKnowledge,
+                seed + ":technology");
+            if (holding.localSociety.institutions == null)
+                holding.localSociety.institutions = new List<CAAxisEntry>();
+            holding.localSociety.institutionalStateIncomplete = false;
+            if (holding.localCulture == null)
+                holding.localCulture = new CACulture
+                {
+                    name = holding.siteName + " culture"
+                };
+            CACultureModel.EnsureIdentity(holding.localCulture,
+                seed + ":culture");
+            CACultureAuthoringKernel.CompleteMissing(holding.localCulture,
+                seed + ":culture", seed + ":population");
+            if (holding.populationGroups == null)
+                holding.populationGroups =
+                    new List<CASettlementPopulationGroup>();
+            if (holding.populationGroups.Count == 0)
+                holding.populationGroups.Add(new CASettlementPopulationGroup
+                {
+                    key = 1,
+                    kind = CAPopulationGroupKind.Unaffiliated,
+                    isPrimary = true,
+                    label = "Local residents",
+                    share = 100,
+                    factionKey = -1,
+                    ideoligionCertainty = 1
+                });
+            int effectiveTier = CATechnologicalKnowledgeModel
+                .CompatibilityTier(
+                    holding.localSociety.technologicalKnowledge);
             CAHabitatViabilityResult result = FrontierPotential(facts,
                 effectiveTier);
-            holding.supportingFactionKey = supportingFactionKey;
-            holding.supportingFactionLoadId = supportingFactionLoadId;
             holding.environmentSourceHash = facts.SourceHash;
             holding.habitatRequirementMask = facts.HabitatRequirementMask;
             holding.requiredCapabilityTier = facts.RequiredCapabilityTier;
@@ -273,13 +373,7 @@ namespace ColonistAwareness
             holding.habitatCapabilityMask = result.CapabilityMask;
             holding.missingHabitatRequirementMask =
                 result.MissingRequirementMask;
-            holding.habitatFoodRoute = (byte)(supported
-                    && (facts.FoodRoute
-                            == CAHabitatFoodRoute.ProtectedCultivation
-                        || facts.FoodRoute == CAHabitatFoodRoute
-                            .ProtectedLowLightCultivation)
-                ? CAHabitatFoodRoute.StoredAndSupported
-                : facts.FoodRoute);
+            holding.habitatFoodRoute = (byte)facts.FoodRoute;
             holding.materializationFailure = result.Viable ? null
                 : "Missing " + MissingWords(result.MissingRequirementMask);
         }
@@ -294,27 +388,66 @@ namespace ColonistAwareness
                 failure = "frontier habitat evidence is unavailable";
                 return false;
             }
-            bool regionalSupport = holding.supportingFactionKey >= 0;
-            bool worldSupport = holding.supportingFactionLoadId >= 0;
-            if (regionalSupport && worldSupport)
+            if (holding.schemaVersion
+                    != CAFrontierHoldingPlan.CurrentSchemaVersion
+                || holding.siteName.NullOrEmpty())
             {
-                failure = "frontier habitat names two supporting factions";
+                failure = "frontier site identity is incomplete";
                 return false;
             }
-            if (holding.capabilityTier > 0
-                && !regionalSupport && !worldSupport)
+            string linkFailure = holding.factionLinks?.ValidationFailure(
+                region);
+            if (!linkFailure.NullOrEmpty())
             {
-                failure = "frontier habitat claims technical capability "
-                    + "without a supporting faction";
+                failure = linkFailure;
                 return false;
             }
-            if (holding.capabilityTier == 0
-                && (regionalSupport || worldSupport))
+            string cultureFailure = CACultureModel.ValidationFailure(
+                holding.localCulture, requireSubstantive: true);
+            if (!cultureFailure.NullOrEmpty())
             {
-                failure = "frontier habitat support identity does not match "
-                    + "its saved capability";
+                failure = "frontier Culture is invalid: " + cultureFailure;
                 return false;
             }
+            string politicalFailure = CAPoliticalBeliefsModel
+                .ValidationFailure(holding.localSociety?.politicalOrder,
+                    allowExactLegacy: false);
+            if (!politicalFailure.NullOrEmpty())
+            {
+                failure = "frontier Political Order is invalid: "
+                    + politicalFailure;
+                return false;
+            }
+            string institutionFailure = CAPoliticalBeliefsModel
+                .ValidationFailure(holding.localSociety?.institutions);
+            if (!institutionFailure.NullOrEmpty())
+            {
+                failure = "frontier institutions are invalid: "
+                    + institutionFailure;
+                return false;
+            }
+            List<CASettlementPopulationGroup> populations = holding
+                .populationGroups;
+            if (populations == null || populations.Count == 0
+                || populations.Any(value => value == null || value.key <= 0
+                    || value.share <= 0 || value.share > 100)
+                || populations.Select(value => value.key).Distinct().Count()
+                    != populations.Count
+                || populations.Count(value => value.isPrimary) != 1
+                || populations.Sum(value => value.share) != 100)
+            {
+                failure = "frontier population composition is invalid";
+                return false;
+            }
+            CATechnologicalKnowledge knowledge = holding.localSociety
+                ?.technologicalKnowledge;
+            if (knowledge == null)
+            {
+                failure = "frontier habitat has no technological knowledge";
+                return false;
+            }
+            int expectedTier = CATechnologicalKnowledgeModel
+                .CompatibilityTier(knowledge);
             CAHabitatViabilityResult expected = FrontierPotential(facts,
                 holding.capabilityTier);
             if (holding.environmentSourceHash != facts.SourceHash
@@ -322,15 +455,8 @@ namespace ColonistAwareness
                     != facts.HabitatRequirementMask
                 || holding.requiredCapabilityTier
                     != facts.RequiredCapabilityTier
-                || holding.habitatFoodRoute != (byte)((holding
-                            .supportingFactionKey >= 0
-                        || holding.supportingFactionLoadId >= 0)
-                        && (facts.FoodRoute
-                                == CAHabitatFoodRoute.ProtectedCultivation
-                            || facts.FoodRoute == CAHabitatFoodRoute
-                                .ProtectedLowLightCultivation)
-                    ? CAHabitatFoodRoute.StoredAndSupported
-                    : facts.FoodRoute)
+                || holding.capabilityTier != expectedTier
+                || holding.habitatFoodRoute != (byte)facts.FoodRoute
                 || holding.habitatCapabilityMask != expected.CapabilityMask
                 || holding.missingHabitatRequirementMask
                     != expected.MissingRequirementMask)
@@ -346,14 +472,13 @@ namespace ColonistAwareness
                 return false;
             }
             Faction supporter = ResolveSupporter(region, holding);
-            if ((regionalSupport || worldSupport) && supporter == null)
+            if (holding.factionLinks?.support
+                    != CASiteFactionReferenceKind.None
+                && supporter == null)
             {
                 failure = "the supporting faction is unavailable";
                 return false;
             }
-            CATechnologicalKnowledge knowledge = supporter == null
-                ? BaselineFrontierKnowledge()
-                : CATechnologicalKnowledgeRuntime.ForFaction(supporter);
             if (!SatisfiesKnowledge(facts, knowledge,
                     false, null,
                     out CATechnologyRequirement missingKnowledge))
@@ -373,7 +498,7 @@ namespace ColonistAwareness
             HashSet<int> settled = new HashSet<int>((plan.settlements
                     ?? new List<CARegionalSettlementPlan>())
                 .Where(item => item != null)
-                .Select(item => item.factionKey));
+                .Select(item => item.OwningFactionKey));
             return (plan.factions ?? new List<CARegionalFactionPlan>())
                 .Where(item => item != null && settled.Contains(item.key))
                 .Where(item => FrontierPotential(facts, item).Viable)
@@ -414,19 +539,8 @@ namespace ColonistAwareness
         internal static Faction ResolveSupporter(CARegionalPlan region,
             CAFrontierHoldingPlan holding)
         {
-            if (holding == null) return null;
-            if (region != null && holding.supportingFactionKey >= 0)
-            {
-                CARegionalFactionPlan faction = region.FactionPlan(
-                    holding.supportingFactionKey);
-                return faction?.resolvedFaction
-                    ?? CARegionalPlanUtility.FactionByLoadId(
-                        faction?.resolvedFactionLoadId ?? -1)
-                    ?? CARegionalPlanUtility.FactionByLoadId(
-                        faction?.existingFactionLoadId ?? -1);
-            }
-            return CARegionalPlanUtility.FactionByLoadId(
-                holding.supportingFactionLoadId);
+            return holding == null ? null : CASiteState.ResolveSupport(
+                region, holding.factionLinks);
         }
 
         internal static string MissingWords(int mask)
@@ -465,8 +579,7 @@ namespace ColonistAwareness
             CASettlementEnvironmentFacts facts)
         {
             return RealizedFoodRoute(facts, CompletePrograms(plan,
-                settlement), plan?.FactionPlan(
-                    settlement?.factionKey ?? -1)?.technologicalKnowledge);
+                settlement), CASiteState.Knowledge(plan, settlement));
         }
 
         private static CAHabitatFoodRoute RealizedFoodRoute(

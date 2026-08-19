@@ -1351,6 +1351,15 @@ namespace ColonistAwareness
                 out missing);
         }
 
+        internal static bool SatisfiesCanonical(
+            CATechnologicalKnowledge knowledge,
+            IEnumerable<CATechnologyRequirement> requirements,
+            out CATechnologyRequirement missing)
+        {
+            return CATechnologicalKnowledgeAvailability.Satisfies(
+                knowledge, requirements, false, null, null, out missing);
+        }
+
         internal static int CanonicalRank(Faction faction, string domain,
             string competency)
         {
@@ -1359,6 +1368,14 @@ namespace ColonistAwareness
                     faction?.def?.techLevel ?? TechLevel.Neolithic);
             return CATechnologicalKnowledgeModel.Rank(ForFaction(faction),
                 domain, competency);
+        }
+
+        internal static int CanonicalRank(
+            CATechnologicalKnowledge knowledge, string domain,
+            string competency)
+        {
+            return CATechnologicalKnowledgeModel.Rank(knowledge, domain,
+                competency);
         }
 
         internal static int CompatibilityTier(Faction faction,
@@ -1409,6 +1426,15 @@ namespace ColonistAwareness
                 out missing);
         }
 
+        internal static bool CanConstructCanonical(
+            CATechnologicalKnowledge knowledge, BuildableDef definition,
+            out CATechnologyRequirement missing)
+        {
+            return SatisfiesCanonical(knowledge,
+                CATechnologyRequirementResolver.ForBuildable(definition),
+                out missing);
+        }
+
         internal static bool CanOperate(Faction faction, RecipeDef recipe,
             out CATechnologyRequirement missing, Map map = null)
         {
@@ -1446,6 +1472,15 @@ namespace ColonistAwareness
             out CATechnologyRequirement missing)
         {
             return SatisfiesCanonical(faction,
+                CATechnologyRequirementResolver.ForPlant(plant),
+                out missing);
+        }
+
+        internal static bool CanGrowCanonical(
+            CATechnologicalKnowledge knowledge, ThingDef plant,
+            out CATechnologyRequirement missing)
+        {
+            return SatisfiesCanonical(knowledge,
                 CATechnologyRequirementResolver.ForPlant(plant),
                 out missing);
         }

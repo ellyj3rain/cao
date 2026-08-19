@@ -192,9 +192,39 @@ namespace ColonistAwareness
             Map map = null)
         {
             if (record == null) return 0;
-            // The saved tier is a creation receipt. Live construction queries
-            // use the faction-owned knowledge currently available here.
-            return record.faction != null ? TechTier(record.faction, map) : 0;
+            // Faction-owned sites query their owner's live availability.
+            // Independent sites use their own canonical knowledge receipt;
+            // faction support never substitutes for either authority.
+            return record.faction != null ? TechTier(record.faction, map)
+                : Mathf.Clamp(record.technologicalKnowledgeTier, 0, 3);
+        }
+
+        internal static int CanonicalTechTier(
+            CARegionalSettlementRecord record)
+        {
+            if (record == null) return 0;
+            if (record.faction != null)
+                return CanonicalTechTier(record.faction);
+            CATechnologicalKnowledge knowledge = record.localSociety
+                ?.technologicalKnowledge;
+            if (knowledge == null)
+                return Mathf.Clamp(record.technologicalKnowledgeTier, 0, 3);
+            int construction = Math.Min(
+                CATechnologicalKnowledgeModel.Rank(knowledge,
+                    CATechnologyDomains.Construction,
+                    CATechnologyCompetencies.Construct),
+                CATechnologicalKnowledgeModel.Rank(knowledge,
+                    CATechnologyDomains.Construction,
+                    CATechnologyCompetencies.Maintain));
+            int materials = Math.Min(
+                CATechnologicalKnowledgeModel.Rank(knowledge,
+                    CATechnologyDomains.Metallurgy,
+                    CATechnologyCompetencies.Construct),
+                CATechnologicalKnowledgeModel.Rank(knowledge,
+                    CATechnologyDomains.Metallurgy,
+                    CATechnologyCompetencies.Maintain));
+            if (construction >= 3 && materials >= 3) return 2;
+            return construction >= 2 ? 1 : 0;
         }
 
         internal static void Materialize(CAOrganization org,
@@ -1001,7 +1031,7 @@ namespace ColonistAwareness
             if (world == null || comp == null) return;
             foreach (CARegionalSettlementRecord record in world.ForMap(map))
             {
-                if (record?.faction == null || record.faction.IsPlayer
+                if (record == null || record.faction?.IsPlayer == true
                     || record.localRect == CellRect.Empty) continue;
                 CAOrganization org = comp.ByKey(record.regionalId + "#"
                     + record.slot);
@@ -1038,10 +1068,8 @@ namespace ColonistAwareness
                 if (p == null || p.Downed || p.Dead || !p.Awake()
                     || p.IsPrisoner || !p.RaceProps.Humanlike) continue;
                 if (p.InMentalState || p.InAggroMentalState) continue;
-                if (map.attackTargetsCache
-                        .TargetsHostileToFaction(record.faction)
-                        .Any(t => t.Thing is Pawn tp && !tp.Downed
-                            && tp.Position.InHorDistOf(p.Position, 40f)))
+                if (CASiteThreats.Within(record, map,
+                        CellRect.CenteredOn(p.Position, 40)).Count > 0)
                     continue;
                 if (!p.Position.InHorDistOf(
                     record.localRect.CenterCell, 90f)) continue;
@@ -1628,12 +1656,11 @@ namespace ColonistAwareness
         private bool RebuildTargetOwnedBy(CARegionalSettlementRecord record,
             CASettlementRebuildWork work)
         {
-            if (record?.faction == null || work == null
+            if (record == null || work == null
                 || !work.cell.InBounds(map) || work.defName.NullOrEmpty())
                 return false;
-            if (work.factionLoadId < 0)
-                work.factionLoadId = record.faction.loadID;
-            if (record.faction.loadID != work.factionLoadId) return false;
+            int expectedFaction = record.faction?.loadID ?? -1;
+            if (work.factionLoadId != expectedFaction) return false;
 
             Blueprint_Build blueprint = map.listerThings
                 .ThingsInGroup(ThingRequestGroup.Blueprint)
@@ -1658,7 +1685,7 @@ namespace ColonistAwareness
                 && blueprint.BuildDef?.defName == work.defName
                 && (work.stuffDefName.NullOrEmpty()
                     || blueprint.Stuff?.defName == work.stuffDefName)
-                && blueprint.Faction?.loadID == work.factionLoadId;
+                && FactionMatches(blueprint.Faction, work.factionLoadId);
         }
 
         private static bool FrameMatchesWork(Frame frame,
@@ -1669,9 +1696,15 @@ namespace ColonistAwareness
                 && frame.BuildDef?.defName == work.defName
                 && (work.stuffDefName.NullOrEmpty()
                     || frame.Stuff?.defName == work.stuffDefName)
-                && frame.Faction?.loadID == work.factionLoadId
+                && FactionMatches(frame.Faction, work.factionLoadId)
                 && (!requireBoundIdentity
                     || frame.ThingID == work.frameThingId);
+        }
+
+        private static bool FactionMatches(Faction faction, int loadId)
+        {
+            return loadId < 0 ? faction == null
+                : faction != null && faction.loadID == loadId;
         }
 
         // Frame.CompleteConstruction is the native rebuild completion seam.

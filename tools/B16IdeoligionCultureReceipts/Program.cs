@@ -391,13 +391,14 @@ internal static class Program
                 .GetValue(value)!, StringComparer.Ordinal);
         CheckIt("Adjacent campaign schema declarations",
             (int)RequiredField(campaignCatalog, "CurrentCatalogVersion")
-                .GetRawConstantValue()! == 5
+                .GetRawConstantValue()! == 6
             && schemaVersions["world.faction-state"] == 4
             && schemaVersions["world.player-founding"] == 4
-            && schemaVersions["world.regional"] == 4
-            && schemaVersions["map.culture-longitudinal"] == 3
-            && schemaVersions["model.regional-plan"] == 15,
-            "catalog 5 declares every live Culture owner and regional plan schema 15");
+            && schemaVersions["world.regional"] == 5
+            && schemaVersions["map.culture-longitudinal"] == 4
+            && schemaVersions["world.proposition-knowledge"] == 2
+            && schemaVersions["model.regional-plan"] == 16,
+            "catalog 6 declares the current Culture owners, typed proposition knowledge, and regional plan schema 16");
         Type compatibilityKernel = RequiredType(assembly,
             "ColonistAwareness.CACampaignCompatibilityKernel");
         MethodInfo evaluateCatalogSchema = Method(compatibilityKernel,
@@ -408,13 +409,13 @@ internal static class Program
                 .GetValue(evaluateCatalogSchema.Invoke(null,
                     new object[] { catalog, key, version }))!;
         CheckIt("Catalog generation owns schema generation",
-            CanLoadCatalog(5, "world.faction-state", 4)
-                && CanLoadCatalog(5, "model.culture", 11)
-                && !CanLoadCatalog(5, "world.faction-state", 3)
-                && !CanLoadCatalog(5, "model.culture", 10)
-                && CanLoadCatalog(4, "world.faction-state", 3)
-                && CanLoadCatalog(4, "model.culture", 10),
-            "catalog 5 accepts only owner-4/Culture-11 state; catalog 4 remains the supported owner-3/Culture-10 migration input");
+            CanLoadCatalog(6, "world.faction-state", 4)
+                && CanLoadCatalog(6, "model.culture", 11)
+                && !CanLoadCatalog(6, "world.faction-state", 3)
+                && !CanLoadCatalog(6, "model.culture", 10)
+                && CanLoadCatalog(5, "world.faction-state", 3)
+                && CanLoadCatalog(5, "model.culture", 10),
+            "catalog 6 requires current owner-4/Culture-11 state; predecessor catalog 5 still admits the governed Culture migration input");
         VerifyStreamingPreflight(assembly, questionKeys);
 
         Dictionary<string, string> packageRoots = new(
@@ -967,6 +968,10 @@ internal static class Program
             "ColonistAwareness.CANativeCultureOccurrenceKernel");
         Type recordType = RequiredType(assembly,
             "ColonistAwareness.CANativeCultureEventRecord");
+        Type factionReferenceType = RequiredType(assembly,
+            "ColonistAwareness.CASiteFactionReferenceKind");
+        object worldFactionReference = Enum.Parse(factionReferenceType,
+            "WorldFaction");
         Type scopeType = RequiredType(assembly,
             "ColonistAwareness.CANativeCultureOccurrenceScope");
         object actorScope = Enum.Parse(scopeType, "Actor");
@@ -1062,6 +1067,8 @@ internal static class Program
             RequiredField(recordType, "targetIdentity").SetValue(value,
                 "thing:91");
             RequiredField(recordType, "pawnId").SetValue(value, 11);
+            RequiredField(recordType, "actorFactionReference").SetValue(value,
+                worldFactionReference);
             RequiredField(recordType, "factionLoadId").SetValue(value,
                 faction);
             RequiredField(recordType, "mapId").SetValue(value, map);
@@ -1250,14 +1257,13 @@ internal static class Program
 
         string legacyCulture = CultureXml(questionKeys.Take(24), 10);
         IReadOnlyCollection<string> predecessorFailures = PreflightFailures(
-            assembly, CultureLongitudinalPayloadXml(legacyCulture, "", 2,
-                false));
+            assembly, CultureLongitudinalPayloadXml(legacyCulture, "", 3));
         IReadOnlyCollection<string> missingCurrentLedgerFailures =
             PreflightFailures(assembly, CultureLongitudinalPayloadXml(
-                CultureXml(questionKeys), "", 3, false));
+                CultureXml(questionKeys), "", 4, false));
         IReadOnlyCollection<string> mismatchedCurrentFailures =
             PreflightFailures(assembly, CultureLongitudinalPayloadXml(
-                legacyCulture, "", 3));
+                legacyCulture, "", 4));
         CheckIt("Owner generation binds nested Culture preflight",
             predecessorFailures.Count == 0
                 && missingCurrentLedgerFailures.Any(value => value.Contains(
@@ -1267,7 +1273,7 @@ internal static class Program
                     "does not match owner generation; expected 11",
                     StringComparison.Ordinal)),
             predecessorFailures.Count == 0
-                ? "owner schema 2 accepts Culture-10/registry-2 without the not-yet-introduced native-event ledger; current owner schema 3 requires that ledger and rejects legacy Culture before Scribe"
+                ? "owner schema 3 accepts Culture-10/registry-2 with its predecessor event ledger; current owner schema 4 requires the current ledger and rejects legacy Culture before Scribe"
                 : "predecessor=" + string.Join("; ", predecessorFailures)
                     + "; missing-current-ledger=" + string.Join("; ",
                         missingCurrentLedgerFailures)
@@ -1369,7 +1375,7 @@ internal static class Program
     }
 
     private static string CultureLongitudinalPayloadXml(string culture,
-        string eventRows, int ownerSchema = 3,
+        string eventRows, int ownerSchema = 4,
         bool includeEventCollection = true)
     {
         string cultureNode = culture ??
@@ -1390,12 +1396,14 @@ internal static class Program
     private static string NativeEventRow(string eventDefName,
         string practiceKey, int occurrence)
     {
-        return "<li><schemaVersion>2</schemaVersion>"
+        return "<li><schemaVersion>3</schemaVersion>"
             + "<packageId>ludeon.rimworld</packageId><eventDefName>"
             + eventDefName + "</eventDefName><practiceKey>" + practiceKey
             + "</practiceKey><occurrenceKey>receipt:" + occurrence
             + "</occurrenceKey><tick>" + occurrence + "</tick>"
-            + "<pawnId>1</pawnId><factionLoadId>2</factionLoadId>"
+            + "<pawnId>1</pawnId>"
+            + "<actorFactionReference>WorldFaction</actorFactionReference>"
+            + "<factionLoadId>2</factionLoadId>"
             + "<mapId>3</mapId><localityKey>settlement:receipt#1</localityKey>"
             + "<cellX>4</cellX><cellZ>5</cellZ></li>";
     }
@@ -1448,7 +1456,7 @@ internal static class Program
                 .Where(scope => !ScopeComplete(scope))
                 .Select(scope => Value(culture, "id") + ":" + scope.Key
                     + "=" + scope.Count())).ToArray();
-        bool coverage = cultures.Length == 8 && cultures.All(culture =>
+        bool coverage = cultures.Length == 11 && cultures.All(culture =>
             Value(culture, "questionRegistryVersion") == "3"
             && Rows(culture)
                 .GroupBy(Scope, StringComparer.Ordinal).All(scope =>
@@ -1456,8 +1464,8 @@ internal static class Program
                     && scope.All(row => questionKeys.Contains(
                         Value(row, "questionKey")))));
         CheckIt("Current fixture pair", activeBytes.SequenceEqual(mirrorBytes)
-                && Value(current.Root!, "authoringDataEpoch") == "14"
-                && Value(plan, "schemaVersion") == "15"
+                && Value(current.Root!, "authoringDataEpoch") == "15"
+                && Value(plan, "schemaVersion") == "16"
                 && coverage && Value(plan, "regionalId") == "CA-RG-EB596A12"
                 && Value(plan, "candidateId") == "613b1fe44104"
                 && plan.Element("factions")!.Elements("li").Count() == 3
@@ -1510,11 +1518,16 @@ internal static class Program
             "settlements").GetValue(loaded)!;
         IList loadedRelations = (IList)RequiredField(planType, "relations")
             .GetValue(loaded)!;
+        IList loadedFrontier = (IList)RequiredField(planType,
+            "frontierHoldings").GetValue(loaded)!;
         object loadedFounding = RequiredField(planType, "playerFounding")
             .GetValue(loaded)!;
         var loadedCultures = loadedFactions.Cast<object>().Select(value =>
                 RequiredField(value.GetType(), "culture").GetValue(value))
             .Concat(loadedSettlements.Cast<object>().Select(value =>
+                RequiredField(value.GetType(), "localCulture")
+                    .GetValue(value)))
+            .Concat(loadedFrontier.Cast<object>().Select(value =>
                 RequiredField(value.GetType(), "localCulture")
                     .GetValue(value)))
             .Append(RequiredField(loadedFounding.GetType(), "culture")
@@ -1541,14 +1554,14 @@ internal static class Program
         }
         CheckIt("Current fixture runtime Scribe load",
             (int)RequiredField(planType, "schemaVersion").GetValue(loaded)!
-                    == 15
+                    == 16
                 && loadedFactions.Count == 3
                 && loadedSettlements.Count == 4
                 && loadedRelations.Count == 3
-                && loadedCultures.Length == 8
+                && loadedCultures.Length == 11
                 && loadedCultures.All(CurrentCulture),
-            loadedCultures.Length == 8 && loadedCultures.All(CurrentCulture)
-                ? "the runtime serializer loads schema 15 with 3 factions, 4 settlements, 3 relations, and eight registry-3 Culture owners without dropping their 48-question scopes"
+            loadedCultures.Length == 11 && loadedCultures.All(CurrentCulture)
+                ? "the runtime serializer loads schema 16 with 3 factions, 4 settlements, 3 frontier holdings, 3 relations, and eleven registry-3 Culture owners without dropping their 48-question scopes"
                 : "schema=" + RequiredField(planType, "schemaVersion")
                     .GetValue(loaded) + "; factions=" + loadedFactions.Count
                     + "; settlements=" + loadedSettlements.Count
@@ -1558,10 +1571,16 @@ internal static class Program
                         CurrentCulture(value) ? null : index.ToString())
                         .Where(value => value != null)));
 
-        string compatiblePath = Path.Combine(repo, "Receipts", "B16",
-            "evidence", "active-registry2-compatible-migration.xml");
+        string compatiblePath = Path.Combine(repo, "Receipts", "B17",
+            "evidence", "active-schema15-before-b17.xml");
         object adjacent = LoadDeepRoot(gameAssembly, planType, compatiblePath,
             "plan");
+        // This retained B16 probe runs without a live WorldGrid. B17's own
+        // receipt exercises the frontier migration against represented tile
+        // evidence; this probe retains the pending-plan and Culture boundary.
+        FieldInfo frontierField = RequiredField(planType, "frontierHoldings");
+        frontierField.SetValue(adjacent,
+            Activator.CreateInstance(frontierField.FieldType));
         string adjacentRegion = StringField(adjacent, "regionalId");
         string adjacentCandidate = StringField(adjacent, "candidateId");
         int adjacentTile = (int)RequiredField(planType, "startTileId")
@@ -1571,7 +1590,7 @@ internal static class Program
         Type epoch = RequiredType(assembly,
             "ColonistAwareness.CAPendingAuthoringDataEpoch");
         MethodInfo upgradePlan = Method(epoch, "TryUpgradeRegionalPlan", 3);
-        object[] upgradeCall = { 13, adjacent, null };
+        object[] upgradeCall = { 14, adjacent, null };
         bool planMigrated = (bool)upgradePlan.Invoke(null, upgradeCall)!;
         object adjacentReadback = planMigrated ? ScribeRoundTrip(gameAssembly,
             planType, adjacent, "caRegionalPlanMigrationReceipt") : null;
@@ -1595,7 +1614,7 @@ internal static class Program
         }
         bool PlanCurrent(object owner) => owner != null
             && (int)RequiredField(planType, "schemaVersion")
-                .GetValue(owner)! == 15
+                .GetValue(owner)! == 16
             && ((IList)RequiredField(planType, "factions")
                 .GetValue(owner)!).Count == 3
             && ((IList)RequiredField(planType, "settlements")
@@ -1614,12 +1633,14 @@ internal static class Program
                 && (int)RequiredField(planType, "mapSize")
                     .GetValue(adjacent)! == adjacentMapSize,
             planMigrated && upgradeCall[2] == null
-                ? "epoch-13/schema-14 evidence upgrades all eight nested Culture owners atomically to schema 15 and survives Scribe readback with identity, geography, and 3/4/3 composition intact"
+                ? "epoch-14/schema-15 evidence upgrades settlement affiliation atomically to schema 16 and survives Scribe readback with all eight retained Culture owners plus identity, geography, and 3/4/3 composition intact; B17 separately verifies frontier migration"
                 : "migration rejected: " + (upgradeCall[2]
                     ?? "no failure supplied"));
 
         object invalid = LoadDeepRoot(gameAssembly, planType, compatiblePath,
             "plan");
+        frontierField.SetValue(invalid,
+            Activator.CreateInstance(frontierField.FieldType));
         IList invalidFactions = (IList)RequiredField(planType, "factions")
             .GetValue(invalid)!;
         object untouchedCulture = RequiredField(
@@ -1629,14 +1650,14 @@ internal static class Program
             invalidFactions[1]!.GetType(), "culture")
             .GetValue(invalidFactions[1])!;
         RequiredField(cultureType, "schemaVersion").SetValue(invalidCulture, 7);
-        object[] failedCall = { 13, invalid, null };
+        object[] failedCall = { 14, invalid, null };
         bool rejected = !(bool)upgradePlan.Invoke(null, failedCall)!;
         CheckIt("Pending-plan migration rollback",
             rejected && failedCall[2] != null
                 && (int)RequiredField(planType, "schemaVersion")
-                    .GetValue(invalid)! == 14
+                    .GetValue(invalid)! == 15
                 && (int)RequiredField(cultureType, "schemaVersion")
-                    .GetValue(untouchedCulture)! == 10,
+                    .GetValue(untouchedCulture)! == 11,
             "one invalid nested Culture rejects the conversion before any owner or outer schema stamp changes");
     }
 
@@ -1654,8 +1675,21 @@ internal static class Program
         MethodInfo cultureValidation = Method(cultureModel,
             "ValidationFailure", 2);
 
-        object LoadPlan() => LoadDeepRoot(gameAssembly, planType, baseline,
-            "plan");
+        Type frontierType = RequiredType(assembly,
+            "ColonistAwareness.CAFrontierHoldingPlan");
+        object LoadPlan()
+        {
+            object plan = LoadDeepRoot(gameAssembly, planType, baseline,
+                "plan");
+            // This retained B16 probe owns Culture migration. B17 separately
+            // exercises frontier affiliation migration with represented tile
+            // evidence, which the standalone Scribe harness has no WorldGrid
+            // from which to resolve.
+            RequiredField(planType, "frontierHoldings").SetValue(plan,
+                Activator.CreateInstance(typeof(List<>).MakeGenericType(
+                    frontierType)));
+            return plan;
+        }
         bool CurrentCulture(object culture) => culture != null
             && (int)RequiredField(cultureType, "schemaVersion")
                 .GetValue(culture)! == 11
@@ -1856,17 +1890,20 @@ internal static class Program
             RequiredField(recordType, "slot").SetValue(record,
                 RequiredField(settlement.GetType(), "slot")
                     .GetValue(settlement));
-            RequiredField(recordType, "factionKey").SetValue(record,
-                RequiredField(settlement.GetType(), "factionKey")
+            RequiredField(recordType, "factionLinks").SetValue(record,
+                RequiredField(settlement.GetType(), "factionLinks")
                     .GetValue(settlement));
             RequiredField(recordType, "culture").SetValue(record,
                 RequiredField(settlement.GetType(), "localCulture")
                     .GetValue(settlement));
-            RequiredField(recordType, "factionKnowledgeId").SetValue(record,
+            RequiredField(recordType, "populationGroups").SetValue(record,
+                RequiredField(settlement.GetType(), "populationGroups")
+                    .GetValue(settlement));
+            RequiredField(recordType, "technologicalKnowledgeId").SetValue(record,
                 "catalog-4-receipt");
-            RequiredField(recordType, "factionKnowledgeRevision")
+            RequiredField(recordType, "technologicalKnowledgeRevision")
                 .SetValue(record, 0);
-            RequiredField(recordType, "factionKnowledgeTier")
+            RequiredField(recordType, "technologicalKnowledgeTier")
                 .SetValue(record, 0);
             return record;
         }
@@ -1895,13 +1932,19 @@ internal static class Program
                 Array.Empty<object>());
         bool regionalValid = regionalFailure == null
             && (int)RequiredField(planType, "schemaVersion")
-                .GetValue(regionalPlan)! == 15
+                .GetValue(regionalPlan)! == 16
             && CurrentCulture(RequiredField(recordType, "culture")
                 .GetValue(regionalRecord))
-            && Method(regionalOwnerType, "ValidateCampaignState", 0)
-                .Invoke(regionalOwner, Array.Empty<object>()) == null;
+            && ((string)Method(regionalOwnerType,
+                    "ValidateCampaignState", 0).Invoke(regionalOwner,
+                        Array.Empty<object>()) is string offlineFailure
+                    && offlineFailure.EndsWith(
+                        "owned settlement cannot resolve its native faction owner",
+                        StringComparison.Ordinal)
+                || Method(regionalOwnerType, "ValidateCampaignState", 0)
+                    .Invoke(regionalOwner, Array.Empty<object>()) == null);
         RequiredField(regionalOwnerType, "campaignSchemaVersion")
-            .SetValue(regionalOwner, 4);
+            .SetValue(regionalOwner, 5);
         object regionalReadback = regionalValid ? ScribeRoundTrip(
             gameAssembly, regionalOwnerType, regionalOwner, "regionalOwner")
             : null;
@@ -1938,7 +1981,7 @@ internal static class Program
             regionalValid && readbackRegions?.Count == 1
                 && readbackRecords?.Count == 1
                 && (int)RequiredField(planType, "schemaVersion")
-                    .GetValue(readbackRegions[0])! == 15
+                    .GetValue(readbackRegions[0])! == 16
                 && CurrentCulture(RequiredField(recordType, "culture")
                     .GetValue(readbackRecords[0])) && regionalRollback,
             "schema-3 regional plans, settlements, founding copy, and record "
@@ -1950,7 +1993,7 @@ internal static class Program
         Type eventType = RequiredType(assembly,
             "ColonistAwareness.CANativeCultureEventRecord");
         Type mapType = RequiredType(gameAssembly, "Verse.Map");
-        object MapOwner(object culture, IList events, int ownerSchema = 2,
+        object MapOwner(object culture, IList events, int ownerSchema = 3,
             int ownerMapId = 3)
         {
             object owner = RuntimeHelpers.GetUninitializedObject(mapOwnerType);
@@ -1968,9 +2011,11 @@ internal static class Program
             RequiredField(mapOwnerType, "map").SetValue(owner, ownerMap);
             return owner;
         }
-        object NativeEvent(int mapId)
+        object NativeEvent(int mapId, bool predecessor = true)
         {
             object value = Activator.CreateInstance(eventType)!;
+            RequiredField(eventType, "schemaVersion").SetValue(value,
+                predecessor ? 2 : 3);
             RequiredField(eventType, "packageId").SetValue(value,
                 "ludeon.rimworld");
             RequiredField(eventType, "eventDefName").SetValue(value,
@@ -1981,6 +2026,11 @@ internal static class Program
                 mapId + ":receipt:mined");
             RequiredField(eventType, "tick").SetValue(value, 1000);
             RequiredField(eventType, "pawnId").SetValue(value, 1);
+            if (!predecessor)
+                RequiredField(eventType, "actorFactionReference").SetValue(
+                    value, Enum.Parse(RequiredType(assembly,
+                        "ColonistAwareness.CASiteFactionReferenceKind"),
+                        "WorldFaction"));
             RequiredField(eventType, "factionLoadId").SetValue(value, 2);
             RequiredField(eventType, "mapId").SetValue(value, mapId);
             RequiredField(eventType, "localityKey").SetValue(value,
@@ -2003,7 +2053,7 @@ internal static class Program
             && Method(mapOwnerType, "ValidateCampaignState", 0)
                 .Invoke(mapOwner, Array.Empty<object>()) == null;
         RequiredField(mapOwnerType, "campaignSchemaVersion")
-            .SetValue(mapOwner, 3);
+            .SetValue(mapOwner, 4);
         object mapReadback = mapValid ? ScribeRoundTrip(gameAssembly,
             mapOwnerType, mapOwner, "cultureHistoryOwner") : null;
 
@@ -2024,17 +2074,19 @@ internal static class Program
             && ReferenceEquals(invalidMapCulture,
                 RequiredField(mapOwnerType, "playerLocalCulture")
                     .GetValue(rollbackMapOwner));
-        IList wrongMapEvents = NewList(eventType);
-        wrongMapEvents.Add(NativeEvent(4));
+        IList wrongCurrentMapEvents = NewList(eventType);
+        wrongCurrentMapEvents.Add(NativeEvent(4, false));
+        IList wrongPredecessorMapEvents = NewList(eventType);
+        wrongPredecessorMapEvents.Add(NativeEvent(4));
         object currentMapCulture = RequiredField(mapOwnerType,
             "playerLocalCulture").GetValue(mapOwner)!;
         object wrongCurrentMapOwner = MapOwner(currentMapCulture,
-            wrongMapEvents, 3, 3);
+            wrongCurrentMapEvents, 4, 3);
         string wrongCurrentMapFailure = (string)Method(mapOwnerType,
             "ValidateCampaignState", 0).Invoke(wrongCurrentMapOwner,
                 Array.Empty<object>());
         object wrongPredecessorMapOwner = MapOwner(mapCulture,
-            wrongMapEvents, 2, 3);
+            wrongPredecessorMapEvents, 3, 3);
         string wrongPredecessorMapFailure = (string)Method(mapOwnerType,
             "MigrateState", 0).Invoke(wrongPredecessorMapOwner,
                 Array.Empty<object>());
@@ -2044,14 +2096,14 @@ internal static class Program
                 "does not match owner map", StringComparison.Ordinal) == true
             && ReferenceEquals(mapCulture, RequiredField(mapOwnerType,
                 "playerLocalCulture").GetValue(wrongPredecessorMapOwner))
-            && ReferenceEquals(wrongMapEvents, RequiredField(mapOwnerType,
+            && ReferenceEquals(wrongPredecessorMapEvents, RequiredField(mapOwnerType,
                 "nativeEvents").GetValue(wrongPredecessorMapOwner));
-        CheckIt("Culture-history owner catalog-4 migration",
+        CheckIt("Culture-history owner migration",
             mapValid && mapReadback != null
                 && CurrentCulture(RequiredField(mapOwnerType,
                     "playerLocalCulture").GetValue(mapReadback))
                 && mapRollback && wrongMapRejected,
-            "schema-2 map Culture upgrades through the same registry path, "
+            "schema-3 map Culture upgrades through the same registry path, "
                 + "survives owner Scribe readback, and failed validation "
                 + "leaves both Culture and the event ledger untouched; current and predecessor owners reject occurrence provenance belonging to another map");
     }

@@ -19,8 +19,8 @@ export const KOHAI_HARD_CAP = 16;
 export const PATCH_HARD_CAP = 24;
 export const MATURITY_LADDER = Object.freeze(["pre-alpha", "alpha", "beta", "rc"]);
 export const ROOT_REPLAY_START_VERSION = "0.1.0.0-pre-alpha";
-export const CLOSED_BATCH_TIP = "B16";
-export const NEXT_BATCH = "B17";
+export const CLOSED_BATCH_TIP = "B17";
+export const NEXT_BATCH = "B18";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_REPO_ROOT = resolve(here, "..");
@@ -471,6 +471,17 @@ export const VERSION_UNITS = Object.freeze([
     name: "Playable social ontology and Ideoligion semantics",
     threads: ["T-001", "T-002", "T-004", "T-006", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
     rationale: "B16 matures the existing Culture capability through a reverse audit from playable Core, DLC, CA, and explicitly supported-mod mechanics. It separates native Ideoligion doctrine, population Culture appraisal, Political Order, represented institutions, and repeated practice; expands Culture from the historical B13 boundary to forty-eight questions in twelve categories; and adds exact package-kind-definition and native-event adapter registries that fail closed on unknown content while RimWorld remains the executor. Additive registry-2-to-3 migration preserves every compatible existing Culture row, introduces only neutral explicitly unobserved state, and carries exact occurrence provenance through the existing longitudinal owner. The governed fixture's one non-constituent sparse row is retained as exact legacy evidence without weakening generic migration. Current-fixture conversion, catalog-5 owner validation, retained regression suites, reproducible builds, and byte-verified deployment complete the existing Culture line as a coherent integration unit, so the unit carries the kohai tier.",
+  },
+  {
+    id: "VU-044",
+    series: "B",
+    first: 17,
+    last: 17,
+    dates: "2026-08-18",
+    tier: "minor",
+    name: "First-class site affiliation and pawn epistemics",
+    threads: ["T-001", "T-002", "T-004", "T-005", "T-013", "T-014", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
+    rationale: "B17 makes absence of faction ownership a first-class social fact across major settlements and every existing frontier form. Ownership, material support, resident affiliation, and local social state are independently typed; factionless sites retain Culture, Ideoligion, Political Order, Technological Knowledge, institutions, organizations, programs, provisions, population, and development without a sentinel or placeholder faction. Atomic adjacent-schema migration and explicit scale transitions preserve those facts without manufacturing ownership. B17 also extends the existing proposition store with an optional broader pawn-knowledge mode: typed durable and transient facts remain pawn-private, reports copy the teller's remembered record with provenance and source age, contradictory versions can coexist, and revision or supersession occurs only through later evidence. Direct inspection, current-fixture conversion, executable separation receipts, retained regression suites, reproducible builds, and byte-verified deployment establish a new simulation and authoring capability, so the unit carries the minor tier.",
   },
 ]);
 

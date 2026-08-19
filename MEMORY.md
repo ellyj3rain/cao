@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Memory |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.6.1.0-alpha` · closed batch tip `B16` · next `B17` |
+| Version | `1.7.0.0-alpha` · closed batch tip `B17` · next `B18` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `MEMORY.md` |
@@ -44,20 +44,20 @@ junction for the operator, not a defect in the index.
 | `VERSION_MAP.md` | REGULATORY, GENERATED | Chronological version-unit replay derived from `tools/version-model.mjs`. |
 | `ROADMAP.md` | CANONICAL | Thread map, backlog, live gates. |
 | `SESSION_STATE.md` | CANONICAL | Current operational reality. Read before claiming where anything stands. |
-| `VERSION` | CANONICAL, GENERATED | `1.6.1.0-alpha`, derived from the version replay. |
+| `VERSION` | CANONICAL, GENERATED | `1.7.0.0-alpha`, derived from the version replay. |
 
 ## Batch record system
 
 | Surface | Status | Role |
 |---|---|---|
 | `Batches/README.md` | REGULATORY | Portable-history contract for one alphanumeric batch namespace. |
-| `Batches/[A-Z]*.md` | APPEND-ONLY | The 102 closed A-sequence records and closed `B1-B16` records in one namespace. |
+| `Batches/[A-Z]*.md` | APPEND-ONLY | The 102 closed A-sequence records and closed `B1-B17` records in one namespace. |
 | `Batches/THREADS.md` | REGULATORY | Permanent series-neutral families and many-to-many threads over nonadjacent batches. |
 | `Batches/THREAD_ID_CROSSWALK.md` | REGULATORY | Complete map from temporary `ATF-*` / `AT-*` identifiers to `TF-*` / `T-*`. |
 | `Batches/FORMER_LABELS.md` | REGULATORY | Complete map from all 93 former ledger boundaries to current batches. |
 
-The A sequence closes at `A102`; the chronology continues through closed `B16`,
-and `B17` is next after the operator runtime-test boundary. The governed batch records, chronological catalog, thematic
+The A sequence closes at `A102`; the chronology continues through closed `B17`,
+and `B18` is next after the operator runtime-test boundary. The governed batch records, chronological catalog, thematic
 crosswalks, version map, decisions, findings, receipts, and source provenance are
 the portable project history.
 
@@ -68,8 +68,8 @@ the portable project history.
 | Published forge history | Host-specific distribution record beginning at the canonical snapshot selected for publication. |
 
 The three development layers are separate. Batches record atomic chronological
-work. Threads classify related work across any letter sequence. The 43 version
-units in `VERSION_MAP.md` partition A1-B16 into contiguous capability runs and
+work. Threads classify related work across any letter sequence. The 44 version
+units in `VERSION_MAP.md` partition A1-B17 into contiguous capability runs and
 derive the current root version through the Neo four-coordinate odometer.
 
 ## Engine and distribution
@@ -98,12 +98,13 @@ derive the current root version through the Neo four-coordinate odometer.
 | `ECONOMIC_IMPLEMENTATION_AUDIT.md` | CANONICAL, INCOMPLETE | DR-87 second pass; RimBank deep trace, verdict "split by layer". Closes with "Remaining, not started". |
 | `PARALLEL_ONTOLOGY_AUDIT.md` | **DAMAGED** | The current file is an 89-line consolidation. The complete 394-line original was overwritten 2026-08-05 while untracked, recovered from session transcripts, and is held in `recovery-candidates/` in the preservation package. **Restoration is an open decision.** Current verdicts in the file are accurate; rounds 1–2 per-item consumer tracing is missing from it. |
 | `SETUP_SCOPE_MAP.md` | RECORD, SUPERSEDED | Historical audit of the removed setup screen. Retained for its dead-control and flow evidence; its schema names are not current contracts. |
-| `MODULE_OWNERSHIP.md` | CANONICAL | Module, state, mutation, cadence, index, dependency, consumer, and diagnostics ownership through B16. |
+| `MODULE_OWNERSHIP.md` | CANONICAL | Module, state, mutation, cadence, index, dependency, consumer, and diagnostics ownership through B17. |
 | `SCHEMA_REGISTRY.md` | CANONICAL | Executable campaign schema catalog, pending-authoring distinction, and validation/migration contract. |
 | `PERSISTENCE_CENSUS.md` | RECORD | Generated source-to-catalog census of every direct Scribe/nested Expose writer and native persisted owner, including narrow non-campaign exclusions. |
 | `CAMPAIGN_COMPATIBILITY.md` | CANONICAL | Operator update, preflight, supported migration, visible failure, backup, and rollback workflow. |
 | `AUTHORING_ONTOLOGY_COVERAGE.md` | CANONICAL | Four-layer authoring coverage, mechanics classification, production vocabulary, semantic kinds, category cardinalities, and duplicate-surface audit. |
 | `B16_PLAYABLE_SOCIAL_ONTOLOGY_AUDIT.md` | CANONICAL | Current doctrine, Culture, Political Order, institutions, and practice ownership split; forty-eight-question reverse playable-mechanics audit; exact native and supported-mod semantic-adapter boundary. |
+| `B17_SITE_AFFILIATION_AND_EPISTEMIC_CONTRACT.md` | CANONICAL | First-class no-owner and independent support across every inhabited scale, complete factionless local social state, explicit transitions, and optional pawn-private broader knowledge with copied report provenance. |
 | `B15_TECHNOLOGICAL_KNOWLEDGE_CONTRACT.md` | CANONICAL | Faction ownership, Society composition, domain/competency model, native translation, standard/distributed availability, migration, and acceptance boundary. |
 | `REGIONAL_GEOGRAPHY_CONTRACT.md` | CANONICAL | B14 regional selection, preview, confirmation, and generation composition identity. |
 | `B13_CAUSAL_CONTRACT.md` | RECORD | Historical twenty-four-question B13 Culture boundary and acceptance contract retained beneath B16. |
@@ -115,7 +116,7 @@ derive the current root version through the Neo four-coordinate odometer.
 | `B13_B12_FIDELITY_AUDIT.md` | RECORD | Pre-change audit proving which B12 contracts were preserved, extended, or corrected. |
 | `B13_ACCEPTANCE_RECEIPTS.md`, `B13_FIXTURE_RECEIPT.md` | RECORD | Fixed-seed registry, authoring, causal-isolation, persistence, generation, historical-feedback, and current-fixture results. |
 | `B13_BUILD_RECEIPT.md`, `B13_DEPLOYMENT_RECEIPT.md`, `B13_REVIEW_RECEIPT.md` | RECORD | Exact build, deployment, and independent causal/structural/surface review closure evidence. |
-| `Receipts/B14/`, `Receipts/B15/`, `Receipts/B16/` | RECORD | Regional/Society convergence, faction Technological Knowledge, and playable social-ontology execution, mapping, fixture, retained-regression, review, build, and deployment evidence. |
+| `Receipts/B14/`, `Receipts/B15/`, `Receipts/B16/`, `Receipts/B17/` | RECORD | Regional/Society convergence, Technological Knowledge, playable social ontology, site affiliation, pawn epistemics, fixture, retained-regression, review, build, and deployment evidence. |
 | `B12_ACCEPTANCE_RECEIPTS.md`, `B12_FIXTURE_RECEIPT.md` | RECORD | Fixed-seed causal, isolation, persistence, performance, migration, and governed-fixture results. |
 | `B12_BUILD_RECEIPT.md`, `B12_DEPLOYMENT_RECEIPT.md`, `B12_REVIEW_RECEIPT.md` | RECORD | Exact build, deployment, and five-lens review closure evidence. |
 | `B11_ACCEPTANCE_RECEIPTS.md` | RECORD | Executable B11 ownership, durability, ontology, composition, surface, and regression results. |

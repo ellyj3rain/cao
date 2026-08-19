@@ -19,6 +19,10 @@ namespace ColonistAwareness
         public string targetIdentity;
         public int tick = -1;
         public int pawnId = -1;
+        // The relationship is explicit. factionLoadId is only the payload of
+        // WorldFaction and -1 never means "unaffiliated" by itself.
+        public CASiteFactionReferenceKind actorFactionReference =
+            CASiteFactionReferenceKind.None;
         public int factionLoadId = -1;
         public int mapId = -1;
         public string localityKey;
@@ -35,6 +39,8 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref targetIdentity, "targetIdentity");
             Scribe_Values.Look(ref tick, "tick", -1);
             Scribe_Values.Look(ref pawnId, "pawnId", -1);
+            Scribe_Values.Look(ref actorFactionReference,
+                "actorFactionReference", CASiteFactionReferenceKind.None);
             Scribe_Values.Look(ref factionLoadId, "factionLoadId", -1);
             Scribe_Values.Look(ref mapId, "mapId", -1);
             Scribe_Values.Look(ref localityKey, "localityKey");
@@ -55,8 +61,17 @@ namespace ColonistAwareness
                     eventDefName);
             if (adapter == null || adapter.PracticeKey != practiceKey)
                 return "native event has no exact supported adapter";
-            if (tick < 0 || pawnId < 0 || factionLoadId < 0 || mapId < 0)
+            if (tick < 0 || pawnId < 0 || mapId < 0)
                 return "native event occurrence identity is incomplete";
+            if (actorFactionReference != CASiteFactionReferenceKind.None
+                && actorFactionReference
+                    != CASiteFactionReferenceKind.WorldFaction)
+                return "native event has an invalid actor-faction relation";
+            if (actorFactionReference
+                    == CASiteFactionReferenceKind.WorldFaction
+                ? factionLoadId < 0 : factionLoadId != -1)
+                return "native event actor-faction payload does not match "
+                    + "its relationship";
             if (occurrenceKey.NullOrEmpty() || localityKey.NullOrEmpty()
                 || cellX < 0 || cellZ < 0)
                 return "native event act or locality is incomplete";
@@ -64,6 +79,27 @@ namespace ColonistAwareness
         }
 
         internal IntVec3 Cell => new IntVec3(cellX, 0, cellZ);
+
+        internal CANativeCultureEventRecord Copy()
+        {
+            return new CANativeCultureEventRecord
+            {
+                schemaVersion = schemaVersion,
+                packageId = packageId,
+                eventDefName = eventDefName,
+                practiceKey = practiceKey,
+                occurrenceKey = occurrenceKey,
+                targetIdentity = targetIdentity,
+                tick = tick,
+                pawnId = pawnId,
+                actorFactionReference = actorFactionReference,
+                factionLoadId = factionLoadId,
+                mapId = mapId,
+                localityKey = localityKey,
+                cellX = cellX,
+                cellZ = cellZ
+            };
+        }
     }
 
     internal static class CANativeCultureOccurrenceKernel
@@ -121,7 +157,21 @@ namespace ColonistAwareness
             int observedTick)
         {
             return record != null
+                && record.actorFactionReference
+                    == CASiteFactionReferenceKind.WorldFaction
                 && record.factionLoadId == factionLoadId
+                && (!locality.HasValue || locality.Value.Contains(record.Cell))
+                && record.tick >= recentStart
+                && record.tick <= observedTick;
+        }
+
+        internal static bool MatchesResidents(
+            CANativeCultureEventRecord record,
+            IReadOnlyCollection<int> residentPawnIds,
+            CellRect? locality, int recentStart, int observedTick)
+        {
+            return record != null && residentPawnIds != null
+                && residentPawnIds.Contains(record.pawnId)
                 && (!locality.HasValue || locality.Value.Contains(record.Cell))
                 && record.tick >= recentStart
                 && record.tick <= observedTick;
@@ -215,6 +265,7 @@ namespace ColonistAwareness
             if (records == null) return;
             var retained = records.Where(value => value != null)
                 .GroupBy(value => value.mapId + "\0"
+                    + value.actorFactionReference + "\0"
                     + value.factionLoadId + "\0"
                     + (value.localityKey ?? "") + "\0"
                     + (value.practiceKey ?? ""), StringComparer.Ordinal)
@@ -238,6 +289,7 @@ namespace ColonistAwareness
                 (records ?? Enumerable.Empty<CANativeCultureEventRecord>())
                 .Where(value => value != null)
                 .GroupBy(value => value.mapId + "\0"
+                    + value.actorFactionReference + "\0"
                     + value.factionLoadId + "\0"
                     + (value.localityKey ?? "") + "\0"
                     + (value.practiceKey ?? ""), StringComparer.Ordinal)
@@ -253,6 +305,7 @@ namespace ColonistAwareness
         private static bool SameBucket(CANativeCultureEventRecord left,
             CANativeCultureEventRecord right) => left != null && right != null
             && left.factionLoadId == right.factionLoadId
+            && left.actorFactionReference == right.actorFactionReference
             && left.mapId == right.mapId
             && left.localityKey == right.localityKey
             && left.practiceKey == right.practiceKey;
@@ -274,7 +327,7 @@ namespace ColonistAwareness
             if (adapter == null
                 || !historyEvent.args.TryGetArg(HistoryEventArgsNames.Doer,
                     out Pawn pawn)
-                || pawn?.MapHeld == null || pawn.Faction == null)
+                || pawn?.MapHeld == null)
                 return;
             CACultureLongitudinalMapComponent history =
                 CACultureLongitudinalMapComponent.For(pawn.MapHeld);

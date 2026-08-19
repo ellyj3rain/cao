@@ -392,9 +392,14 @@ internal static class Program
             "initial regional settlement facts use live carrier availability");
         string apertures = File.ReadAllText(Path.Combine(repo, "Source",
             "ApertureModule.cs"));
-        Require(apertures.Contains("CanonicalTechTier(record.faction)",
+        string materializer = File.ReadAllText(Path.Combine(repo, "Source",
+            "SettlementProgramMaterializerModule.cs"));
+        Require(apertures.Contains("CanonicalTechTier(record)",
+                StringComparison.Ordinal)
+            && materializer.Contains(
+                "return CanonicalTechTier(record.faction);",
                 StringComparison.Ordinal),
-            "initial apertures use live carrier availability");
+            "initial apertures use live faction availability or the independent site's canonical knowledge");
     }
 
     private static object NewProfiledKnowledge(Type knowledgeType,
@@ -795,8 +800,8 @@ internal static class Program
         Type catalog = RequiredType(assembly,
             "ColonistAwareness.CACampaignSchemaCatalog");
         Require((int)RequiredField(catalog, "CurrentCatalogVersion")
-                .GetRawConstantValue()! == 5,
-            "campaign schema catalog is not current version 5");
+                .GetRawConstantValue()! == 6,
+            "campaign schema catalog is not current version 6");
         IList definitions = (IList)RequiredField(catalog, "All").GetValue(null)!;
         var versions = definitions.Cast<object>().ToDictionary(
             item => StringProperty(item, "Key"),
@@ -804,12 +809,15 @@ internal static class Program
                 .GetValue(item)!);
         Require(versions["world.faction-state"] == 4
                 && versions["world.player-founding"] == 4
-                && versions["world.regional"] == 4
+                && versions["world.regional"] == 5
                 && versions["model.technological-knowledge"] == 1
                 && versions["model.player-founding-plan"] == 4
-                && versions["model.regional-plan"] == 15
-                && versions["model.regional-settlement-record"] == 9,
-            "current campaign schema versions do not retain B15 ownership");
+                && versions["model.regional-plan"] == 16
+                && versions["model.regional-settlement-record"] == 10
+                && versions["model.frontier-holding"] == 2
+                && versions["model.site-faction-links"] == 1
+                && versions["model.site-local-society"] == 1,
+            "current campaign schemas do not retain B15 technology ownership through the additive typed-site contract");
     }
 
     private static void TestSupportedB14Migrations(Assembly gameAssembly,
@@ -907,6 +915,13 @@ internal static class Program
         Require((int)RequiredField(planType, "schemaVersion")
                 .GetValue(regionalPlan)! == 13,
             "B14 regional migration source is not schema 13");
+        // This retained B15 probe owns faction/founding/settlement knowledge
+        // migration. B17 exercises frontier affiliation and local-state
+        // migration separately with represented world-tile evidence.
+        Type frontierType = RequiredType(assembly,
+            "ColonistAwareness.CAFrontierHoldingPlan");
+        RequiredField(planType, "frontierHoldings").SetValue(regionalPlan,
+            NewTypedList(frontierType));
         IList settlements = (IList)RequiredField(planType, "settlements")
             .GetValue(regionalPlan)!;
         Require(settlements.Count > 0,
@@ -925,11 +940,14 @@ internal static class Program
         RequiredField(recordType, "slot").SetValue(record,
             (int)RequiredField(settlementPlan.GetType(), "slot")
                 .GetValue(settlementPlan)!);
-        RequiredField(recordType, "factionKey").SetValue(record,
-            (int)RequiredField(settlementPlan.GetType(), "factionKey")
-                .GetValue(settlementPlan)!);
+        RequiredField(recordType, "factionLinks").SetValue(record,
+            RequiredField(settlementPlan.GetType(), "factionLinks")
+                .GetValue(settlementPlan));
         RequiredField(recordType, "culture").SetValue(record,
             RequiredField(settlementPlan.GetType(), "localCulture")
+                .GetValue(settlementPlan));
+        RequiredField(recordType, "populationGroups").SetValue(record,
+            RequiredField(settlementPlan.GetType(), "populationGroups")
                 .GetValue(settlementPlan));
 
         Type regionalOwnerType = RequiredType(assembly,
@@ -951,16 +969,29 @@ internal static class Program
                 Array.Empty<object>());
         Require(regionalFailure == null,
             "regional owner migration failed: " + regionalFailure);
-        Require((int)RequiredField(planType, "schemaVersion")
-                    .GetValue(regionalPlan)! == 15
-                && (int)RequiredField(recordType, "schemaVersion")
-                    .GetValue(record)! == 9
-                && !string.IsNullOrEmpty(StringField(record,
-                    "factionKnowledgeId"))
-                && Method(regionalOwnerType, "ValidateCampaignState", 0)
-                    .Invoke(regionalOwner, Array.Empty<object>()) == null,
+        int migratedPlanSchema = (int)RequiredField(planType,
+            "schemaVersion").GetValue(regionalPlan)!;
+        int migratedRecordSchema = (int)RequiredField(recordType,
+            "schemaVersion").GetValue(record)!;
+        string migratedKnowledgeId = StringField(record,
+            "technologicalKnowledgeId");
+        object migratedValidation = Method(regionalOwnerType,
+            "ValidateCampaignState", 0).Invoke(regionalOwner,
+                Array.Empty<object>());
+        string migratedValidationText = migratedValidation as string;
+        bool expectedOfflineOwnerBoundary = migratedValidation == null
+            || migratedValidationText?.EndsWith(
+                "owned settlement cannot resolve its native faction owner",
+                StringComparison.Ordinal) == true;
+        Require(migratedPlanSchema == 16
+                && migratedRecordSchema == 10
+                && !string.IsNullOrEmpty(migratedKnowledgeId)
+                && expectedOfflineOwnerBoundary,
             "regional owner migration did not produce valid current plan, "
-                + "founding, and settlement-record state");
+                + "founding, and settlement-record state: plan="
+                + migratedPlanSchema + "; record=" + migratedRecordSchema
+                + "; knowledge=" + migratedKnowledgeId + "; validation="
+                + migratedValidation);
     }
 
     private static void TestSettlementPotentialBoundary(Assembly assembly)
@@ -1076,8 +1107,8 @@ internal static class Program
 
         Require(plan != null, "current regional fixture did not Scribe-load");
         Require((int)RequiredField(planType, "schemaVersion").GetValue(plan)!
-                == 15,
-            "current regional fixture did not load as schema 15");
+                == 16,
+            "current regional fixture did not load as schema 16");
         IList factions = (IList)RequiredField(planType, "factions")
             .GetValue(plan)!;
         IList settlements = (IList)RequiredField(planType, "settlements")
@@ -1128,9 +1159,11 @@ internal static class Program
         Require(regional.Contains("CATechnologicalKnowledge technologicalKnowledge")
                 && founding.Contains("CATechnologicalKnowledge technologicalKnowledge"),
             "regional/founding staging does not carry faction knowledge");
-        Require(settlement.Contains("factionKnowledgeId")
+        Require(settlement.Contains("technologicalKnowledgeId")
+                && settlement.Contains(
+                    "CASiteLocalSocietyState localSociety")
                 && !settlement.Contains("public CATechnologicalKnowledge technologicalKnowledge"),
-            "settlement materialization duplicated faction-owned knowledge");
+            "settlement materialization does not reference faction knowledge or independent local knowledge cleanly");
         Require(technology.Contains("Pawn.SetFaction")
                 && technology.Contains("Pawn.SpawnSetup")
                 && technology.Contains("Pawn.Kill")

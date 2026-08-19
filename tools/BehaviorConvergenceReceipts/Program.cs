@@ -67,7 +67,6 @@ internal static class Program
             string drills = Source("DrillsModule.cs");
             string stackLord = Source("StackLord.cs");
             string assaultApproach = Source("AssaultApproachModule.cs");
-            string frontier = Source("FrontierModule.cs");
             string organization = Source("OrganizationModule.cs");
             string disposition = Source("DispositionModule.cs");
             string immediate = Source("ImmediateCombatModule.cs");
@@ -214,9 +213,9 @@ internal static class Program
                 ActiveTierCount(catalog) + " active tier entries", "executable");
             C(22, "Saved fixtures round-trip with the new schema",
                 RoundTrips(mirror) && RoundTrips(keyed)
-                    && Value(mirrorPlan, "schemaVersion") == "8"
+                    && Value(mirrorPlan, "schemaVersion") == "16"
                     && autonomy.Contains("CA_initiativeSchema"),
-                "regional schema 8 round-trip plus initiative schema marker",
+                "regional schema 16 round-trip plus initiative schema marker",
                 "executable");
 
             // Authority: 23-32.
@@ -293,22 +292,20 @@ internal static class Program
                     && intent.Contains("survival.immediate_evasion")
                     && HasAll(settlementPrograms, "TryAuthorizeJob",
                         "developmentExecutable")
-                    && HasAll(roads, "TryAuthorizeJob",
-                        "CABehaviorGate.Evaluate")
+                    && roads.Contains("TryAuthorizeJob")
+                    && HasGateEvaluation(roads)
                     && HasAll(toxicWaste, "TryAuthorizeAndRegister",
                         "hazard.toxic_waste_response")
                     && HasAll(survival, "TryAuthorizeAndRegister",
                         "support.ambush_aftermath",
                         "support.ambush_adaptation", "parent.EpisodeId")
                     && HasAll(stackLord, "support.stack_auto_breach",
-                        "CABehaviorGate.Evaluate", "autoGoReadyTick",
+                        "autoGoReadyTick",
                         "lord.ReceiveMemo(MemoGo)")
+                    && HasGateEvaluation(stackLord)
                     && !stackLord.Contains("Trigger_TicksPassed(180)")
                     && HasAll(assaultApproach,
                         "TryAuthorizeAndRegister", "combat.assault_approach")
-                    && HasAll(frontier, "TryAuthorizeAndRegister",
-                        "institution.frontier_household_activity",
-                        "survival.frontier_flight")
                     && CountOccurrences(runtimeSource,
                         "TryAuthorizeAndRegister") >= 26
                     && Ordered(roads, "CompleteNativeLabor(Pawn worker",
@@ -610,9 +607,11 @@ internal static class Program
                         "creationBehaviorKey", "creationAuthorized",
                         "creationBeneficiaries", "creationCulturalBasis",
                         "creationPoliticalBasis")
-                    && Ordered(organization, "record.creationExecutable",
-                        "CASettlementProgramMaterializer.Materialize",
-                        "TryAuthorizeLaterDevelopment"),
+                    && Ordered(regional, "BuildCreationProposal",
+                        "TryAuthorizeCreationHistory",
+                        "CreationFromRecord(record)",
+                        "CanSiteCreationDemands", "RecordCreationFacts",
+                        "CASettlementProgramMaterializer.Materialize"),
                 "confirmed creation history materializes under world-authoring authority before later institutional development is considered",
                 "source-contract");
             C(75, "Player and NPC planning share semantic demands",
@@ -628,7 +627,8 @@ internal static class Program
                         "CASettlementDemandKind.Access",
                         "CASettlementDemandKind.Maintenance")
                     && CatalogEntryHas(catalog,
-                        "spatial.npc_settlement_development", "B5 demand")
+                        "spatial.npc_settlement_development",
+                        "shared settlement demands")
                     && Ordered(settlementModel,
                         "EnsureSettlementPattern(CARegionalPlan plan)",
                         "CASettlementComposition.EnsureDerived",
@@ -671,10 +671,10 @@ internal static class Program
                 Ordered(spatial, "TrySelectStoragePlan", "CABehaviorContext",
                         "CABehaviorGate.Evaluate")
                     && Ordered(regional, "BuildCreationProposal",
-                        "TryAuthorizeCreationHistory")
-                    && Ordered(organization, "CreationFromRecord(record)",
-                        "CanSiteCreationDemands", "record.creationExecutable",
-                        "TryAuthorizeLaterDevelopment")
+                        "TryAuthorizeCreationHistory",
+                        "CreationFromRecord(record)",
+                        "CanSiteCreationDemands", "RecordCreationFacts",
+                        "CASettlementProgramMaterializer.Materialize")
                     && Ordered(organization, "BuildInstitutionalProposal",
                         "CanExerciseInstitutionalDevelopment",
                         "TryAuthorizeLaterDevelopment")
@@ -691,11 +691,14 @@ internal static class Program
                         "FundingFeasible", "CanSiteCreationDemands",
                         "CanExerciseInstitutionalDevelopment",
                         "RecordInstitutionalFacts",
+                        "developmentMaterialFeasible",
+                        "developmentSitingFeasible",
                         "ReconcileRecord",
                         "materialSatisfied: proposal != null")
-                    && HasAll(organization, "creationExecutable",
-                        "developmentExecutable",
-                        "confirmed creation history blocked")
+                    && HasAll(regional, "creationExecutable",
+                        "creationMaterialFeasible",
+                        "creationSitingFeasible", "creationBlocker")
+                    && organization.Contains("developmentExecutable")
                     && HasAll(settlementPrograms,
                         "!record.creationExecutable",
                         "!record.developmentExecutable",
@@ -957,6 +960,9 @@ internal static class Program
     private static bool HasAll(string text, params string[] values) =>
         values.All(value => text.Contains(value, StringComparison.Ordinal));
 
+    private static bool HasGateEvaluation(string source) => Regex.IsMatch(
+        source, @"CABehaviorGate\s*\.\s*Evaluate");
+
     private static bool CatalogEntryHas(string catalog, string key,
         params string[] values)
     {
@@ -1084,8 +1090,7 @@ internal static class Program
                 string source = File.ReadAllText(path);
                 if (!source.Contains("\"" + key + "\"",
                         StringComparison.Ordinal)) return false;
-                return source.Contains("CABehaviorGate.Evaluate",
-                           StringComparison.Ordinal)
+                return HasGateEvaluation(source)
                     || source.Contains("TryAuthorizeAndRegister",
                         StringComparison.Ordinal);
             }));
@@ -1115,8 +1120,10 @@ internal static class Program
     private static bool FixtureIdentityAndCounts(XElement plan,
         XDocument document)
     {
-        int groups = Items(plan, "settlements").Sum(settlement =>
+        int settlementGroups = Items(plan, "settlements").Sum(settlement =>
             Items(settlement, "populationGroups").Count());
+        int frontierGroups = Items(plan, "frontierHoldings").Sum(frontier =>
+            Items(frontier, "populationGroups").Count());
         return Value(document.Root, "worldIdentity")
                 == "alysaliu|1|Algorab Markab"
             && Value(plan, "regionalId") == "CA-RG-EB596A12"
@@ -1125,21 +1132,25 @@ internal static class Program
             && Value(plan, "mapSize") == "350"
             && Items(plan, "factions").Count() == 3
             && Items(plan, "settlements").Count() == 4
-            && groups == 9;
+            && Items(plan, "frontierHoldings").Count() == 3
+            && settlementGroups + frontierGroups == 7;
     }
 
     private static string FixtureEvidence(XElement plan, XDocument document)
     {
-        int groups = Items(plan, "settlements").Sum(settlement =>
+        int settlementGroups = Items(plan, "settlements").Sum(settlement =>
             Items(settlement, "populationGroups").Count());
+        int frontierGroups = Items(plan, "frontierHoldings").Sum(frontier =>
+            Items(frontier, "populationGroups").Count());
         return Value(document.Root, "worldIdentity") + "; region "
             + Value(plan, "regionalId") + "; candidate "
             + Value(plan, "candidateId") + "; tile "
             + Value(plan, "startTileId") + "; scale "
             + Value(plan, "mapSize") + "; factions "
             + Items(plan, "factions").Count() + "; settlements "
-            + Items(plan, "settlements").Count() + "; population groups "
-            + groups;
+            + Items(plan, "settlements").Count() + "; frontier holdings "
+            + Items(plan, "frontierHoldings").Count()
+            + "; population groups " + (settlementGroups + frontierGroups);
     }
 
     private static void AppendDistribution(StringBuilder report,

@@ -1539,7 +1539,7 @@ namespace ColonistAwareness
 
     public sealed class CAOrganizationWorldComponent : WorldComponent
     {
-        private int campaignSchemaVersion = 2;
+        private int campaignSchemaVersion = 3;
         private int legacyAuthoringDataEpoch =
             CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
         private List<CAOrganization> organizations = new List<CAOrganization>();
@@ -1560,6 +1560,11 @@ namespace ColonistAwareness
         {
             get { return agreements; }
         }
+
+        internal IEnumerable<CAFrontierHoldingPlan> FrontierHoldings =>
+            (frontierMapPlans ?? new List<CAFrontierMapPlan>())
+                .Where(plan => plan?.holdings != null)
+                .SelectMany(plan => plan.holdings);
 
         public List<CAAgreement> ActiveAgreementsInvolving(string key)
         {
@@ -1810,8 +1815,11 @@ namespace ColonistAwareness
                         residents, material)
                 };
                 CAHabitatViability.ApplyFrontier(holding, environment,
-                    capabilityTier, supportingFactionLoadId:
-                        supporter?.loadID ?? -1);
+                    supportingFactionLoadId:
+                        supporter?.loadID ?? -1,
+                    initialKnowledge: supporter == null ? null
+                        : CATechnologicalKnowledgeRuntime.ForFaction(
+                            supporter));
                 created.holdings.Add(holding);
             }
             frontierMapPlans.Add(created);
@@ -1834,9 +1842,9 @@ namespace ColonistAwareness
             CASettlementEnvironmentFacts environment =
                 CASettlementEnvironment.ForTile(tileId);
             CAFrontierHoldingPlan first = plan.holdings.FirstOrDefault();
-            Faction supporter = first?.supportingFactionLoadId >= 0
+            Faction supporter = first?.SupportingFactionLoadId >= 0
                 ? CARegionalPlanUtility.FactionByLoadId(
-                    first.supportingFactionLoadId)
+                    first.SupportingFactionLoadId)
                 : CAHabitatViability.WorldSupporter(environment);
             int capabilityTier = supporter == null ? 0
                 : CAHabitatViability.KnowledgeCompatibilityTier(supporter);
@@ -1878,8 +1886,8 @@ namespace ColonistAwareness
                             holding.materialLevel)
                     || !CAHabitatViability.ValidateFrontier(holding,
                         environment, out _)
-                    || holding.supportingFactionKey != -1
-                    || holding.supportingFactionLoadId
+                    || holding.SupportingFactionKey != -1
+                    || holding.SupportingFactionLoadId
                         != (supporter?.loadID ?? -1)
                     || holding.capabilityTier != capabilityTier)
                     return false;
@@ -2951,20 +2959,33 @@ namespace ColonistAwareness
 
         private string MigrateCampaignState()
         {
+            bool fromB16 = campaignSchemaVersion == 2;
             bool fromB11 = campaignSchemaVersion == 1;
             bool fromB10 = campaignSchemaVersion == 0
                 && legacyAuthoringDataEpoch
                     == CACampaignCompatibilityKernel.LegacyB10AuthoringEpoch;
-            if (!fromB11 && !fromB10)
+            if (!fromB16 && !fromB11 && !fromB10)
                 return "organization owner schema " + campaignSchemaVersion
                     + " has no supported migration";
             string retainedFailure = ValidateCampaignState(
-                requireInstitutionAppraisals: false);
+                requireInstitutionAppraisals: fromB16,
+                requireCurrentFrontierState: false);
             if (!retainedFailure.NullOrEmpty()) return retainedFailure;
-            // The retained payload is valid before mutation. The only upgrade
-            // operation is replacing two absent catalog-2 lists with empty
-            // lists, so the following commit cannot invalidate retained state
-            // and never invents appraisal history.
+
+            var frontierCandidates = new List<CAFrontierMapPlan>();
+            foreach (CAFrontierMapPlan plan in frontierMapPlans)
+            {
+                if (!CASiteAffiliationMigration.TryPrepareFrontierMapPlan(
+                        plan, out CAFrontierMapPlan candidate,
+                        out string frontierFailure))
+                    return "frontier map " + (plan?.mapId ?? -1) + ": "
+                        + frontierFailure;
+                frontierCandidates.Add(candidate);
+            }
+            // Every retained payload and frontier candidate is valid before
+            // this commit. Older owners additionally gain the two collection
+            // fields introduced by owner schema 2; no appraisal history is
+            // invented.
             foreach (CAOrganization organization in organizations
                 .Where(value => value != null))
             {
@@ -2975,15 +2996,18 @@ namespace ColonistAwareness
                     organization.sanctionAppraisals =
                         new List<CAInstitutionSanctionAppraisal>();
             }
+            frontierMapPlans = frontierCandidates;
             return null;
         }
 
         private string ValidateCampaignState()
         {
-            return ValidateCampaignState(requireInstitutionAppraisals: true);
+            return ValidateCampaignState(requireInstitutionAppraisals: true,
+                requireCurrentFrontierState: true);
         }
 
-        private string ValidateCampaignState(bool requireInstitutionAppraisals)
+        private string ValidateCampaignState(bool requireInstitutionAppraisals,
+            bool requireCurrentFrontierState)
         {
             if (organizations == null || frontierMapPlans == null
                 || agreements == null || breachCases == null
@@ -3112,6 +3136,15 @@ namespace ColonistAwareness
                 || offers.Any(item => item == null)
                 || pendingGatherings.Any(item => item == null))
                 return "an organization-owned record is null";
+            if (requireCurrentFrontierState)
+                for (int i = 0; i < frontierMapPlans.Count; i++)
+                {
+                    string frontierFailure = CASiteAffiliationMigration
+                        .ValidateCurrentFrontierMapPlan(frontierMapPlans[i]);
+                    if (!frontierFailure.NullOrEmpty())
+                        return "frontier map " + frontierMapPlans[i].mapId
+                            + ": " + frontierFailure;
+                }
             return null;
         }
 
@@ -3819,7 +3852,7 @@ namespace ColonistAwareness
             for (int i = 0; i < records.Count; i++)
             {
                 CARegionalSettlementRecord record = records[i];
-                if (record.lastMapId < 0 || record.faction == null) continue;
+                if (record.lastMapId < 0) continue;
                 Map map = FindMap(record.lastMapId);
                 string key = record.regionalId + "#" + record.slot;
                 CAOrganization org = comp.ByKey(key);
@@ -3897,7 +3930,6 @@ namespace ColonistAwareness
                 ? new List<string>()
                 : CAPopulationProjection.Residents(record, map)
                     .Where(pawn => pawn != null && !pawn.Dead
-                        && pawn.Faction == record.faction
                         && pawn.RaceProps.Humanlike && !pawn.IsPrisoner)
                     .Select(pawn => pawn.LabelShort)
                     .Distinct().OrderBy(label => label,
@@ -3965,6 +3997,16 @@ namespace ColonistAwareness
             int now = Find.TickManager.TicksGame;
             List<Pawn> residents = CAPopulationProjection.Residents(record,
                 map);
+            org.memberPawnIds = residents.Where(pawn => pawn != null)
+                .Select(pawn => pawn.thingIDNumber).Distinct().OrderBy(id => id)
+                .ToList();
+            List<CAAxisEntry> currentInstitutions = record.faction == null
+                    || record.localSociety?.explicitLocalDivergence == true
+                ? record.localSociety?.institutions
+                : CAFactionStateWorldComponent.Current?.Find(record.faction)
+                    ?.factionStructure;
+            CAPoliticalBeliefPractice.ReconcileCurrentStructure(org,
+                currentInstitutions);
             RefreshDevelopmentAuthority(org, record, map);
 
             // Population loss and warnings are observations of represented
@@ -4171,13 +4213,12 @@ namespace ColonistAwareness
             for (int i = 0; i < allPawns.Count; i++)
             {
                 Pawn h = allPawns[i];
-                if (h.Downed || h.Faction == null
-                    || !reach.Contains(h.Position)) continue;
+                if (h.Downed || !reach.Contains(h.Position)) continue;
                 try
                 {
-                    if (record.faction != null
-                        && h.Faction.HostileTo(record.faction)
-                        && h.Faction != Faction.OfPlayer) return true;
+                    if (h.Faction != Faction.OfPlayer
+                        && CASiteThreats.Threatens(record, map, h))
+                        return true;
                 }
                 catch { }
             }
@@ -4678,14 +4719,12 @@ namespace ColonistAwareness
             for (int i = 0; i < all.Count; i++)
             {
                 Pawn h = all[i];
-                if (h.Downed || h.Faction == null
-                    || h.Faction == Faction.OfPlayer) continue;
+                if (h.Downed || h.Faction == Faction.OfPlayer) continue;
                 if (!approach.Contains(h.Position)
                     || upon.Contains(h.Position)) continue;
                 try
                 {
-                    if (record.faction != null
-                        && h.Faction.HostileTo(record.faction))
+                    if (CASiteThreats.Threatens(record, map, h))
                         approachingIds.Add(h.thingIDNumber);
                 }
                 catch { }
@@ -4764,7 +4803,8 @@ namespace ColonistAwareness
                             var lords = maps2[m].lordManager.lords;
                             for (int l = 0; l < lords.Count; l++)
                             {
-                                if (lords[l].faction != r.faction) continue;
+                                if (!CASiteThreats.LordServes(r, maps2[m],
+                                        lords[l])) continue;
                                 var toil = lords[l].CurLordToil
                                     as LordToil_CAOrganizationDefense;
                                 if (toil == null) continue;
