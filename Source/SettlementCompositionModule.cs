@@ -35,8 +35,14 @@ namespace ColonistAwareness
 
     public sealed class CASettlementPopulationGroup : IExposable
     {
+        public const int CurrentSchemaVersion = 2;
+        public int schemaVersion = CurrentSchemaVersion;
         public int key;
         public CAPopulationGroupKind kind;
+        // Population prominence and faction affiliation are independent.
+        // Every settlement has one primary population, including a site whose
+        // primary residents belong to no faction.
+        public bool isPrimary;
         public string label;
         // Percent of the settlement's population. A percentage is the
         // right shape here because a real denominator exists.
@@ -67,9 +73,15 @@ namespace ColonistAwareness
 
         public void ExposeData()
         {
+            // Schema 1 records predate the explicit primary-population flag.
+            // Missing schema stamps are read as that exact predecessor and
+            // upgraded by the owning regional/frontier migration.
+            Scribe_Values.Look(ref schemaVersion, "schemaVersion", 1);
             Scribe_Values.Look(ref key, "key", 0);
             Scribe_Values.Look(ref kind, "kind",
                 CAPopulationGroupKind.Main);
+            Scribe_Values.Look(ref isPrimary, "isPrimary",
+                kind == CAPopulationGroupKind.Main);
             Scribe_Values.Look(ref label, "label");
             Scribe_Values.Look(ref share, "share", 0);
             Scribe_Values.Look(ref factionKey, "factionKey", -1);
@@ -86,6 +98,27 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref ideoligionProtected,
                 "ideoligionProtected", false);
             Scribe_Values.Look(ref authored, "authored", false);
+        }
+
+        internal CASettlementPopulationGroup Copy()
+        {
+            return new CASettlementPopulationGroup
+            {
+                schemaVersion = schemaVersion,
+                key = key,
+                kind = kind,
+                isPrimary = isPrimary,
+                label = label,
+                share = share,
+                factionKey = factionKey,
+                politicalBeliefsFactionKey = politicalBeliefsFactionKey,
+                politicalBeliefsId = politicalBeliefsId,
+                ideoligionCertainty = ideoligionCertainty,
+                ideoligionFactionKey = ideoligionFactionKey,
+                nativeIdeoligionId = nativeIdeoligionId,
+                ideoligionProtected = ideoligionProtected,
+                authored = authored
+            };
         }
 
         internal string CertaintyWords
@@ -302,6 +335,16 @@ namespace ColonistAwareness
                     new List<CAProvisionArrangement>();
             if (settlementPlan.populationGroups.Count == 0)
                 DerivePopulationGroups(plan, settlementPlan);
+            if (!settlementPlan.populationGroups.Any(item =>
+                    item?.isPrimary == true))
+            {
+                CASettlementPopulationGroup primary = settlementPlan
+                    .populationGroups.FirstOrDefault(item => item != null
+                        && item.kind == CAPopulationGroupKind.Main)
+                    ?? settlementPlan.populationGroups.FirstOrDefault(
+                        item => item != null);
+                if (primary != null) primary.isPrimary = true;
+            }
             CADomesticProvisionAdapter.EnsureDemands(settlementPlan);
             CACultureHistory.EnsureSettlementCulture(plan, settlementPlan);
             ReconcileProvisionArrangements(plan, settlementPlan);
@@ -430,15 +473,22 @@ namespace ColonistAwareness
             CARegionalSettlementPlan settlementPlan)
         {
             CARegionalFactionPlan owner = plan.FactionPlan(
-                settlementPlan.factionKey);
+                settlementPlan.OwningFactionKey);
+            bool unaffiliated = owner == null;
             settlementPlan.populationGroups.Add(
                 new CASettlementPopulationGroup
             {
                 key = 1,
-                kind = CAPopulationGroupKind.Main,
-                label = CARegionalPlanUtility.FactionName(owner),
+                kind = unaffiliated ? CAPopulationGroupKind.Unaffiliated
+                    : CAPopulationGroupKind.Main,
+                isPrimary = true,
+                label = unaffiliated
+                    ? settlementPlan.localCulture?.name
+                        ?? settlementPlan.customName
+                        ?? "Local residents"
+                    : CARegionalPlanUtility.FactionName(owner),
                 share = 100,
-                factionKey = settlementPlan.factionKey,
+                factionKey = settlementPlan.OwningFactionKey,
                 ideoligionCertainty = 1
             });
         }
@@ -456,6 +506,102 @@ namespace ColonistAwareness
     // Materializes saved population groups into native game state.
     internal static class CAPopulationProjection
     {
+        // Frontier residents use the same population-group and Ideoligion
+        // contract as major settlements. The holding owns the residence
+        // assignments; native faction membership is only projected when the
+        // represented resident affiliations can coexist without immediate
+        // engine hostility.
+        internal static void ProjectFrontier(CAFrontierHoldingPlan holding,
+            Map map, List<Pawn> residents, CARegionalPlan region)
+        {
+            if (holding == null || map == null || residents == null
+                || residents.Count == 0
+                || holding.populationGroups == null
+                || holding.populationGroups.Count == 0) return;
+            holding.residenceAssignments =
+                new List<CASettlementResidenceAssignment>();
+            List<Pawn> ordered = residents.Where(value => value != null)
+                .OrderBy(value => value.thingIDNumber).ToList();
+            List<CASettlementPopulationGroup> groups = holding.populationGroups
+                .Where(value => value != null)
+                .OrderBy(value => value.isPrimary ? 1 : 0)
+                .ThenBy(value => value.key).ToList();
+            int cursor = 0;
+            int sequence = 1;
+            int now = Find.TickManager?.TicksGame ?? -1;
+            foreach (CASettlementPopulationGroup group in groups)
+            {
+                int remaining = ordered.Count - cursor;
+                if (remaining <= 0) break;
+                int count = group.isPrimary ? remaining
+                    : Mathf.Clamp(Mathf.RoundToInt(ordered.Count
+                        * group.share / 100f), group.share > 0 ? 1 : 0,
+                        remaining);
+                for (int i = 0; i < count && cursor < ordered.Count;
+                    i++, cursor++)
+                {
+                    Pawn pawn = ordered[cursor];
+                    holding.residenceAssignments.Add(
+                        new CASettlementResidenceAssignment
+                        {
+                            sequence = sequence++,
+                            pawnId = pawn.thingIDNumber,
+                            populationGroupKey = group.key,
+                            entryKind = "initial frontier realization",
+                            entryEvidence = "saved population group "
+                                + group.key + " materialized at holding "
+                                + holding.key,
+                            enteredTick = now
+                        });
+                    ProjectFrontierIdeoligion(map, group, pawn);
+                    Faction affiliation = group.factionKey < 0 ? null
+                        : FactionForGroup(map, group.factionKey);
+                    if (affiliation != null
+                        && CanProjectFrontierFaction(holding, map,
+                            affiliation))
+                        pawn.SetFaction(affiliation);
+                }
+            }
+        }
+
+        private static void ProjectFrontierIdeoligion(Map map,
+            CASettlementPopulationGroup group, Pawn pawn)
+        {
+            int sourceKey = group.ideoligionFactionKey >= 0
+                ? group.ideoligionFactionKey : group.factionKey;
+            Ideo target = group.nativeIdeoligionId >= 0
+                ? IdeoligionById(group.nativeIdeoligionId)
+                : sourceKey >= 0
+                    ? FactionForGroup(map, sourceKey)?.ideos?.PrimaryIdeo
+                    : null;
+            if (target != null && pawn?.ideo != null && pawn.Ideo != target)
+                pawn.ideo.SetIdeo(target);
+            NudgeCertainty(pawn, group);
+        }
+
+        private static bool CanProjectFrontierFaction(
+            CAFrontierHoldingPlan holding, Map map, Faction affiliation)
+        {
+            if (affiliation == null) return false;
+            foreach (CASettlementPopulationGroup group in
+                holding.populationGroups ??
+                    new List<CASettlementPopulationGroup>())
+            {
+                if (group == null || group.factionKey < 0) continue;
+                Faction other = FactionForGroup(map, group.factionKey);
+                if (other != null && other != affiliation
+                    && affiliation.HostileTo(other)) return false;
+            }
+            try
+            {
+                if (affiliation.def?.humanlikeFaction == true
+                    && affiliation.HostileTo(Faction.OfPlayer)
+                    && map.IsPlayerHome) return false;
+            }
+            catch { }
+            return true;
+        }
+
         // Applied after the settlement's resident pawn group has spawned.
         // Reads the record's population groups, produces real engine facts,
         // and writes an assignment table so the group of any
@@ -465,12 +611,15 @@ namespace ColonistAwareness
         {
             try
             {
-                if (record?.populationGroups == null || record.populationGroups.Count == 0
-                    || map == null || record.faction == null) return;
+                if (record?.populationGroups == null
+                    || record.populationGroups.Count == 0 || map == null)
+                    return;
                 CASettlementResidenceState.Normalize(record);
 
-                List<Pawn> residents = map.mapPawns
-                    .SpawnedPawnsInFaction(record.faction)
+                IEnumerable<Pawn> population = record.faction == null
+                    ? map.mapPawns.AllPawnsSpawned.Where(p => p?.Faction == null)
+                    : map.mapPawns.SpawnedPawnsInFaction(record.faction);
+                List<Pawn> residents = population
                     .Where(p => p != null && p.RaceProps.Humanlike
                         && p.Position.InHorDistOf(
                             record.localRect.CenterCell, 60f)
@@ -483,8 +632,11 @@ namespace ColonistAwareness
                 // what happens to distinct-Ideoligion population groups at projection -
                 // the axis' first behavioral consumer.
                 IReadOnlyList<string> rights = CAFactionAxes.KeysOf(
-                    CAFactionStateWorldComponent.Current
-                        ?.Find(record.faction)?.factionStructure, CAFactionAxes.Dissent);
+                    record.faction == null
+                        ? record.localSociety?.institutions
+                        : CAFactionStateWorldComponent.Current
+                            ?.Find(record.faction)?.factionStructure,
+                    CAFactionAxes.Dissent);
 
                 int externalShare = record.populationGroups
                         .Where(item => IsProjectableOtherFaction(record, map,
@@ -522,8 +674,7 @@ namespace ColonistAwareness
                     }
                     // Whatever remains is the dominant population group.
                     CASettlementPopulationGroup dominant = record.populationGroups
-                        .FirstOrDefault(item => item != null && item.kind
-                            == CAPopulationGroupKind.Main);
+                        .FirstOrDefault(item => item?.isPrimary == true);
                 for (; cursor < residents.Count; cursor++)
                     Tag(record, dominant, residents[cursor]);
 
@@ -617,7 +768,7 @@ namespace ColonistAwareness
                 : populationGroup.kind == CAPopulationGroupKind.Unaffiliated
                     && populationGroup.ideoligionFactionKey < 0 ? null
                 : FactionForGroup(map, ideoligionFactionKey)?.ideos?.PrimaryIdeo;
-            Ideo dominant = record.faction.ideos?.PrimaryIdeo;
+            Ideo dominant = record.faction?.ideos?.PrimaryIdeo;
             bool suppress = rights.Contains("orthodoxy")
                 && !rights.Contains("plural")
                 && !populationGroup.ideoligionProtected
@@ -784,8 +935,29 @@ namespace ColonistAwareness
             if (populationGroup == null || populationGroup.kind
                 != CAPopulationGroupKind.OtherFaction) return false;
             Faction minor = FactionForGroup(map, populationGroup.factionKey);
-            return minor != null && minor != record.faction
-                && !minor.HostileTo(record.faction);
+            if (minor == null || minor == record.faction) return false;
+            if (record.faction != null)
+                return !minor.HostileTo(record.faction);
+            // A factionless site's population may still carry faction
+            // affiliations, but native pawn faction assignment is used only
+            // when it will not manufacture immediate combat with the site's
+            // unaffiliated residents or another represented population group.
+            if (minor.def?.hostileToFactionlessHumanlikes == true)
+                return false;
+            foreach (CASettlementPopulationGroup other in
+                record.populationGroups ?? new List<CASettlementPopulationGroup>())
+            {
+                if (other == null || other == populationGroup
+                    || other.kind != CAPopulationGroupKind.OtherFaction)
+                    continue;
+                Faction otherFaction = FactionForGroup(map,
+                    other.factionKey);
+                if (otherFaction != null && otherFaction != minor
+                    && (minor.HostileTo(otherFaction)
+                        || otherFaction.HostileTo(minor)))
+                    return false;
+            }
+            return true;
         }
 
         internal static Faction FactionForGroup(Map map, int factionKey)

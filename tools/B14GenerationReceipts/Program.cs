@@ -58,13 +58,13 @@ internal static class Program
         Add("current fixture identity and schema survive readback",
             V(activeDocument.Root!, "worldIdentity")
                 == "alysaliu|1|Algorab Markab"
-            && V(plan, "schemaVersion") == "13"
+            && V(plan, "schemaVersion") == "16"
             && V(plan, "regionalId") == "CA-RG-EB596A12"
             && V(plan, "candidateId") == "613b1fe44104"
             && V(plan, "startTileId") == "389638"
             && V(plan, "mapSize") == "350"
             && Canonical(plan) == Canonical(mirrorPlan),
-            "schema 13; alysaliu exact route; active and mirror XML agree");
+            "schema 16; alysaliu exact route; active and mirror XML agree");
 
         XElement[] factions = Items(plan, "factions").ToArray();
         XElement[] settlements = Items(plan, "settlements").ToArray();

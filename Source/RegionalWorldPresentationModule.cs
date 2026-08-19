@@ -81,7 +81,7 @@ namespace ColonistAwareness
         private static bool VisibleInWorld(CARegionalPlan region,
             CARegionalSettlementPlan settlement)
         {
-            return region.FactionPlan(settlement.factionKey)
+            return region.FactionPlan(settlement.OwningFactionKey)
                 ?.visibleInWorld != false;
         }
 
@@ -94,7 +94,7 @@ namespace ColonistAwareness
             {
                 Faction faction = records.FirstOrDefault(record =>
                         record.slot == settlement.slot)?.faction
-                    ?? region.FactionPlan(settlement.factionKey)
+                    ?? region.FactionPlan(settlement.OwningFactionKey)
                         ?.resolvedFaction;
                 if (faction != null && !factions.Contains(faction))
                     factions.Add(faction);
@@ -177,14 +177,16 @@ namespace ColonistAwareness
                 CARegionalSettlementRecord record = records.FirstOrDefault(
                     item => item.slot == settlement.slot);
                 CARegionalFactionPlan group = region.FactionPlan(
-                    settlement.factionKey);
+                    settlement.OwningFactionKey);
                 Faction faction = record?.faction ?? group?.resolvedFaction;
                 string name = record?.name ?? "Authored settlement "
                     + (settlement.slot + 1);
-                string detail = faction?.Name ?? group?.Summary
-                    ?? "unresolved faction";
+                string detail = !settlement.HasFactionOwner
+                    ? "no faction"
+                    : faction?.Name ?? group?.Summary
+                        ?? "unresolved faction";
                 if (record != null)
-                    detail += " · " + record.FactionKnowledgeLabel
+                    detail += " · " + record.TechnologicalKnowledgeLabel
                         + " · population " + record.populationCurrent;
                 if ((settlement.operationalRoleMask
                         & CARegionalOperationalRoles.KnownMask) != 0)

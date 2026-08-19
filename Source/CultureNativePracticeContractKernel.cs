@@ -6,7 +6,8 @@ namespace ColonistAwareness
 {
     internal static class CANativeCultureEventPersistenceContract
     {
-        internal const int CurrentRecordSchemaVersion = 2;
+        internal const int CurrentRecordSchemaVersion = 3;
+        internal const int PreviousRecordSchemaVersion = 2;
     }
 
     internal enum CANativeCultureOccurrenceScope

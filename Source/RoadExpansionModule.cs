@@ -114,7 +114,7 @@ namespace ColonistAwareness
             foreach (CARegionalSettlementRecord record in
                 world.ForMap(map))
             {
-                if (record?.faction == null || record.faction.IsPlayer
+                if (record == null || record.faction?.IsPlayer == true
                     || record.localRect == CellRect.Empty
                     || !record.developmentExecutable) continue;
                 string key = record.regionalId + "#" + record.slot;
@@ -248,7 +248,7 @@ namespace ColonistAwareness
             foreach (CARegionalSettlementRecord other in
                 world.ForMap(map))
             {
-                if (other == record || other?.faction == null
+                if (other == record || other == null
                     || other.localRect == CellRect.Empty) continue;
                 string otherKey = other.regionalId + "#" + other.slot;
                 var wc = CAOrganizationWorldComponent.Current;
@@ -483,10 +483,8 @@ namespace ColonistAwareness
                 if (p == null || p.Dead || p.Downed || !p.Awake()
                     || p.IsPrisoner || !p.RaceProps.Humanlike) continue;
                 if (p.InMentalState) continue;
-                if (map.attackTargetsCache
-                        .TargetsHostileToFaction(record.faction)
-                        .Any(t => t.Thing is Pawn tp && !tp.Downed
-                            && tp.Position.InHorDistOf(p.Position, 40f)))
+                if (CASiteThreats.Within(record, map,
+                        CellRect.CenteredOn(p.Position, 40)).Count > 0)
                     continue;
                 Job cur = p.CurJob;
                 if (cur != null && cur.def != JobDefOf.Wait

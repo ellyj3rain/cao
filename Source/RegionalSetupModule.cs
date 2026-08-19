@@ -330,7 +330,7 @@ namespace ColonistAwareness
                 {
                     slot = i,
                     memberTileId = destination,
-                    factionKey = group.key,
+                    OwningFactionKey = group.key,
                     populationOrigin = CASettlementOrigin
                         .ReallocatedFromWorldPool,
                     reallocatedFromTileId = source.Tile.tileId,
@@ -617,7 +617,14 @@ namespace ColonistAwareness
     {
         public int slot;
         public int memberTileId = -1;
-        public int factionKey;
+        public CASiteFactionLinks factionLinks = new CASiteFactionLinks();
+        // Culture is always local to the settlement. Political Order,
+        // Technological Knowledge, and institutions resolve through the owner
+        // unless this site has no owner or an explicit local divergence.
+        public CASiteLocalSocietyState localSociety;
+        // Native faction definitions remain useful generation recipes. This
+        // value never represents ownership, support, or population membership.
+        public string generationFactionDefName;
         public CASettlementOrigin populationOrigin = CASettlementOrigin.Unset;
         public int reallocatedFromTileId = -1;
         public int siteClusterKey = -1;
@@ -686,7 +693,22 @@ namespace ColonistAwareness
         {
             Scribe_Values.Look(ref slot, "slot", -1);
             Scribe_Values.Look(ref memberTileId, "memberTileId", -1);
-            Scribe_Values.Look(ref factionKey, "factionKey", 0);
+            int legacyFactionKey = -1;
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+                Scribe_Values.Look(ref legacyFactionKey, "factionKey", -1);
+            Scribe_Deep.Look(ref factionLinks, "factionLinks");
+            Scribe_Deep.Look(ref localSociety, "localSociety");
+            Scribe_Values.Look(ref generationFactionDefName,
+                "generationFactionDefName");
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                if (factionLinks == null)
+                    factionLinks = new CASiteFactionLinks();
+                if (legacyFactionKey >= 0
+                    && factionLinks.ownership
+                        == CASiteFactionReferenceKind.None)
+                    factionLinks.SetRegionalOwner(legacyFactionKey);
+            }
             Scribe_Values.Look(ref populationOrigin, "populationOrigin",
                 CASettlementOrigin.Unset);
             Scribe_Values.Look(ref reallocatedFromTileId,
@@ -751,6 +773,22 @@ namespace ColonistAwareness
         {
             get { return siteClusterKey >= 0 ? siteClusterKey : slot; }
         }
+
+        internal int OwningFactionKey
+        {
+            get => factionLinks?.ownership
+                    == CASiteFactionReferenceKind.RegionalFaction
+                ? factionLinks.ownerRegionalFactionKey : -1;
+            set
+            {
+                if (factionLinks == null)
+                    factionLinks = new CASiteFactionLinks();
+                if (value < 0) factionLinks.SetNoOwner();
+                else factionLinks.SetRegionalOwner(value);
+            }
+        }
+
+        internal bool HasFactionOwner => CASiteState.HasOwner(factionLinks);
     }
 
     // One persisted frontier holding. Frequency owns how many rows exist;
@@ -758,17 +796,23 @@ namespace ColonistAwareness
     // Domestic identity is established later from actual pawn relations.
     public sealed class CAFrontierHoldingPlan : IExposable
     {
+        public const int CurrentSchemaVersion = 2;
+        public int schemaVersion = CurrentSchemaVersion;
         public int key;
+        public string siteName;
         public int memberTileId = -1;
         public int residentCount = 1;
         public int landCapacity;
         public int materialLevel;
         public int form; // 0 cabin, 1 established homestead
-        // A naturally supported holding may remain unaffiliated. A holding
-        // whose habitat requires greater capability persists the exact
-        // supporting faction selected before materialization.
-        public int supportingFactionKey = -1;
-        public int supportingFactionLoadId = -1;
+        // Ownership and material support remain separate facts. A frontier
+        // holding may have either, both, or neither.
+        public CASiteFactionLinks factionLinks = new CASiteFactionLinks();
+        public CACulture localCulture;
+        public CASiteLocalSocietyState localSociety;
+        public List<CASettlementPopulationGroup> populationGroups =
+            new List<CASettlementPopulationGroup>();
+        public string generationFactionDefName;
         public int environmentSourceHash;
         public int habitatRequirementMask;
         public int requiredCapabilityTier;
@@ -779,21 +823,54 @@ namespace ColonistAwareness
         public string materializationFailure;
         public bool materialized;
         public int materializedMapId = -1;
+        public int firstMaterializationTick = -1;
         public IntVec3 site = IntVec3.Invalid;
         public List<int> residentPawnIds = new List<int>();
+        public List<CASettlementResidenceAssignment> residenceAssignments =
+            new List<CASettlementResidenceAssignment>();
 
         public void ExposeData()
         {
+            Scribe_Values.Look(ref schemaVersion, "schemaVersion",
+                1);
             Scribe_Values.Look(ref key, "key", 0);
+            Scribe_Values.Look(ref siteName, "siteName");
             Scribe_Values.Look(ref memberTileId, "memberTileId", -1);
             Scribe_Values.Look(ref residentCount, "residentCount", 1);
             Scribe_Values.Look(ref landCapacity, "landCapacity", 0);
             Scribe_Values.Look(ref materialLevel, "materialLevel", 0);
             Scribe_Values.Look(ref form, "form", 0);
-            Scribe_Values.Look(ref supportingFactionKey,
-                "supportingFactionKey", -1);
-            Scribe_Values.Look(ref supportingFactionLoadId,
-                "supportingFactionLoadId", -1);
+            int legacySupportingFactionKey = -1;
+            int legacySupportingFactionLoadId = -1;
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                Scribe_Values.Look(ref legacySupportingFactionKey,
+                    "supportingFactionKey", -1);
+                Scribe_Values.Look(ref legacySupportingFactionLoadId,
+                    "supportingFactionLoadId", -1);
+            }
+            Scribe_Deep.Look(ref factionLinks, "factionLinks");
+            Scribe_Deep.Look(ref localCulture, "localCulture");
+            Scribe_Deep.Look(ref localSociety, "localSociety");
+            Scribe_Collections.Look(ref populationGroups,
+                "populationGroups", LookMode.Deep);
+            Scribe_Values.Look(ref generationFactionDefName,
+                "generationFactionDefName");
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                if (factionLinks == null)
+                    factionLinks = new CASiteFactionLinks();
+                if (factionLinks.support
+                        == CASiteFactionReferenceKind.None
+                    && legacySupportingFactionKey >= 0)
+                    factionLinks.SetRegionalSupport(
+                        legacySupportingFactionKey);
+                else if (factionLinks.support
+                        == CASiteFactionReferenceKind.None
+                    && legacySupportingFactionLoadId >= 0)
+                    factionLinks.SetWorldSupport(
+                        legacySupportingFactionLoadId);
+            }
             Scribe_Values.Look(ref environmentSourceHash,
                 "environmentSourceHash", 0);
             Scribe_Values.Look(ref habitatRequirementMask,
@@ -812,10 +889,92 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref materialized, "materialized", false);
             Scribe_Values.Look(ref materializedMapId,
                 "materializedMapId", -1);
+            Scribe_Values.Look(ref firstMaterializationTick,
+                "firstMaterializationTick", -1);
             Scribe_Values.Look(ref site, "site", IntVec3.Invalid);
             Scribe_Collections.Look(ref residentPawnIds,
                 "residentPawnIds", LookMode.Value);
+            Scribe_Collections.Look(ref residenceAssignments,
+                "residenceAssignments", LookMode.Deep);
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
+                if (siteName.NullOrEmpty())
+                    siteName = (form == 1 ? "Frontier homestead "
+                        : "Frontier cabin ") + (key + 1);
+                if (factionLinks == null)
+                    factionLinks = new CASiteFactionLinks();
+                if (populationGroups == null)
+                    populationGroups = new List<CASettlementPopulationGroup>();
+                if (residentPawnIds == null)
+                    residentPawnIds = new List<int>();
+                if (residenceAssignments == null)
+                    residenceAssignments =
+                        new List<CASettlementResidenceAssignment>();
+            }
         }
+
+        internal CAFrontierHoldingPlan Copy()
+        {
+            return new CAFrontierHoldingPlan
+            {
+                schemaVersion = schemaVersion,
+                key = key,
+                siteName = siteName,
+                memberTileId = memberTileId,
+                residentCount = residentCount,
+                landCapacity = landCapacity,
+                materialLevel = materialLevel,
+                form = form,
+                factionLinks = factionLinks?.Copy(),
+                localCulture = localCulture?.Copy(),
+                localSociety = localSociety?.Copy(),
+                populationGroups = (populationGroups
+                    ?? new List<CASettlementPopulationGroup>())
+                    .Where(value => value != null)
+                    .Select(value => value.Copy()).ToList(),
+                generationFactionDefName = generationFactionDefName,
+                environmentSourceHash = environmentSourceHash,
+                habitatRequirementMask = habitatRequirementMask,
+                requiredCapabilityTier = requiredCapabilityTier,
+                capabilityTier = capabilityTier,
+                habitatCapabilityMask = habitatCapabilityMask,
+                missingHabitatRequirementMask =
+                    missingHabitatRequirementMask,
+                habitatFoodRoute = habitatFoodRoute,
+                materializationFailure = materializationFailure,
+                materialized = materialized,
+                materializedMapId = materializedMapId,
+                firstMaterializationTick = firstMaterializationTick,
+                site = site,
+                residentPawnIds = new List<int>(residentPawnIds
+                    ?? new List<int>()),
+                residenceAssignments = (residenceAssignments
+                    ?? new List<CASettlementResidenceAssignment>())
+                    .Where(value => value != null).Select(value =>
+                        new CASettlementResidenceAssignment
+                        {
+                            schemaVersion = value.schemaVersion,
+                            sequence = value.sequence,
+                            pawnId = value.pawnId,
+                            populationGroupKey = value.populationGroupKey,
+                            active = value.active,
+                            entryKind = value.entryKind,
+                            entryEvidence = value.entryEvidence,
+                            enteredTick = value.enteredTick,
+                            exitKind = value.exitKind,
+                            exitEvidence = value.exitEvidence,
+                            exitedTick = value.exitedTick
+                        }).ToList()
+            };
+        }
+
+        internal int SupportingFactionKey => factionLinks?.support
+                == CASiteFactionReferenceKind.RegionalFaction
+            ? factionLinks.supportRegionalFactionKey : -1;
+
+        internal int SupportingFactionLoadId => factionLinks?.support
+                == CASiteFactionReferenceKind.WorldFaction
+            ? factionLinks.supportWorldFactionLoadId : -1;
     }
 
     public enum CARegionalRelationSource : byte
@@ -846,11 +1005,12 @@ namespace ColonistAwareness
 
     public sealed class CARegionalPlan : IExposable
     {
-        internal const int CurrentSchemaVersion = 15;
+        internal const int CurrentSchemaVersion = 16;
 
-        // Schema 15 requires registry-3 Culture on every faction, settlement,
-        // and player-founding owner in the staged composition. Schema 14 at
-        // authoring epoch 13 is the one supported adjacent pending-draft
+        // Schema 16 gives every inhabited site explicit, typed ownership and
+        // support relationships. A site with no owner carries its own social
+        // state; population affiliation remains independent. Schema 15 at
+        // authoring epoch 14 is the one supported adjacent pending-draft
         // source and is upgraded atomically by CAPendingAuthoringDataEpoch.
         // Earlier development schemas are deliberately unsupported.
         public int schemaVersion = CurrentSchemaVersion;
@@ -1333,10 +1493,19 @@ namespace ColonistAwareness
                     failure = "regional settlements need distinct stable identities";
                     return false;
                 }
-                if (plan.FactionPlan(settlement.factionKey) == null)
+                if (settlement.factionLinks == null)
                 {
                     failure = "settlement " + (settlement.slot + 1)
-                        + " references a missing faction";
+                        + " has no affiliation record";
+                    return false;
+                }
+                string linksFailure = settlement.factionLinks
+                    .ValidationFailure(plan);
+                if (!linksFailure.NullOrEmpty())
+                {
+                    failure = "settlement " + (settlement.slot + 1)
+                        + " has invalid faction relationships: "
+                        + linksFailure;
                     return false;
                 }
             }
@@ -1363,14 +1532,13 @@ namespace ColonistAwareness
                     + " needs distinct population-group identities";
                 return false;
             }
-            if (populationGroups.Count(item => item.kind
-                    == CAPopulationGroupKind.Main) != 1
+            if (populationGroups.Count(item => item.isPrimary) != 1
                 || populationGroups.Any(item => item.share <= 0
                     || item.share > 100)
                 || populationGroups.Sum(item => item.share) != 100)
             {
                 failure = "settlement " + (settlement.slot + 1)
-                    + " population groups need one main group and shares "
+                    + " population groups need one primary group and shares "
                     + "totaling 100%";
                 return false;
             }
@@ -1578,6 +1746,65 @@ namespace ColonistAwareness
             foreach (CARegionalSettlementPlan settlement in plan.settlements)
             {
                 int displaySlot = settlement.slot + 1;
+                CARegionalFactionPlan group = CASiteState.OwnerPlan(plan,
+                    settlement.factionLinks);
+                if (!settlement.HasFactionOwner)
+                {
+                    if (settlement.localCulture == null
+                        || settlement.localSociety?.politicalOrder == null
+                        || settlement.localSociety
+                            .technologicalKnowledge == null
+                        || settlement.localSociety.institutions == null)
+                    {
+                        failure = "Settlement " + displaySlot
+                            + " has no owning faction and needs its own "
+                            + "Culture, Political Order, Technological "
+                            + "Knowledge, and institutions.";
+                        return false;
+                    }
+                    string localCultureFailure = CACultureModel
+                        .ValidationFailure(settlement.localCulture,
+                            requireSubstantive: true);
+                    if (!localCultureFailure.NullOrEmpty())
+                    {
+                        failure = "Settlement " + displaySlot
+                            + " has invalid local Culture: "
+                            + localCultureFailure;
+                        return false;
+                    }
+                    string localPoliticalFailure = CAPoliticalBeliefsModel
+                        .ValidationFailure(
+                            settlement.localSociety.politicalOrder,
+                            allowExactLegacy: false);
+                    if (!localPoliticalFailure.NullOrEmpty())
+                    {
+                        failure = "Settlement " + displaySlot
+                            + " has invalid local Political Order: "
+                            + localPoliticalFailure;
+                        return false;
+                    }
+                    string localTechnologyFailure =
+                        CATechnologicalKnowledgeModel.ValidationFailure(
+                            settlement.localSociety
+                                .technologicalKnowledge);
+                    if (!localTechnologyFailure.NullOrEmpty())
+                    {
+                        failure = "Settlement " + displaySlot
+                            + " has invalid local Technological Knowledge: "
+                            + localTechnologyFailure;
+                        return false;
+                    }
+                    string localInstitutionFailure = CAPoliticalBeliefsModel
+                        .ValidationFailure(
+                            settlement.localSociety.institutions);
+                    if (!localInstitutionFailure.NullOrEmpty())
+                    {
+                        failure = "Settlement " + displaySlot
+                            + " has invalid local institutions: "
+                            + localInstitutionFailure;
+                        return false;
+                    }
+                }
                 if (!TryValidatePopulationGroups(plan, settlement,
                         out failure))
                     return false;
@@ -1668,15 +1895,7 @@ namespace ColonistAwareness
                             return false;
                         }
                 }
-                CARegionalFactionPlan group = plan.FactionPlan(
-                    settlement.factionKey);
-                if (group == null)
-                {
-                    failure = "Settlement " + displaySlot
-                        + " needs a faction.";
-                    return false;
-                }
-                if (group.source
+                if (group != null && group.source
                     == CARegionalFactionSource.ExistingWorldFaction)
                 {
                     Faction faction = FactionByLoadId(
@@ -1689,7 +1908,7 @@ namespace ColonistAwareness
                         return false;
                     }
                 }
-                else
+                else if (group != null)
                 {
                     FactionDef def = FactionDefByName(
                         group.customFactionDefName);
@@ -1697,6 +1916,18 @@ namespace ColonistAwareness
                     {
                         failure = "Faction " + group.key
                             + " needs a settlement-capable faction template.";
+                        return false;
+                    }
+                }
+                else
+                {
+                    FactionDef template = FactionDefByName(
+                        settlement.generationFactionDefName);
+                    if (!CanMaterializeSettlement(template))
+                    {
+                        failure = "Settlement " + displaySlot
+                            + " has no owning faction and needs a "
+                            + "settlement-capable generation template.";
                         return false;
                     }
                 }
@@ -1708,7 +1939,7 @@ namespace ColonistAwareness
             {
                 if (group == null) continue;
                 if (plan.settlements.Any(item => item != null
-                        && item.factionKey == group.key)) continue;
+                        && item.OwningFactionKey == group.key)) continue;
                 string name = group.customName.NullOrEmpty()
                     ? "Faction " + group.key : group.customName;
                 if (group.source
@@ -3560,7 +3791,7 @@ namespace ColonistAwareness
                 var survivingFactionKeys = new HashSet<int>(current.settlements.Where(
                         item => item != null
                             && retainedIds.Contains(item.memberTileId))
-                    .Select(item => item.factionKey));
+                    .Select(item => item.OwningFactionKey));
                 var retainedFactionKeys = new HashSet<int>(survivingFactionKeys);
                 foreach (CARegionalFactionPlan group in
                     current.factions.Where(item => item?.authored == true))
@@ -3664,7 +3895,7 @@ namespace ColonistAwareness
             if (pruneDroppedAuthoring)
             {
                 var usedFactionKeys = new HashSet<int>(replacement.settlements.Select(
-                    item => item.factionKey));
+                    item => item.OwningFactionKey));
                 // Explicitly added factions survive a footprint change even
                 // when all of their settlements are removed.
                 replacement.factions.RemoveAll(item => item == null
@@ -3768,6 +3999,8 @@ namespace ColonistAwareness
     {
         internal static Color FactionColor(int key)
         {
+            if (key < 0)
+                return new Color(0.66f, 0.68f, 0.70f);
             return Color.HSVToRGB((key * 0.6180339887f) % 1f, 0.62f,
                 0.95f);
         }

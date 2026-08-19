@@ -303,7 +303,7 @@ namespace ColonistAwareness
                 {
                     Color color = CARegionalWorldOverlay.FactionColor(group.key);
                     int held = plan.settlements.Count(item => item != null
-                        && item.factionKey == group.key);
+                        && item.OwningFactionKey == group.key);
                     string groupSubtitle = held + " settlement"
                         + (held == 1 ? "" : "s") + " - "
                         + CAFactionAxes.Characterize(plan, group);
@@ -346,7 +346,7 @@ namespace ColonistAwareness
 
                     foreach (CARegionalSettlementPlan place in plan.settlements.Where(
                             item => item != null
-                                && item.factionKey == group.key)
+                                && item.OwningFactionKey == group.key)
                         .OrderBy(item => item.slot).ToList())
                     {
                         string placeName = CARegionalPlanUtility
@@ -381,11 +381,11 @@ namespace ColonistAwareness
                 }
 
                 foreach (CARegionalSettlementPlan place in plan.settlements.Where(item =>
-                        item != null && plan.FactionPlan(item.factionKey) == null)
+                        item != null && !item.HasFactionOwner)
                     .OrderBy(item => item.slot).ToList())
                 {
                     string orphanLabel = CARegionalPlanUtility
-                        .SettlementName(plan, place) + " - choose a faction";
+                        .SettlementName(plan, place) + " - no faction";
                     Text.Font = GameFont.Tiny;
                     float orphanHeight = Mathf.Max(30f,
                         Text.CalcHeight(orphanLabel, view.width - 20f) + 10f);
@@ -435,7 +435,7 @@ namespace ColonistAwareness
                 .Where(item => item != null).OrderBy(item => item.key))
             {
                 int held = plan.settlements.Count(item => item != null
-                    && item.factionKey == group.key);
+                    && item.OwningFactionKey == group.key);
                 string subtitle = held + " settlement"
                     + (held == 1 ? "" : "s") + " - "
                     + CAFactionAxes.Characterize(plan, group);
@@ -449,7 +449,7 @@ namespace ColonistAwareness
                 Text.Font = GameFont.Tiny;
                 foreach (CARegionalSettlementPlan place in plan.settlements
                     .Where(item => item != null
-                        && item.factionKey == group.key))
+                        && item.OwningFactionKey == group.key))
                     total += Mathf.Max(30f, Text.CalcHeight(
                         CARegionalPlanUtility.SettlementName(plan, place),
                         width - 32f) + 10f) + 2f;
@@ -458,10 +458,10 @@ namespace ColonistAwareness
             Text.Font = GameFont.Tiny;
             foreach (CARegionalSettlementPlan place in plan.settlements
                 .Where(item => item != null
-                    && plan.FactionPlan(item.factionKey) == null))
+                    && !item.HasFactionOwner))
                 total += Mathf.Max(30f, Text.CalcHeight(
                     CARegionalPlanUtility.SettlementName(plan, place)
-                        + " - choose a faction", width - 20f) + 10f) + 4f;
+                        + " - no faction", width - 20f) + 10f) + 4f;
             Text.Font = GameFont.Small;
             return total + 12f;
         }
@@ -753,7 +753,7 @@ namespace ColonistAwareness
                         .OrderBy(item => item.key))
                 {
                     int held = plan.settlements.Count(item => item != null
-                        && item.factionKey == group.key);
+                        && item.OwningFactionKey == group.key);
                     Readout(ref y, width,
                         CARegionalPlanUtility.FactionName(group),
                         CAFactionAxes.Characterize(plan, group) + " - "
@@ -811,19 +811,21 @@ namespace ColonistAwareness
                 return;
             }
             CARegionalFactionPlan owner = plan.FactionPlan(
-                place.factionKey);
+                place.OwningFactionKey);
             CARegionMapWidget.hoveredSlot = place.slot;
 
             if (layoutMode == CARegionLayoutMode.Compact)
                 DrawSettlementComparison(ref y, width, place);
-            // A settlement belongs to a faction. The overline opens that
-            // faction without copying its controls onto this screen.
+            // Ownership is one optional site relationship. The overline opens
+            // an owner when one exists without conflating support or resident
+            // affiliation with ownership.
             if (Kind(ref y, width,
                     "Settlement - "
-                    + CARegionalPlanUtility.FactionName(owner),
+                    + (owner == null ? "no faction"
+                        : CARegionalPlanUtility.FactionName(owner)),
                     CARegionalWorldOverlay.FactionColor(
-                        place.factionKey)) && owner != null)
-                CARegionMapWidget.SelectFaction(place.factionKey);
+                        place.OwningFactionKey)) && owner != null)
+                CARegionMapWidget.SelectFaction(place.OwningFactionKey);
             Title(ref y, width,
                 CARegionalPlanUtility.SettlementName(plan, place));
             if (plan.settlementRealizationComplete)
@@ -840,7 +842,7 @@ namespace ColonistAwareness
                     + "\n" + environment.ShortSummary()
                     + "\n" + environment.RequirementSummary()
                     + "\nHabitat: " + (place.habitatViable
-                        ? "supported by this settlement's programs and faction capability"
+                        ? "supported by this settlement's programs and technological knowledge"
                         : place.habitatBlocker.NullOrEmpty()
                             ? "not supported"
                             : place.habitatBlocker));
@@ -866,17 +868,41 @@ namespace ColonistAwareness
 
             // Ownership links to the faction screen.
             Widgets.Label(new Rect(0f, y + 3f, LabelWidth, Row),
-                "Faction");
+                "Ownership");
             Rect ownerRect = new Rect(LabelWidth, y,
                 width - LabelWidth - 84f, 28f);
-            if (Widgets.ButtonText(ownerRect,
-                    CARegionalPlanUtility.FactionName(owner)))
-                CARegionMapWidget.SelectFaction(place.factionKey);
-            TooltipHandler.TipRegion(ownerRect, "Owning faction. Open it to "
-                + "edit its identity, knowledge, relations, Political Order, "
-                + "and institutions.");
+            if (Widgets.ButtonText(ownerRect, owner == null ? "No faction"
+                    : CARegionalPlanUtility.FactionName(owner))
+                && owner != null)
+                CARegionMapWidget.SelectFaction(place.OwningFactionKey);
+            TooltipHandler.TipRegion(ownerRect, owner == null
+                ? "This settlement is not owned by a faction. Population "
+                    + "affiliation and faction support remain separate."
+                : "Owning faction. Open it to edit its identity, knowledge, "
+                    + "relations, Political Order, and institutions.");
             if (Widgets.ButtonText(new Rect(width - 80f, y, 80f, 28f),
                     "Change")) OpenOwnerMenu(place);
+            y += Row + Gap;
+
+            CARegionalFactionPlan regionalSupport = place.factionLinks?.support
+                    == CASiteFactionReferenceKind.RegionalFaction
+                ? plan.FactionPlan(place.factionLinks.supportRegionalFactionKey)
+                : null;
+            Faction worldSupport = CASiteState.ResolveSupport(plan,
+                place.factionLinks);
+            string supportName = regionalSupport != null
+                ? CARegionalPlanUtility.FactionName(regionalSupport)
+                : worldSupport?.Name ?? "None";
+            Widgets.Label(new Rect(0f, y + 3f, LabelWidth, Row),
+                "Faction support");
+            Rect supportRect = new Rect(LabelWidth, y,
+                width - LabelWidth, 28f);
+            if (Widgets.ButtonText(supportRect, supportName))
+                OpenSupportMenu(place);
+            TooltipHandler.TipRegion(supportRect,
+                "A supporting faction may supply people or material without "
+                + "owning the settlement. Support does not replace this "
+                + "site's Culture, Political Order, knowledge, or institutions.");
             y += Row + Gap;
 
             Widgets.Label(new Rect(0f, y + 3f, LabelWidth, Row), "Location");
@@ -971,7 +997,7 @@ namespace ColonistAwareness
                 y += populationHeight + 2f;
             }
             bool unrepresentedFaction = plan.factions.Any(faction => faction != null
-                && faction.key != place.factionKey
+                && faction.key != place.OwningFactionKey
                 && !place.populationGroups.Any(group => group != null
                     && group.factionKey == faction.key));
             bool canAddUnaffiliated = !place.populationGroups.Any(group =>
@@ -996,6 +1022,51 @@ namespace ColonistAwareness
                 OpenSettlementCultureEditor(place);
             y += Row + Gap;
 
+            if (!place.HasFactionOwner
+                || place.localSociety?.explicitLocalDivergence == true)
+            {
+                Rule(ref y, width);
+                Title(ref y, width, "Local Political Order");
+                CAPoliticalBeliefs localOrder = CASiteState.PoliticalOrder(
+                    plan, place);
+                Note(ref y, width, CAPoliticalBeliefsModel.Summary(
+                    localOrder));
+                if (Widgets.ButtonText(new Rect(0f, y, width, 28f),
+                        "Compose local Political Order..."))
+                    Verse.Find.WindowStack.Add(
+                        Dialog_CAPoliticalOrderEditor.ForEstablished(
+                            localOrder,
+                            CASiteState.Institutions(plan, place),
+                            (plan.candidateId ?? "ca") + ":settlement:"
+                                + place.slot + ":politics",
+                            () => SiteSocietyChanged(place)));
+                y += Row + Gap;
+
+                Rule(ref y, width);
+                Title(ref y, width, "Local Technological Knowledge");
+                CATechnologicalKnowledge localKnowledge =
+                    CASiteState.Knowledge(plan, place);
+                Note(ref y, width, CATechnologicalKnowledgeModel.Summary(
+                    localKnowledge));
+                if (Widgets.ButtonText(new Rect(0f, y, width, 28f),
+                        "Set local technological knowledge..."))
+                    Verse.Find.WindowStack.Add(
+                        new Dialog_CATechnologicalKnowledgeEditor(
+                            localKnowledge,
+                            (plan.candidateId ?? "ca") + ":settlement:"
+                                + place.slot + ":technology",
+                            () => SiteSocietyChanged(place)));
+                y += Row + Gap;
+
+                List<CAAxisEntry> localInstitutions =
+                    CASiteState.Institutions(plan, place);
+                Readout(ref y, width, "Institutions",
+                    localInstitutions == null || localInstitutions.Count == 0
+                        ? "None represented"
+                        : CAFactionStructureModel.Summary(
+                            localInstitutions));
+            }
+
             Rule(ref y, width);
             Title(ref y, width, "Settlement programs");
             Note(ref y, width, CASettlementProgramRegistry.Summary(place));
@@ -1019,10 +1090,10 @@ namespace ColonistAwareness
             List<CARegionalSettlementPlan> ordered = plan.factions
                 .Where(item => item != null).OrderBy(item => item.key)
                 .SelectMany(faction => plan.settlements.Where(item =>
-                        item != null && item.factionKey == faction.key)
+                        item != null && item.OwningFactionKey == faction.key)
                     .OrderBy(item => item.slot))
                 .Concat(plan.settlements.Where(item => item != null
-                        && plan.FactionPlan(item.factionKey) == null)
+                        && !item.HasFactionOwner)
                     .OrderBy(item => item.slot)).ToList();
             int index = ordered.IndexOf(current);
             const float gap = 4f;
@@ -1222,7 +1293,7 @@ namespace ColonistAwareness
                 CARegionalWorldOverlay.FactionColor(group.key));
             Title(ref y, width, CARegionalPlanUtility.FactionName(group));
             int settlementCount = plan.settlements.Count(item => item != null
-                && item.factionKey == group.key);
+                && item.OwningFactionKey == group.key);
             Note(ref y, width, CAFactionAxes.Characterize(plan, group)
                 + " · " + group.TechnologySummary + " · "
                 + settlementCount + " settlement"
@@ -1498,7 +1569,7 @@ namespace ColonistAwareness
             Rule(ref y, width);
             Title(ref y, width, "Settlements");
             List<CARegionalSettlementPlan> owned = plan.settlements.Where(item =>
-                item != null && item.factionKey == group.key)
+                item != null && item.OwningFactionKey == group.key)
                 .OrderBy(item => item.slot).ToList();
             IReadOnlyList<CACulturalExpression> expressions =
                 CACulturalExpressionModel.ForFaction(plan, group);
@@ -1617,7 +1688,7 @@ namespace ColonistAwareness
         private static int MinorityCapacity(CARegionalSettlementPlan place)
         {
             int others = place?.populationGroups?.Where(item => item != null
-                && item.kind != CAPopulationGroupKind.Main)
+                && !item.isPrimary)
                 .Sum(item => Math.Max(0, item.share)) ?? 0;
             return CACreationFlowContracts.MaximumMinorityShare(others);
         }
@@ -1627,11 +1698,11 @@ namespace ColonistAwareness
         {
             if (place?.populationGroups == null) return;
             if (changed != null
-                && changed.kind != CAPopulationGroupKind.Main)
+                && !changed.isPrimary)
             {
                 int otherShares = place.populationGroups.Where(item =>
                         item != null && item != changed
-                        && item.kind != CAPopulationGroupKind.Main)
+                        && !item.isPrimary)
                     .Sum(item => Math.Max(0, item.share));
                 changed.share = CACreationFlowContracts.ClampMinorityShare(
                     changed.share, otherShares);
@@ -1640,7 +1711,7 @@ namespace ColonistAwareness
             int used = 0;
             foreach (CASettlementPopulationGroup minority in
                 place.populationGroups.Where(item => item != null
-                    && item.kind != CAPopulationGroupKind.Main))
+                    && !item.isPrimary))
             {
                 minority.share = CACreationFlowContracts.ClampMinorityShare(
                     minority.share, used);
@@ -1648,7 +1719,7 @@ namespace ColonistAwareness
             }
             CASettlementPopulationGroup dominant = place.populationGroups.FirstOrDefault(
                 item => item != null
-                && item.kind == CAPopulationGroupKind.Main);
+                && item.isPrimary);
             if (dominant != null)
                 dominant.share = CACreationFlowContracts.MainPopulationShare(used);
         }
@@ -1661,7 +1732,7 @@ namespace ColonistAwareness
                 {
                     NormalizePopulationShares(place, populationGroup);
                     PopulationCompositionChanged(place);
-                }, populationGroup.kind == CAPopulationGroupKind.Main
+                }, populationGroup.isPrimary
                     ? (Action)null : delegate
                     {
                         place.populationGroups.Remove(populationGroup);
@@ -1678,7 +1749,7 @@ namespace ColonistAwareness
             int startingShare = Math.Min(15, MinorityCapacity(place));
             foreach (CARegionalFactionPlan other in plan.factions
                 .Where(item => item != null
-                    && item.key != place.factionKey
+                    && item.key != place.OwningFactionKey
                     && !place.populationGroups.Any(group => group != null
                         && group.factionKey == item.key))
                 .OrderBy(item => item.key))
@@ -1707,6 +1778,22 @@ namespace ColonistAwareness
                     }
                 });
             }
+
+            options.Add(new CACreationChoice
+            {
+                Key = "independent-site",
+                Name = "Independent settlement",
+                Summary = "Create an inhabited settlement with no owning faction.",
+                Traits = "Local Culture, Political Order, knowledge, and institutions",
+                Details = "The settlement owns its local social state. "
+                    + "Faction support and population affiliation can be set "
+                    + "separately before placement.",
+                Group = "Independent sites",
+                Badge = "No faction",
+                Accent = ColoredText.SubtleGrayColor,
+                ConfirmLabel = "Place independent settlement",
+                TryChoose = AddIndependentSettlement
+            });
             if (!place.populationGroups.Any(group => group != null
                     && group.kind == CAPopulationGroupKind.Unaffiliated))
                 options.Add(new CACreationChoice
@@ -1741,11 +1828,16 @@ namespace ColonistAwareness
                 place.populationGroups.Add(new CASettlementPopulationGroup
                 {
                     key = 1,
-                    kind = CAPopulationGroupKind.Main,
-                    label = CARegionalPlanUtility.FactionName(
-                        plan.FactionPlan(place.factionKey)),
+                    kind = place.HasFactionOwner
+                        ? CAPopulationGroupKind.Main
+                        : CAPopulationGroupKind.Unaffiliated,
+                    isPrimary = true,
+                    label = place.HasFactionOwner
+                        ? CARegionalPlanUtility.FactionName(
+                            plan.FactionPlan(place.OwningFactionKey))
+                        : place.localCulture?.name ?? "Local residents",
                     share = 100,
-                    factionKey = place.factionKey,
+                    factionKey = place.OwningFactionKey,
                     ideoligionCertainty = 1
                 });
             int key = place.populationGroups.Max(item => item?.key ?? 0) + 1;
@@ -2019,7 +2111,7 @@ namespace ColonistAwareness
             CARegionalFactionPlan group)
         {
             List<CARegionalSettlementPlan> owned = plan.settlements.Where(item =>
-                    item != null && item.factionKey == group.key)
+                    item != null && item.OwningFactionKey == group.key)
                 .OrderBy(item => item.slot).ToList();
             Color chip = CARegionalWorldOverlay.FactionColor(group.key);
             string character = CAFactionAxes.Characterize(plan, group);
@@ -2173,9 +2265,9 @@ namespace ColonistAwareness
                 if (Entry(ref y, width,
                         CARegionalPlanUtility.SettlementName(plan, place),
                         CARegionalPlanUtility.FactionName(plan.FactionPlan(
-                            place.factionKey)),
+                            place.OwningFactionKey)),
                         CARegionalWorldOverlay.FactionColor(
-                            place.factionKey)))
+                            place.OwningFactionKey)))
                     CARegionMapWidget.SelectSettlement(place.slot);
         }
 
@@ -2466,13 +2558,15 @@ namespace ColonistAwareness
             {
                 slot = slot,
                 memberTileId = tile,
-                factionKey = key,
+                OwningFactionKey = key,
                 siteClusterKey = slot,
                 persistent = true,
                 populationOrigin = scenarioPopulation
                     ? CASettlementOrigin.ScenarioOverride
                     : CASettlementOrigin.Unset
             };
+            settlement.generationFactionDefName = plan.FactionPlan(key)
+                ?.ResolvedFactionDef?.defName;
             plan.settlements.Add(settlement);
             settlement.customName = RollSettlementName(settlement);
             if (scenarioPopulation)
@@ -2486,6 +2580,72 @@ namespace ColonistAwareness
             if (layoutMode == CARegionLayoutMode.Compact)
                 compactPane = 1;
             CARegionalSetupSession.SavePending();
+        }
+
+        private bool AddIndependentSettlement()
+        {
+            if (plan == null) return false;
+            int slot = CARegionalPlanUtility.LowestFreeSlot(plan);
+            var initializer = new CARegionalFactionPlan
+            {
+                key = CARegionalPlanUtility.LowestFreeFactionKey(plan),
+                source = CARegionalFactionSource.NewWorldFaction,
+                authored = true
+            };
+            EnsureFactionChoice(initializer);
+            var settlement = new CARegionalSettlementPlan
+            {
+                slot = slot,
+                memberTileId = -1,
+                siteClusterKey = slot,
+                persistent = true,
+                populationOrigin = CASettlementOrigin.ScenarioOverride,
+                generationFactionDefName = initializer.ResolvedFactionDef
+                    ?.defName,
+                localCulture = initializer.culture?.Copy()
+            };
+            CASiteState.EnsureIndependentState(plan, settlement,
+                initializer);
+            List<int> candidates = plan.memberTileIds
+                .Where(id => id != plan.startTileId)
+                .Where(id => CAHabitatViability.CanPotentiallySettle(plan,
+                    settlement, id, out _))
+                .OrderBy(id => plan.settlements.Count(item => item != null
+                    && item.memberTileId == id))
+                .ThenBy(id => plan.memberTileIds.IndexOf(id)).ToList();
+            if (candidates.Count == 0)
+            {
+                string reason = plan.memberTileIds
+                    .Where(id => id != plan.startTileId)
+                    .Select(id =>
+                    {
+                        CAHabitatViability.CanPotentiallySettle(plan,
+                            settlement, id, out string failure);
+                        return failure;
+                    }).FirstOrDefault(value => !value.NullOrEmpty());
+                Messages.Message("This region has no viable area available "
+                        + "for this independent settlement outside the "
+                        + "arrival area."
+                        + (reason.NullOrEmpty() ? "" : " " + reason),
+                    MessageTypeDefOf.RejectInput, false);
+                return false;
+            }
+            settlement.memberTileId = candidates[0];
+            settlement.customName = RollSettlementName(settlement);
+            plan.settlements.Add(settlement);
+            CASettlementComposition.EnsureDerived(plan, settlement);
+            plan.confirmed = false;
+            plan.operatorAuthored = true;
+            CARegionMapWidget.SelectSettlement(slot);
+            CARegionMapWidget.awaitingSlot = slot;
+            CARegionMapWidget.awaitingArrivalArea = false;
+            if (layoutMode == CARegionLayoutMode.Compact)
+                compactPane = 1;
+            CARegionalSetupSession.SavePending();
+            Messages.Message("Independent settlement is ready. Click an "
+                    + "area to place it.",
+                MessageTypeDefOf.NeutralEvent, false);
+            return true;
         }
 
         private bool PlaceNewSociety(CASocietyPreset preset)
@@ -2548,8 +2708,18 @@ namespace ColonistAwareness
         // Explicitly added factions remain.
         private void RemoveUnusedFactions()
         {
-            var used = new HashSet<int>(plan.settlements.Select(item =>
-                item.factionKey));
+            var used = new HashSet<int>(plan.settlements.Where(item =>
+                    item != null && item.OwningFactionKey >= 0)
+                .Select(item => item.OwningFactionKey));
+            foreach (CARegionalSettlementPlan settlement in plan.settlements
+                .Where(item => item?.populationGroups != null))
+                foreach (CASettlementPopulationGroup population in settlement
+                    .populationGroups.Where(item => item?.factionKey >= 0))
+                    used.Add(population.factionKey);
+            foreach (CAFrontierHoldingPlan holding in (plan.frontierHoldings
+                ?? new List<CAFrontierHoldingPlan>()).Where(item => item != null
+                    && item.SupportingFactionKey >= 0))
+                used.Add(holding.SupportingFactionKey);
             plan.factions.RemoveAll(group => !group.authored
                 && !used.Contains(group.key));
             CARegionalPlanUtility.EnsureRelationRows(plan);
@@ -2731,7 +2901,7 @@ namespace ColonistAwareness
                 .Where(item => item != null).OrderBy(item => item.slot))
             {
                 CARegionalFactionPlan owner = plan.FactionPlan(
-                    place.factionKey);
+                    place.OwningFactionKey);
                 string population = string.Join(", ",
                     (place.populationGroups
                         ?? new List<CASettlementPopulationGroup>())
@@ -3108,7 +3278,7 @@ namespace ColonistAwareness
                 {
                     slot = i,
                     memberTileId = tile,
-                    factionKey = factionKey,
+                    OwningFactionKey = factionKey,
                     siteClusterKey = i,
                     persistent = true,
                     // Each filled settlement consumes one world settlement
@@ -3127,12 +3297,41 @@ namespace ColonistAwareness
 
         private void OpenOwnerMenu(CARegionalSettlementPlan place)
         {
-            var options = plan.factions.OrderBy(group => group.key)
+            var options = new List<CACreationChoice>
+            {
+                new CACreationChoice
+                {
+                    Key = "no-faction",
+                    Name = "No faction",
+                    Summary = "This settlement owns its local social state.",
+                    Traits = "Ownership absent; support and population affiliation remain separate",
+                    Details = "The current Culture remains local. Political "
+                        + "Order, technological knowledge, and institutions "
+                        + "are copied from the former owner once, then edited "
+                        + "as this settlement's own state.",
+                    Badge = "Independent site",
+                    Accent = ColoredText.SubtleGrayColor,
+                    Selected = !place.HasFactionOwner,
+                    ConfirmLabel = "Remove faction ownership",
+                    Choose = delegate
+                    {
+                        CARegionalFactionPlan prior = CASiteState.OwnerPlan(
+                            plan, place.factionLinks);
+                        if (place.generationFactionDefName.NullOrEmpty())
+                            place.generationFactionDefName = prior
+                                ?.ResolvedFactionDef?.defName;
+                        CASiteState.EnsureIndependentState(plan, place,
+                            prior);
+                        SiteSocietyChanged(place);
+                    }
+                }
+            };
+            options.AddRange(plan.factions.OrderBy(group => group.key)
                 .Select(group =>
                 {
                     CARegionalFactionPlan local = group;
                     int held = plan.settlements.Count(item => item != null
-                        && item.factionKey == local.key);
+                        && item.OwningFactionKey == local.key);
                     return new CACreationChoice
                     {
                         Key = "faction:" + local.key,
@@ -3145,16 +3344,21 @@ namespace ColonistAwareness
                             + "independent.",
                         Badge = "Settlement owner",
                         Accent = CARegionalWorldOverlay.FactionColor(local.key),
-                        Selected = place.factionKey == local.key,
+                        Selected = place.OwningFactionKey == local.key,
                         ConfirmLabel = "Assign this faction",
                         Choose = delegate
                         {
-                            place.factionKey = local.key;
+                            place.OwningFactionKey = local.key;
+                            place.generationFactionDefName = local
+                                .ResolvedFactionDef?.defName;
+                            if (place.localSociety != null)
+                                place.localSociety.explicitLocalDivergence =
+                                    false;
                             CARegionalPlanUtility.EnsureRelationRows(plan);
-                            CARegionalSetupSession.SavePending();
+                            SiteSocietyChanged(place);
                         }
                     };
-                }).ToList();
+                }));
             int freeKey = CARegionalPlanUtility.LowestFreeFactionKey(plan);
             options.Add(new CACreationChoice
             {
@@ -3177,14 +3381,84 @@ namespace ColonistAwareness
                     };
                     EnsureFactionChoice(group);
                     plan.factions.Add(group);
-                    place.factionKey = freeKey;
+                    place.OwningFactionKey = freeKey;
+                    place.generationFactionDefName = group
+                        .ResolvedFactionDef?.defName;
+                    if (place.localSociety != null)
+                        place.localSociety.explicitLocalDivergence = false;
                     CARegionalPlanUtility.EnsureRelationRows(plan);
-                    CARegionalSetupSession.SavePending();
+                    SiteSocietyChanged(place);
                 }
             });
             CACreationUI.OpenChoices("Settlement owner",
                 "Choose the faction that owns this settlement. Ownership does "
                 + "not change its population source or exact ground.", options);
+        }
+
+        private void OpenSupportMenu(CARegionalSettlementPlan place)
+        {
+            var options = new List<CACreationChoice>
+            {
+                new CACreationChoice
+                {
+                    Key = "no-support",
+                    Name = "No faction support",
+                    Summary = "No faction supplies this settlement.",
+                    Traits = "Ownership and resident affiliation unchanged",
+                    Details = "This changes only material or organizational "
+                        + "support. It does not change ownership, population, "
+                        + "Culture, Ideoligion, Political Order, knowledge, "
+                        + "or institutions.",
+                    Badge = "Independent support",
+                    Accent = ColoredText.SubtleGrayColor,
+                    Selected = place.factionLinks?.support
+                        == CASiteFactionReferenceKind.None,
+                    ConfirmLabel = "Remove faction support",
+                    Choose = delegate
+                    {
+                        if (place.factionLinks == null)
+                            place.factionLinks = new CASiteFactionLinks();
+                        place.factionLinks.SetNoSupport();
+                        SiteSocietyChanged(place);
+                    }
+                }
+            };
+            options.AddRange(plan.factions.Where(item => item != null)
+                .OrderBy(item => item.key).Select(group =>
+                {
+                    CARegionalFactionPlan local = group;
+                    return new CACreationChoice
+                    {
+                        Key = "support:" + local.key,
+                        Name = CARegionalPlanUtility.FactionName(local),
+                        Summary = "This faction supports the settlement "
+                            + "without owning it.",
+                        Traits = local.TechnologySummary,
+                        Details = "Support records the relationship only. "
+                            + "Settlement viability and capabilities continue "
+                            + "to use the site's canonical technological "
+                            + "knowledge and programs.",
+                        Badge = "Faction support",
+                        Accent = CARegionalWorldOverlay.FactionColor(local.key),
+                        Selected = place.factionLinks?.support
+                                == CASiteFactionReferenceKind.RegionalFaction
+                            && place.factionLinks.supportRegionalFactionKey
+                                == local.key,
+                        ConfirmLabel = "Set faction support",
+                        Choose = delegate
+                        {
+                            if (place.factionLinks == null)
+                                place.factionLinks =
+                                    new CASiteFactionLinks();
+                            place.factionLinks.SetRegionalSupport(local.key);
+                            SiteSocietyChanged(place);
+                        }
+                    };
+                }));
+            CACreationUI.OpenChoices("Faction support",
+                "Choose whether a faction supplies this settlement. The "
+                + "settlement's owner, residents, and local social state are "
+                + "separate facts.", options);
         }
 
         private void EnsureFactionChoice(CARegionalFactionPlan group)
@@ -3258,9 +3532,21 @@ namespace ColonistAwareness
             CARegionalSettlements.EnsureSettlementPattern(plan);
             foreach (CARegionalSettlementPlan place in plan.settlements
                 .Where(item => item != null
-                    && item.factionKey == faction.key))
+                    && item.OwningFactionKey == faction.key))
                 CASettlementComposition.ReconcileProvisionArrangements(plan,
                     place);
+            CARegionalSetupSession.SavePending();
+        }
+
+        private void SiteSocietyChanged(CARegionalSettlementPlan place)
+        {
+            if (place == null) return;
+            plan.confirmed = false;
+            plan.operatorAuthored = true;
+            CARegionalSettlements.Invalidate(plan);
+            CARegionalSettlements.EnsureSettlementPattern(plan);
+            CASettlementComposition.ReconcileProvisionArrangements(plan,
+                place);
             CARegionalSetupSession.SavePending();
         }
 
@@ -3469,8 +3755,10 @@ namespace ColonistAwareness
         {
             try
             {
-                FactionDef def = plan.FactionPlan(place.factionKey)
-                    ?.ResolvedFactionDef;
+                FactionDef def = plan.FactionPlan(place.OwningFactionKey)
+                    ?.ResolvedFactionDef
+                    ?? DefDatabase<FactionDef>.GetNamedSilentFail(
+                        place.generationFactionDefName);
                 var taken = plan.settlements.Where(item => item != null
                         && item != place && !item.customName.NullOrEmpty())
                     .Select(item => item.customName);

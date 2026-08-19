@@ -340,6 +340,10 @@ namespace ColonistAwareness
             N("model.culture", "ColonistAwareness.CARegionalWorldComponent",
                 "CA_regionalPlans/li/settlements/li/localCulture"),
             N("model.culture", "ColonistAwareness.CARegionalWorldComponent",
+                "CA_regionalPlans/li/frontierHoldings/li/localCulture"),
+            N("model.culture", "ColonistAwareness.CAOrganizationWorldComponent",
+                "CA_frontierMapPlans/li/holdings/li/localCulture"),
+            N("model.culture", "ColonistAwareness.CARegionalWorldComponent",
                 "CA_regionalSettlements/li/culture"),
             N("model.culture", "ColonistAwareness.CARegionalWorldComponent",
                 "CA_regionalPlans/li/playerFounding/culture"),
@@ -355,6 +359,20 @@ namespace ColonistAwareness
             N("model.political-order",
                 "ColonistAwareness.CARegionalWorldComponent",
                 "CA_regionalPlans/li/playerFounding/politicalBeliefs"),
+            N("model.political-order",
+                "ColonistAwareness.CARegionalWorldComponent",
+                "CA_regionalPlans/li/settlements/li/localSociety/politicalOrder",
+                true),
+            N("model.political-order",
+                "ColonistAwareness.CARegionalWorldComponent",
+                "CA_regionalPlans/li/frontierHoldings/li/localSociety/politicalOrder"),
+            N("model.political-order",
+                "ColonistAwareness.CARegionalWorldComponent",
+                "CA_regionalSettlements/li/localSociety/politicalOrder",
+                true),
+            N("model.political-order",
+                "ColonistAwareness.CAOrganizationWorldComponent",
+                "CA_frontierMapPlans/li/holdings/li/localSociety/politicalOrder"),
             N("model.technological-knowledge",
                 "ColonistAwareness.CAFactionStateWorldComponent",
                 "CA_factionStates/li/technologicalKnowledge"),
@@ -367,11 +385,49 @@ namespace ColonistAwareness
             N("model.technological-knowledge",
                 "ColonistAwareness.CARegionalWorldComponent",
                 "CA_regionalPlans/li/playerFounding/technologicalKnowledge"),
+            N("model.technological-knowledge",
+                "ColonistAwareness.CARegionalWorldComponent",
+                "CA_regionalPlans/li/settlements/li/localSociety/technologicalKnowledge",
+                true),
+            N("model.technological-knowledge",
+                "ColonistAwareness.CARegionalWorldComponent",
+                "CA_regionalPlans/li/frontierHoldings/li/localSociety/technologicalKnowledge"),
+            N("model.technological-knowledge",
+                "ColonistAwareness.CARegionalWorldComponent",
+                "CA_regionalSettlements/li/localSociety/technologicalKnowledge",
+                true),
+            N("model.technological-knowledge",
+                "ColonistAwareness.CAOrganizationWorldComponent",
+                "CA_frontierMapPlans/li/holdings/li/localSociety/technologicalKnowledge"),
             N("model.represented-institutions",
                 "ColonistAwareness.CAFactionStateWorldComponent",
                 "CA_factionStates/li/factionStructure"),
             N("model.represented-institutions", "ColonistAwareness.CARegionalWorldComponent",
                 "CA_regionalPlans/li/factions/li/factionStructure"),
+            N("model.site-faction-links",
+                "ColonistAwareness.CARegionalWorldComponent",
+                "CA_regionalPlans/li/settlements/li/factionLinks"),
+            N("model.site-faction-links",
+                "ColonistAwareness.CARegionalWorldComponent",
+                "CA_regionalPlans/li/frontierHoldings/li/factionLinks"),
+            N("model.site-faction-links",
+                "ColonistAwareness.CARegionalWorldComponent",
+                "CA_regionalSettlements/li/factionLinks"),
+            N("model.site-faction-links",
+                "ColonistAwareness.CAOrganizationWorldComponent",
+                "CA_frontierMapPlans/li/holdings/li/factionLinks"),
+            N("model.site-local-society",
+                "ColonistAwareness.CARegionalWorldComponent",
+                "CA_regionalPlans/li/settlements/li/localSociety", true),
+            N("model.site-local-society",
+                "ColonistAwareness.CARegionalWorldComponent",
+                "CA_regionalPlans/li/frontierHoldings/li/localSociety"),
+            N("model.site-local-society",
+                "ColonistAwareness.CARegionalWorldComponent",
+                "CA_regionalSettlements/li/localSociety", true),
+            N("model.site-local-society",
+                "ColonistAwareness.CAOrganizationWorldComponent",
+                "CA_frontierMapPlans/li/holdings/li/localSociety"),
             N("model.founding-arrangement",
                 "ColonistAwareness.CAPlayerFoundingWorldComponent",
                 "CA_playerFounding/arrangement"),
@@ -392,6 +448,15 @@ namespace ColonistAwareness
             N("model.settlement-population-group",
                 "ColonistAwareness.CARegionalWorldComponent",
                 "CA_regionalSettlements/li/populationGroups/li"),
+            N("model.settlement-population-group",
+                "ColonistAwareness.CARegionalWorldComponent",
+                "CA_regionalPlans/li/settlements/li/populationGroups/li"),
+            N("model.settlement-population-group",
+                "ColonistAwareness.CARegionalWorldComponent",
+                "CA_regionalPlans/li/frontierHoldings/li/populationGroups/li"),
+            N("model.settlement-population-group",
+                "ColonistAwareness.CAOrganizationWorldComponent",
+                "CA_frontierMapPlans/li/holdings/li/populationGroups/li"),
             N("model.domestic-unit", "ColonistAwareness.CARegionalWorldComponent",
                 "CA_regionalSettlements/li/domesticUnits/li"),
             N("model.domestic-provision-demand",
@@ -400,12 +465,24 @@ namespace ColonistAwareness
             N("model.frontier-map-plan",
                 "ColonistAwareness.CAOrganizationWorldComponent",
                 "CA_frontierMapPlans/li"),
+            N("model.frontier-holding",
+                "ColonistAwareness.CARegionalWorldComponent",
+                "CA_regionalPlans/li/frontierHoldings/li"),
+            N("model.frontier-holding",
+                "ColonistAwareness.CAOrganizationWorldComponent",
+                "CA_frontierMapPlans/li/holdings/li"),
             N("model.groundwater-tuning",
                 "ColonistAwareness.CARegionalWorldComponent",
                 "CA_groundwaterTuning"),
             N("model.settlement-residence",
                 "ColonistAwareness.CARegionalWorldComponent",
                 "CA_regionalSettlements/li/residenceAssignments/li"),
+            N("model.settlement-residence",
+                "ColonistAwareness.CARegionalWorldComponent",
+                "CA_regionalPlans/li/frontierHoldings/li/residenceAssignments/li"),
+            N("model.settlement-residence",
+                "ColonistAwareness.CAOrganizationWorldComponent",
+                "CA_frontierMapPlans/li/holdings/li/residenceAssignments/li"),
             N("model.settlement-capability",
                 "ColonistAwareness.CARegionalWorldComponent",
                 "CA_regionalSettlements/li/capabilities/li"),
@@ -1674,6 +1751,8 @@ namespace ColonistAwareness
         private static void ValidateCultureLongitudinalPayload(
             PayloadElementFrame root, List<string> failures)
         {
+            int ownerVersion = OptionalInteger(root,
+                "CA_cultureHistorySchemaVersion", 0, failures);
             PayloadElementFrame collection = root.Children.FirstOrDefault(
                 value => value.Name == "CA_nativeCultureEvents");
             if (collection == null || IsNullValue(collection)) return;
@@ -1683,17 +1762,28 @@ namespace ColonistAwareness
                 value => value.Name == "li"))
             {
                 if (IsNullValue(record)) continue;
-                ValidateRequiredChildren(record,
-                    K("schemaVersion", "packageId", "eventDefName",
+                string[] required = ownerVersion >= 4
+                    ? K("schemaVersion", "packageId", "eventDefName",
+                        "practiceKey", "occurrenceKey", "tick", "pawnId",
+                        "actorFactionReference", "factionLoadId", "mapId",
+                        "localityKey", "cellX", "cellZ")
+                    : K("schemaVersion", "packageId", "eventDefName",
                         "practiceKey", "occurrenceKey", "tick", "pawnId",
                         "factionLoadId", "mapId", "localityKey", "cellX",
-                        "cellZ"),
-                    K(), K(), failures);
+                        "cellZ");
+                ValidateRequiredChildren(record, required, K(), K(),
+                    failures);
                 RequireInteger(record, "schemaVersion",
-                    CANativeCultureEventPersistenceContract
-                        .CurrentRecordSchemaVersion,
-                    CANativeCultureEventPersistenceContract
-                        .CurrentRecordSchemaVersion,
+                    ownerVersion >= 4
+                        ? CANativeCultureEventPersistenceContract
+                            .CurrentRecordSchemaVersion
+                        : CANativeCultureEventPersistenceContract
+                            .PreviousRecordSchemaVersion,
+                    ownerVersion >= 4
+                        ? CANativeCultureEventPersistenceContract
+                            .CurrentRecordSchemaVersion
+                        : CANativeCultureEventPersistenceContract
+                            .PreviousRecordSchemaVersion,
                     failures);
                 string packageId = RequireText(record, "packageId", failures);
                 string eventDefName = RequireText(record, "eventDefName",
@@ -1704,8 +1794,31 @@ namespace ColonistAwareness
                     failures);
                 RequireInteger(record, "tick", 0, int.MaxValue, failures);
                 RequireInteger(record, "pawnId", 0, int.MaxValue, failures);
-                int factionId = RequireInteger(record, "factionLoadId", 0,
-                    int.MaxValue, failures);
+                int factionId;
+                CASiteFactionReferenceKind actorFaction =
+                    CASiteFactionReferenceKind.WorldFaction;
+                if (ownerVersion >= 4)
+                {
+                    string actorFactionText = OptionalText(record,
+                        "actorFactionReference");
+                    if (!TryParseDefinedEnum(actorFactionText,
+                            out actorFaction)
+                        || actorFaction
+                            == CASiteFactionReferenceKind.RegionalFaction)
+                        failures.Add(DisplayPath(record,
+                            "actorFactionReference")
+                            + " is not a valid native pawn-faction relation");
+                    factionId = OptionalInteger(record, "factionLoadId", -1,
+                        failures);
+                    if (actorFaction
+                                == CASiteFactionReferenceKind.WorldFaction
+                            ? factionId < 0 : factionId != -1)
+                        failures.Add(record.Path + " has an inconsistent "
+                            + "actor-faction payload");
+                }
+                else
+                    factionId = RequireInteger(record, "factionLoadId", 0,
+                        int.MaxValue, failures);
                 int mapId = RequireInteger(record, "mapId", 0,
                     int.MaxValue, failures);
                 string localityKey = RequireText(record, "localityKey",
@@ -1726,7 +1839,8 @@ namespace ColonistAwareness
                     failures.Add(DisplayPath(record, "targetIdentity")
                         + " is required for an observer-shared occurrence");
 
-                string bucket = mapId + "\0" + factionId + "\0"
+                string bucket = mapId + "\0" + actorFaction + "\0"
+                    + factionId + "\0"
                     + (localityKey ?? "") + "\0"
                     + (practiceKey ?? "");
                 if (!bucketOccurrences.TryGetValue(bucket,
@@ -1792,7 +1906,20 @@ namespace ColonistAwareness
                     PayloadElementFrame version = frame.Children
                         .FirstOrDefault(item => item.Name == "schemaVersion");
                     int savedVersion = -1;
-                    if (version == null || !int.TryParse(
+                    bool implicitPredecessor = version == null
+                        && (binding.SchemaKey
+                                == "model.settlement-population-group"
+                            || binding.SchemaKey
+                                == "model.frontier-holding")
+                        && SavedOwnerVersion(componentType, root)
+                            == CACampaignSchemaCatalog.All.First(item =>
+                                item.Key == OwnerVersionDefinitions
+                                    .First(owner => owner.ComponentType
+                                        == componentType).SchemaKey)
+                                .CurrentVersion - 1;
+                    if (implicitPredecessor)
+                        savedVersion = 1;
+                    else if (version == null || !int.TryParse(
                             version.Text.ToString(), out savedVersion))
                         failures.Add(binding.ParentPath + " "
                             + binding.SchemaKey
@@ -1863,6 +1990,10 @@ namespace ColonistAwareness
             CACampaignSchemaDefinition schema = CACampaignSchemaCatalog.All
                 .First(value => value.Key == owner.SchemaKey);
             if (savedOwnerVersion == schema.CurrentVersion) return 11;
+            if (componentType
+                    == "ColonistAwareness.CARegionalWorldComponent"
+                && savedOwnerVersion == 4)
+                return 11;
             if (savedOwnerVersion == schema.CurrentVersion - 1) return 10;
             return -1;
         }
@@ -2363,6 +2494,9 @@ namespace ColonistAwareness
         private static void ValidatePropositionKnowledgeNestedPayload(
             PayloadElementFrame root, List<string> failures)
         {
+            int ownerVersion = SavedOwnerVersion(
+                "ColonistAwareness.CAPropositionKnowledgeWorldComponent",
+                root);
             var propositionIds = new HashSet<string>(StringComparer.Ordinal);
             PayloadElementFrame[] propositions = FindFrames(root,
                 "CA_knowledgePropositions/li").ToArray();
@@ -2375,6 +2509,23 @@ namespace ColonistAwareness
                 StringComparer.Ordinal);
             foreach (PayloadElementFrame proposition in propositions)
             {
+                CAKnowledgeFactKind factKind =
+                    CAKnowledgeFactKind.SocialEvent;
+                string factKindText = OptionalText(proposition, "factKind");
+                if (!string.IsNullOrEmpty(factKindText)
+                    && !TryParseDefinedEnum(factKindText, out factKind))
+                    failures.Add(DisplayPath(proposition, "factKind")
+                        + " is not a recognized knowledge fact kind");
+                CAKnowledgePersistenceClass persistenceClass =
+                    CAKnowledgePersistenceClass.Working;
+                string persistenceText = OptionalText(proposition,
+                    "persistenceClass");
+                if (!string.IsNullOrEmpty(persistenceText)
+                    && !TryParseDefinedEnum(persistenceText,
+                        out persistenceClass))
+                    failures.Add(DisplayPath(proposition,
+                        "persistenceClass")
+                        + " is not a recognized persistence class");
                 string identity = RequireText(proposition, "identity",
                     failures);
                 string topic = RequireText(proposition, "topic", failures);
@@ -2388,6 +2539,12 @@ namespace ColonistAwareness
                 RequireText(proposition, "sourceIdentity", failures);
                 RequireText(proposition, "sourceType", failures);
                 RequireText(proposition, "acquisitionChannel", failures);
+                if (ownerVersion >= 2)
+                {
+                    RequireText(proposition, "subjectIdentity", failures);
+                    RequireText(proposition, "immediateReporterIdentity",
+                        failures);
+                }
                 ValidateRequiredChildren(proposition,
                     K("provenanceChain", "evidence", "contradictions",
                         "corroboratingSources"),
@@ -2429,6 +2586,9 @@ namespace ColonistAwareness
                     RequireFloat(proposition, field, 0f, 1f,
                         field == "confidence" || field == "transmissibility"
                             ? 0f : 0.5f, failures);
+                if (ownerVersion >= 2)
+                    RequireFloat(proposition, "uncertainty", 0f, 1f,
+                        0.5f, failures);
                 RequireFloat(proposition, "noveltyAcceptance", -1f, 1f,
                     0f, failures);
                 string politicalAxis = OptionalText(proposition,
@@ -2449,6 +2609,39 @@ namespace ColonistAwareness
                         + " has an incomplete or noncanonical political binding");
                 RequireFloat(proposition, "decayRate", 0f, float.MaxValue,
                     0f, failures);
+                if (ownerVersion >= 2)
+                {
+                    ValidateOptionalInteger(proposition, "acquiredTick", -1,
+                        int.MaxValue, failures);
+                    ValidateOptionalInteger(proposition, "sourceEventTick",
+                        -1, int.MaxValue, failures);
+                    ValidateOptionalInteger(proposition, "lastReportedTick",
+                        -1, int.MaxValue, failures);
+                    ValidateOptionalInteger(proposition, "lastConfirmedTick",
+                        -1, int.MaxValue, failures);
+                    ValidateOptionalInteger(proposition, "lastDecayTick", -1,
+                        int.MaxValue, failures);
+                    ValidateOptionalInteger(proposition, "staleAfterTick", -1,
+                        int.MaxValue, failures);
+                    ValidateOptionalInteger(proposition, "revision", 1,
+                        int.MaxValue, failures);
+                    PayloadElementFrame site = proposition.Children
+                        .FirstOrDefault(value => value.Name
+                            == "siteAffiliation");
+                    if (factKind == CAKnowledgeFactKind.SiteAffiliation)
+                    {
+                        if (site == null || IsNullValue(site))
+                            failures.Add(DisplayPath(proposition,
+                                "siteAffiliation")
+                                + " is required for an affiliation fact");
+                        else
+                            ValidateSiteAffiliationKnowledge(site, failures);
+                    }
+                    else if (site != null && !IsNullValue(site))
+                        failures.Add(DisplayPath(proposition,
+                            "siteAffiliation")
+                            + " belongs only to an affiliation fact");
+                }
             }
             foreach (KeyValuePair<string, int> topic in topicCounts.Where(
                 value => value.Value
@@ -2500,6 +2693,59 @@ namespace ColonistAwareness
                     failures.Add(receipt.Path
                         + " duplicates research receipt " + identity);
             }
+        }
+
+        private static void ValidateSiteAffiliationKnowledge(
+            PayloadElementFrame site, List<string> failures)
+        {
+            RequireText(site, "siteIdentity", failures);
+            ValidateRequiredChildren(site,
+                K("populationRegionalFactionKeys"), K(), K(), failures);
+            ValidateIntegerValues(site, "populationRegionalFactionKeys", 0,
+                int.MaxValue, unique: true, failures);
+            ValidateFactionReference(site, "ownership",
+                "ownerRegionalFactionKey", "ownerWorldFactionLoadId",
+                failures);
+            ValidateFactionReference(site, "support",
+                "supportRegionalFactionKey", "supportWorldFactionLoadId",
+                failures);
+        }
+
+        private static void ValidateFactionReference(
+            PayloadElementFrame owner, string kindName,
+            string regionalKeyName, string worldLoadIdName,
+            List<string> failures)
+        {
+            CASiteFactionReferenceKind kind =
+                CASiteFactionReferenceKind.None;
+            string kindText = OptionalText(owner, kindName);
+            if (!string.IsNullOrEmpty(kindText)
+                && !TryParseDefinedEnum(kindText, out kind))
+            {
+                failures.Add(DisplayPath(owner, kindName)
+                    + " is not a recognized faction reference kind");
+                return;
+            }
+            int regionalKey = OptionalInteger(owner, regionalKeyName, -1,
+                failures);
+            int worldLoadId = OptionalInteger(owner, worldLoadIdName, -1,
+                failures);
+            bool valid = kind == CASiteFactionReferenceKind.None
+                    && regionalKey == -1 && worldLoadId == -1
+                || kind == CASiteFactionReferenceKind.RegionalFaction
+                    && regionalKey >= 0 && worldLoadId == -1
+                || kind == CASiteFactionReferenceKind.WorldFaction
+                    && regionalKey == -1 && worldLoadId >= 0;
+            if (!valid)
+                failures.Add(owner.Path + " has an inconsistent " + kindName
+                    + " faction reference");
+        }
+
+        private static bool TryParseDefinedEnum<T>(string text, out T value)
+            where T : struct
+        {
+            return Enum.TryParse(text, true, out value)
+                && Enum.IsDefined(typeof(T), value);
         }
 
         private static void ValidateOrganizationLegitimacyPayload(
@@ -2597,6 +2843,24 @@ namespace ColonistAwareness
                             failures);
                 }
             }
+            if (version >= 3)
+            {
+                foreach (PayloadElementFrame plan in FindFrames(root,
+                    "CA_frontierMapPlans/li"))
+                    ValidateRequiredChildren(plan,
+                        K("schemaVersion", "holdings"), K(), K(), failures);
+                foreach (PayloadElementFrame holding in FindFrames(root,
+                    "CA_frontierMapPlans/li/holdings/li"))
+                {
+                    ValidateRequiredChildren(holding,
+                        K("schemaVersion", "factionLinks", "localCulture",
+                            "localSociety", "populationGroups",
+                            "residentPawnIds", "residenceAssignments"),
+                        K(), K(), failures);
+                    ValidatePrimaryPopulation(holding, "populationGroups",
+                        true, failures);
+                }
+            }
         }
 
         private static string OptionalText(PayloadElementFrame parent,
@@ -2626,6 +2890,28 @@ namespace ColonistAwareness
             failures.Add(DisplayPath(parent, name) + " must be between "
                 + minimum + " and " + maximum);
             return 0;
+        }
+
+        private static int OptionalInteger(PayloadElementFrame parent,
+            string name, int defaultValue, List<string> failures)
+        {
+            string text = OptionalText(parent, name);
+            if (text == null) return defaultValue;
+            if (int.TryParse(text, out int value)) return value;
+            failures.Add(DisplayPath(parent, name) + " must be an integer");
+            return defaultValue;
+        }
+
+        private static void ValidateOptionalInteger(
+            PayloadElementFrame parent, string name, int minimum,
+            int maximum, List<string> failures)
+        {
+            string text = OptionalText(parent, name);
+            if (text == null) return;
+            if (int.TryParse(text, out int value) && value >= minimum
+                && value <= maximum) return;
+            failures.Add(DisplayPath(parent, name) + " must be between "
+                + minimum + " and " + maximum);
         }
 
         private static float RequireFloat(PayloadElementFrame parent,
@@ -2756,6 +3042,8 @@ namespace ColonistAwareness
         private static void ValidateRegionalNestedPayload(
             PayloadElementFrame root, List<string> failures)
         {
+            int ownerVersion = SavedOwnerVersion(
+                "ColonistAwareness.CARegionalWorldComponent", root);
             foreach (PayloadElementFrame region in FindFrames(root,
                 "CA_regionalPlans/li"))
                 ValidateRequiredChildren(region,
@@ -2770,17 +3058,45 @@ namespace ColonistAwareness
                     K("resolvedFaction"), K(), failures);
             foreach (PayloadElementFrame settlement in FindFrames(root,
                 "CA_regionalPlans/li/settlements/li"))
+            {
                 ValidateRequiredChildren(settlement,
                     K("populationGroups", "provisionArrangements",
                         "domesticProvisionDemands", "operationalFacts",
                         "settlementProgram", "localCulture"),
                     K(), K(), failures);
+                if (ownerVersion >= 5)
+                {
+                    ValidateRequiredChildren(settlement,
+                        K("factionLinks"), K("localSociety"), K(),
+                        failures);
+                    ValidateSiteAffiliationPayload(settlement,
+                        runtimeRecord: false, localRequiredAlways: false,
+                        failures);
+                }
+                ValidatePrimaryPopulation(settlement, "populationGroups",
+                    ownerVersion >= 5, failures);
+            }
             foreach (PayloadElementFrame holding in FindFrames(root,
                 "CA_regionalPlans/li/frontierHoldings/li"))
+            {
                 ValidateRequiredChildren(holding, K("residentPawnIds"),
                     K(), K(), failures);
+                if (ownerVersion >= 5)
+                {
+                    ValidateRequiredChildren(holding,
+                        K("schemaVersion", "factionLinks", "localCulture",
+                            "localSociety", "populationGroups",
+                            "residenceAssignments"), K(), K(), failures);
+                    ValidateSiteAffiliationPayload(holding,
+                        runtimeRecord: false, localRequiredAlways: true,
+                        failures);
+                }
+                ValidatePrimaryPopulation(holding, "populationGroups",
+                    ownerVersion >= 5, failures);
+            }
             foreach (PayloadElementFrame record in FindFrames(root,
                 "CA_regionalSettlements/li"))
+            {
                 ValidateRequiredChildren(record,
                     K("capabilities", "residentIds", "populationGroups",
                         "residenceAssignments", "provisionArrangements",
@@ -2793,6 +3109,17 @@ namespace ColonistAwareness
                         "developmentDemandKinds",
                         "developmentAssetCandidates"),
                     K("faction", "layout"), K(), failures);
+                if (ownerVersion >= 5)
+                {
+                    ValidateRequiredChildren(record, K("factionLinks"),
+                        K("localSociety"), K(), failures);
+                    ValidateSiteAffiliationPayload(record,
+                        runtimeRecord: true, localRequiredAlways: false,
+                        failures);
+                }
+                ValidatePrimaryPopulation(record, "populationGroups",
+                    ownerVersion >= 5, failures);
+            }
             foreach (PayloadElementFrame capability in FindFrames(root,
                 "CA_regionalSettlements/li/capabilities/li"))
                 ValidateRequiredChildren(capability,
@@ -2825,6 +3152,96 @@ namespace ColonistAwareness
                 ValidateRequiredChildren(layout, K(), K(),
                     K("utilities", "utilityKinds"), failures);
             }
+        }
+
+        private static void ValidateSiteAffiliationPayload(
+            PayloadElementFrame site, bool runtimeRecord,
+            bool localRequiredAlways, List<string> failures)
+        {
+            PayloadElementFrame links = site.Children.FirstOrDefault(value =>
+                value.Name == "factionLinks");
+            if (links == null || IsNullValue(links)) return;
+            ValidateFactionReference(links, "ownership",
+                "ownerRegionalFactionKey", "ownerWorldFactionLoadId",
+                failures);
+            ValidateFactionReference(links, "support",
+                "supportRegionalFactionKey", "supportWorldFactionLoadId",
+                failures);
+
+            CASiteFactionReferenceKind ownership =
+                CASiteFactionReferenceKind.None;
+            string ownershipText = OptionalText(links, "ownership");
+            if (!string.IsNullOrEmpty(ownershipText)
+                && !TryParseDefinedEnum(ownershipText, out ownership))
+                return;
+
+            PayloadElementFrame local = site.Children.FirstOrDefault(value =>
+                value.Name == "localSociety");
+            bool localPresent = local != null && !IsNullValue(local);
+            bool explicitLocal = localPresent && bool.TryParse(
+                OptionalText(local, "explicitLocalDivergence"),
+                out bool parsedLocal) && parsedLocal;
+            bool completeLocalRequired = localRequiredAlways
+                || ownership == CASiteFactionReferenceKind.None
+                || explicitLocal;
+            if (completeLocalRequired && !localPresent)
+            {
+                failures.Add(DisplayPath(site, "localSociety")
+                    + " is required when a site has no faction owner");
+            }
+            else if (completeLocalRequired)
+            {
+                if (!explicitLocal)
+                    failures.Add(DisplayPath(local,
+                        "explicitLocalDivergence")
+                        + " must be true for canonical local social state");
+                ValidateRequiredChildren(local,
+                    K("politicalOrder", "technologicalKnowledge",
+                        "institutions"), K(), K(), failures);
+            }
+
+            if (!runtimeRecord) return;
+            PayloadElementFrame nativeFaction = site.Children.FirstOrDefault(
+                value => value.Name == "faction");
+            bool nativeFactionPresent = nativeFaction != null
+                && !IsNullValue(nativeFaction);
+            if (ownership == CASiteFactionReferenceKind.None
+                && nativeFactionPresent)
+                failures.Add(DisplayPath(site, "faction")
+                    + " must be null when the site has no faction owner");
+            if (ownership != CASiteFactionReferenceKind.None
+                && !nativeFactionPresent)
+                failures.Add(DisplayPath(site, "faction")
+                    + " is required for a faction-owned realized site");
+        }
+
+        private static void ValidatePrimaryPopulation(
+            PayloadElementFrame owner, string collectionName,
+            bool required, List<string> failures)
+        {
+            PayloadElementFrame collection = owner.Children.FirstOrDefault(
+                value => value.Name == collectionName);
+            if (collection == null || IsNullValue(collection))
+            {
+                if (required)
+                    failures.Add(DisplayPath(owner, collectionName)
+                        + " is missing or null");
+                return;
+            }
+            if (!required && collection.ItemCount == 0) return;
+            int primary = 0;
+            foreach (PayloadElementFrame group in collection.Children.Where(
+                value => value.Name == "li" && !IsNullValue(value)))
+            {
+                PayloadElementFrame value = group.Children.FirstOrDefault(
+                    child => child.Name == "isPrimary");
+                if (value != null && bool.TryParse(value.Text.ToString(),
+                        out bool selected) && selected)
+                    primary++;
+            }
+            if (required && collection.ItemCount > 0 && primary != 1)
+                failures.Add(collection.Path + " contains " + primary
+                    + " primary population groups; expected 1");
         }
 
         private static void ValidateIdContinuity(PayloadElementFrame root,

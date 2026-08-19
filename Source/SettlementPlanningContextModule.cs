@@ -373,8 +373,44 @@ namespace ColonistAwareness
             }
             record.creationProposalSignature = signature;
             record.creationMaterialFeasible = expected.MaterialFeasible;
-            record.creationTargetOrDemand = signature;
             return mismatch;
+        }
+
+        // Creation authority is recorded when the author confirms the region.
+        // Executability can only be established after the authored settlement
+        // has real map ground. Join those facts here without silently
+        // authorizing a changed settlement program.
+        internal static void RecordCreationFacts(
+            CARegionalSettlementRecord record,
+            CASettlementDevelopmentProposal proposal, bool sitingFeasible,
+            string sitingBlocker)
+        {
+            if (record == null || proposal == null) return;
+            string signature = proposal.StableSignature();
+            bool authorizedComposition = record.creationTargetOrDemand
+                == signature;
+            record.creationProposalSignature = signature;
+            record.creationMaterialFeasible = proposal.MaterialFeasible;
+            record.creationSitingEvaluated = true;
+            record.creationSitingFeasible = sitingFeasible;
+            record.creationExecutable = record.creationAuthorized
+                && authorizedComposition
+                && proposal.FundingFeasible
+                && proposal.MaterialFeasible
+                && sitingFeasible;
+            record.creationBlocker = record.creationExecutable
+                ? null
+                : !record.creationAuthorized
+                    ? record.creationBlocker
+                        ?? "creation history is not authorized"
+                    : !authorizedComposition
+                        ? "the settlement program differs from the confirmed creation composition"
+                        : !proposal.FundingFeasible
+                            ? proposal.FundingBasis
+                            : !proposal.MaterialFeasible
+                                ? proposal.MaterialBasis
+                                : sitingBlocker
+                                    ?? "the confirmed creation composition cannot be placed on this ground";
         }
 
         internal static bool CanSiteCreationDemands(Map map, CellRect rect,
@@ -533,13 +569,11 @@ namespace ColonistAwareness
         {
             var proposal = new CASettlementDevelopmentProposal();
             bool validGround = record != null && organization != null
-                && map != null && record.faction != null
-                && !record.faction.IsPlayer
+                && map != null && record.faction?.IsPlayer != true
                 && record.localRect != CellRect.Empty;
             List<Pawn> residents = validGround
                 ? CAPopulationProjection.Residents(record, map)
                     .Where(pawn => pawn != null && !pawn.Dead
-                        && pawn.Faction == record.faction
                         && pawn.RaceProps.Humanlike && !pawn.IsPrisoner)
                     .ToList()
                 : new List<Pawn>();
@@ -860,8 +894,8 @@ namespace ColonistAwareness
                     || CASettlementProgramRuntimeContract.WorkerAuthorized(
                         runtime, worker));
             bool currentAuthority = record != null && map != null
-                && organization != null && record.faction != null
-                && !record.faction.IsPlayer && record.developmentAuthorized
+                && organization != null && record.faction?.IsPlayer != true
+                && record.developmentAuthorized
                 && record.developmentBehaviorKey == behaviorKey
                 && record.developmentEpisodeId == episodeId
                 && episodeId > 0
@@ -926,7 +960,7 @@ namespace ColonistAwareness
             string authorityIdentity = record?.faction?.Name
                 ?? organization?.name ?? "unnamed settlement";
             bool valid = record != null && organization != null
-                && record.faction != null && !record.faction.IsPlayer
+                && record.faction?.IsPlayer != true
                 && proposal?.Demands?.Count > 0;
             var context = new CABehaviorContext(null,
                 CAActorContext.NPCSettlement | CAActorContext.NPCInstitution,
@@ -963,12 +997,12 @@ namespace ColonistAwareness
                 intent = new CAIntentContext(record.developmentEpisodeId,
                     CAIntentOrigin.Institutional,
                     CAIntentController.SettlementDevelopment,
-                    record.faction.loadID,
+                    record.faction?.loadID ?? -1,
                     behaviorKey: "spatial.npc_settlement_development",
                     authorityOrigin: CAAuthorityOrigin.Institutional,
                     authorityIdentity: record.developmentAuthorityIdentity,
                     ownershipScope: organization.organizationKey,
-                    ownerId: record.faction.loadID,
+                    ownerId: record.faction?.loadID ?? -1,
                     targetOrDemand: proposal.StableSignature(),
                     createdTick: record.developmentCreatedTick);
             }
@@ -980,7 +1014,7 @@ namespace ColonistAwareness
                     CAAuthorityOrigin.Institutional, context.AuthorityBasis,
                     organization.organizationKey, proposal.StableSignature(),
                     intentOrigin: CAIntentOrigin.Institutional,
-                    ownerId: record.faction.loadID);
+                    ownerId: record.faction?.loadID ?? -1);
             }
             return true;
         }

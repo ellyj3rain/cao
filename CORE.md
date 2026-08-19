@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Core |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.6.1.0-alpha` · closed batch tip `B16` · next `B17` |
+| Version | `1.7.0.0-alpha` · closed batch tip `B17` · next `B18` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `CORE.md` |
@@ -178,7 +178,7 @@ compatibility fallback after authored faction state becomes authoritative.
   real source-and-consumer contracts. Political Order is a complete composition
   over concrete questions; represented institutions remain separate factual
   state. Presets and deterministic generation fill the same complete variables
-  and remain editable. Pending-authoring epoch 14 may reject incompatible
+  and remain editable. Pending-authoring epoch 15 may reject incompatible
   unconfirmed drafts, while realized campaign state follows the durable B11
   boundary and current owner-specific compatibility rules. Manual, preset,
   profile, random, and generated Culture share one object; causal fields remain

@@ -401,22 +401,60 @@ namespace ColonistAwareness
                     CASettlementPopulationGroup group = record.populationGroups?
                         .FirstOrDefault(value => value != null
                             && value.key == key);
-                    int factionKey = group?.factionKey >= 0
-                        ? group.factionKey : record.factionKey;
-                    string populationIdentity = plan.FactionPlan(factionKey)
-                        ?.culture?.id ?? record.culture?.id
+                    CARegionalFactionPlan populationFaction =
+                        group?.factionKey >= 0
+                            ? plan.FactionPlan(group.factionKey) : null;
+                    string populationIdentity = populationFaction?.culture?.id
+                        ?? record.culture?.id
                         ?? "population:" + key;
                     string organizationIdentity = record.regionalId + "#"
                         + record.slot;
                     return new CACultureRuntimeContext
                     {
                         Culture = record.culture
-                            ?? plan.FactionPlan(factionKey)?.culture,
+                            ?? populationFaction?.culture,
                         PopulationIdentity = populationIdentity,
                         ReactionScopeIdentity = organizationIdentity,
                         InstitutionalOrganizationIdentity = organizationIdentity
                     };
                 }
+
+            IEnumerable<CAFrontierHoldingPlan> frontierHoldings =
+                (plan?.frontierHoldings
+                    ?? new List<CAFrontierHoldingPlan>())
+                .Concat(CAOrganizationWorldComponent.Current
+                    ?.FrontierHoldings
+                    ?? Enumerable.Empty<CAFrontierHoldingPlan>());
+            CAFrontierHoldingPlan frontier = frontierHoldings.FirstOrDefault(
+                value => value?.materialized == true
+                    && value.materializedMapId == map?.uniqueID
+                    && value.residentPawnIds?.Contains(
+                        pawn.thingIDNumber) == true);
+            if (frontier != null)
+            {
+                CASettlementResidenceAssignment assignment = frontier
+                    .residenceAssignments?.LastOrDefault(value =>
+                        value != null && value.active
+                        && value.pawnId == pawn.thingIDNumber);
+                CASettlementPopulationGroup group = frontier.populationGroups?
+                    .FirstOrDefault(value => value != null
+                        && value.key == assignment?.populationGroupKey);
+                CARegionalFactionPlan populationFaction =
+                    group?.factionKey >= 0
+                        ? plan?.FactionPlan(group.factionKey) : null;
+                string organizationIdentity = "frontier:" + map.uniqueID
+                    + ":" + frontier.key;
+                return new CACultureRuntimeContext
+                {
+                    Culture = frontier.localCulture
+                        ?? populationFaction?.culture,
+                    PopulationIdentity = populationFaction?.culture?.id
+                        ?? frontier.localCulture?.id
+                        ?? "frontier-population:" + frontier.key,
+                    ReactionScopeIdentity = organizationIdentity,
+                    InstitutionalOrganizationIdentity = organizationIdentity
+                };
+            }
 
             CACulture factionCulture = CAFactionStateWorldComponent.Current
                 ?.Find(pawn.Faction)?.culture;

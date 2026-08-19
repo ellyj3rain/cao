@@ -9,12 +9,12 @@ namespace ColonistAwareness
     // deleted through this epoch.
     internal static class CAPendingAuthoringDataEpoch
     {
-        // B16 expands the Culture question registry without changing who owns
-        // authored state. Epoch 13 remains the one supported adjacent source:
-        // its Society profiles and regional plans already own the B15
-        // Culture, Political Order, and Technological Knowledge composition.
-        internal const int Current = 14;
-        internal const int Previous = 13;
+        // B17 makes ownership, support, and population affiliation explicit
+        // site relationships. Epoch 14 is the one supported adjacent source;
+        // its B16 Culture, Political Order, Technological Knowledge, and
+        // authored fixture remain the factual input to the atomic conversion.
+        internal const int Current = 15;
+        internal const int Previous = 14;
         private static bool diagnosticScheduled;
         private static bool diagnosticEmitted;
 
@@ -29,10 +29,10 @@ namespace ColonistAwareness
         }
 
         // Pending regional drafts are not campaign state, but the current
-        // authored fixture is valuable operator work. The adjacent B15 draft
-        // therefore receives one explicit, atomic conversion. Every Culture
-        // owned by the draft is validated and projected before any assignment
-        // occurs; a failure leaves the source graph and schema stamp intact.
+        // authored fixture is valuable operator work. The adjacent B16 draft
+        // therefore receives one explicit, atomic conversion. Culture and the
+        // complete site candidate graph validate before any assignment; a
+        // failure leaves the source graph and schema stamp intact.
         internal static bool TryUpgradeRegionalPlan(int sourceEpoch,
             CARegionalPlan plan, out string failure)
         {
@@ -51,9 +51,14 @@ namespace ColonistAwareness
                         + CARegionalPlan.CurrentSchemaVersion;
                     return false;
                 }
-                return ValidateCurrentCultureGraph(plan, out failure);
+                if (!ValidateCurrentCultureGraph(plan, out failure))
+                    return false;
+                failure = CASiteAffiliationMigration
+                    .ValidateCurrentRegionalPlan(plan,
+                        requireCompleteSites: false);
+                return failure.NullOrEmpty();
             }
-            if (sourceEpoch != Previous || plan.schemaVersion != 14)
+            if (sourceEpoch != Previous || plan.schemaVersion != 15)
             {
                 failure = "unsupported pending authoring epoch/schema "
                     + sourceEpoch + "/" + plan.schemaVersion;
@@ -66,60 +71,13 @@ namespace ColonistAwareness
                 return false;
             }
 
-            var factions = new Dictionary<CARegionalFactionPlan, CACulture>();
-            foreach (CARegionalFactionPlan faction in plan.factions)
-            {
-                if (faction == null)
-                {
-                    failure = "regional plan contains a null faction";
-                    return false;
-                }
-                if (!CACultureModel.TryUpgradeToCurrent(faction.culture,
-                        out CACulture culture, out string cultureFailure))
-                {
-                    failure = "faction " + faction.key + " Culture: "
-                        + cultureFailure;
-                    return false;
-                }
-                factions.Add(faction, culture);
-            }
-
-            var settlements =
-                new Dictionary<CARegionalSettlementPlan, CACulture>();
-            foreach (CARegionalSettlementPlan settlement in plan.settlements)
-            {
-                if (settlement == null)
-                {
-                    failure = "regional plan contains a null settlement";
-                    return false;
-                }
-                if (settlement.localCulture == null) continue;
-                if (!CACultureModel.TryUpgradeToCurrent(
-                        settlement.localCulture, out CACulture culture,
-                        out string cultureFailure))
-                {
-                    failure = "settlement " + settlement.slot + " Culture: "
-                        + cultureFailure;
-                    return false;
-                }
-                settlements.Add(settlement, culture);
-            }
-
-            if (!CACultureModel.TryUpgradeToCurrent(
-                    plan.playerFounding.culture, out CACulture founding,
-                    out string foundingFailure))
-            {
-                failure = "player founding Culture: " + foundingFailure;
+            if (!ValidateCurrentCultureGraph(plan, out failure))
                 return false;
-            }
-
-            foreach (KeyValuePair<CARegionalFactionPlan, CACulture> pair in
-                factions)
-                pair.Key.culture = pair.Value;
-            foreach (KeyValuePair<CARegionalSettlementPlan, CACulture> pair in
-                settlements)
-                pair.Key.localCulture = pair.Value;
-            plan.playerFounding.culture = founding;
+            if (!CASiteAffiliationMigration.TryPrepareRegionalPlan(plan, 15,
+                    requireCompleteSites: false,
+                    out List<System.Action> commits, out failure))
+                return false;
+            foreach (System.Action commit in commits) commit();
             plan.schemaVersion = CARegionalPlan.CurrentSchemaVersion;
             return true;
         }

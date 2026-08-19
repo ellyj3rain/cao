@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Governance |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.6.1.0-alpha` · closed batch tip `B16` · next `B17` |
+| Version | `1.7.0.0-alpha` · closed batch tip `B17` · next `B18` |
 <!-- cao:generated:version END -->
 | Design authority | ellyj3rain |
 | Repository | `GOVERNANCE.md` |
@@ -113,7 +113,7 @@ substrate; the other three are what make the mod a framework.
   evidence. Local Git commits are supporting engineering evidence when retained.
 - Batch identifiers share one namespace across letter eras. The A sequence is
   closed at `A102`; development continues with `[B#]` in the same directory and
-  log. `B16` is closed and `B17` is next after the operator runtime-test boundary. A new letter does not create another
+  log. `B17` is closed and `B18` is next after the operator runtime-test boundary. A new letter does not create another
   history tree, generator, catalog, or projection layer.
 - The records now under `Batches/` establish this append-only contract. The
   immediately preceding generated history tree was a regulatory projection, not
@@ -171,7 +171,7 @@ operate the game, edit saves, or establish operator visual or gameplay acceptanc
 ## Batch, thread, and version discipline
 
 - **Batch** is the atomic chronological development record. The closed history is
-  `A1` through `A102`, followed by `B1` through `B16`; `B17` is the next identifier.
+  `A1` through `A102`, followed by `B1` through `B17`; `B18` is the next identifier.
 - **Thread and family** are permanent, series-neutral semantic classifications.
   `T-*` and `TF-*` may connect nonadjacent batches across any letter sequence, and
   one batch may participate in several threads.
@@ -192,11 +192,11 @@ Maturity advances independently through `pre-alpha`, `alpha`, `beta`, `rc`, and
 GA.
 
 `tools/version-model.mjs` is the executable replay source. It derives `VERSION`,
-the generated version stamps, and `VERSION_MAP.md`; validates exact A1-B16
+the generated version stamps, and `VERSION_MAP.md`; validates exact A1-B17
 coverage; checks the thematic namespace; and fails if the declared next batch has
 already been consumed. Mechanically derived version facts are generated and
 gated, not hand-typed. Forty-three evidenced version units derive
-`1.6.1.0-alpha`.
+`1.7.0.0-alpha`.
 
 When new development begins, the first batch opens the next contiguous version
 unit. Immediately following batches may share that version only when they form one
@@ -384,3 +384,34 @@ rows remain byte-for-byte equivalent in meaning and the twenty-four new rows
 enter each represented population scope as neutral, low-confidence, explicitly
 unobserved state. Faction, founding, regional, and map-longitudinal owners
 validate their complete nested state before publishing their new versions.
+
+## B17 Site Affiliation and Pawn Epistemics Contract
+
+Every persistent inhabited site records faction ownership and material support
+as independent typed facts. `None` is a complete ownership value and never a
+sentinel, failed lookup, fake faction, or hidden placeholder. Resident
+affiliation remains population state. Support, local authority, Culture,
+Ideoligion, Political Order, Technological Knowledge, institutions,
+organizations, offices, programs, provisions, and practice never imply site
+ownership.
+
+Major settlements and existing frontier settlements, holdings, cabins, and
+homesteads retain their distinct mechanics while using that shared relationship
+contract. A factionless site owns complete local political, technological, and
+institutional state and remains fully simulatable. Detachment snapshots
+effective local state once. Support cannot become ownership, and scale changes
+cannot create a faction without an explicit causal event.
+
+The existing proposition store owns the optional Broader Pawn Knowledge mode.
+It defaults off and does not replace the pawn-private tactical or welfare facts
+already required for causal behavior. When enabled, typed pawn records preserve
+source, immediate reporter, source-event and acquisition time, confidence,
+uncertainty, contradiction, revision, supersession, scope, retention, and
+provenance where meaningful. Communication copies the teller's remembered
+record; it never grants the receiver current world truth. Player-view masking
+remains a separate presentation concern.
+
+Catalog 6 and pending-authoring epoch 15 bind the B17 ownership and knowledge
+schemas. The adjacent conversion validates the complete proposed graph before
+publishing any field or schema stamp. `B17_SITE_AFFILIATION_AND_EPISTEMIC_CONTRACT.md`
+is the canonical detailed contract.

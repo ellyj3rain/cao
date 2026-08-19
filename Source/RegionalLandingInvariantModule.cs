@@ -392,7 +392,7 @@ namespace ColonistAwareness
                 {
                     digest.Add(settlement.slot);
                     digest.Add(settlement.memberTileId);
-                    digest.Add(settlement.factionKey);
+                    digest.Add(settlement.OwningFactionKey);
                     digest.Add(settlement.siteClusterKey);
                     digest.Add(settlement.persistent ? 1 : 0);
                 }
@@ -419,9 +419,9 @@ namespace ColonistAwareness
                 identity.Add(record.slot);
                 identity.Add(record.memberTileId);
                 identity.Add(record.name);
-                identity.Add(record.factionDefName);
+                identity.Add(record.generationFactionDefName);
                 identity.Add(record.faction?.Name);
-                identity.Add(record.factionKnowledgeTier);
+                identity.Add(record.technologicalKnowledgeTier);
                 identity.Add(record.settlementForm);
                 identity.Add(record.settlementProgram?.sourceSignature);
                 identity.Add(record.populationBaseline);
@@ -455,26 +455,23 @@ namespace ColonistAwareness
                     ?? new List<string>()).OrderBy(item => item,
                         StringComparer.Ordinal))
                     garrison.Add(resident);
-                if (record.faction != null)
+                foreach (Pawn pawn in CAPopulationProjection
+                    .Residents(record, map).OrderBy(item =>
+                        item.Position.z * 100000 + item.Position.x))
                 {
-                    foreach (Pawn pawn in map.mapPawns
-                        .SpawnedPawnsInFaction(record.faction)
-                        .OrderBy(item => item.Position.z * 100000
-                            + item.Position.x))
-                    {
-                        garrison.Add(pawn.kindDef?.defName);
-                        garrison.Add(pawn.Name?.ToStringFull);
-                        garrison.Add(pawn.Position.x);
-                        garrison.Add(pawn.Position.z);
-                    }
+                    garrison.Add(pawn.kindDef?.defName);
+                    garrison.Add(pawn.Name?.ToStringFull);
+                    garrison.Add(pawn.Faction?.loadID ?? -1);
+                    garrison.Add(pawn.Position.x);
+                    garrison.Add(pawn.Position.z);
                 }
             }
             Add(lines, "settlement identity", identity,
                 records.Count + " record(s)");
             Add(lines, "settlement layout", layout,
                 "terrain and structures inside every settlement rect");
-            Add(lines, "settlement garrison", garrison,
-                "residents and spawned pawns per settlement faction");
+            Add(lines, "settlement residents", garrison,
+                "typed residents and their independent faction affiliations");
         }
 
         private static void Entry(Map map, CARegionalPlan region,

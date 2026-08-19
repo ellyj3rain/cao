@@ -2677,7 +2677,7 @@ namespace ColonistAwareness
             {
                 if (population == null || population.share <= 0) continue;
                 int sourceKey = population.factionKey >= 0
-                    ? population.factionKey : settlement.factionKey;
+                    ? population.factionKey : settlement.OwningFactionKey;
                 CACulture source = population.kind
                         == CAPopulationGroupKind.Unaffiliated
                     ? null : plan.FactionPlan(sourceKey)?.culture;
@@ -2752,9 +2752,9 @@ namespace ColonistAwareness
                 .populationGroups?.Where(item => item != null)
                 .OrderByDescending(item => item.share).FirstOrDefault();
             int key = dominant != null && dominant.factionKey >= 0
-                ? dominant.factionKey : settlement.factionKey;
+                ? dominant.factionKey : settlement.OwningFactionKey;
             return plan?.FactionPlan(key)?.culture
-                ?? plan?.FactionPlan(settlement.factionKey)?.culture;
+                ?? plan?.FactionPlan(settlement.OwningFactionKey)?.culture;
         }
 
         private static string CompositionSignature(

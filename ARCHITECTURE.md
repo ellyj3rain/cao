@@ -44,6 +44,17 @@ incident generated him to save, their arrival cells, and gross downed state. It
 grants no clinical severity, general hostile, item, or map knowledge; urgency
 requires a local assessment.
 
+The default-off Broader Pawn Knowledge mode extends the same proposition store
+to additional represented social, political, technological, geographic, route,
+person, and site facts. Each pawn retains a separate typed payload, original
+source, immediate reporter, source-event time, acquisition time, confidence,
+uncertainty, contradiction, revision, supersession, scope, and provenance where
+those fields are meaningful. Communication copies the teller's remembered
+record; it never queries live truth for the receiver. Durable and transient fact
+families retain separate lifetimes. Existing tactical and welfare knowledge
+remains active when the broader mode is disabled, and player-view information
+masking remains a separate presentation concern.
+
 Welfare is a separate typed fact family. A pawn may retain gross condition and a
 last-known cell from firsthand sight, receive the teller's remembered cell and
 source age through a valid same-faction communication edge, or acquire a coarse
@@ -479,25 +490,45 @@ references the faction-owned source until an explicit local divergence is
 authored. No catalog entry, placement mode, or settlement archetype is added to
 persistent state.
 
-Technological Knowledge is a faction-owned domain composition, not a settlement
-tier or a replacement research tree. Nine domains record four distinct
+Every persistent inhabited site separately records faction ownership and
+material support. `None` is a complete typed ownership value, not a sentinel or
+failed lookup. Population groups retain their own affiliations; support does not
+imply ownership, resident affiliation does not infer ownership, and independent
+local authority is not synonymous with being factionless. Major settlements and
+the existing frontier cabins, homesteads, holdings, and settlements use this
+same relationship contract without collapsing their distinct mechanics.
+
+A factionless site remains a complete society. Population-local Culture and
+Ideoligion continue through represented groups, while the site owns local
+Political Order, Technological Knowledge, represented institutions,
+organizations, offices, authority, programs, provisions, and material history.
+Faction-owned sites resolve faction state unless an explicit local divergence is
+represented. Detachment snapshots effective local state once. Growth between
+inhabited forms preserves ownership and support exactly; only an explicit causal
+event can change either relationship.
+
+Technological Knowledge is a social-owner domain composition, not a settlement
+tier or a replacement research tree. A faction owns the composition used by its
+non-divergent sites; a factionless or explicitly divergent site owns its local
+composition. Nine domains record four distinct
 competencies: understand, construct, operate, and maintain. One explicit
 translation layer maps native research, construction, recipes, crops, habitat
 requirements, and autonomous development onto those domains. Native research
 projects remain the concrete completion graph. `FactionDef.techLevel` may seed a
 new unauthored faction once or serve before a world owner exists, but active
-authoring and runtime consumers query faction state.
+authoring and runtime consumers query the effective faction or site state.
 
 Standard availability treats the faction's composition as socially available.
 Experimental Distributed Knowledge uses the same composition while requiring
 accessible pawn, institutional, or recorded custody for practical availability.
 Pawn death, departure, incapacity, recruitment, and research update or expose
 that custody; overlapping carriers supply redundancy and an isolated carrier's
-loss can remove capability. A settlement record may retain the faction knowledge
-identity, revision, and compatibility tier as a realization receipt, but it does
-not own a second knowledge composition. Environment requirements, effective
-knowledge, labor, materials, programs, and built systems remain separately
-validated causes.
+loss can remove capability. A non-divergent owned settlement may retain the
+faction knowledge identity, revision, and compatibility tier as a realization
+receipt, but it does not own a second composition. Factionless and explicitly
+divergent sites retain their one canonical local composition. Environment
+requirements, effective knowledge, labor, materials, programs, and built systems
+remain separately validated causes.
 
 Individual observation becomes collective action only through an explicit causal
 chain: a pawn observes; a valid communication or reporting edge carries an

@@ -209,7 +209,7 @@ namespace ColonistAwareness
 
                 int groupKey = record.populationGroups?.FirstOrDefault(
                     group => group != null
-                        && group.kind == CAPopulationGroupKind.Main)?.key ?? -1;
+                        && group.isPrimary)?.key ?? -1;
                 CASettlementResidenceAssignment recruiterAssignment =
                     recruiter == null ? null
                     : CASettlementResidenceState.Active(record,

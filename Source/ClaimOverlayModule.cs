@@ -66,8 +66,7 @@ namespace ColonistAwareness
             {
                 CARegionalSettlementRecord record = records[i];
                 if (record.lastMapId != map.uniqueID
-                    || record.localRect == CellRect.Empty
-                    || record.faction == null) continue;
+                    || record.localRect == CellRect.Empty) continue;
                 Color color = StanceColor(record);
                 var chunks = new List<List<Matrix4x4>>();
                 var current = new List<Matrix4x4>();

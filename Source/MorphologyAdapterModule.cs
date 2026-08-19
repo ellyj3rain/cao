@@ -110,9 +110,19 @@ namespace ColonistAwareness
             if (record == null) return CAMorphForm.Tribal;
             if (record.settlementForm >= 0)
                 return CASettlementAxes.Form(record.settlementForm,
-                    CATechnologicalKnowledgeRuntime.CanonicalBuildTechLevel(
-                        record.faction));
-            return FormFor(record.faction);
+                    TechLevelFor(record));
+            return CASettlementAxes.Form(CASettlementAxes.Derive,
+                TechLevelFor(record));
+        }
+
+        private static TechLevel TechLevelFor(
+            CARegionalSettlementRecord record)
+        {
+            if (record?.faction != null)
+                return CATechnologicalKnowledgeRuntime
+                    .CanonicalBuildTechLevel(record.faction);
+            return CATechnologicalKnowledgeModel.CompatibilityTechLevel(
+                record?.localSociety?.technologicalKnowledge);
         }
 
         // ---- passable mask: where the settlement may grow ----

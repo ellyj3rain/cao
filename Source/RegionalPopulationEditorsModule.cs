@@ -62,7 +62,7 @@ namespace ColonistAwareness
                 introductionHeight), introduction);
             GUI.color = Color.white;
 
-            bool main = population.kind == CAPopulationGroupKind.Main;
+            bool main = population.isPrimary;
             float bodyTop = 38f + introductionHeight + 10f;
             const float footerHeight = 55f;
             Rect outRect = new Rect(0f, bodyTop, inRect.width,
@@ -75,7 +75,7 @@ namespace ColonistAwareness
             {
                 int otherShares = settlement.populationGroups.Where(item =>
                         item != null && item != population
-                        && item.kind != CAPopulationGroupKind.Main)
+                        && !item.isPrimary)
                     .Sum(item => Math.Max(0, item.share));
                 int maximum = CACreationFlowContracts.MaximumMinorityShare(
                     otherShares);
@@ -332,7 +332,8 @@ namespace ColonistAwareness
                     Choose = delegate
                     {
                         population.factionKey = local.key;
-                        population.kind = local.key == settlement.factionKey
+                        population.kind = local.key
+                                == settlement.OwningFactionKey
                             ? CAPopulationGroupKind.LocalResidents
                             : CAPopulationGroupKind.OtherFaction;
                         population.label = CARegionalPlanUtility.FactionName(local);

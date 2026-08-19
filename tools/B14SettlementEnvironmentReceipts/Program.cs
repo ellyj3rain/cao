@@ -303,13 +303,13 @@ internal static class Program
             "saved supporter and exact tile requirements are validated; "
                 + "shelter, food route, stores, and required functions are "
                 + "materialized before residents");
-        Add("frontier capability belongs to an exact saved faction",
-            habitat.Contains("effectiveTier = supported ? technologyTier : 0")
-            && habitat.Contains("claims technical capability")
-            && frontier.Contains("ResolveSupporter")
+        Add("frontier capability belongs to exact saved site state",
+            habitat.Contains("CATechnologicalKnowledge knowledge = CASiteState.Knowledge(plan,")
+            && frontier.Contains("holding.localSociety?.technologicalKnowledge")
+            && frontier.Contains("supportDeclared")
+            && frontier.Contains("ownerDeclared")
             && frontier.Contains("resolvedTier != holding.capabilityTier"),
-            "a numeric tier without a saved faction supplies no capability; "
-                + "materialization resolves and rechecks the exact owner");
+            "the canonical local knowledge supplies capability; optional owner and support references are resolved separately and materialization rechecks the saved tier");
         Add("frontier realization identity rejects stale causes",
             organization.Contains("FrontierRealizationSourceHash")
             && organization.Contains("plan.realizationSourceHash")

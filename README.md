@@ -6,7 +6,7 @@ institutions, beliefs, and authority. Factions make decisions and carry their
 consequences forward instead of resetting to isolated game events.
 
 <!-- cao:generated:version BEGIN -->
-Current version: `1.6.1.0-alpha`. Implementation is complete through batch `B16`; `B17` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.
+Current version: `1.7.0.0-alpha`. Implementation is complete through batch `B17`; `B18` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.
 <!-- cao:generated:version END -->
 
 ## Framework
@@ -154,13 +154,34 @@ use the same preset while creating an ordinary local faction and settlement;
 the page separately records its scenario population and map-area assignment.
 No settlement type, catalog ownership, or preset mode is retained.
 
-Standard play reads the faction's Technological Knowledge directly. Experimental
-Distributed Knowledge changes only where that same knowledge is available:
+Standard play reads the effective social owner's Technological Knowledge
+directly: the faction for a non-divergent owned site, or the site's canonical
+local state when factionless or explicitly divergent. Experimental Distributed
+Knowledge changes only where that same knowledge is available:
 living pawns, institutions, and records carry domain competencies, redundancy
 protects them, and the loss or incapacity of an isolated carrier can remove a
 practical capability. Recruitment, departure, research, and represented custody
 changes operate on the same ontology; teaching is not yet a shipped transfer
 mechanism. The mode does not create a second technology system.
+
+Every persistent inhabited site separately records faction ownership and
+material support. Major settlements and existing frontier settlements,
+holdings, cabins, and homesteads share this relationship contract without losing
+their distinct mechanics. `No faction` is a complete ownership value. Support,
+resident affiliation, Culture, Ideoligion, Political Order, Technological
+Knowledge, institutions, organizations, offices, local authority, programs,
+provisions, and practice remain separate facts. Factionless sites therefore
+retain complete local social state and can develop without a faction appearing
+at a scale transition.
+
+The default-off Broader Pawn Knowledge mode extends the existing proposition
+store to represented people, sites, affiliation, social state, events,
+technology, geography, and routes. Each pawn keeps a separate typed record with
+source age, confidence, uncertainty, reporter, contradiction, revision,
+supersession, scope, retention, and provenance where meaningful. A report copies
+what the teller remembers; it never gives the receiver refreshed world truth.
+The pawn inspector describes the pawn's belief and evidence. Existing required
+tactical and welfare knowledge remains unchanged when this broader mode is off.
 
 Political Order is a complete normative composition over twenty-six concrete
 questions covering authority, civic life, ownership by economic domain,
@@ -226,6 +247,7 @@ changes require a full RimWorld restart.
 | `SCHEMA_REGISTRY.md`, `PERSISTENCE_CENSUS.md`, `CAMPAIGN_COMPATIBILITY.md` | Durable campaign schema, independent source-writer census, preflight, migration, update, and rollback contracts |
 | `AUTHORING_ONTOLOGY_COVERAGE.md` | Production social/political vocabulary, mechanics coverage, control contracts, categories, and exclusions |
 | `B16_PLAYABLE_SOCIAL_ONTOLOGY_AUDIT.md`, `AUTHORING_ONTOLOGY_COVERAGE.md` | Current forty-eight-question Culture registry, exact Ideoligion and native-event semantic adapters, ownership audit, mechanics coverage, consumers, and fail-closed mod boundary |
+| `B17_SITE_AFFILIATION_AND_EPISTEMIC_CONTRACT.md` | Typed ownership/support across inhabited sites, complete factionless social state, scale-transition rules, and the optional broader pawn-knowledge contract |
 | `B13_CAUSAL_CONTRACT.md` | Historical twenty-four-question B13 Culture boundary retained beneath B16 |
 | `CULTURE_RESEARCH_CORPUS.md` | Current Culture research and playable-mechanics corpus: B13 source basis plus B16 reverse ownership audit, causal separations, consumers, feedback, and calibration limits |
 | `REGIONAL_GEOGRAPHY_CONTRACT.md` | Shared B14 preview and generation identity, supported geography combinations, and fail-closed realization rules |
@@ -233,7 +255,7 @@ changes require a full RimWorld restart.
 | `DATASET_GOVERNANCE.md` | Public corpus strata, provenance, acquisition, processing, privacy, IP, cohort, and use-accounting boundary; underlying examples remain local |
 | `PLAYER_BASE_PATTERN_CORPUS.md`, `Corpus/PlayerBaseLayouts/`, `tools/PlayerBaseLayoutExtractor/` | Layout methodology, evidence limits, aggregate profile, extraction schema, and reusable construction relationships; normalized spatial records and exact cohort membership remain local and ignored |
 | `CULTURAL_COGNITION_RESEARCH.md`, `B12_CULTURE_QUESTION_AUDIT.md` | B12 research and migration evidence retained beneath the B13 completion |
-| `B13_ACCEPTANCE_RECEIPTS.md`, `B13_REVIEW_RECEIPT.md`, `Receipts/B14/`, `Receipts/B15/`, `Receipts/B16/` | Executable closure, retained-regression, review, fixture, build, and deployment evidence |
+| `B13_ACCEPTANCE_RECEIPTS.md`, `B13_REVIEW_RECEIPT.md`, `Receipts/B14/`, `Receipts/B15/`, `Receipts/B16/`, `Receipts/B17/` | Executable closure, retained-regression, review, fixture, build, and deployment evidence |
 
 ## Project history
 

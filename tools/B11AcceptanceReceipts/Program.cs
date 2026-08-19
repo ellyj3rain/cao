@@ -790,18 +790,25 @@ internal static class Program
             results.Where(item => item.Number <= 26).All(item => item.Passed),
             "all original ownership, profiler, schema, migration, and rollback receipts pass");
         C(75, "Schema transition is deterministic and explicit",
-            V(activeDoc.Root, "authoringDataEpoch") == "14"
-            && V(activePlan, "schemaVersion") == "15"
+            V(activeDoc.Root, "authoringDataEpoch") == "15"
+            && V(activePlan, "schemaVersion") == "16"
             && cultures.All(item => V(item, "schemaVersion") == "11")
             && politicalBeliefs.All(item => V(item, "schemaVersion") == "10")
-            && activeDoc.Descendants("technologicalKnowledge").Count() == 4
+            && activeDoc.Descendants("technologicalKnowledge").Count() >= 4
             && activeDoc.Descendants("technologicalKnowledge").All(item =>
                 V(item, "schemaVersion") == "1")
+            && activePlan.Element("settlements")?.Elements("li").All(item =>
+                item.Element("factionLinks") != null) == true
+            && activePlan.Element("frontierHoldings")?.Elements("li").All(item =>
+                item.Element("factionLinks") != null
+                && item.Element("localSociety") != null) == true
+            && activeDoc.Descendants("populationGroups").Elements("li")
+                .All(item => V(item, "schemaVersion") == "2")
             && culturePractices.All(item => !V(item, "practiceKey").Equals("")
                 && !V(item, "sourceOwner").Equals("")
                 && item.Element("subjectKey") == null)
             && ontologyKernel.Contains("FromB10LongitudinalEvidence"),
-            "pending epoch 14, regional plan 15, Culture 11, Political Order 10, four technological-knowledge schema-1 owners, and explicit B10 evidence gate");
+            "pending epoch 15, regional plan 16, Culture 11, Political Order 10, typed site links, complete frontier local state, population schema 2, technological-knowledge schema 1, and explicit B10 evidence gate");
         C(76, "Clean Release build completed with zero errors",
             buildReceipt.Contains("Warnings: **0**")
             && buildReceipt.Contains("Errors: **0**")
@@ -1257,6 +1264,10 @@ internal static class Program
                         ? "model.settlement-operational-fact"
                         : "model.settlement-program");
             case "SettlementResidenceModule.cs": return Route("model.settlement-residence");
+            case "SiteAffiliationModule.cs":
+                return Route(carrier.Name == "CASiteFactionLinks"
+                    ? "model.site-faction-links"
+                    : "model.site-local-society");
             case "SocialInterpretationRuntimeModule.cs": return Route("world.social-reactions");
             case "SpatialInitiativeModule.cs": return Route("map.spatial-initiative");
             case "SquadModule.cs": return Route("game.squad");
@@ -1587,12 +1598,33 @@ internal static class Program
             new XElement("utilityKinds"),
             new XElement("approaches"));
         return new XElement("li",
-            new XElement("schemaVersion", 8),
+            new XElement("schemaVersion", CACampaignSchemaCatalog.All
+                .First(item => item.Key == "model.regional-settlement-record")
+                .CurrentVersion),
             new XElement("regionalId", "regional.synthetic"),
             new XElement("name", "Synthetic settlement"),
             new XElement("regionKey", "region.synthetic"),
             new XElement("slot", 0),
             new XElement("faction", new XAttribute("IsNull", "True")),
+            new XElement("factionLinks",
+                new XElement("schemaVersion", 1),
+                new XElement("ownership", "None"),
+                new XElement("ownerRegionalFactionKey", -1),
+                new XElement("ownerWorldFactionLoadId", -1),
+                new XElement("support", "None"),
+                new XElement("supportRegionalFactionKey", -1),
+                new XElement("supportWorldFactionLoadId", -1)),
+            new XElement("localSociety",
+                new XElement("schemaVersion", 1),
+                new XElement("explicitLocalDivergence", "True"),
+                new XElement("politicalOrder",
+                    SyntheticPoliticalBeliefs().Elements()),
+                new XElement("technologicalKnowledge",
+                    new XElement("schemaVersion", 1),
+                    new XElement("domains"),
+                    new XElement("custody")),
+                new XElement("institutions"),
+                new XElement("institutionalStateIncomplete", "False")),
             new XElement("capabilities"),
             new XElement("residentIds"),
             new XElement("populationGroups"),
@@ -1946,7 +1978,7 @@ internal static class Program
             .AppendLine("| Culture | Population distributions over 48 explicit questions, constituents, inherited and lived practices, observations, transitions, locality, and native visual tradition | Forty-eight questions in 12 categories plus the complete subject/practice vocabularies below | Pawn appraisal and repeated represented evidence alter local Culture only at explicit transition boundaries | One Culture composer with categorized values, one overall-disagreement control, per-value disagreement under More, presets, randomization, constituents, read-only practices, continuity, and visual style |")
             .AppendLine($"| Political Order | Complete normative composition over {politicalQuestions} causal questions | {politicalOptions} supported positions and {politicalPresets} complete presets | Generated identity and account, belief-practice readings, legitimacy, reaction, ownership, provision, and founding suggestions consume the saved variables | Edit one concrete question at a time; blendable subjects total 100 and complete presets remain editable |")
             .AppendLine($"| Represented institutions | Independent instituted mechanisms over {representedInstitutionSubjects} comparison subjects | {politicalMechanisms} supported compatibility mechanisms | Offices, organizations, work, property, security, provisions, and tension reporting consume represented facts | Read-only comparison in Political Order authoring; institutions arise from scenario or historical evidence |")
-            .AppendLine("| Factions, settlements, and populations | Relational and structured composition over native factions, owned places, population groups, relations, current institutions, and represented history | The control-contract inventory below names every active authoring degree of freedom | Starting-region realization persists facts once and generation consumes the saved result | Object list, ground map, details, and object-specific composers; no schema-shaped global mode |")
+            .AppendLine("| Factions, inhabited sites, and populations | Relational and structured composition over native factions, independently optional site ownership and support, population affiliation, local social state, relations, current institutions, and represented history | The control-contract inventory below names every active authoring degree of freedom | Starting-region realization persists ownership, support, resident affiliation, and local state once; generation consumes those facts without inventing a faction | Region list, ground map, details, and object-specific composers; direct owner and support choices remain separate from settlement authority |")
             .AppendLine("| Settlement habitat | Physical requirements derived from the exact selected terrain, biome, climate, ecology, water, light, pollution, hazards, and vacuum state | Shelter, thermal control, food route and reserve, medicine, water treatment, light, hazard protection, and breathable interior | Advanced capability can admit potential established-settlement ground; actual programs must satisfy it at confirmation, while frontier occupancy requires the compact materializer to prove every function | Read-only requirement and viability summary on the owning settlement; no biome personality or survival-style control |")
             .AppendLine("| World tendencies | Independent scalar propensities and bounded ranges plus read-only realized outcomes | Eight causal policy controls | Fixed-seed generation owns placement, extent, frontier count/form, urban threshold, source selection, and distant cadence | One direct-effect row per tendency; presets are copy-on-apply convenience compositions |")
             .AppendLine()
@@ -2077,7 +2109,7 @@ internal static class Program
             .AppendLine()
             .AppendLine("## Closure statement")
             .AppendLine()
-            .AppendLine("The current authoring ontology reaches its static boundary only when this inventory, the executable contracts, the fixture round trip, retained B10-B15 suites, B16 causal receipts, clean build, and byte-verified deployment agree. Operator runtime judgment remains separate.");
+            .AppendLine("The current authoring ontology reaches its static boundary only when this inventory, the executable contracts, the fixture round trip, retained B10-B16 suites, B17 affiliation and epistemic receipts, clean build, and byte-verified deployment agree. Operator runtime judgment remains separate.");
         File.WriteAllText(P("AUTHORING_ONTOLOGY_COVERAGE.md"),
             text.ToString(), new UTF8Encoding(false));
     }
@@ -2133,7 +2165,7 @@ internal static class Program
         M("Decisions and policies", "political or institutional fact", "CAOrganization decisionHistory and current policy records", "public voice, office governance, public deliberation", "organization behavior, settlement services, legitimacy, Culture history", "represented institutions and established-program facts"),
         M("Office existence, holder, jurisdiction, standing, and succession", "political or institutional fact", "CAOrganization offices and succession records", "office holding, office governance, delegated authority, kin succession", "authority, membership, institutional legitimacy, Culture", "represented institutions; office facts are inspected rather than replaced by a political label"),
         M("Organization membership and groups", "political or institutional fact", "CAOrganization membership and group records", "faction membership, delegated governance, public deliberation", "authority, reporting, work, agreements, and political response", "population/faction authoring plus represented institutions"),
-        M("Population group affiliation and share", "political or institutional fact", "CASettlementPopulationGroup", "faction membership and Culture constituents", "pawn realization, Culture weighting, beliefs, provisions", "direct structured settlement-population composition"),
+        M("Population group affiliation and share", "political or institutional fact", "CASettlementPopulationGroup.kind, explicit faction payload when affiliated, and share", "faction membership and Culture constituents", "pawn realization, Culture weighting, beliefs, provisions", "direct structured settlement-population composition; unaffiliated residents remain explicit even in supported or owned sites"),
         M("Status, rank, caste, and standing", "political or institutional fact", "represented institutions, offices, and membership records", "inherited rank, office holding, kin succession", "participation, succession, work, prestige, and conflict", "normative Political Order and represented institutions remain independent"),
         M("Domestic-unit membership and residence", "political or institutional fact", "CADomesticUnit and factual pawn relations/residence", "household membership and household provision", "domestic provision, housing, continuity", "population composition is authorable; factual units form from represented relationships"),
         M("Kinship and represented personal relationships", "culturally interpretable subject", "native pawn relations and domestic-unit evidence", "household membership and kin succession", "domestic formation, succession, Culture interpretation", "read-only realized relationship at this boundary"),

@@ -1,8 +1,8 @@
 # Campaign compatibility
 
-Status: canonical for `1.6.1.0-alpha` / closed B16
+Status: canonical for `1.7.0.0-alpha` / closed B17
 Current campaign boundary: `1`
-Current schema catalog: `5`
+Current schema catalog: `6`
 
 B11 is CAO's first durable campaign boundary. A world confirmed under this
 boundary is historical state. Later code may govern future events differently,
@@ -71,6 +71,22 @@ weakening that rule. The map owner also adds a bounded exact native-event ledger
 Every affected owner validates before catalog 5 is published. No native doctrine,
 institution, prior occurrence, or historical practice is inferred.
 
+Catalog 6 is B17's site-affiliation and pawn-epistemics boundary. Major
+settlements and every existing frontier form persist site ownership and material
+support as independent typed relationships. Population groups persist their own
+affiliation, and a factionless or explicitly divergent site persists complete
+local Political Order, Technological Knowledge, and represented institutions.
+`None` is a semantic value and never a key, failed lookup, fake faction, or
+placeholder. Proposition knowledge schema 2 adds optional pawn-private typed
+facts, original source, immediate reporter, event/acquisition time, uncertainty,
+contradiction, revision, supersession, scope, and fact-specific retention.
+
+The supported catalog-5 conversion validates every proposed relationship,
+population group, local social owner, frontier holding, and knowledge record
+before changing any owner or catalog version. It neither infers ownership from
+support or residents nor backdates a pawn's knowledge. A failed conversion
+publishes no partial state.
+
 The same streaming validator runs on the closed XML candidate after
 `ScribeSaver.FinalizeSaving` and before SafeSaver replaces the prior file. Only
 a complete current-boundary candidate receives the exact terminal SHA-256 seal.
@@ -99,8 +115,8 @@ native-class validator.
 
 Pending authoring is an unconfirmed proposal. The active/mirror Starting Region
 plan, unconfirmed founding draft, preset files, and preview caches may be
-regenerated or rejected according to pending-authoring epoch 14 and their own
-current schema. The governed regional plan is schema 15; Culture is schema 11
+regenerated or rejected according to pending-authoring epoch 15 and their own
+current schema. The governed regional plan is schema 16; Culture is schema 11
 with question registry 3; Political Order is schema 10; Technological Knowledge
 is schema 1.
 
@@ -208,17 +224,19 @@ A future destructive live-state migration is exceptional and requires all of:
 
 ## Remaining live proof
 
-B15's non-interactive evidence uses the current authored regional fixture, the
+B17's non-interactive evidence uses the current authored regional fixture, the
 catalog-1 B11 upgrade envelope, and the retained controlled B10 envelope. It
 proves preflight decisions, exact
 component scope/cardinality, repeated-record validation, digest corruption
 rejection, stable IDs, deterministic additive metadata, idempotence,
 source-input immutability, exact Culture evidence migration, independently
 owned and causally separated cultural cognition, political cognition,
-proposition knowledge and organization appraisals, faction-owned Technological
-Knowledge, exact Society application, standard/distributed availability, no
-creation rerun, no invented prior history, retained B10-B14 regression, and
-build/deployment identity.
+proposition knowledge and organization appraisals, faction and local
+Technological Knowledge owners, exact Society application, standard/distributed
+availability, typed site ownership and support, independent resident
+affiliation, complete factionless local state, pawn-private broader knowledge,
+copied report provenance, contradiction/revision, no creation rerun, no invented
+prior history, retained B10-B16 regression, and build/deployment identity.
 
 It does not pretend to automate a true RimWorld save round trip. The operator's
 first retained campaign is the live proof: create and save the campaign, close
@@ -237,5 +255,5 @@ Every later implementation batch states:
 - performance impact: operations/cadence, bounded work, scans, index/cache
   effects and profiler keys.
 
-The next action after B16 is the operator's RimWorld runtime test and, once
+The next action after B17 is the operator's RimWorld runtime test and, once
 accepted, the first retained campaign save.

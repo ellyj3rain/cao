@@ -856,11 +856,16 @@ namespace ColonistAwareness
                 if (settlementPlan != null)
                     signature = signature * 31L
                         + settlementPlan.memberTileId * 7L
-                        + settlementPlan.factionKey;
+                        + (int)(settlementPlan.factionLinks?.ownership
+                            ?? CASiteFactionReferenceKind.None) * 17L
+                        + (settlementPlan.factionLinks
+                            ?.ownerRegionalFactionKey ?? -1) * 23L
+                        + (settlementPlan.factionLinks
+                            ?.ownerWorldFactionLoadId ?? -1);
             if (signature == cachedOverlaySignature
                 && cachedOverlay != null) return cachedOverlay;
 
-            var owners = new Dictionary<int, List<int>>();
+            var owners = new Dictionary<int, List<CASiteFactionLinks>>();
             for (int i = 0; i < plan.settlements.Count; i++)
             {
                 CARegionalSettlementPlan settlementPlan = plan.settlements[i];
@@ -869,11 +874,13 @@ namespace ColonistAwareness
                     : kernel.Members.FindIndex(tile =>
                         tile.tileId == settlementPlan.memberTileId);
                 if (member < 0) continue;
-                List<int> groups;
+                List<CASiteFactionLinks> groups;
                 if (!owners.TryGetValue(member, out groups))
-                    owners[member] = groups = new List<int>();
-                if (!groups.Contains(settlementPlan.factionKey))
-                    groups.Add(settlementPlan.factionKey);
+                    owners[member] = groups = new List<CASiteFactionLinks>();
+                CASiteFactionLinks links = settlementPlan.factionLinks
+                    ?? new CASiteFactionLinks();
+                if (!groups.Any(value => SameOwner(value, links)))
+                    groups.Add(links);
             }
 
             int width = kernel.Size.x;
@@ -884,16 +891,16 @@ namespace ColonistAwareness
                 {
                     int index = z * width + x;
                     int member = kernel.MemberByCell[index];
-                    List<int> groups;
+                    List<CASiteFactionLinks> groups;
                     if (member < 0 || !kernel.IsVisualLandAtIndex(index)
                         || !owners.TryGetValue(member, out groups))
                     {
                         pixels[index] = new Color32(10, 12, 14, 60);
                         continue;
                     }
-                    int pick = groups.Count == 1 ? groups[0]
+                    CASiteFactionLinks pick = groups.Count == 1 ? groups[0]
                         : groups[((x + z) / 6) % groups.Count];
-                    Color color = CARegionalWorldOverlay.FactionColor(pick);
+                    Color color = SiteOwnerColor(plan, pick);
                     pixels[index] = new Color32((byte)(color.r * 255),
                         (byte)(color.g * 255), (byte)(color.b * 255),
                         (byte)(groups.Count > 1 ? 150 : 105));
@@ -908,6 +915,32 @@ namespace ColonistAwareness
             cachedOverlay.Apply();
             cachedOverlaySignature = signature;
             return cachedOverlay;
+        }
+
+        private static bool SameOwner(CASiteFactionLinks left,
+            CASiteFactionLinks right)
+        {
+            if (left == null || right == null) return left == right;
+            return left.ownership == right.ownership
+                && left.ownerRegionalFactionKey
+                    == right.ownerRegionalFactionKey
+                && left.ownerWorldFactionLoadId
+                    == right.ownerWorldFactionLoadId;
+        }
+
+        private static Color SiteOwnerColor(CARegionalPlan plan,
+            CASiteFactionLinks links)
+        {
+            if (links?.ownership
+                    == CASiteFactionReferenceKind.RegionalFaction)
+                return CARegionalWorldOverlay.FactionColor(
+                    links.ownerRegionalFactionKey);
+            if (links?.ownership == CASiteFactionReferenceKind.WorldFaction)
+            {
+                Faction faction = CASiteState.ResolveOwner(plan, links);
+                if (faction != null) return faction.Color;
+            }
+            return new Color(0.62f, 0.66f, 0.68f, 1f);
         }
 
         // Selection is an AREA fill. A settlement does not have a generated
@@ -941,7 +974,7 @@ namespace ColonistAwareness
                 factionColor.a = 0.28f;
                 foreach (CARegionalSettlementPlan settlement in plan.settlements)
                     if (settlement != null
-                        && settlement.factionKey == emphasis)
+                        && settlement.OwningFactionKey == emphasis)
                         colors[settlement.memberTileId] = factionColor;
             }
 
@@ -1319,7 +1352,7 @@ namespace ColonistAwareness
                 List<CARegionalSettlementPlan> settlements = group
                     .OrderBy(settlement => settlement.slot).ToList();
                 bool emphasized = settlements.Any(settlement => emphasize >= 0
-                    && settlement.factionKey == emphasize);
+                    && settlement.OwningFactionKey == emphasize);
 
                 Vector2 point = ToGui(map, kernel,
                     AreaCentroid(kernel, group.Key));
@@ -1477,7 +1510,7 @@ namespace ColonistAwareness
                     else if (moving.memberTileId != tileId)
                     {
                         if (!CAHabitatViability.CanPotentiallySettle(plan,
-                                moving.factionKey, tileId,
+                                moving, tileId,
                                 out string habitatFailure))
                             Messages.Message(habitatFailure,
                                 MessageTypeDefOf.RejectInput, false);
@@ -1711,7 +1744,7 @@ namespace ColonistAwareness
                 int factionKey = selectedKind == CARegionSelectionKind.Faction
                     ? selectedFactionKey : plan?.settlements?.FirstOrDefault(
                             item => item != null && item.slot == selectedSlot)
-                        ?.factionKey ?? -1;
+                        ?.OwningFactionKey ?? -1;
                 Widgets.DrawBoxSolid(new Rect(strip.x, strip.y + 3f, 4f,
                     Mathf.Max(4f, strip.height - 6f)),
                     CARegionalWorldOverlay.FactionColor(factionKey));
@@ -1822,7 +1855,7 @@ namespace ColonistAwareness
                 CARegionalFactionPlan faction = plan.FactionPlan(
                     selectedFactionKey);
                 int held = plan.settlements.Count(item => item != null
-                    && item.factionKey == selectedFactionKey);
+                    && item.OwningFactionKey == selectedFactionKey);
                 text = faction == null ? "Faction"
                     : "Faction - " + CARegionalPlanUtility.FactionName(faction)
                         + " - " + held + " settlement"

@@ -700,7 +700,7 @@ internal static class Program
         string state = S("Source/CulturalCognitionStateModule.cs");
         string preflight = S("Source/CampaignCompatibilityPreflightKernel.cs");
         Add("campaign catalog records the B13 cognition schema",
-            CACampaignSchemaCatalog.CurrentCatalogVersion == 5
+            CACampaignSchemaCatalog.CurrentCatalogVersion == 6
                 && CACampaignSchemaCatalog.TryFind(
                     "world.cultural-cognition", out var cognition)
                 && cognition.CurrentVersion == 2
@@ -711,7 +711,7 @@ internal static class Program
                     StringComparison.Ordinal)
                 && state.Contains("CA_culturalCognitionOwnerVersion",
                     StringComparison.Ordinal),
-            "catalog=5 retains the cultural-cognition schema-2 owner introduced in 2 and admits no schema-1 payload");
+            "catalog=6 retains the cultural-cognition schema-2 owner introduced in 2 and admits no schema-1 payload");
         Add("durable attitudes persist the separated causal facts",
             state.Contains("CurrentSchemaVersion = 2",
                     StringComparison.Ordinal)
@@ -842,7 +842,7 @@ internal static class Program
             activeBytes.SequenceEqual(mirrorBytes),
             "SHA-256=" + Sha(activeBytes));
         Add("fixture preserves authored identity and composition",
-            Value(document.Root, "authoringDataEpoch") == "14"
+            Value(document.Root, "authoringDataEpoch") == "15"
                 && Value(plan, "regionalId") == "CA-RG-EB596A12"
                 && Value(plan, "candidateId") == "613b1fe44104"
                 && Value(plan, "startTileId") == "389638"
@@ -860,7 +860,11 @@ internal static class Program
             .Select(value => Value(value, "key"))
             .ToHashSet(StringComparer.Ordinal);
         bool relationships = settlements.All(settlement =>
-                factionKeys.Contains(Value(settlement, "factionKey")))
+                Value(settlement.Element("factionLinks"), "ownership")
+                    == "RegionalFaction"
+                && factionKeys.Contains(Value(
+                    settlement.Element("factionLinks"),
+                    "ownerRegionalFactionKey")))
             && settlements.All(settlement => Items(settlement,
                     "populationGroups").Sum(group =>
                         int.Parse(Value(group, "share"))) == 100)
@@ -871,9 +875,9 @@ internal static class Program
                     "factionKey")));
         Add("faction and population relationships survive readback",
             relationships,
-            "every settlement owner and affiliated population resolves to one of 3 factions; shares total 100 per settlement");
+            "every typed settlement owner and affiliated population resolves to one of 3 factions; shares total 100 per settlement");
 
-        bool complete = cultures.Length == 8 && cultures.All(culture =>
+        bool complete = cultures.Length == 11 && cultures.All(culture =>
         {
             List<XElement> roots = Items(culture, "inheritedQuestions")
                 .Concat(Items(culture, "localQuestions")).Where(value =>
@@ -888,7 +892,7 @@ internal static class Program
         });
         Add("fixture carries complete current Culture state",
             complete,
-            $"8 schema-11 registry-3 records each contain {CACultureQuestionRegistry.FixedQuestionCount} root distributions");
+            $"11 schema-11 registry-3 records each contain {CACultureQuestionRegistry.FixedQuestionCount} root distributions");
         int questionCount = cultures.Sum(value =>
             Items(value, "inheritedQuestions").Count()
                 + Items(value, "localQuestions").Count());
@@ -904,7 +908,7 @@ internal static class Program
             questionCount >= cultures.Length
                     * CACultureQuestionRegistry.FixedQuestionCount
                 && quarantinedCount == 1
-                && evidenceCount == 26
+                && evidenceCount == 35
                 && cultures.SelectMany(value => Items(value,
                     "legacyEvidence")).Any(value =>
                     Value(value, "sourceKey")
@@ -919,8 +923,8 @@ internal static class Program
                 + Items(value, "localQuestions").Count());
         Add("fixture round-trips without dropping Culture",
             readbackCultureQuestions == questionCount
-                && readbackCultures.Length == 8,
-            $"XML serialization/readback retains all {questionCount} distributions and 8 Culture records");
+                && readbackCultures.Length == 11,
+            $"XML serialization/readback retains all {questionCount} distributions and 11 Culture records");
     }
 
     private static void ResearchReceipts()

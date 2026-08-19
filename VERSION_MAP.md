@@ -8,9 +8,9 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | Form | `major.minor.kohai.patch-maturity` |
 | Hard caps | minor 12; kohai 16; patch 24 |
 | Replay start | `0.1.0.0-pre-alpha` |
-| Current version | `1.6.1.0-alpha` |
-| Closed chronology | `A1-B16` |
-| Next batch | `B17` |
+| Current version | `1.7.0.0-alpha` |
+| Closed chronology | `A1-B17` |
+| Next batch | `B18` |
 | Executable source | [`tools/version-model.mjs`](tools/version-model.mjs) |
 
 ## Tier meanings
@@ -71,6 +71,7 @@ This is the regulatory version replay for Colonist Awareness. It partitions the 
 | VU-041 | B14 | 2026-08-14 to 2026-08-17 | minor | `1.5.0.0-alpha` | Regional world and Society creation convergence | `T-001`, `T-002`, `T-013`, `T-014`, `T-015`, `T-019`, `T-020`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-026`, `T-027`, `T-028`, `T-029`, `T-030` | B14 establishes a new end-to-end creation capability across regional geography, settlement viability, and coherent Society authoring. Preview, confirmation, and generation now share one exact geography composition; hostile environments derive concrete habitat requirements; and autonomous construction ranks task-owned spatial evidence. Culture and Political Order remain canonical sibling owners while an independent Society recipe atomically initializes both, supports reusable saved snapshots, and leaves no persistent preset ownership. Starting Region placement, current-schema persistence, startup integration, offline creator tooling, fixed-cause receipts, reproducible builds, and byte-verified deployment close the capability as one minor unit. |
 | VU-042 | B15 | 2026-08-17 to 2026-08-18 | minor | `1.6.0.0-alpha` | Faction technological knowledge and distributed availability | `T-001`, `T-004`, `T-005`, `T-015`, `T-016`, `T-019`, `T-021`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B15 adds Technological Knowledge as a third canonical component owned by authored faction state beside Culture and Political Order. The existing Society surface composes all three and reusable Society presets atomically snapshot and apply all three without becoming runtime owners. One explicit native translation layer maps research, construction, production, plants, habitat viability, and autonomous development onto domain competencies. Standard mode reads faction capability directly; the experimental distributed mode projects that same ontology through living pawns and persistent institutional or recorded custody, making redundancy and isolated loss causally meaningful without creating another technology system. Current-schema persistence, fixture conversion, executable causal receipts, retained regression suites, reproducible builds, and byte-verified deployment close a new simulation and authoring capability, so the unit carries the minor tier. |
 | VU-043 | B16 | 2026-08-18 | kohai | `1.6.1.0-alpha` | Playable social ontology and Ideoligion semantics | `T-001`, `T-002`, `T-004`, `T-006`, `T-019`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B16 matures the existing Culture capability through a reverse audit from playable Core, DLC, CA, and explicitly supported-mod mechanics. It separates native Ideoligion doctrine, population Culture appraisal, Political Order, represented institutions, and repeated practice; expands Culture from the historical B13 boundary to forty-eight questions in twelve categories; and adds exact package-kind-definition and native-event adapter registries that fail closed on unknown content while RimWorld remains the executor. Additive registry-2-to-3 migration preserves every compatible existing Culture row, introduces only neutral explicitly unobserved state, and carries exact occurrence provenance through the existing longitudinal owner. The governed fixture's one non-constituent sparse row is retained as exact legacy evidence without weakening generic migration. Current-fixture conversion, catalog-5 owner validation, retained regression suites, reproducible builds, and byte-verified deployment complete the existing Culture line as a coherent integration unit, so the unit carries the kohai tier. |
+| VU-044 | B17 | 2026-08-18 | minor | `1.7.0.0-alpha` | First-class site affiliation and pawn epistemics | `T-001`, `T-002`, `T-004`, `T-005`, `T-013`, `T-014`, `T-019`, `T-021`, `T-022`, `T-023`, `T-024`, `T-025`, `T-028`, `T-030` | B17 makes absence of faction ownership a first-class social fact across major settlements and every existing frontier form. Ownership, material support, resident affiliation, and local social state are independently typed; factionless sites retain Culture, Ideoligion, Political Order, Technological Knowledge, institutions, organizations, programs, provisions, population, and development without a sentinel or placeholder faction. Atomic adjacent-schema migration and explicit scale transitions preserve those facts without manufacturing ownership. B17 also extends the existing proposition store with an optional broader pawn-knowledge mode: typed durable and transient facts remain pawn-private, reports copy the teller's remembered record with provenance and source age, contradictory versions can coexist, and revision or supersession occurs only through later evidence. Direct inspection, current-fixture conversion, executable separation receipts, retained regression suites, reproducible builds, and byte-verified deployment establish a new simulation and authoring capability, so the unit carries the minor tier. |
 
 ## Historical version evidence
 
@@ -80,12 +81,12 @@ A22 is the maturity boundary: reproducible assembly followed an end-to-end runti
 
 ## Next movement
 
-`B17` is the next ordinary batch. Its content determines its tier after it exists:
+`B18` is the next ordinary batch. Its content determines its tier after it exists:
 
-| If B17 is | Result |
+| If B18 is | Result |
 |---|---|
-| patch or hotfix | `1.6.1.1-alpha` |
-| kohai | `1.6.2.0-alpha` |
-| minor | `1.7.0.0-alpha` (the minor tier advances capability; maturity remains unchanged) |
+| patch or hotfix | `1.7.0.1-alpha` |
+| kohai | `1.7.1.0-alpha` |
+| minor | `1.8.0.0-alpha` (the minor tier advances capability; maturity remains unchanged) |
 
 The thematic catalog is series-neutral in [`Batches/THREADS.md`](Batches/THREADS.md). Temporary `AT-*` and `ATF-*` identifiers resolve through [`Batches/THREAD_ID_CROSSWALK.md`](Batches/THREAD_ID_CROSSWALK.md).

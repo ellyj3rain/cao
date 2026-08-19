@@ -4,8 +4,8 @@ Date: 2026-08-18
 
 This report is generated from production C# source, independently of the campaign schema catalog. It discovers declarations that directly write through `Scribe`, call a nested `Expose` writer, or inherit a native persisted job/lord/need/thought/world/scenario owner. Every discovered carrier must resolve to an executable catalog schema or a narrow, stated non-campaign exclusion.
 
-- Discovered persistence carriers: **258**
-- Catalog schemas reached from source carriers: **87**
+- Discovered persistence carriers: **261**
+- Catalog schemas reached from source carriers: **89**
 - Explicit non-campaign exclusions: **5**
 - Unclassified or invalid routes: **0**
 - Result: **PASS**
@@ -173,6 +173,7 @@ This report is generated from production C# source, independently of the campaig
 | `ColonistAwareness.CAKnowledgePropositionRecord` in `Source/PropositionKnowledgeModule.cs` | direct Scribe/nested Expose writer | `world.proposition-knowledge` | **PASS** |
 | `ColonistAwareness.CAPropositionKnowledgeWorldComponent` in `Source/PropositionKnowledgeModule.cs` | direct Scribe/nested Expose writer | `world.proposition-knowledge` | **PASS** |
 | `ColonistAwareness.CAResearchProgramReceipt` in `Source/PropositionKnowledgeModule.cs` | direct Scribe/nested Expose writer | `world.proposition-knowledge` | **PASS** |
+| `ColonistAwareness.CASiteAffiliationKnowledgePayload` in `Source/PropositionKnowledgeModule.cs` | direct Scribe/nested Expose writer | `world.proposition-knowledge` | **PASS** |
 | `ColonistAwareness.JobDriver_CAShelter` in `Source/RaidResponseModule.cs` | native persisted owner (`JobDriver`) | `native.ca-job-drivers` | **PASS** |
 | `ColonistAwareness.RaidResponseMapComponent` in `Source/RaidResponseModule.cs` | direct Scribe/nested Expose writer | `map.raid-response` | **PASS** |
 | `ColonistAwareness.CompRainCatch` in `Source/RainCatchModule.cs` | direct Scribe/nested Expose writer | `thing.water-state` | **PASS** |
@@ -207,6 +208,8 @@ This report is generated from production C# source, independently of the campaig
 | `ColonistAwareness.CASettlementProgram` in `Source/SettlementProgramModule.cs` | direct Scribe/nested Expose writer | `model.settlement-program` | **PASS** |
 | `ColonistAwareness.CASettlementProgramEntry` in `Source/SettlementProgramModule.cs` | direct Scribe/nested Expose writer | `model.settlement-program-entry` | **PASS** |
 | `ColonistAwareness.CASettlementResidenceAssignment` in `Source/SettlementResidenceModule.cs` | direct Scribe/nested Expose writer | `model.settlement-residence` | **PASS** |
+| `ColonistAwareness.CASiteFactionLinks` in `Source/SiteAffiliationModule.cs` | direct Scribe/nested Expose writer | `model.site-faction-links` | **PASS** |
+| `ColonistAwareness.CASiteLocalSocietyState` in `Source/SiteAffiliationModule.cs` | direct Scribe/nested Expose writer | `model.site-local-society` | **PASS** |
 | `ColonistAwareness.CASocialReactionRecord` in `Source/SocialInterpretationRuntimeModule.cs` | direct Scribe/nested Expose writer | `world.social-reactions` | **PASS** |
 | `ColonistAwareness.CASocialReactionWorldComponent` in `Source/SocialInterpretationRuntimeModule.cs` | direct Scribe/nested Expose writer | `world.social-reactions` | **PASS** |
 | `ColonistAwareness.CASpatialBuiltRoomRecord` in `Source/SpatialInitiativeModule.cs` | direct Scribe/nested Expose writer | `map.spatial-initiative` | **PASS** |

@@ -202,7 +202,7 @@ namespace ColonistAwareness
                 {
                     slot = i,
                     memberTileId = members[i],
-                    factionKey = i < 2 ? 1 : 2,
+                    OwningFactionKey = i < 2 ? 1 : 2,
                     siteClusterKey = i,
                     persistent = true,
                     populationOrigin =
