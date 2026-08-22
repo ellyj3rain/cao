@@ -336,3 +336,12 @@ active measurements on the larger map remain the better indicator of the
 substrate's intrinsic rendering capability. Per the scope boundary above,
 none of these numbers claim to predict completed CAO simulation
 performance.
+
+## Storage boundary
+
+Raw run logs and non-acceptance (diagnostic) screenshots are kept local and
+ignored, not promoted into source history. Curated per-run receipt summaries
+and acceptance screenshots (program-room, provision-order, reachability-fix)
+are tracked in Git. Every raw artifact's identity, SHA-256, run association, and
+disposition are recorded in `B18_PERFORMANCE_ARTIFACT_INDEX.md`. This corrects any
+earlier wording that implied the raw log payload itself is tracked.

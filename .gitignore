@@ -29,3 +29,12 @@ Corpus/PlayerBaseLayouts/**
 !Corpus/PlayerBaseLayouts/external/
 Corpus/PlayerBaseLayouts/external/**
 !Corpus/PlayerBaseLayouts/external/real-ruins-broad-profile.json
+
+# B18 performance evidence storage boundary (see Receipts/B18/B18_PERFORMANCE_ARTIFACT_INDEX.md)
+Receipts/B18/Performance/**/*.log
+Receipts/B18/Performance/diagnostic-200x4-access-diagnostic-run1/*.png
+
+
+# convergence-exercise scratch (build outputs, not canonical)
+/.tmp/
+
