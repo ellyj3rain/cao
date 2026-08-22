@@ -140,6 +140,21 @@ quality gradient. Every learned relationship is re-evaluated against the current
 map, available materials, population, technology, threats, Culture, Political
 Order, and represented institutions.
 
+As of 2026-08-19 the first vertical implementation of this contract exists:
+`tools/PlayerBaseLayoutExtractor relationships` mines thirteen conditional
+relationship bands from the broad cohort's train partition;
+`relationships-evaluate` scores the held-out test partition (coverage
+0.733-0.970 per band, receipt at
+`Receipts/B18/Settlement/SPATIAL_EVIDENCE_HOLDOUT.json`); the
+non-reconstructive aggregate ships at `Evidence/spatial-relationships.xml`;
+and `CASpatialRelationshipEvidence` ranks otherwise-valid candidates at two
+runtime seams (fit-out function assignment, development-extension anchor
+choice), receipted per decision as `[CA][Settlement][Evidence]`. Governance
+accounting for this use lives in `DATASET_GOVERNANCE.md`. The remaining
+seams (morphology lot and door placement, frontier siting), richer features
+(corridor geometry beyond door passability, terrain-following envelopes),
+and the operator/.rws ground-resolution gap stay open.
+
 ## Complementary mature corpus
 
 The missing stratum is native-save evidence from builders with demonstrated

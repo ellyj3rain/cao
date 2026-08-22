@@ -1,0 +1,343 @@
+==== CONVERGENCE EXERCISE (developer-exercise route, disposable) ====
+
+---- MAP COMPOSITION RECEIPT ----
+[CA][Convergence] map receipt
+  ==== Crook Plain (CA-RS-CA-RG-646B3C61-0) ====
+  native Settlement faction: Assembly of the Ford / CannibalPirate; relations with you: Hostile
+  creation: authorized=True, executable=True, material=True, siting=True
+      program ca.settlement.agriculture / population-group:1: materialized
+      program ca.settlement.housing / population-group:1: materialized
+      program ca.settlement.provision.communal / CA-RS-CA-RG-646B3C61-0#0: materialized
+  [A] PEOPLE - expected Assembly of the Ford 80%, Charter Towns 20%
+      Assembly of the Ford (Main, normal): expected 80%, assigned 8 resident(s)
+      Charter Towns (OtherFaction, normal): expected 20%, assigned 2 resident(s)
+  [B] NATIVE FACTS of assigned residents:
+      Pawn.Faction: Assembly of the Ford x10   EXPECT >1 faction when a resident minority population group resolved
+      Pawn.Ideo:    Bagucinquan Army x10   EXPECT >1 ideo when a distinct Ideoligion group resolved
+      Certainty: min 0.63, max 0.96   EXPECT spread when cohesion differs
+  [C] PROVISIONING:
+      communal kitchens · universal access · funded by shared work · centralized
+        operator org: Crook Plain (treasury 0)   EXPECT present
+        runtime: operational; exact material contract: complete
+      physical: 3 hearth/stove(s), 2 dining table(s), 1 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
+  [D] LEDGER: 0 transaction(s), 0 debt(s) world-wide; tax collections update treasuries and record acts as they occur
+  ==== Hien (CA-RS-CA-RG-646B3C61-1) ====
+  native Settlement faction: Assembly of the Ford / CannibalPirate; relations with you: Hostile
+  creation: authorized=True, executable=True, material=True, siting=True
+      program ca.settlement.agriculture / population-group:1: materialized
+      program ca.settlement.housing / population-group:1: materialized
+      program ca.settlement.provision.communal / CA-RS-CA-RG-646B3C61-1#1: materialized
+  [A] PEOPLE - expected Assembly of the Ford 100%
+      Assembly of the Ford (Main, normal): expected 100%, assigned 14 resident(s)
+  [B] NATIVE FACTS of assigned residents:
+      Pawn.Faction: Assembly of the Ford x12   EXPECT >1 faction when a resident minority population group resolved
+      Pawn.Ideo:    Bagucinquan Army x12   EXPECT >1 ideo when a distinct Ideoligion group resolved
+      Certainty: min 0.66, max 0.98   EXPECT spread when cohesion differs
+  [C] PROVISIONING:
+      communal kitchens · universal access · funded by shared work · centralized
+        operator org: Hien (treasury 0)   EXPECT present
+        runtime: operational; exact material contract: complete
+      physical: 1 hearth/stove(s), 4 dining table(s), 1 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
+  [D] LEDGER: 0 transaction(s), 0 debt(s) world-wide; tax collections update treasuries and record acts as they occur
+  ==== Night Canyon (CA-RS-CA-RG-646B3C61-2) ====
+  native Settlement faction: Assembly of the Ford / CannibalPirate; relations with you: Hostile
+  creation: authorized=True, executable=True, material=True, siting=True
+      program ca.settlement.agriculture / population-group:1: materialized
+      program ca.settlement.housing / population-group:1: materialized
+      program ca.settlement.provision.communal / CA-RS-CA-RG-646B3C61-2#2: materialized
+  [A] PEOPLE - expected Assembly of the Ford 100%
+      Assembly of the Ford (Main, normal): expected 100%, assigned 11 resident(s)
+  [B] NATIVE FACTS of assigned residents:
+      Pawn.Faction: Assembly of the Ford x11   EXPECT >1 faction when a resident minority population group resolved
+      Pawn.Ideo:    Bagucinquan Army x11   EXPECT >1 ideo when a distinct Ideoligion group resolved
+      Certainty: min 0.62, max 0.99   EXPECT spread when cohesion differs
+  [C] PROVISIONING:
+      communal kitchens · universal access · funded by shared work · centralized
+        operator org: Night Canyon (treasury 0)   EXPECT present
+        runtime: operational; exact material contract: complete
+      physical: 3 hearth/stove(s), 2 dining table(s), 1 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
+  [D] LEDGER: 0 transaction(s), 0 debt(s) world-wide; tax collections update treasuries and record acts as they occur
+  ==== Champion Rock (CA-RS-CA-RG-646B3C61-3) ====
+  native Settlement faction: Charter Towns / CannibalPirate; relations with you: Hostile
+  creation: authorized=True, executable=True, material=True, siting=True
+      program ca.settlement.agriculture / population-group:1: materialized
+      program ca.settlement.housing / population-group:1: materialized
+      program ca.settlement.medicine / population-group:1: materialized
+      program ca.settlement.provision.communal / CA-RS-CA-RG-646B3C61-3#3: materialized
+  [A] PEOPLE - expected Charter Towns 100%
+      Charter Towns (Main, normal): expected 100%, assigned 13 resident(s)
+  [B] NATIVE FACTS of assigned residents:
+      Pawn.Faction: Charter Towns x13   EXPECT >1 faction when a resident minority population group resolved
+      Pawn.Ideo:    Bagucinquan Army x13   EXPECT >1 ideo when a distinct Ideoligion group resolved
+      Certainty: min 0.63, max 0.99   EXPECT spread when cohesion differs
+  [C] PROVISIONING:
+      communal kitchens · universal access · funded by shared work · centralized
+        operator org: Champion Rock (treasury 0)   EXPECT present
+        runtime: operational; exact material contract: complete
+      physical: 1 hearth/stove(s), 4 dining table(s), 1 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
+  [D] LEDGER: 0 transaction(s), 0 debt(s) world-wide; tax collections update treasuries and record acts as they occur
+  [F] Crook Plain FACTION STRUCTURE:
+      members: 10 enrolled
+      holdings on this map: 4 (tenure per the ownership axis; see ledger)
+      apertures: 28 CA_WindowGlazed, 15 CA_ApertureShuttered
+  [F] Hien FACTION STRUCTURE:
+      members: 12 enrolled
+      holdings on this map: 4 (tenure per the ownership axis; see ledger)
+      apertures: 34 CA_WindowGlazed, 5 CA_ApertureShuttered
+  [F] Night Canyon FACTION STRUCTURE:
+      members: 11 enrolled
+      holdings on this map: 4 (tenure per the ownership axis; see ledger)
+      apertures: 12 CA_ApertureShuttered, 32 CA_WindowGlazed
+  [F] Champion Rock FACTION STRUCTURE:
+      members: 13 enrolled
+      holdings on this map: 4 (tenure per the ownership axis; see ledger)
+      apertures: 14 CA_ApertureShuttered, 34 CA_WindowGlazed
+  [E] SETTLEMENT AUTHORITY RELATIONS:
+      region: contested · regional center
+      Assembly of the Ford: no member relations (single settlement or loose association)
+      Charter Towns: no member relations (single settlement or loose association)
+
+
+---- RADICAL SHIFT RECEIPT ----
+[CA][Convergence] radical-shift receipt
+  faction: Assembly of the Ford (authority between settlements not set)
+  BEFORE: 0 member settlement(s), sharing []
+  physical: 1879 standing edifices across 3 settlement rect(s)
+  SHIFTED to central authority:
+  AFTER:  3 member settlement(s), sharing [defense, diplomacy, taxes, decisions, disputes]   EXPECT responsibilities changed
+  physical: 1879 standing edifices across 3 settlement rect(s)   EXPECT identical - authority moved, streets did not
+  RESTORED: 0 member settlement(s), sharing []
+
+
+---- FACTION CULTURE AND POLITICS RECEIPT ----
+[CA][Faction] state receipt
+  [CA][Faction] setup pass (faction-state receipt): 0 Culture identities, 0 Culture questions, 0 political-belief sets, 0 political-belief fields, 0 technological-knowledge sets, 0 represented institutional mechanisms generated; 2 non-humanlike factions skipped; unsupported political fields remain unset; Ideoligions unchanged
+  eligible factions: 17
+  substantive Culture and political owners: 17
+  factions with unset Political Order: 0
+  factions with represented institutions: 0
+  factions explicitly awaiting institutional evidence: 17
+  factions with unacknowledged unset institutions: 0
+  Ideoligions changed: 0 (expected 0)
+  RESULT: PASS
+
+---- POLITICAL ORDER MENU PERFORMANCE ----
+first open: request+construction 17.232 ms; first render 3.204 ms; effective open 20.435 ms; render calls 84; mean/max 0.153/3.204 ms
+reopen: request+construction 13.531 ms; first render 0.168 ms; effective open 13.698 ms; render calls 74; mean/max 0.116/0.278 ms
+thresholds: first open <1000 ms PASS; reopen <250 ms PASS; ordinary render <100 ms PASS
+
+---- PASSIVE PLAY MODULE PROFILE (15 WALL SECONDS) ----
+[CA][Profiler] enabled=True; fixed keys=25
+  BehaviorAuthorization: calls=28; totalMs=0.110; maxMs=0.006; meanMs=0.004; examined=28; accepted=28; cache=0/0; skipped=0; failures=0
+  KnowledgePropagation: calls=7; totalMs=32.170; maxMs=10.329; meanMs=4.596; examined=323575; accepted=7536; cache=0/0; skipped=0; failures=0
+  AutonomousHomePlanning: calls=1; totalMs=7.865; maxMs=7.865; meanMs=7.865; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  OrganizationLookup: calls=20; totalMs=0.013; maxMs=0.002; meanMs=0.001; examined=19; accepted=1; cache=0/0; skipped=0; failures=0
+  KnowledgeObservation: calls=15; totalMs=113.684; maxMs=10.645; meanMs=7.579; examined=17700; accepted=123; cache=0/0; skipped=0; failures=0
+
+---- PASSIVE PLAY MATRIX ----
+  phase PausedStatic: 20.0 s wall; frames 1179; fps median 60.0, 1% low 39.0; frame ms p50/p95/p99 16.7/17.6/25.6; longest 173.7 ms; hitches >100ms 1, >250ms 0; ticks +0 (0.0 TPS); cpu cores 1.57; ws unavailable under this runtime; managed 1886 MB (start 1752); gc +4/+4/+4
+  [profiler PausedStatic] [CA][Profiler] enabled=True; fixed keys=25
+  phase PausedCameraPan: 20.0 s wall; frames 1188; fps median 60.0, 1% low 44.7; frame ms p50/p95/p99 16.7/16.7/22.4; longest 49.0 ms; hitches >100ms 0, >250ms 0; ticks +0 (0.0 TPS); cpu cores 1.49; ws unavailable under this runtime; managed 1883 MB (start 1887); gc +5/+5/+5
+  [profiler PausedCameraPan] [CA][Profiler] enabled=True; fixed keys=25
+  phase NormalQuiet: 30.1 s wall; frames 483; fps median 22.6, 1% low 2.3; frame ms p50/p95/p99 44.2/105.8/436.9; longest 1298.9 ms; hitches >100ms 32, >250ms 5; ticks +958 (31.8 TPS); cpu cores 1.24; ws unavailable under this runtime; managed 2174 MB (start 1884); gc +4/+4/+4
+  [profiler NormalQuiet] [CA][Profiler] enabled=True; fixed keys=25
+  BehaviorAuthorization: calls=24; totalMs=0.051; maxMs=0.003; meanMs=0.002; examined=24; accepted=16; cache=0/0; skipped=8; failures=0
+  KnowledgePropagation: calls=16; totalMs=43.217; maxMs=3.211; meanMs=2.701; examined=739600; accepted=17586; cache=0/0; skipped=0; failures=0
+  AutonomousHomePlanning: calls=2; totalMs=0.536; maxMs=0.276; meanMs=0.268; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  PopulationResidentLookup: calls=20; totalMs=0.629; maxMs=0.053; meanMs=0.031; examined=4300; accepted=230; cache=0/0; skipped=0; failures=0
+  OrganizationLookup: calls=1583; totalMs=0.208; maxMs=0.004; meanMs=0.000; examined=21; accepted=1562; cache=0/0; skipped=0; failures=0
+  FullWorldScan: calls=1; totalMs=43.486; maxMs=43.486; meanMs=43.486; examined=6; accepted=0; cache=0/0; skipped=0; failures=0
+  KnowledgeObservation: calls=32; totalMs=217.401; maxMs=9.755; meanMs=6.794; examined=37760; accepted=113; cache=0/0; skipped=0; failures=0
+  CulturalCognition: calls=1; totalMs=113.299; maxMs=113.299; meanMs=113.299; examined=60; accepted=12; cache=0/0; skipped=0; failures=0
+  PoliticalCognition: calls=1; totalMs=292.658; maxMs=292.658; meanMs=292.658; examined=12; accepted=12; cache=0/0; skipped=0; failures=0
+  phase FastSpeed: 30.1 s wall; frames 371; fps median 14.1, 1% low 6.5; frame ms p50/p95/p99 71.1/107.8/152.8; longest 1283.6 ms; hitches >100ms 25, >250ms 2; ticks +1274 (42.4 TPS); cpu cores 1.19; ws unavailable under this runtime; managed 2544 MB (start 2176); gc +2/+2/+2
+  [profiler FastSpeed] [CA][Profiler] enabled=True; fixed keys=25
+  BehaviorAuthorization: calls=25; totalMs=0.052; maxMs=0.004; meanMs=0.002; examined=25; accepted=21; cache=0/0; skipped=4; failures=0
+  KnowledgePropagation: calls=21; totalMs=60.878; maxMs=5.490; meanMs=2.899; examined=970725; accepted=25135; cache=0/0; skipped=0; failures=0
+  AutonomousHomePlanning: calls=2; totalMs=0.596; maxMs=0.402; meanMs=0.298; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  PopulationResidentLookup: calls=8; totalMs=0.304; maxMs=0.057; meanMs=0.038; examined=1720; accepted=92; cache=0/0; skipped=0; failures=0
+  OrganizationLookup: calls=14; totalMs=0.012; maxMs=0.002; meanMs=0.001; examined=14; accepted=0; cache=0/0; skipped=0; failures=0
+  KnowledgeObservation: calls=42; totalMs=238.515; maxMs=8.211; meanMs=5.679; examined=49560; accepted=210; cache=0/0; skipped=0; failures=0
+  phase SuperfastSpeed: 30.9 s wall; frames 490; fps median 22.7, 1% low 2.3; frame ms p50/p95/p99 44.0/74.3/427.3; longest 1275.7 ms; hitches >100ms 6, >250ms 5; ticks +1074 (34.8 TPS); cpu cores 1.24; ws unavailable under this runtime; managed 2438 MB (start 2546); gc +3/+3/+3
+  [profiler SuperfastSpeed] [CA][Profiler] enabled=True; fixed keys=25
+  BehaviorAuthorization: calls=22; totalMs=0.046; maxMs=0.003; meanMs=0.002; examined=22; accepted=18; cache=0/0; skipped=4; failures=0
+  KnowledgePropagation: calls=18; totalMs=49.542; maxMs=3.770; meanMs=2.752; examined=832050; accepted=23207; cache=0/0; skipped=0; failures=0
+  SocialAggregation: calls=5; totalMs=2.195; maxMs=2.162; meanMs=0.439; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  CultureLongitudinalUpdate: calls=1; totalMs=235.480; maxMs=235.480; meanMs=235.480; examined=1; accepted=0; cache=0/0; skipped=0; failures=0
+  AutonomousHomePlanning: calls=2; totalMs=0.633; maxMs=0.337; meanMs=0.316; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  PopulationResidentLookup: calls=20; totalMs=0.695; maxMs=0.059; meanMs=0.035; examined=4300; accepted=230; cache=0/0; skipped=0; failures=0
+  OrganizationLookup: calls=732; totalMs=0.138; maxMs=0.002; meanMs=0.000; examined=590; accepted=142; cache=0/0; skipped=0; failures=0
+  FullWorldScan: calls=1; totalMs=41.297; maxMs=41.297; meanMs=41.297; examined=6; accepted=0; cache=0/0; skipped=0; failures=0
+  KnowledgeObservation: calls=36; totalMs=194.824; maxMs=8.052; meanMs=5.412; examined=42480; accepted=225; cache=0/0; skipped=0; failures=0
+  CulturalCognition: calls=1; totalMs=36.223; maxMs=36.223; meanMs=36.223; examined=588; accepted=12; cache=0/0; skipped=0; failures=0
+  PoliticalCognition: calls=1; totalMs=123.349; maxMs=123.349; meanMs=123.349; examined=12; accepted=12; cache=0/0; skipped=0; failures=0
+  ca-surfaces: political-order editor was open for the phase
+  phase CaSurfaces: 20.0 s wall; frames 369; fps median 22.7, 1% low 12.3; frame ms p50/p95/p99 44.1/64.6/81.6; longest 1358.2 ms; hitches >100ms 2, >250ms 2; ticks +736 (36.8 TPS); cpu cores 1.31; ws unavailable under this runtime; managed 2389 MB (start 2440); gc +2/+2/+2
+  [profiler CaSurfaces] [CA][Profiler] enabled=True; fixed keys=25
+  BehaviorAuthorization: calls=12; totalMs=0.025; maxMs=0.003; meanMs=0.002; examined=12; accepted=12; cache=0/0; skipped=0; failures=0
+  KnowledgePropagation: calls=12; totalMs=33.679; maxMs=3.280; meanMs=2.807; examined=554700; accepted=16822; cache=0/0; skipped=0; failures=0
+  AutonomousHomePlanning: calls=1; totalMs=0.232; maxMs=0.232; meanMs=0.232; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  KnowledgeObservation: calls=25; totalMs=132.062; maxMs=6.995; meanMs=5.282; examined=29500; accepted=97; cache=0/0; skipped=0; failures=0
+  combat: raid by Assembly of the Ford at 600 points executed
+  phase CombatRaid: 45.0 s wall; frames 770; fps median 20.1, 1% low 5.7; frame ms p50/p95/p99 49.8/119.7/174.0; longest 310.2 ms; hitches >100ms 54, >250ms 1; ticks +1532 (34.0 TPS); cpu cores 1.30; ws unavailable under this runtime; managed 3198 MB (start 2391); gc +4/+4/+4
+  [profiler CombatRaid] [CA][Profiler] enabled=True; fixed keys=25
+  BehaviorAuthorization: calls=30; totalMs=0.066; maxMs=0.003; meanMs=0.002; examined=30; accepted=26; cache=0/0; skipped=4; failures=0
+  KnowledgePropagation: calls=26; totalMs=90.597; maxMs=5.131; meanMs=3.485; examined=1304576; accepted=32183; cache=0/0; skipped=0; failures=0
+  AutonomousHomePlanning: calls=2; totalMs=0.342; maxMs=0.226; meanMs=0.171; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  PopulationResidentLookup: calls=8; totalMs=0.290; maxMs=0.050; meanMs=0.036; examined=1792; accepted=92; cache=0/0; skipped=0; failures=0
+  OrganizationLookup: calls=4; totalMs=0.004; maxMs=0.001; meanMs=0.001; examined=4; accepted=0; cache=0/0; skipped=0; failures=0
+  KnowledgeObservation: calls=51; totalMs=373.345; maxMs=13.836; meanMs=7.320; examined=73567; accepted=66; cache=0/0; skipped=0; failures=0
+  fire: 3 fire(s) started in Crook Plain
+  phase FireEvent: 30.1 s wall; frames 508; fps median 20.1, 1% low 6.0; frame ms p50/p95/p99 49.7/118.1/167.9; longest 655.3 ms; hitches >100ms 36, >250ms 2; ticks +1012 (33.6 TPS); cpu cores 1.28; ws unavailable under this runtime; managed 3649 MB (start 3201); gc +2/+2/+2
+  [profiler FireEvent] [CA][Profiler] enabled=True; fixed keys=25
+  BehaviorAuthorization: calls=25; totalMs=0.056; maxMs=0.004; meanMs=0.002; examined=25; accepted=17; cache=0/0; skipped=8; failures=0
+  KnowledgePropagation: calls=17; totalMs=55.122; maxMs=7.479; meanMs=3.242; examined=852992; accepted=10849; cache=0/0; skipped=0; failures=0
+  SocialInterpretation: calls=15; totalMs=43.445; maxMs=22.497; meanMs=2.896; examined=15; accepted=15; cache=0/0; skipped=0; failures=0
+  DomesticUnitLookup: calls=4; totalMs=0.125; maxMs=0.044; meanMs=0.031; examined=46; accepted=46; cache=0/0; skipped=0; failures=0
+  DomesticUnitTransition: calls=4; totalMs=1.381; maxMs=0.422; meanMs=0.345; examined=46; accepted=0; cache=0/0; skipped=0; failures=0
+  ProvisionResolution: calls=4; totalMs=35.536; maxMs=10.544; meanMs=8.884; examined=4; accepted=4; cache=0/0; skipped=0; failures=0
+  SettlementProgramMaintenance: calls=4; totalMs=14.127; maxMs=5.244; meanMs=3.532; examined=9; accepted=9; cache=0/0; skipped=0; failures=0
+  AutonomousHomePlanning: calls=2; totalMs=0.435; maxMs=0.325; meanMs=0.218; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  PopulationResidentLookup: calls=92; totalMs=2.841; maxMs=0.086; meanMs=0.031; examined=20608; accepted=1064; cache=0/0; skipped=0; failures=0
+  OrganizationLookup: calls=1845; totalMs=0.492; maxMs=0.024; meanMs=0.000; examined=1836; accepted=9; cache=0/0; skipped=0; failures=0
+  FullMapScan: calls=1; totalMs=7.838; maxMs=7.838; meanMs=7.838; examined=167728; accepted=9087; cache=0/0; skipped=0; failures=0
+  FullWorldScan: calls=1; totalMs=69.202; maxMs=69.202; meanMs=69.202; examined=6; accepted=0; cache=0/0; skipped=0; failures=0
+  KnowledgeObservation: calls=34; totalMs=232.915; maxMs=11.597; meanMs=6.850; examined=46478; accepted=42; cache=0/0; skipped=0; failures=0
+  CulturalCognition: calls=1; totalMs=78.802; maxMs=78.802; meanMs=78.802; examined=2220; accepted=12; cache=0/0; skipped=0; failures=0
+  PoliticalCognition: calls=1; totalMs=399.973; maxMs=399.973; meanMs=399.973; examined=12; accepted=12; cache=0/0; skipped=0; failures=0
+  site materialization: every represented settlement of this fixture is materialized during generation and no deferred unmaterialized site exists on this map; generation-time materialization cost is the generation receipt's evidence and no synthetic runtime result is claimed. Deferred CA work (autonomous planning, reconciliation) is measured inside the day soak.
+  phase SiteMaterialization: 20.0 s wall; frames 296; fps median 19.3, 1% low 4.8; frame ms p50/p95/p99 51.9/122.9/207.1; longest 1321.0 ms; hitches >100ms 22, >250ms 2; ticks +588 (29.3 TPS); cpu cores 1.25; ws unavailable under this runtime; managed 3661 MB (start 3651); gc +2/+2/+2
+  [profiler SiteMaterialization] [CA][Profiler] enabled=True; fixed keys=25
+  BehaviorAuthorization: calls=9; totalMs=0.020; maxMs=0.003; meanMs=0.002; examined=9; accepted=9; cache=0/0; skipped=0; failures=0
+  KnowledgePropagation: calls=9; totalMs=32.022; maxMs=4.694; meanMs=3.558; examined=451584; accepted=5550; cache=0/0; skipped=0; failures=0
+  AutonomousHomePlanning: calls=1; totalMs=0.210; maxMs=0.210; meanMs=0.210; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  KnowledgeObservation: calls=19; totalMs=126.427; maxMs=9.969; meanMs=6.654; examined=25973; accepted=36; cache=0/0; skipped=0; failures=0
+  phase DaySoak: 1658.2 s wall; frames 30137; fps median 20.4, 1% low 7.0; frame ms p50/p95/p99 48.9/89.3/142.8; longest 1914.1 ms; hitches >100ms 1048, >250ms 49; ticks +60001 (36.2 TPS); cpu cores 1.34; ws unavailable under this runtime; managed 4905 MB (start 3663); gc +85/+85/+85
+  [profiler DaySoak] [CA][Profiler] enabled=True; fixed keys=25
+  BehaviorAuthorization: calls=1346; totalMs=3.788; maxMs=0.400; meanMs=0.003; examined=1346; accepted=1128; cache=0/0; skipped=218; failures=0
+  KnowledgePropagation: calls=1000; totalMs=1326.604; maxMs=7.841; meanMs=1.327; examined=45653348; accepted=393602; cache=0/0; skipped=0; failures=0
+  SocialInterpretation: calls=405; totalMs=753.992; maxMs=6.604; meanMs=1.862; examined=392; accepted=392; cache=0/0; skipped=0; failures=0
+  SocialAggregation: calls=5; totalMs=8.636; maxMs=6.864; meanMs=1.727; examined=1965; accepted=3; cache=0/0; skipped=0; failures=0
+  CultureLongitudinalUpdate: calls=1; totalMs=206.663; maxMs=206.663; meanMs=206.663; examined=1; accepted=0; cache=0/0; skipped=0; failures=0
+  DomesticUnitLookup: calls=32; totalMs=0.547; maxMs=0.026; meanMs=0.017; examined=368; accepted=368; cache=0/0; skipped=0; failures=0
+  DomesticUnitTransition: calls=32; totalMs=7.878; maxMs=0.920; meanMs=0.246; examined=368; accepted=0; cache=0/0; skipped=0; failures=0
+  ProvisionResolution: calls=32; totalMs=221.378; maxMs=15.330; meanMs=6.918; examined=32; accepted=32; cache=0/0; skipped=0; failures=0
+  SettlementProgramMaintenance: calls=32; totalMs=86.019; maxMs=7.651; meanMs=2.688; examined=72; accepted=72; cache=0/0; skipped=0; failures=0
+  AutonomousHomePlanning: calls=100; totalMs=10.257; maxMs=0.203; meanMs=0.103; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  PopulationResidentLookup: calls=1112; totalMs=33.594; maxMs=0.309; meanMs=0.030; examined=237104; accepted=12836; cache=0/0; skipped=0; failures=0
+  OrganizationLookup: calls=40919; totalMs=8.621; maxMs=0.040; meanMs=0.000; examined=28067; accepted=12852; cache=0/0; skipped=0; failures=0
+  FullMapScan: calls=8; totalMs=63.560; maxMs=8.676; meanMs=7.945; examined=1323076; accepted=72141; cache=0/0; skipped=0; failures=0
+  FullWorldScan: calls=24; totalMs=1452.282; maxMs=325.834; meanMs=60.512; examined=144; accepted=0; cache=0/0; skipped=0; failures=0
+  KnowledgeObservation: calls=2000; totalMs=8812.753; maxMs=131.602; meanMs=4.406; examined=1540770; accepted=5071; cache=0/0; skipped=0; failures=0
+  CulturalCognition: calls=24; totalMs=1802.924; maxMs=199.521; meanMs=75.122; examined=31392; accepted=288; cache=0/0; skipped=0; failures=0
+  PoliticalCognition: calls=24; totalMs=7009.053; maxMs=450.565; meanMs=292.044; examined=288; accepted=282; cache=0/0; skipped=0; failures=0
+  PoliticalCoalition: calls=1; totalMs=55.494; maxMs=55.494; meanMs=55.494; examined=1209; accepted=0; cache=0/0; skipped=0; failures=0
+  InstitutionalLegitimacy: calls=1; totalMs=21.795; maxMs=21.795; meanMs=21.795; examined=6; accepted=6; cache=0/0; skipped=0; failures=0
+  PropositionKnowledge: calls=1; totalMs=217.060; maxMs=217.060; meanMs=217.060; examined=169; accepted=0; cache=0/0; skipped=0; failures=0
+  soak begin evidence: ws unavailable under this runtime; managed 3663 MB; gc 258/258/258; map things 167750; world pawns 27; windows 3; broader pawn knowledge remains default-off so no epistemic communication queue exists in this run
+  soak end   evidence: ws unavailable under this runtime; managed 4905 MB; gc 343/343/343; map things 163050; world pawns 34; windows 3; broader pawn knowledge remains default-off so no epistemic communication queue exists in this run
+  save: disposable save 'ca-b18-passive-disposable' FAILED - no file was written after 7162 ms; the reload phases are skipped and no save/reload result is claimed
+  phase SaveDisposable: 7.2 s wall; frames 1; fps median 0.1, 1% low 0.1; frame ms p50/p95/p99 7210.9/7210.9/7210.9; longest 7210.9 ms; hitches >100ms 1, >250ms 1; ticks +0 (0.0 TPS); cpu cores 0.01; ws unavailable under this runtime; managed 5137 MB (start 5137); gc +0/+0/+0
+  [profiler SaveDisposable] [CA][Profiler] enabled=True; fixed keys=25
+  phase PostReloadVerify: 30.0 s wall; frames 1645; fps median 57.7, 1% low 36.4; frame ms p50/p95/p99 17.3/22.2/27.5; longest 110.6 ms; hitches >100ms 2, >250ms 0; ticks +0 (0.0 TPS); cpu cores 1.80; ws unavailable under this runtime; managed 5818 MB (start 5137); gc +2/+2/+2
+  [profiler PostReloadVerify] [CA][Profiler] enabled=True; fixed keys=25
+  post-reload map receipt: 4 provision arrangement(s) operational, 0 not operating
+---- POST-RELOAD MAP RECEIPT ----
+[CA][Convergence] map receipt
+  ==== Crook Plain (CA-RS-CA-RG-646B3C61-0) ====
+  native Settlement faction: Assembly of the Ford / CannibalPirate; relations with you: Hostile
+  creation: authorized=True, executable=True, material=True, siting=True
+      program ca.settlement.agriculture / population-group:1: materialized
+      program ca.settlement.housing / population-group:1: materialized
+      program ca.settlement.provision.communal / CA-RS-CA-RG-646B3C61-0#0: materialized
+  [A] PEOPLE - expected Assembly of the Ford 80%, Charter Towns 20%
+      Assembly of the Ford (Main, normal): expected 80%, assigned 8 resident(s)
+      Charter Towns (OtherFaction, normal): expected 20%, assigned 2 resident(s)
+  [B] NATIVE FACTS of assigned residents:
+      Pawn.Faction: Assembly of the Ford x10   EXPECT >1 faction when a resident minority population group resolved
+      Pawn.Ideo:    Bagucinquan Army x10   EXPECT >1 ideo when a distinct Ideoligion group resolved
+      Certainty: min 0.65, max 0.97   EXPECT spread when cohesion differs
+  [C] PROVISIONING:
+      communal kitchens · universal access · funded by shared work · centralized
+        operator org: Crook Plain (treasury 0)   EXPECT present
+        runtime: operational; exact material contract: complete
+      physical: 3 hearth/stove(s), 2 dining table(s), 1 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
+  [D] LEDGER: 0 transaction(s), 0 debt(s) world-wide; tax collections update treasuries and record acts as they occur
+  ==== Hien (CA-RS-CA-RG-646B3C61-1) ====
+  native Settlement faction: Assembly of the Ford / CannibalPirate; relations with you: Hostile
+  creation: authorized=True, executable=True, material=True, siting=True
+      program ca.settlement.agriculture / population-group:1: materialized
+      program ca.settlement.housing / population-group:1: materialized
+      program ca.settlement.provision.communal / CA-RS-CA-RG-646B3C61-1#1: materialized
+  [A] PEOPLE - expected Assembly of the Ford 100%
+      Assembly of the Ford (Main, normal): expected 100%, assigned 14 resident(s)
+  [B] NATIVE FACTS of assigned residents:
+      Pawn.Faction: Assembly of the Ford x12   EXPECT >1 faction when a resident minority population group resolved
+      Pawn.Ideo:    Bagucinquan Army x12   EXPECT >1 ideo when a distinct Ideoligion group resolved
+      Certainty: min 0.68, max 1.00   EXPECT spread when cohesion differs
+  [C] PROVISIONING:
+      communal kitchens · universal access · funded by shared work · centralized
+        operator org: Hien (treasury 0)   EXPECT present
+        runtime: operational; exact material contract: complete
+      physical: 1 hearth/stove(s), 4 dining table(s), 1 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
+  [D] LEDGER: 0 transaction(s), 0 debt(s) world-wide; tax collections update treasuries and record acts as they occur
+  ==== Night Canyon (CA-RS-CA-RG-646B3C61-2) ====
+  native Settlement faction: Assembly of the Ford / CannibalPirate; relations with you: Hostile
+  creation: authorized=True, executable=True, material=True, siting=True
+      program ca.settlement.agriculture / population-group:1: materialized
+      program ca.settlement.housing / population-group:1: materialized
+      program ca.settlement.provision.communal / CA-RS-CA-RG-646B3C61-2#2: materialized
+  [A] PEOPLE - expected Assembly of the Ford 100%
+      Assembly of the Ford (Main, normal): expected 100%, assigned 11 resident(s)
+  [B] NATIVE FACTS of assigned residents:
+      Pawn.Faction: Assembly of the Ford x11   EXPECT >1 faction when a resident minority population group resolved
+      Pawn.Ideo:    Bagucinquan Army x11   EXPECT >1 ideo when a distinct Ideoligion group resolved
+      Certainty: min 0.64, max 1.00   EXPECT spread when cohesion differs
+  [C] PROVISIONING:
+      communal kitchens · universal access · funded by shared work · centralized
+        operator org: Night Canyon (treasury 0)   EXPECT present
+        runtime: operational; exact material contract: complete
+      physical: 3 hearth/stove(s), 2 dining table(s), 1 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
+  [D] LEDGER: 0 transaction(s), 0 debt(s) world-wide; tax collections update treasuries and record acts as they occur
+  ==== Champion Rock (CA-RS-CA-RG-646B3C61-3) ====
+  native Settlement faction: Charter Towns / CannibalPirate; relations with you: Hostile
+  creation: authorized=True, executable=True, material=True, siting=True
+      program ca.settlement.agriculture / population-group:1: materialized
+      program ca.settlement.housing / population-group:1: materialized
+      program ca.settlement.medicine / population-group:1: materialized
+      program ca.settlement.provision.communal / CA-RS-CA-RG-646B3C61-3#3: materialized
+  [A] PEOPLE - expected Charter Towns 100%
+      Charter Towns (Main, normal): expected 100%, assigned 13 resident(s)
+  [B] NATIVE FACTS of assigned residents:
+      Pawn.Faction: Charter Towns x13   EXPECT >1 faction when a resident minority population group resolved
+      Pawn.Ideo:    Bagucinquan Army x13   EXPECT >1 ideo when a distinct Ideoligion group resolved
+      Certainty: min 0.65, max 1.00   EXPECT spread when cohesion differs
+  [C] PROVISIONING:
+      communal kitchens · universal access · funded by shared work · centralized
+        operator org: Champion Rock (treasury 0)   EXPECT present
+        runtime: operational; exact material contract: complete
+      physical: 1 hearth/stove(s), 4 dining table(s), 1 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
+  [D] LEDGER: 0 transaction(s), 0 debt(s) world-wide; tax collections update treasuries and record acts as they occur
+  [F] Crook Plain FACTION STRUCTURE:
+      members: 10 enrolled
+      holdings on this map: 4 (tenure per the ownership axis; see ledger)
+      apertures: 28 CA_WindowGlazed, 15 CA_ApertureShuttered
+  [F] Hien FACTION STRUCTURE:
+      members: 12 enrolled
+      holdings on this map: 4 (tenure per the ownership axis; see ledger)
+      apertures: 34 CA_WindowGlazed, 5 CA_ApertureShuttered
+  [F] Night Canyon FACTION STRUCTURE:
+      members: 11 enrolled
+      holdings on this map: 4 (tenure per the ownership axis; see ledger)
+      apertures: 12 CA_ApertureShuttered, 32 CA_WindowGlazed
+  [F] Champion Rock FACTION STRUCTURE:
+      members: 13 enrolled
+      holdings on this map: 4 (tenure per the ownership axis; see ledger)
+      apertures: 14 CA_ApertureShuttered, 34 CA_WindowGlazed
+  [E] SETTLEMENT AUTHORITY RELATIONS:
+      region: contested · regional center
+      Assembly of the Ford: no member relations (single settlement or loose association)
+      Charter Towns: no member relations (single settlement or loose association)
+
+
+==== exercise finished: passive-complete ====

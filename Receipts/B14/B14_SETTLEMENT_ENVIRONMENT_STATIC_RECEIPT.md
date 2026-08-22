@@ -18,12 +18,12 @@ This executable receipt varies one environmental input set at a time, inspects t
 | live regional planning reads represented source tiles | **PASS** | projected cells -> constituent tiles -> saved planning context -> thermally informed placement |
 | existing proactive behavior consumes the profile | **PASS** | Home planning prefers indoor recreation under seasonal exposure and ranks essential sleep placement by current room safety |
 | frontier occupancy follows verified habitat materialization | **PASS** | saved supporter and exact tile requirements are validated; shelter, food route, stores, and required functions are materialized before residents |
-| frontier capability belongs to an exact saved faction | **PASS** | a numeric tier without a saved faction supplies no capability; materialization resolves and rechecks the exact owner |
+| frontier capability belongs to exact saved site state | **PASS** | the canonical local knowledge supplies capability; optional owner and support references are resolved separately and materialization rechecks the saved tier |
 | frontier realization identity rejects stale causes | **PASS** | saved policy, environment, capability, supporter, count, and map identity are revalidated before a plan is reused |
 | autonomous building uses composable pattern evidence | **PASS** | one multi-axis evidence vector ranks whole-site candidates; the unified extractor reads full saves and structured snapshots while preserving source limits, exact ground, and rejection evidence; the corpus admits relationships, not copied layouts or a style toggle |
 | broad native layout corpus is substantial and lineage safe | **PASS** | 4,238 complete source-unique and lineage-unique native layouts span 80 biome definitions; deterministic partitions cover every clean row |
 | environmental realization survives save and readback | **PASS** | planning context Scribes environmental facts and includes them in its stable evidence signature |
 | environment contract matches RimWorld terrain facts | **PASS** | decompiled terrain UI and engine expose the same season, plant, forage, and disease inputs |
-| production assembly exists after compilation | **PASS** | bytes=4149248; SHA256=A5A3D89A516B08156D0163E1F49D8DEC97FCFFED799B60531715DB9C9D495FC9 |
+| production assembly exists after compilation | **PASS** | bytes=4522496; SHA256=6878162A831177694186BADC1C5DB10805B6218D1477576ECE13D0D6BCFC21FC |
 
 Overall: **PASS**
