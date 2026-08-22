@@ -501,11 +501,11 @@ namespace ColonistAwareness
                     return 0;
                 }
                 Thing t = ThingMaker.MakeThing(def, stuff);
-                ThingStyleDef culturalStyle =
-                    CAVisualTraditionStyle.StyleFor(
-                        CAVisualTraditionStyle.CultureFor(record), def);
-                if (culturalStyle != null)
-                    t.SetStyleDef(culturalStyle);
+                // Through the site resolver, so a settlement's assets
+                // are styled by the same people who chose their
+                // material rather than by its faction's average.
+                CAConstructionMaterials.ApplyStyle(t,
+                    CASiteState.Culture(record));
                 GenSpawn.Spawn(t, cell, map, Rot4.South);
                 if (record.faction != null) t.SetFaction(record.faction);
                 CompRefuelable fuel = t.TryGetComp<CompRefuelable>();
@@ -1209,8 +1209,25 @@ namespace ColonistAwareness
             TechLevel tech = CASettlementFitOut.TechFor(record);
             ThingDef bedDef = CASettlementFitOut.BedFor(tech);
             if (bedDef == null) return false;
-            ThingDef bedStuff = bedDef.MadeFromStuff
-                ? GenStuff.DefaultStuffFor(bedDef) : null;
+            // A settlement building for itself over time builds from
+            // what it actually has, exactly as it did at generation.
+            // This took the engine default, so a place that had grown
+            // into stone and metal still added engine-default beds and
+            // its longitudinal development contradicted its own fabric.
+            ThingDef bedStuff = null;
+            if (bedDef.MadeFromStuff)
+            {
+                var materials = new CAConstructionContext(map,
+                    CASiteState.Knowledge(record),
+                    record.realizedScale, record.residentPopulation,
+                    record.economicCapacity, record.tradeConnectivity,
+                    record.regionalId + ":" + record.slot,
+                    fromStores: true,
+                    culture: CASiteState.Culture(record));
+                bedStuff = CAConstructionMaterials.ChooseFor(bedDef,
+                    materials, out _)
+                    ?? GenStuff.DefaultStuffFor(bedDef);
+            }
 
             // 1) infill: a free spot inside an existing interior
             IntVec3 spot = IntVec3.Invalid;
@@ -1265,8 +1282,13 @@ namespace ColonistAwareness
                     requireMaterializedAssets: false,
                     out CABehaviorDecision _, out CAIntentContext intent))
                 return false;
+            // A settlement adding to itself later builds in the style it
+            // already built in, so its own extensions do not read as
+            // someone else's work standing inside it.
+            CACulture builders = CASiteState.Culture(record);
             Blueprint_Build blueprint = GenConstruct.PlaceBlueprintForBuild(
-                def, cell, map, Rot4.North, record.faction, stuff);
+                def, cell, map, Rot4.North, record.faction, stuff,
+                styleDef: CAConstructionMaterials.StyleFor(def, builders));
             if (blueprint == null)
             {
                 CABehaviorIntentMapComponent.For(map)?.Unregister(worker,
@@ -1318,14 +1340,20 @@ namespace ColonistAwareness
                     out CABehaviorDecision _, out CAIntentContext intent))
                 return false;
             var placed = new List<Blueprint_Build>();
+            CACulture builders = CASiteState.Culture(record);
+            ThingStyleDef wallStyle = CAConstructionMaterials.StyleFor(
+                wallDef, builders);
             foreach (IntVec3 c in walls)
             {
                 Blueprint_Build wall = GenConstruct.PlaceBlueprintForBuild(
-                    wallDef, c, map, Rot4.North, record.faction, wallStuff);
+                    wallDef, c, map, Rot4.North, record.faction, wallStuff,
+                    styleDef: wallStyle);
                 if (wall != null) placed.Add(wall);
             }
             Blueprint_Build doorPrint = GenConstruct.PlaceBlueprintForBuild(
-                doorDef, door, map, Rot4.North, record.faction, wallStuff);
+                doorDef, door, map, Rot4.North, record.faction, wallStuff,
+                styleDef: CAConstructionMaterials.StyleFor(doorDef,
+                    builders));
             // A hole-riddled shell is not an extension; abandon rather than
             // stand a ruin the settlement never asked for.
             if (doorPrint == null || placed.Count < walls.Count * 3 / 4)

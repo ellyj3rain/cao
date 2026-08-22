@@ -233,7 +233,7 @@ namespace ColonistAwareness
                 if (plan.lots.Count == 0) return false;
                 if (plan?.cells == null) return false;
 
-                Palette palette = PaletteFor(map, faction);
+                Palette palette = PaletteFor(map, faction, record);
                 // the settlement body, reconstructed from the plan:
                 // structural cells grown by two. The ground-truth
                 // pass, the street gradient and the pier all read
@@ -391,17 +391,17 @@ namespace ColonistAwareness
                             case CAMorphCell.Wall:
                                 built += SpawnEdifice(map, c,
                                     palette.wall, palette.wallStuff,
-                                    faction);
+                                    faction, palette.culture);
                                 break;
                             case CAMorphCell.Door:
                                 built += SpawnEdifice(map, c,
                                     palette.door, palette.doorStuff,
-                                    faction);
+                                    faction, palette.culture);
                                 break;
                             case CAMorphCell.Fence:
                                 built += SpawnEdifice(map, c,
                                     palette.fence, palette.fenceStuff,
-                                    faction);
+                                    faction, palette.culture);
                                 break;
                             case CAMorphCell.Floor:
                                 if (palette.floor == null) continue;
@@ -451,7 +451,7 @@ namespace ColonistAwareness
         }
 
         private static int SpawnEdifice(Map map, IntVec3 c, ThingDef def,
-            ThingDef stuff, Faction faction)
+            ThingDef stuff, Faction faction, CACulture culture = null)
         {
             if (def == null) return 0;
             if (!CATechnologicalKnowledgeRuntime.CanConstructCanonical(
@@ -471,6 +471,7 @@ namespace ColonistAwareness
             ThingDef madeOf = def.MadeFromStuff
                 ? (stuff ?? GenStuff.DefaultStuffFor(def)) : null;
             Thing thing = ThingMaker.MakeThing(def, madeOf);
+            CAConstructionMaterials.ApplyStyle(thing, culture);
             GenSpawn.Spawn(thing, c, map);
             if (faction != null) thing.SetFaction(faction);
             return 1;
@@ -781,7 +782,7 @@ namespace ColonistAwareness
                         TerrainDef here = c.GetTerrain(map);
                         if (here == null || here.IsWater) continue;
                         receipt.harborCells += SpawnEdifice(map, c, shelf,
-                            palette.wallStuff, faction);
+                            palette.wallStuff, faction, palette.culture);
                     }
                     catch { }
                 }
@@ -889,11 +890,12 @@ namespace ColonistAwareness
                 {
                     if (HoldsBuilding(head, map)
                         || SpawnEdifice(map, head, palette.pierHead,
-                            null, faction) == 0)
+                            null, faction, palette.culture) == 0)
                     {
                         if (!HoldsBuilding(site, map))
                             SpawnEdifice(map, site,
-                                palette.pierHead, null, faction);
+                                palette.pierHead, null, faction,
+                                palette.culture);
                     }
                 }
                 catch { }
@@ -1029,9 +1031,13 @@ namespace ColonistAwareness
             internal TerrainDef pier;
             internal ThingDef pierHead;
             internal ThingDef crop;
+            // Whose walls these are. Travels with the material so the
+            // shell of a settlement is styled like the assets inside it.
+            internal CACulture culture;
         }
 
-        private static Palette PaletteFor(Map map, Faction faction)
+        private static Palette PaletteFor(Map map, Faction faction,
+            CARegionalSettlementRecord record = null)
         {
             int tier = CASettlementProgramMaterializer
                 .CanonicalTechTier(faction);
@@ -1126,6 +1132,57 @@ namespace ColonistAwareness
                     .GetNamedSilentFail("PavedTile");
                 palette.streetOutside = flagstone;
             }
+            // The tier bands above are this module's own historical
+            // answer. Where the settlement has a record, the shared
+            // construction authority decides instead, reading its
+            // knowledge, ground, people and trade rather than a tech
+            // tier alone - so one settlement is one material across
+            // morphology, fit-out and frontier rather than three.
+            if (record != null)
+            {
+                var materials = new CAConstructionContext(map,
+                    CASiteState.Knowledge(record),
+                    record.realizedScale, record.residentPopulation,
+                    record.economicCapacity, record.tradeConnectivity,
+                    record.regionalId + ":" + record.slot,
+                    culture: CASiteState.Culture(record));
+                palette.culture = materials.Culture;
+                string wallBasis = null;
+                ThingDef resolvedWall = palette.wall == null ? null
+                    : CAConstructionMaterials.ChooseFor(palette.wall,
+                        materials, out wallBasis);
+                if (resolvedWall != null)
+                {
+                    palette.wallStuff = resolvedWall;
+                    Log.Message("[CA][Settlement][Material] "
+                        + (record.name ?? record.regionalId)
+                        + " builds in " + wallBasis);
+                }
+                ThingDef resolvedDoor = palette.door == null ? null
+                    : CAConstructionMaterials.ChooseFor(palette.door,
+                        materials, out _);
+                if (resolvedDoor != null) palette.doorStuff = resolvedDoor;
+                // The ground follows the walls. Floors were still chosen
+                // by tech tier while the walls had moved to the resolved
+                // material, so a settlement that builds in cut stone
+                // could stand on plank floors and read as two different
+                // places at once. A stone-building settlement flagstones
+                // its ground; a timber one keeps its planks.
+                if (resolvedWall != null
+                    && resolvedWall.defName.StartsWith("Blocks",
+                        StringComparison.Ordinal))
+                {
+                    TerrainDef localFlag = DefDatabase<TerrainDef>
+                        .GetNamedSilentFail("Flagstone"
+                            + resolvedWall.defName.Substring(6));
+                    if (localFlag != null)
+                    {
+                        palette.floor = localFlag;
+                        if (palette.street != null) palette.street = localFlag;
+                    }
+                }
+            }
+
             return palette;
         }
     }

@@ -287,7 +287,77 @@ namespace ColonistAwareness
                 && result.Contains(CASettlementProgramRegistry.Trade))
                 AddMaterializable(plan, settlement, result,
                     CASettlementProgramRegistry.Transport);
+
+            // A DECLARED ROLE IS A FACT OF THE SAME KIND. Environment,
+            // habitat requirement, standing, history and coast all
+            // compose this list; the operational roles an operator
+            // declared for this settlement did not, so a place marked
+            // as a combat outpost or a casualty collection point was
+            // built exactly like one marked as nothing. The mask was
+            // authored, saved, summarized and drawn on the globe, and
+            // changed nothing on the ground.
+            //
+            // Each role enters as the program it IS when built: a
+            // patrol base, an observation post and a combat outpost are
+            // all defensive works; a logistics point holds and moves
+            // goods; a relay is a communications installation; a
+            // casualty collection point is medical; and a place people
+            // are meant to fall back TO keeps reserves for the people
+            // who reach it with nothing.
+            //
+            // Through AddMaterializable, so a role still cannot conjure
+            // works this ground and these people could not raise. A
+            // declaration is a commitment, not an exemption.
+            foreach (string programKey in CAOperationalRoleProgramKernel
+                .ProgramKeysFor(settlement.operationalRoleMask))
+                if (CanBuild(plan, settlement, knowledge, programKey))
+                    AddMaterializable(plan, settlement, result,
+                        programKey);
             return result.Distinct(StringComparer.Ordinal).ToList();
+        }
+
+        // AddMaterializable screens whether a program's assets EXIST and
+        // can stand on this ground; it does not ask whether these people
+        // know how to build them. The materializer does ask, and treats
+        // a shortfall as a blocker that stops the settlement being
+        // created at all - so a role admitted here on asset grounds
+        // alone could turn a declaration into a failed materialization.
+        //
+        // A role commits a settlement to works within its people's
+        // reach. Beyond that reach the declaration is simply not
+        // honoured in fabric, which is the same answer the rest of the
+        // substrate gives when knowledge runs out.
+        private static bool CanBuild(CARegionalPlan plan,
+            CARegionalSettlementPlan settlement,
+            CATechnologicalKnowledge knowledge, string programKey)
+        {
+            CASettlementProgramDef definition =
+                CASettlementProgramRegistry.Find(programKey);
+            if (definition == null) return false;
+            // Saved geography rather than built assets; nothing to know.
+            if (definition.NativeSpatialContract) return true;
+            foreach (string[] group in definition.CandidateGroups
+                ?.Invoke(plan, settlement)
+                    ?? Enumerable.Empty<string[]>())
+            {
+                bool any = false;
+                foreach (string name in CASettlementProgramRegistry
+                    .LoadedFunctionalCandidates(definition, group))
+                {
+                    ThingDef candidate = DefDatabase<ThingDef>
+                        .GetNamedSilentFail(name);
+                    if (candidate == null) continue;
+                    if (CATechnologicalKnowledgeRuntime
+                        .CanConstructCanonical(knowledge, candidate,
+                            out _))
+                    {
+                        any = true;
+                        break;
+                    }
+                }
+                if (!any) return false;
+            }
+            return true;
         }
 
         private static void AddMaterializable(CARegionalPlan plan,

@@ -254,6 +254,76 @@ namespace ColonistAwareness
                     ?.politicalBeliefs;
         }
 
+        // The same question for a MATERIALIZED settlement. B15: a
+        // settlement references its faction's knowledge unless an
+        // explicit local divergence is modeled. The order lived inline
+        // inside one validator, so every other consumer that needed it
+        // either read localSociety directly - getting a stale snapshot
+        // for an owned settlement whose faction has since learned
+        // something - or invented its own answer. One resolver now.
+        internal static CATechnologicalKnowledge Knowledge(
+            CARegionalSettlementRecord record)
+        {
+            if (record == null) return null;
+            bool diverges = record.localSociety
+                ?.explicitLocalDivergence == true;
+            if (record.faction == null || diverges)
+                return record.localSociety?.technologicalKnowledge
+                    ?? FactionKnowledge(record.faction);
+            return FactionKnowledge(record.faction)
+                ?? record.localSociety?.technologicalKnowledge;
+        }
+
+        // WHOSE EXPECTATIONS A SITE BUILDS TO. A settlement carries its
+        // own culture, copied from its plan at materialization; where it
+        // has none - the designed identity-only empty state - the
+        // faction it belongs to stands in.
+        //
+        // This resolves the site's culture BEFORE the faction's, which
+        // is the opposite precedence to knowledge above, and the
+        // difference is deliberate. A faction is the authority on what
+        // its people know; it is not the authority on how each of its
+        // settlements expects to live. Cultural expression already
+        // resolves it this way, and every settlement is given its own
+        // culture at materialization - preferring the faction's would
+        // make that culture dead weight and every settlement of one
+        // faction build identically.
+        internal static CACulture Culture(
+            CARegionalSettlementRecord record)
+        {
+            if (record == null) return null;
+            return Answering(record.culture)
+                ?? CAFactionStateWorldComponent.Current
+                    ?.Find(record.faction)?.culture;
+        }
+
+        // A culture that has never been asked anything answers nothing,
+        // and reads as absent rather than as a neutral position. The
+        // identity-only object the record projection assigns when a
+        // settlement has no culture of its own is exactly that case,
+        // and it is NOT null - so anything testing for a missing
+        // culture has to test this rather than a null reference.
+        internal static bool Answers(CACulture culture)
+        {
+            return culture != null
+                && ((culture.inheritedQuestions?.Count ?? 0) > 0
+                    || (culture.localQuestions?.Count ?? 0) > 0);
+        }
+
+        private static CACulture Answering(CACulture culture)
+        {
+            return Answers(culture) ? culture : null;
+        }
+
+        private static CATechnologicalKnowledge FactionKnowledge(
+            Faction faction)
+        {
+            if (faction == null) return null;
+            CATechnologicalKnowledge live = CAFactionStateWorldComponent
+                .Current?.Find(faction)?.technologicalKnowledge;
+            return live?.domains?.Count > 0 ? live : null;
+        }
+
         internal static CATechnologicalKnowledge Knowledge(
             CARegionalPlan plan, CARegionalSettlementPlan settlement)
         {
@@ -318,6 +388,58 @@ namespace ColonistAwareness
                 settlement.localSociety.institutions =
                     new List<CAAxisEntry>();
             settlement.localSociety.explicitLocalDivergence = true;
+        }
+
+        // LOCAL DIVERGENCE WITHOUT DETACHMENT. B15 establishes that a
+        // settlement references its faction's state "unless an explicit
+        // local divergence is modeled", and eight consumers already read
+        // that flag - but the only writer for a settlement was
+        // EnsureIndependentState, which removes the owner first, and
+        // every owner-assigning path resets the flag to false. The owned-
+        // and-divergent case therefore had consumers, gated editors, and
+        // no producer at all. This is that producer: the site keeps its
+        // owner and gains its own political, technological, and
+        // institutional state, seeded from the owner so divergence
+        // starts as agreement and becomes difference only where the
+        // operator edits it.
+        internal static void EnsureDivergentState(CARegionalPlan plan,
+            CARegionalSettlementPlan settlement,
+            CARegionalFactionPlan owner)
+        {
+            if (settlement == null || !settlement.HasFactionOwner) return;
+            bool mustSnapshot = settlement.localSociety == null
+                || !settlement.localSociety.explicitLocalDivergence;
+            if (settlement.localSociety == null)
+                settlement.localSociety = new CASiteLocalSocietyState();
+            if (mustSnapshot && owner != null)
+                settlement.localSociety.CopyFrom(owner);
+            string seed = (plan?.candidateId ?? "ca-region") + ":site:"
+                + settlement.slot;
+            if (settlement.localSociety.politicalOrder == null)
+                settlement.localSociety.politicalOrder =
+                    new CAPoliticalBeliefs();
+            CAPoliticalBeliefsModel.Ensure(
+                settlement.localSociety.politicalOrder, seed + ":politics");
+            if (settlement.localSociety.technologicalKnowledge == null)
+                settlement.localSociety.technologicalKnowledge =
+                    new CATechnologicalKnowledge();
+            CATechnologicalKnowledgeModel.Ensure(
+                settlement.localSociety.technologicalKnowledge,
+                seed + ":technology");
+            if (settlement.localSociety.institutions == null)
+                settlement.localSociety.institutions =
+                    new List<CAAxisEntry>();
+            settlement.localSociety.explicitLocalDivergence = true;
+        }
+
+        // Returning to the owner's state. The local fields stay saved but
+        // stop being authoritative, exactly as they do for a settlement
+        // that never diverged.
+        internal static void ClearDivergentState(
+            CARegionalSettlementPlan settlement)
+        {
+            if (settlement?.localSociety == null) return;
+            settlement.localSociety.explicitLocalDivergence = false;
         }
     }
 

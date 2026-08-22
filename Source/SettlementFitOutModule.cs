@@ -65,6 +65,11 @@ namespace ColonistAwareness
         {
             internal ThingDef Stuff;
             internal string Name = "none";
+            // A settlement's furniture is its people's furniture. The
+            // palette already travels to every spawn here, so the style
+            // travels with the material rather than being asked for
+            // separately and forgotten.
+            internal CACulture Culture;
         }
 
         internal static void Furnish(Map map, CellRect rect,
@@ -91,7 +96,20 @@ namespace ColonistAwareness
         {
             Faction faction = record.faction;
             TechLevel tech = TechFor(record);
-            Palette palette = PaletteFor(map, tech);
+            // ONE ANSWER TO WHAT THIS PLACE BUILDS FROM. The fit-out kept
+            // its own local-rock palette while the frontier used wood and
+            // morphology used the engine default, so one settlement could
+            // be three materials depending which system placed the thing.
+            // The shared authority reads the same facts for all of them:
+            // this settlement's knowledge, its ground, its people, its
+            // trade, and how developed it is becoming.
+            var materials = new CAConstructionContext(map,
+                CASiteState.Knowledge(record),
+                record.realizedScale, record.residentPopulation,
+                record.economicCapacity, record.tradeConnectivity,
+                record.regionalId + ":" + record.slot,
+                culture: CASiteState.Culture(record));
+            Palette palette = PaletteFor(map, tech, materials);
 
             var keys = new HashSet<string>(
                 record.settlementProgram?.entries?
@@ -609,6 +627,7 @@ namespace ColonistAwareness
                         ? palette.Stuff : GenStuff.DefaultStuffFor(def);
                 }
                 Thing thing = ThingMaker.MakeThing(def, stuff);
+                CAConstructionMaterials.ApplyStyle(thing, palette.Culture);
                 if (faction != null && def.CanHaveFaction)
                     thing.SetFaction(faction);
                 GenSpawn.Spawn(thing, c, map, Rot4.North);
@@ -618,9 +637,25 @@ namespace ColonistAwareness
         }
 
         // ---- one material per settlement, from the rock under the map ----
-        private static Palette PaletteFor(Map map, TechLevel tech)
+        private static Palette PaletteFor(Map map, TechLevel tech,
+            CAConstructionContext materials)
         {
-            var palette = new Palette();
+            var palette = new Palette { Culture = materials.Culture };
+            // The shared authority answers first; the historical
+            // tech-banded palette below remains the fallback for cases it
+            // cannot resolve.
+            ThingDef wall = DefDatabase<ThingDef>.GetNamedSilentFail("Wall");
+            if (wall != null)
+            {
+                ThingDef resolved = CAConstructionMaterials.ChooseFor(wall,
+                    materials, out string basis);
+                if (resolved != null)
+                {
+                    palette.Stuff = resolved;
+                    palette.Name = basis;
+                    return palette;
+                }
+            }
             try
             {
                 if (tech <= TechLevel.Medieval)
