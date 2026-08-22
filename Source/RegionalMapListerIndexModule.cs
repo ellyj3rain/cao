@@ -40,6 +40,7 @@ namespace ColonistAwareness
         internal long auditMismatches;
         internal long nativeFallbacks;
         internal long appended;
+        private int suspendDepth;
 
         internal CARegionalMapListerIndexScope(Map map)
         {
@@ -49,7 +50,7 @@ namespace ColonistAwareness
 
         internal void RecordAppend(List<Thing> list, Thing thing)
         {
-            if (degraded || list == null || thing == null
+            if (suspendDepth > 0 || degraded || list == null || thing == null
                 || disabled.Contains(list)
                 || !indexes.TryGetValue(list,
                     out CARegionalOrderedThingListIndex index)) return;
@@ -69,7 +70,8 @@ namespace ColonistAwareness
         internal bool Remove(List<Thing> list, Thing thing, int auditStride)
         {
             if (list == null) throw new ArgumentNullException(nameof(list));
-            if (degraded || thing == null || disabled.Contains(list)
+            if (suspendDepth > 0 || degraded || thing == null
+                || disabled.Contains(list)
                 || list.Count < MinimumTrackedCount
                     && !indexes.ContainsKey(list))
             {
@@ -142,6 +144,25 @@ namespace ColonistAwareness
                 nativeFallbacks++;
                 return list.Remove(thing);
             }
+        }
+
+        internal void Suspend()
+        {
+            suspendDepth++;
+        }
+
+        internal void Resume()
+        {
+            if (suspendDepth <= 0) return;
+            suspendDepth--;
+            if (suspendDepth != 0 || degraded) return;
+            // A per-genstep accelerator may temporarily swap entries and then
+            // restore their exact stable order. Discard lazy indexes derived
+            // before that transaction; the next removal rebuilds from the
+            // canonical list without treating the temporary order as damage.
+            indexes.Clear();
+            disabled.Clear();
+            disableReasons.Clear();
         }
 
         internal void LogFinal(Exception exception)
@@ -239,6 +260,20 @@ namespace ColonistAwareness
                 return listerCalls != null && listerCalls.Count > 0
                     ? listerCalls.Peek() : null;
             }
+        }
+
+        internal static void SuspendIndexForStep(Map map)
+        {
+            CARegionalMapListerIndexScope scope = CurrentScope;
+            if (scope == null || !ReferenceEquals(scope.map, map)) return;
+            scope.Suspend();
+        }
+
+        internal static void ResumeIndexAfterStep(Map map)
+        {
+            CARegionalMapListerIndexScope scope = CurrentScope;
+            if (scope == null || !ReferenceEquals(scope.map, map)) return;
+            scope.Resume();
         }
 
         internal static void ContentsPrefix(Map map, out bool __state)

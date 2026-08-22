@@ -55,6 +55,11 @@ namespace ColonistAwareness
         // discovered from these, not supplied.
         internal List<int> MemberTileIds = new List<int>();
 
+        // Canonical authored feature shapes carried from the plan, so
+        // per-carrier re-expression resolves authored degrees of freedom
+        // over its deterministic identity-seeded defaults.
+        internal List<CAAuthoredFeatureShape> FeatureShapes;
+
         // Cells per SOURCE TILE at full resolution - the local scale axis,
         // never the aggregate.
         internal int CellsPerSourceTile;
@@ -94,6 +99,7 @@ namespace ColonistAwareness
                 BundleRootTileId = plan.bundleRootTileId,
                 MemberTileIds = plan.memberTileIds?.ToList()
                     ?? new List<int>(),
+                FeatureShapes = plan.featureShapes,
                 CellsPerSourceTile = plan.mapSize,
                 BackingSize = backingSize,
                 Resolution = 1f,
@@ -119,6 +125,7 @@ namespace ColonistAwareness
                 BundleRootTileId = plan.bundleRootTileId,
                 MemberTileIds = plan.memberTileIds?.ToList()
                     ?? new List<int>(),
+                FeatureShapes = plan.featureShapes,
                 CellsPerSourceTile = plan.mapSize,
                 BackingSize = backing,
                 Resolution = resolution,
@@ -259,7 +266,44 @@ namespace ColonistAwareness
         {
             get; private set;
         }
+        internal int BayCarrierCount { get; private set; }
+        internal int FjordCarrierCount { get; private set; }
+        internal int PeninsulaCarrierCount { get; private set; }
+        internal int CoastalIslandCarrierCount { get; private set; }
+        internal int IcebergCarrierCount { get; private set; }
+
+        // Iceberg mass on the water: >0.35 ice surface, >0.55 solid ice
+        // walls, >0 the shallow ring around the berg. Terrain and thing
+        // spawning consume it at generation; the diagram whitens the mass.
+        internal float[] BergValueByCell { get; private set; }
         internal string PerformanceSummary { get; private set; }
+
+        // Inland water features (the radial TileMutatorWorker_Lake family)
+        // re-expressed at carrier scale. Value mirrors the native lake noise
+        // (1 at the basin's heart, 0 at its rim): >0.75 deep, >0.5 water,
+        // >0.45 shore. Kind keeps each carrier's own terrain contract.
+        internal float[] LakeValueByCell { get; private set; }
+        internal byte[] LakeKindByCell { get; private set; }
+        internal int LakeCarrierCount { get; private set; }
+        internal int LakeWaterCells { get; private set; }
+        internal Vector2 FirstLakeCenter { get; private set; }
+        internal bool HasLakeCenter { get; private set; }
+
+        // Each realized inland-water basin's resolved center in kernel
+        // cells, with its carrier and feature identity -- the spatial
+        // handle direct editing drags.
+        internal sealed class CAInlandWaterCenter
+        {
+            internal int TileId;
+            internal string FeatureDef;
+            internal CAInlandWaterKind Kind;
+            internal Vector2 Center;
+            internal float Span;
+            internal Vector2 Anchor;
+        }
+
+        internal readonly List<CAInlandWaterCenter> InlandWaterCenters =
+            new List<CAInlandWaterCenter>();
 
         // Beach width differs for a CoastalAtoll (native MaxForSand=.53)
         // from the generic coast (.60). This mask keeps that feature-specific
@@ -529,6 +573,7 @@ namespace ColonistAwareness
             long classifyMs = timer.ElapsedMilliseconds;
             SmoothMemberMicrofragments();
             ApplyContinuousGeographicFeatures();
+            ApplyInlandWaterFeatures();
             BuildRawBiomeCache();
             long smoothMs = timer.ElapsedMilliseconds - classifyMs;
             BuildWaterDepth();
@@ -774,7 +819,17 @@ namespace ColonistAwareness
                 && BiomeAtIndex(index)?.isWaterBiome != true
                 && (BoundaryWaterByCell == null
                     || index >= BoundaryWaterByCell.Length
-                    || BoundaryWaterByCell[index] < 0);
+                    || BoundaryWaterByCell[index] < 0)
+                && (LakeValueByCell == null
+                    || index >= LakeValueByCell.Length
+                    || LakeValueByCell[index] <= 0.5f
+                    || LakeKindByCell[index]
+                        == (byte)CAInlandWaterKind.DryLake
+                    || IsLavaKind(
+                        (CAInlandWaterKind)LakeKindByCell[index])
+                    || (LakeKindByCell[index]
+                            == (byte)CAInlandWaterKind.Oasis
+                        && LakeValueByCell[index] <= 0.57f));
         }
 
         private readonly Dictionary<int, Vector2> visualLandAnchors =
@@ -1009,6 +1064,11 @@ namespace ColonistAwareness
             var atollCarriers = new List<int>();
             var coveCarriers = new List<int>();
             var archipelagoCarriers = new List<int>();
+            var bayCarriers = new List<int>();
+            var fjordCarriers = new List<int>();
+            var peninsulaCarriers = new List<int>();
+            var coastalIslandCarriers = new List<int>();
+            var icebergCarriers = new List<int>();
             for (int i = 0; i < Members.Count; i++)
             {
                 if (!coreIds.Contains(Members[i].tileId)) continue;
@@ -1023,19 +1083,41 @@ namespace ColonistAwareness
                         coveCarriers.Add(i);
                     else if (worker is TileMutatorWorker_Archipelago)
                         archipelagoCarriers.Add(i);
+                    else if (worker is TileMutatorWorker_Bay)
+                        bayCarriers.Add(i);
+                    else if (worker is TileMutatorWorker_Fjord)
+                        fjordCarriers.Add(i);
+                    else if (worker is TileMutatorWorker_Peninsula)
+                        peninsulaCarriers.Add(i);
+                    else if (worker is TileMutatorWorker_CoastalIsland)
+                        coastalIslandCarriers.Add(i);
+                    else if (worker is TileMutatorWorker_Iceberg)
+                        icebergCarriers.Add(i);
                 }
             }
             atollCarriers = atollCarriers.Distinct().ToList();
             coveCarriers = coveCarriers.Distinct().ToList();
             archipelagoCarriers = archipelagoCarriers.Distinct().ToList();
+            bayCarriers = bayCarriers.Distinct().ToList();
+            fjordCarriers = fjordCarriers.Distinct().ToList();
+            peninsulaCarriers = peninsulaCarriers.Distinct().ToList();
+            coastalIslandCarriers = coastalIslandCarriers.Distinct().ToList();
+            icebergCarriers = icebergCarriers.Distinct().ToList();
             if (atollCarriers.Count == 0 && coveCarriers.Count == 0
-                && archipelagoCarriers.Count == 0) return;
+                && archipelagoCarriers.Count == 0
+                && bayCarriers.Count == 0 && fjordCarriers.Count == 0
+                && peninsulaCarriers.Count == 0
+                && coastalIslandCarriers.Count == 0
+                && icebergCarriers.Count == 0) return;
 
             // Capture each carrier's visible land before any feature changes
             // the coast. World-tile centers describe provenance; feature
             // shapes belong to the land the player can actually see.
             Dictionary<int, Vector2> featureCenters = atollCarriers
                 .Concat(coveCarriers).Concat(archipelagoCarriers)
+                .Concat(bayCarriers).Concat(fjordCarriers)
+                .Concat(peninsulaCarriers).Concat(coastalIslandCarriers)
+                .Concat(icebergCarriers)
                 .Distinct().ToDictionary(index => index,
                     index => ComputeVisualLandAnchor(index));
 
@@ -1052,8 +1134,10 @@ namespace ColonistAwareness
                 int oceanIndex = NearestOceanIndex(center);
                 if (oceanIndex < 0) continue;
 
-                int featureSalt = Gen.HashCombineInt(carrier.tileId,
-                    1096044364); // "ATOL"
+                string atollDef = FeatureDefOn(carrier, worker =>
+                    worker is TileMutatorWorker_CoastalAtoll);
+                int featureSalt = ShapeSalt(Gen.HashCombineInt(
+                    carrier.tileId, 1096044364), carrier, atollDef); // ATOL
                 CoarseNoiseField outerX = CreateWorldAnchoredNoiseField(
                     spacing, (x, z) => (SampleWorldNoise(x, z, 0.015f,
                         Gen.HashCombineInt(featureSalt, 11)) * 2f - 1f)
@@ -1079,12 +1163,41 @@ namespace ColonistAwareness
                             Gen.HashCombineInt(featureSalt, 24)) * 2f - 1f)
                                 * 5f * resolution);
 
-                float innerOffsetX = span * Mathf.Lerp(-0.08f, 0.08f,
+                // MUTATED GEOGRAPHY MAY ELABORATE, CAUSALLY. This atoll's
+                // proportions derive from its own feature identity and its
+                // real surroundings: more open water around the carrier
+                // grows a broader ring, the per-feature salt sets how
+                // elongated the ring runs and how wide the lagoon opens.
+                // The same feature is always the same shape, and it is
+                // always recognizably an atoll -- elaboration, never an
+                // arbitrary approximation.
+                var carrierNeighbors = new List<PlanetTile>();
+                carrier.Layer.GetTileNeighbors(carrier, carrierNeighbors);
+                int waterAround = carrierNeighbors.Count(neighbor =>
+                    neighbor.Valid && neighbor.Tile?.WaterCovered == true);
+                float openWater = carrierNeighbors.Count == 0 ? 0.5f
+                    : waterAround / (float)carrierNeighbors.Count;
+                float featureSpan = span * Mathf.Lerp(0.85f, 1.30f,
+                    Mathf.Clamp01(openWater * 0.7f
+                        + DeterministicUnit(Gen.HashCombineInt(
+                            featureSalt, 41)) * 0.5f))
+                    * ShapeValue(carrier, atollDef, "span", 1f);
+                float elongation = ShapeValue(carrier, atollDef,
+                    "elongation", Mathf.Lerp(0.55f, 0.92f,
+                        DeterministicUnit(Gen.HashCombineInt(
+                            featureSalt, 42))));
+                float lagoonWidth = ShapeValue(carrier, atollDef, "lagoon",
+                    Mathf.Lerp(0.42f, 0.58f, DeterministicUnit(
+                        Gen.HashCombineInt(featureSalt, 43))));
+
+                float innerOffsetX = featureSpan * Mathf.Lerp(-0.08f, 0.08f,
                     DeterministicUnit(Gen.HashCombineInt(featureSalt, 31)));
-                float innerOffsetZ = span * Mathf.Lerp(-0.08f, 0.08f,
+                float innerOffsetZ = featureSpan * Mathf.Lerp(-0.08f, 0.08f,
                     DeterministicUnit(Gen.HashCombineInt(featureSalt, 32)));
-                float angle = Verse.Find.World.CoastAngleAt(carrier,
-                    BiomeDefOf.Ocean).GetValueOrDefault() * Mathf.Deg2Rad;
+                float angle = ShapeValue(carrier, atollDef, "orientation",
+                    Verse.Find.World.CoastAngleAt(carrier,
+                        BiomeDefOf.Ocean).GetValueOrDefault())
+                    * Mathf.Deg2Rad;
                 float cos = Mathf.Cos(angle);
                 float sin = Mathf.Sin(angle);
 
@@ -1104,12 +1217,16 @@ namespace ColonistAwareness
                             + sin * displacedOuterZ;
                         float rotatedOuterZ = -sin * displacedOuterX
                             + cos * displacedOuterZ;
-                        // Native scales one axis by .8 before evaluating the
-                        // outer DistFromPoint, producing the atoll's broad oval.
+                        // Native scales one axis by .8 for its broad oval;
+                        // here the axis ratio is the feature's own
+                        // elongation, so atolls run from broad rings to
+                        // drawn-out chains.
                         float outerDistance = Mathf.Sqrt(
                             rotatedOuterX * rotatedOuterX
-                            + rotatedOuterZ * 0.8f * rotatedOuterZ * 0.8f);
-                        float outerNormalized = outerDistance / (span * 0.95f);
+                            + rotatedOuterZ * elongation
+                                * rotatedOuterZ * elongation);
+                        float outerNormalized = outerDistance
+                            / (featureSpan * 0.95f);
                         if (outerNormalized > 1.12f) continue;
 
                         float displacedShapeX = localX
@@ -1125,9 +1242,10 @@ namespace ColonistAwareness
                             + innerZ * innerZ);
 
                         float outer = Mathf.Clamp(outerNormalized, 0.4f, 1f);
-                        float island = 1f - islandDistance / (span * 0.65f);
+                        float island = 1f - islandDistance
+                            / (featureSpan * 0.65f);
                         float inner = Mathf.Clamp(innerDistance
-                            / (span * 0.5f), 0.4f, 1f);
+                            / (featureSpan * lagoonWidth), 0.4f, 1f);
                         float original = CoastValueByCell[index];
                         float shaped = GenMath.SmoothMin(original, outer, 0.5f);
                         shaped = Mathf.Max(shaped, island);
@@ -1167,7 +1285,822 @@ namespace ColonistAwareness
             ApplyCoveFeatures(coveCarriers, spacing, span, featureCenters);
             ApplyArchipelagoFeatures(archipelagoCarriers, spacing, span,
                 featureCenters);
+            ApplyBayFeatures(bayCarriers, spacing, span, featureCenters);
+            ApplyFjordFeatures(fjordCarriers, spacing, span, featureCenters);
+            ApplyPeninsulaFeatures(peninsulaCarriers, spacing, span,
+                featureCenters);
+            ApplyCoastalIslandFeatures(coastalIslandCarriers, spacing, span,
+                featureCenters);
+            ApplyIcebergFeatures(icebergCarriers, spacing, span,
+                featureCenters);
             visualLandAnchors.Clear();
+        }
+
+        // Native Iceberg pushes the sea open along the coast and raises an
+        // ice mass mid-tile: ice surface past .35, solid ice walls past
+        // .55, a shallow ring where the field is barely positive. The berg
+        // is folded here around the carrier at one-tile scale; terrain and
+        // wall spawning consume the field at generation.
+        private void ApplyIcebergFeatures(List<int> carriers, int spacing,
+            float span, Dictionary<int, Vector2> featureCenters)
+        {
+            IcebergCarrierCount = carriers?.Count ?? 0;
+            if (IcebergCarrierCount == 0) return;
+            foreach (int carrierIndex in carriers)
+            {
+                PlanetTile carrier = Members[carrierIndex];
+                Vector2 center = featureCenters[carrierIndex];
+                int oceanIndex = NearestOceanIndex(center);
+                if (oceanIndex < 0) continue;
+                if (BergValueByCell == null)
+                    BergValueByCell = new float[MemberByCell.Length];
+
+                string bergDef = FeatureDefOn(carrier, worker =>
+                    worker is TileMutatorWorker_Iceberg);
+                int salt = ShapeSalt(Gen.HashCombineInt(carrier.tileId,
+                    0x42455247), carrier, bergDef); // "BERG"
+                float bergSpan = ShapeValue(carrier, bergDef, "span", 1f);
+                CoarseNoiseField ringDispX =
+                    CreateWorldAnchoredNoiseField(spacing, (x, z) =>
+                        (SampleWorldNoise(x, z, 0.015f,
+                            Gen.HashCombineInt(salt, 11)) * 2f - 1f)
+                                * 25f * resolution);
+                CoarseNoiseField ringDispZ =
+                    CreateWorldAnchoredNoiseField(spacing, (x, z) =>
+                        (SampleWorldNoise(x, z, 0.015f,
+                            Gen.HashCombineInt(salt, 12)) * 2f - 1f)
+                                * 25f * resolution);
+                CoarseNoiseField bergDispX =
+                    CreateWorldAnchoredNoiseField(spacing, (x, z) =>
+                        (SampleWorldNoise(x, z, 0.015f,
+                            Gen.HashCombineInt(salt, 13)) * 2f - 1f)
+                                * 20f * resolution);
+                CoarseNoiseField bergDispZ =
+                    CreateWorldAnchoredNoiseField(spacing, (x, z) =>
+                        (SampleWorldNoise(x, z, 0.015f,
+                            Gen.HashCombineInt(salt, 14)) * 2f - 1f)
+                                * 20f * resolution);
+                float coastAngle = Verse.Find.World.CoastAngleAt(carrier,
+                    BiomeDefOf.Ocean).GetValueOrDefault() * Mathf.Deg2Rad;
+                float coastCos = Mathf.Cos(coastAngle);
+                float coastSin = Mathf.Sin(coastAngle);
+                float squash = ShapeValue(carrier, bergDef, "stretch",
+                    Mathf.Lerp(0.65f, 0.9f, DeterministicUnit(
+                        Gen.HashCombineInt(salt, 21))));
+                float authoredBergAngle = ShapeValue(carrier, bergDef,
+                    "orientation", float.NaN);
+                float bergAngle = float.IsNaN(authoredBergAngle)
+                    ? DeterministicUnit(Gen.HashCombineInt(salt, 22))
+                        * 2f * Mathf.PI
+                    : authoredBergAngle * Mathf.Deg2Rad;
+                float bergCos = Mathf.Cos(bergAngle);
+                float bergSin = Mathf.Sin(bergAngle);
+
+                for (int z = 0; z < Size.z; z++)
+                {
+                    for (int x = 0; x < Size.x; x++)
+                    {
+                        float rawX = x - center.x;
+                        float rawZ = z - center.y;
+                        int index = z * Size.x + x;
+
+                        // The opening ring: sea pushed clear along the
+                        // coast so the berg floats in open water.
+                        float ringX = rawX + ringDispX.Sample(x, z);
+                        float ringZ = rawZ + ringDispZ.Sample(x, z);
+                        float ringEnvelope = Mathf.Sqrt(ringX * ringX
+                            + ringZ * ringZ) / (span * 0.95f);
+                        if (ringEnvelope <= 1.20f)
+                        {
+                            float along = -coastSin * ringX
+                                + coastCos * ringZ;
+                            float across = coastCos * ringX
+                                + coastSin * ringZ;
+                            float ring = Mathf.Sqrt(across * 0.75f * across
+                                * 0.75f + along * along) / (0.95f * span);
+                            ring = Mathf.Max(0.4f, ring);
+                            float original = CoastValueByCell[index];
+                            float shaped = GenMath.SmoothMin(original, ring,
+                                0.25f);
+                            float fade = Mathf.SmoothStep(0f, 1f,
+                                Mathf.InverseLerp(0.85f, 1.20f,
+                                    ringEnvelope));
+                            shaped = Mathf.Lerp(shaped, original, fade);
+                            bool isWater = shaped < 0.5f;
+                            CoastValueByCell[index] = shaped;
+                            NearestBoundaryWaterByCell[index] = oceanIndex;
+                            BoundaryWaterByCell[index] = isWater
+                                ? oceanIndex : -1;
+                            if (isWater) HillFactorByCell[index] = 0f;
+                        }
+
+                        // The berg mass itself, native curve preserved:
+                        // clamp01(1 - d/r) raised to the .4 power.
+                        float bergX = rawX + bergDispX.Sample(x, z);
+                        float bergZ = rawZ + bergDispZ.Sample(x, z);
+                        float rx = (bergCos * bergX + bergSin * bergZ)
+                            * squash;
+                        float rz = -bergSin * bergX + bergCos * bergZ;
+                        float value = Mathf.Clamp01(1f - Mathf.Sqrt(
+                            rx * rx + rz * rz)
+                            / (0.25f * span * bergSpan));
+                        if (value <= 0f) continue;
+                        value = Mathf.Pow(value, 0.4f);
+                        if (value > BergValueByCell[index])
+                            BergValueByCell[index] = value;
+                    }
+                }
+            }
+        }
+
+        // The lake family centers a radial basin on a one-tile map and
+        // scales it by map width; run natively against the aggregate it
+        // would flood region-proportionate ground (a toxic lake at 0.6 of
+        // the whole stitched width), and carried by a non-anchor member it
+        // would never run at all. The same basin is re-expressed here
+        // around each carrying area's visible land at one-tile scale,
+        // deterministic per feature identity, crossing ownership seams like
+        // every other continuous geographic feature.
+        private void ApplyInlandWaterFeatures()
+        {
+            if (!ModsConfig.OdysseyActive || Members == null
+                || Members.Count == 0 || MemberByCell == null) return;
+            var coreIds = new HashSet<int>(request.MemberTileIds
+                ?? new List<int>());
+            var entries =
+                new List<KeyValuePair<KeyValuePair<int, string>,
+                    CAInlandWaterKind>>();
+            for (int i = 0; i < Members.Count; i++)
+            {
+                if (!coreIds.Contains(Members[i].tileId)) continue;
+                Tile info = Members[i].Valid ? Members[i].Tile : null;
+                if (info == null) continue;
+                foreach (TileMutatorDef mutator in info.Mutators)
+                {
+                    CAInlandWaterKind kind =
+                        InlandWaterKindOf(mutator?.Worker);
+                    if (kind != CAInlandWaterKind.None)
+                        entries.Add(new KeyValuePair<
+                            KeyValuePair<int, string>, CAInlandWaterKind>(
+                            new KeyValuePair<int, string>(i,
+                                mutator.defName), kind));
+                }
+            }
+            if (entries.Count == 0) return;
+            entries = entries.Distinct()
+                .OrderBy(entry => Members[entry.Key.Key].tileId)
+                .ThenBy(entry => (byte)entry.Value).ToList();
+
+            LakeValueByCell = new float[MemberByCell.Length];
+            LakeKindByCell = new byte[MemberByCell.Length];
+            LakeCarrierCount = entries.Select(entry => entry.Key.Key)
+                .Distinct().Count();
+            int spacing = Math.Max(1, Mathf.RoundToInt(8f * resolution));
+            float span = Math.Max(8f, LocalCells * resolution);
+
+            foreach (KeyValuePair<KeyValuePair<int, string>,
+                CAInlandWaterKind> entry in entries)
+            {
+                int carrierIndex = entry.Key.Key;
+                string featureDef = entry.Key.Value;
+                CAInlandWaterKind kind = entry.Value;
+                PlanetTile carrier = Members[carrierIndex];
+                int salt = CAFeatureShapeModel.SaltWithVariant(
+                    Gen.HashCombineInt(Gen.HashCombineInt(
+                        carrier.tileId, 0x4C414B45), (int)kind), // "LAKE"
+                    request.FeatureShapes, carrier.tileId, featureDef);
+                float radiusFactor =
+                    kind == CAInlandWaterKind.Pond ? 0.3f
+                    : kind == CAInlandWaterKind.LakeWithIsland ? 0.8f
+                    : kind == CAInlandWaterKind.Basin ? 0.3f
+                    : kind == CAInlandWaterKind.LakeWithIslands ? 0.75f
+                    : kind == CAInlandWaterKind.Oasis ? 0.4f
+                    : IsLavaKind(kind) ? 0.4f
+                    : 0.6f;
+                float radius = radiusFactor * span
+                    * CAFeatureShapeModel.Value(request.FeatureShapes,
+                        carrier.tileId, featureDef, "span", 1f);
+
+                // Native centers wander +-0.4 map widths from the middle;
+                // at carrier scale +-0.3 keeps the basin recognizably that
+                // area's while preserving placement variety. Basin pins its
+                // water to the anchor exactly, as its native center does.
+                // Authored wander places the basin explicitly.
+                Vector2 anchor = ComputeVisualLandAnchor(carrierIndex);
+                float wander = kind == CAInlandWaterKind.Basin ? 0f : 0.3f;
+                float authoredWanderX = CAFeatureShapeModel.Value(
+                    request.FeatureShapes, carrier.tileId, featureDef,
+                    "wanderX", float.NaN);
+                float authoredWanderZ = CAFeatureShapeModel.Value(
+                    request.FeatureShapes, carrier.tileId, featureDef,
+                    "wanderZ", float.NaN);
+                float centerX = float.IsNaN(authoredWanderX)
+                    ? anchor.x + (DeterministicUnit(
+                        Gen.HashCombineInt(salt, 1)) * 2f - 1f)
+                        * wander * span
+                    : anchor.x + authoredWanderX * span;
+                float centerZ = float.IsNaN(authoredWanderZ)
+                    ? anchor.y + (DeterministicUnit(
+                        Gen.HashCombineInt(salt, 2)) * 2f - 1f)
+                        * wander * span
+                    : anchor.y + authoredWanderZ * span;
+                float squash = CAFeatureShapeModel.Value(
+                    request.FeatureShapes, carrier.tileId, featureDef,
+                    "stretch", Mathf.Lerp(1f, 1.3f, DeterministicUnit(
+                        Gen.HashCombineInt(salt, 3))));
+                float authoredAngle = CAFeatureShapeModel.Value(
+                    request.FeatureShapes, carrier.tileId, featureDef,
+                    "orientation", float.NaN);
+                float angle = float.IsNaN(authoredAngle)
+                    ? DeterministicUnit(Gen.HashCombineInt(salt, 4))
+                        * 2f * Mathf.PI
+                    : authoredAngle * Mathf.Deg2Rad;
+                float cos = Mathf.Cos(angle);
+                float sin = Mathf.Sin(angle);
+                float islandAngle = DeterministicUnit(
+                    Gen.HashCombineInt(salt, 5)) * 2f * Mathf.PI;
+                float islandCos = Mathf.Cos(islandAngle);
+                float islandSin = Mathf.Sin(islandAngle);
+
+                // Native displacement: macro 0.006/40 plus detail 0.015/15.
+                CoarseNoiseField dispX = CreateWorldAnchoredNoiseField(
+                    spacing, (x, z) => (SampleWorldNoise(x, z, 0.006f,
+                        Gen.HashCombineInt(salt, 11)) * 2f - 1f)
+                            * 40f * resolution
+                        + (SampleWorldNoise(x, z, 0.015f,
+                            Gen.HashCombineInt(salt, 12)) * 2f - 1f)
+                            * 15f * resolution);
+                CoarseNoiseField dispZ = CreateWorldAnchoredNoiseField(
+                    spacing, (x, z) => (SampleWorldNoise(x, z, 0.006f,
+                        Gen.HashCombineInt(salt, 13)) * 2f - 1f)
+                            * 40f * resolution
+                        + (SampleWorldNoise(x, z, 0.015f,
+                            Gen.HashCombineInt(salt, 14)) * 2f - 1f)
+                            * 15f * resolution);
+                CoarseNoiseField islandsDispX = null;
+                CoarseNoiseField islandsDispZ = null;
+                if (kind == CAInlandWaterKind.LakeWithIslands)
+                {
+                    islandsDispX = CreateWorldAnchoredNoiseField(spacing,
+                        (x, z) => (SampleWorldNoise(x, z, 0.015f,
+                            Gen.HashCombineInt(salt, 25)) * 2f - 1f)
+                                * 15f * resolution);
+                    islandsDispZ = CreateWorldAnchoredNoiseField(spacing,
+                        (x, z) => (SampleWorldNoise(x, z, 0.015f,
+                            Gen.HashCombineInt(salt, 26)) * 2f - 1f)
+                                * 15f * resolution);
+                }
+                CoarseNoiseField islandDispX = null;
+                CoarseNoiseField islandDispZ = null;
+                if (kind == CAInlandWaterKind.LakeWithIsland)
+                {
+                    islandDispX = CreateWorldAnchoredNoiseField(spacing,
+                        (x, z) => (SampleWorldNoise(x, z, 0.006f,
+                            Gen.HashCombineInt(salt, 21)) * 2f - 1f)
+                                * 40f * resolution
+                            + (SampleWorldNoise(x, z, 0.015f,
+                                Gen.HashCombineInt(salt, 22)) * 2f - 1f)
+                                * 15f * resolution);
+                    islandDispZ = CreateWorldAnchoredNoiseField(spacing,
+                        (x, z) => (SampleWorldNoise(x, z, 0.006f,
+                            Gen.HashCombineInt(salt, 23)) * 2f - 1f)
+                                * 40f * resolution
+                            + (SampleWorldNoise(x, z, 0.015f,
+                                Gen.HashCombineInt(salt, 24)) * 2f - 1f)
+                                * 15f * resolution);
+                }
+
+                if (!HasLakeCenter)
+                {
+                    FirstLakeCenter = new Vector2(centerX, centerZ);
+                    HasLakeCenter = true;
+                }
+                InlandWaterCenters.Add(new CAInlandWaterCenter
+                {
+                    TileId = carrier.tileId,
+                    FeatureDef = featureDef,
+                    Kind = kind,
+                    Center = new Vector2(centerX, centerZ),
+                    Span = span,
+                    Anchor = anchor
+                });
+
+                float margin = 60f * resolution;
+                int minX = Math.Max(0,
+                    Mathf.FloorToInt(centerX - radius - margin));
+                int maxX = Math.Min(Size.x - 1,
+                    Mathf.CeilToInt(centerX + radius + margin));
+                int minZ = Math.Max(0,
+                    Mathf.FloorToInt(centerZ - radius - margin));
+                int maxZ = Math.Min(Size.z - 1,
+                    Mathf.CeilToInt(centerZ + radius + margin));
+                for (int z = minZ; z <= maxZ; z++)
+                {
+                    for (int x = minX; x <= maxX; x++)
+                    {
+                        int index = z * Size.x + x;
+                        float localX = x - centerX;
+                        float localZ = z - centerZ;
+                        float px = localX + dispX.Sample(x, z);
+                        float pz = localZ + dispZ.Sample(x, z);
+                        float rx = (cos * px + sin * pz) * squash;
+                        float rz = -sin * px + cos * pz;
+                        float value = Mathf.Clamp01(1f - Mathf.Sqrt(
+                            rx * rx + rz * rz) / radius);
+                        // Native Oasis narrows its pool with a squared
+                        // falloff.
+                        if (kind == CAInlandWaterKind.Oasis)
+                            value *= value;
+                        if (kind == CAInlandWaterKind.LakeWithIslands)
+                        {
+                            // Native: perlin islands (x0.6+0.7) scaled by
+                            // the basin's own falloff, min-folded so land
+                            // stands out of the wide shallow lake.
+                            float pnoise = SampleWorldNoise(
+                                x + islandsDispX.Sample(x, z),
+                                z + islandsDispZ.Sample(x, z), 0.02f,
+                                Gen.HashCombineInt(salt, 31)) * 2f - 1f;
+                            float falloff = Mathf.Pow(Mathf.Clamp01(
+                                2f * value - 1f), 0.45f);
+                            value = Mathf.Min(value,
+                                1f - (pnoise * 0.6f + 0.7f) * falloff);
+                        }
+                        if (kind == CAInlandWaterKind.LakeWithIsland)
+                        {
+                            float ix = localX + islandDispX.Sample(x, z);
+                            float iz = localZ + islandDispZ.Sample(x, z);
+                            float irx = islandCos * ix + islandSin * iz;
+                            float irz = -islandSin * ix + islandCos * iz;
+                            value = Mathf.Min(value, Mathf.Sqrt(
+                                irx * irx + irz * irz) / (0.4f * span));
+                        }
+                        float cutoff = IsLavaKind(kind) ? 0.16f
+                            : kind == CAInlandWaterKind.Oasis ? 0.3f
+                            : 0.45f;
+                        if (value <= cutoff
+                            || value <= LakeValueByCell[index]) continue;
+                        LakeValueByCell[index] = value;
+                        LakeKindByCell[index] = (byte)kind;
+                        // The native workers zero elevation through the
+                        // whole shore band (lava through its rock ring), so
+                        // no natural rock stands in the basin.
+                        if (value > (IsLavaKind(kind) ? 0.25f : 0.45f))
+                            HillFactorByCell[index] = 0f;
+                    }
+                }
+            }
+
+            int waterCells = 0;
+            for (int index = 0; index < LakeValueByCell.Length; index++)
+                if (LakeValueByCell[index] > 0.5f && LakeKindByCell[index]
+                        != (byte)CAInlandWaterKind.DryLake
+                    && !IsLavaKind(
+                        (CAInlandWaterKind)LakeKindByCell[index]))
+                    waterCells++;
+            LakeWaterCells = waterCells;
+        }
+
+        internal static CAInlandWaterKind InlandWaterKindOf(
+            TileMutatorWorker worker)
+        {
+            if (worker is TileMutatorWorker_Oasis)
+                return CAInlandWaterKind.Oasis;
+            if (worker is TileMutatorWorker_LakeWithIslands)
+                return CAInlandWaterKind.LakeWithIslands;
+            if (worker is TileMutatorWorker_LavaCrater)
+                return CAInlandWaterKind.LavaCrater;
+            if (worker is TileMutatorWorker_LavaLake)
+                return CAInlandWaterKind.LavaLake;
+            if (worker is TileMutatorWorker_Basin)
+                return CAInlandWaterKind.Basin;
+            if (worker is TileMutatorWorker_ToxicLake)
+                return CAInlandWaterKind.Toxic;
+            if (worker is TileMutatorWorker_Pond)
+                return CAInlandWaterKind.Pond;
+            if (worker is TileMutatorWorker_DryLake)
+                return CAInlandWaterKind.DryLake;
+            if (worker is TileMutatorWorker_LakeWithIsland)
+                return CAInlandWaterKind.LakeWithIsland;
+            if (worker is TileMutatorWorker_Lake)
+                return CAInlandWaterKind.Lake;
+            return CAInlandWaterKind.None;
+        }
+
+        internal static bool IsLavaKind(CAInlandWaterKind kind)
+        {
+            return kind == CAInlandWaterKind.LavaLake
+                || kind == CAInlandWaterKind.LavaCrater;
+        }
+
+        // The carried mutator behind a family-specific carrier list, so
+        // authored shape state can key by its defName.
+        private string FeatureDefOn(PlanetTile carrier,
+            Func<TileMutatorWorker, bool> test)
+        {
+            Tile info = carrier.Valid ? carrier.Tile : null;
+            if (info == null) return null;
+            foreach (TileMutatorDef mutator in info.Mutators)
+                if (mutator?.Worker != null && test(mutator.Worker))
+                    return mutator.defName;
+            return null;
+        }
+
+        private float ShapeValue(PlanetTile carrier, string featureDef,
+            string key, float fallback)
+        {
+            return CAFeatureShapeModel.Value(request.FeatureShapes,
+                carrier.tileId, featureDef, key, fallback);
+        }
+
+        private int ShapeSalt(int salt, PlanetTile carrier,
+            string featureDef)
+        {
+            return CAFeatureShapeModel.SaltWithVariant(salt,
+                request.FeatureShapes, carrier.tileId, featureDef);
+        }
+
+        // Native Bay smooth-mins a coast-elongated water disc, biased
+        // inland, into the base coast. The same bite is folded here around
+        // the carrier's visible land: wider along the shoreline than deep,
+        // floored at the deep-water boundary like the native clamp.
+        private void ApplyBayFeatures(List<int> carriers, int spacing,
+            float span, Dictionary<int, Vector2> featureCenters)
+        {
+            BayCarrierCount = carriers?.Count ?? 0;
+            if (BayCarrierCount == 0) return;
+            foreach (int carrierIndex in carriers)
+            {
+                PlanetTile carrier = Members[carrierIndex];
+                Vector2 center = featureCenters[carrierIndex];
+                int oceanIndex = NearestOceanIndex(center);
+                if (oceanIndex < 0) continue;
+
+                string bayDef = FeatureDefOn(carrier, worker =>
+                    worker is TileMutatorWorker_Bay);
+                int salt = ShapeSalt(Gen.HashCombineInt(carrier.tileId,
+                    0x42415920), carrier, bayDef); // "BAY "
+                float baySpan = span
+                    * ShapeValue(carrier, bayDef, "span", 1f);
+                float baySquash = ShapeValue(carrier, bayDef, "stretch",
+                    0.75f);
+                CoarseNoiseField displacementX =
+                    CreateWorldAnchoredNoiseField(spacing, (x, z) =>
+                        (SampleWorldNoise(x, z, 0.003f,
+                            Gen.HashCombineInt(salt, 11)) * 2f - 1f)
+                                * 70f * resolution
+                        + (SampleWorldNoise(x, z, 0.015f,
+                            Gen.HashCombineInt(salt, 12)) * 2f - 1f)
+                                * 25f * resolution);
+                CoarseNoiseField displacementZ =
+                    CreateWorldAnchoredNoiseField(spacing, (x, z) =>
+                        (SampleWorldNoise(x, z, 0.003f,
+                            Gen.HashCombineInt(salt, 13)) * 2f - 1f)
+                                * 70f * resolution
+                        + (SampleWorldNoise(x, z, 0.015f,
+                            Gen.HashCombineInt(salt, 14)) * 2f - 1f)
+                                * 25f * resolution);
+                float angle = ShapeValue(carrier, bayDef, "orientation",
+                    Verse.Find.World.CoastAngleAt(carrier,
+                        BiomeDefOf.Ocean).GetValueOrDefault())
+                    * Mathf.Deg2Rad;
+                float cos = Mathf.Cos(angle);
+                float sin = Mathf.Sin(angle);
+
+                for (int z = 0; z < Size.z; z++)
+                {
+                    for (int x = 0; x < Size.x; x++)
+                    {
+                        float localX = x - center.x
+                            + displacementX.Sample(x, z);
+                        float localZ = z - center.y
+                            + displacementZ.Sample(x, z);
+                        float envelope = Mathf.Sqrt(localX * localX
+                            + localZ * localZ) / (baySpan * 0.95f);
+                        if (envelope > 1.20f) continue;
+                        float along = -sin * localX + cos * localZ;
+                        float across = cos * localX + sin * localZ;
+                        // Disc center sits inland of the anchor; the bite
+                        // spreads along the shoreline (native squash .75).
+                        float alongC = along + 0.10f * baySpan;
+                        float bay = Mathf.Sqrt(across * baySquash * across
+                            * baySquash + alongC * alongC)
+                            / (0.60f * baySpan);
+                        bay = Mathf.Max(0.4f, bay);
+
+                        int index = z * Size.x + x;
+                        float shaped = GenMath.SmoothMin(
+                            CoastValueByCell[index], bay, 0.5f);
+                        float fade = Mathf.SmoothStep(0f, 1f,
+                            Mathf.InverseLerp(0.85f, 1.20f, envelope));
+                        shaped = Mathf.Lerp(shaped,
+                            CoastValueByCell[index], fade);
+                        bool wasWater = BoundaryWaterByCell[index] >= 0;
+                        bool isWater = shaped < 0.5f;
+                        CoastValueByCell[index] = shaped;
+                        NearestBoundaryWaterByCell[index] = oceanIndex;
+                        BoundaryWaterByCell[index] = isWater
+                            ? oceanIndex : -1;
+                        if (isWater) HillFactorByCell[index] = 0f;
+                        else if (wasWater)
+                        {
+                            int owner = MemberByCell[index];
+                            if (owner >= 0 && owner < MemberHillFactors.Count)
+                                HillFactorByCell[index] =
+                                    MemberHillFactors[owner];
+                        }
+                    }
+                }
+            }
+        }
+
+        // Native Fjord cuts a narrow water channel perpendicular to the
+        // coast, flaring seaward through a cone, and steps the walls down
+        // toward the water. The channel is folded here along the carrier's
+        // own coast normal; walls descend by scaling the hill blend.
+        private void ApplyFjordFeatures(List<int> carriers, int spacing,
+            float span, Dictionary<int, Vector2> featureCenters)
+        {
+            FjordCarrierCount = carriers?.Count ?? 0;
+            if (FjordCarrierCount == 0) return;
+            foreach (int carrierIndex in carriers)
+            {
+                PlanetTile carrier = Members[carrierIndex];
+                Vector2 center = featureCenters[carrierIndex];
+                int oceanIndex = NearestOceanIndex(center);
+                if (oceanIndex < 0) continue;
+
+                string fjordDef = FeatureDefOn(carrier, worker =>
+                    worker is TileMutatorWorker_Fjord);
+                int salt = ShapeSalt(Gen.HashCombineInt(carrier.tileId,
+                    0x464A4F52), carrier, fjordDef); // "FJOR"
+                float fjordWidth = ShapeValue(carrier, fjordDef, "span",
+                    1f);
+                CoarseNoiseField displacementX =
+                    CreateWorldAnchoredNoiseField(spacing, (x, z) =>
+                        (SampleWorldNoise(x, z, 0.015f,
+                            Gen.HashCombineInt(salt, 11)) * 2f - 1f)
+                                * 25f * resolution);
+                CoarseNoiseField displacementZ =
+                    CreateWorldAnchoredNoiseField(spacing, (x, z) =>
+                        (SampleWorldNoise(x, z, 0.015f,
+                            Gen.HashCombineInt(salt, 12)) * 2f - 1f)
+                                * 25f * resolution);
+                float angle = ShapeValue(carrier, fjordDef, "orientation",
+                    Verse.Find.World.CoastAngleAt(carrier,
+                        BiomeDefOf.Ocean).GetValueOrDefault())
+                    * Mathf.Deg2Rad;
+                float cos = Mathf.Cos(angle);
+                float sin = Mathf.Sin(angle);
+
+                for (int z = 0; z < Size.z; z++)
+                {
+                    for (int x = 0; x < Size.x; x++)
+                    {
+                        float localX = x - center.x
+                            + displacementX.Sample(x, z);
+                        float localZ = z - center.y
+                            + displacementZ.Sample(x, z);
+                        float envelope = Mathf.Sqrt(localX * localX
+                            + localZ * localZ) / (span * 0.92f);
+                        if (envelope > 1.10f) continue;
+                        float along = -sin * localX + cos * localZ;
+                        float across = cos * localX + sin * localZ;
+                        // Native half-width is .125 of the tile; the cone
+                        // flares it toward open water.
+                        float flare = Mathf.Max(0f, along - 0.15f * span)
+                            * 0.45f;
+                        float halfWidth = (0.125f * span + flare)
+                            * fjordWidth;
+                        float fjord = Mathf.Abs(across)
+                            / Math.Max(1f, 2f * halfWidth);
+                        if (along < -0.55f * span)
+                            fjord += (-0.55f * span - along)
+                                / (0.10f * span);
+                        fjord = Mathf.Max(0.4f, fjord);
+
+                        int index = z * Size.x + x;
+                        float original = CoastValueByCell[index];
+                        float shaped = GenMath.SmoothMin(original, fjord,
+                            0.5f);
+                        float fade = Mathf.SmoothStep(0f, 1f,
+                            Mathf.InverseLerp(0.80f, 1.10f, envelope));
+                        shaped = Mathf.Lerp(shaped, original, fade);
+                        bool wasWater = BoundaryWaterByCell[index] >= 0;
+                        bool isWater = shaped < 0.5f;
+                        CoastValueByCell[index] = shaped;
+                        NearestBoundaryWaterByCell[index] = oceanIndex;
+                        BoundaryWaterByCell[index] = isWater
+                            ? oceanIndex : -1;
+                        if (isWater) HillFactorByCell[index] = 0f;
+                        else
+                        {
+                            if (wasWater)
+                            {
+                                int owner = MemberByCell[index];
+                                if (owner >= 0
+                                    && owner < MemberHillFactors.Count)
+                                    HillFactorByCell[index] =
+                                        MemberHillFactors[owner];
+                            }
+                            // Native lowers wall elevation by value-1;
+                            // the hill blend steps down toward the water.
+                            if (fjord < 1f && fade < 1f)
+                                HillFactorByCell[index] *= Mathf.Lerp(
+                                    Mathf.Clamp01(fjord), 1f, fade);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Native Peninsula replaces the whole one-tile coast with a land
+        // tongue running seaward (a rounded cap inland, a straight band
+        // toward open water). Here the tongue raises land out of the
+        // carrier's own boundary water; the regional coastline elsewhere
+        // is untouched.
+        private void ApplyPeninsulaFeatures(List<int> carriers, int spacing,
+            float span, Dictionary<int, Vector2> featureCenters)
+        {
+            PeninsulaCarrierCount = carriers?.Count ?? 0;
+            if (PeninsulaCarrierCount == 0) return;
+            foreach (int carrierIndex in carriers)
+            {
+                PlanetTile carrier = Members[carrierIndex];
+                Vector2 center = featureCenters[carrierIndex];
+                int oceanIndex = NearestOceanIndex(center);
+                if (oceanIndex < 0) continue;
+
+                string peninsulaDef = FeatureDefOn(carrier, worker =>
+                    worker is TileMutatorWorker_Peninsula);
+                int salt = ShapeSalt(Gen.HashCombineInt(carrier.tileId,
+                    0x50454E49), carrier, peninsulaDef); // "PENI"
+                float tongueWidth = ShapeValue(carrier, peninsulaDef,
+                    "span", 1f);
+                float tongueLength = ShapeValue(carrier, peninsulaDef,
+                    "length", 1f);
+                CoarseNoiseField displacementX =
+                    CreateWorldAnchoredNoiseField(spacing, (x, z) =>
+                        (SampleWorldNoise(x, z, 0.006f,
+                            Gen.HashCombineInt(salt, 11)) * 2f - 1f)
+                                * 30f * resolution
+                        + (SampleWorldNoise(x, z, 0.015f,
+                            Gen.HashCombineInt(salt, 12)) * 2f - 1f)
+                                * 25f * resolution);
+                CoarseNoiseField displacementZ =
+                    CreateWorldAnchoredNoiseField(spacing, (x, z) =>
+                        (SampleWorldNoise(x, z, 0.006f,
+                            Gen.HashCombineInt(salt, 13)) * 2f - 1f)
+                                * 30f * resolution
+                        + (SampleWorldNoise(x, z, 0.015f,
+                            Gen.HashCombineInt(salt, 14)) * 2f - 1f)
+                                * 25f * resolution);
+                float angle = ShapeValue(carrier, peninsulaDef,
+                    "orientation", Verse.Find.World.CoastAngleAt(carrier,
+                        BiomeDefOf.Ocean).GetValueOrDefault())
+                    * Mathf.Deg2Rad;
+                float cos = Mathf.Cos(angle);
+                float sin = Mathf.Sin(angle);
+
+                for (int z = 0; z < Size.z; z++)
+                {
+                    for (int x = 0; x < Size.x; x++)
+                    {
+                        float localX = x - center.x
+                            + displacementX.Sample(x, z);
+                        float localZ = z - center.y
+                            + displacementZ.Sample(x, z);
+                        float envelope = Mathf.Sqrt(localX * localX
+                            + localZ * localZ) / (span * 1.00f);
+                        if (envelope > 1.25f) continue;
+                        float along = -sin * localX + cos * localZ;
+                        float across = cos * localX + sin * localZ;
+                        // Native offsets the shape .1 of the tile seaward.
+                        float alongP = along - 0.10f * span;
+                        float tongue = alongP >= 0f
+                            ? 1f - Mathf.Abs(across)
+                                / (0.60f * span * tongueWidth)
+                            : 1f - Mathf.Sqrt(across * across
+                                + alongP * alongP)
+                                / (0.60f * span * tongueWidth);
+                        // The native band runs off the one-tile map edge;
+                        // at carrier scale it tapers into open water.
+                        if (alongP > 0.90f * span * tongueLength)
+                            tongue -= (alongP - 0.90f * span
+                                * tongueLength) / (0.20f * span);
+                        tongue = Mathf.Clamp01(tongue);
+
+                        int index = z * Size.x + x;
+                        float original = CoastValueByCell[index];
+                        float fade = Mathf.SmoothStep(0f, 1f,
+                            Mathf.InverseLerp(0.90f, 1.25f, envelope));
+                        float shaped = Mathf.Max(original,
+                            Mathf.Lerp(tongue, 0f, fade));
+                        bool wasWater = BoundaryWaterByCell[index] >= 0;
+                        bool isWater = shaped < 0.5f;
+                        CoastValueByCell[index] = shaped;
+                        BoundaryWaterByCell[index] = isWater
+                            ? (wasWater ? BoundaryWaterByCell[index]
+                                : oceanIndex) : -1;
+                        if (!isWater && wasWater)
+                        {
+                            int owner = MemberByCell[index];
+                            HillFactorByCell[index] = owner >= 0
+                                && owner < MemberHillFactors.Count
+                                ? MemberHillFactors[owner] : 0f;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Native CoastalIsland pushes the sea open and raises a squashed
+        // island disc offshore. Folded here as the atoll's machinery minus
+        // the lagoon: open water ring, island landmass, both around the
+        // carrier's visible land.
+        private void ApplyCoastalIslandFeatures(List<int> carriers,
+            int spacing, float span, Dictionary<int, Vector2> featureCenters)
+        {
+            CoastalIslandCarrierCount = carriers?.Count ?? 0;
+            if (CoastalIslandCarrierCount == 0) return;
+            foreach (int carrierIndex in carriers)
+            {
+                PlanetTile carrier = Members[carrierIndex];
+                Vector2 center = featureCenters[carrierIndex];
+                int oceanIndex = NearestOceanIndex(center);
+                if (oceanIndex < 0) continue;
+
+                string islandDef = FeatureDefOn(carrier, worker =>
+                    worker is TileMutatorWorker_CoastalIsland);
+                int salt = ShapeSalt(Gen.HashCombineInt(carrier.tileId,
+                    0x49534C41), carrier, islandDef); // "ISLA"
+                float islandSpan = span
+                    * ShapeValue(carrier, islandDef, "span", 1f);
+                CoarseNoiseField displacementX =
+                    CreateWorldAnchoredNoiseField(spacing, (x, z) =>
+                        (SampleWorldNoise(x, z, 0.015f,
+                            Gen.HashCombineInt(salt, 11)) * 2f - 1f)
+                                * 35f * resolution);
+                CoarseNoiseField displacementZ =
+                    CreateWorldAnchoredNoiseField(spacing, (x, z) =>
+                        (SampleWorldNoise(x, z, 0.015f,
+                            Gen.HashCombineInt(salt, 12)) * 2f - 1f)
+                                * 35f * resolution);
+                float squash = ShapeValue(carrier, islandDef, "stretch",
+                    Mathf.Lerp(0.65f, 1f, DeterministicUnit(
+                        Gen.HashCombineInt(salt, 21))));
+                float authoredIslandAngle = ShapeValue(carrier, islandDef,
+                    "orientation", float.NaN);
+                float angle = float.IsNaN(authoredIslandAngle)
+                    ? DeterministicUnit(Gen.HashCombineInt(salt, 22))
+                        * 2f * Mathf.PI
+                    : authoredIslandAngle * Mathf.Deg2Rad;
+                float cos = Mathf.Cos(angle);
+                float sin = Mathf.Sin(angle);
+
+                for (int z = 0; z < Size.z; z++)
+                {
+                    for (int x = 0; x < Size.x; x++)
+                    {
+                        float localX = x - center.x
+                            + displacementX.Sample(x, z);
+                        float localZ = z - center.y
+                            + displacementZ.Sample(x, z);
+                        float envelope = Mathf.Sqrt(localX * localX
+                            + localZ * localZ) / (span * 0.95f);
+                        if (envelope > 1.15f) continue;
+                        float rx = (cos * localX + sin * localZ) * squash;
+                        float rz = -sin * localX + cos * localZ;
+                        float distance = Mathf.Sqrt(rx * rx + rz * rz);
+                        float water = Mathf.Max(0.4f,
+                            distance / (0.95f * span));
+                        float island = 1f - distance
+                            / (0.65f * islandSpan);
+
+                        int index = z * Size.x + x;
+                        float original = CoastValueByCell[index];
+                        float shaped = GenMath.SmoothMin(original, water,
+                            0.25f);
+                        shaped = Mathf.Max(shaped, island);
+                        float fade = Mathf.SmoothStep(0f, 1f,
+                            Mathf.InverseLerp(0.85f, 1.15f, envelope));
+                        shaped = Mathf.Lerp(shaped, original, fade);
+                        bool wasWater = BoundaryWaterByCell[index] >= 0;
+                        bool isWater = shaped < 0.5f;
+                        CoastValueByCell[index] = shaped;
+                        NearestBoundaryWaterByCell[index] = oceanIndex;
+                        BoundaryWaterByCell[index] = isWater
+                            ? oceanIndex : -1;
+                        if (isWater) HillFactorByCell[index] = 0f;
+                        else if (wasWater)
+                        {
+                            int owner = MemberByCell[index];
+                            HillFactorByCell[index] = owner >= 0
+                                && owner < MemberHillFactors.Count
+                                ? MemberHillFactors[owner] : 0f;
+                        }
+                    }
+                }
+            }
         }
 
         // Cove and Archipelago are authored geographic shapes, not labels on
@@ -1187,8 +2120,12 @@ namespace ColonistAwareness
                 int oceanIndex = NearestOceanIndex(center);
                 if (oceanIndex < 0) continue;
 
-                int salt = Gen.HashCombineInt(carrier.tileId,
-                    1129272914); // "COVE"
+                string coveDef = FeatureDefOn(carrier, worker =>
+                    worker is TileMutatorWorker_Cove);
+                int salt = ShapeSalt(Gen.HashCombineInt(carrier.tileId,
+                    1129272914), carrier, coveDef); // "COVE"
+                float coveSpan = span
+                    * ShapeValue(carrier, coveDef, "span", 1f);
                 CoarseNoiseField displacementX =
                     CreateWorldAnchoredNoiseField(spacing, (x, z) =>
                         (SampleWorldNoise(x, z, 0.003f,
@@ -1205,12 +2142,15 @@ namespace ColonistAwareness
                         + (SampleWorldNoise(x, z, 0.015f,
                             Gen.HashCombineInt(salt, 14)) * 2f - 1f)
                                 * 25f * resolution);
-                float angle = Verse.Find.World.CoastAngleAt(carrier,
-                    BiomeDefOf.Ocean).GetValueOrDefault() * Mathf.Deg2Rad;
+                float angle = ShapeValue(carrier, coveDef, "orientation",
+                    Verse.Find.World.CoastAngleAt(carrier,
+                        BiomeDefOf.Ocean).GetValueOrDefault())
+                    * Mathf.Deg2Rad;
                 float cos = Mathf.Cos(angle);
                 float sin = Mathf.Sin(angle);
-                float entranceBias = Mathf.Lerp(-0.10f, 0.10f,
-                    DeterministicUnit(Gen.HashCombineInt(salt, 21))) * span;
+                float entranceBias = ShapeValue(carrier, coveDef, "mouth",
+                    Mathf.Lerp(-0.10f, 0.10f, DeterministicUnit(
+                        Gen.HashCombineInt(salt, 21)))) * coveSpan;
 
                 for (int z = 0; z < Size.z; z++)
                 {
@@ -1227,28 +2167,28 @@ namespace ColonistAwareness
                         float across = cos * localX + sin * localZ
                             - entranceBias;
                         float envelope = Mathf.Sqrt(localX * localX
-                            + localZ * localZ) / (span * 0.92f);
+                            + localZ * localZ) / (coveSpan * 0.92f);
                         if (envelope > 1.08f) continue;
 
                         // Native Cove smooth-mins a displaced half-map radial
                         // basin with a narrow DistFromCone entrance. The
                         // widening channel below preserves that readable
                         // basin-and-mouth topology at carrier scale.
-                        float basinAlong = along + span * 0.18f;
+                        float basinAlong = along + coveSpan * 0.18f;
                         float basin = Mathf.Sqrt(across * across
-                            + basinAlong * basinAlong) / (span * 0.50f);
+                            + basinAlong * basinAlong) / (coveSpan * 0.50f);
                         float mouthProgress = Mathf.InverseLerp(
-                            -span * 0.18f, span * 0.72f, along);
-                        float mouthHalfWidth = span * Mathf.Lerp(0.055f,
+                            -coveSpan * 0.18f, coveSpan * 0.72f, along);
+                        float mouthHalfWidth = coveSpan * Mathf.Lerp(0.055f,
                             0.16f, mouthProgress);
                         float channel = Mathf.Abs(across)
                             / Math.Max(1f, mouthHalfWidth);
-                        if (along < -span * 0.24f)
-                            channel += (-span * 0.24f - along)
-                                / (span * 0.12f);
-                        else if (along > span * 0.78f)
-                            channel += (along - span * 0.78f)
-                                / (span * 0.12f);
+                        if (along < -coveSpan * 0.24f)
+                            channel += (-coveSpan * 0.24f - along)
+                                / (coveSpan * 0.12f);
+                        else if (along > coveSpan * 0.78f)
+                            channel += (along - coveSpan * 0.78f)
+                                / (coveSpan * 0.12f);
                         float cove = GenMath.SmoothMin(basin,
                             channel * 0.25f, 0.2f);
                         cove = Mathf.Max(0.4f, cove);
@@ -1299,8 +2239,13 @@ namespace ColonistAwareness
                 int oceanIndex = NearestOceanIndex(center);
                 if (oceanIndex < 0) continue;
 
-                int salt = Gen.HashCombineInt(carrier.tileId,
-                    1095781448); // "ARCH"
+                string archDef = FeatureDefOn(carrier, worker =>
+                    worker is TileMutatorWorker_Archipelago);
+                int salt = ShapeSalt(Gen.HashCombineInt(carrier.tileId,
+                    1095781448), carrier, archDef); // "ARCH"
+                float archSpan = span
+                    * ShapeValue(carrier, archDef, "span", 1f);
+                float density = ShapeValue(carrier, archDef, "density", 0f);
                 CoarseNoiseField displacementX =
                     CreateWorldAnchoredNoiseField(spacing, (x, z) =>
                         (SampleWorldNoise(x, z, 0.015f,
@@ -1331,13 +2276,15 @@ namespace ColonistAwareness
                         float localX = x - center.x;
                         float localZ = z - center.y;
                         float envelope = Mathf.Sqrt(localX * localX
-                            + localZ * localZ) / (span * 0.95f);
+                            + localZ * localZ) / (archSpan * 0.95f);
                         if (envelope > 1.12f) continue;
                         float islands = islandNoise.Sample(x, z);
                         // Archipelago's native coast offset is fixed at .2;
                         // lowering the field slightly carries that more
                         // water-forward shoreline into the shared coast.
-                        islands = Mathf.Clamp01(islands - 0.04f);
+                        // Authored density raises or thins the island
+                        // field within its band.
+                        islands = Mathf.Clamp01(islands - 0.04f + density);
 
                         int index = z * Size.x + x;
                         float shaped = GenMath.SmoothMin(

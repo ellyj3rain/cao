@@ -26,19 +26,16 @@ namespace ColonistAwareness
     // in-chain. The scope is GenStep_Plants.Generate only.
     //
     // Modes:
-    //   - Default (audit-only): the prefix predicts, the original ALWAYS
+    //   - Audit (CA_REGIONAL_PLANTMASK_SERVE=0): the prefix predicts, the original ALWAYS
     //     runs, and the postfix - running after every other postfix -
     //     compares the prediction against the final post-Harmony result.
     //     Nothing is ever skipped, so the default mode is behaviorally
     //     inert and produces a complete mismatch census, not a sample.
-    //   - Serve (CA_REGIONAL_PLANTMASK_SERVE=1, to be enabled only after
-    //     a first zero-mismatch live gate): on a proven reject the last
-    //     prefix sets blockingThing=null and __result=false and skips the
-    //     original; postfixes still run, and the only allowlisted foreign
-    //     postfix (ReGrowth's) can only flip results toward rejection, so
-    //     a served false can never become a wrongly-served accept. The
-    //     postfix still verifies the final result and degrades on any
-    //     anomaly.
+    //   - Serve (default after the zero-mismatch live gate): the complete
+    //     reason-free native base decision is evaluated from the same live
+    //     mutable state and frozen cell terms, then the original is skipped.
+    //     Every postfix still runs. ReGrowth may narrow an accepted result
+    //     through its monotonic terrain rule; no foreign patch is bypassed.
     //
     // Fail-closed compatibility gate, exact per method AND patch kind:
     // before the first prediction the scope enumerates the live Harmony
@@ -141,6 +138,13 @@ namespace ColonistAwareness
             internal bool completelyIgnoreFertility;
             internal float fertilityMin;
             internal Pollution pollution;
+            internal Dictionary<TerrainDef, bool> terrainAllowed;
+        }
+
+        internal struct EvaluationState
+        {
+            internal int mode;
+            internal bool expectedBaseAccepted;
         }
 
         private sealed class Scope
@@ -167,7 +171,11 @@ namespace ColonistAwareness
             internal long auditPredictions;
             internal long auditConfirmed;
             internal long auditMismatches;
+            internal long fullAuditPredictions;
+            internal long fullAuditConfirmed;
+            internal long fullAuditMismatches;
             internal long servedFalse;
+            internal long servedTrue;
             internal long serveAnomalies;
 
             internal void Degrade(string reason)
@@ -220,9 +228,9 @@ namespace ColonistAwareness
             Installed = !string.Equals(
                 Environment.GetEnvironmentVariable("CA_REGIONAL_PLANTMASK"),
                 "0", StringComparison.Ordinal);
-            ServeModeRequested = string.Equals(
+            ServeModeRequested = !string.Equals(
                 Environment.GetEnvironmentVariable(
-                    "CA_REGIONAL_PLANTMASK_SERVE"), "1",
+                    "CA_REGIONAL_PLANTMASK_SERVE"), "0",
                 StringComparison.Ordinal);
         }
 
@@ -240,8 +248,8 @@ namespace ColonistAwareness
                 + WarmupCallsBeforeExtraction + " in-scope calls under a "
                 + (MaxSnapshotBytes / (1024 * 1024)) + " MB checked cap; "
                 + "env CA_REGIONAL_PLANTMASK=0 disables at load, "
-                + "CA_REGIONAL_PLANTMASK_SERVE=1 enables serving only "
-                + "after a first zero-mismatch live gate";
+                + "CA_REGIONAL_PLANTMASK_SERVE=0 restores full native "
+                + "audit mode";
         }
 
         private static Scope Current
@@ -316,6 +324,11 @@ namespace ColonistAwareness
                     + scope.auditPredictions + " audited predictions: "
                     + scope.auditConfirmed + " confirmed, "
                     + scope.auditMismatches + " mismatches) + "
+                    + scope.fullAuditPredictions
+                    + " full base audits ("
+                    + scope.fullAuditConfirmed + " confirmed, "
+                    + scope.fullAuditMismatches + " mismatches) + "
+                    + scope.servedTrue + " served accepts + "
                     + scope.servedFalse + " served rejects ("
                     + scope.serveAnomalies + " serve anomalies) + "
                     + scope.degradedNativeCalls + " degraded native; "
@@ -351,13 +364,16 @@ namespace ColonistAwareness
         private const int ModeDegradedNative = 3;
         private const int ModeAudit = 4;
         private const int ModeServe = 5;
+        private const int ModeFullAudit = 6;
+        private const int ModeFullServe = 7;
 
         internal static bool CanEverPlantAtPrefix(ThingDef plantDef,
             IntVec3 c, Map map, ref Thing blockingThing,
             bool canWipePlantsExceptTree, bool checkMapTemperature,
-            ref AcceptanceReport __result, out int __state)
+            bool writeNoReason, ref AcceptanceReport __result,
+            out EvaluationState __state)
         {
-            __state = ModeInactive;
+            __state = default(EvaluationState);
             try
             {
                 Scope scope = Current;
@@ -370,12 +386,12 @@ namespace ColonistAwareness
                 scope.routedCalls++;
                 if (scope.degraded)
                 {
-                    __state = ModeDegradedNative;
+                    __state.mode = ModeDegradedNative;
                     return true;
                 }
                 if (scope.routedCalls <= WarmupCallsBeforeExtraction)
                 {
-                    __state = ModeWarmupNative;
+                    __state.mode = ModeWarmupNative;
                     return true;
                 }
                 if (!scope.compatibilityChecked)
@@ -384,52 +400,43 @@ namespace ColonistAwareness
                     ExtractCellTerms(scope);
                 if (scope.degraded)
                 {
-                    __state = ModeDegradedNative;
+                    __state.mode = ModeDegradedNative;
                     return true;
                 }
-                DefTerms terms = GetDefTerms(scope, plantDef);
-                if (!terms.screen)
+
+                // GenStep_Plants reaches this overload through the bool
+                // wrapper, which always requests a reason-free result and
+                // discards blockingThing. Other callers retain the complete
+                // native report path even if they somehow nest this scope.
+                if (!writeNoReason
+                    || !TryEvaluateNativeBase(scope, plantDef, c, map,
+                        canWipePlantsExceptTree, checkMapTemperature,
+                        out bool accepted, out Thing predictedBlocker))
                 {
-                    __state = ModeNative;
+                    __state.mode = ModeNative;
                     return true;
                 }
-                bool reject = checkMapTemperature
-                    && terms.temperatureRejected;
-                if (!reject)
-                {
-                    int cell = c.z * scope.sizeX + c.x;
-                    reject = CARegionalPlantRejectionTerms.Rejects(
-                        scope.fertility[cell],
-                        (scope.pollutedBits[cell >> 6]
-                            >> (cell & 63) & 1UL) != 0,
-                        terms.completelyIgnoreFertility,
-                        terms.fertilityMin,
-                        terms.pollution);
-                }
-                if (!reject)
-                {
-                    __state = ModeNative;
-                    return true;
-                }
+
+                __state.expectedBaseAccepted = accepted;
                 if (!scope.serveMode)
                 {
-                    // Audit-only: the original always runs; the postfix
-                    // compares this prediction against the final result.
-                    __state = ModeAudit;
+                    // Audit the complete native base decision before any
+                    // foreign postfix. The original still runs.
+                    __state.mode = ModeFullAudit;
                     return true;
                 }
-                // Serve mode: skip the original with the proven rejection.
-                // All postfixes still run; the allowlisted foreign postfix
-                // is monotonic toward rejection, and our own postfix
-                // re-verifies the final result.
-                blockingThing = null;
-                __result = false;
-                __state = ModeServe;
+
+                // Serve the complete, already-audited base decision. Harmony
+                // still runs every postfix, including ReGrowth's additional
+                // monotonic terrain rejection.
+                blockingThing = predictedBlocker;
+                __result = accepted;
+                __state.mode = ModeFullServe;
                 return false;
             }
             catch (Exception accelerationError)
             {
-                __state = ModeInactive;
+                __state = default(EvaluationState);
                 try
                 {
                     Current?.Degrade("prefix acceleration failure ("
@@ -444,16 +451,64 @@ namespace ColonistAwareness
             }
         }
 
-        internal static void CanEverPlantAtPostfix(ThingDef plantDef,
-            IntVec3 c, ref AcceptanceReport __result, int __state,
-            bool __runOriginal)
+        // Runs before ReGrowth's postfix. In audit mode this observes the
+        // unmodified native base result and proves the replacement decision.
+        internal static void CanEverPlantAtBaseAuditPostfix(
+            ThingDef plantDef, IntVec3 c, AcceptanceReport __result,
+            EvaluationState __state, bool __runOriginal)
         {
-            if (__state == ModeInactive) return;
+            if (__state.mode != ModeFullAudit) return;
             try
             {
                 Scope scope = Current;
                 if (scope == null) return;
-                switch (__state)
+                scope.nativeCalls++;
+                scope.fullAuditPredictions++;
+                if (!__runOriginal)
+                {
+                    scope.fullAuditMismatches++;
+                    scope.Degrade("full audit invalidated: the original "
+                        + "was skipped by another patch for "
+                        + (plantDef?.defName ?? "null") + " at " + c);
+                    return;
+                }
+                if (__result.Accepted != __state.expectedBaseAccepted)
+                {
+                    scope.fullAuditMismatches++;
+                    scope.Degrade("full native decision audit falsified for "
+                        + (plantDef?.defName ?? "null") + " at " + c
+                        + ": expected " + __state.expectedBaseAccepted
+                        + ", native returned " + __result.Accepted);
+                    return;
+                }
+                scope.fullAuditConfirmed++;
+            }
+            catch (Exception error)
+            {
+                try
+                {
+                    Current?.Degrade("full base-audit bookkeeping failed ("
+                        + error.GetType().Name + ": " + error.Message + ")");
+                }
+                catch (Exception)
+                {
+                    // Best-effort only.
+                }
+            }
+        }
+
+        // Runs after every foreign postfix and supervises served decisions.
+        internal static void CanEverPlantAtFinalPostfix(ThingDef plantDef,
+            IntVec3 c, ref AcceptanceReport __result,
+            EvaluationState __state,
+            bool __runOriginal)
+        {
+            if (__state.mode == ModeInactive) return;
+            try
+            {
+                Scope scope = Current;
+                if (scope == null) return;
+                switch (__state.mode)
                 {
                     case ModeWarmupNative:
                         scope.warmupNativeCalls++;
@@ -514,6 +569,32 @@ namespace ColonistAwareness
                             scope.servedFalse++;
                         }
                         break;
+                    case ModeFullAudit:
+                        // Counted and compared by the early postfix, before
+                        // ReGrowth is allowed to narrow the accepted set.
+                        break;
+                    case ModeFullServe:
+                        if (!__state.expectedBaseAccepted
+                            && __result.Accepted)
+                        {
+                            // The only allowed foreign postfix is monotonic
+                            // toward rejection. A rejected base decision may
+                            // therefore never become accepted.
+                            scope.serveAnomalies++;
+                            scope.Degrade("served base rejection flipped to "
+                                + "accepted by a later patch for "
+                                + (plantDef?.defName ?? "null") + " at "
+                                + c);
+                        }
+                        else if (__result.Accepted)
+                        {
+                            scope.servedTrue++;
+                        }
+                        else
+                        {
+                            scope.servedFalse++;
+                        }
+                        break;
                 }
             }
             catch (Exception bookkeepingError)
@@ -533,6 +614,112 @@ namespace ColonistAwareness
                     // Best-effort only.
                 }
             }
+        }
+
+        // Exact reason-free mirror of RimWorld 1.6's
+        // PlantUtility.CanEverPlantAt base method. It deliberately keeps all
+        // mutable reads live (things, blockers, terraformers, and adjacent
+        // doors). Only fertility, pollution, whole-map temperature, and the
+        // per-def/per-terrain set relation are cached while Plants runs.
+        private static bool TryEvaluateNativeBase(Scope scope,
+            ThingDef plantDef, IntVec3 c, Map map,
+            bool canWipePlantsExceptTree, bool checkMapTemperature,
+            out bool accepted, out Thing blockingThing)
+        {
+            accepted = false;
+            blockingThing = null;
+            if (plantDef == null || plantDef.category != ThingCategory.Plant
+                || plantDef.plant == null)
+                return false;
+
+            DefTerms terms = GetDefTerms(scope, plantDef);
+            if (!terms.screen) return false;
+            int cell = c.z * scope.sizeX + c.x;
+            if (checkMapTemperature && terms.temperatureRejected)
+                return true;
+            if (CARegionalPlantRejectionTerms.Rejects(
+                    scope.fertility[cell],
+                    (scope.pollutedBits[cell >> 6]
+                        >> (cell & 63) & 1UL) != 0,
+                    terms.completelyIgnoreFertility,
+                    terms.fertilityMin,
+                    terms.pollution))
+                return true;
+
+            TerrainDef terrain = c.GetTerrain(map);
+            if (plantDef.plant.terraformable
+                && !CompTerraformer.CanEverConvertCell(c, map))
+                return true;
+
+            List<Thing> things = map.thingGrid.ThingsListAt(c);
+            bool grower = false;
+            for (int i = 0; i < things.Count; i++)
+            {
+                if (things[i] is Building_PlantGrower)
+                {
+                    grower = true;
+                    break;
+                }
+            }
+            if (!grower && !TerrainAllows(terms, plantDef, terrain))
+                return true;
+
+            for (int i = 0; i < things.Count; i++)
+            {
+                Thing thing = things[i];
+                if (!grower
+                    && thing.def.BlocksPlanting(canWipePlantsExceptTree))
+                {
+                    blockingThing = thing;
+                    return true;
+                }
+                if (plantDef.passability != Traversability.Impassable)
+                    continue;
+                ThingCategory category = thing.def.category;
+                if (category == ThingCategory.Pawn
+                    || category == ThingCategory.Item
+                    || category == ThingCategory.Building
+                    || (category == ThingCategory.Plant
+                        && canWipePlantsExceptTree
+                        && thing.def.plant.IsTree))
+                {
+                    blockingThing = thing;
+                    return true;
+                }
+            }
+
+            if (plantDef.passability == Traversability.Impassable)
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    IntVec3 adjacent = c + GenAdj.CardinalDirections[i];
+                    if (!adjacent.InBounds(map)) continue;
+                    Building edifice = adjacent.GetEdifice(map);
+                    if (edifice != null && edifice.def.IsDoor)
+                    {
+                        blockingThing = edifice;
+                        return true;
+                    }
+                }
+            }
+
+            accepted = true;
+            return true;
+        }
+
+        private static bool TerrainAllows(DefTerms terms,
+            ThingDef plantDef, TerrainDef terrain)
+        {
+            if (terms.terrainAllowed.TryGetValue(terrain, out bool allowed))
+                return allowed;
+            PlantProperties plant = plantDef.plant;
+            allowed = (plant.WildTerrainTags.Count == 0
+                    || plant.WildTerrainTags.Overlaps(
+                        terrain.tags.OrElseEmptyEnumerable()))
+                && (plant.terrainBlacklist == null
+                    || !plant.terrainBlacklist.Contains(terrain));
+            terms.terrainAllowed.Add(terrain, allowed);
+            return allowed;
         }
 
         // ---- fail-closed compatibility gate ----
@@ -714,6 +901,7 @@ namespace ColonistAwareness
                     plant.completelyIgnoreFertility;
                 terms.fertilityMin = plant.fertilityMin;
                 terms.pollution = plant.pollution;
+                terms.terrainAllowed = new Dictionary<TerrainDef, bool>();
                 terms.temperatureRejected =
                     scope.map.TileInfo.MinTemperature
                         > plant.maxGrowthTemperature
@@ -775,8 +963,12 @@ namespace ColonistAwareness
                         .CanEverPlantAtPrefix), Priority.Last,
                         after: new[] { "Helixien.ReGrowthCore" }),
                     postfix: Method(nameof(CARegionalPlantMaskPatches
-                        .CanEverPlantAtPostfix), Priority.Last,
+                        .CanEverPlantAtFinalPostfix), Priority.Last,
                         after: new[] { "Helixien.ReGrowthCore" }));
+                harmony.Patch(acceptanceOverload,
+                    postfix: Method(nameof(CARegionalPlantMaskPatches
+                        .CanEverPlantAtBaseAuditPostfix), Priority.First,
+                        before: new[] { "Helixien.ReGrowthCore" }));
                 Log.Message("[CA][Regional][Jobs][PlantMask] plant "
                     + "frozen-term prediction screen installed in-chain "
                     + "on the AcceptanceReport overload; "
@@ -808,12 +1000,13 @@ namespace ColonistAwareness
         }
 
         private static HarmonyMethod Method(string name, int priority = -1,
-            string[] after = null)
+            string[] after = null, string[] before = null)
         {
             HarmonyMethod method = new HarmonyMethod(AccessTools.Method(
                 typeof(CARegionalPlantMaskPatches), name));
             if (priority >= 0) method.priority = priority;
             if (after != null) method.after = after;
+            if (before != null) method.before = before;
             return method;
         }
     }
