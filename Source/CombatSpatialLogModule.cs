@@ -195,9 +195,18 @@ namespace ColonistAwareness
     // Save-owned evidence index for combat coordinates and map topology. It has no
     // tick polling; native map events feed bounded deltas, while presentation and
     // explicit read-only exports consume the retained snapshots.
+    //
+    // Save policy: a record lives only while its native battle-log entry
+    // lives, and at most the newest RetainedRecordCap records serialize.
+    // The native battle log keeps battles for roughly seven in-game days
+    // after their last entry, so chronic day-long combat would otherwise
+    // accumulate past the campaign preflight's streaming element limit and
+    // fail every save; beyond the recency horizon the native battle-log
+    // text remains while the CA spatial snapshot expires.
     internal sealed partial class CACombatSpatialLogComponent : GameComponent
     {
         private const int StoresBetweenPrunes = 128;
+        private const int RetainedRecordCap = 2000;
 
         private readonly Game game;
         private Dictionary<int, CACombatSpatialLogRecord> records =
@@ -287,10 +296,22 @@ namespace ColonistAwareness
                 if (stale == null) stale = new List<int>();
                 stale.Add(pair.Key);
             }
-            if (stale == null) return;
-            for (int i = 0; i < stale.Count; i++)
-                records.Remove(stale[i]);
-            PruneTopologyToRecords();
+            if (stale != null)
+                for (int i = 0; i < stale.Count; i++)
+                    records.Remove(stale[i]);
+            bool pruned = stale != null;
+            if (records.Count > RetainedRecordCap)
+            {
+                // Native log ids increase monotonically, so the smallest
+                // ids are the oldest evidence beyond the recency horizon.
+                var ordered = new List<int>(records.Keys);
+                ordered.Sort();
+                int surplus = records.Count - RetainedRecordCap;
+                for (int i = 0; i < surplus; i++)
+                    records.Remove(ordered[i]);
+                pruned = true;
+            }
+            if (pruned) PruneTopologyToRecords();
         }
 
         internal static CACombatSpatialLogComponent CurrentComponent()

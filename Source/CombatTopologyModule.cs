@@ -472,6 +472,12 @@ namespace ColonistAwareness
         internal bool changesTruncated;
         internal int changesTruncatedAtTick = -1;
         internal string changesTruncationReason;
+        // Artifact census accounting: how many battlefield-reference
+        // artifacts existed on the map and how many fell outside the
+        // bounded battlefield window or the hard cap. The census itself
+        // stays bounded so its cost never scales with total map area.
+        internal int artifactCensusTotal;
+        internal int artifactsBeyondWindow;
         private int cachedChangeEstimatedBytes = -1;
 
         public void ExposeData()
@@ -493,6 +499,10 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref baselineEstimatedBytes,
                 "baselineEstimatedBytes", 0);
             Scribe_Values.Look(ref nextSequence, "nextSequence", 0);
+            Scribe_Values.Look(ref artifactCensusTotal,
+                "artifactCensusTotal", 0);
+            Scribe_Values.Look(ref artifactsBeyondWindow,
+                "artifactsBeyondWindow", 0);
             Scribe_Values.Look(ref changesTruncated,
                 "changesTruncated", false);
             Scribe_Values.Look(ref changesTruncatedAtTick,
@@ -874,11 +884,10 @@ namespace ColonistAwareness
             };
             incident.AddLogId(firstLogId);
             incident.AddBattleAlias(battleAlias);
-            incident.battlefieldReference = CaptureBattlefieldReference(map,
-                incident.baselineCapturedTick);
-
             List<IntVec3> pawnCenters = PawnConcernCenters(entry, record,
                 map, incident.observerPawnIds);
+            incident.battlefieldReference = CaptureBattlefieldReference(map,
+                incident.baselineCapturedTick, pawnCenters);
             SortedSet<int> known = ProximalRevealCellIndices(map,
                 pawnCenters, record.hasBulletImpact
                     && record.impactMapId == map.uniqueID
@@ -961,7 +970,8 @@ namespace ColonistAwareness
         }
 
         internal static CACombatTopologyBattlefieldReference
-            CaptureBattlefieldReference(Map map, int capturedTick)
+            CaptureBattlefieldReference(Map map, int capturedTick,
+                List<IntVec3> battleCenters = null)
         {
             if (map == null) return null;
             var reference = new CACombatTopologyBattlefieldReference
@@ -1020,7 +1030,7 @@ namespace ColonistAwareness
             }
             reference.cellPayload = EncodeReference(signatures);
             reference.cellPayloadSha256 = Sha256(reference.cellPayload);
-            reference.artifacts.AddRange(CaptureReferenceArtifacts(map));
+            CaptureReferenceArtifacts(map, battleCenters, reference);
             reference.baselineEstimatedBytes = reference.EstimateBytes();
             return reference;
         }
@@ -1124,21 +1134,69 @@ namespace ColonistAwareness
             };
         }
 
-        private static List<CACombatTopologyReferenceArtifactState>
-            CaptureReferenceArtifacts(Map map)
+        // A battlefield reference censuses the BATTLEFIELD, not the map:
+        // on regional maps a whole-map artifact census serializes past the
+        // campaign preflight's element limit (measured at 400x6: the
+        // artifact list alone crossed 1,000,000 elements), and its cost
+        // would scale with total map area. Artifacts are captured within a
+        // bounded window around the battle's concern centers, nearest
+        // first under a hard cap, and the census totals record exactly
+        // what stayed outside.
+        private const int ArtifactWindowRadius = 96;
+        private const int MaxReferenceArtifacts = 4096;
+
+        private static void CaptureReferenceArtifacts(Map map,
+            List<IntVec3> battleCenters,
+            CACombatTopologyBattlefieldReference reference)
         {
-            var result = new List<CACombatTopologyReferenceArtifactState>();
-            if (map == null || map.listerThings == null) return result;
+            if (map == null || map.listerThings == null
+                || reference == null) return;
+            bool windowed = battleCenters != null && battleCenters.Count > 0;
+            int windowSquared = ArtifactWindowRadius * ArtifactWindowRadius;
+            var kept = new List<CACombatTopologyReferenceArtifactState>();
+            var keptDistances = new List<int>();
+            int total = 0;
+            int beyond = 0;
             List<Thing> things = map.listerThings.AllThings;
             for (int i = 0; i < things.Count; i++)
             {
                 Thing thing = things[i];
                 if (thing == null || !thing.Spawned || thing.Map != map
                     || !IsBattlefieldReferenceArtifact(thing)) continue;
-                result.Add(CaptureReferenceArtifact(thing));
+                total++;
+                int nearest = 0;
+                if (windowed)
+                {
+                    nearest = int.MaxValue;
+                    for (int c = 0; c < battleCenters.Count; c++)
+                    {
+                        int distance = thing.Position.DistanceToSquared(
+                            battleCenters[c]);
+                        if (distance < nearest) nearest = distance;
+                    }
+                    if (nearest > windowSquared) { beyond++; continue; }
+                }
+                kept.Add(CaptureReferenceArtifact(thing));
+                keptDistances.Add(nearest);
             }
-            result.Sort(CompareReferenceArtifacts);
-            return result;
+            if (kept.Count > MaxReferenceArtifacts)
+            {
+                int[] order = new int[kept.Count];
+                for (int i = 0; i < order.Length; i++) order[i] = i;
+                int[] distances = keptDistances.ToArray();
+                Array.Sort(distances, order);
+                var nearestKept =
+                    new List<CACombatTopologyReferenceArtifactState>(
+                        MaxReferenceArtifacts);
+                for (int i = 0; i < MaxReferenceArtifacts; i++)
+                    nearestKept.Add(kept[order[i]]);
+                beyond += kept.Count - MaxReferenceArtifacts;
+                kept = nearestKept;
+            }
+            kept.Sort(CompareReferenceArtifacts);
+            reference.artifacts.AddRange(kept);
+            reference.artifactCensusTotal = total;
+            reference.artifactsBeyondWindow = beyond;
         }
 
         private static bool IsChunk(Thing thing)
@@ -2391,10 +2449,23 @@ namespace ColonistAwareness
 
     internal sealed partial class CACombatSpatialLogComponent
     {
-        private const int MaxTopologyIncidents = 5;
-        private const int MaxTopologyDeltasPerIncident = 8192;
-        private const int MaxTopologyIncidentBytes = 2 * 1024 * 1024;
-        private const int MaxTopologyHistoryBytes = 8 * 1024 * 1024;
+        // These byte budgets also bound the campaign preflight's ELEMENT
+        // economics: reference cells and delta cell lists estimate ~100
+        // bytes apiece but serialize as ~12 XML elements each, so the
+        // former 5-incident/2-MiB budget could stream past the preflight's
+        // 1,000,000-element component limit after a day of chronic combat
+        // and fail every save. Element-per-byte density varies about
+        // fivefold across delta shapes, so the budget carries real margin:
+        // a measured day-long chronic-combat save serialized ~820K
+        // elements under the previous 2x512-KiB budget, so two incidents
+        // at 256 KiB bound the worst case near ~410K elements with the
+        // same counted-eviction degradation, and the preflight's overflow
+        // diagnostic names the dominating element path if any future shape
+        // breaks the model.
+        private const int MaxTopologyIncidents = 2;
+        private const int MaxTopologyDeltasPerIncident = 1024;
+        private const int MaxTopologyIncidentBytes = 256 * 1024;
+        private const int MaxTopologyHistoryBytes = 512 * 1024;
         private const int MaxBattlefieldReferenceChanges = 4096;
         private const int MaxBattlefieldReferenceChangeBytes = 1024 * 1024;
 
