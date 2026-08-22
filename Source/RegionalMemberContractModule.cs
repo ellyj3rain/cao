@@ -262,6 +262,15 @@ namespace ColonistAwareness
                 var world = CARegionalWorldComponent.Current;
                 CARegionalPlan region = world?.FindRegionContaining(tile);
                 if (region == null) return true;
+                // Transient world content standing on regional ground --
+                // quest sites, camps -- owns its own encounter map. Only
+                // requests for the region's own ground funnel to the
+                // regional map.
+                bool ownMapParentAtTile = Find.WorldObjects?.ObjectsAt(tile)
+                    ?.Any(item => item is MapParent
+                        && !(item is WorldObject_CARegionalMemberReservation)
+                        && item.Tile.tileId != region.startTileId) == true;
+                if (ownMapParentAtTile) return true;
                 foreach (Map map in Find.Maps ?? new List<Map>())
                 {
                     if (world.FindRegionForMap(map) != region) continue;

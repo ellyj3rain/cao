@@ -1124,6 +1124,43 @@ namespace ColonistAwareness
                 OpenSettlementCultureEditor(place);
             y += Row + Gap;
 
+            // An owned settlement can hold its own political,
+            // technological and institutional state. Without this control
+            // the flag those editors are gated on had no producer, so the
+            // editors below were unreachable for any settlement with a
+            // faction.
+            if (place.HasFactionOwner)
+            {
+                bool diverges = place.localSociety
+                    ?.explicitLocalDivergence == true;
+                CARegionalFactionPlan divergenceOwner = plan.FactionPlan(
+                    place.OwningFactionKey);
+                string ownerName = CARegionalPlanUtility.FactionName(
+                    divergenceOwner);
+                if (CAOpeningTheme.GhostButton(new Rect(0f, y, width, 28f),
+                        diverges
+                            ? "Follow " + ownerName + " again"
+                            : "Diverge from " + ownerName + "...",
+                        diverges
+                            ? "This settlement keeps its own political, "
+                            + "technological and institutional state. "
+                            + "Returning it to " + ownerName
+                            + " keeps those values saved but stops them "
+                            + "being authoritative."
+                            : "Give this settlement its own political, "
+                            + "technological and institutional state, "
+                            + "starting from " + ownerName
+                            + "'s and editable from there. It keeps its "
+                            + "owner."))
+                {
+                    if (diverges) CASiteState.ClearDivergentState(place);
+                    else CASiteState.EnsureDivergentState(plan, place,
+                        divergenceOwner);
+                    SiteSocietyChanged(place);
+                }
+                y += Row + Gap;
+            }
+
             if (!place.HasFactionOwner
                 || place.localSociety?.explicitLocalDivergence == true)
             {
@@ -1277,6 +1314,10 @@ namespace ColonistAwareness
         private void OpenSettlementCultureEditor(
             CARegionalSettlementPlan place)
         {
+            // The editor edits the settlement's own culture object. It
+            // must exist first, or every edit lands on a detached copy
+            // and the confirm below dereferences a null field.
+            CACultureHistory.EnsureSettlementCulture(plan, place);
             Ideo comparator = SettlementIdeoligionComparator(place,
                 out CACultureIdeoligionComparison comparison);
             Verse.Find.WindowStack.Add(new Dialog_CACultureEditor(
@@ -2487,6 +2528,7 @@ namespace ColonistAwareness
             }
 
             int populationGroupsFilled = 0;
+            int settlementCulturesFilled = 0;
             // Represented institutions can change factual settlement context.
             // Recompute the still-unconfirmed realization; the fixed candidate
             // seed keeps every unrelated fact stable.
@@ -2500,6 +2542,14 @@ namespace ColonistAwareness
                 CASettlementComposition.EnsureDerived(plan, place);
                 if (!hadPopulationGroups && place.populationGroups.Count > 0)
                     populationGroupsFilled++;
+                // After composition, because the culture a settlement
+                // carries is derived from who actually lives there -
+                // the dominant population group's people, who are not
+                // always the faction that owns the place.
+                bool hadCulture = place.localCulture != null;
+                CACultureHistory.EnsureSettlementCulture(plan, place);
+                if (!hadCulture && place.localCulture != null)
+                    settlementCulturesFilled++;
             }
             // Open origins draw from nearby existing settlements. Generation
             // never creates additional world population.
@@ -2539,6 +2589,9 @@ namespace ColonistAwareness
             if (cultureQuestionsFilled > 0)
                 filled.Add(Counted(cultureQuestionsFilled,
                     "Culture question"));
+            if (settlementCulturesFilled > 0)
+                filled.Add(Counted(settlementCulturesFilled,
+                    "settlement Culture") + " from their residents");
             if (originsFilled > 0)
                 filled.Add(Counted(originsFilled, "population origin") + " "
                     + "from nearby world settlements");

@@ -171,6 +171,14 @@ namespace ColonistAwareness
                     layers.Insert(selected >= 0 ? selected + 1 : layers.Count,
                         typeof(WorldDrawLayer_CARegionalFootprint));
                 }
+                // The whole-partition layer sits under the footprint
+                // treatment: structure first, selection and registration
+                // drawn over it.
+                if (!layers.Contains(
+                        typeof(WorldDrawLayer_CARegionalPartition)))
+                    layers.Insert(layers.IndexOf(
+                            typeof(WorldDrawLayer_CARegionalFootprint)),
+                        typeof(WorldDrawLayer_CARegionalPartition));
                 footprintLayerInstalled = true;
                 Log.Message("[CA][Regional] persistent regional footprint "
                     + "world layer " + (declared
@@ -752,10 +760,14 @@ namespace ColonistAwareness
                     continue;
                 Color color = CARegionalWorldOverlay.FactionColor(
                     settlement.OwningFactionKey);
-                var glyph = new Rect(at.x - 4f, at.y - 4f, 8f, 8f);
-                Widgets.DrawBoxSolid(glyph.ExpandedBy(1f),
-                    new Color(0.05f, 0.06f, 0.07f, 0.9f));
-                Widgets.DrawBoxSolid(glyph, color);
+                // A settlement reads as a settlement: a roofed cluster
+                // in its holder's color, growing with the standing the
+                // urban tendency gave it.
+                int standing = settlement.realizedScale;
+                CAPlaceGlyphs.DrawSettlement(at,
+                    Mathf.Clamp(3.4f + standing * 0.3f, 3.4f, 5f),
+                    standing, color);
+                var glyph = new Rect(at.x - 6f, at.y - 6f, 12f, 12f);
                 string name = CARegionalPlanUtility.SettlementName(plan,
                     settlement);
                 if (!name.NullOrEmpty())
@@ -783,6 +795,31 @@ namespace ColonistAwareness
                     + CARegionalPlanUtility.TileWords(
                         settlement.memberTileId)
                     + "\nExact site is chosen from generated terrain.");
+            }
+
+            // The frontier tendency's own output, on the same preview:
+            // holdings as farmsteads across the region's empty land.
+            foreach (CAFrontierHoldingPlan holding in
+                plan.frontierHoldings ?? new List<CAFrontierHoldingPlan>())
+            {
+                if (holding == null || holding.memberTileId < 0) continue;
+                Vector2 anchor = kernel.VisualLandAnchor(
+                    holding.memberTileId);
+                var norm = new Vector2((anchor.x + 0.5f) / kernel.Size.x,
+                    (anchor.y + 0.5f) / kernel.Size.z);
+                Vector2 at = PreviewScreenAt(map, norm);
+                at.y += 10f;
+                if (at.x < map.x + 5f || at.x > map.xMax - 5f
+                    || at.y < map.y + 5f || at.y > map.yMax - 5f)
+                    continue;
+                CAPlaceGlyphs.DrawHolding(at, 3f, holding.materialLevel);
+                TooltipHandler.TipRegion(new Rect(at.x - 7f, at.y - 7f,
+                        14f, 14f),
+                    (holding.siteName ?? (holding.form == 1
+                        ? "Homestead" : "Cabin"))
+                    + "\n" + holding.residentCount + " resident"
+                    + (holding.residentCount == 1 ? "" : "s")
+                    + ", material level " + holding.materialLevel);
             }
         }
 
@@ -1964,6 +2001,75 @@ namespace ColonistAwareness
         // Groundwater settings fixed when the world is created.
         private CAGroundwaterTuning groundwater =
             new CAGroundwaterTuning();
+        // THE WORLD-WIDE REGIONAL PARTITION: every eligible surface tile's
+        // deterministic membership, minted once (world generation, or the
+        // one-time migration of an older save) and persisted thereafter.
+        // Registered plans REALIZE topology regions; they never replace the
+        // partition as the membership truth for untouched land.
+        private List<CARegionalTopologyRecord> topology =
+            new List<CARegionalTopologyRecord>();
+        // Derived lookup state, rebuilt from the persisted records.
+        private Dictionary<int, CARegionalTopologyRecord> topologyByTile;
+        private Dictionary<string, CARegionalTopologyRecord> topologyById;
+        private Dictionary<string, List<string>> topologyNeighborCache;
+        // Persistent world-settlement state: the world-facing record of who
+        // founded each standing settlement, the coarse population and urban
+        // class its ground supports, and when it was founded. Extended by
+        // the distant-world founding cadence while the campaign runs.
+        private List<CARegionalWorldSettlementState> worldSettlementStates =
+            new List<CARegionalWorldSettlementState>();
+        private Dictionary<int, CARegionalWorldSettlementState>
+            worldSettlementByTile;
+        private int initialWorldSettlementCount = -1;
+        private int lastDistantFoundingCheckTick;
+        // Persistent political state per multi-area region: the holder
+        // set as last observed, plus the dated events of every change.
+        private List<CARegionalPoliticalRecord> politicalRecords =
+            new List<CARegionalPoliticalRecord>();
+        private Dictionary<string, CARegionalPoliticalRecord>
+            politicalById;
+        private int lastPoliticalCheckTick;
+        // Bumped whenever topology or world-settlement state changes, so
+        // world layers can regenerate exactly then and never per-frame.
+        private int worldStateRevision;
+
+        internal int WorldStateRevision
+        {
+            get { return worldStateRevision; }
+        }
+
+        internal IReadOnlyList<CARegionalPoliticalRecord> PoliticalRecords
+        {
+            get { return politicalRecords; }
+        }
+
+        internal CARegionalPoliticalRecord PoliticalRecordFor(
+            string regionId)
+        {
+            if (regionId == null) return null;
+            if (politicalById == null)
+            {
+                politicalById = new Dictionary<string,
+                    CARegionalPoliticalRecord>();
+                foreach (CARegionalPoliticalRecord record in
+                    politicalRecords
+                    ?? new List<CARegionalPoliticalRecord>())
+                    if (record?.regionId != null)
+                        politicalById[record.regionId] = record;
+            }
+            politicalById.TryGetValue(regionId,
+                out CARegionalPoliticalRecord found);
+            return found;
+        }
+
+        internal void AddPoliticalRecord(
+            CARegionalPoliticalRecord record)
+        {
+            if (record?.regionId == null) return;
+            politicalRecords.Add(record);
+            if (politicalById != null)
+                politicalById[record.regionId] = record;
+        }
 
         public CAGroundwaterTuning Groundwater
         {
@@ -2039,6 +2145,18 @@ namespace ColonistAwareness
                 // reload. Ordinary campaigns scribe null here.
                 Scribe_Deep.Look(ref transientDeveloperExerciseRegion,
                     "CA_transientDeveloperExerciseRegion");
+                Scribe_Collections.Look(ref topology,
+                    "CA_regionalTopology", LookMode.Deep);
+                Scribe_Collections.Look(ref worldSettlementStates,
+                    "CA_worldSettlementStates", LookMode.Deep);
+                Scribe_Values.Look(ref initialWorldSettlementCount,
+                    "CA_initialWorldSettlementCount", -1);
+                Scribe_Values.Look(ref lastDistantFoundingCheckTick,
+                    "CA_lastDistantFoundingCheckTick", 0);
+                Scribe_Collections.Look(ref politicalRecords,
+                    "CA_regionalPoliticalRecords", LookMode.Deep);
+                Scribe_Values.Look(ref lastPoliticalCheckTick,
+                    "CA_lastPoliticalCheckTick", 0);
             }
             if (Scribe.mode == LoadSaveMode.PostLoadInit && readable)
             {
@@ -2047,6 +2165,17 @@ namespace ColonistAwareness
                     legacyAuthoringDataEpoch, ValidateCampaignState,
                     MigrateSupportedState);
                 RebuildAcceptedReadModels();
+                if (topology == null)
+                    topology = new List<CARegionalTopologyRecord>();
+                RebuildTopologyIndex();
+                if (worldSettlementStates == null)
+                    worldSettlementStates =
+                        new List<CARegionalWorldSettlementState>();
+                RebuildWorldSettlementIndex();
+                if (politicalRecords == null)
+                    politicalRecords =
+                        new List<CARegionalPoliticalRecord>();
+                politicalById = null;
             }
             base.ExposeData();
         }
@@ -2673,15 +2802,423 @@ namespace ColonistAwareness
         {
             base.FinalizeInit(fromLoad);
             if (!fromLoad)
+            {
                 worldPolicy = CAWorldTendenciesSession.Policy.Copy();
+                // The world's one frequency roll happens at generation; the
+                // snapshot above must carry it rather than re-deriving it
+                // lazily at first materialization. The derivation is
+                // seed-fixed, so this re-assertion after the snapshot equals
+                // the value the topology partition consumed.
+                worldPolicy.ResolveStitchedRegionFrequency();
+            }
             // A new world is a new set of engine-root receipts. Without this
             // the once-per-subject guard would silence the second world played
             // in a session.
             CARegionalEngineRoot.ForgetAnnouncements();
-            if (!fromLoad || regions == null) return;
+            if (!fromLoad)
+                return;
+            // Saves created before the world-wide partition existed receive
+            // it exactly once here, with registered regional footprints
+            // pre-owned so realized ground is never double-claimed.
+            EnsureTopology("post-load migration");
+            if (topology.Count > 0 && worldSettlementStates.Count == 0)
+                RebuildWorldSettlementStates("post-load migration");
+            if (regions == null) return;
             if (!ReconcileReservationRegistry(out string failure))
                 throw new InvalidOperationException(
                     "Regional reservation registry is invalid: " + failure);
+        }
+
+        // ---- Persistent world-settlement state ----
+
+        internal IReadOnlyList<CARegionalWorldSettlementState>
+            WorldSettlementStates
+        {
+            get { return worldSettlementStates; }
+        }
+
+        internal CARegionalWorldSettlementState WorldSettlementStateAt(
+            int tileId)
+        {
+            if (worldSettlementByTile == null)
+                RebuildWorldSettlementIndex();
+            return worldSettlementByTile.TryGetValue(tileId,
+                out CARegionalWorldSettlementState state) ? state : null;
+        }
+
+        internal void RebuildWorldSettlementIndex()
+        {
+            worldSettlementByTile =
+                new Dictionary<int, CARegionalWorldSettlementState>();
+            foreach (CARegionalWorldSettlementState state in
+                worldSettlementStates
+                ?? new List<CARegionalWorldSettlementState>())
+                if (state != null && state.tileId >= 0)
+                    worldSettlementByTile[state.tileId] = state;
+        }
+
+        // Rebuild state rows against the settlements actually standing:
+        // surviving tiles keep their founding record, new settlements gain
+        // one, and rows for absorbed or destroyed settlements retire with
+        // their world objects (a materialized settlement's truth lives in
+        // its regional record instead).
+        internal void RebuildWorldSettlementStates(string reason)
+        {
+            if (worldSettlementByTile == null)
+                RebuildWorldSettlementIndex();
+            int seed = world?.info?.Seed ?? 0;
+            var rebuilt = new List<CARegionalWorldSettlementState>();
+            List<Settlement> settlements =
+                Verse.Find.WorldObjects?.Settlements;
+            foreach (Settlement settlement in settlements
+                ?? new List<Settlement>())
+            {
+                if (settlement == null
+                    || settlement.Faction?.IsPlayer == true
+                    || settlement.Tile.Layer
+                        != Verse.Find.WorldGrid.Surface) continue;
+                CARegionalWorldSettlementState prior =
+                    WorldSettlementStateAt(settlement.Tile.tileId);
+                CARegionalWorldSettlementState state =
+                    CARegionalWorldSettlements.BuildState(seed, settlement,
+                        prior?.foundedAbsTick ?? 0);
+                rebuilt.Add(state);
+            }
+            // This runs on a play-time cadence as well as at generation,
+            // so it must not report change that did not happen: the
+            // world-state revision drives world-layer mesh rebuilds, and
+            // bumping it unconditionally would regenerate every region
+            // border on the globe once a day for nothing.
+            bool changed = worldSettlementStates == null
+                || worldSettlementStates.Count != rebuilt.Count;
+            if (!changed)
+                for (int i = 0; i < rebuilt.Count && !changed; i++)
+                {
+                    CARegionalWorldSettlementState now = rebuilt[i];
+                    CARegionalWorldSettlementState before =
+                        WorldSettlementStateAt(now.tileId);
+                    changed = before == null
+                        || before.factionLoadId != now.factionLoadId
+                        || before.urbanClass != now.urbanClass
+                        || before.population != now.population;
+                }
+            worldSettlementStates = rebuilt;
+            RebuildWorldSettlementIndex();
+            if (initialWorldSettlementCount < 0)
+                initialWorldSettlementCount = rebuilt.Count;
+            if (!changed) return;
+            worldStateRevision++;
+            Log.Message("[CA][WorldSettlements] " + rebuilt.Count
+                + " world settlement states ("
+                + rebuilt.Count(state => state.urbanClass >= 4)
+                + " town-or-larger) rebuilt at " + reason);
+            CARegionalPoliticalLedger.Rebuild(this, reason);
+        }
+
+        // THE DISTANT WORLD KEEPS MOVING. Off-map activity's world-facing
+        // consumer: at a cadence owned here, distant factions found new
+        // settlements through the same placement scoring the world was
+        // generated with. The change is persistent, visible on the globe,
+        // and carries its founding date.
+        private const int DistantFoundingPeriodTicks = 900000; // 15 days
+
+        // Vanilla play changes holders without touching CA state - a
+        // settlement captured, destroyed, or defected. A daily ledger
+        // pass catches those; every CA-side mutation rebuilds directly.
+        private const int PoliticalCheckPeriodTicks = 60000;
+
+        public override void WorldComponentTick()
+        {
+            base.WorldComponentTick();
+            if (topology == null || topology.Count == 0) return;
+            int now = Verse.Find.TickManager?.TicksGame ?? 0;
+            if (now - lastPoliticalCheckTick >= PoliticalCheckPeriodTicks)
+            {
+                lastPoliticalCheckTick = now;
+                // Settlements are captured, destroyed, and founded by
+                // ordinary play, none of which told this component
+                // anything. Without a play-time pass the world's
+                // settlement records kept the owner and standing they
+                // were generated with, and the inspect line went stale
+                // the first time a settlement changed hands. The
+                // rebuild is silent when nothing actually differs.
+                RebuildWorldSettlementStates("daily check");
+                // Relations can turn a shared region contested without
+                // any settlement changing, so the ledger runs on its
+                // own regardless of whether the states moved.
+                CARegionalPoliticalLedger.Rebuild(this, "daily check");
+            }
+            if (now - lastDistantFoundingCheckTick
+                < DistantFoundingPeriodTicks) return;
+            lastDistantFoundingCheckTick = now;
+            float rate = WorldPolicy.offMapActivityRate;
+            if (rate <= 0f) return;
+            int period = now / DistantFoundingPeriodTicks;
+            if (CAWorldTendencyCausalKernel.Unit(world?.info?.Seed ?? 0,
+                    period, 442771) >= rate) return;
+            PlanetLayer surface = Verse.Find.WorldGrid?.Surface;
+            if (surface == null) return;
+            List<Settlement> standing = Verse.Find.WorldObjects?.Settlements
+                ?.Where(item => item != null
+                    && item.Tile.Layer == surface
+                    && item.Faction?.IsPlayer != true).ToList();
+            if (standing == null) return;
+            if (initialWorldSettlementCount > 0 && standing.Count
+                >= (int)Math.Ceiling(initialWorldSettlementCount * 1.5f))
+                return;
+            List<Faction> eligible = Verse.Find.World.factionManager
+                .AllFactionsListForReading.Where(faction =>
+                    !faction.def.isPlayer && !faction.Hidden
+                    && !faction.temporary && !faction.defeated
+                    && faction.def.settlementGenerationWeight > 0f).ToList();
+            if (eligible.Count == 0) return;
+            var represented = new HashSet<Faction>(standing
+                .Select(item => item.Faction).Where(item => item != null));
+            int targetDistinct = CAWorldTendencyCausalKernel
+                .SourceVarietyTargetDistinct(standing.Count + 1,
+                    eligible.Count, WorldPolicy.reallocationSourceVariety);
+            Faction founder = CARegionalWorldSettlements.ChooseFaction(
+                eligible, represented, targetDistinct);
+            PlanetTile tile = CARegionalWorldSettlements.PlaceSettlementTile(
+                surface, founder, WorldPolicy.settlementConcentration,
+                standing.Select(item => item.Tile).ToList());
+            if (!tile.Valid) return;
+            // Never found inside a registered region's reserved footprint:
+            // realized ground is governed by its regional plan.
+            if (FindRegionContaining(tile) != null) return;
+            WorldObject worldObject = WorldObjectMaker.MakeWorldObject(
+                surface.Def.SettlementWorldObjectDef);
+            worldObject.SetFaction(founder);
+            worldObject.Tile = tile;
+            if (worldObject is INameableWorldObject nameable)
+                nameable.Name = SettlementNameGenerator
+                    .GenerateSettlementName(worldObject);
+            Verse.Find.WorldObjects.Add(worldObject);
+            if (worldObject is Settlement founded)
+            {
+                CARegionalWorldSettlementState state =
+                    CARegionalWorldSettlements.BuildState(
+                        world?.info?.Seed ?? 0, founded, now);
+                worldSettlementStates.Add(state);
+                RebuildWorldSettlementIndex();
+                worldStateRevision++;
+                CARegionalPoliticalLedger.Rebuild(this,
+                    "distant founding");
+                Log.Message("[CA][WorldSettlements] distant founding: "
+                    + founded.LabelCap + " (" + founder.Name + ") at tile "
+                    + tile.tileId + ", " + state.UrbanWord
+                    + "; off-map activity rate " + rate.ToString("F2"));
+            }
+        }
+
+        // ---- World-wide regional topology ----
+
+        internal IReadOnlyList<CARegionalTopologyRecord> Topology
+        {
+            get { return topology; }
+        }
+
+        internal void EnsureTopology(string reason)
+        {
+            if (topology != null && topology.Count > 0) return;
+            if (world?.grid?.Surface == null)
+            {
+                Log.Warning("[CA][Topology] cannot build the partition ("
+                    + reason + "): no surface grid");
+                return;
+            }
+            var preAssigned = new HashSet<int>();
+            foreach (CARegionalPlan region in Regions)
+                if (region?.ReservedTileIds != null)
+                    foreach (int id in region.ReservedTileIds)
+                        preAssigned.Add(id);
+            // The partition is the substrate everything regional stands
+            // on, and this runs inside world generation. Every consumer
+            // already gates on a non-empty topology and falls through to
+            // vanilla behavior without one, so a failure here degrades
+            // the world to non-regional rather than refusing to create
+            // a world at all.
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            string receipt;
+            try
+            {
+                topology = CARegionalTopologyBuilder.Build(world,
+                    WorldPolicy, preAssigned, out receipt);
+            }
+            catch (Exception ex)
+            {
+                topology = new List<CARegionalTopologyRecord>();
+                RebuildTopologyIndex();
+                Log.Error("[CA][Topology] the partition could not be "
+                    + "built (" + reason + "): " + ex
+                    + "\nThis world continues WITHOUT regional topology: "
+                    + "settlement placement, region selection, and the "
+                    + "regional viewport all fall through to vanilla "
+                    + "behavior. Regional tendencies will have no effect "
+                    + "in this world.");
+                return;
+            }
+            RebuildTopologyIndex();
+            clock.Stop();
+            Log.Message(receipt + "; built at " + reason + " in "
+                + clock.ElapsedMilliseconds + " ms");
+        }
+
+        internal void RebuildTopologyIndex()
+        {
+            worldStateRevision++;
+            topologyByTile =
+                new Dictionary<int, CARegionalTopologyRecord>();
+            topologyById =
+                new Dictionary<string, CARegionalTopologyRecord>();
+            topologyNeighborCache = null;
+            foreach (CARegionalTopologyRecord record in topology
+                ?? new List<CARegionalTopologyRecord>())
+            {
+                if (record?.memberTileIds == null
+                    || string.IsNullOrEmpty(record.regionId)) continue;
+                topologyById[record.regionId] = record;
+                foreach (int id in record.memberTileIds)
+                    topologyByTile[id] = record;
+            }
+        }
+
+        internal CARegionalTopologyRecord TopologyRecordAt(PlanetTile tile)
+        {
+            if (!tile.Valid) return null;
+            return TopologyRecordAt(tile.tileId);
+        }
+
+        internal CARegionalTopologyRecord TopologyRecordAt(int tileId)
+        {
+            if (topologyByTile == null) RebuildTopologyIndex();
+            return topologyByTile.TryGetValue(tileId,
+                out CARegionalTopologyRecord record) ? record : null;
+        }
+
+        internal CARegionalTopologyRecord TopologyRecordById(string regionId)
+        {
+            if (string.IsNullOrEmpty(regionId)) return null;
+            if (topologyById == null) RebuildTopologyIndex();
+            return topologyById.TryGetValue(regionId,
+                out CARegionalTopologyRecord record) ? record : null;
+        }
+
+        // Region adjacency, derived from persisted membership: two regions
+        // neighbor when any of their member tiles touch. Derived state is
+        // rebuilt rather than scribed; membership is the durable truth.
+        internal IReadOnlyList<string> TopologyNeighborsOf(
+            CARegionalTopologyRecord record)
+        {
+            if (record?.memberTileIds == null
+                || string.IsNullOrEmpty(record.regionId))
+                return Array.Empty<string>();
+            if (topologyNeighborCache == null)
+                topologyNeighborCache =
+                    new Dictionary<string, List<string>>();
+            if (topologyNeighborCache.TryGetValue(record.regionId,
+                    out List<string> cached))
+                return cached;
+            var neighbors = new List<string>();
+            var seen = new HashSet<string> { record.regionId };
+            var scratch = new List<PlanetTile>(8);
+            PlanetLayer surface = world?.grid?.Surface;
+            if (surface != null)
+                foreach (int memberId in record.memberTileIds)
+                {
+                    scratch.Clear();
+                    surface.GetTileNeighbors(
+                        new PlanetTile(memberId, surface), scratch);
+                    foreach (PlanetTile touch in scratch)
+                    {
+                        CARegionalTopologyRecord other =
+                            TopologyRecordAt(touch);
+                        if (other == null || !seen.Add(other.regionId))
+                            continue;
+                        neighbors.Add(other.regionId);
+                    }
+                }
+            neighbors.Sort(StringComparer.Ordinal);
+            topologyNeighborCache[record.regionId] = neighbors;
+            return neighbors;
+        }
+
+        // An authored footprint is canonical geometry: carving it out of
+        // the partition is the ONE mutation topology supports. Affected
+        // records lose the carved tiles; remainders re-form as connected
+        // regions (the largest keeps the identity, splinters mint stable
+        // new identities from their lowest member).
+        internal void CarveTopologyForRegion(CARegionalPlan plan)
+        {
+            if (plan?.ReservedTileIds == null || topology == null
+                || topology.Count == 0) return;
+            // A plan realizing an existing topology region inherits its
+            // identity, and the partition already states this membership -
+            // but only when the membership genuinely matches. The guard
+            // used to key on the id alone, so a plan that adopted an id
+            // while covering different ground would have left the record
+            // asserting tiles the plan had taken. Everything downstream
+            // that treats one regionId as one region depends on this.
+            if (!string.IsNullOrEmpty(plan.regionalId))
+            {
+                CARegionalTopologyRecord sameId =
+                    TopologyRecordById(plan.regionalId);
+                if (sameId?.memberTileIds != null
+                    && new HashSet<int>(sameId.memberTileIds)
+                        .SetEquals(plan.ReservedTileIds))
+                    return;
+            }
+            var carved = new HashSet<int>(plan.ReservedTileIds);
+            var affected = new List<CARegionalTopologyRecord>();
+            foreach (int id in carved)
+            {
+                CARegionalTopologyRecord record = TopologyRecordAt(id);
+                if (record != null && !affected.Contains(record))
+                    affected.Add(record);
+            }
+            if (affected.Count == 0) return;
+            PlanetLayer surface = world?.grid?.Surface;
+            var scratch = new List<PlanetTile>(8);
+            IReadOnlyList<int> NeighborsOf(int id)
+            {
+                if (surface == null) return Array.Empty<int>();
+                scratch.Clear();
+                surface.GetTileNeighbors(new PlanetTile(id, surface),
+                    scratch);
+                return scratch.Select(tile => tile.tileId).ToList();
+            }
+            int worldSeed = world?.info?.Seed ?? 0;
+            foreach (CARegionalTopologyRecord record in affected)
+            {
+                List<int> remaining = record.memberTileIds
+                    .Where(id => !carved.Contains(id)).ToList();
+                if (remaining.Count == 0)
+                {
+                    topology.Remove(record);
+                    continue;
+                }
+                List<List<int>> components = CARegionalTopologyKernel
+                    .SplitComponents(remaining, NeighborsOf);
+                record.memberTileIds = components[0];
+                if (!record.memberTileIds.Contains(record.rootTileId))
+                    record.rootTileId = record.memberTileIds[0];
+                for (int i = 1; i < components.Count; i++)
+                {
+                    List<int> splinter = components[i];
+                    topology.Add(new CARegionalTopologyRecord
+                    {
+                        regionId = CARegionalTopologyBuilder.MintRegionId(
+                            worldSeed, splinter[0]),
+                        rootTileId = splinter[0],
+                        memberTileIds = splinter
+                    });
+                }
+            }
+            RebuildTopologyIndex();
+            Log.Message("[CA][Topology] carved the authored footprint "
+                + (plan.regionalId ?? "unknown") + " ("
+                + carved.Count + " tiles) out of " + affected.Count
+                + " partition region" + (affected.Count == 1 ? "" : "s"));
         }
 
         internal CARegionalPlan FindRegion(PlanetTile mapTile, int mapSize)
@@ -2802,8 +3339,14 @@ namespace ColonistAwareness
                         + "reservations";
                     return false;
                 }
+                // A settlement on a member is fragmentation and must be
+                // absorbed before reservation. Transient world content --
+                // quest sites, camps, caravans -- coexists on regional
+                // ground: it keeps its own identity and its own encounter
+                // maps, and reservation does not evict it.
                 WorldObject conflict = objects.FirstOrDefault(item =>
-                    matching.Count == 0 || item != matching[0]);
+                    (matching.Count == 0 || item != matching[0])
+                    && item is Settlement);
                 if (conflict != null)
                 {
                     failure = "member tile " + id + " is occupied by "
@@ -2980,6 +3523,10 @@ namespace ColonistAwareness
                         throw new InvalidOperationException(
                             "Replacement regional footprint is invalid: "
                             + failure);
+                    CarveTopologyForRegion(region);
+                    if (worldSettlementStates.Count > 0)
+                        RebuildWorldSettlementStates(
+                            "regional materialization");
                     return region;
                 }
                 ValidateDurableRegion(existing);
@@ -2990,6 +3537,9 @@ namespace ColonistAwareness
                 worldPolicy = region.worldPolicy.Copy();
             if (region.operatorAuthored && region.groundwater != null)
                 groundwater = region.groundwater.Copy();
+            CarveTopologyForRegion(region);
+            if (worldSettlementStates.Count > 0)
+                RebuildWorldSettlementStates("regional materialization");
             return region;
         }
 
@@ -3061,12 +3611,44 @@ namespace ColonistAwareness
                         + existingFailure);
                 return existing;
             }
-            int availableTiles = Math.Max(1, CARegionalBundleBuilder.Build(
-                mapTile, 12).Count);
-            int regionTileCount = WorldPolicy.ResolveRequestedExtent(mapTile,
-                availableTiles);
-            CARegionalPlan derived = CARegionalPlanUtility.Create(profile,
-                mapTile, false, regionTileCount);
+            // A member tile of an already-registered region can never
+            // produce a competing plan or a second map. Map opening is
+            // redirected to the canonical anchor before generation begins;
+            // reaching this point with a member tile means that contract
+            // was bypassed, and the only safe answer is to refuse loudly.
+            CARegionalPlan containing = FindRegionContaining(mapTile);
+            if (containing != null)
+                throw new InvalidOperationException("Tile " + mapTile.tileId
+                    + " is a member of registered region "
+                    + containing.regionalId + " (anchor "
+                    + containing.startTileId + "); a constituent tile "
+                    + "cannot materialize a competing regional map.");
+            // The world's persistent partition states this region's
+            // identity and membership; materialization realizes exactly
+            // that region, whichever member the engine entered through.
+            CARegionalTopologyRecord topologyRecord =
+                TopologyRecordAt(mapTile);
+            CARegionalPlan derived;
+            if (topologyRecord != null)
+            {
+                derived = CARegionalPlanUtility.CreateFromTopology(profile,
+                    topologyRecord, mapTile);
+            }
+            else
+            {
+                // Land outside the partition (an ineligible pocket, or a
+                // world older than the topology whose migration could not
+                // run) falls back to the legacy visit-derived bundle.
+                Log.Warning("[CA][Topology] tile " + mapTile.tileId
+                    + " has no partition membership; deriving a legacy "
+                    + "visit-scoped region");
+                int availableTiles = Math.Max(1,
+                    CARegionalBundleBuilder.Build(mapTile, 12).Count);
+                int regionTileCount = WorldPolicy.ResolveRequestedExtent(
+                    mapTile, availableTiles);
+                derived = CARegionalPlanUtility.Create(profile, mapTile,
+                    false, regionTileCount);
+            }
             // The world component is the canonical owner of global tendencies;
             // every realized region carries a snapshot so later composition
             // stages cannot silently construct fresh defaults.
@@ -3076,14 +3658,18 @@ namespace ColonistAwareness
             // validates again at the canonical write boundary, but that later
             // check cannot undo reservations already added to the world.
             ValidateDurableRegion(derived);
+            // Auto-generated major settlements use the same RimWorld pool
+            // transfer as authored reallocation. Frontier holdings are absent
+            // from this list and never consume major-settlement authorization.
+            // Consumption precedes reservation: settlements standing on the
+            // region's own members are absorbed as mandatory sources, and
+            // their world objects must be gone before the members can be
+            // reserved.
+            CARegionalPlanUtility.ConsumeReallocatedSources(derived);
             string failure;
             if (!TryReserveRegion(derived, out failure))
                 throw new InvalidOperationException("Regional footprint "
                     + derived.regionalId + " cannot be reserved: " + failure);
-            // Auto-generated major settlements use the same RimWorld pool
-            // transfer as authored reallocation. Frontier holdings are absent
-            // from this list and never consume major-settlement authorization.
-            CARegionalPlanUtility.ConsumeReallocatedSources(derived);
             return RegisterRegion(derived);
         }
 
@@ -3193,6 +3779,30 @@ namespace ColonistAwareness
                     .OrderBy(label => label, StringComparer.Ordinal).ToList();
             if (beneficiaries.Count == 0)
                 beneficiaries.Add("settlement residents");
+            // The guarantee point. A plan can arrive here from setup,
+            // reallocation, a preview or a probe, and only one of those
+            // paths ran the authoring pass - so the culture a
+            // settlement's residents brought is settled here, once,
+            // before it is copied into the record that outlives the plan.
+            // Guarded because this sits between the settlement being
+            // decided and the record that carries it into the game. A
+            // settlement whose culture could not be settled should
+            // still BE a settlement - the material and style
+            // authorities read an unanswering culture as no cultural
+            // position, which is a legible outcome, whereas a throw
+            // here takes the whole settlement out of the world.
+            try
+            {
+                CACultureHistory.EnsureSettlementCulture(localRegion,
+                    settlement);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning("[CA][Settlement][Culture] could not settle "
+                    + "the culture for slot " + slot + " of "
+                    + (regionKey ?? "region") + ": " + ex.Message
+                    + "; it builds to no cultural position");
+            }
             var record = new CARegionalSettlementRecord
             {
                 regionalId = CASettlementAuthorityWriter
@@ -3219,8 +3829,11 @@ namespace ColonistAwareness
                 civicInfrastructure = resolvedCivic,
                 settlementProgram = settlement?.settlementProgram?.Copy()
                     ?? new CASettlementProgram(),
-                // The record validator requires a culture object; an
-                // identity-only culture is the designed empty state.
+                // Settled just above, so this carries the settlement's
+                // real culture. The identity-only object remains for a
+                // record with no settlement plan behind it at all - the
+                // validator requires an object, and an unanswering one
+                // is the designed empty state.
                 culture = settlement?.localCulture?.Copy()
                     ?? new CACulture(),
                 persistent = settlement?.persistent ?? true,
@@ -3627,7 +4240,13 @@ namespace ColonistAwareness
             CARegionalSettlementRecord record, Map map)
         {
             if (record == null) return;
-            if (record.culture == null && map != null)
+            // The repair below was gated on a null culture, and the
+            // record projection assigns an identity-only culture rather
+            // than null - so it could never run, and a settlement that
+            // reached materialization without one stayed without one.
+            // It repairs an unanswering culture, which is what the
+            // empty state actually is.
+            if (!CASiteState.Answers(record.culture) && map != null)
             {
                 CARegionalWorldComponent world =
                     CARegionalWorldComponent.Current;
@@ -4145,8 +4764,20 @@ namespace ColonistAwareness
                     && item.memberTileId == settlement.memberTileId
                     && item.PhysicalClusterKey
                         == settlement.PhysicalClusterKey);
+                // The standing half of that rule was never implemented:
+                // quarters came from programs and the floor came from
+                // co-siting, so an urban centre and a hamlet sharing a
+                // tile built the same internal complexity and the urban
+                // tendency had no physical expression at all. A regional
+                // centre earns a second quarter, an urban centre a third,
+                // a large urban region a fourth. The cluster count
+                // remains the floor.
+                int standingQuarters = CAWorldTendencyCausalKernel
+                    .SettlementQuarters(record.residentPopulation,
+                        record.urbanSupport);
                 Materialize(record, rect, map,
-                    Math.Max(1, clustered)); // [morphology lane]
+                    Math.Max(Math.Max(1, clustered),
+                        standingQuarters)); // [morphology lane]
                 clusterRects.Add(rect);
                 materialized++;
                 materializedSlots.Add(slot);

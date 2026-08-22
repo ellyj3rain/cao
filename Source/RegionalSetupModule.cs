@@ -257,6 +257,13 @@ namespace ColonistAwareness
             // already authorized by world population. Starting-region rows
             // with ScenarioOverride are the separate explicit exception.
             var footprint = new HashSet<int>(plan.ReservedTileIds);
+            // SETTLEMENTS STANDING ON THE REGION'S OWN GROUND ARE THE
+            // REGION'S SETTLEMENTS. The persistent partition assigns
+            // membership before world settlements scatter, so a region's
+            // members may already carry them; they are mandatory sources,
+            // realized at their actual tiles, before any nearby-pool
+            // reallocation is considered.
+            var residents = new List<Settlement>();
             var pool = new List<Settlement>();
             foreach (Settlement settlement in Verse.Find.WorldObjects
                 ?.Settlements ?? new List<Settlement>())
@@ -264,9 +271,25 @@ namespace ColonistAwareness
                 if (settlement == null || settlement.Faction == null
                     || settlement.Faction == parentFaction
                     || settlement.Faction.IsPlayer
-                    || footprint.Contains(settlement.Tile.tileId)
                     || !CARegionalPlanUtility.IsEligibleExistingFaction(
                         settlement.Faction)) continue;
+                if (footprint.Contains(settlement.Tile.tileId))
+                {
+                    // ARRIVAL MUST NOT CHANGE COMPOSITION. This skipped a
+                    // settlement standing on the arrival tile, and the
+                    // arrival tile defaults to whichever member the
+                    // region was entered through - so the same region
+                    // absorbed a different set of settlements depending
+                    // on where the player came in, and that difference
+                    // was frozen into the scribed plan at first
+                    // materialization. A region is one map spanning its
+                    // members, so a settlement on the arrival member is
+                    // simply a settlement inside the region like any
+                    // other, and it is absorbed as one rather than
+                    // silently dropped out of the world.
+                    residents.Add(settlement);
+                    continue;
+                }
                 float distance;
                 try
                 {
@@ -276,6 +299,8 @@ namespace ColonistAwareness
                 catch { continue; }
                 if (distance <= 14f) pool.Add(settlement);
             }
+            residents = residents.OrderBy(item => item.Tile.tileId)
+                .ToList();
             pool = pool.OrderBy(item =>
             {
                 try
@@ -296,46 +321,86 @@ namespace ColonistAwareness
                 reallocationSourceVariety);
             var usedByTile = new Dictionary<int, int>();
             var assignedTiles = new List<int>();
+            int slot = 0;
+
+            CARegionalFactionPlan GroupFor(Settlement source)
+            {
+                CARegionalFactionPlan group = plan.factions.FirstOrDefault(
+                    item => item.source
+                            == CARegionalFactionSource.ExistingWorldFaction
+                        && item.existingFactionLoadId
+                            == source.Faction.loadID);
+                if (group != null) return group;
+                int key = CARegionalPlanUtility.LowestFreeFactionKey(plan);
+                group = new CARegionalFactionPlan
+                {
+                    key = key,
+                    source = CARegionalFactionSource.ExistingWorldFaction,
+                    existingFactionLoadId = source.Faction.loadID,
+                    playerRelation = source.Faction.PlayerRelationKind,
+                    authorPlayerRelation = false,
+                    visibleInWorld = true
+                };
+                plan.factions.Add(group);
+                foreach (CARegionalFactionPlan other in plan.factions
+                    .Where(item => item != group))
+                {
+                    Faction left = source.Faction;
+                    Faction right = CARegionalPlanUtility.FactionByLoadId(
+                        other.existingFactionLoadId);
+                    if (left == null || right == null) continue;
+                    FactionRelationKind relation =
+                        left.RelationKindWith(right);
+                    // Automatic relations preserve an actual RimWorld
+                    // relation. Starting Region overrides remain separate.
+                    plan.SetRelation(group.key, other.key, relation,
+                        CARegionalRelationSource.NativeExisting);
+                }
+                return group;
+            }
+
+            // The world's own record for a standing settlement, so an
+            // absorbed place keeps the population it already had.
+            int WorldPopulationAt(int tileId)
+            {
+                CARegionalWorldSettlementState state =
+                    CARegionalWorldComponent.Current
+                        ?.WorldSettlementStateAt(tileId);
+                return state == null ? -1 : state.population;
+            }
+
+            // Residents first: their ground is inside the map about to
+            // exist, so they are absorbed where they stand, outside the
+            // reallocation count and concentration scoring.
+            foreach (Settlement resident in residents)
+            {
+                CARegionalFactionPlan group = GroupFor(resident);
+                int destination = resident.Tile.tileId;
+                usedByTile[destination] = usedByTile.TryGetValue(destination,
+                    out int prior) ? prior + 1 : 1;
+                assignedTiles.Add(destination);
+                plan.settlements.Add(new CARegionalSettlementPlan
+                {
+                    slot = slot,
+                    memberTileId = destination,
+                    OwningFactionKey = group.key,
+                    populationOrigin = CASettlementOrigin
+                        .ReallocatedFromWorldPool,
+                    reallocatedFromTileId = destination,
+                    siteClusterKey = destination,
+                    absorbedWorldPopulation = WorldPopulationAt(destination),
+                    persistent = true
+                });
+                slot++;
+            }
 
             for (int i = 0; i < sources.Count; i++)
             {
                 Settlement source = sources[i];
-                CARegionalFactionPlan group = null;
-                group = plan.factions.FirstOrDefault(item => item.source
-                            == CARegionalFactionSource.ExistingWorldFaction
-                        && item.existingFactionLoadId
-                            == source.Faction.loadID);
-                if (group == null)
-                {
-                    int key = CARegionalPlanUtility.LowestFreeFactionKey(plan);
-                    group = new CARegionalFactionPlan
-                    {
-                        key = key,
-                        source = CARegionalFactionSource.ExistingWorldFaction,
-                        existingFactionLoadId = source.Faction.loadID,
-                        playerRelation = source.Faction.PlayerRelationKind,
-                        authorPlayerRelation = false,
-                        visibleInWorld = true
-                    };
-                    plan.factions.Add(group);
-                    foreach (CARegionalFactionPlan other in plan.factions
-                        .Where(item => item != group))
-                    {
-                        Faction left = source.Faction;
-                        Faction right = CARegionalPlanUtility.FactionByLoadId(
-                            other.existingFactionLoadId);
-                        if (left == null || right == null) continue;
-                        FactionRelationKind relation =
-                            left.RelationKindWith(right);
-                        // Automatic relations preserve an actual RimWorld
-                        // relation. Starting Region overrides remain separate.
-                        plan.SetRelation(group.key, other.key, relation,
-                            CARegionalRelationSource.NativeExisting);
-                    }
-                }
+                CARegionalFactionPlan group = GroupFor(source);
 
                 int destination = SelectDestination(destinations, usedByTile,
-                    assignedTiles, plan.bundleRootTileId, seed, i,
+                    assignedTiles, plan.bundleRootTileId, seed, slot,
                     settlementConcentration);
                 if (destination < 0) break;
                 usedByTile[destination] = usedByTile.TryGetValue(destination,
@@ -343,15 +408,20 @@ namespace ColonistAwareness
                 assignedTiles.Add(destination);
                 plan.settlements.Add(new CARegionalSettlementPlan
                 {
-                    slot = i,
+                    slot = slot,
                     memberTileId = destination,
                     OwningFactionKey = group.key,
                     populationOrigin = CASettlementOrigin
                         .ReallocatedFromWorldPool,
                     reallocatedFromTileId = source.Tile.tileId,
                     siteClusterKey = destination,
+                    // Reallocated sources move, but the people move with
+                    // them: the population is the source settlement's.
+                    absorbedWorldPopulation =
+                        WorldPopulationAt(source.Tile.tileId),
                     persistent = true
                 });
+                slot++;
             }
 
             CARegionalPlanUtility.EnsureRelationRows(plan);
@@ -708,6 +778,15 @@ namespace ColonistAwareness
         public int authoredPopulation = -1;
         public int authoredLandCapacity = -1;
         public int authoredHistoricalDevelopment = -1;
+        // The population this place already had on the world map before
+        // the region materialized around it. A settlement the player
+        // inspected on the globe is the same settlement after they
+        // enter its region; without carrying its established population
+        // the regional derivation invents a new one and the place can
+        // change standing between the two views. Operator authoring
+        // still wins over it. -1 means this settlement was not absorbed
+        // from a standing world settlement.
+        public int absorbedWorldPopulation = -1;
         // Empty uses the owning faction's name maker. The generated name is
         // shown during setup and may be rerolled.
         public string customName;
@@ -792,6 +871,8 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref authoredForm, "authoredForm", -1);
             Scribe_Values.Look(ref authoredPopulation,
                 "authoredPopulation", -1);
+            Scribe_Values.Look(ref absorbedWorldPopulation,
+                "absorbedWorldPopulation", -1);
             Scribe_Values.Look(ref authoredLandCapacity,
                 "authoredLandCapacity", -1);
             Scribe_Values.Look(ref authoredHistoricalDevelopment,
@@ -2244,6 +2325,75 @@ namespace ColonistAwareness
             return plan;
         }
 
+        // LAND IS ALREADY REGIONAL. Selecting new ground during setup
+        // selects the persistent partition region that contains it; the
+        // authored candidate starts as exactly that region, and composing
+        // edits from the base. The stock bundle remains the fallback for
+        // ground the partition does not cover.
+        internal static CARegionalPlan CreateAuthoredAt(
+            CAExpandedLandmassProfile profile, PlanetTile clicked,
+            int fallbackCount, int fallbackRotation)
+        {
+            CARegionalTopologyRecord record = CARegionalWorldComponent
+                .Current?.TopologyRecordAt(clicked);
+            if (record == null)
+                return Create(profile, clicked, true, fallbackCount,
+                    fallbackRotation);
+            CARegionalPlan plan = CreateExplicit(profile,
+                SurfaceTile(record.rootTileId),
+                record.memberTileIds.ToList(), 0);
+            plan.regionalId = record.regionId;
+            plan.startTileId = record.memberTileIds.Contains(clicked.tileId)
+                ? clicked.tileId : record.rootTileId;
+            plan.creationSummary = "selected from the world's persistent "
+                + "regional partition";
+            return plan;
+        }
+
+        // A TOPOLOGY REGION MATERIALIZES AS ITSELF. The plan realizes the
+        // persistent partition record: its identity IS the record's, its
+        // members ARE the record's, and its realization seed derives from
+        // the record's root -- so the same region materializes identically
+        // whichever member tile the engine entered through. The entry tile
+        // is retained as arrival/anchor context only.
+        internal static CARegionalPlan CreateFromTopology(
+            CAExpandedLandmassProfile profile,
+            CARegionalTopologyRecord record, PlanetTile entryTile)
+        {
+            List<PlanetTile> members = record.memberTileIds
+                .Select(SurfaceTile).Where(tile => tile.Valid).ToList();
+            PlanetTile root = SurfaceTile(record.rootTileId);
+            IntVec3 backing = BackingMapSize(profile, root, members);
+            int seed = Gen.HashCombineInt(Gen.HashCombineInt(
+                Verse.Find.World.info.Seed, record.rootTileId,
+                profile.Size, members.Count), 0);
+            var plan = new CARegionalPlan
+            {
+                mapSize = profile.Size,
+                requestedRegionTileCount = members.Count,
+                regionTileCount = members.Count,
+                backingMapWidth = backing.x,
+                backingMapHeight = backing.z,
+                footprintRotation = 0,
+                bundleRootTileId = record.rootTileId,
+                startTileId = entryTile.Valid
+                    && record.memberTileIds.Contains(entryTile.tileId)
+                    ? entryTile.tileId : record.rootTileId,
+                candidateId = "topo" + unchecked((uint)Gen.HashCombineInt(
+                    seed, members.Count, backing.x, backing.z))
+                    .ToString("X8"),
+                memberTileIds = record.memberTileIds.ToList(),
+                operatorAuthored = false,
+                worldPolicy = null,
+                creationSummary = "materialized from the world's "
+                    + "persistent regional partition"
+            };
+            plan.regionalId = record.regionId;
+            plan.regionName = RegionName(plan);
+            plan.footprintTileIds = CARegionalGeometry.ClaimedTiles(plan);
+            return plan;
+        }
+
         // AN AUTHORED MEMBER SET IS CANONICAL GEOMETRY. Where Create derives
         // its members from the bundle builder's stock shapes, this builds a
         // plan around exactly the connected areas the operator composed --
@@ -2291,6 +2441,17 @@ namespace ColonistAwareness
             };
             plan.regionalId = "CA-RG-"
                 + unchecked((uint)seed).ToString("X8");
+            // A composition that matches a persistent partition region
+            // exactly IS that region: the same land keeps the same
+            // identity whether the player arrived at it by selection or by
+            // composing their way back to it.
+            CARegionalTopologyRecord match = CARegionalWorldComponent
+                .Current?.TopologyRecordAt(root);
+            if (match?.memberTileIds != null
+                && match.memberTileIds.Count == memberIds.Count
+                && new HashSet<int>(match.memberTileIds).SetEquals(
+                    memberIds))
+                plan.regionalId = match.regionId;
             plan.regionName = RegionName(plan);
             plan.footprintTileIds = CARegionalGeometry.ClaimedTiles(plan);
             return plan;
@@ -3230,11 +3391,13 @@ namespace ColonistAwareness
             if (Pending == null || Pending.mapSize != profile.Size
                 || Pending.bundleRootTileId != selected.tileId)
             {
-                // Carry the operator's chosen extent and orientation into the
-                // rebuild. Passing 0 for either keeps Create's own default,
-                // so a player who has never resized is unaffected.
-                Pending = CARegionalPlanUtility.Create(profile, selected, true,
-                    StickyRegionTileCount, StickyFootprintRotation);
+                // Land is already regional: new ground selects the
+                // persistent partition region containing it, and composing
+                // edits from that base. The sticky extent and orientation
+                // remain the fallback for land outside the partition.
+                Pending = CARegionalPlanUtility.CreateAuthoredAt(profile,
+                    selected, StickyRegionTileCount,
+                    StickyFootprintRotation);
                 pendingIdentity = WorldIdentity();
                 previewDerived = null;
                 boundPreviewPlan = null;
@@ -3337,6 +3500,30 @@ namespace ColonistAwareness
             {
                 previewDerived = existing;
                 return existing;
+            }
+            // THE PREVIEW IS THE REGION, NOT A BUNDLE AROUND A TILE. The
+            // world already has a partition, and materialization realizes
+            // that record through CreateFromTopology. This path ignored
+            // it and built a stock hex bundle around whatever tile was
+            // clicked under a freshly minted identity, so on every fresh
+            // world the previewed member set, identity and backing size
+            // contradicted what would actually be created - the exact
+            // "a tile becomes its own competing region" failure the
+            // partition exists to prevent. The record answers first;
+            // Create remains the fallback for ground the partition does
+            // not cover.
+            CARegionalTopologyRecord record = CARegionalWorldComponent
+                .Current?.TopologyRecordAt(mapTile);
+            if (record != null && record.memberTileIds != null
+                && record.memberTileIds.Count > 0)
+            {
+                if (previewDerived != null
+                    && previewDerived.mapSize == profile.Size
+                    && previewDerived.regionalId == record.regionId)
+                    return previewDerived;
+                previewDerived = CARegionalPlanUtility.CreateFromTopology(
+                    profile, record, mapTile);
+                return previewDerived;
             }
             if (previewDerived != null
                 && previewDerived.mapSize == profile.Size
@@ -3829,9 +4016,10 @@ namespace ColonistAwareness
             PlanetTile destination)
         {
             if (current == null || !destination.Valid) return;
-            CARegionalPlan replacement = CARegionalPlanUtility.Create(profile,
-                destination, true, current.RequestedRegionTileCount,
-                current.FootprintRotation);
+            CARegionalPlan replacement = CARegionalPlanUtility
+                .CreateAuthoredAt(profile, destination,
+                    current.RequestedRegionTileCount,
+                    current.FootprintRotation);
             if (replacement.memberTileIds == null
                 || replacement.memberTileIds.Count == 0) return;
 
@@ -4605,7 +4793,7 @@ namespace ColonistAwareness
             // Ideoligion remains unchanged. The player's carried state is
             // staged by the founding page and applied at the one-shot game
             // start boundary; regional resolution does not own or replay it.
-            Log.Message(CAFactionStateGenerator.RunWorldPass(plan.worldPolicy,
+            Log.Message(CAFactionStateGenerator.RunWorldPass(
                 "region " + (plan.regionalId ?? "unknown")));
         }
 
