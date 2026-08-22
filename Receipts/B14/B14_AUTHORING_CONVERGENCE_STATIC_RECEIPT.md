@@ -1,6 +1,6 @@
 # B14 Authoring Convergence Static Receipt
 
-Timestamp: 2026-08-18 13:47 UTC / 06:47 PST
+Timestamp: 2026-08-22 02:41 UTC / 19:41 PST
 
 This receipt verifies the current source and governed pending fixture. It does not claim operator visual or gameplay acceptance.
 
@@ -19,7 +19,7 @@ This receipt verifies the current source and governed pending fixture. It does n
 | 11 | Duplicate institution authoring is absent | **PASS** | one Political Order composer remains; represented institutions are comparison facts |
 | 12 | Saved Political Orders copy complete state | **PASS** | profiles copy all questions into the destination without shared mutable state |
 | 13 | Persistence and compatibility name the current model | **PASS** | schema 10 Political Order and schema 1 represented institutions have separate owners |
-| 14 | Active and mirror fixtures are byte-identical | **PASS** | 530039 bytes; SHA-256 004C5A0F2505594D36E89CBD0F02A4BBE46C1B044965E6A5F29AFD27AFC521AF |
+| 14 | Active and mirror fixtures are byte-identical | **PASS** | 679624 bytes; SHA-256 0381E19688C708DA9AA20E800155F56DD421F64D0E22AB0EBD7B856CA5C6832A |
 | 15 | Authored composition survives the schema conversion | **PASS** | 3 factions; 4 settlements |
 | 16 | Every saved Political Order is complete | **PASS** | 4 records each retain 26 normalized questions after readback |
 | 17 | Recovered mixed relationships survive serialization | **PASS** | normative mixtures and independent represented support institutions coexist |
@@ -29,6 +29,6 @@ This receipt verifies the current source and governed pending fixture. It does n
 | 21 | Culture and Political Order remain independent substitutions | **PASS** | component loaders write only their owning state; preset identity is not serialized into faction, settlement, or founding records |
 | 22 | Settlement placement reuses the society catalog and map assignment | **PASS** | one copy-on-apply society catalog creates ordinary scenario settlement state and arms the existing broad-area map assignment; no settlement-preset mode is persisted |
 | 23 | Settlement Culture follows faction-owned state unless locally changed | **PASS** | the faction owns applied Culture; each settlement's explicit local-history record references that parent and refreshes inherited baselines until a local field is authored |
-| 24 | Region authoring remains the current schema | **PASS** | regional plan schema 15 retains the existing geography and composition while carrying the current faction-owned authored state |
+| 24 | Region authoring remains the current schema | **PASS** | regional plan schema 16 retains the existing geography and composition while carrying typed site affiliation and complete local state where required |
 
 Result: **PASS** - 24/24 checks passed.

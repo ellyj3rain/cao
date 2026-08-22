@@ -195,3 +195,341 @@ The operator rejected both the foreign glyph card the runtime showed ("immediate
 Flow re-audit (Create World -> tendency state -> preset comparison -> causal authoring -> generation -> realized readback): every segment reachable and consistent. Readback within the opening flow works by construction -- the session adopts the plan's policy instance at plan construction, generation writes realized values into that instance, the world component scribes it, so reopening the page or either dialog after generation shows the rolled state in the realized tone. Post-embark readback has no player entry by design: that is the B19 integrated-runtime boundary, not an opening-flow gap. Deployed-DLL verification at the junction-resolved path with the game exited: hash 71866301, new-surface strings present, old-card strings absent.
 
 Standing: World Tendencies and World Presets remain failed acceptance evidence until the operator's runtime pass; this entry-surface recomposition does not discharge that.
+
+## The regional substrate: the world is actually regional (operator redirection, 2026-08-20, commits 6a18688..11eecb4, B19 development, NOT deployed)
+
+The operator froze the World Tendencies / infographic iteration (runtime screenshots preserved from cao_world_tendencies_runtime_screenshots.zip; UI and palette work retained for later reuse) and redirected to the foundational inversion: CAO presented controls for a regionalized, populated, politically structured world before that world existed as persistent observable state. The from-code audit (no prior ledger dispositions used as evidence) established: regions were created only at authored confirmation or on-demand at first map visit, identity was rooted at the clicked tile, no policy field had a world-generation consumer, the frequency roll was lazy, settlement concentration and source variety never touched the authored path, RunWorldPass's policy parameter was dead, and the in-game globe carried read-only decoration over tile-owned selection.
+
+### What was built, dependency-first per the directive's order
+
+| Priority | State | Substance |
+| --- | --- | --- |
+| 1. Persistent world-wide topology | IMPLEMENTED + RECEIPTED | CARegionalTopologyKernel (pure partition: deterministic hashed seed order, cohesion growth, land-share feedback controller meeting the authored joined share exactly, merge-to-band fixpoint) + CARegionalTopologyRecord scribed per region (CA_regionalTopology) + WorldGenStep at order 450 + one-time post-load migration with registered footprints pre-owned + authored-footprint carving with connected-component splinter identities. |
+| 2. Member lookup + neighbor graph | IMPLEMENTED | O(1) tile-to-region index and region-id index rebuilt from persisted membership; neighboring-region graph derived and cached, never scribed. |
+| 3. Region-based globe selection | IMPLEMENTED | Both globes: selecting any land selects its region (footprint layer draws the selected partition region as one object; inspect label/text name the region, membership, settlements, and derived political standing). Setup selection is region-first: clicking new ground adopts the partition region as the candidate; compositions matching a partition region re-adopt its identity; relocation targets the destination's region. |
+| 4. One region, one map | IMPLEMENTED | Materialization realizes the partition record (identity, members, realization seed rooted at the record; entry tile = arrival context only); a member of a registered region can never mint a competing plan (fails closed); the member map-open redirect defers to a tile's own MapParent so quest sites keep their encounter maps; settlements standing on a materializing region's members are absorbed where they stand as mandatory sources, consumption before reservation. |
+| 5. Viewport / control plane | IMPLEMENTED | The region main tab serves every region: loaded regional map reads actual state (existing); from the globe, registered regions show persisted composition, unrealized regions show the deterministic kernel projection (cached by region id; member click pans to the member's subarea), settlements with faction colors, frontier holdings with resident/material tooltips, arrival mark, political standing in the header. |
+| 6. Persistent settlements + political state | IMPLEMENTED | CARegionalWorldSettlementState per world settlement (founder, coarse population, urban class from real support facts vs the propensity threshold, founding date), scribed, rebuilt at materialization, migrated once for older saves, readable in the settlement inspect string. Political geography derived, never implied: unsettled / held-by-one / divided / contested from standing settlements and actual relations, on inspect and viewport. |
+| 7. Ownership/jurisdiction overlays | PARTIAL (named) | Derived summary shipped; parcel/jurisdiction/government overlays await the B19 economy/civil layer that owns those facts (per the ratified B19 boundary). No fake overlays were built. |
+| 8. Tendency consumers | See classification below | |
+| 9. Realized readback | IMPLEMENTED (pre-embark; in-game via viewport/inspect) | Rolled frequency asserted into the persisted policy at generation instead of first-visit lazily. |
+| 10. Terminology/infographic polish | FROZEN by operator | UI work preserved untouched. |
+
+### Honest per-tendency classification (A sim-no-representation / B representation-no-consumer / C on-demand-only / D end-to-end / E no-product)
+
+| Tendency | Before (code-verified) | Now |
+| --- | --- | --- |
+| Joined-region share (band + roll) | C - lazy roll, consumed per visited region only | D - partition consumes the roll at worldgen; receipts prove exact land-share targeting; regions visible/selectable on both globes |
+| Region reach (span band) | C - per-visit extent | D - partition sizes inside the band to the merge fixpoint; backing maps and viewport consume membership |
+| Settlement gathering | C - and only on the derived path; never authored, never world | D - world settlement scatter scored by concentration at worldgen (0.5 exactly vanilla-neutral); distant founding uses the same scoring; visible as actual placement |
+| Urban development | C - realizedScale on plan rows, world-invisible | D-minus - world settlements carry persistent urban class from support facts vs threshold, in inspect; RESIDUAL: initial realization only (no longitudinal development), world class not yet fed into regional records at materialization |
+| Frontier sites/holdings | C - per-plan and per-map only, no world representation | C+ - viewport now represents holdings with resident/material facts; RESIDUAL: no world-scale frontier state outside plans, no globe marks (named choice) |
+| Settlement origins (variety) | C - derived-path reallocation only | D - worldgen faction distribution honors the distinct-source target; distant founding prefers unrepresented sources; reallocation retained |
+| Distant world (rate) | B - real org-pulse consumer, invisible counter | D-minus - distant factions found dated, persistent, globe-visible settlements at an owned deterministic-gated cadence, capped at 1.5x founding count; org pulse retained; RESIDUAL: no growth/decline of existing settlements |
+| RunWorldPass policy input | dead API | removed - faction social state derives from faction facts alone |
+
+### Static and deterministic acceptance (tools/B19RegionalSubstrateReceipts, 21/21 PASS, CI-registered)
+
+Coverage/disjointness, member-resolution single-valuedness, connectivity, byte-identical determinism, seed sensitivity, land-share at 0.10/0.40/0.80, span-band fixpoint, share-zero, pre-assignment exclusion, fragmented geography, carve components, unit hash, explicit Region(A)==Region(B)/Region(C)!=Region(A), concentration spread/cluster/neutral, variety monotonicity, urban threshold movement + support floor, frontier count/size separation + poor-land cap, off-map budget bounds, world-settlement fact determinism.
+
+### Adversarial closure audit - what static work does NOT prove (runtime-only evidence, honestly)
+
+Save/load round-trip of topology + states (scribe paths exist; the actual cycle is runtime); preview-to-map congruence on a live materialization; both-globes rendering fidelity; the Factions-prefix behavior against the real modlist's faction defs; migration on the operator's existing campaign; distant-founding cadence in play. Named residuals beyond the classification: (a) the viewport's derived preview uses the first registered region's map-size profile (or 250) until the world's local scale is chosen - preview scale may differ from eventual materialization scale; (b) world settlement population/class and regional record derivation are separate derivations pending unification at materialization; (c) setup-time clicking inside an already-registered region (only reachable on a restarted world) falls back to the legacy bundle path; (d) topology adds roughly 0.5-3MB to saves at large world coverages. Deployment was NOT requested and has not happened; the loaded path still carries 71866301 (the pre-redirection build).
+
+## The opening feature made mechanically truthful (operator redirection back to the world-authoring feature, 2026-08-20, commits a6c1eda + a4c32a2, NOT deployed)
+
+The operator held the acceptance boundary at the start menu: the regional substrate is preserved with its runtime validation queued, and Create World -> World Tendencies -> World Presets is the active work. The substrate audit supplied what the controls lacked - a named persistent consumer per tendency - and this pass rebuilt intelligibility on that ground.
+
+What each control now states and shows, with its real consumer: Joined regions and Region reach draw the ACTUAL partition (the diagram runs CARegionalTopologyKernel.Partition live on a small grid - the land-share controller, band fixpoint, and cohesive growth are executing, not illustrated), and the hover names the world-forming division of all land. Settlement gathering places its marks by the actual WorldPlacementScore sequence, and names worldgen placement plus distant founding. Urban development keeps the true 137-point fact gauge (weights identical to the kernel), gains per-segment tooltips naming each fact, and names inspectable settlement standing; its bar tags anchor apart inside the rect, closing both runtime collisions from the operator's screenshots. Frontier controls name per-region holdings; origins names the three founding paths; the distant strip and vignette use OffMapActivityBudget itself and name the acting share plus founding cadence. The vignette's towns are the real support-versus-threshold comparison (replacing a fake derived count), and a four-word legend names the marks. Concept corrections: "tiles" is "areas" everywhere; the dialog intro no longer claims Starting Region choices replace tendencies wholesale (they take over only inside the authored region); the browser's land row keeps the roll caption inside bounds.
+
+Hide-audit conclusion: no control is hidden - after the substrate, every tendency has a product-real persistent consumer, named in its own hover. Create World's character row carries the state name plus its one meaning line above the kernel-true vignette and the two doors; presets and tendencies remain two views of one authored state through shared drawings, StateName, and the same meaning line in all three places. Palette, banded controls, typography, and panel language untouched per the directive.
+
+NOT deployed (deployment not requested; the loaded path carries 66aa3ca2 from the pre-directive deploy). Awaiting the operator's runtime pass on the opening feature; the substrate's runtime validation remains queued behind it.
+
+## The representational standard redefined: cartography, never encoded primitives (operator directive with reference mockup, 2026-08-20, commits 96cc1e7, NOT deployed)
+
+The operator rejected the rectangle/dot/block system in totality with runtime screenshots (cao_opening_ui_semantic_blocker_screenshots.zip): the rendered objects did not look like the phenomena they represent, and a legend cannot fix wrong form. The standard is memorized (representation-resembles-subject): RimWorld consistency governs window placement, input, frame, and transitions - never cartographic fidelity, terrain quality, settlement depiction, or graphical sophistication. Map Preview is the lower bound. A reference mockup set the clarity bar; its fictional controls (Resources and Riches, Harshness, Technology) were NOT adopted - the real eight tendencies drive everything.
+
+What was built: one controlled representative world. A pure reference kernel builds fixed deterministic geography (continent, corrugated mountain spine with non-regional bare rock mirroring the substrate's impassable exclusion, rivers carved until they reach the sea, woodland masses, coastal shallows) and applies the ACTUAL kernels over its area graph - the topology partition, sequential WorldPlacementScore placement under vanilla's separation rule, urban standing from real support facts against the authored threshold (reference facts authored so the threshold's movement genuinely changes which places cross into towns and cities - verified in the differential renders), per-region frontier holdings, variety-driven founding peoples with per-people roof colors. A pure cartographic renderer paints it at 1280x800: hypsometric tint under hillshade, cased roads seeking low ground, joined regions as organically bordered warm-washed provinces, settlements as roofed building clusters with fields (hamlet, village, town, walled city with keep - visibly different scales), holdings as hut-and-field farmsteads.
+
+The fidelity was iterated against rendered PNGs through five passes (the render tool, tools/B19ReferenceWorldRender, is CI-registered and renders the differential matrix: balanced, join low/high-wide, spread/clustered, urban low/high, frontier dense/sparse, origins repeated/varied). The no-legend perception test at the current state: geography, inhabited places, settlement-scale differences, clustering versus dispersion, frontier habitation, and connected-versus-fragmented regional structure are all recognizable unlabeled; the spread/clustered pair and the join-band pair read as visibly different worlds.
+
+Surfaces: the tendencies editor is one controls column (banded controls preserved) beside ONE shared rendered scene - no per-control mini-charts remain - with the controlled-simulation framing ("Same reference seed, same geography - only the tendencies change"), eight state-word chips, and the representative-projection caveat. Preset cards carry each preset's rendered world; the comparison renders your world beside the preset's under identical reference conditions with changed tendencies named beneath (numbers only where the number is the point). The Create World vignette is the same rendered world. Textures build once per cadence tick (drag surfaces hold their last frame; identity-critical surfaces never show another world's map) and release on page close.
+
+Honest residuals: (a) the post-generation regional viewport/control plane has NOT yet adopted the scene's visual language for its overlay marks - the projection ground texture is already geographic, but settlement/holding marks remain simple; that alignment is the standing next slice, per the directive's requirement that the persistent regional view exceed stock Map Preview; (b) the distant-world tendency currently reads only through its state chip - its non-spatial treatment inside the scene panel is open; (c) scene build cost ~40-80ms per state on the main thread, bounded by the cadence throttle - acceptable in menus, unmeasured on the operator's machine. NOT deployed; the loaded path still carries f243f8f3.
+
+## Lineup completed for the runtime pass (2026-08-20, commits 0b2e42b + deploy f08cc974 at the verified loaded path)
+
+The named residuals are closed: CAPlaceGlyphs carries the rendered scene's built-place vocabulary to GUI scale, and every regional overlay now speaks it - the in-game globe's faction diamonds are replaced by roofed settlement clusters that grow with realized standing (co-holders as smaller neighbors), the regional viewport draws plan settlements and hut-and-field holdings as places in both modes, and the tendencies editor gains the beyond-the-horizon band (twelve distant silhouettes, lit to the actual acting budget - the one deliberately non-spatial treatment). The setup widget keeps its area-anchored badges by the ratified B14 no-coordinate-promise contract, recorded as a named decision, not an omission. Deployed with the game exited: hash f08cc974 identical at build output and loaded path; new-lineup strings verified present; the two flagged absent-strings are live current copy (the realized-share line, the reach hover), not remnants.
+
+The complete opening lineup awaiting the operator's runtime verdict on this build: Create World character zone (name, meaning line, rendered world vignette, two doors) -> World Tendencies (controls column beside the one shared rendered scene, state chips, horizon band, controlled-simulation framing) -> World Presets (rendered-world cards, side-by-side comparison under identical reference conditions, changed tendencies named) -> generation -> in-game globe (region selection, place-glyph overlay, inspect naming with political standing) -> the region viewport (persisted or deterministic-projection ground with place glyphs) -> the regional substrate beneath it all, its own runtime validation still queued behind the opening-feature verdict.
+
+## Startup defect, per-class patch resilience, and the phantom-failure filter (2026-08-20/21, commits 988fd62, c6c93b9; deploys 47bb85ed, 58fdfa09)
+
+The f08cc974 lineup build was dead on arrival at runtime (operator: "it went from create world to ideologion, no tendencies"): CAWorldSceneReleasePatch targeted Page_CreateWorldParams.PostClose by string, the class declares no such method, Harmony threw at mod instantiation, and PatchAll aborted with the entire mod. Fixed by targeting the declared Window.PostClose with an instance filter, AND the failure mode itself was removed: patches now apply per class, so one broken patch class logs loudly and stands down for the session while every other patch applies (988fd62, deployed 47bb85ed by the exit watcher, verified live). The fresh log then showed 62 "patch class failed" errors - all phantoms: the per-class loop had dropped PatchAll's own filter and fed Harmony every type in the assembly, so ordinary classes with methods named Cleanup/Prepare/Prefix (every JobDriver, every LordToil, the manually-installed helpers) were misread as patch directives. No real patch was affected. The filter (class-level HarmonyPatch attribute) was restored while keeping per-class isolation (c6c93b9, deployed 58fdfa09). Lessons banked: verify string-named patch targets against the decompile; a resilience mechanism must reproduce the semantics of the path it replaces.
+
+## The graphics come out; words and the world carry the representation (2026-08-21, commits 1ba0fea, b10d91f, 8cb8b2a, f5ef7d3, 3de78a7; deploys 08ff340c then the standing exit-watcher)
+
+Operator redirection in three steps, each accepted as given. (1) "Remove the graphics, keep everything else": the rendered reference world, its kernel, renderer, scene cache, render tool, vignette, preset thumbnails, side-by-side scenes, and horizon band were deleted (~1,900 lines); palette, panels, banded controls, copy, and start-menu compatibility preserved; the regional setup preview's 8x8 colored settlement squares replaced with the built-place glyphs (the representation belongs on the world surfaces, not the menu). (2) "Too detached and analytical; small type; 'towns are hard-won' describes no mechanic I've witnessed": the front door became World character - nine named worlds each carrying authored prose about the country itself, name at heading weight, description in a bordered block at reading size, differences from the current world demoted beneath, caveat quiet at the foot; the generated spec sentences moved entirely to the advanced surface (Adjust tendencies..., controls left, What-this-world-does panel right); the urban copy now states only the observable mechanic: a standing judged from what a place has, read by inspecting it. (3) The operator's structural challenge - is any of this visible on the globe, or only per-click; where do cross-factional arrangements live; how does this become history; where is the persistent per-region preview - was answered with verified code citations (the honest answer was "mostly not yet") and then closed under explicit permission:
+
+- The globe now draws the WHOLE partition: every multi-area region's border, muted; brighter where the ground carries settlements; single-area regions deliberately undrawn (outlining them would re-grid the map). Mesh keyed to a world-state revision, never selection.
+- Political state PERSISTS: one record per region (holder faction set, contested flag, dated events, cap 40) diffed at every mutation point - worldgen, materialization, distant founding - plus a daily pass catching vanilla capture/destruction. Materialized regions continue the same history thread on their plan identity after carve.
+- History EXISTS: dated events per holder change ("X settled into <region>; the land is now divided among 2 polities"), read on settlement inspection (region, remembered status, latest event) and in the regional viewport (persisted status in the header; a quiet three-event History panel over the map corner).
+- The viewport marks the ground's named features (landmark/historical monument glyphs, from the same facts source as the setup preview), alongside settlements, holdings, arrival, zoom/pan.
+
+Honest residuals, stated as obligations: unrealized regions' viewport plans remain derived-and-cached (deterministic, so stable, but not scribed); no representation distinguishes federation/jurisdiction beyond held/divided/contested - that political structure does not exist yet and was not faked; the partition-layer draw cost on a large world is unmeasured on the operator's machine; ALL of the above is UNACCEPTED pending the operator's runtime pass. The standing exit-watcher deploys the current build and relaunches on the next game exit.
+
+## End-to-end propagation audit of the eight tendencies (2026-08-21 overnight, commits 053f69f..6c27f58, deployed e866efb0)
+
+The operator's question was whether the choices the player can make
+actually propagate into the running game. They were traced in current code
+rather than from names, comments, prior ledger rows, or receipts. The
+governing fact discovered first: **no world has ever been generated with
+any of this**. `Player.log` carries zero `[CA][WorldSettlements]`, zero
+`[CA][Topology]`, and zero generation markers across every session to date;
+every runtime observation so far has been of menus. The whole regional
+substrate and its consumers have never executed once, which reframed the
+pass from adding behavior to making the first execution survivable and
+truthful.
+
+### What each tendency actually does, traced
+
+| Tendency | Real production consumer | Terminates at | Honest status |
+|---|---|---|---|
+| Joined regions (band) | `WorldGenStep_CARegionalTopology` order 450 → `Partition` over every eligible surface tile | persistent scribed topology; globe partition layer; region-first selection; one-map-per-region | CLOSED to persistent world state, unobserved at runtime |
+| Region extent (span) | same partition call | member counts per region → the map you get on entry | CLOSED to persistent state, unobserved |
+| Settlement gathering | `FactionGenerator.GenerateFactionsIntoWorldLayer` prefix (order 500) → `PlaceSettlementTile` → `WorldPlacementScore`; also distant founding | actual tile of every generated settlement | CLOSED, and REPAIRED tonight — see below |
+| Urban development | `BuildState` → `SettlementScale` → `urbanClass` | a persisted classification, surfaced only in the settlement inspect line; regional plans additionally feed `CulturalExpressionModule` and the population screen | CLASSIFICATION ONLY. Nothing grows over time. No physical, material, or behavioral consequence follows scale for world settlements. Recorded as truth, not repaired — inventing growth was out of scope |
+| Frontier sites / holdings | `PopulateDerived` → `RealizeFrontierHoldings` on the materialization path | plan records, persisted with the region; drawn in viewport and preview | REGION-SCOPED BY DESIGN. Holdings never become world objects and exist only for regions that materialize or are being viewed. The world at large has no holdings |
+| Settlement origins | `ChooseFaction` inside the worldgen prefix | which factions own the world's settlements | CLOSED, unobserved |
+| Distant world | `PulsePoliticalBeliefsUnderBudget` (background org belief pulses) and the 900k-tick distant-founding cadence | real new `Settlement` world objects carrying founding dates; persistent organization belief state | CLOSED and genuinely longitudinal. Evidence reaches the player as a new settlement whose inspect line states its founding date; there is deliberately no letter |
+
+### Defects found and repaired
+
+**Settlement gathering did essentially nothing at real world sizes.** The
+scoring kernel discriminates across a 0..15 band; the production caller
+passed raw tile distance. Real planets place settlements tens of tiles
+apart, so effectively every candidate saturated the cap: spread stopped
+separating from neutral entirely, and clustering only bit when a sample
+happened to land within fifteen tiles. The caller now scales measured
+distance into the band by the world's own mean spacing. The kernel is
+untouched. This is the single repair most likely to make two World
+Characters produce visibly different worlds.
+
+**The receipt suite could not have caught it.** `concentration-placement`
+fed the kernel distances already inside the band, proving the function
+while the integration that feeds it was inert. A second receipt now asserts
+world-scale behavior in both halves — that raw 25 and 60 tiles score
+identically (the defect, kept as evidence) and that band-scaling restores
+separation. 22/22.
+
+**Worldgen settlement placement could have produced a world with no
+settlements.** The prefix suppresses vanilla placement wholesale and returns
+false; any throw inside it had no error path. The body is now guarded and
+vanilla completes whatever remains unplaced.
+
+**A failed partition would have refused world creation.** `EnsureTopology`
+runs inside generation and was unguarded. Every consumer already gates on a
+non-empty topology, so the designed degradation existed but was
+unreachable; a failure now empties the partition, logs the cause with an
+explicit statement that the world will have no regional behavior, and lets
+generation finish.
+
+**The political ledger added tonight bloated saves and swept too eagerly.**
+It persisted a record for every joined region including the thousands no
+faction holds — unclaimed is the absence of a record — and resolved every
+region's name eagerly on a daily pass. Both corrected.
+
+### Unmeasured, and deliberately left to runtime
+
+Partition build time across a real planet, and the partition draw layer's
+cost across every joined region on the globe, have never been measured.
+Both now report their own elapsed milliseconds and record counts to the
+log, so the morning session produces the numbers instead of an estimate.
+
+### Not repaired, and why
+
+Urban development changes a classification and nothing else; growth over
+time does not exist anywhere in the code. Frontier holdings are
+region-scoped and never enter the world. Both are recorded as they are.
+Repairing either means adding simulation the ratified architecture does not
+currently establish, which is the operator's decision and not a defect to
+fix unattended.
+
+### Second pass: missing consumers implemented, region-identity breaks closed (commits 1290bc4..7a6ae50)
+
+The first pass stopped at describing incomplete chains. This pass traced
+them and implemented the missing consumers where intent was already
+established.
+
+**Region identity — four breaks, all closed.**
+
+*The pre-landing preview manufactured competing geography.* `EnsurePreviewPlan`
+never consulted the partition: it built a stock hex bundle around whichever
+tile was clicked under a freshly minted `CA-RG-` id. On every fresh world the
+previewed member set, identity and backing size therefore contradicted what
+materialization would create. It now realizes the record through the same
+`CreateFromTopology` the materialization path uses.
+
+*Arrival changed composition.* A settlement standing on the arrival tile was
+skipped when absorbing residents, and arrival defaults to whichever member
+the region was entered through — so the same region absorbed a different set
+of settlements depending on where the player came in, frozen into the scribed
+plan at first materialization. Absorption is now arrival-independent.
+
+*The political ledger double-wrote.* A realized plan adopts the partition
+record's id and the carve deliberately leaves that record standing, so both
+ledger loops reached the same `regionId` with different holder sets —
+flip-flopping the persisted record and appending a false dated event every
+daily sweep, forever. The plan is now the single writer wherever one exists.
+This defect was introduced earlier the same night.
+
+*The carve guard keyed on identity alone*, so a plan adopting an id while
+covering different ground would have left the partition asserting tiles the
+plan had taken. It now requires membership equality — the invariant the three
+breaks above were leaning on.
+
+**Missing consumers, implemented.**
+
+*Owned settlements could not diverge.* B15 establishes that a settlement
+references its faction's state "unless an explicit local divergence is
+modeled", eight consumers read that flag, and gated local editors exist for
+it — but its only writer detached the site from its owner first, and every
+owner-assigning path reset it to false. The owned-and-divergent case had
+consumers, editors, and no producer. `EnsureDivergentState` is that producer:
+the site keeps its owner and gains its own political, technological and
+institutional state seeded from that owner, with one control driving it.
+
+*Absorbed settlements lost their population.* A settlement standing on a
+region's members was absorbed with a freshly invented population, so the same
+place could read as a town on the globe and a village inside its region.
+`absorbedWorldPopulation` (scribed, additive, `-1` on every existing save)
+carries it, consulted after operator authoring and before fact-derivation.
+
+*World settlement records were never maintained.* Written at generation,
+materialization and distant founding, and never again — so a captured
+settlement kept its original owner and standing and the inspect line was
+wrong from the first capture. A daily pass now rebuilds them, silent when
+nothing differs so the world-state revision does not force a globe mesh
+rebuild for nothing.
+
+*Frontier holdings never reached the world map*, so a region worked by
+homesteads was indistinguishable from an empty one; they now draw in the
+built-place vocabulary, and a holdings-only region is no longer skipped
+entirely. *The settlement tooltip never stated scale* although the glyph
+collapses a shared tile to its largest place. *The tile inspect pane
+recomputed its own political summary* while the settlement pane read the
+persisted record, so the two could disagree about one region; both now read
+the remembered state and its latest dated event.
+
+*The regional preview used the wrong map scale.* It asked the first
+registered region and fell back to a literal 250, while materialization
+resolves pending size → this game's chosen size → the world's initial size.
+Same chain now.
+
+*The off-map budget throttled on-map subjects.* Frontier holding
+organizations exist only for holdings on a LOADED player map, yet were
+classified background and throttled by the distant-world rate. They are now
+always live.
+
+### Genuinely operator-blocked (product intent absent, not implementation)
+
+- **Urban development has no consequence beyond classification.** Nothing
+  grows over time anywhere in the code. Deciding what a "town" should *do*
+  differently is a simulation-scope decision.
+- **Frontier holdings are region-scoped and never become world objects.**
+  Whether the frontier tendencies should populate the whole world is a scope
+  decision; the ratified architecture establishes only per-region realization.
+- **Off-map settlement organizations never acquire customs**, because
+  `SyncRegionalSettlements` skips records with no loaded map. Pulsing them is
+  provably a no-op, so the distant world's *political drift* is inert even
+  though its *founding* is real. Whether off-map settlements should simulate
+  political change is a scope decision with real cost.
+- **Jurisdiction and claims have no canonical field at all** — only derived
+  holder state. Representing disputed or overlapping claims would be new
+  ontology.
+- **Settlement-level organizations** are expressible only through owning
+  factions; federations spanning settlements directly are not representable.
+- **Extent and rotation rebuild a partition-derived region from a bundle**,
+  giving it a fresh identity rather than composing from the record. Whether
+  those controls should be offered for partition regions at all is a product
+  question.
+
+### Known dead state, left in place deliberately
+
+`CASiteLocalSocietyState.institutionalStateIncomplete` is written and scribed
+but never read for a site; its faction-level twin gates structure generation,
+and no site-level generator exists to gate. `CASiteFactionReferenceKind.WorldFaction`
+ownership is validated and resolved but `SetWorldOwner` has no callers.
+Removing either is schema churn with no product benefit tonight.
+
+### Construction material and world frontier (commits 4039ec2..3e6a83d)
+
+The operator's correction: the World Tendencies parameterization promises
+consequences that have not been built, and this is greenfield - the pieces
+exist for one system but were never intertwined. Material is not
+`materialLevel = 2 -> stone walls`; it follows from development pressure,
+technological knowledge, local resources, trade and access, population and
+material capacity, culture where relevant, and what is actually available.
+
+**Material had three uncoordinated answers and one dead input.** The
+frontier shell was hard-coded to wood whatever its holding said; the
+settlement fit-out kept its own local-rock palette; morphology used a
+tech-tier band; and `materialLevel`, written by the frontier tendency and
+drawn in glyphs, had no consumer in any physical build. One settlement could
+be three materials depending which system placed the thing.
+
+`CAConstructionMaterials` is now the single answer, resolving valid choices
+from the facts that decide them and ordering that set by development
+pressure rather than letting pressure select a material outright. Its
+arithmetic lives in a pure kernel (`CAConstructionMaterialsKernel`) so the
+thresholds exist once and can be exercised without an engine. The frontier
+shell, the fit-out palette, the morphology palette, and longitudinal
+development all consume it; the longitudinal path additionally draws only on
+materials the settlement actually holds, because a place adding to itself
+cannot build from what it does not have.
+
+Two defects surfaced inside that work and were fixed: the holding context
+passed its development level as its economic capacity, counting it twice;
+and the capacity thresholds were calibrated for settlements counting people
+in hundreds, which pinned every frontier holding to the lowest material
+however developed - the same saturation that had made settlement gathering
+inert, reproduced inside the fix for it. Three receipts now assert reach
+across a cabin, a homestead, a village and a city, that ambition never
+exceeds means, and that within reach the more worked material wins while
+local ground breaks a tie against an import.
+
+**Culture is named as an absent input rather than implied.** Nothing in the
+culture registry bears on what a place builds from - no material, craft,
+permanence or display axis - and cultural expression yields a signature
+rather than a building preference. The module states where such an axis
+would enter.
+
+**Urban standing reached the built world.** The materialization site already
+stated that co-siting sets the floor and a settlement's own standing may
+raise its internal complexity, and implemented only the floor, so an urban
+centre and a hamlet on the same ground built identical complexity. Standing
+now raises quarters.
+
+**The frontier exists across the whole world.** Holdings were built only
+inside regional plans, which exist only where the player has been, so an
+open-frontier world and a heartlands world were identical across nearly the
+entire map. Holdings are a deterministic consequence of facts the world
+already holds, so they derive on demand from the same kernel calls the
+plan-side realization uses, cached per region and flattened once per world
+change. The world view screens on land capacity while realization also
+screens habitat viability, so a region may show a holding on a tile its
+realization declines - counts and character hold, the exact ground is
+settled at realization. That difference is stated in the module rather than
+claimed away.
+
+**The distant world can now drift.** The off-map budget mostly selects
+faction bodies, and faction bodies had never been reconciled against any
+structure, so pulsing them could not open a conflict, cost support, or
+recover any - the whole pass was a provable no-op however high the tendency
+was set. A faction body's structure is that faction's own represented
+institutions, which are world state needing no loaded map.
+
+Repository gates held throughout: 26/26 substrate receipts, synthetic-state
+census 316 classified / 0 unresolved, persistence census 267 carriers / 0
+unrouted, tracked assembly matching a clean production build.

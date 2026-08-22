@@ -1239,6 +1239,17 @@ internal static class Program
                     : carrier.Name == "CARegionalSettlementRecord"
                         ? "model.regional-settlement-record"
                         : "world.regional");
+            // The partition, the world's settlement standings, and the
+            // remembered political records are all nested records the
+            // regional world component writes through its own schema;
+            // they are not separate persisted families.
+            case "RegionalPoliticalModule.cs":
+            case "RegionalTopologyModule.cs":
+            case "RegionalWorldSettlementModule.cs":
+                return Route("world.regional");
+            // Authored feature shapes are carried by the regional plan.
+            case "FeatureShapeModule.cs":
+                return Route("model.regional-plan");
             case "RoadExpansionModule.cs": return Route("map.road-expansion");
             case "SettlementCapabilityModule.cs": return Route("model.settlement-capability");
             case "SettlementCompositionModule.cs":

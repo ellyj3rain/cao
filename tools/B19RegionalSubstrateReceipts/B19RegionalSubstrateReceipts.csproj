@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RollForward>Major</RollForward>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Source\RegionalTopologyKernel.cs" />
+    <Compile Include="..\..\Source\WorldTendencyCausalKernel.cs" />
+    <Compile Include="..\..\Source\WorldCharacterValues.cs" />
+    <Compile Include="..\..\Source\ConstructionMaterialsKernel.cs" />
+    <Compile Include="..\..\Source\SettlementProgramCausalKernel.cs" />
+    <Compile Include="..\..\Source\OperationalRoleProgramKernel.cs" />
+  </ItemGroup>
+</Project>
