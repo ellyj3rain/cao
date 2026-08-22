@@ -199,6 +199,33 @@ namespace ColonistAwareness
             return 0;
         }
 
+        // HOW MANY QUARTERS A SETTLEMENT BUILDS, from what it actually
+        // has. A larger place is more internally complex than a small
+        // one, and co-sited settlements of different size should not
+        // raise identical internal structure.
+        //
+        // Deliberately NOT keyed to realized scale. Scale is population
+        // and support measured against UrbanThreshold, which the urban
+        // tendency moves - so keying quarters to scale let a naming
+        // preference change how much of a settlement physically got
+        // built. The tendency decides where the bar for calling a place
+        // a town or a city sits; it cannot supply a place with support
+        // it lacks, and it must not supply it with buildings either.
+        //
+        // The support constants are the unmoved threshold, so the same
+        // settlement raises the same structure whatever the player calls
+        // it.
+        public static int SettlementQuarters(int population,
+            int urbanSupport)
+        {
+            const int Unmoved = 72;
+            if (population >= 1200 && urbanSupport >= Unmoved + 12)
+                return 4;
+            if (population >= 500 && urbanSupport >= Unmoved) return 3;
+            if (population >= 280) return 2;
+            return 1;
+        }
+
         // 0 peaceful, 1 rival, 2 contested.
         public static int RelationPattern(int factionCount, int hostilePairs,
             int neutralPairs)
@@ -251,6 +278,52 @@ namespace ColonistAwareness
             if (subjectCount <= 0 || rate <= 0f) return 0;
             return Math.Max(1, Math.Min(subjectCount,
                 (int)Math.Ceiling(subjectCount * Clamp01(rate))));
+        }
+
+        // World-scale settlement placement. Habitat preference (the biome
+        // and temperature weight vanilla already computes) stays primary;
+        // concentration only bends the spatial term. At 0.5 the term is a
+        // constant 7.5 for every distance, so the middle of the tendency
+        // reproduces vanilla's indifference to existing settlements.
+        public static double WorldPlacementScore(int seed, int tileId,
+            float habitatWeight, float distanceToNearestSettlement,
+            float concentration)
+        {
+            if (habitatWeight <= 0f) return 0d;
+            float tendency = Clamp01(concentration);
+            float distance = distanceToNearestSettlement < 0f ? 15f
+                : Math.Min(15f, Math.Max(0f, distanceToNearestSettlement));
+            double spread = distance;
+            double cluster = 15f - distance;
+            double spatial = spread * (1d - tendency) + cluster * tendency;
+            return habitatWeight * (1d + spatial * 0.15d)
+                + Unit(seed, tileId, 6577) * 0.001d;
+        }
+
+        // World-scale settlement facts, derived deterministically from the
+        // ground the settlement stands on. These are coarse world-map
+        // classifications; a materialized regional settlement derives its
+        // richer record from the full composition instead.
+        public static int WorldSettlementPopulation(int seed, int tileId,
+            int landCapacity, int techTier)
+        {
+            int history = (int)(Unit(seed, tileId, 8317) * 4f);
+            return PopulationFromFacts(landCapacity,
+                Clamp(history, 0, 3), Clamp(techTier, 0, 3), false);
+        }
+
+        public static int WorldSettlementSupport(int population,
+            int landCapacity, int access, bool regionalCenter)
+        {
+            int services = population >= 400 ? 2
+                : population >= 140 ? 1 : 0;
+            int civic = population >= 700 ? 2
+                : population >= 220 ? 1 : 0;
+            int economic = EconomicCapacity(population, civic,
+                hasWorkshop: population >= 280, hasStores: population >= 140);
+            return UrbanSupport(population, landCapacity, access, services,
+                civic, economic, Clamp(access, 0, 3), 0, regionalCenter,
+                population >= 500 ? 2 : population >= 200 ? 1 : 0);
         }
 
         private static float Clamp01(float value)
