@@ -20,6 +20,11 @@ internal static partial class Program
 
     public static int Main(string[] args)
     {
+        if (args.Length > 0 && (string.Equals(args[0], "relationships",
+                StringComparison.OrdinalIgnoreCase)
+            || string.Equals(args[0], "relationships-evaluate",
+                StringComparison.OrdinalIgnoreCase)))
+            return RelationshipMiner.Run(args);
         if (!TryReadArguments(args, out ExtractorArguments? arguments,
                 out string? argumentError))
         {

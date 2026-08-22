@@ -1,0 +1,182 @@
+==== CONVERGENCE EXERCISE (developer-exercise route, disposable) ====
+
+---- MAP COMPOSITION RECEIPT ----
+[CA][Convergence] map receipt
+  ==== Crook Plain (CA-RS-CA-RG-646B3C61-0) ====
+  native Settlement faction: Assembly of the Ford / CannibalPirate; relations with you: Hostile
+  creation: authorized=True, executable=True, material=True, siting=True
+      program ca.settlement.agriculture / population-group:1: materialized
+      program ca.settlement.housing / population-group:1: materialized
+      program ca.settlement.provision.communal / CA-RS-CA-RG-646B3C61-0#0: materialized
+  [A] PEOPLE - expected Assembly of the Ford 80%, Charter Towns 20%
+      Assembly of the Ford (Main, normal): expected 80%, assigned 8 resident(s)
+      Charter Towns (OtherFaction, normal): expected 20%, assigned 2 resident(s)
+  [B] NATIVE FACTS of assigned residents:
+      Pawn.Faction: Assembly of the Ford x10   EXPECT >1 faction when a resident minority population group resolved
+      Pawn.Ideo:    Bagucinquan Army x10   EXPECT >1 ideo when a distinct Ideoligion group resolved
+      Certainty: min 0.63, max 0.98   EXPECT spread when cohesion differs
+  [C] PROVISIONING:
+      communal kitchens · universal access · funded by shared work · centralized
+        operator org: Crook Plain (treasury 0)   EXPECT present
+        runtime: operational; exact material contract: complete
+      physical: 1 hearth/stove(s), 4 dining table(s), 1 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
+  [D] LEDGER: 0 transaction(s), 0 debt(s) world-wide; tax collections update treasuries and record acts as they occur
+  ==== Hien (CA-RS-CA-RG-646B3C61-1) ====
+  native Settlement faction: Assembly of the Ford / CannibalPirate; relations with you: Hostile
+  creation: authorized=True, executable=True, material=True, siting=True
+      program ca.settlement.agriculture / population-group:1: materialized
+      program ca.settlement.housing / population-group:1: materialized
+      program ca.settlement.provision.communal / CA-RS-CA-RG-646B3C61-1#1: materialized
+  [A] PEOPLE - expected Assembly of the Ford 100%
+      Assembly of the Ford (Main, normal): expected 100%, assigned 13 resident(s)
+  [B] NATIVE FACTS of assigned residents:
+      Pawn.Faction: Assembly of the Ford x13   EXPECT >1 faction when a resident minority population group resolved
+      Pawn.Ideo:    Bagucinquan Army x13   EXPECT >1 ideo when a distinct Ideoligion group resolved
+      Certainty: min 0.64, max 0.96   EXPECT spread when cohesion differs
+  [C] PROVISIONING:
+      communal kitchens · universal access · funded by shared work · centralized
+        operator org: Hien (treasury 0)   EXPECT present
+        runtime: operational; exact material contract: complete
+      physical: 3 hearth/stove(s), 2 dining table(s), 1 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
+  [D] LEDGER: 0 transaction(s), 0 debt(s) world-wide; tax collections update treasuries and record acts as they occur
+  ==== Defiler Field (CA-RS-CA-RG-646B3C61-2) ====
+  native Settlement faction: Assembly of the Ford / CannibalPirate; relations with you: Hostile
+  creation: authorized=True, executable=True, material=True, siting=True
+      program ca.settlement.agriculture / population-group:1: materialized
+      program ca.settlement.housing / population-group:1: materialized
+      program ca.settlement.provision.communal / CA-RS-CA-RG-646B3C61-2#2: materialized
+  [A] PEOPLE - expected Assembly of the Ford 100%
+      Assembly of the Ford (Main, normal): expected 100%, assigned 11 resident(s)
+  [B] NATIVE FACTS of assigned residents:
+      Pawn.Faction: Assembly of the Ford x11   EXPECT >1 faction when a resident minority population group resolved
+      Pawn.Ideo:    Bagucinquan Army x11   EXPECT >1 ideo when a distinct Ideoligion group resolved
+      Certainty: min 0.61, max 0.95   EXPECT spread when cohesion differs
+  [C] PROVISIONING:
+      communal kitchens · universal access · funded by shared work · centralized
+        operator org: Defiler Field (treasury 0)   EXPECT present
+        runtime: not operating; exact material contract: complete; runtime blocker: no eligible resident can reach the exact provision nodes and stock
+        [access diagnostic] eligible residents: 11
+          resident pawn:6801 at (136, 0, 229); region 3595 Normal district 653
+          resident pawn:6806 at (138, 0, 236); region 3595 Normal district 653
+          resident pawn:6812 at (135, 0, 227); region 3594 Normal district 653
+          resident pawn:6821 at (142, 0, 237); region 3595 Normal district 653
+          node arrangement:1:node:0:role:0 at (157, 0, 229); region 2542 Normal district 376; reachable by 0/11
+          node arrangement:1:node:0:role:1 at (159, 0, 229); region 2542 Normal district 376; reachable by 0/11
+          node arrangement:1:node:0:role:2 at (159, 0, 231); region 2542 Normal district 376; reachable by 0/11
+          node arrangement:1:node:0:role:3 at (160, 0, 229); region 2542 Normal district 376; reachable by 0/11
+          stock Pemmican x40 at (157, 0, 230); region 2542 Normal district 376; reachable by 0/11
+          standing neighborhood 33x33 around (157, 0, 229) (N up; #=impassable edifice, D=door, A=aperture, n=node, s=stock, p=resident, +=building, ~=water, .=walkable, x=unwalkable):
+          A................................
+          A.######.........................
+          #.#....A.........................
+          #.A....#.........................
+          ..#....#.........................
+          ..D....#.........................
+          ..##A###.........................
+          .................................
+          .p.#A#######.....................
+          ...#....#..##########............
+          ##.#....#..##.......#............
+          .#p#....#..##.......#............
+          .#.#....#..##.......#............
+          .#p#....D..##.......#............
+          .#.#....#..##....+n.#............
+          ##.#DA#######+++s++.#............
+          ...p........#+++n+nn#............
+          ##...#DA###.####D####............
+          .A...#....#....####A#............
+          .#...#....A....#....#............
+          .#....#...#....#....A............
+          A#....#####....D....#............
+          ...............####A#............
+          ####A####........................
+          #.....#.#........................
+          A.....D.#........................
+          #.....#.#........................
+          D.....#.#........................
+          ###A#####........................
+          .................................
+          .................................
+          .................................
+          .................................
+      physical: 1 hearth/stove(s), 4 dining table(s), 1 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
+  [D] LEDGER: 0 transaction(s), 0 debt(s) world-wide; tax collections update treasuries and record acts as they occur
+  ==== Violence Lake (CA-RS-CA-RG-646B3C61-3) ====
+  native Settlement faction: Charter Towns / CannibalPirate; relations with you: Hostile
+  creation: authorized=True, executable=True, material=True, siting=True
+      program ca.settlement.agriculture / population-group:1: materialized
+      program ca.settlement.housing / population-group:1: materialized
+      program ca.settlement.medicine / population-group:1: materialized
+      program ca.settlement.provision.communal / CA-RS-CA-RG-646B3C61-3#3: materialized
+  [A] PEOPLE - expected Charter Towns 100%
+      Charter Towns (Main, normal): expected 100%, assigned 13 resident(s)
+  [B] NATIVE FACTS of assigned residents:
+      Pawn.Faction: Charter Towns x13   EXPECT >1 faction when a resident minority population group resolved
+      Pawn.Ideo:    Bagucinquan Army x13   EXPECT >1 ideo when a distinct Ideoligion group resolved
+      Certainty: min 0.60, max 1.00   EXPECT spread when cohesion differs
+  [C] PROVISIONING:
+      communal kitchens · universal access · funded by shared work · centralized
+        operator org: Violence Lake (treasury 0)   EXPECT present
+        runtime: operational; exact material contract: complete
+      physical: 3 hearth/stove(s), 2 dining table(s), 1 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
+  [D] LEDGER: 0 transaction(s), 0 debt(s) world-wide; tax collections update treasuries and record acts as they occur
+  [F] Crook Plain FACTION STRUCTURE:
+      members: 10 enrolled
+      holdings on this map: 4 (tenure per the ownership axis; see ledger)
+      apertures: 28 CA_WindowGlazed, 15 CA_ApertureShuttered
+  [F] Hien FACTION STRUCTURE:
+      members: 13 enrolled
+      holdings on this map: 4 (tenure per the ownership axis; see ledger)
+      apertures: 34 CA_WindowGlazed, 5 CA_ApertureShuttered
+  [F] Defiler Field FACTION STRUCTURE:
+      members: 11 enrolled
+      holdings on this map: 4 (tenure per the ownership axis; see ledger)
+      apertures: 12 CA_ApertureShuttered, 32 CA_WindowGlazed
+  [F] Violence Lake FACTION STRUCTURE:
+      members: 13 enrolled
+      holdings on this map: 4 (tenure per the ownership axis; see ledger)
+      apertures: 14 CA_ApertureShuttered, 34 CA_WindowGlazed
+  [E] SETTLEMENT AUTHORITY RELATIONS:
+      region: contested · regional center
+      Assembly of the Ford: no member relations (single settlement or loose association)
+      Charter Towns: no member relations (single settlement or loose association)
+
+
+---- RADICAL SHIFT RECEIPT ----
+[CA][Convergence] radical-shift receipt
+  faction: Assembly of the Ford (authority between settlements not set)
+  BEFORE: 0 member settlement(s), sharing []
+  physical: 1879 standing edifices across 3 settlement rect(s)
+  SHIFTED to central authority:
+  AFTER:  3 member settlement(s), sharing [defense, diplomacy, taxes, decisions, disputes]   EXPECT responsibilities changed
+  physical: 1879 standing edifices across 3 settlement rect(s)   EXPECT identical - authority moved, streets did not
+  RESTORED: 0 member settlement(s), sharing []
+
+
+---- FACTION CULTURE AND POLITICS RECEIPT ----
+[CA][Faction] state receipt
+  [CA][Faction] setup pass (faction-state receipt): 0 Culture identities, 0 Culture questions, 0 political-belief sets, 0 political-belief fields, 0 technological-knowledge sets, 0 represented institutional mechanisms generated; 2 non-humanlike factions skipped; unsupported political fields remain unset; Ideoligions unchanged
+  eligible factions: 17
+  substantive Culture and political owners: 17
+  factions with unset Political Order: 0
+  factions with represented institutions: 0
+  factions explicitly awaiting institutional evidence: 17
+  factions with unacknowledged unset institutions: 0
+  Ideoligions changed: 0 (expected 0)
+  RESULT: PASS
+
+---- POLITICAL ORDER MENU PERFORMANCE ----
+first open: request+construction 15.266 ms; first render 3.515 ms; effective open 18.780 ms; render calls 78; mean/max 0.174/3.515 ms
+reopen: request+construction 19.749 ms; first render 0.211 ms; effective open 19.960 ms; render calls 62; mean/max 0.138/0.477 ms
+thresholds: first open <1000 ms PASS; reopen <250 ms PASS; ordinary render <100 ms PASS
+
+---- PASSIVE PLAY MODULE PROFILE (15 WALL SECONDS) ----
+[CA][Profiler] enabled=True; fixed keys=25
+  BehaviorAuthorization: calls=28; totalMs=0.106; maxMs=0.006; meanMs=0.004; examined=28; accepted=28; cache=0/0; skipped=0; failures=0
+  KnowledgePropagation: calls=8; totalMs=33.183; maxMs=6.912; meanMs=4.148; examined=504008; accepted=9484; cache=0/0; skipped=0; failures=0
+  AutonomousHomePlanning: calls=1; totalMs=7.421; maxMs=7.421; meanMs=7.421; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  PopulationResidentLookup: calls=2; totalMs=0.129; maxMs=0.091; meanMs=0.065; examined=502; accepted=22; cache=0/0; skipped=0; failures=0
+  OrganizationLookup: calls=21; totalMs=0.028; maxMs=0.003; meanMs=0.001; examined=20; accepted=1; cache=0/0; skipped=0; failures=0
+  KnowledgeObservation: calls=15; totalMs=121.219; maxMs=11.939; meanMs=8.081; examined=18195; accepted=100; cache=0/0; skipped=0; failures=0
+
+==== exercise finished: complete ====

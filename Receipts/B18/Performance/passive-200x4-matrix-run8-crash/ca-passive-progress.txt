@@ -1,0 +1,82 @@
+---- PASSIVE PLAY MATRIX ----
+  phase PausedStatic: 20.0 s wall; frames 1170; fps median 60.0, 1% low 38.1; frame ms p50/p95/p99 16.7/18.5/26.2; longest 147.6 ms; hitches >100ms 1, >250ms 0; ticks +0 (0.0 TPS); cpu cores 1.51; ws unavailable under this runtime; managed 1765 MB (start 1759); gc +5/+5/+5
+  [profiler PausedStatic] [CA][Profiler] enabled=True; fixed keys=25
+  phase PausedCameraPan: 20.0 s wall; frames 1181; fps median 60.0, 1% low 43.4; frame ms p50/p95/p99 16.7/17.7/23.0; longest 42.9 ms; hitches >100ms 0, >250ms 0; ticks +0 (0.0 TPS); cpu cores 1.53; ws unavailable under this runtime; managed 1817 MB (start 1766); gc +5/+5/+5
+  [profiler PausedCameraPan] [CA][Profiler] enabled=True; fixed keys=25
+  phase NormalQuiet: 30.0 s wall; frames 437; fps median 20.6, 1% low 0.8; frame ms p50/p95/p99 48.6/108.8/1225.6; longest 1355.4 ms; hitches >100ms 29, >250ms 5; ticks +866 (28.8 TPS); cpu cores 1.20; ws unavailable under this runtime; managed 2028 MB (start 1818); gc +4/+4/+4
+  [profiler NormalQuiet] [CA][Profiler] enabled=True; fixed keys=25
+  BehaviorAuthorization: calls=18; totalMs=0.041; maxMs=0.004; meanMs=0.002; examined=18; accepted=14; cache=0/0; skipped=4; failures=0
+  KnowledgePropagation: calls=14; totalMs=34.362; maxMs=4.157; meanMs=2.454; examined=903224; accepted=17426; cache=0/0; skipped=0; failures=0
+  AutonomousHomePlanning: calls=1; totalMs=0.143; maxMs=0.143; meanMs=0.143; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  PopulationResidentLookup: calls=8; totalMs=0.314; maxMs=0.055; meanMs=0.039; examined=2032; accepted=94; cache=0/0; skipped=0; failures=0
+  OrganizationLookup: calls=4; totalMs=0.004; maxMs=0.002; meanMs=0.001; examined=4; accepted=0; cache=0/0; skipped=0; failures=0
+  KnowledgeObservation: calls=28; totalMs=203.769; maxMs=10.801; meanMs=7.277; examined=33964; accepted=85; cache=0/0; skipped=0; failures=0
+  phase FastSpeed: 30.0 s wall; frames 387; fps median 14.1, 1% low 5.5; frame ms p50/p95/p99 70.7/126.5/181.7; longest 475.5 ms; hitches >100ms 34, >250ms 1; ticks +1203 (40.0 TPS); cpu cores 1.23; ws unavailable under this runtime; managed 2669 MB (start 2036); gc +2/+2/+2
+  [profiler FastSpeed] [CA][Profiler] enabled=True; fixed keys=25
+  BehaviorAuthorization: calls=24; totalMs=0.051; maxMs=0.003; meanMs=0.002; examined=24; accepted=20; cache=0/0; skipped=4; failures=0
+  KnowledgePropagation: calls=20; totalMs=50.307; maxMs=3.277; meanMs=2.515; examined=1290320; accepted=23610; cache=0/0; skipped=0; failures=0
+  AutonomousHomePlanning: calls=2; totalMs=0.290; maxMs=0.147; meanMs=0.145; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  PopulationResidentLookup: calls=12; totalMs=0.488; maxMs=0.184; meanMs=0.041; examined=3048; accepted=141; cache=0/0; skipped=0; failures=0
+  OrganizationLookup: calls=1586; totalMs=0.232; maxMs=0.004; meanMs=0.000; examined=24; accepted=1562; cache=0/0; skipped=0; failures=0
+  FullWorldScan: calls=1; totalMs=39.928; maxMs=39.928; meanMs=39.928; examined=6; accepted=0; cache=0/0; skipped=0; failures=0
+  KnowledgeObservation: calls=40; totalMs=264.764; maxMs=11.622; meanMs=6.619; examined=48520; accepted=108; cache=0/0; skipped=0; failures=0
+  CulturalCognition: calls=1; totalMs=115.022; maxMs=115.022; meanMs=115.022; examined=60; accepted=12; cache=0/0; skipped=0; failures=0
+  PoliticalCognition: calls=1; totalMs=302.939; maxMs=302.939; meanMs=302.939; examined=12; accepted=12; cache=0/0; skipped=0; failures=0
+  phase SuperfastSpeed: 30.0 s wall; frames 523; fps median 19.9, 1% low 7.2; frame ms p50/p95/p99 50.3/92.3/138.7; longest 309.0 ms; hitches >100ms 21, >250ms 1; ticks +1186 (39.5 TPS); cpu cores 1.27; ws unavailable under this runtime; managed 2831 MB (start 2671); gc +3/+3/+3
+  [profiler SuperfastSpeed] [CA][Profiler] enabled=True; fixed keys=25
+  BehaviorAuthorization: calls=23; totalMs=0.049; maxMs=0.004; meanMs=0.002; examined=23; accepted=19; cache=0/0; skipped=4; failures=0
+  KnowledgePropagation: calls=19; totalMs=45.484; maxMs=3.375; meanMs=2.394; examined=1225804; accepted=21324; cache=0/0; skipped=0; failures=0
+  AutonomousHomePlanning: calls=2; totalMs=0.241; maxMs=0.132; meanMs=0.120; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  PopulationResidentLookup: calls=8; totalMs=0.257; maxMs=0.053; meanMs=0.032; examined=2032; accepted=94; cache=0/0; skipped=0; failures=0
+  OrganizationLookup: calls=4; totalMs=0.004; maxMs=0.002; meanMs=0.001; examined=4; accepted=0; cache=0/0; skipped=0; failures=0
+  KnowledgeObservation: calls=39; totalMs=222.188; maxMs=7.252; meanMs=5.697; examined=47307; accepted=32; cache=0/0; skipped=0; failures=0
+  ca-surfaces: political-order editor was open for the phase
+  phase CaSurfaces: 20.0 s wall; frames 403; fps median 21.8, 1% low 12.6; frame ms p50/p95/p99 45.9/66.5/79.1; longest 574.3 ms; hitches >100ms 1, >250ms 1; ticks +801 (40.0 TPS); cpu cores 1.34; ws unavailable under this runtime; managed 2741 MB (start 2833); gc +2/+2/+2
+  [profiler CaSurfaces] [CA][Profiler] enabled=True; fixed keys=25
+  BehaviorAuthorization: calls=18; totalMs=0.039; maxMs=0.003; meanMs=0.002; examined=18; accepted=14; cache=0/0; skipped=4; failures=0
+  KnowledgePropagation: calls=14; totalMs=35.554; maxMs=3.187; meanMs=2.540; examined=903224; accepted=14550; cache=0/0; skipped=0; failures=0
+  SocialAggregation: calls=5; totalMs=1.991; maxMs=1.959; meanMs=0.398; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  CultureLongitudinalUpdate: calls=1; totalMs=322.247; maxMs=322.247; meanMs=322.247; examined=1; accepted=0; cache=0/0; skipped=0; failures=0
+  AutonomousHomePlanning: calls=1; totalMs=0.209; maxMs=0.209; meanMs=0.209; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  PopulationResidentLookup: calls=20; totalMs=0.773; maxMs=0.070; meanMs=0.039; examined=5080; accepted=235; cache=0/0; skipped=0; failures=0
+  OrganizationLookup: calls=732; totalMs=0.245; maxMs=0.078; meanMs=0.000; examined=590; accepted=142; cache=0/0; skipped=0; failures=0
+  FullWorldScan: calls=1; totalMs=45.937; maxMs=45.937; meanMs=45.937; examined=6; accepted=0; cache=0/0; skipped=0; failures=0
+  KnowledgeObservation: calls=27; totalMs=161.768; maxMs=9.729; meanMs=5.991; examined=32751; accepted=16; cache=0/0; skipped=0; failures=0
+  CulturalCognition: calls=1; totalMs=38.999; maxMs=38.999; meanMs=38.999; examined=588; accepted=12; cache=0/0; skipped=0; failures=0
+  PoliticalCognition: calls=1; totalMs=175.039; maxMs=175.039; meanMs=175.039; examined=12; accepted=12; cache=0/0; skipped=0; failures=0
+  combat: raid by Assembly of the Ford at 600 points executed
+  phase CombatRaid: 45.0 s wall; frames 636; fps median 20.1, 1% low 0.8; frame ms p50/p95/p99 49.7/128.1/1193.9; longest 1334.9 ms; hitches >100ms 49, >250ms 7; ticks +1257 (27.9 TPS); cpu cores 1.24; ws unavailable under this runtime; managed 3324 MB (start 2743); gc +3/+3/+3
+  [profiler CombatRaid] [CA][Profiler] enabled=True; fixed keys=25
+  BehaviorAuthorization: calls=25; totalMs=0.053; maxMs=0.004; meanMs=0.002; examined=25; accepted=21; cache=0/0; skipped=4; failures=0
+  KnowledgePropagation: calls=21; totalMs=66.162; maxMs=5.801; meanMs=3.151; examined=1452549; accepted=29978; cache=0/0; skipped=0; failures=0
+  SocialInterpretation: calls=1; totalMs=18.004; maxMs=18.004; meanMs=18.004; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  AutonomousHomePlanning: calls=2; totalMs=0.393; maxMs=0.198; meanMs=0.197; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  PopulationResidentLookup: calls=8; totalMs=0.261; maxMs=0.051; meanMs=0.033; examined=2104; accepted=94; cache=0/0; skipped=0; failures=0
+  OrganizationLookup: calls=4; totalMs=0.004; maxMs=0.001; meanMs=0.001; examined=4; accepted=0; cache=0/0; skipped=0; failures=0
+  KnowledgeObservation: calls=42; totalMs=299.200; maxMs=13.171; meanMs=7.124; examined=62300; accepted=197; cache=0/0; skipped=0; failures=0
+  fire: 3 fire(s) started in Crook Plain
+  phase FireEvent: 30.0 s wall; frames 486; fps median 20.8, 1% low 5.2; frame ms p50/p95/p99 48.1/122.7/191.3; longest 1313.3 ms; hitches >100ms 35, >250ms 3; ticks +968 (32.2 TPS); cpu cores 1.27; ws unavailable under this runtime; managed 3906 MB (start 3326); gc +2/+2/+2
+  [profiler FireEvent] [CA][Profiler] enabled=True; fixed keys=25
+  BehaviorAuthorization: calls=25; totalMs=0.085; maxMs=0.010; meanMs=0.003; examined=25; accepted=21; cache=0/0; skipped=4; failures=0
+  KnowledgePropagation: calls=16; totalMs=40.946; maxMs=3.402; meanMs=2.559; examined=1106704; accepted=17856; cache=0/0; skipped=0; failures=0
+  DomesticUnitLookup: calls=4; totalMs=0.058; maxMs=0.017; meanMs=0.015; examined=47; accepted=47; cache=0/0; skipped=0; failures=0
+  DomesticUnitTransition: calls=4; totalMs=0.737; maxMs=0.194; meanMs=0.184; examined=47; accepted=0; cache=0/0; skipped=0; failures=0
+  ProvisionResolution: calls=4; totalMs=22.050; maxMs=5.785; meanMs=5.512; examined=4; accepted=4; cache=0/0; skipped=0; failures=0
+  SettlementProgramMaintenance: calls=4; totalMs=8.818; maxMs=2.883; meanMs=2.204; examined=9; accepted=9; cache=0/0; skipped=0; failures=0
+  AutonomousHomePlanning: calls=2; totalMs=0.248; maxMs=0.149; meanMs=0.124; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  PopulationResidentLookup: calls=84; totalMs=1.684; maxMs=0.084; meanMs=0.020; examined=22092; accepted=992; cache=0/0; skipped=0; failures=0
+  OrganizationLookup: calls=1742; totalMs=0.368; maxMs=0.002; meanMs=0.000; examined=1733; accepted=9; cache=0/0; skipped=0; failures=0
+  FullMapScan: calls=1; totalMs=7.294; maxMs=7.294; meanMs=7.294; examined=167410; accepted=8925; cache=0/0; skipped=0; failures=0
+  FullWorldScan: calls=1; totalMs=38.014; maxMs=38.014; meanMs=38.014; examined=6; accepted=0; cache=0/0; skipped=0; failures=0
+  KnowledgeObservation: calls=32; totalMs=216.525; maxMs=8.982; meanMs=6.766; examined=44736; accepted=53; cache=0/0; skipped=0; failures=0
+  CulturalCognition: calls=1; totalMs=71.769; maxMs=71.769; meanMs=71.769; examined=1980; accepted=12; cache=0/0; skipped=0; failures=0
+  PoliticalCognition: calls=1; totalMs=265.248; maxMs=265.248; meanMs=265.248; examined=12; accepted=12; cache=0/0; skipped=0; failures=0
+  site materialization: every represented settlement of this fixture is materialized during generation and no deferred unmaterialized site exists on this map; generation-time materialization cost is the generation receipt's evidence and no synthetic runtime result is claimed. Deferred CA work (autonomous planning, reconciliation) is measured inside the day soak.
+  phase SiteMaterialization: 20.0 s wall; frames 289; fps median 19.4, 1% low 5.0; frame ms p50/p95/p99 51.6/133.8/200.0; longest 1268.0 ms; hitches >100ms 27, >250ms 2; ticks +572 (28.6 TPS); cpu cores 1.28; ws unavailable under this runtime; managed 4387 MB (start 3908); gc +1/+1/+1
+  [profiler SiteMaterialization] [CA][Profiler] enabled=True; fixed keys=25
+  BehaviorAuthorization: calls=26; totalMs=0.117; maxMs=0.013; meanMs=0.004; examined=26; accepted=22; cache=0/0; skipped=4; failures=0
+  KnowledgePropagation: calls=9; totalMs=22.239; maxMs=2.831; meanMs=2.471; examined=622521; accepted=7086; cache=0/0; skipped=0; failures=0
+  AutonomousHomePlanning: calls=1; totalMs=0.137; maxMs=0.137; meanMs=0.137; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  PopulationResidentLookup: calls=8; totalMs=0.373; maxMs=0.068; meanMs=0.047; examined=2104; accepted=94; cache=0/0; skipped=0; failures=0
+  OrganizationLookup: calls=4; totalMs=0.005; maxMs=0.001; meanMs=0.001; examined=4; accepted=0; cache=0/0; skipped=0; failures=0
+  KnowledgeObservation: calls=19; totalMs=138.021; maxMs=14.060; meanMs=7.264; examined=26562; accepted=86; cache=0/0; skipped=0; failures=0

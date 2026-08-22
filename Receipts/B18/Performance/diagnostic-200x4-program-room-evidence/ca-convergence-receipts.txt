@@ -1,0 +1,134 @@
+==== CONVERGENCE EXERCISE (developer-exercise route, disposable) ====
+
+---- MAP COMPOSITION RECEIPT ----
+[CA][Convergence] map receipt
+  ==== Crook Plain (CA-RS-CA-RG-646B3C61-0) ====
+  native Settlement faction: Assembly of the Ford / CannibalPirate; relations with you: Hostile
+  creation: authorized=True, executable=True, material=True, siting=True
+      program ca.settlement.agriculture / population-group:1: materialized
+      program ca.settlement.housing / population-group:1: materialized
+      program ca.settlement.provision.communal / CA-RS-CA-RG-646B3C61-0#0: materialized
+  [A] PEOPLE - expected Assembly of the Ford 80%, Charter Towns 20%
+      Assembly of the Ford (Main, normal): expected 80%, assigned 8 resident(s)
+      Charter Towns (OtherFaction, normal): expected 20%, assigned 2 resident(s)
+  [B] NATIVE FACTS of assigned residents:
+      Pawn.Faction: Assembly of the Ford x10   EXPECT >1 faction when a resident minority population group resolved
+      Pawn.Ideo:    Bagucinquan Army x10   EXPECT >1 ideo when a distinct Ideoligion group resolved
+      Certainty: min 0.62, max 0.97   EXPECT spread when cohesion differs
+  [C] PROVISIONING:
+      communal kitchens · universal access · funded by shared work · centralized
+        operator org: Crook Plain (treasury 0)   EXPECT present
+        runtime: operational; exact material contract: complete
+      physical: 1 hearth/stove(s), 4 dining table(s), 1 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
+  [D] LEDGER: 0 transaction(s), 0 debt(s) world-wide; tax collections update treasuries and record acts as they occur
+  ==== Hien (CA-RS-CA-RG-646B3C61-1) ====
+  native Settlement faction: Assembly of the Ford / CannibalPirate; relations with you: Hostile
+  creation: authorized=True, executable=False, material=True, siting=False; blocker: no native settlement placement for ca.settlement.provision.communal contract
+      program ca.settlement.agriculture / population-group:1: pending
+      program ca.settlement.housing / population-group:1: pending
+      program ca.settlement.provision.communal / CA-RS-CA-RG-646B3C61-1#1: pending
+  [A] PEOPLE - expected Assembly of the Ford 100%
+      Assembly of the Ford (Main, normal): expected 100%, assigned 13 resident(s)
+  [B] NATIVE FACTS of assigned residents:
+      Pawn.Faction: Assembly of the Ford x13   EXPECT >1 faction when a resident minority population group resolved
+      Pawn.Ideo:    Bagucinquan Army x13   EXPECT >1 ideo when a distinct Ideoligion group resolved
+      Certainty: min 0.67, max 0.91   EXPECT spread when cohesion differs
+  [C] PROVISIONING:
+      communal kitchens · universal access · funded by shared work · centralized
+        operator org: Hien (treasury 0)   EXPECT present
+        runtime: not operating; exact material contract: incomplete - provider-bound material nodes, stock, or allocation are incomplete
+      physical: 0 hearth/stove(s), 0 dining table(s), 0 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
+  [D] LEDGER: 0 transaction(s), 0 debt(s) world-wide; tax collections update treasuries and record acts as they occur
+  ==== Fortedvarg (CA-RS-CA-RG-646B3C61-2) ====
+  native Settlement faction: Assembly of the Ford / CannibalPirate; relations with you: Hostile
+  creation: authorized=True, executable=False, material=True, siting=False; blocker: no native settlement placement for ca.settlement.provision.communal contract
+      program ca.settlement.agriculture / population-group:1: pending
+      program ca.settlement.housing / population-group:1: pending
+      program ca.settlement.provision.communal / CA-RS-CA-RG-646B3C61-2#2: pending
+  [A] PEOPLE - expected Assembly of the Ford 100%
+      Assembly of the Ford (Main, normal): expected 100%, assigned 11 resident(s)
+  [B] NATIVE FACTS of assigned residents:
+      Pawn.Faction: Assembly of the Ford x11   EXPECT >1 faction when a resident minority population group resolved
+      Pawn.Ideo:    Bagucinquan Army x11   EXPECT >1 ideo when a distinct Ideoligion group resolved
+      Certainty: min 0.65, max 0.91   EXPECT spread when cohesion differs
+  [C] PROVISIONING:
+      communal kitchens · universal access · funded by shared work · centralized
+        operator org: Fortedvarg (treasury 0)   EXPECT present
+        runtime: not operating; exact material contract: incomplete - provider-bound material nodes, stock, or allocation are incomplete
+      physical: 0 hearth/stove(s), 0 dining table(s), 0 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
+  [D] LEDGER: 0 transaction(s), 0 debt(s) world-wide; tax collections update treasuries and record acts as they occur
+  ==== Combat Cove (CA-RS-CA-RG-646B3C61-3) ====
+  native Settlement faction: Charter Towns / CannibalPirate; relations with you: Hostile
+  creation: authorized=True, executable=False, material=True, siting=False; blocker: no native settlement placement for ca.settlement.housing contract
+      program ca.settlement.agriculture / population-group:1: pending
+      program ca.settlement.housing / population-group:1: pending
+      program ca.settlement.medicine / population-group:1: pending
+      program ca.settlement.provision.communal / CA-RS-CA-RG-646B3C61-3#3: pending
+  [A] PEOPLE - expected Charter Towns 100%
+      Charter Towns (Main, normal): expected 100%, assigned 13 resident(s)
+  [B] NATIVE FACTS of assigned residents:
+      Pawn.Faction: Charter Towns x13   EXPECT >1 faction when a resident minority population group resolved
+      Pawn.Ideo:    Bagucinquan Army x13   EXPECT >1 ideo when a distinct Ideoligion group resolved
+      Certainty: min 0.62, max 0.99   EXPECT spread when cohesion differs
+  [C] PROVISIONING:
+      communal kitchens · universal access · funded by shared work · centralized
+        operator org: Combat Cove (treasury 0)   EXPECT present
+        runtime: not operating; exact material contract: incomplete - provider-bound material nodes, stock, or allocation are incomplete
+      physical: 0 hearth/stove(s), 0 dining table(s), 0 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
+  [D] LEDGER: 0 transaction(s), 0 debt(s) world-wide; tax collections update treasuries and record acts as they occur
+  [F] Crook Plain FACTION STRUCTURE:
+      members: 10 enrolled
+      holdings on this map: 4 (tenure per the ownership axis; see ledger)
+      apertures: 28 CA_WindowGlazed, 15 CA_ApertureShuttered
+  [F] Hien FACTION STRUCTURE:
+      members: 13 enrolled
+      apertures: 34 CA_WindowGlazed, 5 CA_ApertureShuttered
+  [F] Fortedvarg FACTION STRUCTURE:
+      members: 11 enrolled
+      apertures: 12 CA_ApertureShuttered, 32 CA_WindowGlazed
+  [F] Combat Cove FACTION STRUCTURE:
+      members: 13 enrolled
+      apertures: 14 CA_ApertureShuttered, 34 CA_WindowGlazed
+  [E] SETTLEMENT AUTHORITY RELATIONS:
+      region: contested · regional center
+      Assembly of the Ford: no member relations (single settlement or loose association)
+      Charter Towns: no member relations (single settlement or loose association)
+
+
+---- RADICAL SHIFT RECEIPT ----
+[CA][Convergence] radical-shift receipt
+  faction: Assembly of the Ford (authority between settlements not set)
+  BEFORE: 0 member settlement(s), sharing []
+  physical: 1783 standing edifices across 3 settlement rect(s)
+  SHIFTED to central authority:
+  AFTER:  3 member settlement(s), sharing [defense, diplomacy, taxes, decisions, disputes]   EXPECT responsibilities changed
+  physical: 1783 standing edifices across 3 settlement rect(s)   EXPECT identical - authority moved, streets did not
+  RESTORED: 0 member settlement(s), sharing []
+
+
+---- FACTION CULTURE AND POLITICS RECEIPT ----
+[CA][Faction] state receipt
+  [CA][Faction] setup pass (faction-state receipt): 0 Culture identities, 0 Culture questions, 0 political-belief sets, 0 political-belief fields, 0 technological-knowledge sets, 0 represented institutional mechanisms generated; 2 non-humanlike factions skipped; unsupported political fields remain unset; Ideoligions unchanged
+  eligible factions: 17
+  substantive Culture and political owners: 17
+  factions with unset Political Order: 0
+  factions with represented institutions: 0
+  factions explicitly awaiting institutional evidence: 17
+  factions with unacknowledged unset institutions: 0
+  Ideoligions changed: 0 (expected 0)
+  RESULT: PASS
+
+---- POLITICAL ORDER MENU PERFORMANCE ----
+first open: request+construction 0.000 ms; first render 0.000 ms; effective open 0.000 ms; render calls 0; mean/max 0.000/0.000 ms
+reopen: request+construction 0.000 ms; first render 0.000 ms; effective open 0.000 ms; render calls 0; mean/max 0.000/0.000 ms
+thresholds: first open <1000 ms FAIL; reopen <250 ms FAIL; ordinary render <100 ms FAIL (OnGUI was not rendered; no UI result claimed)
+
+---- PASSIVE PLAY MODULE PROFILE (15 WALL SECONDS) ----
+[CA][Profiler] enabled=True; fixed keys=25
+  BehaviorAuthorization: calls=26; totalMs=0.088; maxMs=0.006; meanMs=0.003; examined=26; accepted=26; cache=0/0; skipped=0; failures=0
+  KnowledgePropagation: calls=9; totalMs=19.002; maxMs=3.965; meanMs=2.111; examined=331776; accepted=8837; cache=0/0; skipped=0; failures=0
+  AutonomousHomePlanning: calls=1; totalMs=5.706; maxMs=5.706; meanMs=5.706; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
+  OrganizationLookup: calls=20; totalMs=0.013; maxMs=0.002; meanMs=0.001; examined=19; accepted=1; cache=0/0; skipped=0; failures=0
+  KnowledgeObservation: calls=19; totalMs=128.128; maxMs=8.762; meanMs=6.744; examined=23047; accepted=142; cache=0/0; skipped=0; failures=0
+
+==== exercise finished: complete ====

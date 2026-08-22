@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "partition": "test",
+  "layouts": 449,
+  "expectation": "an 80% band should hold roughly 0.8 of held-out layouts; large deviations mean the bands do not generalize and must not ship",
+  "relationships": {
+    "bed-to-dining": {
+      "n": 401,
+      "coverageP10P90": 0.8928
+    },
+    "bed-to-foodprep": {
+      "n": 373,
+      "coverageP10P90": 0.7721
+    },
+    "defense-edge-affinity": {
+      "n": 258,
+      "coverageP10P90": 0.814
+    },
+    "door-passability": {
+      "n": 417,
+      "coverageP10P90": 0.9592
+    },
+    "envelope-density": {
+      "n": 449,
+      "coverageP10P90": 0.7728
+    },
+    "expansion-reserve": {
+      "n": 449,
+      "coverageP10P90": 0.7728
+    },
+    "food-protected": {
+      "n": 372,
+      "coverageP10P90": 0.9032
+    },
+    "foodprep-to-cold": {
+      "n": 326,
+      "coverageP10P90": 0.7331
+    },
+    "foodprep-to-dining": {
+      "n": 371,
+      "coverageP10P90": 0.8868
+    },
+    "hazard-to-bed": {
+      "n": 337,
+      "coverageP10P90": 0.7982
+    },
+    "medical-to-defense": {
+      "n": 113,
+      "coverageP10P90": 0.7611
+    },
+    "power-protected": {
+      "n": 338,
+      "coverageP10P90": 0.9704
+    },
+    "samedef-alignment": {
+      "n": 398,
+      "coverageP10P90": 0.8643
+    }
+  }
+}

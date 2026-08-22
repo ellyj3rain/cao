@@ -1,0 +1,10 @@
+[CA] morphology Industrial [88 ms] grown over (612,831,676,895) for Assembly of the Ford: 777 cells materialized, 22 lots, 288 cells roofed, 1 district(s), seed -1682655905; ground: 735 paved, 0 wild plants purged, 0 garden(s), 61 gradient street cells, no pier
+[CA] morphology Industrial [84 ms] grown over (528,826,592,890) for Assembly of the Ford: 850 cells materialized, 24 lots, 327 cells roofed, 1 district(s), seed -1682655904; ground: 758 paved, 0 wild plants purged, 0 garden(s), 69 gradient street cells, no pier
+[CA][Regional][ProgramSiting] ca.settlement.provision.communal cannot place Table1x2c in (528,826,592,890); rooms=1; indoor cells=12; source cells examined=12; native placements=0; reserved overlaps=12; previously reserved=6
+[CA][Regional][ProgramSiting] Shadow Valley: 1 deterministic program room added; last center (561, 0, 850)
+[CA] morphology Industrial [53 ms] grown over (618,408,682,472) for Assembly of the Ford: 746 cells materialized, 21 lots, 285 cells roofed, 1 district(s), seed -1682655903; ground: 739 paved, 0 wild plants purged, 0 garden(s), 53 gradient street cells, no pier
+[CA][Regional][ProgramSiting] ca.settlement.provision.communal cannot place Table2x2c in (618,408,682,472); rooms=1; indoor cells=12; source cells examined=12; native placements=0; reserved overlaps=12; previously reserved=6
+[CA][Regional][ProgramSiting] Criminal's Pit: 1 deterministic program room added; last center (659, 0, 450)
+[CA] morphology Industrial [68 ms] grown over (938,241,1003,306) for Charter Towns: 864 cells materialized, 26 lots, 342 cells roofed, 1 district(s), seed -1682655902; ground: 757 paved, 0 wild plants purged, 0 garden(s), 42 gradient street cells, no pier
+[CA][Regional][ProgramSiting] ca.settlement.provision.communal cannot place FueledStove in (938,241,1003,306); rooms=3; indoor cells=22; source cells examined=22; native placements=0; reserved overlaps=8; previously reserved=8
+[CA][Regional][ProgramSiting] Triumph Cove: 1 deterministic program room added; last center (970, 0, 290)

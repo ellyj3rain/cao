@@ -1,9 +1,9 @@
 # B16 Ideoligion and Culture Acceptance Receipt
 
-Generated: 2026-08-18 14:26:36 UTC / 2026-08-18 07:26:36 -07:00
+Generated: 2026-08-19 13:22:48 UTC / 2026-08-19 06:22:48 -07:00
 
 Assembly: `Assemblies/ColonistAwareness.dll`
-SHA-256: `EF56D9BADAAF82DB5E8269A3996F2F56A565BC8E564DB9A970C97F5B72C94342`
+SHA-256: `6878162A831177694186BADC1C5DB10805B6218D1477576ECE13D0D6BCFC21FC`
 
 More Precepts source commit: `33eab9398d7acc608e11dd7390476fefc4f433f5`
 
@@ -25,11 +25,11 @@ More Precepts source commit: `33eab9398d7acc608e11dd7390476fefc4f433f5`
 | Saved profile Culture migration | **PASS** | Scribe readback retains both profile identities and their schema-11/registry-3 nested Culture |
 | Schema-9 Culture migration | **PASS** | the exact legacy meaning maps to property control, all 48 registry-3 questions are present, and the full evidence row survives Scribe readback |
 | Represented state does not manufacture appraisal | **PASS** | sustained represented state changes only the descriptive norm; an explicit social appraisal is required before the evaluative mean moves |
-| Adjacent campaign schema declarations | **PASS** | catalog 5 declares every live Culture owner and regional plan schema 15 |
-| Catalog generation owns schema generation | **PASS** | catalog 5 accepts only owner-4/Culture-11 state; catalog 4 remains the supported owner-3/Culture-10 migration input |
+| Adjacent campaign schema declarations | **PASS** | catalog 6 declares the current Culture owners, typed proposition knowledge, and regional plan schema 16 |
+| Catalog generation owns schema generation | **PASS** | catalog 6 requires current owner-4/Culture-11 state; predecessor catalog 5 still admits the governed Culture migration input |
 | Native event streaming preflight | **PASS** | a valid exact event and repeated emissions of one occurrence pass; an unknown event and 65 distinct occurrences in one map/faction/locality/practice bucket fail before Scribe owner load |
 | Culture scope completeness preflight | **PASS** | schema-11 registry-3 Culture requires all 48 questions in every represented population scope before Scribe owner load |
-| Owner generation binds nested Culture preflight | **PASS** | owner schema 2 accepts Culture-10/registry-2 without the not-yet-introduced native-event ledger; current owner schema 3 requires that ledger and rejects legacy Culture before Scribe |
+| Owner generation binds nested Culture preflight | **PASS** | owner schema 3 accepts Culture-10/registry-2 with its predecessor event ledger; current owner schema 4 requires the current ledger and rejects legacy Culture before Scribe |
 | More Precepts support identity | **PASS** | package=llunak.MorePrecepts; source commit=33eab9398d7acc608e11dd7390476fefc4f433f5 |
 | Exact Ideoligion semantic registry | **PASS** | 184 explicit package, kind, def, and Culture mappings |
 | Question doctrine metadata matches the exact registry | **PASS** | 30 Culture questions advertise exact doctrine mappings |
@@ -51,15 +51,15 @@ More Precepts source commit: `33eab9398d7acc608e11dd7390476fefc4f433f5`
 | Ritual injury records the recipient | **PASS** | GotBlinded and GotScarified keep per-pawn occurrence identity but do not mislabel the altered pawn as the actor |
 | Native event retention is per settlement practice | **PASS** | rare evidence and another same-map, same-faction settlement's same-practice evidence survive a 1000-occurrence flood; duplicate participant emissions remain with their occurrence while only 64 distinct occurrences are retained |
 | Native event Scribe round-trip | **PASS** | package, event, practice, occurrence, target, tick, pawn, faction, and cell provenance survive serialization readback |
-| Current fixture pair | **PASS** | pair=True; epoch=14; schema=15; cultures=8; region=CA-RG-EB596A12; candidate=613b1fe44104; factions=3; settlements=4 |
+| Current fixture pair | **PASS** | pair=True; epoch=15; schema=16; cultures=11; region=CA-RG-EB596A12; candidate=613b1fe44104; factions=3; settlements=4 |
 | Authored Culture preservation | **PASS** | 289 live pre-B16 Culture rows survive exact serialization readback; one orphaned scoped row remains durable legacy evidence rather than live state |
-| Current fixture runtime Scribe load | **PASS** | the runtime serializer loads schema 15 with 3 factions, 4 settlements, 3 relations, and eight registry-3 Culture owners without dropping their 48-question scopes |
-| Adjacent pending-plan migration | **PASS** | epoch-13/schema-14 evidence upgrades all eight nested Culture owners atomically to schema 15 and survives Scribe readback with identity, geography, and 3/4/3 composition intact |
+| Current fixture runtime Scribe load | **PASS** | the runtime serializer loads schema 16 with 3 factions, 4 settlements, 3 frontier holdings, 3 relations, and eleven registry-3 Culture owners without dropping their 48-question scopes |
+| Adjacent pending-plan migration | **PASS** | epoch-14/schema-15 evidence upgrades settlement affiliation atomically to schema 16 and survives Scribe readback with all eight retained Culture owners plus identity, geography, and 3/4/3 composition intact; B17 separately verifies frontier migration |
 | Pending-plan migration rollback | **PASS** | one invalid nested Culture rejects the conversion before any owner or outer schema stamp changes |
 | Faction owner catalog-4 migration | **PASS** | schema-3 faction state migrates to exact registry-3 Culture, survives owner Scribe readback, and an invalid sibling leaves the original owner graph unchanged |
 | Player-founding owner catalog-4 migration | **PASS** | schema-3 founding state migrates to exact registry-3 Culture, survives owner Scribe readback, and failed validation does not replace the founding object |
 | Regional owner catalog-4 migration | **PASS** | schema-3 regional plans, settlements, founding copy, and record migrate together, survive owner Scribe readback, and an invalid nested Culture commits none of the queued changes |
-| Culture-history owner catalog-4 migration | **PASS** | schema-2 map Culture upgrades through the same registry path, survives owner Scribe readback, and failed validation leaves both Culture and the event ledger untouched; current and predecessor owners reject occurrence provenance belonging to another map |
+| Culture-history owner migration | **PASS** | schema-3 map Culture upgrades through the same registry path, survives owner Scribe readback, and failed validation leaves both Culture and the event ledger untouched; current and predecessor owners reject occurrence provenance belonging to another map |
 | Canonical ownership contract | **PASS** | five owners and native execution boundary are documented |
 | Playable ontology definition adjudication | **PASS** | 157 doctrine families contain no unresolved exact definitions; 4 native-only definitions are explicitly adjudicated |
 | Playable native-event adjudication | **PASS** | 185 loaded native events: 54 exact Culture-practice adapters and 131 explicit native-only dispositions |

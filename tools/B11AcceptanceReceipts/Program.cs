@@ -1485,10 +1485,15 @@ internal static class Program
                 new XElement("values"));
         }
         else if (nullMissionReference && definition.ComponentType ==
-            "ColonistAwareness.MissionCasualtyKnowledgeMapComponent")
-            component.Element("CA_missionCasualtyFacts")!.Add(
-                new XElement("li", new XElement("rescuer", "null"),
-                    new XElement("beneficiary", "Thing_Human1")));
+            "ColonistAwareness.CAPatrolSystemMapComponent")
+            // Casualty facts now legitimately allow null rescuer and
+            // beneficiary references (the pawns can die); a patrol
+            // assignment's pawn stays required non-null, so it carries
+            // the textual-null rejection contract.
+            component.Element("patrols")!.Add(
+                new XElement("li", new XElement("pawn", "null"),
+                    new XElement("route",
+                        new XElement("li", "(1, 0, 1)"))));
         else if (definition.ComponentType ==
             "ColonistAwareness.CARegionalWorldComponent")
         {

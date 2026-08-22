@@ -1,0 +1,1518 @@
+Mono path[0] = 'C:/Program Files (x86)/Steam/steamapps/common/RimWorld/RimWorldWin64_Data/Managed'
+Mono config path = 'C:/Program Files (x86)/Steam/steamapps/common/RimWorld/MonoBleedingEdge/etc'
+[PhysX] Initialized MultithreadedTaskDispatcher with 32 workers.
+Initialize engine version: 2022.3.35f1 (011206c7a712)
+[Subsystems] Discovering subsystems at path C:/Program Files (x86)/Steam/steamapps/common/RimWorld/RimWorldWin64_Data/UnitySubsystems
+GfxDevice: creating device client; threaded=1; jobified=0
+Direct3D:
+    Version:  Direct3D 11.0 [level 11.1]
+    Renderer: NVIDIA GeForce RTX 4090 Laptop GPU (ID=0x2757)
+    Vendor:   NVIDIA
+    VRAM:     16048 MB
+    Driver:   32.0.16.1062
+Begin MonoManager ReloadAssembly
+- Loaded All Assemblies, in  0.110 seconds
+- Finished resetting the current domain, in  0.001 seconds
+<RI> Initializing input.
+<RI> Input initialized.
+<RI> Initialized touch support.
+[PhysX] Initialized MultithreadedTaskDispatcher with 32 workers.
+UnloadTime: 0.655100 ms
+RimWorld 1.6.4871 rev591
+Fallback handler could not load library C:/Program Files (x86)/Steam/steamapps/common/RimWorld/RimWorldWin64_Data/MonoBleedingEdge/data-000002577A055350.dll
+Fallback handler could not load library C:/Program Files (x86)/Steam/steamapps/common/RimWorld/RimWorldWin64_Data/MonoBleedingEdge/data-000002577A2B6150.dll
+Fallback handler could not load library C:/Program Files (x86)/Steam/steamapps/common/RimWorld/RimWorldWin64_Data/MonoBleedingEdge/data-000002577B245020.dll
+[CA][Regional][Root] RockNoises.Init: replaced 1 map.Tile read(s) with the footprint anchor - stone palette - NaturalRockTypesIn(map.Tile) fixes both the native rock set and, because each RockNoise draws Rand.Range in iteration order, the rockDef->Perlin pairing that CA's union postfix extends
+[CA][Regional][Root] MapCellsInRandomOrder.CreateListIfShould: replaced 1 map.Tile read(s) with the footprint anchor - initial plant layout - GenStep_Plants walks this order and its shuffle is seeded worldSeed ^ map.Tile hash
+[CA][Regional][Root] GenStep_Pollution.Generate: replaced 1 map.Tile read(s) with the footprint anchor - map-wide pollution percentage is read off the parented tile's pollution value
+[CA][Regional][Root] GenStep_Snow.Generate: replaced 1 map.Tile read(s) with the footprint anchor - snow depth counts twelfths below freezing at map.Tile
+[CA][Regional][Root] MapTemperature.get_SeasonalTemp: replaced 1 map.Tile read(s) with the footprint anchor - seasonal temperature is climate, and one backing map has one climate; it also feeds GenStep_Snow's depth
+[CA][Regional][Root] MapTemperature.get_OutdoorTemp: replaced 1 map.Tile read(s) with the footprint anchor - outdoor temperature, same reason as SeasonalTemp
+[CA][Regional][Root] GenLocalDate.Twelfth: replaced 1 map.Tile read(s) with the footprint anchor - the twelfth is a climate/season reading, and GenStep_Snow takes it from the map
+[CA][Regional][Root] GenLocalDate.Season: replaced 1 map.Tile read(s) with the footprint anchor - season, same reason as Twelfth
+[CA][Regional][Root] TileMutatorWorker_MineralRich.GeneratePostTerrain: replaced 1 map.Tile read(s) with the footprint anchor - which mineral the landmark yields is feature identity
+[CA][Regional][Root] TileMutatorWorker_Stockpile.GeneratePostFog: replaced 1 map.Tile read(s) with the footprint anchor - which stockpile type the hatch carries is feature identity
+[CA][Regional][Root] PollutionGrid.PollutionTick: replaced 3 map.Tile read(s) with the footprint anchor sentinel (write suppressed) - the only WRITE in the root trace; suppressed for regional maps rather than re-anchored
+[CA][Regional][Root] MapGenerator.GenerateMap: replaced 1 parent.Tile read(s); the map generation master seed is now footprint-anchored.
+[CA][Regional][Root] GenStep_Pollution.Generate: replaced 1 map.Tile read(s) with the footprint anchor - map-wide pollution percentage is read off the parented tile's pollution value
+[CA][Regional][Root] GenStep_Snow.Generate: replaced 1 map.Tile read(s) with the footprint anchor - snow depth counts twelfths below freezing at map.Tile
+[CA][Regional][Root] MapGenerator.GenerateMap: replaced 1 parent.Tile read(s); the map generation master seed is now footprint-anchored.
+[CA][Regional] TerrainFrom: redirected 2 map.TileInfo.Mutators read(s) to the selected area owning the cell; geographic halo reads are neutral.
+[CA][Regional] BeachTerrainAt: redirected 1 map.TileInfo.Mutators read(s) to the selected area owning the cell; geographic halo reads are neutral.
+[CA][Regional] LakeshoreTerrainAt: redirected 1 map.TileInfo.Mutators read(s) to the selected area owning the cell; geographic halo reads are neutral.
+[CA][Regional] MudTerrainAt: redirected 1 map.TileInfo.Mutators read(s) to the selected area owning the cell; geographic halo reads are neutral.
+[CA][Regional] RiverbankTerrainAt: redirected 1 map.TileInfo.Mutators read(s) to the selected area owning the cell; geographic halo reads are neutral.
+[CA][MapSize] transpiler: redirected 2 MapSizes/TestMapSizes field-read(s) in the size loop to CA's source-scale catalog; the drawn list no longer trusts the mutable field
+[CA][Regional] TerrainFrom: redirected 2 map.TileInfo.Mutators read(s) to the selected area owning the cell; geographic halo reads are neutral.
+[CA][Regional][Root] MapGenerator.GenerateMap: replaced 1 parent.Tile read(s); the map generation master seed is now footprint-anchored.
+[CA][Regional][Root] GenStep_Pollution.Generate: replaced 1 map.Tile read(s) with the footprint anchor - map-wide pollution percentage is read off the parented tile's pollution value
+[CA][Regional][Root] GenStep_Snow.Generate: replaced 1 map.Tile read(s) with the footprint anchor - snow depth counts twelfths below freezing at map.Tile
+[CA][Regional][Root] RockNoises.Init: replaced 1 map.Tile read(s) with the footprint anchor - stone palette - NaturalRockTypesIn(map.Tile) fixes both the native rock set and, because each RockNoise draws Rand.Range in iteration order, the rockDef->Perlin pairing that CA's union postfix extends
+[CA][Regional][Root] MapGenerator.GenerateMap: replaced 1 parent.Tile read(s); the map generation master seed is now footprint-anchored.
+[Colonist Awareness] dual wield seams installed
+[CA][Regional] advanced map sizes installed: 200, 225, 250, 275, 300, 325, 350, 400, 500; each is a local source scale independent of regional extent
+[CA][Regional] persistent regional footprint layer verification deferred until Surface Def injection
+[CA][Regional] Map Preview compatibility deferred until main-thread DefOf initialization
+[Colonist Awareness] loaded; behavior trace on.
+[CA][Regional] starting-region authoring, projected geography, strategic overview, and saved settlement overlays installed.
+ReGrowth 2 5.1-rev6
+Parsed 0.3 as int.
+Parsed 0.3 as int.
+Key binding conflict: MainTab_History and MainTab_AM_LevelSchedule are both bound to F9.
+Key binding conflict: MainTab_AM_LevelSchedule and MainTab_History are both bound to F9.
+[CA][Authoring] An incompatible pending creation draft or reusable authoring profile was discarded. Realized campaign history is governed by the durable campaign schema and was not reset through this path.
+[CA][Regional] persistent regional footprint world layer verified from Surface Def
+[CA][Regional] Map Preview compatibility installed against the 1.6 three-argument size API; regional requests use the selected composition's exact backing frame and shared projection steps; inhabited settlement materialization remains preview-inert
+[CA][VehicleFramework] resolved bundled Shader Materials/ShaderRGBPattern.shader through its retained upstream identity.
+[CA][VehicleFramework] resolved bundled Shader Materials/ShaderRGBSkin.shader through its retained upstream identity.
+[CA][VehicleFramework] resolved bundled Shader Materials/ShaderRGB.shader through its retained upstream identity.
+Translation data for language English has 1 errors. Generate translation report for more info.
+[Simple FX: Splashes] The following terrains have been defined as being hard:
+ - rough-hewn vacstone
+ - rough vacstone
+ - rough-hewn marble
+ - rough marble
+ - rough-hewn slate
+ - rough slate
+ - rough-hewn limestone
+ - rough limestone
+ - rough-hewn granite
+ - rough granite
+ - rough-hewn sandstone
+ - rough sandstone
+ - Striped ceramic tiles
+ - ceramic tile（black）
+ - ceramic tile
+ - ancient heavy bridge
+ - heavy bridge
+ - gravship substructure
+ - vacstone flagstone
+ - vacstone tile
+ - hex tile
+ - totemic vacstone tile
+ - totemic marble tile
+ - totemic slate tile
+ - totemic limestone tile
+ - totemic granite tile
+ - totemic sandstone tile
+ - spikecore plates
+ - vacstone spikecore tile
+ - marble spikecore tile
+ - slate spikecore tile
+ - limestone spikecore tile
+ - granite spikecore tile
+ - sandstone spikecore tile
+ - morbid vacstone tile
+ - morbid marble tile
+ - morbid slate tile
+ - morbid limestone tile
+ - morbid granite tile
+ - morbid sandstone tile
+ - fine vacstone tile
+ - fine marble tile
+ - fine slate tile
+ - fine limestone tile
+ - fine granite tile
+ - fine sandstone tile
+ - broken asphalt
+ - marble flagstone
+ - slate flagstone
+ - limestone flagstone
+ - granite flagstone
+ - sandstone flagstone
+ - marble tile
+ - slate tile
+ - limestone tile
+ - granite tile
+ - sandstone tile
+ - sterile tile
+ - gold tile
+ - silver tile
+ - steel tile
+ - paved tile
+ - concrete
+[TrueTerrainColors v1.12.26] Loaded cached true colors for 568 terrain defs from file.
+[CA][Regional][Root] PollutionGrid.PollutionTick: replaced 3 map.Tile read(s) with the footprint anchor sentinel (write suppressed) - the only WRITE in the root trace; suppressed for regional maps rather than re-anchored
+[CA][TickProbe] armed: DoSingleTick attribution every 300 ticks
+[CA][Exercise] ARMED: the exercise will author a two-faction regional candidate at the menu, generate it through the native lifecycle, run every receipt, capture screenshots and exit
+[Colonist Awareness] Simple Sidearms bridge active
+[CA][Regional][Jobs][MapListerIndex] installed; stable-order Add=True Remove=True; lists below 4096 entries stay native; env CA_REGIONAL_LISTER_INDEX=0 disables and CA_REGIONAL_LISTER_INDEX_AUDIT=n sets sampling
+[CA][Regional][Jobs][PlantMask] plant frozen-term prediction screen installed in-chain on the AcceptanceReport overload; SERVE mode (proven rejects skip the original; postfix chain still runs and re-verifies); frozen-term surface gate allowing exactly 4 proven method/kind/owner entries; extraction after 4096 in-scope calls under a 96 MB checked cap; env CA_REGIONAL_PLANTMASK=0 disables at load, CA_REGIONAL_PLANTMASK_SERVE=0 restores full native audit mode
+[CA][Regional][Jobs] regional RockChunks noise jobs installed: parallel grid build on regional maps only, native Rand/traversal/spawn order retained; workers=8 (processors 32 - 2, clamped 1-8); sequential-verify on; env CA_REGIONAL_JOBS=0 disables at load, CA_REGIONAL_JOBS_SEQUENTIAL=1 forces one worker, CA_REGIONAL_JOBS_WORKERS=n overrides, CA_REGIONAL_JOBS_VERIFY=0 skips the live equivalence pass; ReGrowth RockChunks postfix timing installed
+[CA][Regional][Root] GenStep_Pollution.Generate: replaced 1 map.Tile read(s) with the footprint anchor - map-wide pollution percentage is read off the parented tile's pollution value
+[CA][Regional][Root] GenStep_Snow.Generate: replaced 1 map.Tile read(s) with the footprint anchor - snow depth counts twelfths below freezing at map.Tile
+[CA][Regional][Jobs][SpawnPath] ordered-commit attribution and spawned-things index installed; spawned-things index on; native-scan audit stride 256; env CA_REGIONAL_SPAWNPATH=0 disables at load, CA_REGIONAL_SPAWNPATH_INDEX=0 keeps receipts but serves native scans, CA_REGIONAL_SPAWNPATH_AUDIT=n samples every nth served index against the native scan; optional wraps: 16 installed [spawn,wipe,despawn,listerRemove,filth,rebuildAll,rebuildDirty,plantCheck,plantSaturated,plantCanGrow,plantClusters,plantSuccession,plantDistribution,scatterCalc,scatterFind,genstepBoundaries:98]
+[CA][Regional][Jobs][NoiseGrids] regional terrain noise grids installed: elevation/fertility routed; TerrainAt routed; flood-fill lambda routed; workers=8; sequential-verify off; caps 16 grids / 160 MB per scope; worker graphs fail closed to exact Perlin/Const/Displace/Scale/Rotate/ScaleBias/Multiply types; materialize after max(4096, ceil(area/workers)) in-bounds requests; one worker stays native; env CA_REGIONAL_NOISEGRIDS=0 disables at load, _SEQUENTIAL=1 forces one worker, _WORKERS=n overrides, _VERIFY=1 enables the live full-grid bitwise rebuild; regional rock-selection noises routed directly.
+[SmashPhil.VehicleFramework] Compatibility Patches: ludeon.rimworld.odyssey,VanillaExpanded.VCEF
+[CA][VehicleFramework] resolved bundled Texture2D Textures/SmashTools/VideoSkiptoNext.png through its retained upstream identity.
+[CA][VehicleFramework] resolved bundled Texture2D Textures/UI/Cursors/MouseHandOpen.png through its retained upstream identity.
+[CA][VehicleFramework] resolved bundled Texture2D Textures/UI/Cursors/MouseHandClosed.png through its retained upstream identity.
+[CA][VehicleFramework] resolved bundled Shader Materials/ShaderRGBUI.shader through its retained upstream identity.
+[CA][VehicleFramework] resolved bundled Shader Materials/ShaderRGBPatternUI.shader through its retained upstream identity.
+[CA][VehicleFramework] resolved bundled Shader Materials/ShaderRGBSkinUI.shader through its retained upstream identity.
+[CA][VehicleFramework] resolved bundled Texture2D Textures/UI/Gizmos/GearDrive.png through its retained upstream identity.
+[CA][VehicleFramework] resolved bundled Texture2D Textures/UI/Gizmos/GearReverse.png through its retained upstream identity.
+[CA][VehicleFramework] resolved bundled Texture2D Textures/UI/Gizmos/RefuelFromCargo.png through its retained upstream identity.
+[CA][VehicleFramework] resolved bundled Texture2D Textures/UI/Icons/Rotate.png through its retained upstream identity.
+[VehicleFramework] version 1.4.1.0-alpha
+[CA][VehicleFramework] resolved bundled Texture2D Textures/UI/Icons/EfficiencyHills.png through its retained upstream identity.
+[CA][VehicleFramework] resolved bundled Texture2D Textures/UI/Icons/EfficiencyRiver.png through its retained upstream identity.
+[CA][VehicleFramework] resolved bundled Texture2D Textures/UI/Icons/EfficiencyRoads.png through its retained upstream identity.
+[CA][Regional][Root] MapGenerator.GenerateMap: replaced 1 parent.Tile read(s); the map generation master seed is now footprint-anchored.
+Unloading 5 Unused Serialized files (Serialized files now loaded: 7)
+MVCF successfully applied 0 patches
+Unloading 193 unused Assets to reduce memory usage. Loaded Objects now: 31561.
+Total: 314.123400 ms (FindLiveObjects: 0.979500 ms CreateObjectMapping: 0.636000 ms MarkObjects: 312.020700 ms  DeleteObjects: 0.486600 ms)
+
+adding BorealForestto primary biomes
+adding Tundrato primary biomes
+adding ColdBogto primary biomes
+adding IceSheetto primary biomes
+adding TemperateForestto primary biomes
+adding TemperateSwampto primary biomes
+adding TropicalRainforestto primary biomes
+adding TropicalSwampto primary biomes
+adding AridShrublandto primary biomes
+adding Desertto primary biomes
+adding ExtremeDesertto primary biomes
+adding GlacialPlainto primary biomes
+adding Glowforestto primary biomes
+adding Grasslandsto primary biomes
+adding LavaFieldto primary biomes
+adding Scarlandsto primary biomes
+adding RG_AspenForestto primary biomes
+finished biome cycle
+finished biome cycle
+finished biome cycle
+finished biome cycle
+finished biome cycle
+finished biome cycle
+finished biome cycle
+finished biome cycle
+finished biome cycle
+finished biome cycle
+finished biome cycle
+finished biome cycle
+finished biome cycle
+finished biome cycle
+finished biome cycle
+finished biome cycle
+finished biome cycle
+[CA][Exercise] fixed benchmark setup: world seed CA-B18-PERFORMANCE-CONVERGENCE, starting-tile seed 181806, run RNG seed 181814, scale 400x6
+[CA][Exercise] authored candidate CA-RG-C42D7CC3 at tile 115253: contested · regional center; 4 settlements, 2 factions
+Unloading 3 Unused Serialized files (Serialized files now loaded: 7)
+[PhysX] Initialized MultithreadedTaskDispatcher with 32 workers.
+UnloadTime: 0.936900 ms
+Unloading 2 unused Assets to reduce memory usage. Loaded Objects now: 31759.
+Total: 272.609800 ms (FindLiveObjects: 0.934100 ms CreateObjectMapping: 0.590500 ms MarkObjects: 271.016600 ms  DeleteObjects: 0.068000 ms)
+
+Initializing new game with mods:
+  - brrainz.harmony
+  - Ludeon.RimWorld
+  - Ludeon.RimWorld.Royalty
+  - Ludeon.RimWorld.Ideology
+  - Ludeon.RimWorld.Biotech
+  - Ludeon.RimWorld.Odyssey
+  - XMB.AncientUrbanrUins.MO
+  - IH.Clean.Textures.Background
+  - OskarPotocki.VanillaFactionsExpanded.Core
+  - VanillaExpanded.VCEF
+  - ReGrowth.BOTR.Core
+  - IH.Clean.Textures
+  - RedMattis.BetterGeneInheritance
+  - Adamas.Hospital
+  - costel.layeredapparel
+  - m00nl1ght.MapPreview
+  - ReGrowth.BOTR.AspenForest
+  - PeteTimesSix.SimpleSidearms
+  - weilbyte.snapout
+  - Arylice.Rimworld.AutomaticStumpChopping
+  - Nals.FacialAnimation
+  - EdB.PrepareCarefully
+  - ferny.ProgressionEducation
+  - ferny.ProgressionTherapy
+  - ferny.TraumaAndIntegrity
+  - ellyj3rain.colonistawareness
+[CA][Regional] transient developer exercise CA-RG-C42D7CC3 registered for this runtime only; it is excluded from durable regional world state and cannot be saved; compatibility at registration: 1 attachments across 1 source tiles; 1 obligations; mechanism [RuntimeWorkerBehaviour=1]; def readiness [ImplementedUnverified=1]; obligation readiness [ImplementedUnverified=1].
+[CA][Regional] created authored world faction Assembly of the Ford from CannibalPirate; visible True
+[CA][Regional] created authored world faction Charter Towns from CannibalPirate; visible True
+[CA][Faction] setup pass (region CA-RG-C42D7CC3): 15 Culture identities, 672 Culture questions, 15 political-belief sets, 0 political-belief fields, 15 technological-knowledge sets, 0 represented institutional mechanisms generated; 2 non-humanlike factions skipped; unsupported political fields remain unset; Ideoligions unchanged
+[CA][Regional] queued regional 400-cell source scale; local tile scale 400x400; aggregate backing 1246x1080 for surface tile 115253,0; source members 115253,115260,39480,115255,115261,66123; landing 115253; authored settlements 4
+Direct3D: detected that using refresh rate causes time drift. Will stop trusting refresh rate until the game window is moved.
+[CA][Regional][Root] engine root: map 0 parented to landing tile 115253; footprint anchor 115253 (CA-RG-C42D7CC3) now answers every intercepted root read
+Direct3D: detected that vsync is broken (it does not limit frame rate properly). Delta time will now be calculated using cpu-side time stampling until the game window is moved.
+[CA][Regional][Timing] projection 1246x1080 map 0: composition 0E91A2B00FCB3D20; classification 3200 ms; smoothing/cache 184 ms; water depth 73 ms; littoral 19 ms; diagnostics 91 ms; total 3568 ms
+[CA][Regional][Jobs][SpawnPath] scope opened for 1246x1080 map 0 with 0 pre-spawned things; spawned-things index on; native-scan audit stride 256; env CA_REGIONAL_SPAWNPATH=0 disables at load, CA_REGIONAL_SPAWNPATH_INDEX=0 keeps receipts but serves native scans, CA_REGIONAL_SPAWNPATH_AUDIT=n samples every nth served index against the native scan
+[CA][Regional][Jobs][NoiseGrids] scope opened for 1246x1080 map 0; workers=8; sequential-verify off; caps 16 grids / 160 MB per scope; worker graphs fail closed to exact Perlin/Const/Displace/Scale/Rotate/ScaleBias/Multiply types; materialize after max(4096, ceil(area/workers)) in-bounds requests; one worker stays native; env CA_REGIONAL_NOISEGRIDS=0 disables at load, _SEQUENTIAL=1 forces one worker, _WORKERS=n overrides, _VERIFY=1 enables the live full-grid bitwise rebuild; scope materialization threshold=168210
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_ElevationFertility [ElevationFertility] for 1246x1080 map 0
+[CA][Regional][Jobs][NoiseGrids] Multiply#1 built for map 0: 418 ms across 8 workers, checksum 1614B909101A4FA6, audit off
+[CA][Regional][Jobs][NoiseGrids] ScaleBias#2 built for map 0: 118 ms across 8 workers, checksum 49C4164F994E1B7F, audit off
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_ElevationFertility [ElevationFertility] completed in 1008 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_ScaleElevation [GrasslandsElevationReduction] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_ScaleElevation [GrasslandsElevationReduction] completed in 60 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_MutatorPostElevationFertility [MutatorPostElevationFertility] for 1246x1080 map 0
+[CA][Regional] member-mutator loss receipt for map 0; root tile 115253 of 59 geographic source tiles (58 non-root); root mutators [none]; per-source [1344:none | 4359:none | 4363:none | 7316:none | 9304:none | 12547:none | 12548:none | 21404:none | 21406:none | 21407:none | 39476:none | 39477:none | 39478:none | 39479:none | 39480:none | 39481:WildPlants | 39500:none | 39505:none | 39521:none | 39522:none | 39523:none | 48039:none | 48040:none | 48041:none | 48042:none | 66119:none | 66120:SunnyMutator | 66121:none | 66122:MixedBiome | 66123:none | 66124:none | 66143:AnimalLife_Decreased,AncientToxVent,Pollution_Increased | 66144:none | 66148:none | 66165:none | 66166:none | 83844:none | 83845:none | 83846:none | 83848:none | 83849:none | 83850:none | 95797:none | 95798:WindyMutator | 95799:none | 115245:none | 115252:MixedBiome | 115253:root:none | 115254:none | 115255:WildPlants | 115256:none | 115257:AnimalHabitat | 115258:none | 115259:WildPlants | 115260:none | 115261:none | 115262:none | 115263:none | 115264:none]; union [WildPlants,SunnyMutator,MixedBiome,AnimalLife_Decreased,AncientToxVent,Pollution_Increased,WindyMutator,AnimalHabitat]; member-only discarded [AncientToxVent,AnimalHabitat,AnimalLife_Decreased,MixedBiome,Pollution_Increased,SunnyMutator,WildPlants,WindyMutator]; provisional hook-shape classes, not verified scope [AncientToxVent=incompatible (hooks NonCriticalStructures; on 1 member tiles 66143) | AnimalHabitat=region-wide (hooks none; on 1 member tiles 115257) | AnimalLife_Decreased=region-wide (hooks none; on 1 member tiles 66143) | MixedBiome=region-wide (hooks none; on 2 member tiles 66122,115252) | Pollution_Increased=region-wide (hooks none; on 1 member tiles 66143) | SunnyMutator=region-wide (hooks none; on 1 member tiles 66120) | WildPlants=region-wide (hooks none; on 3 member tiles 39481,115255,115259) | WindyMutator=region-wide (hooks none; on 1 member tiles 95798)]; suppression flags [preventNaturalElevation root=clear, root discards 0 member tiles carrying it, root imposes on 0 not carrying it | preventPatches root=clear, root discards 0 member tiles carrying it, root imposes on 0 not carrying it | preventsPondGeneration root=clear, root discards 0 member tiles carrying it, root imposes on 0 not carrying it]; density factors [animal root=1.00, 1 member tiles differ, 1 non-unit, member range 0.50-1.00 | plant root=1.00, 0 member tiles differ, 0 non-unit, member range 1.00-1.00 | junk root=1.00, 0 member tiles differ, 0 non-unit, member range 1.00-1.00 | geyser root=1.00, 0 member tiles differ, 0 non-unit, member range 1.00-1.00 | chunk root=1.00, 0 member tiles differ, 0 non-unit, member range 1.00-1.00 | fish root=1.00, 0 member tiles differ, 0 non-unit, member range 1.00-1.00]
+[CA][Regional] projected mountain field: 0 mountainous source tiles; 0 cells raised (0.0% of map), 0 at or above 0.70; peak add 0.000
+[CA][Regional] projected caves: no cave-bearing source tiles
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_MutatorPostElevationFertility [MutatorPostElevationFertility] completed in 35 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting ColonistAwareness.GenStep_CARegionalProjection [CA_RegionalProjection] for 1246x1080 map 0
+[CA][Regional] compatibility gate failed at GENERATION for candidate de7d325f7c1e - This region contains content CA cannot yet generate correctly: WildPlants on 1 tile - overall ImplementedUnverified; unresolved: AdditionalWildPlants (ImplementedUnverified: selected member additions are unioned into the map-wide candidate/commonality caches, then PlantChoiceWeight uses its cell to retain mutator-only species on the carrying area's visible land). Choose a different region, or remove the landmarks carrying it, before continuing. (1 attachments across 1 source tiles; 1 obligations; mechanism [RuntimeWorkerBehaviour=1]; def readiness [ImplementedUnverified=1]; obligation readiness [ImplementedUnverified=1]) Continuing as the explicitly accepted transient test; saving is disabled and this result is evidence, not a durable-world compatibility claim.
+[CA][Regional] compatibility: 1 attachments across 1 source tiles; 1 obligations; mechanism [RuntimeWorkerBehaviour=1]; def readiness [ImplementedUnverified=1]; obligation readiness [ImplementedUnverified=1]
+[CA][Regional] candidate de7d325f7c1e confirmed is generating; feature identities and seeds derive from it. Preview-to-generation equivalence is NOT established by this - it requires both to consume the same execution contracts and remains unverified.
+[CA][Regional] continuously projected 59 geographic sampling tiles (land 59, water 0; 6 selected core) at 400 local cells each onto aggregate 1246x1080 map 0; landing member 115253; sampling tile ids 1344, 4359, 4363, 7316, 9304, 12547, 12548, 21404, 21406, 21407, 39476, 39477, 39478, 39479, 39480, 39481, 39500, 39505, 39521, 39522, 39523, 48039, 48040, 48041, 48042, 66119, 66120, 66121, 66122, 66123, 66124, 66143, 66144, 66148, 66165, 66166, 83844, 83845, 83846, 83848, 83849, 83850, 95797, 95798, 95799, 115245, 115252, 115253, 115254, 115255, 115256, 115257, 115258, 115259, 115260, 115261, 115262, 115263, 115264; frame origin 13.8991,16.0192; center offset -0.2549,-0.0915; scale 1397.190 cells/degree; biomes AridShrubland, Grasslands; perimeter water neighbors none; vanilla-profile beach cells 0; shallow-water depth 40; biome cells [AridShrubland:940360, Grasslands:405320]; cross-biome edges 1920; triple-junction quads 0; micro-fragment cells reassigned 0; projected water 0 (maximum depth 0, shallow 0, deep 0, isotropic chamfer); retained water 0 (shoreline 0, share 0.0%); selected-core land 846720; geographic-halo land 498960; vanilla-profile beach cells 0; littoral components 0 (largest 0, tiny 0); source-center checks land 0 flooded, water 0 dry; adjacent land joins 16 checked, 0 severed; coastal atolls 0 (lagoon cells 0, ring land 0, classification changes beyond carrier ownership 0); coves 0 (water cells 0, classification changes beyond carrier ownership 0); archipelagos 0 (water cells 0, classification changes beyond carrier ownership 0); timing classification 3200 ms; smoothing/cache 184 ms; water depth 73 ms; littoral 19 ms; diagnostics 91 ms; total 3568 ms; elevation application 139 ms; genstep total 139 ms; river-valley relief cells 0
+[CA][Regional][Timing][GenStep] ColonistAwareness.GenStep_CARegionalProjection [CA_RegionalProjection] completed in 139 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_RocksFromGrid [RocksFromGrid] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_ScatterLumpsMineable for 1246x1080 map 0
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+Not generating ores for asteroid step
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_ScatterLumpsMineable completed in 1167 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_RocksFromGrid [RocksFromGrid] completed in 2217 ms for 1246x1080 map 0
+[CA][Regional][Timing][IndexedRemoval] RimWorld.GenStep_RocksFromGrid [RocksFromGrid] completed with plantDespawns=0 ownerRemovals=6553 listerRemovals=6553 indexedLists=8 snapshotEntries=81702 indexWork=53 ms restore=12 ms comparisonsBypassed=202913282 shiftsBypassed=202307530 canonicalOrder=True for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] RimWorld.GenStep_RocksFromGrid [RocksFromGrid] for map 0: spawn=35292/1343ms; wipe=35292/289ms; despawn=6553/99ms; ownerTryAdd=35292/12ms; ownerRemove=6553/11ms; mapListerRemove=6553/51ms; spawnedThings=28739
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_Terrain [Terrain] for 1246x1080 map 0
+[CA][Regional][Progress] Generating terrain: 62% (835584/1345680 cells after 25452 ms) for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_Terrain [Terrain] completed in 43327 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_MutatorPostTerrain [MutatorPostTerrain] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_MutatorPostTerrain [MutatorPostTerrain] completed in 1 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting ColonistAwareness.GenStep_CARegionalWorldLinks [CA_RegionalWorldLinks] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] ColonistAwareness.GenStep_CARegionalWorldLinks [CA_RegionalWorldLinks] completed in 0 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting KCSG.GenStep_BiomeStructures [KCSG_GenerateBiomeStructures] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] KCSG.GenStep_BiomeStructures [KCSG_GenerateBiomeStructures] completed in 0 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting ColonistAwareness.GenStep_CARegionalSettlements [CA_RegionalSettlements] for 1246x1080 map 0
+[CA][Faction] setup pass (region CA-RG-C42D7CC3): 0 Culture identities, 0 Culture questions, 0 political-belief sets, 0 political-belief fields, 0 technological-knowledge sets, 0 represented institutional mechanisms generated; 2 non-humanlike factions skipped; unsupported political fields remain unset; Ideoligions unchanged
+[CA] morphology Industrial [113 ms] grown over (612,831,676,895) for Assembly of the Ford: 777 cells materialized, 22 lots, 288 cells roofed, 1 district(s), seed -1682655905; ground: 735 paved, 0 wild plants purged, 0 garden(s), 61 gradient street cells, no pier
+[CA][Regional][Jobs][SpawnPath] region rebuild entry TryRebuildDirtyRegionsAndRooms during regional generation of map 0; caller stack:
+  at System.Environment.get_StackTrace () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.TraceRebuild (System.String entryPoint) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.RebuildDirtyPrefix (System.Int64& __state) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionAndRoomUpdater.TryRebuildDirtyRegionsAndRooms_Patch3 (Verse.RegionAndRoomUpdater ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionGrid.GetValidRegionAt_Patch1 (Verse.RegionGrid , Verse.IntVec3 ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.RegionAndRoomQuery.RegionAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.RegionAndRoomQuery.DistrictAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.RegionAndRoomQuery.RoomAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GridsUtility.GetRoom_Patch1 (Verse.IntVec3 , Verse.Map ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at ColonistAwareness.CAApertures.CutApertures (Verse.Map map, ColonistAwareness.CARegionalSettlementRecord record) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at ColonistAwareness.GenStep_CARegionalSettlements.Materialize (ColonistAwareness.CARegionalSettlementRecord record, Verse.CellRect rect, Verse.Map map, System.Int32 districts) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.ColonistAwareness.GenStep_CARegionalSettlements.Generate_Patch3 (ColonistAwareness.GenStep_CARegionalSettlements , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateContentsIntoMap_Patch5 (System.Collections.Generic.IEnumerable`1[T] , Verse.Map , System.Int32 , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateMap_Patch6 (Verse.IntVec3 , RimWorld.Planet.MapParent , Verse.MapGeneratorDef , System.Collections.Generic.IEnumerable`1[T] , System.Action`1[T] , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Game.InitNewGame_Patch3 (Verse.Game ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.Root_Play+<>c.<Start>b__1_2 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler.RunEventFromAnotherThread (System.Action action) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler+<>c.<UpdateCurrentAsynchronousEvent>b__28_0 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at System.Threading.ThreadHelper.ThreadStart_Context (System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.RunInternal (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ThreadHelper.ThreadStart () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+[CA][Regional][Jobs][SpawnPath] region rebuild entry RebuildAllRegionsAndRooms during regional generation of map 0; caller stack:
+  at System.Environment.get_StackTrace () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.TraceRebuild (System.String entryPoint) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.RebuildAllPrefix (System.Int64& __state) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionAndRoomUpdater.RebuildAllRegionsAndRooms_Patch2 (Verse.RegionAndRoomUpdater ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionAndRoomUpdater.TryRebuildDirtyRegionsAndRooms_Patch3 (Verse.RegionAndRoomUpdater ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionGrid.GetValidRegionAt_Patch1 (Verse.RegionGrid , Verse.IntVec3 ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.RegionAndRoomQuery.RegionAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.RegionAndRoomQuery.DistrictAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.RegionAndRoomQuery.RoomAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GridsUtility.GetRoom_Patch1 (Verse.IntVec3 , Verse.Map ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at ColonistAwareness.CAApertures.CutApertures (Verse.Map map, ColonistAwareness.CARegionalSettlementRecord record) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at ColonistAwareness.GenStep_CARegionalSettlements.Materialize (ColonistAwareness.CARegionalSettlementRecord record, Verse.CellRect rect, Verse.Map map, System.Int32 districts) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.ColonistAwareness.GenStep_CARegionalSettlements.Generate_Patch3 (ColonistAwareness.GenStep_CARegionalSettlements , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateContentsIntoMap_Patch5 (System.Collections.Generic.IEnumerable`1[T] , Verse.Map , System.Int32 , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateMap_Patch6 (Verse.IntVec3 , RimWorld.Planet.MapParent , Verse.MapGeneratorDef , System.Collections.Generic.IEnumerable`1[T] , System.Action`1[T] , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Game.InitNewGame_Patch3 (Verse.Game ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.Root_Play+<>c.<Start>b__1_2 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler.RunEventFromAnotherThread (System.Action action) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler+<>c.<UpdateCurrentAsynchronousEvent>b__28_0 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at System.Threading.ThreadHelper.ThreadStart_Context (System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.RunInternal (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ThreadHelper.ThreadStart () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 948 ms; dirty 1323433/1345680 (98.3 %); initialized=False
+[CA][Regional][Timing] initial region classification snapshot classified 1345680 cells in 10 ms and served 1812757 exact indexed queries during a 960 ms region build
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 28 ms; dirty 93/1345680 (0.0 %); initialized=True
+[CA][Apertures] Crook Plain (tier 2, construction era 2, wealth 2, Industrial, 28C): 45 aperture(s) - 35 CA_WindowGlazed, 10 CA_ApertureShuttered
+[CA][Population] Crook Plain: 12 residents across 2 population groups (Assembly of the Ford 80%, Charter Towns 20%)
+[CA] Crook Plain settlement program: 3 entries, 53 placed assets
+[CA][Regional] settlement CA-RS-CA-RG-C42D7CC3-0 materialized: Crook Plain of Assembly of the Ford at (612,831,676,895); native relation Neutral goodwill -100; tech knowledge tier 3; medicine 0, production 0, logistics 0, civic 0, research 0, security 0, commerce 0, communications 0; declared operational roles No operational roles; population 12, buildings 401
+[CA] morphology Industrial [57 ms] grown over (528,826,592,890) for Assembly of the Ford: 850 cells materialized, 24 lots, 327 cells roofed, 1 district(s), seed -1682655904; ground: 758 paved, 0 wild plants purged, 0 garden(s), 69 gradient street cells, no pier
+[CA][Apertures] Shadow Valley (tier 2, construction era 2, wealth 2, Industrial, 28C): 49 aperture(s) - 37 CA_WindowGlazed, 12 CA_ApertureShuttered
+[CA][Regional][ProgramSiting] ca.settlement.provision.communal cannot place Shelf in (528,826,592,890); rooms=1; indoor cells=12; source cells examined=12; native placements=0; reserved overlaps=12; previously reserved=6
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 53 ms; dirty 334/1345680 (0.0 %); initialized=True
+[CA][Regional][ProgramSiting] Shadow Valley: 1 deterministic program room added; last center (561, 0, 850)
+[CA][Population] Shadow Valley: 11 residents across 1 population groups (Assembly of the Ford 100%)
+[CA] Shadow Valley settlement program: 3 entries, 57 placed assets
+[CA][Regional] settlement CA-RS-CA-RG-C42D7CC3-1 materialized: Shadow Valley of Assembly of the Ford at (528,826,592,890); native relation Hostile goodwill -100; tech knowledge tier 3; medicine 0, production 0, logistics 0, civic 0, research 0, security 0, commerce 0, communications 0; declared operational roles No operational roles; population 11, buildings 468
+[CA] morphology Industrial [50 ms] grown over (618,408,682,472) for Assembly of the Ford: 746 cells materialized, 21 lots, 285 cells roofed, 1 district(s), seed -1682655903; ground: 739 paved, 0 wild plants purged, 0 garden(s), 53 gradient street cells, no pier
+[CA][Apertures] Criminal's Pit (tier 2, construction era 2, wealth 2, Industrial, 28C): 43 aperture(s) - 31 CA_WindowGlazed, 12 CA_ApertureShuttered
+[CA][Regional][ProgramSiting] ca.settlement.provision.communal cannot place FueledStove in (618,408,682,472); rooms=1; indoor cells=12; source cells examined=12; native placements=0; reserved overlaps=8; previously reserved=6
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 135 ms; dirty 221/1345680 (0.0 %); initialized=True
+[CA][Regional][ProgramSiting] Criminal's Pit: 1 deterministic program room added; last center (659, 0, 450)
+[CA][Population] Criminal's Pit: 14 residents across 1 population groups (Assembly of the Ford 100%)
+[CA] Criminal's Pit settlement program: 3 entries, 51 placed assets
+[CA][Regional] settlement CA-RS-CA-RG-C42D7CC3-2 materialized: Criminal's Pit of Assembly of the Ford at (618,408,682,472); native relation Hostile goodwill -100; tech knowledge tier 3; medicine 0, production 0, logistics 0, civic 0, research 0, security 0, commerce 0, communications 0; declared operational roles No operational roles; population 14, buildings 411
+[CA] morphology Industrial [60 ms] grown over (938,241,1003,306) for Charter Towns: 864 cells materialized, 26 lots, 342 cells roofed, 1 district(s), seed -1682655902; ground: 757 paved, 0 wild plants purged, 0 garden(s), 42 gradient street cells, no pier
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 33 ms; dirty 112/1345680 (0.0 %); initialized=True
+[CA][Apertures] Triumph Cove (tier 2, construction era 2, wealth 2, Industrial, 28C): 48 aperture(s) - 14 CA_ApertureShuttered, 34 CA_WindowGlazed
+[CA][Population] Triumph Cove: 11 residents across 1 population groups (Charter Towns 100%)
+[CA] Triumph Cove settlement program: 4 entries, 57 placed assets
+[CA][Regional] settlement CA-RS-CA-RG-C42D7CC3-3 materialized: Triumph Cove of Charter Towns at (938,241,1003,306); native relation Neutral goodwill -100; tech knowledge tier 3; medicine 0, production 0, logistics 0, civic 0, research 0, security 0, commerce 0, communications 0; declared operational roles No operational roles; population 11, buildings 441
+[CA][B14][GenerationReceipt] PASS region=CA-RG-C42D7CC3 gate=pass expected=4 materialized=4 slots=0,1,2,3 ownership=4/4 populations=4/4 relations=1-2:NativeInitial:Hostile unsupportedSourceProbe=rejected
+[CA][Regional] materialized 4/4 authored settlements on regional 400-cell source scale 1246x1080 region CA-RG-C42D7CC3 (contested · regional center); bundle tiles 115253,115260,39480,115255,115261,66123; clear visual horizon 996.8 cells
+[CA][Regional][Timing][GenStep] ColonistAwareness.GenStep_CARegionalSettlements [CA_RegionalSettlements] completed in 6993 ms for 1246x1080 map 0
+[CA][Regional][Timing][IndexedRemoval] ColonistAwareness.GenStep_CARegionalSettlements [CA_RegionalSettlements] completed with plantDespawns=0 ownerRemovals=185 listerRemovals=643 indexedLists=1379 snapshotEntries=92154 indexWork=19 ms restore=7 ms comparisonsBypassed=5945921 shiftsBypassed=199130 canonicalOrder=False for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] ColonistAwareness.GenStep_CARegionalSettlements [CA_RegionalSettlements] for map 0: spawn=1960/183ms; wipe=1960/2ms; despawn=185/75ms; ownerTryAdd=2291/7ms; ownerRemove=185/2ms; mapListerRemove=185/5ms; otherListerRemove=458/12ms; regionRebuildAll=1/126ms; regionRebuildDirty=53329/2412ms; spawnedThings=30514
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_Power [CA_RegionalSettlementPower] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_Power [CA_RegionalSettlementPower] completed in 4 ms for 1246x1080 map 0
+[CA][Regional] selected-area Archean trees: no selected area carries ArcheanTrees
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_MutatorNonCriticalStructures [MutatorNonCriticalStructures] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_MutatorNonCriticalStructures [MutatorNonCriticalStructures] completed in 0 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_Scatterer [ScatterShrines] for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] region rebuild entry TryRebuildDirtyRegionsAndRooms during regional generation of map 0; caller stack:
+  at System.Environment.get_StackTrace () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.TraceRebuild (System.String entryPoint) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.RebuildDirtyPrefix (System.Int64& __state) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionAndRoomUpdater.TryRebuildDirtyRegionsAndRooms_Patch3 (Verse.RegionAndRoomUpdater ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionGrid.GetValidRegionAt_Patch1 (Verse.RegionGrid , Verse.IntVec3 ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.RegionAndRoomQuery.RegionAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.RegionAndRoomQuery.DistrictAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.RegionAndRoomQuery.GetDistrict (Verse.Thing thing, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.RegionAndRoomQuery.GetRoom (Verse.Thing thing, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.CompSpawnerHives.CalculateNextHiveSpawnTick () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.CompSpawnerHives.PostSpawnSetup (System.Boolean respawningAfterLoad) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.ThingWithComps.SpawnSetup (Verse.Map map, System.Boolean respawningAfterLoad) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Building.SpawnSetup_Patch2 (Verse.Building , Verse.Map , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at RimWorld.Hive.SpawnSetup (Verse.Map map, System.Boolean respawningAfterLoad) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenSpawn.Spawn_Patch3 (Verse.Thing , Verse.IntVec3 , Verse.Map , Verse.Rot4 , Verse.WipeMode , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.GenSpawn.Spawn (Verse.Thing newThing, Verse.IntVec3 loc, Verse.Map map, Verse.WipeMode wipeMode) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.HiveUtility.SpawnHive (Verse.IntVec3 spawnCell, Verse.Map map, Verse.WipeMode wipeMode, System.Boolean spawnInsectsImmediately, System.Boolean canSpawnHives, System.Boolean canSpawnInsects, System.Boolean dormant, System.Boolean aggressive, System.Boolean spawnJellyImmediately, System.Boolean spawnSludge) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.HiveUtility.SpawnHives (Verse.IntVec3 spawnCell, Verse.Map map, System.Int32 count, System.Single radius, Verse.WipeMode wipeMode, System.Boolean spawnInsectsImmediately, System.Boolean canSpawnHives, System.Boolean canSpawnInsects, System.Boolean dormant, System.Boolean aggressive, System.Boolean spawnSludge) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.BaseGen.SymbolResolver_Hives.Resolve (RimWorld.BaseGen.ResolveParams rp) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.BaseGen.BaseGen.Resolve (RimWorld.BaseGen.SymbolStack+Element toResolve) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.BaseGen.BaseGen.Generate () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.GenStep_ScatterShrines.ScatterAt (Verse.IntVec3 loc, Verse.Map map, Verse.GenStepParams parms, System.Int32 stackCount) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenStep_Scatterer.Generate_Patch1 (Verse.GenStep_Scatterer , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateContentsIntoMap_Patch5 (System.Collections.Generic.IEnumerable`1[T] , Verse.Map , System.Int32 , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateMap_Patch6 (Verse.IntVec3 , RimWorld.Planet.MapParent , Verse.MapGeneratorDef , System.Collections.Generic.IEnumerable`1[T] , System.Action`1[T] , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Game.InitNewGame_Patch3 (Verse.Game ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.Root_Play+<>c.<Start>b__1_2 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler.RunEventFromAnotherThread (System.Action action) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler+<>c.<UpdateCurrentAsynchronousEvent>b__28_0 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at System.Threading.ThreadHelper.ThreadStart_Context (System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.RunInternal (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ThreadHelper.ThreadStart () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+[CA][Regional][Jobs][SpawnPath] region rebuild entry TryRebuildDirtyRegionsAndRooms during regional generation of map 0; caller stack:
+  at System.Environment.get_StackTrace () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.TraceRebuild (System.String entryPoint) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.RebuildDirtyPrefix (System.Int64& __state) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionAndRoomUpdater.TryRebuildDirtyRegionsAndRooms_Patch3 (Verse.RegionAndRoomUpdater ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionGrid.GetValidRegionAt_Patch1 (Verse.RegionGrid , Verse.IntVec3 ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.RegionAndRoomQuery.RegionAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.RegionAndRoomQuery.DistrictAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.RegionAndRoomQuery.RoomAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GridsUtility.GetRoom_Patch1 (Verse.IntVec3 , Verse.Map ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at RimWorld.CompSpawnerHives.CalculateNextHiveSpawnTick () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.CompSpawnerHives.PostSpawnSetup (System.Boolean respawningAfterLoad) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.ThingWithComps.SpawnSetup (Verse.Map map, System.Boolean respawningAfterLoad) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Building.SpawnSetup_Patch2 (Verse.Building , Verse.Map , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at RimWorld.Hive.SpawnSetup (Verse.Map map, System.Boolean respawningAfterLoad) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenSpawn.Spawn_Patch3 (Verse.Thing , Verse.IntVec3 , Verse.Map , Verse.Rot4 , Verse.WipeMode , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.GenSpawn.Spawn (Verse.Thing newThing, Verse.IntVec3 loc, Verse.Map map, Verse.WipeMode wipeMode) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.HiveUtility.SpawnHive (Verse.IntVec3 spawnCell, Verse.Map map, Verse.WipeMode wipeMode, System.Boolean spawnInsectsImmediately, System.Boolean canSpawnHives, System.Boolean canSpawnInsects, System.Boolean dormant, System.Boolean aggressive, System.Boolean spawnJellyImmediately, System.Boolean spawnSludge) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.HiveUtility.SpawnHives (Verse.IntVec3 spawnCell, Verse.Map map, System.Int32 count, System.Single radius, Verse.WipeMode wipeMode, System.Boolean spawnInsectsImmediately, System.Boolean canSpawnHives, System.Boolean canSpawnInsects, System.Boolean dormant, System.Boolean aggressive, System.Boolean spawnSludge) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.BaseGen.SymbolResolver_Hives.Resolve (RimWorld.BaseGen.ResolveParams rp) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.BaseGen.BaseGen.Resolve (RimWorld.BaseGen.SymbolStack+Element toResolve) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.BaseGen.BaseGen.Generate () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.GenStep_ScatterShrines.ScatterAt (Verse.IntVec3 loc, Verse.Map map, Verse.GenStepParams parms, System.Int32 stackCount) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenStep_Scatterer.Generate_Patch1 (Verse.GenStep_Scatterer , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateContentsIntoMap_Patch5 (System.Collections.Generic.IEnumerable`1[T] , Verse.Map , System.Int32 , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateMap_Patch6 (Verse.IntVec3 , RimWorld.Planet.MapParent , Verse.MapGeneratorDef , System.Collections.Generic.IEnumerable`1[T] , System.Action`1[T] , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Game.InitNewGame_Patch3 (Verse.Game ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.Root_Play+<>c.<Start>b__1_2 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler.RunEventFromAnotherThread (System.Action action) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler+<>c.<UpdateCurrentAsynchronousEvent>b__28_0 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at System.Threading.ThreadHelper.ThreadStart_Context (System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.RunInternal (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ThreadHelper.ThreadStart () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 180 ms; dirty 2704/1345680 (0.2 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 38 ms; dirty 1655/1345680 (0.1 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 43 ms; dirty 1560/1345680 (0.1 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 81 ms; dirty 2133/1345680 (0.2 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 84 ms; dirty 3208/1345680 (0.2 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 45 ms; dirty 1380/1345680 (0.1 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 40 ms; dirty 319/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 226 ms; dirty 3077/1345680 (0.2 %); initialized=True
+[CA][Regional][Timing][GenStep] Verse.GenStep_Scatterer [ScatterShrines] completed in 3350 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_Scatterer [ScatterRuinsSimple] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] Verse.GenStep_Scatterer [ScatterRuinsSimple] completed in 2712 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_ScatterAncientUtilityBuilding [AncientUtilityBuilding] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_Scatterer [AncientUtilityBuilding] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] Verse.GenStep_Scatterer [AncientUtilityBuilding] completed in 15 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_ScatterAncientUtilityBuilding [AncientUtilityBuilding] completed in 18 ms for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] RimWorld.GenStep_ScatterAncientUtilityBuilding [AncientUtilityBuilding] for map 0: spawn=32/1ms; wipe=32/0ms; ownerTryAdd=32/0ms; spawnedThings=39042
+[CA][Regional][Timing][GenStep] starting ColonistAwareness.GenStep_CARegionalPlayerStart [CA_RegionalPlayerStart] for 1246x1080 map 0
+[CA][Regional] landing anchor tile 115253 projected to cell (979, 0, 668)
+[CA][Regional][Timing][GenStep] ColonistAwareness.GenStep_CARegionalPlayerStart [CA_RegionalPlayerStart] completed in 16 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_ScenParts [ScenParts] for 1246x1080 map 0
+[CA][Regional] starting cargo uses bounded local drop validation without reading or rebuilding the global region graph
+[CA][Regional] starting cargo entered the exact near-placement scope; room identity is deferred only for this bounded placement call
+[CA][Regional][Timing] starting cargo drop placement for 1246x1080 map 0 took 14 ms
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_ScatterThings for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] region rebuild entry TryRebuildDirtyRegionsAndRooms during regional generation of map 0; caller stack:
+  at System.Environment.get_StackTrace () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.TraceRebuild (System.String entryPoint) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.RebuildDirtyPrefix (System.Int64& __state) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionAndRoomUpdater.TryRebuildDirtyRegionsAndRooms_Patch3 (Verse.RegionAndRoomUpdater ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionGrid.GetValidRegionAt_Patch1 (Verse.RegionGrid , Verse.IntVec3 ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.RegionAndRoomQuery.RegionAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.GridsUtility.GetRegion (Verse.IntVec3 loc, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinder.TryFindRandomReachableNearbyCell (Verse.IntVec3 root, Verse.Map map, System.Single radius, Verse.TraverseParms traverseParms, System.Predicate`1[T] cellValidator, System.Predicate`1[T] regionValidator, Verse.IntVec3& result, System.Int32 maxRegions) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinder.TryRandomClosewalkCellNear (Verse.IntVec3 root, Verse.Map map, System.Int32 radius, Verse.IntVec3& result, System.Predicate`1[T] extraValidator) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinder.RandomClosewalkCellNear (Verse.IntVec3 root, Verse.Map map, System.Int32 radius, System.Predicate`1[T] extraValidator) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenStep_Scatterer.TryFindScatterCell_Patch1 (Verse.GenStep_Scatterer , Verse.Map , Verse.IntVec3& ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.GenStep_ScatterThings.TryFindScatterCell (Verse.Map map, Verse.IntVec3& result) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenStep_ScatterThings.Generate_Patch3 (Verse.GenStep_ScatterThings , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at RimWorld.ScenPart_ScatterThings.GenerateIntoMap (Verse.Map map) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.Scenario.GenerateIntoMap (Verse.Map map) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.RimWorld.GenStep_ScenParts.Generate_Patch3 (RimWorld.GenStep_ScenParts , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateContentsIntoMap_Patch5 (System.Collections.Generic.IEnumerable`1[T] , Verse.Map , System.Int32 , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateMap_Patch6 (Verse.IntVec3 , RimWorld.Planet.MapParent , Verse.MapGeneratorDef , System.Collections.Generic.IEnumerable`1[T] , System.Action`1[T] , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Game.InitNewGame_Patch3 (Verse.Game ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.Root_Play+<>c.<Start>b__1_2 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler.RunEventFromAnotherThread (System.Action action) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler+<>c.<UpdateCurrentAsynchronousEvent>b__28_0 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at System.Threading.ThreadHelper.ThreadStart_Context (System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.RunInternal (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ThreadHelper.ThreadStart () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 8309 ms; dirty 148850/1345680 (11.1 %); initialized=True
+[CA][Regional][Jobs][SpawnPath] region rebuild entry TryRebuildDirtyRegionsAndRooms during regional generation of map 0; caller stack:
+  at System.Environment.get_StackTrace () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.TraceRebuild (System.String entryPoint) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.RebuildDirtyPrefix (System.Int64& __state) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionAndRoomUpdater.TryRebuildDirtyRegionsAndRooms_Patch3 (Verse.RegionAndRoomUpdater ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.RegionGrid.get_DirectGrid () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.Region.get_RandomCell () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinder.TryFindRandomCellInRegion (Verse.Region reg, System.Predicate`1[T] validator, Verse.IntVec3& result) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinder.TryFindRandomReachableNearbyCell (Verse.IntVec3 root, Verse.Map map, System.Single radius, Verse.TraverseParms traverseParms, System.Predicate`1[T] cellValidator, System.Predicate`1[T] regionValidator, Verse.IntVec3& result, System.Int32 maxRegions) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinder.TryRandomClosewalkCellNear (Verse.IntVec3 root, Verse.Map map, System.Int32 radius, Verse.IntVec3& result, System.Predicate`1[T] extraValidator) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinder.RandomClosewalkCellNear (Verse.IntVec3 root, Verse.Map map, System.Int32 radius, System.Predicate`1[T] extraValidator) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenStep_Scatterer.TryFindScatterCell_Patch1 (Verse.GenStep_Scatterer , Verse.Map , Verse.IntVec3& ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.GenStep_ScatterThings.TryFindScatterCell (Verse.Map map, Verse.IntVec3& result) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenStep_ScatterThings.Generate_Patch3 (Verse.GenStep_ScatterThings , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at RimWorld.ScenPart_ScatterThings.GenerateIntoMap (Verse.Map map) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.Scenario.GenerateIntoMap (Verse.Map map) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.RimWorld.GenStep_ScenParts.Generate_Patch3 (RimWorld.GenStep_ScenParts , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateContentsIntoMap_Patch5 (System.Collections.Generic.IEnumerable`1[T] , Verse.Map , System.Int32 , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateMap_Patch6 (Verse.IntVec3 , RimWorld.Planet.MapParent , Verse.MapGeneratorDef , System.Collections.Generic.IEnumerable`1[T] , System.Action`1[T] , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Game.InitNewGame_Patch3 (Verse.Game ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.Root_Play+<>c.<Start>b__1_2 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler.RunEventFromAnotherThread (System.Action action) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler+<>c.<UpdateCurrentAsynchronousEvent>b__28_0 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at System.Threading.ThreadHelper.ThreadStart_Context (System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.RunInternal (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ThreadHelper.ThreadStart () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+[CA][Regional][Timing][GenStep] Verse.GenStep_ScatterThings completed in 8315 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_ScatterThings for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] Verse.GenStep_ScatterThings completed in 1 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_ScatterThings for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] Verse.GenStep_ScatterThings completed in 0 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_ScatterThings for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] Verse.GenStep_ScatterThings completed in 1 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_ScatterThings for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] Verse.GenStep_ScatterThings completed in 1 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_ScenParts [ScenParts] completed in 8359 ms for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] RimWorld.GenStep_ScenParts [ScenParts] for map 0: spawn=57/11ms; wipe=57/0ms; ownerTryAdd=57/0ms; regionRebuildDirty=366/8309ms; spawnedThings=39099
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_Pollution [Pollution] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_Pollution [Pollution] completed in 54 ms for 1246x1080 map 0
+[CA][Regional][Timing][Plants] initialized bounded ecology spatial summaries in 206 ms for 1246x1080 map 0; desired plants 613773.9
+[CA][Regional][Jobs][PlantMask] scope opened for 1246x1080 map 0; SERVE mode (proven rejects skip the original; postfix chain still runs and re-verifies); frozen-term surface gate allowing exactly 4 proven method/kind/owner entries; extraction after 4096 in-scope calls under a 96 MB checked cap; env CA_REGIONAL_PLANTMASK=0 disables at load, CA_REGIONAL_PLANTMASK_SERVE=0 restores full native audit mode
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_Plants [Plants] for 1246x1080 map 0
+[CA][Regional][Jobs][PlantMask] frozen-term surface verified for map 0: 5 surface patches, every (method, kind, owner) explicitly proven
+[CA][Regional][Jobs][PlantMask] frozen terms extracted for map 0 in 71 ms (1345680 cells, 5550936 bytes, native fertility/pollution reads, after 4097-call warmup)
+[CA][Regional] plant density receipt for map 0: 4096 calls, 3357 resolved to a non-root constituent, 0 of 4096 sampled differed from the root-tile value
+[CA][Regional][Timing][Plants] bounded initial native seed examined 160000 of 1345680 cells and spawned 107255 plants in 11797 ms for 1246x1080 map 0; full ecological target 613773.9.
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_Plants [Plants] completed in 11798 ms for 1246x1080 map 0
+[CA][Regional][Timing][Plants] bounded ecology index served 107255 cluster, 155125 saturation, 707234 succession, and 214510 distribution queries; bypassed 85482235 ThingGrid cell visits; inspected 1059659 cluster block summaries and 15626596 local density blocks for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] RimWorld.GenStep_Plants [Plants] for map 0: spawn=107255/1435ms; wipe=107255/81ms; ownerTryAdd=107255/31ms; plantCheck=159844/10833ms; plantSaturated=155125/6ms; plantCanGrow=155122/4925ms; plantClusters=107255/4ms; plantSuccession=707234/27ms; plantDistribution=214510/11ms; spawnedThings=146354
+[CA][Regional][Jobs][PlantMask] scope closed for map 0: 2076910 in-scope evaluations = 4096 warmup native + 0 native (of which 0 audited predictions: 0 confirmed, 0 mismatches) + 0 full base audits (0 confirmed, 0 mismatches) + 1090401 served accepts + 982413 served rejects (0 serve anomalies) + 0 degraded native; 25 defs cached (0 whole-def temperature rejections); extraction 71 ms, 5550936 bytes
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_ScatterThings [SteamGeysers] for 1246x1080 map 0
+[CA][Regional] geysers recomputed per constituent from native inputs: total 77 [4359:1, 12548:7, 21407:6, 39480:12, 39481:3, 66122:8, 66123:11, 66124:2, 115259:1, 115260:10, 115261:11, 115262:4, 115263:1]
+[CA][Regional][Timing][GenStep] Verse.GenStep_ScatterThings [SteamGeysers] completed in 117 ms for 1246x1080 map 0
+[CA][Regional][Timing][IndexedRemoval] Verse.GenStep_ScatterThings [SteamGeysers] completed with plantDespawns=22 ownerRemovals=22 listerRemovals=51 indexedLists=129 snapshotEntries=676844 indexWork=57 ms restore=71 ms comparisonsBypassed=7535742 shiftsBypassed=6211726 canonicalOrder=True for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] RimWorld.GenStep_ScatterGeysers [SteamGeysers] for map 0: spawn=77/63ms; wipe=77/58ms; despawn=22/57ms; ownerTryAdd=77/0ms; ownerRemove=22/11ms; mapListerRemove=22/45ms; otherListerRemove=29/0ms; spawnedThings=146409
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_ScatterRoadDebris [ScatterRoadDebris] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_Scatterer [ScatterRoadDebris] for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] region rebuild entry TryRebuildDirtyRegionsAndRooms during regional generation of map 0; caller stack:
+  at System.Environment.get_StackTrace () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.TraceRebuild (System.String entryPoint) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.RebuildDirtyPrefix (System.Int64& __state) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionAndRoomUpdater.TryRebuildDirtyRegionsAndRooms_Patch3 (Verse.RegionAndRoomUpdater ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionGrid.GetValidRegionAt_Patch1 (Verse.RegionGrid , Verse.IntVec3 ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.RegionAndRoomQuery.RegionAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.GridsUtility.GetRegion (Verse.IntVec3 loc, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Reachability.CanReachMapEdge_Patch1 (Verse.Reachability , Verse.IntVec3 , Verse.TraverseParms ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at RimWorld.ScatterDebrisUtility.CanPlaceThingAt (Verse.IntVec3 c, Verse.Rot4 rot, Verse.Map map, Verse.ThingDef thingDef) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.GenStep_ScatterRoadDebris.CanPlaceThingAt (Verse.IntVec3 c, Verse.Rot4 rot, Verse.Map map, Verse.ThingDef thingDef) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.GenStep_ScatterRoadDebris.CanScatterAt (Verse.IntVec3 c, Verse.Map map) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.GenStep_Scatterer+<>c__DisplayClass28_0.<TryFindScatterCell>b__2 (Verse.IntVec3 x) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinderLoose.TryFindRandomNotEdgeCellWith (System.Int32 minEdgeDistance, System.Predicate`1[T] validator, Verse.Map map, Verse.IntVec3& result) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenStep_Scatterer.TryFindScatterCell_Patch1 (Verse.GenStep_Scatterer , Verse.Map , Verse.IntVec3& ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenStep_Scatterer.Generate_Patch1 (Verse.GenStep_Scatterer , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.RimWorld.GenStep_ScatterRoadDebris.Generate_Patch3 (RimWorld.GenStep_ScatterRoadDebris , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateContentsIntoMap_Patch5 (System.Collections.Generic.IEnumerable`1[T] , Verse.Map , System.Int32 , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateMap_Patch6 (Verse.IntVec3 , RimWorld.Planet.MapParent , Verse.MapGeneratorDef , System.Collections.Generic.IEnumerable`1[T] , System.Action`1[T] , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Game.InitNewGame_Patch3 (Verse.Game ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.Root_Play+<>c.<Start>b__1_2 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler.RunEventFromAnotherThread (System.Action action) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler+<>c.<UpdateCurrentAsynchronousEvent>b__28_0 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at System.Threading.ThreadHelper.ThreadStart_Context (System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.RunInternal (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ThreadHelper.ThreadStart () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+[CA][Regional][Jobs][SpawnPath] region rebuild entry TryRebuildDirtyRegionsAndRooms during regional generation of map 0; caller stack:
+  at System.Environment.get_StackTrace () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.TraceRebuild (System.String entryPoint) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.RebuildDirtyPrefix (System.Int64& __state) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionAndRoomUpdater.TryRebuildDirtyRegionsAndRooms_Patch3 (Verse.RegionAndRoomUpdater ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionGrid.GetValidRegionAt_Patch1 (Verse.RegionGrid , Verse.IntVec3 ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.RegionAndRoomQuery.RegionAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.GridsUtility.GetRegion (Verse.IntVec3 loc, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Reachability.CanReachMapEdge_Patch1 (Verse.Reachability , Verse.IntVec3 , Verse.TraverseParms ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at RimWorld.ScatterDebrisUtility.CanPlaceThingAt (Verse.IntVec3 c, Verse.Rot4 rot, Verse.Map map, Verse.ThingDef thingDef) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.GenStep_ScatterRoadDebris.CanPlaceThingAt (Verse.IntVec3 c, Verse.Rot4 rot, Verse.Map map, Verse.ThingDef thingDef) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.GenStep_ScatterRoadDebris.CanScatterAt (Verse.IntVec3 c, Verse.Map map) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.GenStep_Scatterer+<>c__DisplayClass28_0.<TryFindScatterCell>b__2 (Verse.IntVec3 x) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinderLoose.TryFindRandomNotEdgeCellWith (System.Int32 minEdgeDistance, System.Predicate`1[T] validator, Verse.Map map, Verse.IntVec3& result) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenStep_Scatterer.TryFindScatterCell_Patch1 (Verse.GenStep_Scatterer , Verse.Map , Verse.IntVec3& ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenStep_Scatterer.Generate_Patch1 (Verse.GenStep_Scatterer , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.RimWorld.GenStep_ScatterRoadDebris.Generate_Patch3 (RimWorld.GenStep_ScatterRoadDebris , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateContentsIntoMap_Patch5 (System.Collections.Generic.IEnumerable`1[T] , Verse.Map , System.Int32 , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateMap_Patch6 (Verse.IntVec3 , RimWorld.Planet.MapParent , Verse.MapGeneratorDef , System.Collections.Generic.IEnumerable`1[T] , System.Action`1[T] , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Game.InitNewGame_Patch3 (Verse.Game ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.Root_Play+<>c.<Start>b__1_2 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler.RunEventFromAnotherThread (System.Action action) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler+<>c.<UpdateCurrentAsynchronousEvent>b__28_0 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at System.Threading.ThreadHelper.ThreadStart_Context (System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.RunInternal (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ThreadHelper.ThreadStart () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+[CA][Regional][Timing][GenStep] Verse.GenStep_Scatterer [ScatterRoadDebris] completed in 4 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_ScatterRoadDebris [ScatterRoadDebris] completed in 12 ms for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] RimWorld.GenStep_ScatterRoadDebris [ScatterRoadDebris] for map 0: spawn=42/0ms; wipe=42/0ms; ownerTryAdd=42/0ms; filth=41/0ms; regionRebuildDirty=31/0ms; spawnedThings=146451
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_ScatterCaveDebris [ScatterCaveDebris] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_ScatterCaveDebris [ScatterCaveDebris] completed in 0 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_ScatterGroup [MechanoidRemains] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_Scatterer [MechanoidRemains] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] Verse.GenStep_Scatterer [MechanoidRemains] completed in 17 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] Verse.GenStep_ScatterGroup [MechanoidRemains] completed in 26 ms for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] Verse.GenStep_ScatterGroup [MechanoidRemains] for map 0: spawn=44/0ms; wipe=44/0ms; ownerTryAdd=44/0ms; filth=36/0ms; scatterCalc=2/14ms; scatterFind=1/11ms; spawnedThings=146495
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_ScatterAncientTurret [AncientTurret] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_ScatterAncientTurret [AncientTurret] completed in 0 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_ScatterAncientMechs [AncientMechs] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_Scatterer [AncientMechs] for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] region rebuild entry TryRebuildDirtyRegionsAndRooms during regional generation of map 0; caller stack:
+  at System.Environment.get_StackTrace () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.TraceRebuild (System.String entryPoint) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.RebuildDirtyPrefix (System.Int64& __state) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionAndRoomUpdater.TryRebuildDirtyRegionsAndRooms_Patch3 (Verse.RegionAndRoomUpdater ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionGrid.GetValidRegionAt_Patch1 (Verse.RegionGrid , Verse.IntVec3 ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.RegionAndRoomQuery.RegionAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.GridsUtility.GetRegion (Verse.IntVec3 loc, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Reachability.CanReachMapEdge_Patch1 (Verse.Reachability , Verse.IntVec3 , Verse.TraverseParms ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at RimWorld.ScatterDebrisUtility.CanPlaceThingAt (Verse.IntVec3 c, Verse.Rot4 rot, Verse.Map map, Verse.ThingDef thingDef) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.GenStep_ScatterAncientMechs.CanPlaceThingAt (Verse.IntVec3 c, Verse.Rot4 rot, Verse.Map map, Verse.ThingDef thingDef) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.GenStep_ScatterAncientMechs.CanScatterAt (Verse.IntVec3 c, Verse.Map map) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.GenStep_Scatterer+<>c__DisplayClass28_0.<TryFindScatterCell>b__2 (Verse.IntVec3 x) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinderLoose.TryFindRandomNotEdgeCellWith (System.Int32 minEdgeDistance, System.Predicate`1[T] validator, Verse.Map map, Verse.IntVec3& result) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenStep_Scatterer.TryFindScatterCell_Patch1 (Verse.GenStep_Scatterer , Verse.Map , Verse.IntVec3& ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenStep_Scatterer.Generate_Patch1 (Verse.GenStep_Scatterer , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.RimWorld.GenStep_ScatterAncientMechs.Generate_Patch3 (RimWorld.GenStep_ScatterAncientMechs , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateContentsIntoMap_Patch5 (System.Collections.Generic.IEnumerable`1[T] , Verse.Map , System.Int32 , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateMap_Patch6 (Verse.IntVec3 , RimWorld.Planet.MapParent , Verse.MapGeneratorDef , System.Collections.Generic.IEnumerable`1[T] , System.Action`1[T] , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Game.InitNewGame_Patch3 (Verse.Game ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.Root_Play+<>c.<Start>b__1_2 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler.RunEventFromAnotherThread (System.Action action) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler+<>c.<UpdateCurrentAsynchronousEvent>b__28_0 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at System.Threading.ThreadHelper.ThreadStart_Context (System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.RunInternal (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ThreadHelper.ThreadStart () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+[CA][Regional][Jobs][SpawnPath] region rebuild entry TryRebuildDirtyRegionsAndRooms during regional generation of map 0; caller stack:
+  at System.Environment.get_StackTrace () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.TraceRebuild (System.String entryPoint) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.RebuildDirtyPrefix (System.Int64& __state) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionAndRoomUpdater.TryRebuildDirtyRegionsAndRooms_Patch3 (Verse.RegionAndRoomUpdater ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionGrid.GetValidRegionAt_Patch1 (Verse.RegionGrid , Verse.IntVec3 ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.RegionAndRoomQuery.RegionAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.GridsUtility.GetRegion (Verse.IntVec3 loc, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Reachability.CanReachMapEdge_Patch1 (Verse.Reachability , Verse.IntVec3 , Verse.TraverseParms ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at RimWorld.ScatterDebrisUtility.CanPlaceThingAt (Verse.IntVec3 c, Verse.Rot4 rot, Verse.Map map, Verse.ThingDef thingDef) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.GenStep_ScatterAncientMechs.CanPlaceThingAt (Verse.IntVec3 c, Verse.Rot4 rot, Verse.Map map, Verse.ThingDef thingDef) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.GenStep_ScatterAncientMechs.CanScatterAt (Verse.IntVec3 c, Verse.Map map) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.GenStep_Scatterer+<>c__DisplayClass28_0.<TryFindScatterCell>b__2 (Verse.IntVec3 x) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinderLoose.TryFindRandomNotEdgeCellWith (System.Int32 minEdgeDistance, System.Predicate`1[T] validator, Verse.Map map, Verse.IntVec3& result) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenStep_Scatterer.TryFindScatterCell_Patch1 (Verse.GenStep_Scatterer , Verse.Map , Verse.IntVec3& ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenStep_Scatterer.Generate_Patch1 (Verse.GenStep_Scatterer , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.RimWorld.GenStep_ScatterAncientMechs.Generate_Patch3 (RimWorld.GenStep_ScatterAncientMechs , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateContentsIntoMap_Patch5 (System.Collections.Generic.IEnumerable`1[T] , Verse.Map , System.Int32 , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateMap_Patch6 (Verse.IntVec3 , RimWorld.Planet.MapParent , Verse.MapGeneratorDef , System.Collections.Generic.IEnumerable`1[T] , System.Action`1[T] , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Game.InitNewGame_Patch3 (Verse.Game ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.Root_Play+<>c.<Start>b__1_2 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler.RunEventFromAnotherThread (System.Action action) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler+<>c.<UpdateCurrentAsynchronousEvent>b__28_0 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at System.Threading.ThreadHelper.ThreadStart_Context (System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.RunInternal (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ThreadHelper.ThreadStart () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+[CA][Regional][Timing][GenStep] Verse.GenStep_Scatterer [AncientMechs] completed in 2 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_ScatterAncientMechs [AncientMechs] completed in 10 ms for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] RimWorld.GenStep_ScatterAncientMechs [AncientMechs] for map 0: spawn=11/0ms; wipe=11/0ms; ownerTryAdd=11/0ms; filth=10/0ms; regionRebuildDirty=4/0ms; spawnedThings=146506
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_ScatterAncientLandingPad [AncientLandingPad] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_Scatterer [AncientLandingPad] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] Verse.GenStep_Scatterer [AncientLandingPad] completed in 126 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_ScatterAncientLandingPad [AncientLandingPad] completed in 151 ms for 1246x1080 map 0
+[CA][Regional][Timing][IndexedRemoval] RimWorld.GenStep_ScatterAncientLandingPad [AncientLandingPad] completed with plantDespawns=16 ownerRemovals=16 listerRemovals=40 indexedLists=34 snapshotEntries=658479 indexWork=115 ms restore=120 ms comparisonsBypassed=5326942 shiftsBypassed=4106042 canonicalOrder=True for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] RimWorld.GenStep_ScatterAncientLandingPad [AncientLandingPad] for map 0: spawn=14/1ms; wipe=14/0ms; despawn=16/116ms; ownerTryAdd=14/0ms; ownerRemove=16/18ms; mapListerRemove=16/95ms; otherListerRemove=24/1ms; filth=11/0ms; spawnedThings=146504
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_ScatterAncientFences [AncientFences] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_Scatterer [AncientFences] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] Verse.GenStep_Scatterer [AncientFences] completed in 2 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_ScatterAncientFences [AncientFences] completed in 12 ms for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] RimWorld.GenStep_ScatterAncientFences [AncientFences] for map 0: spawn=5/0ms; wipe=5/0ms; ownerTryAdd=5/0ms; spawnedThings=146509
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_ScatterThings [AncientPipelineSection] for 1246x1080 map 0
+[CA][Regional] junk(GenStep_ScatterThings) recomputed per constituent from native inputs: total 48 [12547:1, 12548:3, 21407:3, 39479:1, 39480:6, 39481:1, 66122:3, 66123:5, 66124:1, 115252:1, 115253:5, 115254:1, 115255:5, 115260:5, 115261:5, 115262:2]
+[CA][Regional][Timing][GenStep] Verse.GenStep_ScatterThings [AncientPipelineSection] completed in 152 ms for 1246x1080 map 0
+[CA][Regional][Timing][IndexedRemoval] Verse.GenStep_ScatterThings [AncientPipelineSection] completed with plantDespawns=6 ownerRemovals=6 listerRemovals=14 indexedLists=48 snapshotEntries=714978 indexWork=142 ms restore=68 ms comparisonsBypassed=2488048 shiftsBypassed=886123 canonicalOrder=True for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] Verse.GenStep_ScatterThings [AncientPipelineSection] for map 0: spawn=257/148ms; wipe=257/144ms; despawn=6/144ms; ownerTryAdd=257/0ms; ownerRemove=6/46ms; mapListerRemove=6/96ms; otherListerRemove=8/1ms; filth=210/2ms; spawnedThings=146760
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_ScatterGroup [AncientJunkClusters] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_Scatterer [AncientJunkClusters] for 1246x1080 map 0
+[CA][Regional] junk(GenStep_ScatterGroup) recomputed per constituent from native inputs: total 51 [12547:1, 12548:3, 21407:3, 39479:1, 39480:6, 39481:1, 66122:4, 66123:5, 66124:1, 115252:1, 115253:6, 115254:1, 115255:6, 115260:5, 115261:5, 115262:2]
+[CA][Regional][Jobs][SpawnPath] region rebuild entry TryRebuildDirtyRegionsAndRooms during regional generation of map 0; caller stack:
+  at System.Environment.get_StackTrace () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.TraceRebuild (System.String entryPoint) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.RebuildDirtyPrefix (System.Int64& __state) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionAndRoomUpdater.TryRebuildDirtyRegionsAndRooms_Patch3 (Verse.RegionAndRoomUpdater ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionGrid.GetValidRegionAt_Patch1 (Verse.RegionGrid , Verse.IntVec3 ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.RegionAndRoomQuery.RegionAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.RegionAndRoomQuery.DistrictAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.RegionAndRoomQuery.GetDistrict (Verse.Thing thing, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.Building_Bed.SpawnSetup (Verse.Map map, System.Boolean respawningAfterLoad) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenSpawn.Spawn_Patch3 (Verse.Thing , Verse.IntVec3 , Verse.Map , Verse.Rot4 , Verse.WipeMode , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.GenStep_ScatterGroup.ScatterAt (Verse.IntVec3 loc, Verse.Map map, Verse.GenStepParams parms, System.Int32 count) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenStep_Scatterer.Generate_Patch1 (Verse.GenStep_Scatterer , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenStep_ScatterGroup.Generate_Patch4 (Verse.GenStep_ScatterGroup , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateContentsIntoMap_Patch5 (System.Collections.Generic.IEnumerable`1[T] , Verse.Map , System.Int32 , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateMap_Patch6 (Verse.IntVec3 , RimWorld.Planet.MapParent , Verse.MapGeneratorDef , System.Collections.Generic.IEnumerable`1[T] , System.Action`1[T] , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Game.InitNewGame_Patch3 (Verse.Game ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.Root_Play+<>c.<Start>b__1_2 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler.RunEventFromAnotherThread (System.Action action) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler+<>c.<UpdateCurrentAsynchronousEvent>b__28_0 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at System.Threading.ThreadHelper.ThreadStart_Context (System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.RunInternal (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ThreadHelper.ThreadStart () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 64 ms; dirty 542/1345680 (0.0 %); initialized=True
+[CA][Regional][Jobs][SpawnPath] region rebuild entry TryRebuildDirtyRegionsAndRooms during regional generation of map 0; caller stack:
+  at System.Environment.get_StackTrace () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.TraceRebuild (System.String entryPoint) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.RebuildDirtyPrefix (System.Int64& __state) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionAndRoomUpdater.TryRebuildDirtyRegionsAndRooms_Patch3 (Verse.RegionAndRoomUpdater ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionGrid.GetValidRegionAt_Patch1 (Verse.RegionGrid , Verse.IntVec3 ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.RegionAndRoomQuery.RegionAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.RegionAndRoomQuery.DistrictAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.RegionAndRoomQuery.GetDistrict (Verse.Thing thing, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.Building_Bed.SpawnSetup (Verse.Map map, System.Boolean respawningAfterLoad) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenSpawn.Spawn_Patch3 (Verse.Thing , Verse.IntVec3 , Verse.Map , Verse.Rot4 , Verse.WipeMode , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.GenStep_ScatterGroup.ScatterAt (Verse.IntVec3 loc, Verse.Map map, Verse.GenStepParams parms, System.Int32 count) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenStep_Scatterer.Generate_Patch1 (Verse.GenStep_Scatterer , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GenStep_ScatterGroup.Generate_Patch4 (Verse.GenStep_ScatterGroup , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateContentsIntoMap_Patch5 (System.Collections.Generic.IEnumerable`1[T] , Verse.Map , System.Int32 , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateMap_Patch6 (Verse.IntVec3 , RimWorld.Planet.MapParent , Verse.MapGeneratorDef , System.Collections.Generic.IEnumerable`1[T] , System.Action`1[T] , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Game.InitNewGame_Patch3 (Verse.Game ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.Root_Play+<>c.<Start>b__1_2 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler.RunEventFromAnotherThread (System.Action action) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler+<>c.<UpdateCurrentAsynchronousEvent>b__28_0 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at System.Threading.ThreadHelper.ThreadStart_Context (System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.RunInternal (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ThreadHelper.ThreadStart () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 135 ms; dirty 629/1345680 (0.0 %); initialized=True
+[CA][Regional] scatter surrendered 8 of 51 allocated placements: no cell owned by a constituent still holding quota satisfied the native validators. No cross-constituent item was produced.
+Scatterer Verse.GenStep_ScatterGroup from def AncientJunkClusters could not find cell to generate at.
+[CA][Regional][Timing][GenStep] Verse.GenStep_Scatterer [AncientJunkClusters] completed in 1392 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] Verse.GenStep_ScatterGroup [AncientJunkClusters] completed in 1399 ms for 1246x1080 map 0
+[CA][Regional][Timing][AncientJunkClusters] completed with 11005 indexed walls built in 0 ms; answered 1702 indoor-ruin queries by inspecting 466 local walls instead of a worst-case full-list budget of 374170 comparisons for 1246x1080 map 0; def AncientJunkClusters
+[CA][Regional][Timing][IndexedRemoval] Verse.GenStep_ScatterGroup [AncientJunkClusters] completed with plantDespawns=108 ownerRemovals=197 listerRemovals=468 indexedLists=544 snapshotEntries=733405 indexWork=60 ms restore=72 ms comparisonsBypassed=47411805 shiftsBypassed=34080393 canonicalOrder=False for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] Verse.GenStep_ScatterGroup [AncientJunkClusters] for map 0: spawn=2104/323ms; wipe=2104/64ms; despawn=197/62ms; ownerTryAdd=2104/1ms; ownerRemove=197/11ms; mapListerRemove=197/45ms; otherListerRemove=271/4ms; filth=1742/23ms; regionRebuildDirty=10/200ms; scatterCalc=1702/1021ms; scatterFind=44/576ms; spawnedThings=148667
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_ScatterGroup [AncientPollutionJunk] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_Scatterer [AncientPollutionJunk] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] Verse.GenStep_Scatterer [AncientPollutionJunk] completed in 0 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] Verse.GenStep_ScatterGroup [AncientPollutionJunk] completed in 7 ms for 1246x1080 map 0
+[CA][Regional][Jobs][RockChunks] starting RimWorld.GenStep_RockChunks [RockChunks] for 1246x1080 map 0; workers=8 (processors 32 - 2, clamped 1-8); sequential-verify on; env CA_REGIONAL_JOBS=0 disables at load, CA_REGIONAL_JOBS_SEQUENTIAL=1 forces one worker, CA_REGIONAL_JOBS_WORKERS=n overrides, CA_REGIONAL_JOBS_VERIFY=0 skips the live equivalence pass
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_RockChunks [RockChunks] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_RockChunks [RockChunks] completed in 18422 ms for 1246x1080 map 0
+[CA][Regional][SettlementAudit] CA-RS-CA-RG-C42D7CC3-2 Criminal's Pit after RimWorld.GenStep_RockChunks [RockChunks]: buildings 411->410; removed [count 1; defs Wall=1; ids Wall#Thing_Wall37123]; added [none]
+[CA][Regional] selected-source geology [Granite, Limestone, Marble, Slate]; materialized [Granite:natural=4044,chunks=10585 | Limestone:natural=3870,chunks=7578 | Marble:natural=3479,chunks=10678 | Slate:natural=6168,chunks=12111]; missing [none]
+[CA][Regional][Timing][IndexedRemoval] RimWorld.GenStep_RockChunks [RockChunks] completed with plantDespawns=5078 ownerRemovals=44193 listerRemovals=85877 indexedLists=34665 snapshotEntries=1284592 indexWork=748 ms restore=459 ms comparisonsBypassed=16268157702 shiftsBypassed=2685564854 canonicalOrder=False for 1246x1080 map 0
+[CA][Regional][Jobs][RockChunks] completed RimWorld.GenStep_RockChunks [RockChunks] in 18921 ms for 1246x1080 map 0: parallel noise build 113 ms across 8 workers, grid audit 586 ms (sequential rebuild 581 ms plus checksums/comparison), ordered native remainder 18222 ms, 1345680 of 1345680 cell values served from the grid
+[CA][Regional][Jobs][RockChunks] checksums for map 0: parallel=D664E3CCB867D8DF; sequential=D664E3CCB867D8DF; bitIdentical=True
+[CA][Regional][Jobs][RockChunks] formations=6850 chunkThings=41850 rubbleFilthThings=134797 maxFormationLength=48 lengths [0:364 1:402 2:1583 3:1029 4:766 5-8:1658 9-16:230 17-32:779 33-64:39 65+:0] for map 0 (chunkThings counts non-filth things spawned during formation growth; rubble thickened onto existing filth does not add a thing)
+[CA][Regional][Jobs][RockChunks][ReGrowth] timed calls=6850 elapsed=5705 ms netThings=51630 netRubble=42428 exceptions=0 for map 0
+[CA][Regional][Jobs][SpawnPath] RimWorld.GenStep_RockChunks [RockChunks] for map 0: spawn=220830/16533ms; wipe=220830/888ms; despawn=44193/984ms; ownerTryAdd=220830/197ms; ownerRemove=44193/56ms; mapListerRemove=44193/372ms; otherListerRemove=41684/374ms; filth=173331/11725ms; spawnedThings=325304
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_SpecialTrees [PoluxTrees] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_SpecialTrees [PoluxTrees] completed in 0 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_CaveHives [CaveHives] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_CaveHives [CaveHives] completed in 263 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_Snow [Snow] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_Snow [Snow] completed in 0 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_Animals [Animals] for 1246x1080 map 0
+[CA][Regional][Timing] animal edge-locality mask classified 1345680 cells and reached 1295222 in 92 ms for 1246x1080 map 0; native animal selection no longer requires a dirty global region rebuild
+[CA][Regional][Jobs][SpawnPath] region rebuild entry TryRebuildDirtyRegionsAndRooms during regional generation of map 0; caller stack:
+  at System.Environment.get_StackTrace () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.TraceRebuild (System.String entryPoint) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.RebuildDirtyPrefix (System.Int64& __state) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionAndRoomUpdater.TryRebuildDirtyRegionsAndRooms_Patch3 (Verse.RegionAndRoomUpdater ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionGrid.GetValidRegionAt_Patch1 (Verse.RegionGrid , Verse.IntVec3 ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.RegionAndRoomQuery.RegionAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.GridsUtility.GetRegion (Verse.IntVec3 loc, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinder.TryFindRandomReachableNearbyCell (Verse.IntVec3 root, Verse.Map map, System.Single radius, Verse.TraverseParms traverseParms, System.Predicate`1[T] cellValidator, System.Predicate`1[T] regionValidator, Verse.IntVec3& result, System.Int32 maxRegions) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinder.TryRandomClosewalkCellNear (Verse.IntVec3 root, Verse.Map map, System.Int32 radius, Verse.IntVec3& result, System.Predicate`1[T] extraValidator) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinder.RandomClosewalkCellNear (Verse.IntVec3 root, Verse.Map map, System.Int32 radius, System.Predicate`1[T] extraValidator) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.WildAnimalSpawner.SpawnRandomWildAnimalAt (Verse.IntVec3 loc, System.Boolean canFlyIn, Verse.PawnKindDef animalKind) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.RimWorld.GenStep_Animals.Generate_Patch4 (RimWorld.GenStep_Animals , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateContentsIntoMap_Patch5 (System.Collections.Generic.IEnumerable`1[T] , Verse.Map , System.Int32 , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateMap_Patch6 (Verse.IntVec3 , RimWorld.Planet.MapParent , Verse.MapGeneratorDef , System.Collections.Generic.IEnumerable`1[T] , System.Action`1[T] , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Game.InitNewGame_Patch3 (Verse.Game ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.Root_Play+<>c.<Start>b__1_2 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler.RunEventFromAnotherThread (System.Action action) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler+<>c.<UpdateCurrentAsynchronousEvent>b__28_0 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at System.Threading.ThreadHelper.ThreadStart_Context (System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.RunInternal (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ThreadHelper.ThreadStart () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 15558 ms; dirty 220005/1345680 (16.3 %); initialized=True
+[CA][Regional][Jobs][SpawnPath] region rebuild entry TryRebuildDirtyRegionsAndRooms during regional generation of map 0; caller stack:
+  at System.Environment.get_StackTrace () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.TraceRebuild (System.String entryPoint) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.RebuildDirtyPrefix (System.Int64& __state) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionAndRoomUpdater.TryRebuildDirtyRegionsAndRooms_Patch3 (Verse.RegionAndRoomUpdater ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.RegionGrid.get_DirectGrid () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.Region.get_RandomCell () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinder.TryFindRandomCellInRegion (Verse.Region reg, System.Predicate`1[T] validator, Verse.IntVec3& result) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinder.TryFindRandomReachableNearbyCell (Verse.IntVec3 root, Verse.Map map, System.Single radius, Verse.TraverseParms traverseParms, System.Predicate`1[T] cellValidator, System.Predicate`1[T] regionValidator, Verse.IntVec3& result, System.Int32 maxRegions) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinder.TryRandomClosewalkCellNear (Verse.IntVec3 root, Verse.Map map, System.Int32 radius, Verse.IntVec3& result, System.Predicate`1[T] extraValidator) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinder.RandomClosewalkCellNear (Verse.IntVec3 root, Verse.Map map, System.Int32 radius, System.Predicate`1[T] extraValidator) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.WildAnimalSpawner.SpawnRandomWildAnimalAt (Verse.IntVec3 loc, System.Boolean canFlyIn, Verse.PawnKindDef animalKind) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.RimWorld.GenStep_Animals.Generate_Patch4 (RimWorld.GenStep_Animals , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateContentsIntoMap_Patch5 (System.Collections.Generic.IEnumerable`1[T] , Verse.Map , System.Int32 , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateMap_Patch6 (Verse.IntVec3 , RimWorld.Planet.MapParent , Verse.MapGeneratorDef , System.Collections.Generic.IEnumerable`1[T] , System.Action`1[T] , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Game.InitNewGame_Patch3 (Verse.Game ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.Root_Play+<>c.<Start>b__1_2 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler.RunEventFromAnotherThread (System.Action action) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler+<>c.<UpdateCurrentAsynchronousEvent>b__28_0 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at System.Threading.ThreadHelper.ThreadStart_Context (System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.RunInternal (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ThreadHelper.ThreadStart () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+[CA][Regional] animal commonality receipt for map 0: 4096 calls, 3564 resolved to a non-root constituent, 0 of 256 sampled differed from the root-tile value
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_Animals [Animals] completed in 16887 ms for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] RimWorld.GenStep_Animals [Animals] for map 0: spawn=908/742ms; wipe=908/1ms; ownerTryAdd=908/0ms; regionRebuildDirty=8201/15560ms; spawnedThings=326212
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_Fog [Fog] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_Fog [Fog] completed in 884 ms for 1246x1080 map 0
+[CA][Regional] selected-area stockpiles: no selected area carries Stockpile
+[CA][Regional][Timing][GenStep] starting RimWorld.GenStep_SpecialTrees [AnimaTrees] for 1246x1080 map 0
+[CA][Regional][Jobs][SpawnPath] region rebuild entry TryRebuildDirtyRegionsAndRooms during regional generation of map 0; caller stack:
+  at System.Environment.get_StackTrace () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.TraceRebuild (System.String entryPoint) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.RebuildDirtyPrefix (System.Int64& __state) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionAndRoomUpdater.TryRebuildDirtyRegionsAndRooms_Patch3 (Verse.RegionAndRoomUpdater ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionGrid.GetValidRegionAt_Patch1 (Verse.RegionGrid , Verse.IntVec3 ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.RegionAndRoomQuery.RegionAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.RegionAndRoomQuery.DistrictAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.RegionAndRoomQuery.RoomAt (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.GridsUtility.GetRoom_Patch1 (Verse.IntVec3 , Verse.Map ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at RimWorld.GenStep_SpecialTrees.CanSpawnAt (Verse.IntVec3 c, Verse.Map map, System.Int32 minProximityToArtificialStructures, System.Int32 minProximityToCenter, System.Single fertilityRequirement, System.Int32 minFertileUnroofedCells, System.Int32 maxFertileUnroofedCellRadius, System.Int32 minProximityToSameTree, System.Int32 maxProximityToSameTree, System.Int32 minDistFromMapEdge) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.GenStep_SpecialTrees+<>c__DisplayClass10_0.<Generate>b__0 (Verse.IntVec3 x) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinderLoose.TryFindRandomNotEdgeCellWith (System.Int32 minEdgeDistance, System.Predicate`1[T] validator, Verse.Map map, Verse.IntVec3& result) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.RimWorld.GenStep_SpecialTrees.Generate_Patch1 (RimWorld.GenStep_SpecialTrees , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateContentsIntoMap_Patch5 (System.Collections.Generic.IEnumerable`1[T] , Verse.Map , System.Int32 , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateMap_Patch6 (Verse.IntVec3 , RimWorld.Planet.MapParent , Verse.MapGeneratorDef , System.Collections.Generic.IEnumerable`1[T] , System.Action`1[T] , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Game.InitNewGame_Patch3 (Verse.Game ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.Root_Play+<>c.<Start>b__1_2 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler.RunEventFromAnotherThread (System.Action action) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler+<>c.<UpdateCurrentAsynchronousEvent>b__28_0 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at System.Threading.ThreadHelper.ThreadStart_Context (System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.RunInternal (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ThreadHelper.ThreadStart () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+[CA][Regional][Jobs][SpawnPath] region rebuild entry TryRebuildDirtyRegionsAndRooms during regional generation of map 0; caller stack:
+  at System.Environment.get_StackTrace () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.TraceRebuild (System.String entryPoint) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at ColonistAwareness.CARegionalSpawnPathPatches.RebuildDirtyPrefix (System.Int64& __state) [0x00000] in <ce6957add9c9454fadbb7341b9e8a08b>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionAndRoomUpdater.TryRebuildDirtyRegionsAndRooms_Patch3 (Verse.RegionAndRoomUpdater ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.RegionGrid.GetValidRegionAt_Patch1 (Verse.RegionGrid , Verse.IntVec3 ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.RegionAndRoomQuery.DistirctAtFast (Verse.IntVec3 c, Verse.Map map, Verse.RegionType allowedRegionTypes) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Reachability.CanReach_Patch1 (Verse.Reachability , Verse.IntVec3 , Verse.LocalTargetInfo , Verse.AI.PathEndMode , Verse.TraverseParms ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.Reachability.CanReachFactionBase (Verse.IntVec3 c, RimWorld.Faction factionBaseFaction) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.GenStep_SpecialTrees.CanSpawnAt (Verse.IntVec3 c, Verse.Map map, System.Int32 minProximityToArtificialStructures, System.Int32 minProximityToCenter, System.Single fertilityRequirement, System.Int32 minFertileUnroofedCells, System.Int32 maxFertileUnroofedCellRadius, System.Int32 minProximityToSameTree, System.Int32 maxProximityToSameTree, System.Int32 minDistFromMapEdge) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at RimWorld.GenStep_SpecialTrees+<>c__DisplayClass10_0.<Generate>b__0 (Verse.IntVec3 x) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.CellFinderLoose.TryFindRandomNotEdgeCellWith (System.Int32 minEdgeDistance, System.Predicate`1[T] validator, Verse.Map map, Verse.IntVec3& result) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.RimWorld.GenStep_SpecialTrees.Generate_Patch1 (RimWorld.GenStep_SpecialTrees , Verse.Map , Verse.GenStepParams ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateContentsIntoMap_Patch5 (System.Collections.Generic.IEnumerable`1[T] , Verse.Map , System.Int32 , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.MapGenerator.GenerateMap_Patch6 (Verse.IntVec3 , RimWorld.Planet.MapParent , Verse.MapGeneratorDef , System.Collections.Generic.IEnumerable`1[T] , System.Action`1[T] , System.Boolean , System.Boolean ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at MonoMod.Utils.DynamicMethodDefinition.Verse.Game.InitNewGame_Patch3 (Verse.Game ) [0x00000] in <e53399289d9b419d83f9f5b02c5cf609>:0 
+  at Verse.Root_Play+<>c.<Start>b__1_2 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler.RunEventFromAnotherThread (System.Action action) [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at Verse.LongEventHandler+<>c.<UpdateCurrentAsynchronousEvent>b__28_0 () [0x00000] in <61e4173561894da49d210260257b5097>:0 
+  at System.Threading.ThreadHelper.ThreadStart_Context (System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.RunInternal (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state, System.Boolean preserveSyncCtx) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ExecutionContext.Run (System.Threading.ExecutionContext executionContext, System.Threading.ContextCallback callback, System.Object state) [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+  at System.Threading.ThreadHelper.ThreadStart () [0x00000] in <51fded79cd284d4d911c5949aff4cb21>:0 
+[CA][Regional][Timing][GenStep] RimWorld.GenStep_SpecialTrees [AnimaTrees] completed in 145 ms for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] starting Verse.GenStep_Scatterer [AncientExostriderRemains] for 1246x1080 map 0
+[CA][Regional][Timing][GenStep] Verse.GenStep_Scatterer [AncientExostriderRemains] completed in 48 ms for 1246x1080 map 0
+[CA][Regional][Timing] ordered map gensteps for 1246x1080 map 0 took 120137 ms
+[CA][Regional][Timing][RegionRegistration] added 381131 initial things across 368428 touched regions while bypassing 10052894 redundant linear membership comparisons and extending the native spawned-thing capacity 0 times for 1246x1080 map 0
+[CA][Regional][Jobs][MapListerIndex] scope completed for map 0: trackedLists=10 activeEntries=1015366 served=6618 appended=21499 sampledAudits=25 auditMismatches=0 nativeFallbacks=991 build=104 ms finalAudit=38 ms exact=True
+[CA][Regional][Jobs][SpawnPath] scope closed for map 0: spawnedThings 0 -> 326247; index served=3714 sampledAudits=14 auditMismatches=0 unavailableLookups=0; final full audit exact over 326247 entries
+[CA][Regional][Jobs][SpawnPath] generation totals for map 0: spawn=381133/22413ms; wipe=381123/1650ms; despawn=54886/1759ms; ownerTryAdd=382918/263ms; ownerRemove=54886/186ms; mapListerRemove=54886/868ms; otherListerRemove=42664/395ms; filth=175682/11758ms; regionRebuildAll=1/126ms; regionRebuildDirty=74646/27295ms; plantCheck=159844/10833ms; plantSaturated=155125/6ms; plantCanGrow=155122/4925ms; plantClusters=107255/4ms; plantSuccession=707234/27ms; plantDistribution=214510/11ms; scatterCalc=1704/1035ms; scatterFind=45/588ms
+[CA][Regional][Jobs][NoiseGrids] Multiply#1 closed: requests=1345680, gridServes=1177471, nativeWarmup=168209, nativeFallback=0, buildMs=418, auditMs=0, state=grid
+[CA][Regional][Jobs][NoiseGrids] ScaleBias#2 closed: requests=1345680, gridServes=1177471, nativeWarmup=168209, nativeFallback=0, buildMs=118, auditMs=0, state=grid
+[CA][Regional][Jobs][NoiseGrids] Perlin#3 closed: requests=99231, gridServes=0, nativeWarmup=99231, nativeFallback=0, buildMs=0, auditMs=0, state=sparse-native
+[CA][Regional][Jobs][NoiseGrids] Perlin#4 closed: requests=87525, gridServes=0, nativeWarmup=87525, nativeFallback=0, buildMs=0, auditMs=0, state=sparse-native
+[CA][Regional][Jobs][NoiseGrids] Perlin#5 closed: requests=61594, gridServes=0, nativeWarmup=61594, nativeFallback=0, buildMs=0, auditMs=0, state=sparse-native
+[CA][Regional][Jobs][NoiseGrids] Perlin#6 closed: requests=83625, gridServes=0, nativeWarmup=83625, nativeFallback=0, buildMs=0, auditMs=0, state=sparse-native
+[CA][Regional][Jobs][NoiseGrids] scope closed for map 0: 2 grids built (10 MB, 536 ms parallel build, 0 ms audits, sequentialAudit=off), 4 sparse-native, 0 degraded, 0 refused by caps, 0 unsafe graphs kept native, 2354942 values served, 668393 native warm-up evaluations, 0 native fallback evaluations, routerNativeOnly=False
+[CA][Regional][Timing] perceived path-cost rebuild for 1246x1080 map 0 took 1461 ms
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 1875 ms; dirty 1345680/1345680 (100.0 %); initialized=True
+[CA][Regional] map-loaded receipt CA-RS-CA-RG-C42D7CC3-0 Crook Plain: population 12/12, buildings 401, infrastructure 25, cultivated plants 0
+[CA][Regional] map-loaded receipt CA-RS-CA-RG-C42D7CC3-1 Shadow Valley: population 11/11, buildings 468, infrastructure 29, cultivated plants 0
+[CA][Regional] map-loaded receipt CA-RS-CA-RG-C42D7CC3-2 Criminal's Pit: population 12/14, buildings 410, infrastructure 25, cultivated plants 0
+[CA][Regional] map-loaded receipt CA-RS-CA-RG-C42D7CC3-3 Triumph Cove: population 11/11, buildings 441, infrastructure 30, cultivated plants 0
+[CA][Regional][Timing] refreshed native recent-memory state for 3 deferred starting pawns after the canonical room graph was finalized in 0 ms
+[CA][Regional][Timing] map finalization for 1246x1080 map 0 took 6141 ms
+[CA][Regional] map-generated receipt CA-RS-CA-RG-C42D7CC3-0 Crook Plain: population 12/12, buildings 401, infrastructure 25, cultivated plants 0
+[CA][Regional] map-generated receipt CA-RS-CA-RG-C42D7CC3-1 Shadow Valley: population 11/11, buildings 468, infrastructure 29, cultivated plants 0
+[CA][Regional] map-generated receipt CA-RS-CA-RG-C42D7CC3-2 Criminal's Pit: population 12/14, buildings 410, infrastructure 25, cultivated plants 0
+[CA][Regional] map-generated receipt CA-RS-CA-RG-C42D7CC3-3 Triumph Cove: population 11/11, buildings 441, infrastructure 30, cultivated plants 0
+[CA][Regional][Mountain] fixture receipt - region CA-RG-C42D7CC3, candidate de7d325f7c1e, anchor 115253, landing 115253
+  map 1246x1080 = 1345680 cells; 59 constituents
+  NO Mountain carriers on this footprint. The Mountain adapter contributes nothing here, so any rock present comes from base elevation - the per-cell hilliness factor - and not from this path (see F-131).
+  hill-factor blend (F-131, separate and NOT fixed here): 0 cells read a hilliness factor above their OWN constituent's, worst excess 0.000 on a 0.80-1.10 scale
+[CA][Regional][Invariant] landing-swap receipt (map generated)
+  PRECONDITION candidate de7d325f7c1e  <- two receipts are COMPARABLE ONLY if this matches. A candidate id is a fresh Guid per created candidate and it seeds every feature instance, so two separately built candidates over the same footprint differ legitimately. Move the landing pin on the SAME pending candidate; do not rebuild or reroll it.
+  region CA-RG-C42D7CC3; footprint anchor 115253; landing 115253; members [115253,115260,39480,115255,115261,66123]
+  map 0 1246x1080; parented tile 115253; engine root answering intercepted reads 115253
+  INVARIANT DIGEST 4F35086379AC1BF7  <- this value must be IDENTICAL across two landings of the same candidate
+    [=] footprint+anchor      AEE972F55DDF795C  identity, members, backing size, resolved engine root
+    [=] terrain               6624B22AE57CBAA6  surface + under terrain, all cells
+    [=] roof                  53B718AA1146274B  roof grid, all cells
+    [=] fertility             DB724CEDA742C290  fertility grid, all cells
+    [=] features+landmarks    961E293B785A2D23  map mutators/biome plus every constituent's mutators and landmark
+    [=] stone palette         4845C69C165DE81E  11 natural rock def(s): Granitex4044, Limestonex3870, Marblex3479, MineableComponentsIndustrialx860, MineableGoldx56, MineableJadex41, MineablePlasteelx72, MineableSilverx91, MineableSteelx6271, MineableUraniumx155, Slatex6168
+    [=] stone layout          1648A6D7BC15E946  every natural rock, def and position
+    [=] stone floors          A3285974751B6F33  stone-category terrain cells
+    [=] plants                18D1420BDC869EAD  102038 plant(s), def, position and growth
+    [=] placed things         33C841989C945DF8  every non-pawn non-rock thing, def, position and stack
+    [=] pollution             CBF29CE484222325  0 polluted cell(s)
+    [=] snow                  3F4CB15B5C1CFB65  snow depth, all cells
+    [=] history               7BC8411881DD5F40  factions, relations, and settlements
+    [=] settlement identity   BB78838966B17EA6  4 record(s)
+    [=] settlement layout     108565AE0F789CA5  terrain and structures inside every settlement rect
+    [=] settlement residents  9F97AA2670EA94EB  typed residents and their independent faction affiliations
+    [~] entry state           D33F2A9D3A0CCA58  landing tile and colonist start positions - this line is EXPECTED to differ
+  [=] must not differ between landings; [~] may.
+  NOT COVERED by this receipt, stated rather than implied: content this install does not load (this session loads 87 TileMutatorDefs; active expansions [Royalty, Ideology, Biotech, Odyssey]), anything a mod places after generation, and the runtime colony clock - GenLocalDate's hour-of-day family still reads the parented tile by design.
+[CA][Regional][Timing] complete map generation 1246x1080 map 0 took 132319 ms; regional projection classification 3200 ms; smoothing/cache 184 ms; water depth 73 ms; littoral 19 ms; diagnostics 91 ms; total 3568 ms
+[CA] No technological-knowledge mapping exists for research RG_MushroomCultivation.
+[CA] No technological-knowledge mapping exists for research Ferny_NeolithicEducation.
+[CA] arrival signature: 'Crashlanded' - LOUD; the region saw the sky burn
+[CA][Founding] preset 'shared-survival+faction' applied to scenario 'Crashlanded': One chosen founder leads. Work is voluntary. All 3 founders take part in decisions. Starting supplies are shared and rationed. These terms last 30 days. | relation ledger now holds 49 records.
+[CA][MapSize] transpiler: redirected 2 MapSizes/TestMapSizes field-read(s) in the size loop to CA's source-scale catalog; the drawn list no longer trusts the mutable field
+Unloading 0 Unused Serialized files (Serialized files now loaded: 7)
+[CA][Regional][Timing][TerrainScatter] built 26316 deterministic minimum-spaced points for 1246x1080 map 0 in 8 ms instead of vanilla's quadratic whole-map pass
+[CA][Regional][Timing] map drawer global layers took 4 ms; warmed 28 and retained 0 ready sections out of 4736 using separate landing and saved-camera bounds in 167 ms; total 171 ms; remaining section meshes will materialize when viewed
+Unloading 1 unused Assets to reduce memory usage. Loaded Objects now: 32503.
+Total: 735.983300 ms (FindLiveObjects: 2.503600 ms CreateObjectMapping: 0.581400 ms MarkObjects: 732.817400 ms  DeleteObjects: 0.080500 ms)
+
+[CA][Regional][Timing] map drawer global layers took 0 ms; warmed 38 and retained 16 ready sections out of 4736 using separate landing and saved-camera bounds in 131 ms; total 131 ms; remaining section meshes will materialize when viewed
+Random state stack is not empty. There were more calls to PushState than PopState. Fixing.
+[CA] frontier autonomous siting chose (72, 0, 604): valid ground True; unmet requirements 0; terrain fit 121; functional adjacency 441; throughput 4; circulation 225; expansion 454; environmental buffer 0; defensive separation 0; visual order 40; material cost 0; stable order 49
+[CA] frontier autonomous habitat closed outdoor cultivation at (72, 0, 604): 3 beds, 60 food units, 81 roofed cells; requirements 5
+[CA][Regional][FreezeScan] map 0: freeze/thaw steady visits screened to relevant cells; 0 freezable and 0 ThinIce cells of 1345680 at build; terrain writes keep the screen exact; env CA_REGIONAL_FREEZESCAN=0 disables at load
+[CA][Regional][Renderer] replaced vanilla's 1000-cell north/south map-edge mask with a complete 2246x500 regional cap on 1246x1080 map 0
+[Colonist Awareness] God Mode item mover input patch is active.
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 53 ms; dirty 192/1345680 (0.0 %); initialized=True
+[CA][Regional][Renderer] pacing sample map 0: 4 frames in 6016 ms (0.7 fps); process CPU 1.29 logical cores; CA draw 0.846 ms/frame; CA update 9.015 ms/frame; sections initialized 77, dirty 26, visible 28, offscreen dynamic 49, update candidates 135; vSyncCount 1, targetFrameRate 60, display refresh 60.00 Hz
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 52 ms; dirty 126/1345680 (0.0 %); initialized=True
+ThinkNode_PrioritySorter has child node which didn't give a priority: ColonistAwareness.JobGiver_CAWash
+ThinkNode_PrioritySorter has child node which didn't give a priority: ColonistAwareness.JobGiver_CARelieve
+ThinkNode_PrioritySorter has child node which didn't give a priority: ColonistAwareness.JobGiver_CADrink
+[CA][Regional][Renderer] tactical mesh pressure: 0 cold visible sections; processed 6 with budget 6 in 27 ms; camera section delta 0,0; prefetch bounds 229x189
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 54 ms; dirty 75/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 51 ms; dirty 126/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 54 ms; dirty 92/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 54 ms; dirty 52/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 52 ms; dirty 27/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 53 ms; dirty 21/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 53 ms; dirty 115/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 55 ms; dirty 221/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 56 ms; dirty 156/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 56 ms; dirty 221/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 57 ms; dirty 85/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 54 ms; dirty 76/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 50 ms; dirty 68/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 54 ms; dirty 138/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 51 ms; dirty 93/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 67 ms; dirty 97/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 57 ms; dirty 138/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 57 ms; dirty 78/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 54 ms; dirty 105/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 54 ms; dirty 130/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 49 ms; dirty 278/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 55 ms; dirty 73/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 53 ms; dirty 135/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 57 ms; dirty 101/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 51 ms; dirty 190/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 55 ms; dirty 132/1345680 (0.0 %); initialized=True
+[CA][Regional][Timing] region/room rebuild for 1246x1080 map 0 took 54 ms; dirty 65/1345680 (0.0 %); initialized=True
+[CA][TickProbe] 300 ticks, ms/tick: total 59.60; mapPre 1.89; listNormal 14.97; listRare 1.37; listLong 9.01; world 3.11; story 0.00; mapPost 29.15 [animals 0.00; plants 16.77; power 0.00; steady 7.75; components 4.38; gas 0.00; pollution 0.00; lords 0.03; resources 0.00; fireWatch 0.00; flecks 0.02; postOther 0.00]; gameComp 0.02; other 0.07; post:GameConditionManager 0.01; post:TempTerrainManager 0.16; post:DeferredSpawner 0.00; post:PassingShipManager 0.00; post:DebugCellDrawer 0.00; post:VoluntarilyJoinableLordsStarter 0.00; post:WeatherManager 0.01; post:WeatherDecider 0.01; post:EffecterMaintainer 0.00; comp:WallSnowManager 1.67; comp:KnowledgeMapComponent 1.17; comp:CASettlementWorksMapComponent 0.62; comp:CASettlementPlanningContextMapComponent 0.24; comp:CASettlementGraphMapComponent 0.23; comp:CASpatialCombatMemoryMapComponent 0.09
+[CA][Settlements] Assembly of the Ford: central authority, 3 member settlements, shared [defense, diplomacy, taxes, decisions, disputes]
+[CA][Exercise] receipts written
+[CA][Regional][Renderer] tactical mesh pressure: 24 cold visible sections; processed 32 with budget 32 in 101 ms; camera section delta -20,12; prefetch bounds 399x311
+[CA][TickProbe] 300 ticks, ms/tick: total 27.80; mapPre 0.52; listNormal 14.86; listRare 0.00; listLong 2.53; world 0.48; story 0.00; mapPost 9.37 [animals 0.00; plants 0.27; power 0.00; steady 7.44; components 1.31; gas 0.00; pollution 0.00; lords 0.03; resources 0.00; fireWatch 0.00; flecks 0.15; postOther 0.00]; gameComp 0.01; other 0.02; post:GameConditionManager 0.01; post:TempTerrainManager 0.13; post:DeferredSpawner 0.00; post:PassingShipManager 0.00; post:DebugCellDrawer 0.00; post:VoluntarilyJoinableLordsStarter 0.00; post:WeatherManager 0.00; post:WeatherDecider 0.01; post:EffecterMaintainer 0.00; comp:KnowledgeMapComponent 0.92; comp:CASettlementGraphMapComponent 0.15; comp:CASpatialCombatMemoryMapComponent 0.09; comp:CADraftedCombatInitiativeMapComponent 0.04; comp:AutonomousHomeMapComponent 0.02; comp:SquadSupportMapComponent 0.01
+[CA][Regional][Renderer] pacing sample map 0: 373 frames in 30037 ms (12.4 fps); process CPU 1.55 logical cores; CA draw 0.370 ms/frame; CA update 2.746 ms/frame; sections initialized 387, dirty 32, visible 24, offscreen dynamic 363, update candidates 0; vSyncCount 1, targetFrameRate 60, display refresh 60.00 Hz
+[CA][Regional][Renderer] tactical mesh pressure: 0 cold visible sections; processed 32 with budget 32 in 103 ms; camera section delta 0,-4; prefetch bounds 229x291
+[CA][TickProbe] 300 ticks, ms/tick: total 22.33; mapPre 0.44; listNormal 8.79; listRare 0.00; listLong 2.66; world 0.50; story 0.00; mapPost 9.91 [animals 0.00; plants 0.26; power 0.00; steady 7.75; components 1.15; gas 0.00; pollution 0.00; lords 0.03; resources 0.00; fireWatch 0.00; flecks 0.54; postOther 0.00]; gameComp 0.01; other 0.02; post:GameConditionManager 0.01; post:TempTerrainManager 0.14; post:DeferredSpawner 0.00; post:PassingShipManager 0.00; post:DebugCellDrawer 0.00; post:VoluntarilyJoinableLordsStarter 0.00; post:WeatherManager 0.00; post:WeatherDecider 0.01; post:EffecterMaintainer 0.00; comp:KnowledgeMapComponent 0.91; comp:CASpatialCombatMemoryMapComponent 0.11; comp:CADraftedCombatInitiativeMapComponent 0.04; comp:SquadSupportMapComponent 0.01; comp:EquipTransitionMapComponent 0.01; comp:RaidResponseMapComponent 0.00
+[CA][TickProbe] 300 ticks, ms/tick: total 27.54; mapPre 0.41; listNormal 14.44; listRare 0.00; listLong 2.59; world 0.50; story 0.04; mapPost 9.53 [animals 0.00; plants 0.27; power 0.00; steady 7.70; components 1.30; gas 0.00; pollution 0.00; lords 0.03; resources 0.00; fireWatch 0.00; flecks 0.06; postOther 0.00]; gameComp 0.01; other 0.02; post:GameConditionManager 0.01; post:TempTerrainManager 0.14; post:DeferredSpawner 0.00; post:PassingShipManager 0.00; post:DebugCellDrawer 0.00; post:VoluntarilyJoinableLordsStarter 0.00; post:WeatherManager 0.00; post:WeatherDecider 0.01; post:EffecterMaintainer 0.00; comp:KnowledgeMapComponent 0.90; comp:CASettlementGraphMapComponent 0.15; comp:CASpatialCombatMemoryMapComponent 0.11; comp:CADraftedCombatInitiativeMapComponent 0.04; comp:MapComponent_AstrogeneOverrides 0.01; comp:SquadSupportMapComponent 0.01
+[CA][TickProbe] 300 ticks, ms/tick: total 22.04; mapPre 0.40; listNormal 9.18; listRare 0.00; listLong 2.59; world 0.52; story 0.00; mapPost 9.32 [animals 0.00; plants 0.26; power 0.00; steady 7.67; components 1.18; gas 0.00; pollution 0.00; lords 0.03; resources 0.00; fireWatch 0.00; flecks 0.02; postOther 0.00]; gameComp 0.01; other 0.02; post:GameConditionManager 0.01; post:TempTerrainManager 0.14; post:DeferredSpawner 0.00; post:PassingShipManager 0.00; post:DebugCellDrawer 0.00; post:VoluntarilyJoinableLordsStarter 0.00; post:WeatherManager 0.00; post:WeatherDecider 0.01; post:EffecterMaintainer 0.00; comp:KnowledgeMapComponent 0.92; comp:CASpatialCombatMemoryMapComponent 0.11; comp:CADraftedCombatInitiativeMapComponent 0.05; comp:RaidResponseMapComponent 0.01; comp:SquadSupportMapComponent 0.01; comp:EquipTransitionMapComponent 0.01
+[CA][Exercise] complete; shutting down
+[CA][Exercise] fixed benchmark RNG cleanup failed during shutdown: Stack empty.
+Memory Statistics:
+[ALLOC_TEMP_TLS] TLS Allocator
+  StackAllocators : 
+    [ALLOC_TEMP_MAIN]
+      Peak usage frame count: [0-1.0 KB]: 10715 frames, [1.0 KB-2.0 KB]: 7 frames, [2.0 KB-4.0 KB]: 755 frames, [4.0 KB-8.0 KB]: 16 frames, [8.0 KB-16.0 KB]: 40 frames, [16.0 KB-32.0 KB]: 5 frames, [32.0 KB-64.0 KB]: 3 frames, [64.0 KB-128.0 KB]: 6 frames, [128.0 KB-256.0 KB]: 1 frames, [1.0 MB-2.0 MB]: 1 frames, [2.0 MB-4.0 MB]: 1 frames, [4.0 MB-8.0 MB]: 3 frames
+      Initial Block Size 4.0 MB
+      Current Block Size 6.3 MB
+      Peak Allocated Bytes 6.3 MB
+      Overflow Count 1
+    [ALLOC_TEMP_Job.Worker 18]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 144 B
+      Overflow Count 0
+    [ALLOC_TEMP_Loading.PreloadManager]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 3.8 KB
+      Overflow Count 8
+    [ALLOC_TEMP_Background Job.Worker 8]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 54 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 10]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 54 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 16]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 176 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 6]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 54 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 4]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 160 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 27]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 160 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 14]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 160 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 17]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 144 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 3]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 160 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 12]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 54 B
+      Overflow Count 0
+    [ALLOC_TEMP_] x 3
+      Initial Block Size 64.0 KB
+      Current Block Size 92.0 KB
+      Peak Allocated Bytes 91.6 KB
+      Overflow Count 8
+    [ALLOC_TEMP_Background Job.Worker 1]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 54 B
+      Overflow Count 0
+    [ALLOC_TEMP_AssetGarbageCollectorHelper] x 31
+      Initial Block Size 64.0 KB
+      Current Block Size 64.0 KB
+      Peak Allocated Bytes 138 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 5]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 54 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 13]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 54 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 11]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 54 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 2]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 480 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 3]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 54 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 0]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 54 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 20]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 144 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 11]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 160 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 4]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 54 B
+      Overflow Count 0
+    [ALLOC_TEMP_BatchDeleteObjects]
+      Initial Block Size 64.0 KB
+      Current Block Size 64.0 KB
+      Peak Allocated Bytes 54 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 30]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 112 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 6]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 144 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 0]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 128 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 21]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 160 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 26]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 144 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 5]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 176 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 9]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 54 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 25]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 128 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 14]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 54 B
+      Overflow Count 0
+    [ALLOC_TEMP_ReadCacheIndex]
+      Initial Block Size 64.0 KB
+      Current Block Size 64.0 KB
+      Peak Allocated Bytes 0.6 KB
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 29]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 128 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 13]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 128 B
+      Overflow Count 0
+    [ALLOC_TEMP_EnlightenWorker] x 16
+      Initial Block Size 64.0 KB
+      Current Block Size 64.0 KB
+      Peak Allocated Bytes 54 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 15]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 54 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 2]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 54 B
+      Overflow Count 0
+    [ALLOC_TEMP_Background Job.Worker 7]
+      Initial Block Size 32.0 KB
+      Current Block Size 32.0 KB
+      Peak Allocated Bytes 54 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 22]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 144 B
+      Overflow Count 0
+    [ALLOC_TEMP_UnityGfxDeviceWorker]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 10.3 KB
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 28]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 128 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 9]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 176 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 8]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 176 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 7]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 144 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 23]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 144 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 1]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 507 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 10]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 160 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 15]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 144 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 24]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 160 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 12]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 160 B
+      Overflow Count 0
+    [ALLOC_TEMP_Job.Worker 19]
+      Initial Block Size 256.0 KB
+      Current Block Size 256.0 KB
+      Peak Allocated Bytes 128 B
+      Overflow Count 0
+    [ALLOC_TEMP_Loading.AsyncRead]
+      Initial Block Size 64.0 KB
+      Current Block Size 108.0 KB
+      Peak Allocated Bytes 104.0 KB
+      Overflow Count 0
+[ALLOC_DEFAULT] Dual Thread Allocator
+  Peak main deferred allocation count 35899
+    [ALLOC_BUCKET]
+      Large Block size 4.0 MB
+      Used Block count 1
+      Peak Allocated bytes 4.0 MB
+      Failed Allocations. Bucket layout:
+        16B: 4 Subsections = 4096 buckets. Failed count: 85904
+        32B: 34 Subsections = 17408 buckets. Failed count: 74936
+        48B: 49 Subsections = 16725 buckets. Failed count: 193061
+        64B: 40 Subsections = 10240 buckets. Failed count: 61461
+        80B: 85 Subsections = 17408 buckets. Failed count: 38863
+        96B: 28 Subsections = 4778 buckets. Failed count: 37417
+        112B: 10 Subsections = 1462 buckets. Failed count: 18607
+        128B: 6 Subsections = 768 buckets. Failed count: 22429
+    [ALLOC_DEFAULT_MAIN]
+      Peak usage frame count: [16.0 MB-32.0 MB]: 1016 frames, [32.0 MB-64.0 MB]: 1 frames, [128.0 MB-256.0 MB]: 9727 frames, [2.00 GB-4.00 GB]: 809 frames
+      Requested Block Size 16.0 MB
+      Peak Block count 41
+      Peak Allocated memory 2.69 GB
+      Peak Large allocation bytes 2.07 GB
+    [ALLOC_DEFAULT_THREAD]
+      Peak usage frame count: [8.0 MB-16.0 MB]: 1096 frames, [16.0 MB-32.0 MB]: 5 frames, [32.0 MB-64.0 MB]: 7 frames, [64.0 MB-128.0 MB]: 1 frames, [128.0 MB-256.0 MB]: 1 frames, [256.0 MB-0.50 GB]: 2 frames, [0.50 GB-1.00 GB]: 4 frames, [1.00 GB-2.00 GB]: 10437 frames
+      Requested Block Size 16.0 MB
+      Peak Block count 33
+      Peak Allocated memory 1.30 GB
+      Peak Large allocation bytes 0.80 GB
+[ALLOC_TEMP_JOB_1_FRAME]
+  Initial Block Size 2.0 MB
+  Used Block Count 0
+  Overflow Count (too large) 0
+  Overflow Count (full) 0
+[ALLOC_TEMP_JOB_2_FRAMES]
+  Initial Block Size 2.0 MB
+  Used Block Count 0
+  Overflow Count (too large) 0
+  Overflow Count (full) 0
+[ALLOC_TEMP_JOB_4_FRAMES (JobTemp)]
+  Initial Block Size 2.0 MB
+  Used Block Count 1
+  Overflow Count (too large) 0
+  Overflow Count (full) 0
+[ALLOC_TEMP_JOB_ASYNC (Background)]
+  Initial Block Size 1.0 MB
+  Used Block Count 1
+  Overflow Count (too large) 0
+  Overflow Count (full) 0
+[ALLOC_GFX] Dual Thread Allocator
+  Peak main deferred allocation count 70
+    [ALLOC_BUCKET]
+      Large Block size 4.0 MB
+      Used Block count 1
+      Peak Allocated bytes 4.0 MB
+      Failed Allocations. Bucket layout:
+        16B: 4 Subsections = 4096 buckets. Failed count: 85904
+        32B: 34 Subsections = 17408 buckets. Failed count: 74936
+        48B: 49 Subsections = 16725 buckets. Failed count: 193061
+        64B: 40 Subsections = 10240 buckets. Failed count: 61461
+        80B: 85 Subsections = 17408 buckets. Failed count: 38863
+        96B: 28 Subsections = 4778 buckets. Failed count: 37417
+        112B: 10 Subsections = 1462 buckets. Failed count: 18607
+        128B: 6 Subsections = 768 buckets. Failed count: 22429
+    [ALLOC_GFX_MAIN]
+      Peak usage frame count: [128.0 KB-256.0 KB]: 1 frames, [2.0 MB-4.0 MB]: 1016 frames, [8.0 MB-16.0 MB]: 9722 frames, [16.0 MB-32.0 MB]: 14 frames, [32.0 MB-64.0 MB]: 231 frames, [64.0 MB-128.0 MB]: 568 frames, [1.00 GB-2.00 GB]: 1 frames
+      Requested Block Size 16.0 MB
+      Peak Block count 9
+      Peak Allocated memory 1.00 GB
+      Peak Large allocation bytes 0.93 GB
+    [ALLOC_GFX_THREAD]
+      Peak usage frame count: [0-1.0 KB]: 1018 frames, [1.0 KB-2.0 KB]: 1 frames, [2.0 KB-4.0 KB]: 9723 frames, [16.0 KB-32.0 KB]: 226 frames, [32.0 KB-64.0 KB]: 171 frames, [64.0 KB-128.0 KB]: 414 frames
+      Requested Block Size 16.0 MB
+      Peak Block count 1
+      Peak Allocated memory 103.2 KB
+      Peak Large allocation bytes 0 B
+[ALLOC_CACHEOBJECTS] Dual Thread Allocator
+  Peak main deferred allocation count 203
+    [ALLOC_BUCKET]
+      Large Block size 4.0 MB
+      Used Block count 1
+      Peak Allocated bytes 4.0 MB
+      Failed Allocations. Bucket layout:
+        16B: 4 Subsections = 4096 buckets. Failed count: 85904
+        32B: 34 Subsections = 17408 buckets. Failed count: 74936
+        48B: 49 Subsections = 16725 buckets. Failed count: 193061
+        64B: 40 Subsections = 10240 buckets. Failed count: 61461
+        80B: 85 Subsections = 17408 buckets. Failed count: 38863
+        96B: 28 Subsections = 4778 buckets. Failed count: 37417
+        112B: 10 Subsections = 1462 buckets. Failed count: 18607
+        128B: 6 Subsections = 768 buckets. Failed count: 22429
+    [ALLOC_CACHEOBJECTS_MAIN]
+      Peak usage frame count: [4.0 MB-8.0 MB]: 1 frames, [8.0 MB-16.0 MB]: 1016 frames, [32.0 MB-64.0 MB]: 10536 frames
+      Requested Block Size 4.0 MB
+      Peak Block count 9
+      Peak Allocated memory 33.5 MB
+      Peak Large allocation bytes 0 B
+    [ALLOC_CACHEOBJECTS_THREAD]
+      Peak usage frame count: [4.0 KB-8.0 KB]: 1016 frames, [32.0 KB-64.0 KB]: 1 frames, [128.0 KB-256.0 KB]: 3 frames, [256.0 KB-0.5 MB]: 10530 frames, [0.5 MB-1.0 MB]: 3 frames
+      Requested Block Size 4.0 MB
+      Peak Block count 1
+      Peak Allocated memory 0.6 MB
+      Peak Large allocation bytes 0 B
+[ALLOC_TYPETREE] Dual Thread Allocator
+  Peak main deferred allocation count 0
+    [ALLOC_BUCKET]
+      Large Block size 4.0 MB
+      Used Block count 1
+      Peak Allocated bytes 4.0 MB
+      Failed Allocations. Bucket layout:
+        16B: 4 Subsections = 4096 buckets. Failed count: 85904
+        32B: 34 Subsections = 17408 buckets. Failed count: 74936
+        48B: 49 Subsections = 16725 buckets. Failed count: 193061
+        64B: 40 Subsections = 10240 buckets. Failed count: 61461
+        80B: 85 Subsections = 17408 buckets. Failed count: 38863
+        96B: 28 Subsections = 4778 buckets. Failed count: 37417
+        112B: 10 Subsections = 1462 buckets. Failed count: 18607
+        128B: 6 Subsections = 768 buckets. Failed count: 22429
+    [ALLOC_TYPETREE_MAIN]
+      Peak usage frame count: [4.0 KB-8.0 KB]: 1 frames, [8.0 KB-16.0 KB]: 1016 frames, [256.0 KB-0.5 MB]: 10536 frames
+      Requested Block Size 2.0 MB
+      Peak Block count 1
+      Peak Allocated memory 352.7 KB
+      Peak Large allocation bytes 0 B
+    [ALLOC_TYPETREE_THREAD]
+      Peak usage frame count: [0-1.0 KB]: 11553 frames
+      Requested Block Size 2.0 MB
+      Peak Block count 0
+      Peak Allocated memory 0 B
+      Peak Large allocation bytes 0 B

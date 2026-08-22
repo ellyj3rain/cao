@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
   <CA_MapSizeExtremeSourceScale>Extreme source-tile scale</CA_MapSizeExtremeSourceScale>
+  <CA_JumpToSettlement>Jump to settlement</CA_JumpToSettlement>
+  <CA_JumpToSettlementDesc>This settlement stands inside the loaded regional map. Jump the camera to its ground.</CA_JumpToSettlementDesc>
+  <CA_PartOfLoadedRegion>part of the loaded region {0}; travel there on the map</CA_PartOfLoadedRegion>
 </LanguageData>
