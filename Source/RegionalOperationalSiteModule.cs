@@ -6,19 +6,6 @@ using Verse;
 
 namespace ColonistAwareness
 {
-    [Flags]
-    public enum CARegionalOperationalRole
-    {
-        None = 0,
-        PatrolBase = 1 << 0,
-        ObservationPost = 1 << 1,
-        CombatOutpost = 1 << 2,
-        LogisticsPoint = 1 << 3,
-        CommunicationsRelay = 1 << 4,
-        CasualtyCollection = 1 << 5,
-        FallbackShelter = 1 << 6
-    }
-
     internal sealed class CARegionalOperationalRoleDefinition
     {
         internal readonly CARegionalOperationalRole Role;

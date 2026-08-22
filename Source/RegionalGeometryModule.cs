@@ -66,14 +66,26 @@ namespace ColonistAwareness
         internal static CARegionalEnvelopeGeometry BuildEnvelope(
             CARegionalPlan plan, bool smooth = true)
         {
+            return BuildEnvelope(plan?.memberTileIds,
+                plan?.bundleRootTileId ?? -1, smooth);
+        }
+
+        // The envelope is a function of membership alone; topology records
+        // and realized plans share it.
+        internal static CARegionalEnvelopeGeometry BuildEnvelope(
+            IReadOnlyList<int> memberTileIds, int rootTileId,
+            bool smooth = true)
+        {
             var geometry = new CARegionalEnvelopeGeometry();
-            List<PlanetTile> members = plan?.memberTileIds
+            List<PlanetTile> members = memberTileIds
                 ?.Select(CARegionalPlanUtility.SurfaceTile)
                 .Where(tile => tile.Valid).ToList()
                 ?? new List<PlanetTile>();
             if (members.Count == 0) return geometry;
 
-            PlanetTile root = plan.BundleRoot.Valid ? plan.BundleRoot
+            PlanetTile rootCandidate =
+                CARegionalPlanUtility.SurfaceTile(rootTileId);
+            PlanetTile root = rootCandidate.Valid ? rootCandidate
                 : members[0];
             Vector3 rootCenter = Verse.Find.WorldGrid.GetTileCenter(root);
             geometry.radius = rootCenter.magnitude;
@@ -372,6 +384,124 @@ namespace ColonistAwareness
     }
 
     [StaticConstructorOnStartup]
+    // THE WHOLE PARTITION, VISIBLE. Until this layer, only the selected
+    // or registered region ever drew - on a fresh world the globe looked
+    // exactly like vanilla, and the authored claim "most of this land
+    // lies in joined regions" had no visible evidence anywhere. This
+    // layer draws every multi-area partition region's border, muted so
+    // geography stays primary; regions whose ground carries settlements
+    // draw a shade brighter, so held country reads against empty
+    // country at a glance. Single-area regions are just tiles and stay
+    // undrawn - outlining them would re-grid the map. The mesh is keyed
+    // to the component's world-state revision, never to selection, so
+    // it builds once and regenerates only when the world itself changes
+    // (carve, settlement founding, capture).
+    public sealed class WorldDrawLayer_CARegionalPartition : WorldDrawLayer
+    {
+        private const float BorderAltitude = 0.045f;
+        private static readonly Material PartitionBorder =
+            MaterialPool.MatFrom(BaseContent.WhiteTex,
+                ShaderDatabase.WorldOverlayTransparent,
+                new Color(0.72f, 0.78f, 0.80f, 0.22f), 3588);
+        private static readonly Material HeldPartitionBorder =
+            MaterialPool.MatFrom(BaseContent.WhiteTex,
+                ShaderDatabase.WorldOverlayTransparent,
+                new Color(0.86f, 0.83f, 0.66f, 0.40f), 3589);
+
+        private string lastKey;
+        // Visible is queried every frame, and the honest answer requires
+        // knowing whether any joined region exists - a scan of every
+        // partition record. Answered once per world-state revision
+        // instead of once per frame.
+        private static int joinedCheckRevision = -1;
+        private static bool joinedCheckResult;
+
+        public override bool VisibleWhenLayerNotSelected => false;
+        public override bool VisibleInBackground => false;
+        public override bool Visible => base.Visible && AnyJoinedRegion();
+
+        private static bool AnyJoinedRegion()
+        {
+            CARegionalWorldComponent component =
+                CARegionalWorldComponent.Current;
+            if (component?.Topology == null) return false;
+            if (component.WorldStateRevision == joinedCheckRevision)
+                return joinedCheckResult;
+            joinedCheckRevision = component.WorldStateRevision;
+            joinedCheckResult = false;
+            IReadOnlyList<CARegionalTopologyRecord> topology =
+                component.Topology;
+            for (int i = 0; i < topology.Count; i++)
+                if (topology[i]?.memberTileIds != null
+                    && topology[i].memberTileIds.Count >= 2)
+                {
+                    joinedCheckResult = true;
+                    break;
+                }
+            return joinedCheckResult;
+        }
+
+        public override bool ShouldRegenerate => base.ShouldRegenerate
+            || CurrentKey() != lastKey;
+
+        private static string CurrentKey()
+        {
+            CARegionalWorldComponent component =
+                CARegionalWorldComponent.Current;
+            return (Verse.Find.World?.info?.Seed ?? 0) + ":"
+                + (component?.WorldStateRevision ?? 0);
+        }
+
+        public override IEnumerable Regenerate()
+        {
+            foreach (object item in base.Regenerate()) yield return item;
+            lastKey = CurrentKey();
+            if (planetLayer != Verse.Find.WorldGrid.Surface) yield break;
+            CARegionalWorldComponent component =
+                CARegionalWorldComponent.Current;
+            if (component?.Topology == null) yield break;
+
+            // This layer walks every joined region in the world. Its
+            // real cost is unmeasurable statically and matters to
+            // whether the globe stays usable, so it reports itself
+            // once per rebuild rather than being guessed at.
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            bool drewAny = false;
+            int drawn = 0;
+            foreach (CARegionalTopologyRecord record in component.Topology)
+            {
+                if (record?.memberTileIds == null
+                    || record.memberTileIds.Count < 2) continue;
+                // Registered ground draws on the footprint layer with the
+                // full treatment; this layer carries only the rest.
+                PlanetTile root = CARegionalPlanUtility.SurfaceTile(
+                    record.rootTileId);
+                if (root.Valid
+                    && CARegionalGeography.RegionAt(root) != null)
+                    continue;
+                CARegionalEnvelopeGeometry geometry = CARegionalGeometry
+                    .BuildEnvelope(record.memberTileIds,
+                        record.rootTileId, true);
+                if (geometry.polygon.Count < 3) continue;
+                bool held = record.memberTileIds.Any(id =>
+                    component.WorldSettlementStateAt(id) != null);
+                LayerSubMesh border = GetSubMesh(held
+                    ? HeldPartitionBorder : PartitionBorder);
+                foreach (List<Vector2> loop in geometry.loops)
+                    WorldDrawLayer_CARegionalFootprint.AddBorderRing(
+                        border, geometry, loop);
+                drewAny = true;
+                if (++drawn % 64 == 0) yield return null;
+            }
+            if (drewAny) FinalizeMesh(MeshParts.All);
+            clock.Stop();
+            Log.Message("[CA][Regional][Partition] drew " + drawn
+                + " joined region border(s) of "
+                + component.Topology.Count + " partition records in "
+                + clock.ElapsedMilliseconds + " ms");
+        }
+    }
+
     public sealed class WorldDrawLayer_CARegionalFootprint : WorldDrawLayer
     {
         private const float FillAltitude = 0.025f;
@@ -408,7 +538,7 @@ namespace ColonistAwareness
         public override bool VisibleWhenLayerNotSelected => false;
         public override bool VisibleInBackground => false;
         public override bool Visible => base.Visible
-            && VisiblePlans().Any();
+            && (VisiblePlans().Any() || SelectedTopologyRecord() != null);
 
         public override bool ShouldRegenerate => base.ShouldRegenerate
             || CurrentKey() != lastKey;
@@ -455,7 +585,43 @@ namespace ColonistAwareness
                         arrival);
                 }
             }
+
+            // SELECTING ANY LAND SELECTS ITS REGION. Unrealized partition
+            // regions have no plan yet; the selected one still presents as
+            // one geographic object, with the selected treatment.
+            CARegionalTopologyRecord selectedRecord =
+                SelectedTopologyRecord();
+            if (selectedRecord != null)
+            {
+                CARegionalEnvelopeGeometry geometry = CARegionalGeometry
+                    .BuildEnvelope(selectedRecord.memberTileIds,
+                        selectedRecord.rootTileId, true);
+                if (geometry.polygon.Count >= 3)
+                {
+                    drewAny = true;
+                    LayerSubMesh fill = GetSubMesh(SelectedFootprintFill);
+                    foreach (PlanetTile tile in selectedRecord.memberTileIds
+                                 .Select(CARegionalPlanUtility.SurfaceTile)
+                             .Where(tile => tile.Valid))
+                        AddTileFill(fill, geometry, tile);
+                    LayerSubMesh border = GetSubMesh(
+                        SelectedFootprintBorder);
+                    foreach (List<Vector2> loop in geometry.loops)
+                        AddBorderRing(border, geometry, loop);
+                }
+            }
             if (drewAny) FinalizeMesh(MeshParts.All);
+        }
+
+        // The topology region under the current selection, when no drawn
+        // plan already covers that ground.
+        private static CARegionalTopologyRecord SelectedTopologyRecord()
+        {
+            PlanetTile tile = Verse.Find.WorldSelector?.SelectedTile
+                ?? PlanetTile.Invalid;
+            if (!tile.Valid) return null;
+            if (CARegionalGeography.RegionAt(tile) != null) return null;
+            return CARegionalWorldComponent.Current?.TopologyRecordAt(tile);
         }
 
         private static void AddTileRim(LayerSubMesh mesh,
@@ -502,7 +668,7 @@ namespace ColonistAwareness
             foreach (int index in triangles) mesh.tris.Add(first + index);
         }
 
-        private static void AddEdgeStrip(LayerSubMesh mesh,
+        internal static void AddEdgeStrip(LayerSubMesh mesh,
             CARegionalEnvelopeGeometry geometry, Vector2 from, Vector2 to,
             float width, float altitude)
         {
@@ -526,7 +692,7 @@ namespace ColonistAwareness
             mesh.tris.Add(first + 2);
         }
 
-        private static void AddBorderRing(LayerSubMesh mesh,
+        internal static void AddBorderRing(LayerSubMesh mesh,
             CARegionalEnvelopeGeometry geometry, List<Vector2> polygon)
         {
             if (polygon == null || polygon.Count < 3) return;
@@ -658,6 +824,113 @@ namespace ColonistAwareness
                     && pending.ReservedTileIds.Contains(tile.tileId)
                 ? pending : null;
         }
+
+        // The partition region for land no plan governs. Realized ground
+        // answers through RegionAt first; this is the membership truth for
+        // everything else.
+        internal static CARegionalTopologyRecord TopologyAt(PlanetTile tile)
+        {
+            if (!tile.Valid) return null;
+            return CARegionalWorldComponent.Current?.TopologyRecordAt(tile);
+        }
+
+        // Deterministic geographic name for an unrealized partition region,
+        // the same derivation realized plans use: the root's named feature,
+        // else its biome.
+        internal static string TopologyName(CARegionalTopologyRecord record)
+        {
+            if (record == null) return "Region";
+            PlanetTile root =
+                CARegionalPlanUtility.SurfaceTile(record.rootTileId);
+            string feature = root.Valid ? root.Tile?.feature?.name : null;
+            if (!feature.NullOrEmpty()) return feature + " region";
+            string biome = root.Valid
+                ? root.Tile?.PrimaryBiome?.label : null;
+            return biome.NullOrEmpty() ? "Region"
+                : biome.CapitalizeFirst() + " region";
+        }
+
+        // World settlements standing on a partition region's members.
+        internal static int TopologySettlementCount(
+            CARegionalTopologyRecord record)
+        {
+            if (record?.memberTileIds == null
+                || record.memberTileIds.Count == 0) return 0;
+            List<Settlement> settlements =
+                Verse.Find.WorldObjects?.Settlements;
+            if (settlements == null) return 0;
+            var members = new HashSet<int>(record.memberTileIds);
+            int count = 0;
+            for (int i = 0; i < settlements.Count; i++)
+                if (settlements[i] != null
+                    && members.Contains(settlements[i].Tile.tileId))
+                    count++;
+            return count;
+        }
+
+        // POLITICAL GEOGRAPHY IS DERIVED, NEVER IMPLIED. A region is a
+        // geographic container; who holds its ground derives from the
+        // settlements actually standing there and their actual relations.
+        // Unsettled, single-polity, divided, and contested are all
+        // representable, and no click, arrival, or membership implies
+        // ownership.
+        internal static string PoliticalSummary(
+            CARegionalTopologyRecord record)
+        {
+            if (record?.memberTileIds == null) return null;
+            List<Settlement> settlements =
+                Verse.Find.WorldObjects?.Settlements;
+            if (settlements == null) return "unsettled";
+            var members = new HashSet<int>(record.memberTileIds);
+            var holders = new List<Faction>();
+            for (int i = 0; i < settlements.Count; i++)
+            {
+                Settlement settlement = settlements[i];
+                if (settlement == null
+                    || !members.Contains(settlement.Tile.tileId)) continue;
+                if (settlement.Faction != null
+                    && !holders.Contains(settlement.Faction))
+                    holders.Add(settlement.Faction);
+            }
+            return SummarizeHolders(holders);
+        }
+
+        internal static string PoliticalSummary(CARegionalPlan plan)
+        {
+            if (plan?.settlements == null) return null;
+            var keys = plan.settlements.Where(item => item != null)
+                .Select(item => item.OwningFactionKey)
+                .Where(key => key >= 0).Distinct().ToList();
+            if (keys.Count == 0)
+                return plan.settlements.Count == 0 ? "unsettled"
+                    : "settled, no political owner";
+            if (keys.Count == 1)
+            {
+                CARegionalFactionPlan group = plan.FactionPlan(keys[0]);
+                return "held by " + CARegionalPlanUtility.FactionName(group);
+            }
+            bool contested = false;
+            for (int i = 0; i < keys.Count && !contested; i++)
+                for (int j = i + 1; j < keys.Count && !contested; j++)
+                    if (plan.RelationBetween(keys[i], keys[j])
+                        == FactionRelationKind.Hostile)
+                        contested = true;
+            return (contested ? "contested among " : "divided among ")
+                + keys.Count + " polities";
+        }
+
+        private static string SummarizeHolders(List<Faction> holders)
+        {
+            if (holders.Count == 0) return "unsettled";
+            if (holders.Count == 1) return "held by " + holders[0].Name;
+            bool contested = false;
+            for (int i = 0; i < holders.Count && !contested; i++)
+                for (int j = i + 1; j < holders.Count && !contested; j++)
+                    if (holders[i].HostileTo(holders[j]))
+                        contested = true;
+            return (contested ? "contested among " : "divided among ")
+                + holders.Count + " polities";
+        }
     }
 
     [HarmonyPatch(typeof(WorldInspectPane), "TileInspectString",
@@ -670,15 +943,51 @@ namespace ColonistAwareness
             PlanetTile tile = Verse.Find.WorldSelector?.SelectedTile
                 ?? PlanetTile.Invalid;
             CARegionalPlan region = CARegionalGeography.RegionAt(tile);
-            if (region == null) return;
-            string prefix = "Geographic region: "
-                + CARegionalPlanUtility.RegionName(region)
-                + "\n" + region.RegionTileCount + " connected areas - "
-                + region.factions.Count + " faction"
-                + (region.factions.Count == 1 ? "" : "s")
-                + " - " + region.settlements.Count + " settlement"
-                + (region.settlements.Count == 1 ? "" : "s");
-            __result = prefix + "\n\nSelected land\n" + __result;
+            if (region != null)
+            {
+                string held = CARegionalGeography.PoliticalSummary(region);
+                string prefix = "Geographic region: "
+                    + CARegionalPlanUtility.RegionName(region)
+                    + "\n" + region.RegionTileCount + " connected areas - "
+                    + region.factions.Count + " faction"
+                    + (region.factions.Count == 1 ? "" : "s")
+                    + " - " + region.settlements.Count + " settlement"
+                    + (region.settlements.Count == 1 ? "" : "s")
+                    + (held.NullOrEmpty() ? "" : "\nLand: " + held);
+                __result = prefix + "\n\nSelected land\n" + __result;
+                return;
+            }
+            CARegionalTopologyRecord record =
+                CARegionalGeography.TopologyAt(tile);
+            if (record == null) return;
+            int settlements =
+                CARegionalGeography.TopologySettlementCount(record);
+            // ONE SOURCE FOR WHO HOLDS THE LAND. The world now remembers
+            // each region's holders and the dated events that changed
+            // them; recomputing a summary here would let the tile pane
+            // and the settlement pane disagree about the same region.
+            // The remembered record answers, and the derivation remains
+            // the fallback for land it has never had to record.
+            CARegionalPoliticalRecord political =
+                CARegionalWorldComponent.Current
+                    ?.PoliticalRecordFor(record.regionId);
+            string topologyHeld = political?.StatusLine
+                ?? CARegionalGeography.PoliticalSummary(record);
+            CARegionalPoliticalEvent latest =
+                political?.events?.LastOrDefault();
+            string topologyPrefix = "Geographic region: "
+                + CARegionalGeography.TopologyName(record)
+                + "\n" + record.memberTileIds.Count + " connected area"
+                + (record.memberTileIds.Count == 1 ? "" : "s")
+                + (settlements > 0
+                    ? " - " + settlements + " settlement"
+                        + (settlements == 1 ? "" : "s")
+                    : "")
+                + (topologyHeld.NullOrEmpty() ? ""
+                    : "\nLand: " + topologyHeld)
+                + (latest == null ? ""
+                    : "\n" + CARegionalPoliticalLedger.EventLine(latest));
+            __result = topologyPrefix + "\n\nSelected land\n" + __result;
         }
     }
 
@@ -693,7 +1002,15 @@ namespace ColonistAwareness
                 ?? PlanetTile.Invalid;
             CARegionalPlan region = CARegionalGeography.RegionAt(tile);
             if (region != null)
+            {
                 __result = CARegionalPlanUtility.RegionName(region)
+                    + " - " + __result;
+                return;
+            }
+            CARegionalTopologyRecord record =
+                CARegionalGeography.TopologyAt(tile);
+            if (record != null)
+                __result = CARegionalGeography.TopologyName(record)
                     + " - " + __result;
         }
     }

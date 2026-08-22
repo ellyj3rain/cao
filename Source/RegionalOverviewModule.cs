@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using RimWorld;
+using RimWorld.Planet;
 using UnityEngine;
 using Verse;
 
@@ -268,8 +270,16 @@ namespace ColonistAwareness
         {
             get
             {
-                return base.Visible && Find.CurrentMap?.GetComponent<
-                    CARegionalProjectionMapComponent>()?.Active == true;
+                if (!base.Visible) return false;
+                if (Find.CurrentMap?.GetComponent<
+                        CARegionalProjectionMapComponent>()?.Active == true)
+                    return true;
+                // A regional world keeps its control plane everywhere: any
+                // region can be inspected from the globe, loaded or not.
+                CARegionalWorldComponent world =
+                    CARegionalWorldComponent.Current;
+                return world != null && (world.Regions.Count > 0
+                    || world.Topology.Count > 0);
             }
         }
     }
@@ -297,15 +307,120 @@ namespace ColonistAwareness
             Mathf.Min(1200f, UI.screenWidth),
             Mathf.Min(900f, UI.screenHeight - 35f));
 
+        // ONE VIEWPORT FOR EVERY REGION. With the loaded regional map in
+        // front, the overview reads the actual persisted map. From the
+        // globe, the selected region presents through the same viewport:
+        // a registered region shows its persisted composition; an
+        // unrealized partition region shows the deterministic projection
+        // that materialization will realize. The identity is the region's,
+        // never the clicked member's - the derived preview is cached by
+        // region id, so selecting another member of the same region pans
+        // the focus and regenerates nothing.
+        private static readonly
+            Dictionary<string, CARegionalPlan> worldViewPlans =
+                new Dictionary<string, CARegionalPlan>();
+        private string worldViewRegionId;
+        private int worldViewFocusMember = -1;
+
+        private CARegionalPlan ResolveWorldViewPlan(out int focusMember)
+        {
+            focusMember = -1;
+            if (!WorldRendererUtility.WorldRendered) return null;
+            PlanetTile tile = Find.WorldSelector?.SelectedTile
+                ?? PlanetTile.Invalid;
+            if (!tile.Valid)
+            {
+                // A selected regional-member world object counts as
+                // selecting its region.
+                WorldObject selected =
+                    Find.WorldSelector?.SingleSelectedObject;
+                if (selected != null) tile = selected.Tile;
+            }
+            if (!tile.Valid) return null;
+            CARegionalWorldComponent world =
+                CARegionalWorldComponent.Current;
+            if (world == null) return null;
+            CARegionalPlan registered = world.FindRegionContaining(tile);
+            if (registered != null)
+            {
+                focusMember = registered.memberTileIds.Contains(tile.tileId)
+                    ? tile.tileId : -1;
+                return registered;
+            }
+            CARegionalTopologyRecord record = world.TopologyRecordAt(tile);
+            if (record == null) return null;
+            focusMember = tile.tileId;
+            if (worldViewPlans.TryGetValue(record.regionId,
+                    out CARegionalPlan cached)
+                && cached?.memberTileIds != null
+                && cached.memberTileIds.Count
+                    == record.memberTileIds.Count)
+                return cached;
+            // THE PREVIEW MUST BE THE MAP THE PLAYER WOULD GET. This
+            // asked the first registered region for its scale and fell
+            // back to a literal 250, neither of which is what
+            // materialization consults: it resolves the pending setup
+            // size, then this game's chosen map size, then the world's
+            // initial size. Guessing here meant an unrealized region was
+            // previewed at a scale it would never materialize at. Same
+            // order as the materialization path, so preview and result
+            // agree.
+            CAExpandedLandmassProfile profile;
+            bool hasProfile = false;
+            int chosen = Verse.Find.GameInitData?.mapSize ?? 0;
+            if (chosen > 0)
+                hasProfile = CAExpandedLandmassProfile.TryFor(chosen,
+                    out profile);
+            else profile = default(CAExpandedLandmassProfile);
+            if (!hasProfile)
+            {
+                IntVec3 initial = Verse.Find.World?.info?.initialMapSize
+                    ?? IntVec3.Zero;
+                hasProfile = initial.x > 0 && initial.x == initial.z
+                    && CAExpandedLandmassProfile.TryFor(initial.x,
+                        out profile);
+            }
+            if (!hasProfile)
+            {
+                int registeredScale =
+                    world.Regions.FirstOrDefault()?.mapSize ?? 0;
+                hasProfile = registeredScale > 0
+                    && CAExpandedLandmassProfile.TryFor(registeredScale,
+                        out profile);
+            }
+            if (!hasProfile
+                && !CAExpandedLandmassProfile.TryFor(250, out profile))
+                return null;
+            CARegionalPlan derived = CARegionalPlanUtility
+                .CreateFromTopology(profile, record, tile);
+            derived.worldPolicy = world.WorldPolicy.Copy();
+            world.WorldPolicy.PopulateDerived(derived, profile, null);
+            if (worldViewPlans.Count > 12) worldViewPlans.Clear();
+            worldViewPlans[record.regionId] = derived;
+            return derived;
+        }
+
         public override void DoWindowContents(Rect inRect)
         {
             Text.Font = GameFont.Small;
             Map map = Find.CurrentMap;
             CARegionalProjectionMapComponent projection = map?.GetComponent<
                 CARegionalProjectionMapComponent>();
+            CARegionalPlan worldPlan = ResolveWorldViewPlan(
+                out int focusMember);
+            bool worldMode = worldPlan != null
+                && (projection?.Active != true
+                    || (map != null && CARegionalWorldComponent.Current
+                        ?.FindRegionForMap(map) != worldPlan));
+            if (worldMode)
+            {
+                DrawWorldRegion(inRect, worldPlan, focusMember);
+                return;
+            }
             if (map == null || projection?.Active != true)
             {
-                Widgets.Label(inRect, "No regional map is currently selected.");
+                Widgets.Label(inRect, "Select a region on the world map, "
+                    + "or open this overview from a regional map.");
                 return;
             }
 
@@ -334,6 +449,290 @@ namespace ColonistAwareness
             DrawSettlements(mapRect, uv, map);
             DrawPawns(mapRect, uv, map);
             DrawFooter(inRect, map, overview);
+        }
+
+        private void DrawWorldRegion(Rect inRect, CARegionalPlan plan,
+            int focusMember)
+        {
+            bool regionChanged = worldViewRegionId != plan.regionalId;
+            if (regionChanged)
+            {
+                worldViewRegionId = plan.regionalId;
+                zoom = 1f;
+                center = new Vector2(0.5f, 0.5f);
+                worldViewFocusMember = -1;
+            }
+            CARegionalProjectionKernel kernel =
+                CARegionalProjectionPreview.KernelFor(plan);
+            Texture2D ground = CARegionalProjectionPreview.GroundFor(plan);
+            if (kernel == null || ground == null)
+            {
+                Widgets.Label(inRect,
+                    "Preparing the regional projection...");
+                return;
+            }
+
+            CARegionalWorldComponent component =
+                CARegionalWorldComponent.Current;
+            bool registered = component?.Regions
+                .Any(item => item != null
+                    && item.regionalId == plan.regionalId) == true;
+            Rect titleRect = new Rect(inRect.x, inRect.y,
+                inRect.width - 320f, 28f);
+            // The persisted political record when the region has one -
+            // the remembered arrangement, not a fresh recomputation -
+            // with the derived summary as the fallback.
+            CARegionalPoliticalRecord political =
+                component?.PoliticalRecordFor(plan.regionalId)
+                ?? (plan.memberTileIds ?? new List<int>())
+                    .Select(id => component?.TopologyRecordAt(id))
+                    .Where(record => record != null)
+                    .Select(record =>
+                        component.PoliticalRecordFor(record.regionId))
+                    .FirstOrDefault(record => record != null);
+            string held = political?.StatusLine
+                ?? CARegionalGeography.PoliticalSummary(plan);
+            Widgets.Label(titleRect,
+                CARegionalPlanUtility.RegionName(plan) + "  -  "
+                + plan.RegionTileCount + " connected area"
+                + (plan.RegionTileCount == 1 ? "" : "s") + ", "
+                + plan.settlements.Count + " settlement"
+                + (plan.settlements.Count == 1 ? "" : "s")
+                + (held.NullOrEmpty() ? "" : "  -  " + held)
+                + (registered ? "" : "  -  unrealized"));
+            Rect zoomRect = new Rect(inRect.xMax - 310f, inRect.y + 2f,
+                180f, 24f);
+            float changed = Widgets.HorizontalSlider(zoomRect, zoom,
+                MinimumZoom, MaximumZoom, false,
+                "Zoom " + zoom.ToString("F2") + "x");
+            if (!Mathf.Approximately(changed, zoom))
+            {
+                zoom = changed;
+                ClampCenter();
+            }
+            if (Widgets.ButtonText(new Rect(inRect.xMax - 120f, inRect.y,
+                    120f, 28f), "Fit region"))
+            {
+                zoom = 1f;
+                center = new Vector2(0.5f, 0.5f);
+            }
+
+            Rect available = new Rect(inRect.x, inRect.y + HeaderHeight,
+                inRect.width, inRect.height - HeaderHeight - FooterHeight);
+            Rect mapRect = FitRect(available, ground.width, ground.height);
+            Widgets.DrawBoxSolid(available, new Color(0.035f, 0.04f,
+                0.045f, 1f));
+
+            // Focus the clicked member's subarea once per selection: the
+            // member is an address into the region, not a new view.
+            if (focusMember >= 0 && focusMember != worldViewFocusMember)
+            {
+                worldViewFocusMember = focusMember;
+                Vector2 anchor = kernel.VisualLandAnchor(focusMember);
+                center = new Vector2(
+                    (anchor.x + 0.5f) / kernel.Size.x,
+                    (anchor.y + 0.5f) / kernel.Size.z);
+                if (plan.RegionTileCount > 1 && zoom < 2f) zoom = 2f;
+                ClampCenter();
+            }
+
+            Rect uv = VisibleUv();
+            GUI.DrawTextureWithTexCoords(mapRect, ground, uv, true);
+            HandleWorldViewInput(mapRect);
+
+            foreach (CARegionalSettlementPlan settlement in plan.settlements
+                .Where(item => item != null))
+            {
+                Vector2 anchor =
+                    kernel.VisualLandAnchor(settlement.memberTileId);
+                Vector2 point = WorldViewPoint(anchor, kernel, mapRect, uv);
+                if (!mapRect.Contains(point)) continue;
+                CARegionalFactionPlan group =
+                    plan.FactionPlan(settlement.OwningFactionKey);
+                Faction faction = group == null ? null
+                    : CARegionalPlanUtility.FactionByLoadId(
+                        group.existingFactionLoadId);
+                int standing = settlement.realizedScale;
+                CAPlaceGlyphs.DrawSettlement(point,
+                    Mathf.Clamp(3.6f + standing * 0.3f, 3.6f, 5.2f),
+                    standing, faction?.Color
+                    ?? new Color(0.85f, 0.8f, 0.55f));
+                float hit = 12f + standing * 3f;
+                TooltipHandler.TipRegion(new Rect(point.x - hit * 0.5f,
+                        point.y - hit * 0.5f, hit, hit),
+                    CARegionalPlanUtility.SettlementName(plan, settlement)
+                    + "\n" + (faction?.Name
+                        ?? CARegionalPlanUtility.FactionName(group))
+                    + "\nAssigned area: " + CARegionalPlanUtility
+                        .TileWords(settlement.memberTileId));
+            }
+
+            // Frontier holdings on the ground the sites tendency filled:
+            // hut-and-field farmsteads, resident and material facts in
+            // the tooltip.
+            foreach (CAFrontierHoldingPlan holding in plan.frontierHoldings
+                .Where(item => item != null && item.memberTileId >= 0))
+            {
+                Vector2 anchor =
+                    kernel.VisualLandAnchor(holding.memberTileId);
+                Vector2 point = WorldViewPoint(anchor, kernel, mapRect, uv);
+                point.y += 8f;
+                if (!mapRect.Contains(point)) continue;
+                CAPlaceGlyphs.DrawHolding(point, 3.2f,
+                    holding.materialLevel);
+                TooltipHandler.TipRegion(new Rect(point.x - 7f,
+                        point.y - 6f, 14f, 12f),
+                    (holding.siteName ?? (holding.form == 1
+                        ? "Homestead" : "Cabin"))
+                    + "\n" + holding.residentCount + " resident"
+                    + (holding.residentCount == 1 ? "" : "s")
+                    + ", material level " + holding.materialLevel);
+            }
+
+            // The region's named features - landmarks and historical
+            // sites the ground actually carries - marked where they
+            // stand, same monument glyph the setup preview uses.
+            CARegionalCandidateFacts facts =
+                CARegionalProjectionPreview.FactsFor(plan);
+            foreach (CARegionalCandidateFacts.Feature feature in
+                facts?.Features
+                ?? Enumerable.Empty<CARegionalCandidateFacts.Feature>())
+            {
+                if (feature?.Tile.Valid != true) continue;
+                Vector2 anchor = kernel.VisualLandAnchor(
+                    feature.Tile.tileId);
+                Vector2 point = WorldViewPoint(anchor, kernel, mapRect,
+                    uv);
+                if (!mapRect.Contains(point)) continue;
+                Color tone = feature.Historical
+                    ? new Color(0.82f, 0.72f, 0.46f)
+                    : new Color(0.90f, 0.91f, 0.88f);
+                var halo = new Color(0.05f, 0.06f, 0.07f, 0.85f);
+                var stem = new Rect(point.x - 1f, point.y - 9f, 2f, 9f);
+                var foot = new Rect(point.x - 3f, point.y - 1f, 6f, 2f);
+                Widgets.DrawBoxSolid(stem.ExpandedBy(1f), halo);
+                Widgets.DrawBoxSolid(foot.ExpandedBy(1f), halo);
+                Widgets.DrawBoxSolid(stem, tone);
+                Widgets.DrawBoxSolid(foot, tone);
+                TooltipHandler.TipRegion(new Rect(point.x - 7f,
+                        point.y - 12f, 14f, 15f),
+                    feature.Name + "\n" + feature.Def.LabelCap);
+            }
+
+            PlanetTile arrival = plan.StartTile;
+            if (arrival.Valid && registered)
+            {
+                Vector2 anchor = kernel.VisualLandAnchor(arrival.tileId);
+                Vector2 point = WorldViewPoint(anchor, kernel, mapRect, uv);
+                if (mapRect.Contains(point))
+                {
+                    GUI.color = new Color(0.98f, 0.93f, 0.74f);
+                    Widgets.DrawBox(new Rect(point.x - 7f, point.y - 7f,
+                        14f, 14f), 2);
+                    GUI.color = Color.white;
+                    TooltipHandler.TipRegion(new Rect(point.x - 7f,
+                        point.y - 7f, 14f, 14f), "Arrival area");
+                }
+            }
+
+            // The region's remembered history, over the map's lower-left
+            // corner: the last few dated political events, so what
+            // happened to this land is read where the land is shown.
+            List<CARegionalPoliticalEvent> events = political?.events;
+            if (events != null && events.Count > 0)
+            {
+                int shown = Math.Min(3, events.Count);
+                Text.Font = GameFont.Tiny;
+                float lineH = 15f;
+                float panelH = shown * lineH + 22f;
+                var panel = new Rect(mapRect.x + 6f,
+                    mapRect.yMax - panelH - 6f,
+                    Mathf.Min(430f, mapRect.width - 12f), panelH);
+                Widgets.DrawBoxSolid(panel,
+                    new Color(0.03f, 0.04f, 0.05f, 0.82f));
+                GUI.color = new Color(0.62f, 0.66f, 0.68f);
+                Widgets.Label(new Rect(panel.x + 7f, panel.y + 3f,
+                    panel.width - 14f, 15f), "History");
+                GUI.color = new Color(0.80f, 0.78f, 0.68f);
+                for (int i = 0; i < shown; i++)
+                {
+                    CARegionalPoliticalEvent item =
+                        events[events.Count - shown + i];
+                    Widgets.Label(new Rect(panel.x + 7f,
+                            panel.y + 19f + i * lineH,
+                            panel.width - 14f, lineH),
+                        CARegionalPoliticalLedger.EventLine(item));
+                }
+                GUI.color = Color.white;
+                Text.Font = GameFont.Small;
+            }
+
+            Rect footer = new Rect(inRect.x, inRect.yMax - FooterHeight + 4f,
+                inRect.width, FooterHeight - 4f);
+            Widgets.Label(footer, registered
+                ? "This region is realized; its map returns exactly as it "
+                    + "stands. Drag to pan; wheel to zoom."
+                : "Deterministic regional projection - first entry "
+                    + "materializes exactly this region. Drag to pan; "
+                    + "wheel to zoom.");
+        }
+
+        private Vector2 WorldViewPoint(Vector2 kernelPoint,
+            CARegionalProjectionKernel kernel, Rect mapRect, Rect uv)
+        {
+            float nx = (kernelPoint.x + 0.5f) / kernel.Size.x;
+            float nz = (kernelPoint.y + 0.5f) / kernel.Size.z;
+            float x = (nx - uv.x) / uv.width;
+            float z = (nz - uv.y) / uv.height;
+            return new Vector2(mapRect.x + x * mapRect.width,
+                mapRect.yMax - z * mapRect.height);
+        }
+
+        private void HandleWorldViewInput(Rect mapRect)
+        {
+            Event current = Event.current;
+            if (!mapRect.Contains(current.mousePosition))
+            {
+                if (current.type == EventType.MouseUp) dragging = false;
+                return;
+            }
+            if (current.type == EventType.ScrollWheel)
+            {
+                float factor = current.delta.y < 0f ? 1.22f : 1f / 1.22f;
+                float next = Mathf.Clamp(zoom * factor, MinimumZoom,
+                    MaximumZoom);
+                if (!Mathf.Approximately(next, zoom))
+                {
+                    zoom = next;
+                    ClampCenter();
+                }
+                current.Use();
+                return;
+            }
+            if (current.type == EventType.MouseDown && current.button == 0)
+            {
+                dragging = true;
+                dragOrigin = current.mousePosition;
+                dragCenter = center;
+                current.Use();
+                return;
+            }
+            if (current.type == EventType.MouseDrag && dragging
+                && current.button == 0)
+            {
+                Vector2 delta = current.mousePosition - dragOrigin;
+                float span = 1f / zoom;
+                center.x = dragCenter.x - delta.x / mapRect.width * span;
+                center.y = dragCenter.y + delta.y / mapRect.height * span;
+                ClampCenter();
+                current.Use();
+                return;
+            }
+            if (current.type == EventType.MouseUp && dragging)
+            {
+                dragging = false;
+                current.Use();
+            }
         }
 
         private void DrawHeader(Rect inRect, Map map)
@@ -467,8 +866,16 @@ namespace ColonistAwareness
                         & CARegionalOperationalRoles.KnownMask) != 0)
                     tooltip += "\nDeclared roles: "
                         + record.OperationalRoleText();
-                DrawMarker(mapRect, uv, map, record.localRect.CenterCell,
-                    color, 10f, tooltip);
+                Vector2 point = ScreenPointFor(
+                    record.localRect.CenterCell, mapRect, uv, map);
+                if (!mapRect.Contains(point)) continue;
+                int standing = record.realizedScale;
+                CAPlaceGlyphs.DrawSettlement(point,
+                    Mathf.Clamp(3.4f + standing * 0.3f, 3.4f, 5f),
+                    standing, color);
+                float hit = 12f + standing * 3f;
+                TooltipHandler.TipRegion(new Rect(point.x - hit * 0.5f,
+                    point.y - hit * 0.5f, hit, hit), tooltip);
             }
         }
 

@@ -159,12 +159,99 @@ namespace ColonistAwareness
         private Vector2 settingsScrollPosition;
         private float settingsScrollHeight;
 
+        // WHICH BUILD IS ACTUALLY RUNNING. The mod has been debugged
+        // against a stale assembly before: the source was fixed, the
+        // build succeeded, and the game went on loading an older DLL
+        // from a path nobody had checked. Nothing in a log distinguishes
+        // those two runs, so hours went into a defect that had already
+        // been repaired.
+        //
+        // The hash printed here is the SHA-256 of the file the game
+        // actually loaded, from the path it actually loaded it from -
+        // the same hash a deployment prints for the file it wrote. If
+        // the two do not match, the run under discussion is not the
+        // build under discussion, and that is now the first line in the
+        // log rather than a conclusion reached late.
+        private static void ReportLoadedBuild()
+        {
+            try
+            {
+                System.Reflection.Assembly assembly = System.Reflection
+                    .Assembly.GetExecutingAssembly();
+                string path = assembly.Location;
+                if (path.NullOrEmpty() || !System.IO.File.Exists(path))
+                {
+                    Log.Message("[CA][Build] loaded from a location the "
+                        + "assembly does not report; identity "
+                        + assembly.ManifestModule.ModuleVersionId);
+                    return;
+                }
+                string hash;
+                using (var sha = System.Security.Cryptography.SHA256
+                    .Create())
+                using (System.IO.FileStream stream =
+                    System.IO.File.OpenRead(path))
+                    hash = BitConverter.ToString(sha.ComputeHash(stream))
+                        .Replace("-", string.Empty);
+                var info = new System.IO.FileInfo(path);
+                Log.Message("[CA][Build] sha256=" + hash + " bytes="
+                    + info.Length + " written="
+                    + info.LastWriteTimeUtc.ToString("s") + "Z path="
+                    + path);
+            }
+            catch (Exception ex)
+            {
+                Log.Message("[CA][Build] could not identify the loaded "
+                    + "assembly: " + ex.Message);
+            }
+        }
+
         public AwarenessMod(ModContentPack content) : base(content)
         {
             Instance = this;
+            ReportLoadedBuild();
             Settings = GetSettings<AwarenessSettings>();
             var harmony = new Harmony("ellyj3rain.colonistawareness");
-            harmony.PatchAll();
+            // Per-class application instead of PatchAll: one broken patch
+            // class logs loudly and stands down for the session while
+            // every other patch still applies. A single bad target
+            // aborting PatchAll silently disabled the ENTIRE mod once
+            // (2026-08-20); that failure mode must not exist.
+            //
+            // The class filter is PatchAll's own and is load-bearing:
+            // Harmony reads Prepare/Cleanup/Prefix/Postfix by NAME, so
+            // handing it every type in the assembly makes it mistake
+            // ordinary classes -- every JobDriver's Cleanup, every
+            // manually-installed helper's Prefix -- for patch
+            // directives and report 62 phantom failures.
+            int patchFailures = 0;
+            foreach (Type patchType in AccessTools.GetTypesFromAssembly(
+                         System.Reflection.Assembly.GetExecutingAssembly()))
+            {
+                bool annotated;
+                try
+                {
+                    annotated = patchType.GetCustomAttributes(true)
+                        .Any(attribute => attribute is HarmonyPatch);
+                }
+                catch (Exception) { continue; }
+                if (!annotated) continue;
+                try
+                {
+                    harmony.CreateClassProcessor(patchType).Patch();
+                }
+                catch (Exception patchException)
+                {
+                    patchFailures++;
+                    Log.Error("[CA] patch class " + patchType.FullName
+                        + " failed to apply and is disabled this "
+                        + "session: " + patchException);
+                }
+            }
+            if (patchFailures > 0)
+                Log.Error("[CA] " + patchFailures + " patch class(es) "
+                    + "failed to apply; every other patch is active. "
+                    + "The failing surfaces are degraded until fixed.");
             PortraitMenuPatch.TryInstall(harmony);
             BioWeightBadge.TryInstall(harmony);
             EnemyRestraintModule.TryInstall(harmony);

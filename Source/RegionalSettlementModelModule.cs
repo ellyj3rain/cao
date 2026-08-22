@@ -1076,13 +1076,19 @@ namespace ColonistAwareness
             CARegionalSettlementPlan settlement, int landCapacity,
             int historicalDevelopment)
         {
-            return settlement.authoredPopulation >= 18
-                ? settlement.authoredPopulation
-                : CAWorldTendencyCausalKernel.PopulationFromFacts(
-                    landCapacity, historicalDevelopment,
-                    TechTier(plan, settlement),
-                    settlement.populationOrigin
-                        == CASettlementOrigin.ScenarioOverride);
+            if (settlement.authoredPopulation >= 18)
+                return settlement.authoredPopulation;
+            // A settlement absorbed from the world map keeps the
+            // population it already had there, so the place the player
+            // inspected on the globe is the same place inside its
+            // region rather than a re-derived stranger.
+            if (settlement.absorbedWorldPopulation >= 18)
+                return settlement.absorbedWorldPopulation;
+            return CAWorldTendencyCausalKernel.PopulationFromFacts(
+                landCapacity, historicalDevelopment,
+                TechTier(plan, settlement),
+                settlement.populationOrigin
+                    == CASettlementOrigin.ScenarioOverride);
         }
 
         private static int TradeConnectivity(CARegionalPlan plan,
@@ -1559,6 +1565,19 @@ namespace ColonistAwareness
                         CARegionalSettlements.SettlementAuthorityWords(authority)
                         + " for " + faction.Name,
                         CAOrganizationKind.Faction);
+                    // A faction body was created and then pulsed forever
+                    // with nothing to pulse: only settlement and frontier
+                    // organizations ever received customs, so the
+                    // political-belief pass over faction bodies was a
+                    // provable no-op and the distant world could not
+                    // actually drift. Its structure is the faction's own
+                    // represented institutions, which are world state and
+                    // need no loaded map - exactly what an off-map body
+                    // should be evaluated against.
+                    CAPoliticalBeliefPractice.ReconcileCurrentStructure(
+                        factionBody,
+                        CAFactionStateWorldComponent.Current
+                            ?.EnsureFor(faction)?.factionStructure);
                     string[] delegated =
                         CARegionalSettlements.SharedResponsibilities(authority);
                     int now = Find.TickManager.TicksGame;
