@@ -4,7 +4,7 @@ Date: 2026-08-18
 
 This report is generated from production C# source, independently of the campaign schema catalog. It discovers declarations that directly write through `Scribe`, call a nested `Expose` writer, or inherit a native persisted job/lord/need/thought/world/scenario owner. Every discovered carrier must resolve to an executable catalog schema or a narrow, stated non-campaign exclusion.
 
-- Discovered persistence carriers: **261**
+- Discovered persistence carriers: **267**
 - Catalog schemas reached from source carriers: **89**
 - Explicit non-campaign exclusions: **5**
 - Unclassified or invalid routes: **0**
@@ -109,6 +109,7 @@ This report is generated from production C# source, independently of the campaig
 | `ColonistAwareness.CAPoliticalDerivationReceipt` in `Source/FactionCultureBeliefsModule.cs` | direct Scribe/nested Expose writer | `model.political-order` | **PASS** |
 | `ColonistAwareness.CAFactionState` in `Source/FactionStateModule.cs` | direct Scribe/nested Expose writer | `world.faction-state` | **PASS** |
 | `ColonistAwareness.CAFactionStateWorldComponent` in `Source/FactionStateModule.cs` | direct Scribe/nested Expose writer | `world.faction-state` | **PASS** |
+| `ColonistAwareness.CAAuthoredFeatureShape` in `Source/FeatureShapeModule.cs` | direct Scribe/nested Expose writer | `model.regional-plan` | **PASS** |
 | `ColonistAwareness.CAFoundingArrangement` in `Source/FoundingArrangementModule.cs` | direct Scribe/nested Expose writer | `model.founding-arrangement` | **PASS** |
 | `ColonistAwareness.CAFrontierMapPlan` in `Source/FrontierModule.cs` | direct Scribe/nested Expose writer | `model.frontier-map-plan` | **PASS** |
 | `ColonistAwareness.CAGroundwaterTuning` in `Source/GroundwaterModule.cs` | direct Scribe/nested Expose writer | `model.groundwater-tuning` | **PASS** |
@@ -178,6 +179,8 @@ This report is generated from production C# source, independently of the campaig
 | `ColonistAwareness.RaidResponseMapComponent` in `Source/RaidResponseModule.cs` | direct Scribe/nested Expose writer | `map.raid-response` | **PASS** |
 | `ColonistAwareness.CompRainCatch` in `Source/RainCatchModule.cs` | direct Scribe/nested Expose writer | `thing.water-state` | **PASS** |
 | `ColonistAwareness.JobDriver_CADrawFromCistern` in `Source/RainCatchModule.cs` | native persisted owner (`JobDriver`) | `native.ca-job-drivers` | **PASS** |
+| `ColonistAwareness.CARegionalPoliticalEvent` in `Source/RegionalPoliticalModule.cs` | direct Scribe/nested Expose writer | `world.regional` | **PASS** |
+| `ColonistAwareness.CARegionalPoliticalRecord` in `Source/RegionalPoliticalModule.cs` | direct Scribe/nested Expose writer | `world.regional` | **PASS** |
 | `ColonistAwareness.WorldObject_CARegionalSettlement` in `Source/RegionalSettlementModelModule.cs` | direct Scribe/nested Expose writer | `world.regional` | **PASS** |
 | `ColonistAwareness.CAFrontierHoldingPlan` in `Source/RegionalSetupModule.cs` | direct Scribe/nested Expose writer | `model.regional-plan` | **PASS** |
 | `ColonistAwareness.CARegionalFactionPlan` in `Source/RegionalSetupModule.cs` | direct Scribe/nested Expose writer | `model.regional-plan` | **PASS** |
@@ -186,11 +189,13 @@ This report is generated from production C# source, independently of the campaig
 | `ColonistAwareness.CARegionalSettlementPlan` in `Source/RegionalSetupModule.cs` | direct Scribe/nested Expose writer | `model.regional-plan` | **PASS** |
 | `ColonistAwareness.CARegionalSetupSession` in `Source/RegionalSetupModule.cs` | direct Scribe/nested Expose writer | `model.regional-plan` | **PASS** |
 | `ColonistAwareness.CARegionalWorldPolicy` in `Source/RegionalSetupModule.cs` | direct Scribe/nested Expose writer | `world.regional` | **PASS** |
+| `ColonistAwareness.CARegionalTopologyRecord` in `Source/RegionalTopologyModule.cs` | direct Scribe/nested Expose writer | `world.regional` | **PASS** |
 | `ColonistAwareness.CARegionalSettlementRecord` in `Source/RegionalWorldModule.cs` | direct Scribe/nested Expose writer | `model.regional-settlement-record` | **PASS** |
 | `ColonistAwareness.CARegionalWorldComponent` in `Source/RegionalWorldModule.cs` | direct Scribe/nested Expose writer | `world.regional` | **PASS** |
 | `ColonistAwareness.CAStartingStockRecord` in `Source/RegionalWorldModule.cs` | direct Scribe/nested Expose writer | `model.starting-stock` | **PASS** |
 | `ColonistAwareness.LordJob_CARegionalSettlement` in `Source/RegionalWorldModule.cs` | direct Scribe/nested Expose writer | `native.regional-settlement-lord` | **PASS** |
 | `ColonistAwareness.WorldObject_CARegionalMemberReservation` in `Source/RegionalWorldModule.cs` | direct Scribe/nested Expose writer | `world.regional-reservation` | **PASS** |
+| `ColonistAwareness.CARegionalWorldSettlementState` in `Source/RegionalWorldSettlementModule.cs` | direct Scribe/nested Expose writer | `world.regional` | **PASS** |
 | `ColonistAwareness.CARoadExpansionMapComponent` in `Source/RoadExpansionModule.cs` | direct Scribe/nested Expose writer | `map.road-expansion` | **PASS** |
 | `ColonistAwareness.CARoadProject` in `Source/RoadExpansionModule.cs` | direct Scribe/nested Expose writer | `map.road-expansion` | **PASS** |
 | `ColonistAwareness.CASettlementCapabilityAssessment` in `Source/SettlementCapabilityModule.cs` | direct Scribe/nested Expose writer | `model.settlement-capability` | **PASS** |
@@ -200,6 +205,7 @@ This report is generated from production C# source, independently of the campaig
 | `ColonistAwareness.CASettlementIdeoligionEvidence` in `Source/SettlementPlanningContextModule.cs` | direct Scribe/nested Expose writer | `map.settlement-planning-context` | **PASS** |
 | `ColonistAwareness.CASettlementPlanningContextMapComponent` in `Source/SettlementPlanningContextModule.cs` | direct Scribe/nested Expose writer | `map.settlement-planning-context` | **PASS** |
 | `ColonistAwareness.CASettlementProgramAssetReceipt` in `Source/SettlementProgramAssetModule.cs` | direct Scribe/nested Expose writer | `model.settlement-program-asset` | **PASS** |
+| `ColonistAwareness.CASettlementDevelopmentWork` in `Source/SettlementProgramMaterializerModule.cs` | direct Scribe/nested Expose writer | `map.settlement-work` | **PASS** |
 | `ColonistAwareness.CASettlementRebuildWork` in `Source/SettlementProgramMaterializerModule.cs` | direct Scribe/nested Expose writer | `model.settlement-rebuild-work` | **PASS** |
 | `ColonistAwareness.CASettlementRepairWork` in `Source/SettlementProgramMaterializerModule.cs` | direct Scribe/nested Expose writer | `model.settlement-repair-work` | **PASS** |
 | `ColonistAwareness.CASettlementResearchWork` in `Source/SettlementProgramMaterializerModule.cs` | direct Scribe/nested Expose writer | `model.settlement-research-work` | **PASS** |
