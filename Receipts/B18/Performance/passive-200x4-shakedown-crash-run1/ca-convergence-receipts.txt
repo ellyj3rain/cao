@@ -1,4 +1,4 @@
-==== CONVERGENCE EXERCISE (developer-exercise route, disposable) ====
+﻿==== CONVERGENCE EXERCISE (developer-exercise route, disposable) ====
 
 ---- MAP COMPOSITION RECEIPT ----
 [CA][Convergence] map receipt
@@ -16,7 +16,7 @@
       Pawn.Ideo:    Bagucinquan Army x10   EXPECT >1 ideo when a distinct Ideoligion group resolved
       Certainty: min 0.63, max 1.00   EXPECT spread when cohesion differs
   [C] PROVISIONING:
-      communal kitchens · universal access · funded by shared work · centralized
+      communal kitchens Â· universal access Â· funded by shared work Â· centralized
         operator org: Crook Plain (treasury 0)   EXPECT present
         runtime: operational; exact material contract: complete
       physical: 3 hearth/stove(s), 2 dining table(s), 1 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
@@ -34,7 +34,7 @@
       Pawn.Ideo:    Bagucinquan Army x13   EXPECT >1 ideo when a distinct Ideoligion group resolved
       Certainty: min 0.62, max 0.97   EXPECT spread when cohesion differs
   [C] PROVISIONING:
-      communal kitchens · universal access · funded by shared work · centralized
+      communal kitchens Â· universal access Â· funded by shared work Â· centralized
         operator org: Hien (treasury 0)   EXPECT present
         runtime: operational; exact material contract: complete
       physical: 1 hearth/stove(s), 4 dining table(s), 1 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
@@ -52,7 +52,7 @@
       Pawn.Ideo:    Bagucinquan Army x11   EXPECT >1 ideo when a distinct Ideoligion group resolved
       Certainty: min 0.63, max 0.99   EXPECT spread when cohesion differs
   [C] PROVISIONING:
-      communal kitchens · universal access · funded by shared work · centralized
+      communal kitchens Â· universal access Â· funded by shared work Â· centralized
         operator org: Night Canyon (treasury 0)   EXPECT present
         runtime: operational; exact material contract: complete
       physical: 3 hearth/stove(s), 2 dining table(s), 1 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
@@ -71,7 +71,7 @@
       Pawn.Ideo:    Bagucinquan Army x13   EXPECT >1 ideo when a distinct Ideoligion group resolved
       Certainty: min 0.60, max 0.91   EXPECT spread when cohesion differs
   [C] PROVISIONING:
-      communal kitchens · universal access · funded by shared work · centralized
+      communal kitchens Â· universal access Â· funded by shared work Â· centralized
         operator org: Champion Rock (treasury 0)   EXPECT present
         runtime: operational; exact material contract: complete
       physical: 1 hearth/stove(s), 4 dining table(s), 1 food stack(s) standing in the rect   EXPECT one hearth+table per non-household node
@@ -93,7 +93,7 @@
       holdings on this map: 4 (tenure per the ownership axis; see ledger)
       apertures: 14 CA_ApertureShuttered, 34 CA_WindowGlazed
   [E] SETTLEMENT AUTHORITY RELATIONS:
-      region: contested · regional center
+      region: contested Â· regional center
       Assembly of the Ford: no member relations (single settlement or loose association)
       Charter Towns: no member relations (single settlement or loose association)
 
@@ -133,4 +133,3 @@ thresholds: first open <1000 ms PASS; reopen <250 ms PASS; ordinary render <100 
   AutonomousHomePlanning: calls=1; totalMs=5.370; maxMs=5.370; meanMs=5.370; examined=0; accepted=0; cache=0/0; skipped=0; failures=0
   OrganizationLookup: calls=20; totalMs=0.011; maxMs=0.002; meanMs=0.001; examined=19; accepted=1; cache=0/0; skipped=0; failures=0
   KnowledgeObservation: calls=13; totalMs=93.425; maxMs=8.889; meanMs=7.187; examined=15769; accepted=37; cache=0/0; skipped=0; failures=0
-

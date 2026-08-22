@@ -1734,4 +1734,3 @@ evidence instead of live scope state. The current fixture, retained B10-B15
 suites, reproducible builds, and byte-verified deployment close the static
 boundary. The next action is the operator's runtime test; `B17` is the next
 ordinary batch.
-

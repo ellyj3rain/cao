@@ -431,6 +431,3 @@ Catalog 6 and pending-authoring epoch 15 bind the B17 ownership and knowledge
 schemas. The adjacent conversion validates the complete proposed graph before
 publishing any field or schema stamp. `B17_SITE_AFFILIATION_AND_EPISTEMIC_CONTRACT.md`
 is the canonical detailed contract.
-
-
-
