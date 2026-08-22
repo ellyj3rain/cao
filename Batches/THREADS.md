@@ -25,6 +25,7 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [B15 - Faction Technological Knowledge and Distributed Availability](B015-2026-08-18-faction-technological-knowledge-and-distributed-availability.md) - 2026-08-17 to 2026-08-18 UTC / 2026-08-17 PDT
 - [B16 - Playable Social Ontology and Ideoligion Semantics](B016-2026-08-18-playable-social-ontology-and-ideoligion-semantics.md) - 2026-08-18 UTC / 2026-08-18 PDT
 - [B17 - First-Class Site Affiliation and Pawn Epistemics](B017-2026-08-18-first-class-site-affiliation-and-pawn-epistemics.md) - 2026-08-18 UTC / 2026-08-18 PDT
+- [B18 - Authoring-State Convergence and Runtime Performance](B018-2026-08-19-authoring-state-convergence-and-runtime-performance.md) - 2026-08-18 to 2026-08-19
 - [B19 - Regional Substrate Realization and Settlement Composition Closure](B019-2026-08-21-regional-substrate-realization-and-settlement-composition-closure.md) - 2026-08-19 to 2026-08-21
 
 ### <a id="t-002"></a>T-002 - Builds, deployment, reproducibility, and receipts
@@ -61,6 +62,7 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
 - [B16 - Playable Social Ontology and Ideoligion Semantics](B016-2026-08-18-playable-social-ontology-and-ideoligion-semantics.md) - 2026-08-18 UTC / 2026-08-18 PDT
 - [B17 - First-Class Site Affiliation and Pawn Epistemics](B017-2026-08-18-first-class-site-affiliation-and-pawn-epistemics.md) - 2026-08-18 UTC / 2026-08-18 PDT
+- [B18 - Authoring-State Convergence and Runtime Performance](B018-2026-08-19-authoring-state-convergence-and-runtime-performance.md) - 2026-08-18 to 2026-08-19
 - [B19 - Regional Substrate Realization and Settlement Composition Closure](B019-2026-08-21-regional-substrate-realization-and-settlement-composition-closure.md) - 2026-08-19 to 2026-08-21
 
 ### <a id="t-030"></a>T-030 - Validation and evidence discipline
@@ -164,6 +166,7 @@ Project identity, historical regulation, build provenance, validation, deploymen
 - [B15 - Faction Technological Knowledge and Distributed Availability](B015-2026-08-18-faction-technological-knowledge-and-distributed-availability.md) - 2026-08-17 to 2026-08-18 UTC / 2026-08-17 PDT
 - [B16 - Playable Social Ontology and Ideoligion Semantics](B016-2026-08-18-playable-social-ontology-and-ideoligion-semantics.md) - 2026-08-18 UTC / 2026-08-18 PDT
 - [B17 - First-Class Site Affiliation and Pawn Epistemics](B017-2026-08-18-first-class-site-affiliation-and-pawn-epistemics.md) - 2026-08-18 UTC / 2026-08-18 PDT
+- [B18 - Authoring-State Convergence and Runtime Performance](B018-2026-08-19-authoring-state-convergence-and-runtime-performance.md) - 2026-08-18 to 2026-08-19
 - [B19 - Regional Substrate Realization and Settlement Composition Closure](B019-2026-08-21-regional-substrate-realization-and-settlement-composition-closure.md) - 2026-08-19 to 2026-08-21
 
 ## TF-02 - Pawn cognition and authority
@@ -251,6 +254,7 @@ Combat reaction, fighting withdrawal, positioning, and battlefield evidence.
 - [A60 - Pawn-proximal combat topology and retention](A060-2026-07-30-pawn-proximal-combat-topology-and-retention.md) - 2026-07-30 19:18–20:27 UTC / 12:18–13:27 PST
 - [A61 - Stable battlefield reference and continuous after-action proof](A061-2026-07-30-stable-battlefield-reference-and-continuous-after-action-proof.md) - 2026-07-30 21:07–21:41 UTC / 14:07–14:41 PST
 - [B6 - Behavior contract, authority, playability, and test convergence](B006-2026-08-11-behavior-contract-authority-playability-and-test-convergence.md) - 2026-08-11 UTC / 2026-08-11 PST
+- [B18 - Authoring-State Convergence and Runtime Performance](B018-2026-08-19-authoring-state-convergence-and-runtime-performance.md) - 2026-08-18 to 2026-08-19
 
 ## TF-04 - Autonomy and operational access
 
@@ -323,6 +327,7 @@ Home planning, space programs, residents, furnishing, and facility siting.
 
 - [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
 - [B17 - First-Class Site Affiliation and Pawn Epistemics](B017-2026-08-18-first-class-site-affiliation-and-pawn-epistemics.md) - 2026-08-18 UTC / 2026-08-18 PDT
+- [B18 - Authoring-State Convergence and Runtime Performance](B018-2026-08-19-authoring-state-convergence-and-runtime-performance.md) - 2026-08-18 to 2026-08-19
 - [B19 - Regional Substrate Realization and Settlement Composition Closure](B019-2026-08-21-regional-substrate-realization-and-settlement-composition-closure.md) - 2026-08-19 to 2026-08-21
 
 ### <a id="t-014"></a>T-014 - Space programs and residents
@@ -458,6 +463,7 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [B15 - Faction Technological Knowledge and Distributed Availability](B015-2026-08-18-faction-technological-knowledge-and-distributed-availability.md) - 2026-08-17 to 2026-08-18 UTC / 2026-08-17 PDT
 - [B16 - Playable Social Ontology and Ideoligion Semantics](B016-2026-08-18-playable-social-ontology-and-ideoligion-semantics.md) - 2026-08-18 UTC / 2026-08-18 PDT
 - [B17 - First-Class Site Affiliation and Pawn Epistemics](B017-2026-08-18-first-class-site-affiliation-and-pawn-epistemics.md) - 2026-08-18 UTC / 2026-08-18 PDT
+- [B18 - Authoring-State Convergence and Runtime Performance](B018-2026-08-19-authoring-state-convergence-and-runtime-performance.md) - 2026-08-18 to 2026-08-19
 - [B19 - Regional Substrate Realization and Settlement Composition Closure](B019-2026-08-21-regional-substrate-realization-and-settlement-composition-closure.md) - 2026-08-19 to 2026-08-21
 
 ### <a id="t-020"></a>T-020 - Regional geometry, projection, and scatter
@@ -476,6 +482,7 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [A90 - Territorial composition](A090-2026-08-08-territorial-composition.md) - 2026-08-08 06:59–07:17 UTC / 23:59–00:17 PST
 
 - [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
+- [B18 - Authoring-State Convergence and Runtime Performance](B018-2026-08-19-authoring-state-convergence-and-runtime-performance.md) - 2026-08-18 to 2026-08-19
 - [B19 - Regional Substrate Realization and Settlement Composition Closure](B019-2026-08-21-regional-substrate-realization-and-settlement-composition-closure.md) - 2026-08-19 to 2026-08-21
 
 ### <a id="t-021"></a>T-021 - Factions, settlements, and population
@@ -518,6 +525,7 @@ Regional persistence, geography, projection, per-cell fields, and settlement mat
 - [B15 - Faction Technological Knowledge and Distributed Availability](B015-2026-08-18-faction-technological-knowledge-and-distributed-availability.md) - 2026-08-17 to 2026-08-18 UTC / 2026-08-17 PDT
 - [B16 - Playable Social Ontology and Ideoligion Semantics](B016-2026-08-18-playable-social-ontology-and-ideoligion-semantics.md) - 2026-08-18 UTC / 2026-08-18 PDT
 - [B17 - First-Class Site Affiliation and Pawn Epistemics](B017-2026-08-18-first-class-site-affiliation-and-pawn-epistemics.md) - 2026-08-18 UTC / 2026-08-18 PDT
+- [B18 - Authoring-State Convergence and Runtime Performance](B018-2026-08-19-authoring-state-convergence-and-runtime-performance.md) - 2026-08-18 to 2026-08-19
 - [B19 - Regional Substrate Realization and Settlement Composition Closure](B019-2026-08-21-regional-substrate-realization-and-settlement-composition-closure.md) - 2026-08-19 to 2026-08-21
 
 ### <a id="t-026"></a>T-026 - World tendencies and geography
@@ -576,6 +584,7 @@ Organizations, relations, political state, culture, beliefs, and Ideoligion.
 - [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
 - [B16 - Playable Social Ontology and Ideoligion Semantics](B016-2026-08-18-playable-social-ontology-and-ideoligion-semantics.md) - 2026-08-18 UTC / 2026-08-18 PDT
 - [B17 - First-Class Site Affiliation and Pawn Epistemics](B017-2026-08-18-first-class-site-affiliation-and-pawn-epistemics.md) - 2026-08-18 UTC / 2026-08-18 PDT
+- [B18 - Authoring-State Convergence and Runtime Performance](B018-2026-08-19-authoring-state-convergence-and-runtime-performance.md) - 2026-08-18 to 2026-08-19
 - [B19 - Regional Substrate Realization and Settlement Composition Closure](B019-2026-08-21-regional-substrate-realization-and-settlement-composition-closure.md) - 2026-08-19 to 2026-08-21
 
 ### <a id="t-023"></a>T-023 - Culture, beliefs, and Ideoligion
@@ -727,6 +736,7 @@ Time controls, independent input, developer tools, exercise harnesses, and runti
 - [A99 - Map-size selector diagnosis and verified fix](A099-2026-08-08-map-size-selector-diagnosis-and-verified-fix.md) - 2026-08-08 23:31–2026-08-09 01:29 UTC / 16:31–18:29 PST
 
 - [B14 - Regional World and Society Creation Convergence](B014-2026-08-17-regional-world-and-society-creation-convergence.md) - 2026-08-14 to 2026-08-17 UTC / 2026-08-13 to 2026-08-17 PDT
+- [B18 - Authoring-State Convergence and Runtime Performance](B018-2026-08-19-authoring-state-convergence-and-runtime-performance.md) - 2026-08-18 to 2026-08-19
 
 ### <a id="t-029"></a>T-029 - Game controls and developer tools
 
