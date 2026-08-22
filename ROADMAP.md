@@ -1,7 +1,7 @@
-# Colonist Awareness - roadmap
+﻿# Colonist Awareness - roadmap
 
-The A sequence is closed at `A102`; the chronology is complete through `B16`,
-and `B17` is the next development batch after the operator runtime test.
+The A sequence is closed at `A102`; the chronology is complete through `B19`,
+and `B20` is the next development batch after the operator runtime test.
 Historical batch identifiers below use the current sequence. Thematic `T-*`
 identifiers link continuing work across nonadjacent batches. The chronological
 catalog is [`BATCH_LOG.md`](BATCH_LOG.md); thematic links are in
@@ -1734,3 +1734,4 @@ evidence instead of live scope state. The current fixture, retained B10-B15
 suites, reproducible builds, and byte-verified deployment close the static
 boundary. The next action is the operator's runtime test; `B17` is the next
 ordinary batch.
+
