@@ -68,7 +68,7 @@ namespace ColonistAwareness
             int rank = CATechnologicalKnowledgeRuntime.CanonicalRank(
                 record.faction, CATechnologyDomains.Agriculture,
                 CATechnologyCompetencies.Operate);
-            ThingDef crop = CropFor(map, rank);
+            ThingDef crop = CropFor(map, rank, record);
             if (crop == null)
             {
                 Log.Message("[CA][Settlement][Subsistence] " + record.name
@@ -178,21 +178,40 @@ namespace ColonistAwareness
             return true;
         }
 
-        // The crop is what this society can actually grow here: knowledge
-        // widens the roster, the map's own outdoor temperature decides
-        // whether anything stands in the ground at the starting date.
-        private static ThingDef CropFor(Map map, int rank)
+        // The crop is what this society can actually grow here. A bare
+        // competency rank was standing in for the knowledge boundary that
+        // already exists: B15 establishes an exact translation for
+        // plants, and CanGrowCanonical answers it from the site's own
+        // knowledge. A rank number could let a settlement sow something
+        // its people demonstrably do not know, and could refuse one they
+        // do. The ground answers too - a crop that cannot hold this
+        // soil's fertility is not a crop here.
+        private static ThingDef CropFor(Map map, int rank,
+            CARegionalSettlementRecord record)
         {
             if (map.mapTemperature.OutdoorTemp < -8f) return null;
+            CATechnologicalKnowledge knowledge =
+                CASiteState.Knowledge(record);
+
+            bool Known(ThingDef plant)
+            {
+                if (plant == null) return false;
+                if (knowledge == null) return true;
+                return CATechnologicalKnowledgeRuntime.CanGrowCanonical(
+                    knowledge, plant, out _);
+            }
+
             ThingDef corn = DefDatabase<ThingDef>
                 .GetNamedSilentFail("Plant_Corn");
             ThingDef potato = DefDatabase<ThingDef>
                 .GetNamedSilentFail("Plant_Potato");
             ThingDef rice = DefDatabase<ThingDef>
                 .GetNamedSilentFail("Plant_Rice");
-            if (rank >= 3 && corn != null && Rand.Chance(0.5f)) return corn;
-            if (rank >= 2 && rice != null && Rand.Chance(0.35f)) return rice;
-            return potato ?? rice ?? corn;
+            if (rank >= 3 && Known(corn) && Rand.Chance(0.5f)) return corn;
+            if (rank >= 2 && Known(rice) && Rand.Chance(0.35f)) return rice;
+            if (Known(potato)) return potato;
+            if (Known(rice)) return rice;
+            return Known(corn) ? corn : null;
         }
     }
 }

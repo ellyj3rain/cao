@@ -2285,6 +2285,27 @@ namespace ColonistAwareness
             if (org.organizationKey == "player"
                 || org.affiliatedWithPlayer) return true;
             if (org.pendingAidDeadline > 0) return true;
+            // A frontier holding organization exists only for holdings
+            // materialized on a LOADED player map (CAFrontier.EnsureHoldings
+            // skips every other map), so these are on-map subjects. They
+            // were falling into the background set and being throttled by
+            // the distant-world activity budget - a tendency about places
+            // the player is not at, deciding how often things on the
+            // player's own map update.
+            if (org.organizationKey != null
+                && org.organizationKey.StartsWith("frontier:"))
+            {
+                int first = org.organizationKey.IndexOf(':') + 1;
+                int second = org.organizationKey.IndexOf(':', first);
+                if (second > first && int.TryParse(
+                        org.organizationKey.Substring(first,
+                            second - first), out int mapId))
+                {
+                    List<Map> maps = Find.Maps;
+                    for (int i = 0; i < maps.Count; i++)
+                        if (maps[i]?.uniqueID == mapId) return true;
+                }
+            }
             try
             {
                 var regional = CARegionalWorldComponent.Current;

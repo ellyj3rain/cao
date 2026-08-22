@@ -3244,13 +3244,6 @@ namespace ColonistAwareness
     // fall back to that object's base style.
     internal static class CAVisualTraditionStyle
     {
-        internal static CACulture CultureFor(
-            CARegionalSettlementRecord settlement)
-        {
-            return CAFactionStateWorldComponent.Current
-                ?.Find(settlement?.faction)?.culture;
-        }
-
         internal static ThingStyleDef StyleFor(CACulture culture,
             ThingDef thing)
         {

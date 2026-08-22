@@ -300,11 +300,12 @@ namespace ColonistAwareness
 
     // Establishes evidence-backed inherited Culture, derives only political
     // positions with real scored causes, and records represented institutions for
-    // every humanlike faction. Native Ideoligion remains untouched.
+    // every humanlike faction. Native Ideoligion remains untouched. World
+    // tendencies are deliberately not an input: faction social state derives
+    // from faction facts alone.
     internal static class CAFactionStateGenerator
     {
-        internal static string RunWorldPass(CARegionalWorldPolicy policy,
-            string reason)
+        internal static string RunWorldPass(string reason)
         {
             CAFactionStateWorldComponent store =
                 CAFactionStateWorldComponent.Current;

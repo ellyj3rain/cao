@@ -347,6 +347,23 @@ namespace ColonistAwareness
                 seed + ":culture");
             CACultureAuthoringKernel.CompleteMissing(holding.localCulture,
                 seed + ":culture", seed + ":population");
+            // People who went out to the frontier went out FROM
+            // somewhere. Where a faction stands behind this holding its
+            // residents are that faction's people, and the native
+            // culture def they carry is what holds their building and
+            // furnishing styles - without it a supported holding is
+            // styled like nobody. A holding nobody supports keeps none,
+            // which is the right answer for people on no one's roll.
+            if (holding.localCulture.sourceCultureDefName.NullOrEmpty())
+                try
+                {
+                    holding.localCulture.sourceCultureDefName =
+                        CAFactionStateWorldComponent.Current?.Find(
+                            CARegionalPlanUtility.FactionByLoadId(
+                                supportingFactionLoadId))
+                        ?.culture?.sourceCultureDefName;
+                }
+                catch (Exception) { }
             if (holding.populationGroups == null)
                 holding.populationGroups =
                     new List<CASettlementPopulationGroup>();

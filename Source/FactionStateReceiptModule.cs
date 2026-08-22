@@ -27,7 +27,6 @@ namespace ColonistAwareness
             var before = factions.ToDictionary(faction => faction.loadID,
                 IdeoligionSignature);
             string pass = CAFactionStateGenerator.RunWorldPass(
-                CARegionalWorldComponent.Current?.WorldPolicy,
                 "faction-state receipt");
 
             int complete = 0;
