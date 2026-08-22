@@ -1,4 +1,4 @@
-# build intermediates (the shipped DLL in Assemblies/ IS tracked)
+﻿# build intermediates (the shipped DLL in Assemblies/ IS tracked)
 Source/obj/
 Source/bin/
 /obj/
@@ -38,3 +38,9 @@ Receipts/B18/Performance/diagnostic-200x4-access-diagnostic-run1/*.png
 # convergence-exercise scratch (build outputs, not canonical)
 /.tmp/
 
+
+# B18 performance evidence storage boundary (see Receipts/B18/B18_PERFORMANCE_ARTIFACT_INDEX.md)
+Receipts/B18/**/*.log
+Receipts/B18/**/ca-passive-progress.txt
+Receipts/B18/Performance/diagnostic-200x4-access-diagnostic-run1/*.png
+/.tmp/

@@ -102,3 +102,20 @@ Governed index of the B18 convergence-exercise performance artifacts. Truthful s
 | target-400x6-nested-region-bypass-run1-receipts.txt | 7E7D265566D89D37 | target-400x6-nested-region-bypass-run1-receipts.txt | tracked-receipt |
 | target-400x6-passive-artifact-census-wall/Player.log | 99EC8553C9145AED | target-400x6-passive-artifact-census-wall | local-raw-log |
 
+## Previously tracked raw logs and progress (removed to satisfy the committed-diff hygiene gate; kept local)
+
+| Artifact | SHA-256 (first 16) | Run | Disposition |
+|---|---|---|---|
+| target-400x6-freezescan-baseline/Player-prev-before-freezescan.log | 3ECE410186596079 | target-400x6-freezescan-baseline | local-raw-log |
+| target-400x6-freezescan-baseline/Player.log | 1014556828E17B2D | target-400x6-freezescan-baseline | local-raw-log |
+| target-400x6-steady-subattribution/Player.log | 17A0E53472D56106 | target-400x6-steady-subattribution | local-raw-log |
+| Settlement/logs/run9-uniform-inputs-Player.log | F86F5AECFBB59F1C | logs | local-raw-log |
+| Settlement/run1-scale-defects-Player.log | 17A0E53472D56106 | run1-scale-defects-Player.log | local-raw-log |
+| passive-200x4-matrix-run11/ca-passive-progress.txt | 5F8E1CE062714100 | passive-200x4-matrix-run11 | local-raw-progress |
+| passive-200x4-matrix-run3/ca-passive-progress.txt | 6A94C08CE2CCB58E | passive-200x4-matrix-run3 | local-raw-progress |
+| passive-200x4-matrix-run4/ca-passive-progress.txt | 9C1990F7F92F246A | passive-200x4-matrix-run4 | local-raw-progress |
+| passive-200x4-matrix-run5/ca-passive-progress.txt | 9C3FCB6FD7278EBE | passive-200x4-matrix-run5 | local-raw-progress |
+| passive-200x4-matrix-run6/ca-passive-progress.txt | 41214B943C1C2975 | passive-200x4-matrix-run6 | local-raw-progress |
+| passive-200x4-matrix-run7/ca-passive-progress.txt | 0E8E4C16F628C00A | passive-200x4-matrix-run7 | local-raw-progress |
+| passive-200x4-matrix-run9/ca-passive-progress.txt | 3CD7F547B4BBB481 | passive-200x4-matrix-run9 | local-raw-progress |
+| target-400x6-passive-artifact-census-wall/ca-passive-progress.txt | E2EF6A1272811398 | target-400x6-passive-artifact-census-wall | local-raw-progress |
