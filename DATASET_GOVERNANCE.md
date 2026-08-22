@@ -115,10 +115,27 @@ does not create a deletion requirement.
 The local compliance manifest is the authoritative ledger connecting an exact
 corpus version or cohort to a training, validation, testing, or evaluation run.
 Each future run records its model/build identity, cohort IDs, exact manifest
-hashes, partitions used, date, purpose, and synthetic-data status. At this
-maintenance boundary, the corpus supports system design and evaluation evidence;
-the repository contains no trained model-weights artifact and records no claim
-that a shipped CAO build was trained from these rows.
+hashes, partitions used, date, purpose, and synthetic-data status.
+
+### Use record: spatial-relationship evidence aggregate (2026-08-19)
+
+The first governed corpus use is a statistical evidence aggregate, not a
+trained model. `tools/PlayerBaseLayoutExtractor relationships` measured
+thirteen named spatial relationships (trip chains, protection of food and
+power, hazard separation, medical access from defense, door passability,
+envelope density, expansion reserve, edge affinity of defense, same-def
+alignment) over the `PB-RR-BROAD-20260817-V1` TRAIN partition only (3,365
+layouts measured), aggregated as quantile bands per condition bucket (biome
+group, cohort scale quartile) with a 30-layout minimum per band. The
+held-out TEST partition (449 layouts, never used for the bands) evaluated
+coverage of each 80% band between 0.733 and 0.970 -- recorded in the
+tracked receipt `Receipts/B18/Settlement/SPATIAL_EVIDENCE_HOLDOUT.json`.
+The shipped artifact is the non-reconstructive aggregate
+`Evidence/spatial-relationships.xml`: quantiles only, no layout
+coordinates, identities, or reconstructable geometry. At runtime it ranks
+otherwise-valid construction candidates and never gates validity. The
+validation partition remains unused and reserved. No trained model-weights
+artifact is tracked or shipped.
 
 ## Maintenance contract
 

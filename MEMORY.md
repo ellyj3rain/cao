@@ -1,7 +1,7 @@
 | Document | Colonist Awareness Overhaul Memory |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.7.0.0-alpha` · closed batch tip `B17` · next `B18` |
+| Version | `1.7.1.0-alpha` · closed batch tip `B18` · next `B19` |
 <!-- cao:generated:version END -->
 | Author | ellyj3rain |
 | Repository | `MEMORY.md` |
