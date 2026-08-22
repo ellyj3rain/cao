@@ -52,6 +52,7 @@ namespace ColonistAwareness
     // ground lying.
     public sealed class CAGroundwaterTuning : IExposable
     {
+        public int schemaVersion = 1;
         // How far the sea reaches through the ground. Inside this, a
         // well draws salt; out to brackishReach it draws brackish.
         // This is why a well is not the answer to a salt coast.
@@ -102,6 +103,7 @@ namespace ColonistAwareness
 
         public void ExposeData()
         {
+            Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
             Scribe_Values.Look(ref saltIntrusion, "saltIntrusion", 18);
             Scribe_Values.Look(ref brackishReach, "brackishReach", 34);
             Scribe_Values.Look(ref highTableReach, "highTableReach", 30);

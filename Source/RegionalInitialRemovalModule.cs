@@ -10,13 +10,14 @@ using Verse;
 
 namespace ColonistAwareness
 {
-    // Initial regional generation can materialize more than a million plants
-    // before later gensteps place chunks, boulders, ruins, and geysers. Vanilla
-    // plant despawn then performs a linear search and a stable shift in every
-    // touched ThingOwner and ListerThings list. Keep those lists indexed during
-    // one ordered genstep, use O(1) swap removal, and reconstruct the exact
-    // stable native order before the genstep returns. Map mutation, callbacks,
-    // Rand, spawn order, and genstep order all remain on the main thread.
+    // Initial regional generation can materialize hundreds of thousands of
+    // things before later gensteps replace plants, filth, chunks, boulders,
+    // ruins, and buildings. Native despawn performs a linear search and a
+    // stable shift in every touched ThingOwner and ListerThings list. Keep all
+    // removals from one ordered genstep indexed, use O(1) swap removal, and
+    // reconstruct the exact stable native order before the genstep returns.
+    // Map mutation, callbacks, Rand, spawn order, and genstep order all remain
+    // on the main thread.
     internal sealed class CARegionalIndexedThingList
     {
         private static readonly CAReferenceComparer<Thing> Comparer =
@@ -144,6 +145,10 @@ namespace ColonistAwareness
         private static readonly AccessTools.FieldRef<ListerThings, int[]>
             StateHashByGroup = AccessTools.FieldRefAccess<ListerThings,
                 int[]>("stateHashByGroup");
+        private static readonly AccessTools.FieldRef<ListerThings,
+            List<IHaulSource>> HaulSources =
+                AccessTools.FieldRefAccess<ListerThings,
+                    List<IHaulSource>>("haulSources");
 
         private readonly ListerThings lister;
         private readonly Dictionary<List<Thing>, CARegionalIndexedThingList>
@@ -168,7 +173,7 @@ namespace ColonistAwareness
             comparisonsBypassed = 0L;
             shiftsBypassed = 0L;
             if (thing == null || !ListerThings.EverListable(thing.def,
-                    lister.use) || thing is IHaulSource)
+                    lister.use))
                 return false;
 
             targets.Clear();
@@ -198,6 +203,12 @@ namespace ColonistAwareness
                     return false;
                 comparisonsBypassed += comparisons;
                 shiftsBypassed += shifts;
+                // Native removes a haul source after its per-def list and
+                // before its request-group lists. targets[0] is always the
+                // per-def list, so preserve that observable order while the
+                // large Thing lists use the indexed path.
+                if (i == 0 && thing is IHaulSource haulSource)
+                    HaulSources(lister).Remove(haulSource);
             }
             int[] hashes = StateHashByGroup(lister);
             for (int i = 0; i < groups.Length; i++)
@@ -279,7 +290,13 @@ namespace ColonistAwareness
 
         private bool disabled;
         private bool restored;
+        private bool receiptLogged;
+        private bool externalIndexesSuspended;
         private string fallbackReason;
+        private bool restoredCanonical;
+        private long restoredSnapshotEntries;
+        private int restoredIndexedLists;
+        private long restoredInMilliseconds;
         private long removedPlants;
         private long ownerRemovals;
         private long listerRemovals;
@@ -295,11 +312,13 @@ namespace ColonistAwareness
             this.stepLabel = stepLabel;
             if (OwnerRemoved == null)
                 Disable("ThingOwner.NotifyRemoved delegate unavailable");
+            else
+                SuspendExternalIndexes();
         }
 
         internal bool TryRemoveOwner(ThingOwner<Thing> owner, Thing thing)
         {
-            if (!Eligible(thing) || owner == null
+            if (!EligibleRemoval(thing) || owner == null
                 || !ReferenceEquals(owner.Owner, map)
                 || !ReferenceEquals(map.spawnedThings, owner))
                 return false;
@@ -343,7 +362,7 @@ namespace ColonistAwareness
 
         internal bool TryRemoveLister(ListerThings lister, Thing thing)
         {
-            if (!Eligible(thing) || lister == null) return false;
+            if (!EligibleRemoval(thing) || lister == null) return false;
             indexWatch.Start();
             if (!listers.TryGetValue(lister,
                     out CARegionalIndexedLister state))
@@ -387,43 +406,39 @@ namespace ColonistAwareness
 
         internal void NotePlantDespawn(Thing thing)
         {
-            if (Eligible(thing)) removedPlants++;
+            if (!disabled && thing?.def?.category == ThingCategory.Plant
+                && ReferenceEquals(thing.Map, map))
+                removedPlants++;
         }
 
         internal void RestoreAndLog(bool completed)
         {
-            if (restored) return;
-            restored = true;
-            Stopwatch restoreWatch = Stopwatch.StartNew();
-            bool canonical = RestoreCollections();
-            restoreWatch.Stop();
-            if (removedPlants == 0L && fallbackReason == null) return;
-            long snapshots = owners.Values.Sum(
-                    state => (long)state.SnapshotCount)
-                + listers.Values.Sum(state => state.SnapshotEntries);
-            int indexedLists = owners.Count
-                + listers.Values.Sum(state => state.IndexedListCount);
+            FinishCollections();
+            if (receiptLogged) return;
+            receiptLogged = true;
+            if (ownerRemovals == 0L && listerRemovals == 0L
+                && fallbackReason == null) return;
             Log.Message("[CA][Regional][Timing][IndexedRemoval] "
                 + stepLabel + " " + (completed ? "completed" : "aborted")
                 + " with plantDespawns=" + removedPlants
                 + " ownerRemovals=" + ownerRemovals
                 + " listerRemovals=" + listerRemovals
-                + " indexedLists=" + indexedLists
-                + " snapshotEntries=" + snapshots
+                + " indexedLists=" + restoredIndexedLists
+                + " snapshotEntries=" + restoredSnapshotEntries
                 + " indexWork=" + indexWatch.ElapsedMilliseconds + " ms"
-                + " restore=" + restoreWatch.ElapsedMilliseconds + " ms"
+                + " restore=" + restoredInMilliseconds + " ms"
                 + " comparisonsBypassed=" + comparisonsBypassed
                 + " shiftsBypassed=" + shiftsBypassed
-                + " canonicalOrder=" + canonical
+                + " canonicalOrder=" + restoredCanonical
                 + (fallbackReason == null ? ""
                     : "; FALLBACK " + fallbackReason)
                 + " for " + map.Size.x + "x" + map.Size.z + " map "
                 + map.uniqueID);
         }
 
-        private bool Eligible(Thing thing)
+        private bool EligibleRemoval(Thing thing)
         {
-            return !disabled && thing?.def?.category == ThingCategory.Plant
+            return !disabled && thing != null
                 && ReferenceEquals(thing.Map, map);
         }
 
@@ -431,9 +446,46 @@ namespace ColonistAwareness
         {
             if (disabled) return;
             fallbackReason = reason;
-            bool canonical = RestoreCollections();
-            if (!canonical) fallbackReason += "; canonical restore failed";
+            FinishCollections();
+            if (!restoredCanonical)
+                fallbackReason += "; canonical restore failed";
             disabled = true;
+        }
+
+        private void FinishCollections()
+        {
+            if (restored) return;
+            restored = true;
+            restoredSnapshotEntries = owners.Values.Sum(
+                    state => (long)state.SnapshotCount)
+                + listers.Values.Sum(state => state.SnapshotEntries);
+            restoredIndexedLists = owners.Count
+                + listers.Values.Sum(state => state.IndexedListCount);
+            Stopwatch restoreWatch = Stopwatch.StartNew();
+            restoredCanonical = RestoreCollections();
+            restoreWatch.Stop();
+            restoredInMilliseconds = restoreWatch.ElapsedMilliseconds;
+            ResumeExternalIndexes();
+        }
+
+        private void SuspendExternalIndexes()
+        {
+            if (externalIndexesSuspended) return;
+            CARegionalSpawnPathPatches.SuspendIndexForStep(map);
+            CARegionalMapListerIndexPatches.SuspendIndexForStep(map);
+            externalIndexesSuspended = true;
+        }
+
+        private void ResumeExternalIndexes()
+        {
+            if (!externalIndexesSuspended) return;
+            // The per-step collections have already been restored to their
+            // canonical stable order. Long-lived generation indexes may now
+            // rebuild from that exact state instead of observing temporary
+            // swap positions and degrading for the rest of generation.
+            CARegionalSpawnPathPatches.ResumeIndexAfterStep(map);
+            CARegionalMapListerIndexPatches.ResumeIndexAfterStep(map);
+            externalIndexesSuspended = false;
         }
 
         private bool RestoreCollections()

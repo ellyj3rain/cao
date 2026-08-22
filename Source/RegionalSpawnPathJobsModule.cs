@@ -258,6 +258,7 @@ namespace ColonistAwareness
         internal long indexUnavailable;
         internal int spawnedAtScopeStart;
         internal int rebuildTracesLogged;
+        internal int indexSuspendDepth;
 
         internal void Accumulate(CASpawnPathMetric metric, long elapsed)
         {
@@ -335,6 +336,36 @@ namespace ColonistAwareness
             {
                 CARegionalSpawnPathScope scope = Current;
                 return scope != null && scope.active ? scope : null;
+            }
+        }
+
+        internal static void SuspendIndexForStep(Map map)
+        {
+            CARegionalSpawnPathScope scope = ActiveScope;
+            if (scope == null || !ReferenceEquals(scope.map, map)) return;
+            scope.indexSuspendDepth++;
+        }
+
+        internal static void ResumeIndexAfterStep(Map map)
+        {
+            CARegionalSpawnPathScope scope = ActiveScope;
+            if (scope == null || !ReferenceEquals(scope.map, map)
+                || scope.indexSuspendDepth <= 0)
+                return;
+            scope.indexSuspendDepth--;
+            if (scope.indexSuspendDepth != 0 || scope.tracker == null
+                || scope.degraded)
+                return;
+            try
+            {
+                if (!scope.tracker.Rebuild(scope.spawnedInner))
+                    DegradeContained(scope,
+                        "post-genstep canonical rebuild rejected");
+            }
+            catch (Exception)
+            {
+                DegradeContained(scope,
+                    "post-genstep canonical rebuild failed");
             }
         }
 
@@ -469,6 +500,7 @@ namespace ColonistAwareness
             if (scope == null || !ReferenceEquals(scope.map, __0)) return;
             scope.genStepDepth++;
             if (scope.genStepDepth != 1) return;
+            scope.rebuildTracesLogged = 0;
             Array.Copy(scope.counts, scope.stepCounts, scope.counts.Length);
             Array.Copy(scope.ticks, scope.stepTicks, scope.ticks.Length);
         }
@@ -694,6 +726,7 @@ namespace ColonistAwareness
             CARegionalSpawnPathScope scope = ActiveScope;
             if (scope == null || scope.tracker == null || scope.degraded)
                 return;
+            if (scope.indexSuspendDepth > 0) return;
             if (!ReferenceEquals(__instance, scope.spawnedThings)) return;
             // A merge-absorbed item returns true without being appended; the
             // appended case is discriminated by holdingOwner having been
@@ -723,6 +756,7 @@ namespace ColonistAwareness
             CARegionalSpawnPathScope scope = ActiveScope;
             if (scope == null || scope.tracker == null || scope.degraded)
                 return;
+            if (scope.indexSuspendDepth > 0) return;
             if (!ReferenceEquals(__instance, scope.spawnedThings)) return;
             try
             {
@@ -787,6 +821,7 @@ namespace ColonistAwareness
         {
             CARegionalSpawnPathScope scope = ActiveScope;
             if (scope == null || scope.degraded || scope.tracker == null
+                || scope.indexSuspendDepth > 0
                 || !ReferenceEquals(list, scope.spawnedInner))
                 return list.LastIndexOf(item);
             try
