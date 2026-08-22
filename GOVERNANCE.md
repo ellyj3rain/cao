@@ -1,7 +1,7 @@
-| Document | Colonist Awareness Overhaul Governance |
+﻿| Document | Colonist Awareness Overhaul Governance |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.7.1.0-alpha` · closed batch tip `B18` · next `B19` |
+| Version | `1.7.2.0-alpha` · closed batch tip `B19` · next `B20` |
 <!-- cao:generated:version END -->
 | Design authority | ellyj3rain |
 | Repository | `GOVERNANCE.md` |
@@ -113,7 +113,7 @@ substrate; the other three are what make the mod a framework.
   evidence. Local Git commits are supporting engineering evidence when retained.
 - Batch identifiers share one namespace across letter eras. The A sequence is
   closed at `A102`; development continues with `[B#]` in the same directory and
-  log. `B17` is closed and `B18` is next after the operator runtime-test boundary. A new letter does not create another
+  log. `B19` is closed and `B20` is next after the operator runtime-test boundary. A new letter does not create another
   history tree, generator, catalog, or projection layer.
 - The records now under `Batches/` establish this append-only contract. The
   immediately preceding generated history tree was a regulatory projection, not
@@ -130,6 +130,22 @@ substrate; the other three are what make the mod a framework.
   documentation, filenames, or regulatory indexes without changing runtime
   behavior, adding a version unit, or consuming the next batch.
 - Automated tools do not receive Co-Authored-By trailers in commits.
+- **An authorized unattended pass is used in full.** When the operator
+  delegates an extended implementation period, the absence of operator
+  runtime acceptance never authorizes stopping after audit, hardening,
+  instrumentation, or preparing tests for later. A useful finding, a clean
+  build, a completed commit, a passing receipt suite, newly exposed runtime
+  uncertainty, or a list of morning tests is not a stopping condition.
+  Remaining work is classified DONE, ACTIONABLE NOW, or GENUINELY
+  OPERATOR-BLOCKED; "needs runtime verification" is not operator-blocked,
+  because such work usually still contains implementation, integration,
+  persistence, representation, and test work that is actionable without
+  operator judgment. Record the narrow junction where product intent is
+  genuinely absent and continue every independent path. Risk reduction does
+  not substitute for assignment completion, and large scope is the reason
+  work was delegated rather than a reason to return it. Where session
+  mechanics genuinely force a stop, state that limitation explicitly rather
+  than presenting a handoff that implies the period was used.
 - The operator owns: architectural ratification, public remotes, destructive ref
   work, version-policy changes.
 
@@ -171,7 +187,7 @@ operate the game, edit saves, or establish operator visual or gameplay acceptanc
 ## Batch, thread, and version discipline
 
 - **Batch** is the atomic chronological development record. The closed history is
-  `A1` through `A102`, followed by `B1` through `B17`; `B18` is the next identifier.
+  `A1` through `A102`, followed by `B1` through `B19`; `B20` is the next identifier.
 - **Thread and family** are permanent, series-neutral semantic classifications.
   `T-*` and `TF-*` may connect nonadjacent batches across any letter sequence, and
   one batch may participate in several threads.
@@ -192,7 +208,7 @@ Maturity advances independently through `pre-alpha`, `alpha`, `beta`, `rc`, and
 GA.
 
 `tools/version-model.mjs` is the executable replay source. It derives `VERSION`,
-the generated version stamps, and `VERSION_MAP.md`; validates exact A1-B17
+the generated version stamps, and `VERSION_MAP.md`; validates exact A1-B19
 coverage; checks the thematic namespace; and fails if the declared next batch has
 already been consumed. Mechanically derived version facts are generated and
 gated, not hand-typed. Forty-three evidenced version units derive
@@ -415,3 +431,6 @@ Catalog 6 and pending-authoring epoch 15 bind the B17 ownership and knowledge
 schemas. The adjacent conversion validates the complete proposed graph before
 publishing any field or schema stamp. `B17_SITE_AFFILIATION_AND_EPISTEMIC_CONTRACT.md`
 is the canonical detailed contract.
+
+
+

@@ -290,3 +290,140 @@ Duplicate candidate universes: **0**. Shared layout code remains presentation in
 ## Closure statement
 
 The current authoring ontology reaches its static boundary only when this inventory, the executable contracts, the fixture round trip, retained B10-B16 suites, B17 affiliation and epistemic receipts, clean build, and byte-verified deployment agree. Operator runtime judgment remains separate.
+
+## Regional geography: unresolved model, controls provisional
+
+Date: 2026-08-21
+
+The "World tendencies" row above inventories eight scalars as though they were
+settled ontology. They are not. This section records why, so the row is read as
+a description of the current build rather than as ratification.
+
+### What RimWorld already owns
+
+Per surface tile the engine carries `elevation`, `hilliness`, `temperature`,
+`rainfall`, `swampiness`, `pollution`, `PrimaryBiome`, `WaterCovered`,
+`IsCoastal` via `World.CoastDirectionAt`, a named `WorldFeature`, and the 1.6
+`TileMutatorDef` landform list. Rivers, roads and neighbour adjacency are
+already resolved before CAO's partition runs. Nearly the whole physical
+substrate for coherent regional geography exists in vanilla.
+
+### What CAO currently does with it
+
+Nothing. `CARegionalTopologyKernel.Partition` is a pure function of
+`(seed, eligible set, adjacency, positions, multiTileLandShare, sizeMin,
+sizeMax, preAssigned)`. No biome, elevation, hilliness, rainfall, temperature,
+river, coast, feature or mutator is consulted at any point. The partition is
+graph growth over adjacency alone.
+
+### Which regional shapes presently emerge, and why
+
+Blobs, by construction. Region outlines are artifacts of flood-fill order and
+the size band, not of landform. Two worlds can hold identical region-frequency
+and region-size statistics while one has recognizable valleys, coasts, river
+corridors and ranges and the other does not; the current parameters cannot
+distinguish those cases because they describe gross outcomes only. Any
+apparent geographic coherence today is coincidence.
+
+### The unresolved decomposition
+
+Open, and required before the regional controls are treated as settled:
+which geographic structures are derivable from existing world data; what
+additional physical structure CAO genuinely needs; how a stitched region may
+span several environmental regimes and how often that should occur; whether
+some biome transitions are more coherent than others; how elevation, coast,
+river systems and latitude should modify local temperature and moisture; which
+environmental facts stay tile-local, which become region-level summaries, and
+which must stay continuous rather than collapsing into categorical labels;
+what is deterministic versus variable; and what belongs in simple,
+intermediate and advanced authoring.
+
+The intended hierarchy is planetary geography and climate, then macro-landforms,
+then regional geometry, then local environmental fields and biome expression,
+then resources, access and habitability, and only then settlement and social
+realization.
+
+### Fixed boundaries
+
+Geographic regions are not political territories. A polity may occupy several
+regions, several societies may inhabit or contest one region, and a political
+boundary may cut across a geographic region. Political change must never
+require regenerating physical topology. Regional topology stays arbitrary with
+respect to settlements, factions, cultures and political centres: existing
+settlements are social anchors inside the geography, never causes of it. The
+generation order therefore stands unchanged.
+
+### Consequence for the current parameters
+
+`stitchedRegionFrequency` and `stitchedRegionSize` are recorded here as crude
+stand-ins for absent geomorphology, not as established causal dimensions. Each
+may survive, change meaning, become derived from landform geometry, move to
+advanced authoring, or disappear. Neither is to be preserved on the grounds
+that the field exists or that a consumer reads it. No master "geographic
+complexity" control is to be introduced in their place; the causal model comes
+first.
+
+## Population realization: one path closed, the anchor path open
+
+Date: 2026-08-21
+
+Represented population is realized on one of two paths, and only one of them
+is closed. Population-group materialization is NOT globally complete.
+
+### Closed: settlements carrying a CAO settlement record
+
+`CAPopulationProjection.Apply` runs during settlement materialization,
+immediately after residents are spawned. It walks residents against the
+record's population groups by share, writes the residence ledger through
+`CASettlementResidenceState.Assign`, sets each pawn's Ideoligion, and applies
+enforced orthodoxy, Ideoligion protection and certainty offsets. It handles
+both `record.faction == null` (factionless spawned pawns) and faction-owned
+records (`SpawnedPawnsInFaction`).
+
+This path was already closed. An earlier entry here credited it to a separate
+change in `MaterializeIndependentResidents`; that change was a duplicate of
+this authority, was reverted, and observed behaviour is unaffected.
+
+### Open: existing vanilla and mod faction-owned settlements
+
+These are the principal social and political anchors of the inhabited world.
+CAO holds world-level state for them via `CARegionalWorldSettlementState`, but
+they carry no `CARegionalSettlementRecord`, so `CAPopulationProjection.Apply`
+never runs for them. When the player enters one, vanilla generates its
+residents and consumes none of CAO's represented population, culture,
+political order or technological knowledge.
+
+The required invariant is that if CAO says a settlement contains a represented
+society, entering or materializing that settlement produces the same society
+rather than letting vanilla independently generate a contradictory one:
+world simulation says this place is X, the player enters it, the same X must
+physically exist.
+
+This is a first-class unresolved integration boundary against the real
+production path, not a caveat on the change above.
+
+It is already visible to the player. A postfix on `Settlement.GetInspectString`
+adds `Standing: <word> (~N people)` from `CARegionalWorldSettlementState`, and
+`RebuildWorldSettlementStates` walks every non-player surface settlement -
+including every anchor CAO will never materialize. Those populations run to
+the hundreds. The world map therefore states a settlement holds ~450 people
+and entering it produces whatever vanilla generates for that map.
+
+The presentation is not the defect and must not be softened to hide it: the
+world-level population is a real derived fact about the place. The defect is
+that the entered place is produced by an authority that consumes none of it.
+Weakening the line would remove the claim rather than satisfy it.
+
+### Epistemic rule for closing it
+
+The hierarchy stays: explicit CAO population-group facts, plus actual
+faction, game and mod facts, produce valid physical population realization.
+Never: a group exists, therefore invent a visual or type distinction so the
+group looks different.
+
+Pawn kind was deliberately left unchanged on the closed path because the
+population-group record does not author a `PawnKindDef`. On the anchor path,
+inspect whether a group's represented faction affiliation already reaches
+legitimate owners - that faction's `FactionDef`, pawn-group makers, PawnKinds,
+xenotypes, Ideoligion or technology. Using facts that already exist is
+realization of represented state, not invention.
