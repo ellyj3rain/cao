@@ -62,4 +62,3 @@ test("repository projections and identifiers match the replay", () => {
   assert.equal(result.closedBatchCount, 121);
   assert.equal(result.nextBatch, "B20");
 });
-
