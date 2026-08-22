@@ -22,7 +22,14 @@ namespace ColonistAwareness
         Defense = 8,
         Maintenance = 9,
         Access = 10,
-        Cultivation = 11
+        Cultivation = 11,
+        // Additive settlement development: extending or adding physical
+        // infrastructure the settlement does not yet have, as distinct from
+        // Maintenance, which restores what generation already stamped. The
+        // works component's cultivation/repair/rebuild/research verbs all
+        // maintain; nothing could be AUTHORIZED to add, because the demand
+        // vocabulary itself had no additive member.
+        Development = 12
     }
 
     // A settlement proposal names needs and native assets before authority is
@@ -276,10 +283,20 @@ namespace ColonistAwareness
                     ? "no complete material source is recorded"
                     : string.Join("; ", materialSources))
                 : "no usable authored settlement ground";
+            // A population-group key identifies who operates or receives from
+            // an arrangement; it does not by itself create a second physical
+            // provision site. Separate rooms are required only when the saved
+            // composition contains more than one distinct active provision
+            // scope (for example, a settlement-wide kitchen plus a protected
+            // group kitchen, or kitchens for two separately served groups).
+            // A single universal kitchen operated by the main population is
+            // one site, even though its exact operator retains that group's
+            // key.
             proposal.RequiresGroupProvisionRoom = (provisions
-                    ?? Enumerable.Empty<CAProvisionArrangement>()).Any(item =>
-                        item != null && item.active
-                        && item.populationGroupKey >= 0);
+                    ?? Enumerable.Empty<CAProvisionArrangement>())
+                .Where(item => item != null && item.active)
+                .Select(item => item.populationGroupKey)
+                .Distinct().Take(2).Count() > 1;
             foreach (CASettlementProgramEntry entry in activeEntries)
             {
                 if (entry == null || !entry.blocker.NullOrEmpty()) continue;
@@ -423,11 +440,23 @@ namespace ColonistAwareness
                 return false;
             }
             var reserved = new HashSet<IntVec3>();
-            List<Room> insideRooms = rect.Cells
-                .Where(cell => cell.InBounds(map) && cell.Roofed(map))
-                .Select(cell => cell.GetRoom(map)).Where(room => room != null
-                    && !room.PsychologicallyOutdoors && !room.IsDoorway
-                    && room.CellCount >= 6).Distinct().ToList();
+            // ROOMS DO NOT EXIST DURING MAP GENERATION. This resolved its
+            // interiors through cell.GetRoom, which reads the region/room
+            // system -- and RimWorld disables regionAndRoomUpdater for the
+            // whole of generation, rebuilding at the end. Every roofed cell
+            // therefore returned no room at settlement materialization, this
+            // list came back empty, and room-dependent program contracts
+            // failed before trying a single asset:
+            //
+            //   ca.settlement.housing cannot place Bedroll in (582,860,...);
+            //   rooms=0; indoor cells=0; source cells examined=0
+            //
+            // The roofs were standing the whole time; the query could not see
+            // them. During generation the same interiors are recovered by
+            // flood-filling roofed, standable, non-edifice cells; during play
+            // the native room system remains the authority.
+            List<List<IntVec3>> insideRooms =
+                CASettlementSitingConstraints.ResolveInteriorRooms(map, rect);
             if (proposal.RequiresGroupProvisionRoom
                 && insideRooms.Count < 2)
             {
@@ -453,83 +482,116 @@ namespace ColonistAwareness
                 bool indoor = scope != "settlement perimeter"
                     && scope != "usable settlement ground"
                     && scope != "workable settlement ground";
-                IEnumerable<Room> candidateRooms = indoor
-                    ? insideRooms : new Room[] { null };
-                bool contractFound = false;
-                foreach (Room contractRoom in candidateRooms)
+                // A settlement program is one operational site, not
+                // necessarily one native Room. Housing may occupy several
+                // homes, and a communal provision program may legitimately
+                // use a kitchen, store, and dining room. Reserve exact native
+                // footprints across the settlement's realized indoor rooms;
+                // only explicitly room-scoped arrangements require a distinct
+                // room. Powered roles still stay within their native six-cell
+                // network radius below.
+                var trial = new HashSet<IntVec3>(reserved);
+                IntVec3 powerAnchor = IntVec3.Invalid;
+                bool rolesFit = true;
+                string failedDefName = null;
+                int failedSourceCells = 0;
+                int failedNativePlacements = 0;
+                int failedReservedOverlaps = 0;
+                foreach (string role in contract.OrderBy(item =>
                 {
-                    var trial = new HashSet<IntVec3>(reserved);
-                    IntVec3 powerAnchor = IntVec3.Invalid;
-                    bool rolesFit = true;
-                    foreach (string role in contract.OrderBy(item =>
+                    string[] parts = item.Split(new[] { '|' },
+                        StringSplitOptions.None);
+                    ThingDef d = DefDatabase<ThingDef>.GetNamedSilentFail(
+                        parts.Length > 3 ? parts[3] : null);
+                    return d?.EverTransmitsPower == true ? 0 : 1;
+                }).ThenByDescending(item =>
+                {
+                    string[] parts = item.Split(new[] { '|' },
+                        StringSplitOptions.None);
+                    return DefDatabase<ThingDef>.GetNamedSilentFail(
+                        parts.Length > 3 ? parts[3] : null)?.size.Area ?? 0;
+                }))
+                {
+                    string[] parts = role.Split(new[] { '|' },
+                        StringSplitOptions.None);
+                    string defName = parts.Length > 3 ? parts[3] : null;
+                    ThingDef def = DefDatabase<ThingDef>
+                        .GetNamedSilentFail(defName);
+                    if (def == null) { rolesFit = false; break; }
+                    ThingDef stuff = def.MadeFromStuff
+                        ? GenStuff.DefaultStuffFor(def) : null;
+                    IEnumerable<IntVec3> cells = scope
+                            == "settlement perimeter"
+                        ? rect.Cells.Where(cell =>
+                            (cell.x <= rect.minX + 2
+                            || cell.x >= rect.maxX - 2
+                            || cell.z <= rect.minZ + 2
+                            || cell.z >= rect.maxZ - 2)
+                            && CASettlementSitingConstraints
+                                .JoinsPawnNetwork(map, cell))
+                        : scope == "usable settlement ground"
+                            || scope == "workable settlement ground"
+                            ? rect.Cells.Where(cell => cell.InBounds(map)
+                                && !cell.Roofed(map)
+                                && CASettlementSitingConstraints
+                                    .JoinsPawnNetwork(map, cell))
+                            : insideRooms.SelectMany(room => room);
+                    if (powerAnchor.IsValid)
+                        cells = cells.Where(cell =>
+                            cell.DistanceToSquared(powerAnchor) <= 36)
+                            .OrderBy(cell => cell.DistanceToSquared(
+                                powerAnchor));
+                    IntVec3 selected = IntVec3.Invalid;
+                    int sourceCells = 0;
+                    int nativePlacements = 0;
+                    int reservedOverlaps = 0;
+                    foreach (IntVec3 cell in cells)
                     {
-                        string[] parts = item.Split(new[] { '|' },
-                            StringSplitOptions.None);
-                        ThingDef d = DefDatabase<ThingDef>.GetNamedSilentFail(
-                            parts.Length > 3 ? parts[3] : null);
-                        return d?.EverTransmitsPower == true ? 0 : 1;
-                    }).ThenByDescending(item =>
-                    {
-                        string[] parts = item.Split(new[] { '|' },
-                            StringSplitOptions.None);
-                        return DefDatabase<ThingDef>.GetNamedSilentFail(
-                            parts.Length > 3 ? parts[3] : null)?.size.Area ?? 0;
-                    }))
-                    {
-                        string[] parts = role.Split(new[] { '|' },
-                            StringSplitOptions.None);
-                        string defName = parts.Length > 3 ? parts[3] : null;
-                        ThingDef def = DefDatabase<ThingDef>
-                            .GetNamedSilentFail(defName);
-                        if (def == null) { rolesFit = false; break; }
-                        ThingDef stuff = def.MadeFromStuff
-                            ? GenStuff.DefaultStuffFor(def) : null;
-                        IEnumerable<IntVec3> cells = scope
-                                == "settlement perimeter"
-                            ? rect.Cells.Where(cell =>
-                                cell.x <= rect.minX + 2
-                                || cell.x >= rect.maxX - 2
-                                || cell.z <= rect.minZ + 2
-                                || cell.z >= rect.maxZ - 2)
-                            : scope == "usable settlement ground"
-                                || scope == "workable settlement ground"
-                                ? rect.Cells.Where(cell => cell.InBounds(map)
-                                    && !cell.Roofed(map))
-                                : contractRoom?.Cells
-                                    ?? Enumerable.Empty<IntVec3>();
-                        if (powerAnchor.IsValid)
-                            cells = cells.Where(cell =>
-                                cell.DistanceToSquared(powerAnchor) <= 36)
-                                .OrderBy(cell => cell.DistanceToSquared(
-                                    powerAnchor));
-                        IntVec3 selected = IntVec3.Invalid;
-                        foreach (IntVec3 cell in cells)
+                        sourceCells++;
+                        CellRect footprint = GenAdj.OccupiedRect(cell,
+                            Rot4.South, def.size);
+                        if (footprint.Cells.Any(trial.Contains))
                         {
-                            CellRect footprint = GenAdj.OccupiedRect(cell,
-                                Rot4.South, def.size);
-                            if (footprint.Cells.Any(trial.Contains)) continue;
-                            if (!CASettlementSitingConstraints
-                                .CanPlaceNativeBlueprint(map, def, cell,
-                                    Rot4.South, stuff).Accepted) continue;
-                            selected = cell;
-                            foreach (IntVec3 occupied in footprint)
-                                trial.Add(occupied);
-                            break;
+                            reservedOverlaps++;
+                            continue;
                         }
-                        if (!selected.IsValid) { rolesFit = false; break; }
-                        if (def.EverTransmitsPower) powerAnchor = selected;
+                        if (!CASettlementSitingConstraints
+                            .CanPlaceNativeBlueprint(map, def, cell,
+                                Rot4.South, stuff).Accepted) continue;
+                        nativePlacements++;
+                        selected = cell;
+                        foreach (IntVec3 occupied in footprint)
+                            trial.Add(occupied);
+                        break;
                     }
-                    if (!rolesFit) continue;
-                    reserved = trial;
-                    contractFound = true;
-                    break;
+                    if (!selected.IsValid)
+                    {
+                        failedDefName = def.defName;
+                        failedSourceCells = sourceCells;
+                        failedNativePlacements = nativePlacements;
+                        failedReservedOverlaps = reservedOverlaps;
+                        rolesFit = false;
+                        break;
+                    }
+                    if (def.EverTransmitsPower) powerAnchor = selected;
                 }
-                if (!contractFound)
+                if (!rolesFit)
                 {
-                    blocker = "no same-site native placement for "
+                    Log.Warning("[CA][Regional][ProgramSiting] "
+                        + programKey + " cannot place "
+                        + (failedDefName ?? "unknown asset") + " in "
+                        + rect + "; rooms=" + insideRooms.Count
+                        + "; indoor cells=" + insideRooms.Sum(room =>
+                            room.Count) + "; source cells examined="
+                        + failedSourceCells + "; native placements="
+                        + failedNativePlacements + "; reserved overlaps="
+                        + failedReservedOverlaps + "; previously reserved="
+                        + reserved.Count);
+                    blocker = "no native settlement placement for "
                         + programKey + " contract";
                     return false;
                 }
+                reserved = trial;
             }
             foreach (string requirement in proposal
                 .ProgramSpatialRequirements)
@@ -548,7 +610,9 @@ namespace ColonistAwareness
                         && cell.GetFertility(map) >= 0.7f
                         && !reserved.Contains(cell)
                         && !cell.GetThingList(map).Any(thing => thing.def
-                            .category == ThingCategory.Building));
+                            .category == ThingCategory.Building)
+                        && CASettlementSitingConstraints.JoinsPawnNetwork(
+                            map, cell));
                     if (suitable < wanted)
                     {
                         blocker = "no native cultivation ground for " + key;
@@ -557,6 +621,246 @@ namespace ColonistAwareness
                 }
             }
             return true;
+        }
+
+        // Native faction-base morphology is intentionally varied and may
+        // produce tents, courtyards, or tiny enclosed rooms. A confirmed
+        // starting program cannot depend on that incidental room yield: the
+        // settlement must have enough real enclosed ground for its own saved
+        // housing, provision, and service assets. Preserve the generated
+        // morphology when it already works. Otherwise add the smallest
+        // deterministic program hall(s), then run the same exact native
+        // placement validator again. This is generation, not a validation
+        // waiver and not an abstract capacity grant.
+        internal static bool EnsureCreationSitingCapacity(Map map,
+            CARegionalSettlementRecord record,
+            CASettlementDevelopmentProposal proposal,
+            out string result)
+        {
+            result = null;
+            if (record == null || map == null
+                || record.localRect == CellRect.Empty || proposal == null)
+                return false;
+            if (CanSiteCreationDemands(map, record.localRect, proposal,
+                    out string blocker))
+            {
+                result = "native morphology already fits the starting program";
+                return true;
+            }
+            if (!NeedsProgramRoom(blocker))
+            {
+                result = blocker;
+                return false;
+            }
+
+            int built = 0;
+            int maxRooms = proposal.RequiresGroupProvisionRoom ? 3 : 2;
+            for (int attempt = 0; attempt < maxRooms; attempt++)
+            {
+                if (!TryBuildProgramRoom(map, record, attempt,
+                        out IntVec3 center, out string buildFailure))
+                {
+                    result = buildFailure ?? blocker;
+                    return false;
+                }
+                built++;
+                map.regionAndRoomUpdater.TryRebuildDirtyRegionsAndRooms();
+                if (CanSiteCreationDemands(map, record.localRect, proposal,
+                        out blocker))
+                {
+                    result = built + " deterministic program room"
+                        + (built == 1 ? "" : "s") + " added; last center "
+                        + center;
+                    record.materializationSummary += "; " + result;
+                    Log.Message("[CA][Regional][ProgramSiting] "
+                        + (record.name ?? record.regionalId) + ": "
+                        + result);
+                    return true;
+                }
+                if (!NeedsProgramRoom(blocker))
+                {
+                    result = blocker;
+                    return false;
+                }
+            }
+            result = blocker;
+            return false;
+        }
+
+        private static bool NeedsProgramRoom(string blocker)
+        {
+            return blocker?.StartsWith("no native settlement placement",
+                       StringComparison.Ordinal) == true
+                || blocker?.StartsWith("group-specific provision requires",
+                       StringComparison.Ordinal) == true;
+        }
+
+        private static bool TryBuildProgramRoom(Map map,
+            CARegionalSettlementRecord record, int ordinal,
+            out IntVec3 center, out string failure)
+        {
+            center = IntVec3.Invalid;
+            failure = null;
+            ThingDef wall = DefDatabase<ThingDef>.GetNamedSilentFail("Wall");
+            ThingDef door = DefDatabase<ThingDef>.GetNamedSilentFail("Door");
+            if (wall == null || door == null
+                || RoofDefOf.RoofConstructed == null)
+            {
+                failure = "the loaded game lacks a wall, door, or constructed roof for the starting program";
+                return false;
+            }
+            CATechnologicalKnowledge knowledge = record.faction != null
+                ? CATechnologicalKnowledgeRuntime.ForFaction(record.faction)
+                : record.localSociety?.technologicalKnowledge;
+            if (!CATechnologicalKnowledgeRuntime.CanConstructCanonical(
+                    knowledge, wall, out _)
+                || !CATechnologicalKnowledgeRuntime.CanConstructCanonical(
+                    knowledge, door, out _))
+            {
+                failure = "the settlement's authored technological knowledge cannot construct its required enclosed program ground";
+                return false;
+            }
+
+            const int radius = 4;
+            IntVec3 origin = record.layout?.core
+                ?? record.localRect.CenterCell;
+            ThingDef wallStuff = wall.MadeFromStuff
+                ? GenStuff.DefaultStuffFor(wall) : null;
+            ThingDef doorStuff = door.MadeFromStuff
+                ? GenStuff.DefaultStuffFor(door) : null;
+            // The door must open onto the settlement's pawn network: the
+            // exact walkable graph residents occupy and native settlement
+            // generation anchors to the map edge. A footprint whose four
+            // approaches are all sealed - walls of abutting structures,
+            // water, or an enclosed courtyard - is not a valid site, and a
+            // built room whose realized interior still fails to join the
+            // network rolls back completely and yields to the next site.
+            IntVec3[] doorSides =
+            {
+                new IntVec3(0, 0, -1), new IntVec3(1, 0, 0),
+                new IntVec3(-1, 0, 0), new IntVec3(0, 0, 1)
+            };
+            IEnumerable<IntVec3> candidates = record.localRect.Cells
+                .Where(cell => cell.InBounds(map))
+                .OrderBy(cell => cell.DistanceToSquared(origin))
+                .ThenBy(cell => cell.x).ThenBy(cell => cell.z);
+            var spawned = new List<Thing>();
+            var roofs = new List<IntVec3>();
+            void RollBack()
+            {
+                for (int i = spawned.Count - 1; i >= 0; i--)
+                    if (spawned[i] != null && !spawned[i].Destroyed)
+                        spawned[i].Destroy(DestroyMode.Vanish);
+                spawned.Clear();
+                foreach (IntVec3 cell in roofs)
+                    if (cell.InBounds(map)
+                        && map.roofGrid.RoofAt(cell)
+                            == RoofDefOf.RoofConstructed)
+                        map.roofGrid.SetRoof(cell, null);
+                roofs.Clear();
+            }
+            try
+            {
+                foreach (IntVec3 candidate in candidates)
+                {
+                    CellRect shell = CellRect.CenteredOn(candidate,
+                        radius * 2 + 1, radius * 2 + 1);
+                    if (shell.Cells.Any(cell =>
+                            !record.localRect.Contains(cell)
+                            || !ProgramRoomCellAvailable(map, cell)))
+                        continue;
+                    bool sideFound = false;
+                    IntVec3 doorSide = IntVec3.Invalid;
+                    foreach (IntVec3 side in doorSides)
+                    {
+                        IntVec3 approach = candidate
+                            + side * (radius + 1);
+                        if (approach.InBounds(map)
+                            && approach.Walkable(map)
+                            && CASettlementSitingConstraints
+                                .JoinsPawnNetwork(map, approach))
+                        {
+                            doorSide = side;
+                            sideFound = true;
+                            break;
+                        }
+                    }
+                    if (!sideFound) continue;
+
+                    for (int dz = -radius; dz <= radius; dz++)
+                        for (int dx = -radius; dx <= radius; dx++)
+                        {
+                            if (Math.Abs(dx) != radius
+                                && Math.Abs(dz) != radius) continue;
+                            bool entrance =
+                                dx == doorSide.x * radius
+                                && dz == doorSide.z * radius;
+                            ThingDef def = entrance ? door : wall;
+                            ThingDef stuff = entrance ? doorStuff
+                                : wallStuff;
+                            IntVec3 cell = candidate
+                                + new IntVec3(dx, 0, dz);
+                            ClearProgramRoomCover(map, cell);
+                            Thing thing = ThingMaker.MakeThing(def, stuff);
+                            if (record.faction != null && def.CanHaveFaction)
+                                thing.SetFaction(record.faction);
+                            GenSpawn.Spawn(thing, cell, map, Rot4.North);
+                            spawned.Add(thing);
+                        }
+                    for (int dz = -radius + 1; dz <= radius - 1; dz++)
+                        for (int dx = -radius + 1; dx <= radius - 1; dx++)
+                        {
+                            IntVec3 cell = candidate
+                                + new IntVec3(dx, 0, dz);
+                            map.roofGrid.SetRoof(cell,
+                                RoofDefOf.RoofConstructed);
+                            roofs.Add(cell);
+                        }
+                    map.regionAndRoomUpdater
+                        .TryRebuildDirtyRegionsAndRooms();
+                    if (!CASettlementSitingConstraints.JoinsPawnNetwork(
+                            map, candidate))
+                    {
+                        RollBack();
+                        continue;
+                    }
+                    center = candidate;
+                    return true;
+                }
+                failure = "the realized settlement ground has no clear 9x9 site that joins the settlement's reachable network for its required starting program";
+                return false;
+            }
+            catch (Exception exception)
+            {
+                RollBack();
+                center = IntVec3.Invalid;
+                failure = "the required starting-program room could not be materialized: "
+                    + exception.Message;
+                return false;
+            }
+        }
+
+        private static bool ProgramRoomCellAvailable(Map map, IntVec3 cell)
+        {
+            if (!cell.InBounds(map) || cell.Fogged(map)
+                || cell.Roofed(map) || !cell.Walkable(map)) return false;
+            TerrainDef terrain = cell.GetTerrain(map);
+            if (terrain == null || terrain.IsWater) return false;
+            foreach (Thing thing in cell.GetThingList(map))
+                if (thing is Pawn
+                    || thing.def.category == ThingCategory.Building
+                    || thing.def.category == ThingCategory.Item)
+                    return false;
+            return true;
+        }
+
+        private static void ClearProgramRoomCover(Map map, IntVec3 cell)
+        {
+            foreach (Thing thing in cell.GetThingList(map).ToList())
+                if (thing != null && !thing.Destroyed
+                    && (thing.def.category == ThingCategory.Plant
+                        || thing.def.category == ThingCategory.Filth))
+                    thing.Destroy(DestroyMode.Vanish);
         }
 
         // Later development consumes exact work that is available now. Saved
@@ -624,6 +928,29 @@ namespace ColonistAwareness
                 proposal.AssetCandidates.Add(((int)
                     CASettlementDemandKind.Cultivation)
                     + "|program:" + agriculture.signature);
+            }
+            // DEVELOPMENT IS A DERIVED DEMAND like every other: a housing
+            // institution plus measured pressure. Residents standing in the
+            // settlement beyond its sleeping places is the represented fact;
+            // no fact, no demand, and TryAuthorizeJob's exactDemand check
+            // correctly refuses any caller that merely asks.
+            CASettlementProgramEntry housing = OperationalProgram(record,
+                CASettlementProgramRegistry.Housing);
+            int sleepingSlots = 0;
+            if (housing != null && validGround)
+                foreach (Thing thing in map.listerThings.ThingsInGroup(
+                             ThingRequestGroup.Bed))
+                    if (thing is Building_Bed bed
+                        && bed.Faction == record.faction
+                        && record.localRect.Contains(bed.Position))
+                        sleepingSlots += bed.SleepingSlotsCount;
+            if (housing != null && residents.Count > sleepingSlots)
+            {
+                proposal.Demands.Add(CASettlementDemandKind.Development);
+                proposal.AssetCandidates.Add(((int)
+                    CASettlementDemandKind.Development)
+                    + "|housing-pressure:" + residents.Count + ">"
+                    + sleepingSlots);
             }
             if (transport != null)
             {
@@ -1155,6 +1482,20 @@ namespace ColonistAwareness
     // it; neither authority path can make an invalid footprint buildable.
     internal static class CASettlementSitingConstraints
     {
+        // The settlement's pawn network is the map-edge-connected walkable
+        // graph that RimWorld's own settlement generation guarantees for
+        // its inhabitants: SymbolResolver_Settlement spawns settlement
+        // pawns only on cells that CanReachMapEdge through doors. Program
+        // rooms, placed program assets, provision stock, and generated
+        // residents must join that same network, or a physically complete
+        // program can never operate for anyone.
+        internal static bool JoinsPawnNetwork(Map map, IntVec3 cell)
+        {
+            return map != null && cell.InBounds(map)
+                && map.reachability.CanReachMapEdge(cell,
+                    TraverseParms.For(TraverseMode.PassDoors));
+        }
+
         internal static bool HasMaterialFootprint(Map map, ThingDef def,
             IntVec3 center, Rot4 rotation)
         {
@@ -1164,6 +1505,75 @@ namespace ColonistAwareness
                 if (!cell.InBounds(map) || !cell.Standable(map))
                     return false;
             return true;
+        }
+
+        // Interior rooms of a settlement rect, resolved safely in BOTH
+        // lifecycle stages. During play the native room system is the
+        // authority. During map generation that system is disabled, so the
+        // same interiors are recovered by flood-filling roofed, standable,
+        // non-edifice cells into components -- the physical fact the room
+        // system will later formalize. Callers receive plain cell lists so
+        // neither stage leaks its representation.
+        internal static List<List<IntVec3>> ResolveInteriorRooms(Map map,
+            CellRect rect)
+        {
+            var rooms = new List<List<IntVec3>>();
+            if (map == null || rect == CellRect.Empty) return rooms;
+            // The branch is LIFECYCLE, not the updater flag. CA's regional
+            // setup keeps regionAndRoomUpdater enabled through generation for
+            // its own rebuild management, so testing Enabled selected the
+            // native path against half-built rooms and still returned rooms=1
+            // against 28 standing lots. Native rooms are authoritative only
+            // once the game is actually playing.
+            if (Current.ProgramState == ProgramState.Playing
+                && map.regionAndRoomUpdater.Enabled)
+            {
+                rooms = rect.Cells
+                    .Where(cell => cell.InBounds(map) && cell.Roofed(map))
+                    .Select(cell => cell.GetRoom(map))
+                    .Where(room => room != null
+                        && !room.PsychologicallyOutdoors && !room.IsDoorway
+                        && room.CellCount >= 6
+                        && JoinsPawnNetwork(map, room.Cells.First()))
+                    .Distinct()
+                    .Select(room => room.Cells.ToList()).ToList();
+                return rooms;
+            }
+            var seen = new HashSet<IntVec3>();
+            bool Interior(IntVec3 c) => c.InBounds(map)
+                && map.roofGrid.Roofed(c) && c.Standable(map)
+                && c.GetEdifice(map) == null;
+            foreach (IntVec3 start in rect)
+            {
+                if (seen.Contains(start) || !Interior(start)) continue;
+                var component = new List<IntVec3>();
+                var queue = new Queue<IntVec3>();
+                queue.Enqueue(start);
+                seen.Add(start);
+                while (queue.Count > 0 && component.Count < 4000)
+                {
+                    IntVec3 c = queue.Dequeue();
+                    component.Add(c);
+                    for (int i = 0; i < 4; i++)
+                    {
+                        IntVec3 n = c + GenAdj.CardinalDirections[i];
+                        if (!rect.Contains(n) || seen.Contains(n)
+                            || !Interior(n)) continue;
+                        seen.Add(n);
+                        queue.Enqueue(n);
+                    }
+                }
+                if (component.Count < 6) continue;
+                // The pawn-network join is a RUNTIME fact: during generation
+                // the residents have not spawned, so requiring it here
+                // rejected nearly every real interior (27-32 lots collapsed
+                // to rooms=1) and re-broke the very contracts this resolver
+                // exists to serve. Enclosure is the generation-time fact;
+                // the native-room path above still applies the network test
+                // during play.
+                rooms.Add(component);
+            }
+            return rooms;
         }
 
         internal static AcceptanceReport CanPlaceNativeBlueprint(Map map,

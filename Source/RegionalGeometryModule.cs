@@ -391,6 +391,17 @@ namespace ColonistAwareness
             MaterialPool.MatFrom(BaseContent.WhiteTex,
                 ShaderDatabase.WorldOverlayTransparent,
                 new Color(0.66f, 0.96f, 1f, 0.96f), 3591);
+        // The arrival area is ARRIVAL-OWNED visual state on the world map:
+        // a warm entry-point tint distinct from the cool membership fill.
+        // It lives on this layer - not on vanilla tile selection - so it
+        // faithfully follows TrySetArrival through a cheap mesh regenerate
+        // and never through any geographic regeneration.
+        private static readonly Material ArrivalFill = MaterialPool.MatFrom(
+            BaseContent.WhiteTex, ShaderDatabase.WorldOverlayTransparent,
+            new Color(0.93f, 0.86f, 0.62f, 0.30f), 3592);
+        private static readonly Material ArrivalBorder = MaterialPool.MatFrom(
+            BaseContent.WhiteTex, ShaderDatabase.WorldOverlayTransparent,
+            new Color(0.98f, 0.93f, 0.74f, 0.92f), 3593);
 
         private string lastKey;
 
@@ -431,8 +442,38 @@ namespace ColonistAwareness
                     ? SelectedFootprintBorder : FootprintBorder);
                 foreach (List<Vector2> loop in geometry.loops)
                     AddBorderRing(border, geometry, loop);
+
+                // The entry point, drawn on its actual area: warm fill and
+                // a rim around the arrival tile's own hex.
+                PlanetTile arrival = CARegionalPlanUtility.SurfaceTile(
+                    plan.startTileId);
+                if (arrival.Valid
+                    && plan.memberTileIds.Contains(plan.startTileId))
+                {
+                    AddTileFill(GetSubMesh(ArrivalFill), geometry, arrival);
+                    AddTileRim(GetSubMesh(ArrivalBorder), geometry,
+                        arrival);
+                }
             }
             if (drewAny) FinalizeMesh(MeshParts.All);
+        }
+
+        private static void AddTileRim(LayerSubMesh mesh,
+            CARegionalEnvelopeGeometry geometry, PlanetTile tile)
+        {
+            var vertices = new List<Vector3>();
+            Verse.Find.WorldGrid.GetTileVertices(tile, vertices);
+            if (vertices.Count < 3) return;
+            float width = Mathf.Max(0.00010f,
+                geometry.referenceTileSize * 0.010f);
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                Vector2 from = geometry.Project(vertices[i]);
+                Vector2 to = geometry.Project(
+                    vertices[(i + 1) % vertices.Count]);
+                AddEdgeStrip(mesh, geometry, from, to, width,
+                    BorderAltitude);
+            }
         }
 
         private static void AddTileFill(LayerSubMesh mesh,
@@ -556,6 +597,7 @@ namespace ColonistAwareness
                 + (Verse.Find.WorldSelector?.SelectedTile.tileId ?? -1) + ":"
                 + string.Join("|", VisiblePlans().Select(plan =>
                     (plan.regionalId ?? "unknown") + ":"
+                    + plan.startTileId + ":"
                     + string.Join(",", plan.memberTileIds
                         ?? new List<int>())));
         }

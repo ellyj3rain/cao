@@ -185,9 +185,15 @@ namespace ColonistAwareness
                 legacyAuthoringDataEpoch);
             if (readable)
             {
+                // The founding plan is created lazily; a save before
+                // anything touched it must still carry the object the
+                // preflight requires.
+                if (Scribe.mode == LoadSaveMode.Saving && founding == null)
+                    founding = new CAPlayerFoundingPlan();
                 Scribe_Deep.Look(ref founding, "CA_playerFounding");
                 Scribe_Values.Look(ref appliedAtTick,
-                    "CA_playerFoundingAppliedAtTick", -1);
+                    "CA_playerFoundingAppliedAtTick", -1,
+                    forceSave: true);
             }
             if (Scribe.mode == LoadSaveMode.PostLoadInit && readable)
             {

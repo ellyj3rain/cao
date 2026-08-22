@@ -69,10 +69,13 @@ namespace ColonistAwareness
         private void ConfigureWindow()
         {
             doCloseX = false;
+            doWindowBackground = false;
             closeOnClickedOutside = false;
             absorbInputAroundWindow = true;
             draggable = false;
         }
+
+        protected override float Margin => 0f;
 
         public override void PostOpen()
         {
@@ -119,18 +122,35 @@ namespace ColonistAwareness
 
         public override void DoWindowContents(Rect inRect)
         {
-            DrawPageTitle(inRect);
+            // The Starting Region page is a CAO surface: the same shell,
+            // typography and controls as the tendencies dialog and the
+            // landing column, hosting the same canonical region widget.
+            inRect = CAOpeningTheme.BeginWindowSurface(inRect);
+            try
+            {
+                DoPageContents(inRect);
+            }
+            finally
+            {
+                CAOpeningTheme.EndWindowSurface();
+            }
+        }
+
+        private void DoPageContents(Rect inRect)
+        {
+            CAOpeningTheme.Heading(0f, 0f, inRect.width,
+                "Starting Region");
             Text.Font = GameFont.Small;
-            Widgets.Label(new Rect(0f, 32f, inRect.width, 24f),
+            CAOpeningTheme.Fine(0f, 32f, inRect.width,
                 "Set the starting region: factions, settlements, and "
                     + "populations on their actual ground.");
 
             if (plan == null || !profileReady)
             {
-                Widgets.Label(new Rect(0f, 72f, inRect.width, 60f),
+                CAOpeningTheme.Body(0f, 72f, inRect.width,
                     "No starting region is available. Go back and choose "
-                    + "a region on the world map.");
-                DoBottomButtons(inRect, "Continue", showNext: false);
+                    + "a region on the world map.", true);
+                DrawThemeNav(inRect, false);
                 return;
             }
 
@@ -176,7 +196,23 @@ namespace ColonistAwareness
                         ? (Action)OpenSettlementPlacement : null);
                 DrawInspector(panel);
             }
-            DoBottomButtons(inRect, "Continue");
+            DrawThemeNav(inRect);
+        }
+
+        // Progression on the same surface as the work: Back and Continue
+        // drive the page's own CanDoBack/DoBack/CanDoNext/DoNext, so every
+        // validation this page performs still runs.
+        private void DrawThemeNav(Rect inRect, bool showNext = true)
+        {
+            CAOpeningTheme.Divider(0f, inRect.height - 44f, inRect.width);
+            if (CAOpeningTheme.GhostButton(new Rect(0f,
+                    inRect.height - 36f, 130f, 34f), "Back")
+                && CanDoBack())
+                DoBack();
+            if (showNext && CAOpeningTheme.PrimaryButton(new Rect(
+                    inRect.width - 170f, inRect.height - 36f, 170f, 34f),
+                    "Continue") && CanDoNext())
+                DoNext();
         }
 
         // Continue validates the final regional composition shown here.
@@ -234,7 +270,7 @@ namespace ColonistAwareness
         // Region navigation: region, factions, then owned settlements.
         private void DrawRegionList(Rect rail)
         {
-            Widgets.DrawMenuSection(rail);
+            CAOpeningTheme.SurfacePanel(rail, true);
             Rect outRect = rail.ContractedBy(6f);
             Rect actionArea = new Rect(outRect.x, outRect.yMax - 68f,
                 outRect.width, 68f);
@@ -269,12 +305,14 @@ namespace ColonistAwareness
                 float regionHeight = Mathf.Max(50f, 5f + regionTitleHeight
                     + 2f + regionSubtitleHeight + 4f);
                 Rect regionCard = new Rect(0f, y, view.width, regionHeight);
-                if (CARegionMapWidget.selectedKind
-                    == CARegionSelectionKind.Region)
-                    Widgets.DrawHighlightSelected(regionCard);
-                else if (Mouse.IsOver(regionCard))
-                    Widgets.DrawHighlight(regionCard);
-                Widgets.DrawBox(regionCard, 1);
+                bool regionSelected = CARegionMapWidget.selectedKind
+                    == CARegionSelectionKind.Region;
+                Widgets.DrawBoxSolid(regionCard, regionSelected
+                    ? CAOpeningTheme.RaisedHover
+                    : Mouse.IsOver(regionCard) ? CAOpeningTheme.Raised
+                        : CAOpeningTheme.Surface);
+                CAOpeningTheme.Border(regionCard, regionSelected
+                    ? CAOpeningTheme.TextLo : CAOpeningTheme.Hairline);
                 Text.Font = GameFont.Small;
                 Widgets.Label(new Rect(10f, y + 5f, view.width - 20f,
                     regionTitleHeight), regionName);
@@ -318,13 +356,15 @@ namespace ColonistAwareness
                     float groupHeight = Mathf.Max(42f,
                         7f + titleHeight + subtitleHeight + 4f);
                     Rect groupCard = new Rect(0f, y, view.width, groupHeight);
-                    if (CARegionMapWidget.selectedKind
+                    bool groupSelected = CARegionMapWidget.selectedKind
                             == CARegionSelectionKind.Faction
-                        && CARegionMapWidget.selectedFactionKey == group.key)
-                        Widgets.DrawHighlightSelected(groupCard);
-                    else if (Mouse.IsOver(groupCard))
-                        Widgets.DrawHighlight(groupCard);
-                    Widgets.DrawBox(groupCard, 1);
+                        && CARegionMapWidget.selectedFactionKey == group.key;
+                    Widgets.DrawBoxSolid(groupCard, groupSelected
+                        ? CAOpeningTheme.RaisedHover
+                        : Mouse.IsOver(groupCard) ? CAOpeningTheme.Raised
+                            : CAOpeningTheme.Surface);
+                    CAOpeningTheme.Border(groupCard, groupSelected
+                        ? CAOpeningTheme.TextLo : CAOpeningTheme.Hairline);
                     Widgets.DrawBoxSolid(new Rect(groupCard.x, groupCard.y,
                         4f, groupCard.height), color);
                     Text.Font = GameFont.Small;
@@ -351,23 +391,39 @@ namespace ColonistAwareness
                     {
                         string placeName = CARegionalPlanUtility
                             .SettlementName(plan, place);
-                        float placeHeight = Mathf.Max(30f,
-                            Text.CalcHeight(placeName,
-                                view.width - 32f) + 10f);
+                        string placeFacts = SettlementRowFacts(place);
+                        Text.Font = GameFont.Tiny;
+                        float nameHeight = Text.CalcHeight(placeName,
+                            view.width - 32f);
+                        float factsHeight = Text.CalcHeight(placeFacts,
+                            view.width - 32f);
+                        float placeHeight = Mathf.Max(34f,
+                            nameHeight + factsHeight + 12f);
                         Rect placeRow = new Rect(14f, y,
                             view.width - 14f, placeHeight);
-                        if (CARegionMapWidget.selectedKind
+                        bool placeSelected = CARegionMapWidget.selectedKind
                                 == CARegionSelectionKind.Settlement
-                            && CARegionMapWidget.selectedSlot == place.slot)
-                            Widgets.DrawHighlightSelected(placeRow);
-                        else if (Mouse.IsOver(placeRow))
-                            Widgets.DrawHighlight(placeRow);
+                            && CARegionMapWidget.selectedSlot == place.slot;
+                        Widgets.DrawBoxSolid(placeRow, placeSelected
+                            ? CAOpeningTheme.RaisedHover
+                            : Mouse.IsOver(placeRow)
+                                ? CAOpeningTheme.Raised
+                                : CAOpeningTheme.Surface);
+                        if (placeSelected)
+                            CAOpeningTheme.Border(placeRow,
+                                CAOpeningTheme.TextLo);
                         Widgets.DrawBoxSolid(new Rect(placeRow.x + 3f,
-                            placeRow.center.y - 3f, 6f, 6f), color);
-                        Text.Font = GameFont.Tiny;
+                            placeRow.y + 9f, 6f, 6f), color);
+                        GUI.color = CAOpeningTheme.TextHi;
                         Widgets.Label(new Rect(placeRow.x + 14f,
                             placeRow.y + 5f, placeRow.width - 18f,
-                            placeHeight - 10f), placeName);
+                            nameHeight), placeName);
+                        GUI.color = CAOpeningTheme.TextLo;
+                        Widgets.Label(new Rect(placeRow.x + 14f,
+                            placeRow.y + 7f + nameHeight,
+                            placeRow.width - 18f, factsHeight),
+                            placeFacts);
+                        GUI.color = Color.white;
                         if (Mouse.IsOver(placeRow))
                             CARegionMapWidget.hoveredSlot = place.slot;
                         if (Widgets.ButtonInvisible(placeRow))
@@ -384,16 +440,43 @@ namespace ColonistAwareness
                         item != null && !item.HasFactionOwner)
                     .OrderBy(item => item.slot).ToList())
                 {
-                    string orphanLabel = CARegionalPlanUtility
-                        .SettlementName(plan, place) + " - no faction";
+                    // A factionless settlement is complete authored state,
+                    // not an error - but the missing owner is stated where
+                    // the relationship would live, with the same facts and
+                    // interactions every owned row carries.
+                    string orphanName = CARegionalPlanUtility
+                        .SettlementName(plan, place);
+                    string orphanFacts = SettlementRowFacts(place)
+                        + " · no faction";
                     Text.Font = GameFont.Tiny;
-                    float orphanHeight = Mathf.Max(30f,
-                        Text.CalcHeight(orphanLabel, view.width - 20f) + 10f);
-                    Rect placeRow = new Rect(0f, y, view.width, orphanHeight);
-                    Widgets.DrawBox(placeRow, 1);
-                    Text.Font = GameFont.Tiny;
+                    float nameHeight = Text.CalcHeight(orphanName,
+                        view.width - 26f);
+                    float factsHeight = Text.CalcHeight(orphanFacts,
+                        view.width - 26f);
+                    float orphanHeight = Mathf.Max(34f,
+                        nameHeight + factsHeight + 12f);
+                    Rect placeRow = new Rect(0f, y, view.width,
+                        orphanHeight);
+                    bool orphanSelected = CARegionMapWidget.selectedKind
+                            == CARegionSelectionKind.Settlement
+                        && CARegionMapWidget.selectedSlot == place.slot;
+                    Widgets.DrawBoxSolid(placeRow, orphanSelected
+                        ? CAOpeningTheme.RaisedHover
+                        : Mouse.IsOver(placeRow) ? CAOpeningTheme.Raised
+                            : CAOpeningTheme.Surface);
+                    CAOpeningTheme.Border(placeRow, orphanSelected
+                        ? CAOpeningTheme.TextLo : CAOpeningTheme.Hairline);
+                    Widgets.DrawBoxSolid(new Rect(placeRow.x, placeRow.y,
+                        4f, placeRow.height), CAOpeningTheme.Warn);
+                    GUI.color = CAOpeningTheme.TextHi;
                     Widgets.Label(new Rect(10f, y + 5f,
-                        view.width - 20f, orphanHeight - 10f), orphanLabel);
+                        view.width - 26f, nameHeight), orphanName);
+                    GUI.color = CAOpeningTheme.TextLo;
+                    Widgets.Label(new Rect(10f, y + 7f + nameHeight,
+                        view.width - 26f, factsHeight), orphanFacts);
+                    GUI.color = Color.white;
+                    if (Mouse.IsOver(placeRow))
+                        CARegionMapWidget.hoveredSlot = place.slot;
                     if (Widgets.ButtonInvisible(placeRow))
                     {
                         CARegionMapWidget.SelectSettlement(place.slot);
@@ -409,13 +492,28 @@ namespace ColonistAwareness
                 Widgets.EndScrollView();
             }
             bool room = plan.settlements.Count < MaxAuthoredSettlements;
-            if (Widgets.ButtonText(new Rect(actionArea.x, actionArea.y,
-                    actionArea.width, 30f), "Add faction"))
+            if (CAOpeningTheme.GhostButton(new Rect(actionArea.x,
+                    actionArea.y, actionArea.width, 30f), "Add faction"))
                 NewFaction();
-            if (Widgets.ButtonText(new Rect(actionArea.x,
+            if (CAOpeningTheme.PrimaryButton(new Rect(actionArea.x,
                     actionArea.y + 36f, actionArea.width, 30f),
-                    "Place settlement...", true, true, room) && room)
+                    "Place settlement...", room) && room)
                 OpenSettlementPlacement();
+        }
+
+        // The rail states what is being authored, not only its name: the
+        // people, the ground they occupy, and the settlement's realized
+        // role in the region.
+        private static string SettlementRowFacts(
+            CARegionalSettlementPlan place)
+        {
+            return (place.residentPopulation >= 18
+                    ? place.residentPopulation + " people"
+                    : "population unset")
+                + " · "
+                + CARegionalPlanUtility.TileWords(place.memberTileId)
+                + " · " + ((CASettlementRole)place.realizedRole)
+                    .ToString().ToLower();
         }
 
         private float RegionListContentHeight(float width)
@@ -450,18 +548,22 @@ namespace ColonistAwareness
                 foreach (CARegionalSettlementPlan place in plan.settlements
                     .Where(item => item != null
                         && item.OwningFactionKey == group.key))
-                    total += Mathf.Max(30f, Text.CalcHeight(
-                        CARegionalPlanUtility.SettlementName(plan, place),
-                        width - 32f) + 10f) + 2f;
+                    total += Mathf.Max(34f, Text.CalcHeight(
+                            CARegionalPlanUtility.SettlementName(plan,
+                                place), width - 32f)
+                        + Text.CalcHeight(SettlementRowFacts(place),
+                            width - 32f) + 12f) + 2f;
                 total += 6f;
             }
             Text.Font = GameFont.Tiny;
             foreach (CARegionalSettlementPlan place in plan.settlements
                 .Where(item => item != null
                     && !item.HasFactionOwner))
-                total += Mathf.Max(30f, Text.CalcHeight(
-                    CARegionalPlanUtility.SettlementName(plan, place)
-                        + " - no faction", width - 20f) + 10f) + 4f;
+                total += Mathf.Max(34f, Text.CalcHeight(
+                        CARegionalPlanUtility.SettlementName(plan, place),
+                        width - 26f)
+                    + Text.CalcHeight(SettlementRowFacts(place)
+                        + " · no faction", width - 26f) + 12f) + 4f;
             Text.Font = GameFont.Small;
             return total + 12f;
         }
@@ -470,7 +572,7 @@ namespace ColonistAwareness
 
         private void DrawInspector(Rect panel)
         {
-            Widgets.DrawMenuSection(panel);
+            CAOpeningTheme.SurfacePanel(panel, true);
             Rect outRect = panel.ContractedBy(8f);
             int selection = InspectorSelectionIdentity();
             if (selection != lastInspectorSelection)
@@ -593,7 +695,7 @@ namespace ColonistAwareness
 
             bool choosing = CARegionMapWidget.awaitingArrivalArea;
             Rect choose = new Rect(0f, y, width, 30f);
-            if (Widgets.ButtonText(choose, choosing
+            if (CAOpeningTheme.GhostButton(choose, choosing
                     ? "Cancel arrival move" : "Choose another area on map"))
             {
                 CARegionMapWidget.awaitingArrivalArea = !choosing;
@@ -657,10 +759,10 @@ namespace ColonistAwareness
 
             float half = (width - Gap) * 0.5f;
             Rect fillRect = new Rect(0f, y, half, 30f);
-            if (Widgets.ButtonText(fillRect, "Replace composition..."))
+            if (CAOpeningTheme.GhostButton(fillRect, "Replace composition..."))
                 OpenFillMenu();
             Rect completeRect = new Rect(fillRect.xMax + Gap, y, half, 30f);
-            if (Widgets.ButtonText(completeRect, "Complete missing fields"))
+            if (CAOpeningTheme.GhostButton(completeRect, "Complete missing fields"))
                 GenerateUnspecified();
             TooltipHandler.TipRegion(fillRect, "Choose a complete regional "
                 + "composition template. Applying one replaces the current "
@@ -852,13 +954,13 @@ namespace ColonistAwareness
             place.customName = Widgets.TextField(
                 new Rect(LabelWidth, y + 1f, width - LabelWidth - 152f, 26f),
                 place.customName ?? "");
-            if (Widgets.ButtonText(new Rect(width - 148f, y, 72f, 28f),
+            if (CAOpeningTheme.GhostButton(new Rect(width - 148f, y, 72f, 28f),
                     "Reroll"))
             {
                 place.customName = RollSettlementName(place);
                 CARegionalSetupSession.SavePending();
             }
-            if (Widgets.ButtonText(new Rect(width - 72f, y, 72f, 28f),
+            if (CAOpeningTheme.GhostButton(new Rect(width - 72f, y, 72f, 28f),
                     "Clear"))
             {
                 place.customName = null;
@@ -871,7 +973,7 @@ namespace ColonistAwareness
                 "Ownership");
             Rect ownerRect = new Rect(LabelWidth, y,
                 width - LabelWidth - 84f, 28f);
-            if (Widgets.ButtonText(ownerRect, owner == null ? "No faction"
+            if (CAOpeningTheme.GhostButton(ownerRect, owner == null ? "No faction"
                     : CARegionalPlanUtility.FactionName(owner))
                 && owner != null)
                 CARegionMapWidget.SelectFaction(place.OwningFactionKey);
@@ -880,7 +982,7 @@ namespace ColonistAwareness
                     + "affiliation and faction support remain separate."
                 : "Owning faction. Open it to edit its identity, knowledge, "
                     + "relations, Political Order, and institutions.");
-            if (Widgets.ButtonText(new Rect(width - 80f, y, 80f, 28f),
+            if (CAOpeningTheme.GhostButton(new Rect(width - 80f, y, 80f, 28f),
                     "Change")) OpenOwnerMenu(place);
             y += Row + Gap;
 
@@ -897,7 +999,7 @@ namespace ColonistAwareness
                 "Faction support");
             Rect supportRect = new Rect(LabelWidth, y,
                 width - LabelWidth, 28f);
-            if (Widgets.ButtonText(supportRect, supportName))
+            if (CAOpeningTheme.GhostButton(supportRect, supportName))
                 OpenSupportMenu(place);
             TooltipHandler.TipRegion(supportRect,
                 "A supporting faction may supply people or material without "
@@ -909,7 +1011,7 @@ namespace ColonistAwareness
             Rect groundRect = new Rect(LabelWidth, y, width - LabelWidth,
                 28f);
             bool placing = CARegionMapWidget.awaitingSlot == place.slot;
-            if (Widgets.ButtonText(groundRect, placing
+            if (CAOpeningTheme.GhostButton(groundRect, placing
                     ? "Choose an area on the diagram..."
                     : CARegionalPlanUtility.TileWords(place.memberTileId)
                         + " - change area"))
@@ -934,7 +1036,7 @@ namespace ColonistAwareness
                     "Site layout");
                 Rect formRect = new Rect(LabelWidth, y,
                     width - LabelWidth, 28f);
-                if (Widgets.ButtonText(formRect, PhysicalSiteSummary(place)))
+                if (CAOpeningTheme.GhostButton(formRect, PhysicalSiteSummary(place)))
                     OpenPhysicalSiteMenu(place);
                 y += Row + Gap;
             }
@@ -950,7 +1052,7 @@ namespace ColonistAwareness
                     width - LabelWidth, 28f);
                 if (place.populationOrigin == CASettlementOrigin.Unset)
                     GUI.color = new Color(1f, 0.72f, 0.5f);
-                if (Widgets.ButtonText(originRect, OriginSummary(place)))
+                if (CAOpeningTheme.GhostButton(originRect, OriginSummary(place)))
                     OpenOriginMenu(place);
                 GUI.color = Color.white;
                 y += Row + Gap;
@@ -964,7 +1066,7 @@ namespace ColonistAwareness
                 Note(ref y, width, "No population set. Add a population or "
                     + "generate one from the faction and regional settings.");
                 Rect generatePopulation = new Rect(0f, y, width, 26f);
-                if (Widgets.ButtonText(generatePopulation,
+                if (CAOpeningTheme.GhostButton(generatePopulation,
                         "Generate population"))
                 {
                     CASettlementComposition.EnsureDerived(plan, place);
@@ -989,7 +1091,7 @@ namespace ColonistAwareness
                     width - LabelWidth, populationHeight);
                 if (populationGroup.authored)
                     GUI.color = new Color(1f, 0.92f, 0.70f);
-                if (Widgets.ButtonText(populationGroupRect, populationLabel))
+                if (CAOpeningTheme.GhostButton(populationGroupRect, populationLabel))
                     OpenPopulationGroupMenu(place, populationGroup);
                 GUI.color = Color.white;
                 TooltipHandler.TipRegion(populationGroupRect, PopulationGroupTooltip(place,
@@ -1006,7 +1108,7 @@ namespace ColonistAwareness
                 && (unrepresentedFaction || canAddUnaffiliated))
             {
                 Rect addPopulationGroup = new Rect(0f, y, width, 26f);
-                if (Widgets.ButtonText(addPopulationGroup, "Add minority population"))
+                if (CAOpeningTheme.GhostButton(addPopulationGroup, "Add minority population"))
                     OpenAddPopulationGroupMenu(place);
                 y += Row + 2f;
             }
@@ -1017,7 +1119,7 @@ namespace ColonistAwareness
             Readout(ref y, width, "Local Culture",
                 place.localCulture?.name ?? "Not recorded");
             Note(ref y, width, SettlementCultureSummary(place));
-            if (Widgets.ButtonText(new Rect(0f, y, width, 28f),
+            if (CAOpeningTheme.GhostButton(new Rect(0f, y, width, 28f),
                     "Compose local Culture..."))
                 OpenSettlementCultureEditor(place);
             y += Row + Gap;
@@ -1031,7 +1133,7 @@ namespace ColonistAwareness
                     plan, place);
                 Note(ref y, width, CAPoliticalBeliefsModel.Summary(
                     localOrder));
-                if (Widgets.ButtonText(new Rect(0f, y, width, 28f),
+                if (CAOpeningTheme.GhostButton(new Rect(0f, y, width, 28f),
                         "Compose local Political Order..."))
                     Verse.Find.WindowStack.Add(
                         Dialog_CAPoliticalOrderEditor.ForEstablished(
@@ -1048,7 +1150,7 @@ namespace ColonistAwareness
                     CASiteState.Knowledge(plan, place);
                 Note(ref y, width, CATechnologicalKnowledgeModel.Summary(
                     localKnowledge));
-                if (Widgets.ButtonText(new Rect(0f, y, width, 28f),
+                if (CAOpeningTheme.GhostButton(new Rect(0f, y, width, 28f),
                         "Set local technological knowledge..."))
                     Verse.Find.WindowStack.Add(
                         new Dialog_CATechnologicalKnowledgeEditor(
@@ -1073,7 +1175,7 @@ namespace ColonistAwareness
             DrawSettlementProgramInspector(ref y, width, place);
 
             Rule(ref y, width);
-            if (Widgets.ButtonText(new Rect(0f, y, width, 30f),
+            if (CAOpeningTheme.GhostButton(new Rect(0f, y, width, 30f),
                     "Remove settlement"))
             {
                 plan.settlements.Remove(place);
@@ -1103,13 +1205,12 @@ namespace ColonistAwareness
             Text.Font = GameFont.Small;
             float rowHeight = Mathf.Max(28f,
                 Text.CalcHeight(currentName, button - 8f) + 8f);
-            if (Widgets.ButtonText(new Rect(0f, y, button, rowHeight),
+            if (CAOpeningTheme.GhostButton(new Rect(0f, y, button, rowHeight),
                     "Region"))
                 compactPane = 0;
             bool previous = index > 0;
-            if (Widgets.ButtonText(new Rect(button + gap, y, button,
-                    rowHeight),
-                    "Previous", true, true, previous) && previous)
+            if (CAOpeningTheme.GhostButton(new Rect(button + gap, y, button,
+                    rowHeight), "Previous", null, previous) && previous)
                 CARegionMapWidget.SelectSettlement(ordered[index - 1].slot);
             GUI.color = CACreationUI.Accent;
             Widgets.DrawBox(new Rect((button + gap) * 2f, y, button,
@@ -1123,8 +1224,8 @@ namespace ColonistAwareness
             Text.Anchor = TextAnchor.UpperLeft;
             GUI.color = Color.white;
             bool nextSettlement = index >= 0 && index + 1 < ordered.Count;
-            if (Widgets.ButtonText(new Rect((button + gap) * 3f, y,
-                    button, rowHeight), "Next", true, true, nextSettlement)
+            if (CAOpeningTheme.GhostButton(new Rect((button + gap) * 3f, y,
+                    button, rowHeight), "Next", null, nextSettlement)
                 && nextSettlement)
                 CARegionMapWidget.SelectSettlement(ordered[index + 1].slot);
             y += rowHeight + 8f;
@@ -1142,7 +1243,7 @@ namespace ColonistAwareness
                 item != null && item.blocker.NullOrEmpty()) == true;
             if (!hasPresent && alternatives.Count == 0
                 && unavailable.Count == 0) return;
-            if (Widgets.ButtonText(new Rect(0f, y, width, 28f),
+            if (CAOpeningTheme.GhostButton(new Rect(0f, y, width, 28f),
                     "Inspect settlement composition..."))
                 Verse.Find.WindowStack.Add(new Dialog_CASettlementProgram(
                     plan, place));
@@ -1313,7 +1414,7 @@ namespace ColonistAwareness
                 Widgets.Label(new Rect(0f, y + 3f, LabelWidth, Row), "Origin");
                 Rect sourceRect = new Rect(LabelWidth, y,
                     width - LabelWidth, 28f);
-                if (Widgets.ButtonText(sourceRect, group.source
+                if (CAOpeningTheme.GhostButton(sourceRect, group.source
                         == CARegionalFactionSource.ExistingWorldFaction
                         ? "Existing world faction" : "New faction"))
                     OpenSourceMenu(group);
@@ -1336,7 +1437,7 @@ namespace ColonistAwareness
                 28f);
             if (factionChoices > 1)
             {
-                if (Widgets.ButtonText(factionRect, group.Summary))
+                if (CAOpeningTheme.GhostButton(factionRect, group.Summary))
                     OpenFactionMenu(group);
             }
             else Widgets.Label(factionRect, group.Summary);
@@ -1362,7 +1463,7 @@ namespace ColonistAwareness
                     group.customName = editedName;
                     SynchronizeGeneratedFactionCultureName(group, priorName);
                 }
-                if (Widgets.ButtonText(new Rect(width - 76f, y, 76f, 28f),
+                if (CAOpeningTheme.GhostButton(new Rect(width - 76f, y, 76f, 28f),
                         "Reroll"))
                 {
                     string previousName = group.customName;
@@ -1394,12 +1495,12 @@ namespace ColonistAwareness
                         society.PoliticalPreview()) + ". Knowledge: "
                     + society.TechnologySummary + ".");
             Rect societyEdit = new Rect(0f, y, (width - 6f) * 0.5f, 28f);
-            if (Widgets.ButtonText(societyEdit,
+            if (CAOpeningTheme.GhostButton(societyEdit,
                     "Choose society preset..."))
                 OpenSocietyPresets(group);
             Rect societySave = new Rect(societyEdit.xMax + 6f, y,
                 societyEdit.width, 28f);
-            if (Widgets.ButtonText(societySave, "Save society preset..."))
+            if (CAOpeningTheme.GhostButton(societySave, "Save society preset..."))
                 SaveSocietyProfile(group);
             y += Row + Gap;
 
@@ -1409,7 +1510,7 @@ namespace ColonistAwareness
                 group.culture?.name ?? "Culture not recorded");
             Note(ref y, width, CACultureModel.Summary(group.culture));
             Rect cultureEdit = new Rect(0f, y, width, 28f);
-            if (Widgets.ButtonText(cultureEdit, "Compose Culture..."))
+            if (CAOpeningTheme.GhostButton(cultureEdit, "Compose Culture..."))
                 Verse.Find.WindowStack.Add(new Dialog_CACultureEditor(
                     group.culture, group.Summary,
                     () => FactionCultureChanged(group),
@@ -1445,7 +1546,7 @@ namespace ColonistAwareness
                             ? " differs" : "s differ")
                         + " from the institutions in use."));
             Rect beliefsEdit = new Rect(0f, y, width, 28f);
-            if (Widgets.ButtonText(beliefsEdit,
+            if (CAOpeningTheme.GhostButton(beliefsEdit,
                     "Compose Political Order..."))
                 Verse.Find.WindowStack.Add(
                     Dialog_CAPoliticalOrderEditor.ForEstablished(
@@ -1459,7 +1560,7 @@ namespace ColonistAwareness
             Note(ref y, width, CATechnologicalKnowledgeModel.Summary(
                 group.technologicalKnowledge));
             Rect knowledgeEdit = new Rect(0f, y, width, 28f);
-            if (Widgets.ButtonText(knowledgeEdit,
+            if (CAOpeningTheme.GhostButton(knowledgeEdit,
                     "Set technological knowledge..."))
                 Verse.Find.WindowStack.Add(
                     new Dialog_CATechnologicalKnowledgeEditor(
@@ -1503,7 +1604,7 @@ namespace ColonistAwareness
             }
             if (group.settlementAuthorityExplicit)
                 GUI.color = new Color(1f, 0.92f, 0.70f);
-            if (Widgets.ButtonText(authorityRect, authorityWords))
+            if (CAOpeningTheme.GhostButton(authorityRect, authorityWords))
                 OpenSettlementAuthorityMenu(group);
             GUI.color = Color.white;
             TooltipHandler.TipRegion(authorityRect, "Faction-wide "
@@ -1518,7 +1619,7 @@ namespace ColonistAwareness
                 + PlayerRelationLabel(group);
             float playerHeight = ButtonRowHeight(playerWords, width);
             Rect playerRect = new Rect(0f, y, width, playerHeight);
-            if (Widgets.ButtonText(playerRect, playerWords))
+            if (CAOpeningTheme.GhostButton(playerRect, playerWords))
                 OpenPlayerRelationMenu(group);
             TooltipHandler.TipRegion(playerRect,
                 PlayerRelationTooltip(group));
@@ -1537,7 +1638,8 @@ namespace ColonistAwareness
                         .FederationKindName(federationKind).CapitalizeFirst());
             float federationHeight = ButtonRowHeight(federationWords, width);
             Rect federationRect = new Rect(0f, y, width, federationHeight);
-            if (federationChoices > 1 && Widgets.ButtonText(federationRect,
+            if (federationChoices > 1
+                && CAOpeningTheme.GhostButton(federationRect,
                     federationWords))
                 OpenFederationMenu(group);
             else if (federationChoices == 1)
@@ -1559,7 +1661,7 @@ namespace ColonistAwareness
                 Rect pairRect = new Rect(0f, y, width, pairHeight);
                 if (FactionsShareWorldFaction(group, other))
                     Widgets.Label(pairRect, label);
-                else if (Widgets.ButtonText(pairRect, label))
+                else if (CAOpeningTheme.GhostButton(pairRect, label))
                     OpenPairRelationMenu(group, other, pair);
                 TooltipHandler.TipRegion(pairRect,
                     PairRelationTooltip(group, other, pair));
@@ -1597,8 +1699,8 @@ namespace ColonistAwareness
             }
             bool room = plan.settlements.Count < MaxAuthoredSettlements;
             Rect foundRect = new Rect(0f, y, width, 28f);
-            if (Widgets.ButtonText(foundRect,
-                    "Add settlement", true, true, room)
+            if (CAOpeningTheme.GhostButton(foundRect,
+                    "Add settlement", null, room)
                 && room)
                 AddSettlementFor(group.key);
             TooltipHandler.TipRegion(foundRect, room
@@ -1610,8 +1712,8 @@ namespace ColonistAwareness
             Rule(ref y, width);
             bool empty = owned.Count == 0;
             Rect removeRect = new Rect(0f, y, width, 28f);
-            if (Widgets.ButtonText(removeRect, "Remove faction", true,
-                    true, empty) && empty)
+            if (CAOpeningTheme.GhostButton(removeRect, "Remove faction",
+                    null, empty) && empty)
             {
                 plan.factions.Remove(group);
                 plan.relations.RemoveAll(pair => pair != null
@@ -2255,6 +2357,23 @@ namespace ColonistAwareness
             Body(ref y, width, FeatureDescription(feature));
             // (FeatureDescription: the native description where one
             // exists; never generated filler about the type name.)
+            // The same one shape capability the landing surfaces open:
+            // this area's features, bent within what they can be.
+            PlanetTile featureTile = feature.Tile;
+            if ((featureTile.Valid ? featureTile.Tile?.Mutators : null)
+                ?.Any(CAFeatureShapeModel.Shapeable) == true)
+            {
+                y += 4f;
+                if (CAOpeningTheme.GhostButton(new Rect(0f, y, width,
+                        28f), "Shape features...",
+                        "Bend this area's features within what they can "
+                        + "naturally be. Preview and map both generate "
+                        + "from the authored shape."))
+                    Verse.Find.WindowStack.Add(
+                        new Dialog_CAFeatureShapeEditor(plan,
+                            featureTile.tileId));
+                y += 32f;
+            }
             List<CARegionalSettlementPlan> here = plan.settlements.Where(item =>
                 item != null
                 && item.memberTileId == feature.Tile.tileId).ToList();
@@ -2478,11 +2597,15 @@ namespace ColonistAwareness
                 CASocietyPreset matched = CASocietyPresetLibrary.Match(
                     local.culture, local.politicalBeliefs,
                     local.technologicalKnowledge);
+                int held = plan.settlements.Count(item => item != null
+                    && item.OwningFactionKey == local.key);
                 options.Add(new CACreationChoice
                 {
                     Key = "existing-faction:" + local.key,
                     Name = CARegionalPlanUtility.FactionName(local),
-                    Summary = "Add another settlement for this faction.",
+                    Summary = held + " settlement" + (held == 1 ? "" : "s")
+                        + " in this region · "
+                        + CAFactionAxes.Characterize(plan, local),
                     Traits = matched?.Label ?? "Custom society",
                     Details = "The faction's Culture, Ideoligion, Political "
                         + "Order, relations, and institutions stay unchanged. "
@@ -2975,6 +3098,18 @@ namespace ColonistAwareness
                     && !already.Contains(item.Tile.tileId)).ToList();
         }
 
+        private List<CARegionalCandidateFacts.Neighbor>
+            ReallocatableSettlementsForReplacement()
+        {
+            CARegionalCandidateFacts facts =
+                CARegionalProjectionPreview.FactsFor(plan);
+            return facts == null
+                ? new List<CARegionalCandidateFacts.Neighbor>()
+                : facts.Neighbors.Where(item => item.Object is Settlement
+                    && item.Faction != null && !item.Faction.IsPlayer)
+                    .ToList();
+        }
+
         private string OriginSummary(CARegionalSettlementPlan place)
         {
             switch (place.populationOrigin)
@@ -3073,7 +3208,10 @@ namespace ColonistAwareness
 
         private void OpenFillMenu()
         {
-            int sources = ReallocatableSettlements().Count;
+            // A region template replaces the current composition. Sources
+            // reserved by that composition become available to the replacement
+            // and must not make the chooser report zero capacity.
+            int sources = ReallocatableSettlementsForReplacement().Count;
             int existingFactions = CARegionalPlanUtility
                 .EligibleExistingFactions().Count;
             int newFactionTypes = CARegionalPlanUtility
@@ -4172,7 +4310,7 @@ namespace ColonistAwareness
 
         private static void Back(ref float y, float width, string label)
         {
-            if (Widgets.ButtonText(new Rect(0f, y, width, 26f),
+            if (CAOpeningTheme.GhostButton(new Rect(0f, y, width, 26f),
                     "‹ " + label))
                 CARegionMapWidget.SelectRegion();
             y += 32f;

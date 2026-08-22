@@ -21,6 +21,7 @@ namespace ColonistAwareness
         {
             get
             {
+                if (CAPassivePlayMatrix.SuppressTrace) return false;
                 var s = AwarenessMod.Settings;
                 return s != null && s.traceBehavior;
             }

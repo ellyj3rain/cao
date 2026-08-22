@@ -68,6 +68,11 @@ namespace ColonistAwareness
         // which CAOutpostVariant face this plan wears; -1 for every
         // form that is not an Outpost.
         public int outpostVariant = -1;
+        // street-derivation receipt: how many lots walked and how many
+        // street cells their walks laid -- distinct from the adapter's
+        // terrain counter, which only counts cells whose ground it changed
+        public int desireStreetCells;
+        public int desireWalkedLots;
         // WATCHPOST: the platform pad's rim cells (the barricade
         // line the in-game spawner raises, already gapped toward
         // the camp) and the watch point its light stands on.
@@ -102,9 +107,33 @@ namespace ColonistAwareness
             public bool Chance(float p) => (Next() % 10000) < p * 10000f;
         }
 
+        // densityScale carries the settlement's authored development standing.
+        // BodyArea scaled a settlement purely by FORM, so a hamlet and a
+        // regional capital of the same form covered the same ground and every
+        // authored development axis was invisible. 1f reproduces the previous
+        // extent exactly, so an unauthored caller is unchanged.
+        // The causes arrive SEPARATELY, because they are separate:
+        //   targetBodyCells   floor from the settlement's own program extents
+        //                     (what its functions physically need), ceiling
+        //                     from its land capacity. -1 keeps the legacy
+        //                     form-fraction sizing for callers with no
+        //                     represented requirements (the demo).
+        //   accretion         historical development: 0 reads planned and
+        //                     regular, 1 reads accumulated and irregular.
+        //   wallKindOverride  -1 keeps the form's own idiom; 0 forces open,
+        //                     1 partial, 2 full -- set by a represented
+        //                     defense cause, afforded by economy.
+        //   plazaCells        open market ground demanded by a trade
+        //                     program; 0 when no such program exists.
+        //   portSide          0..3 = map edge the water lies on when a
+        //                     trade/transport program has waterfront; one
+        //                     district core is biased toward that edge.
         public static CAMorphResult Generate(CAMorphForm form, int seed,
             int w, int h, bool[] passable = null, int districts = 1,
-            int outpostVariant = -1)
+            int outpostVariant = -1, float densityScale = 1f,
+            int targetBodyCells = -1, float accretion = 0.35f,
+            int wallKindOverride = -1, int plazaCells = 0,
+            int portSide = -1)
         {
             var m = new CAMorphResult { w = w, h = h, cells = new byte[w * h] };
             var rng = new Rng(seed);
@@ -126,9 +155,16 @@ namespace ColonistAwareness
             var blob = new bool[w * h];
             var cores = new List<(int x, int z)>();
             int span = Math.Min(w, h);
-            int per = districts > 1
-                ? (int)(span * span * 0.55f / districts)
-                : BodyArea(form, span, ref rng);
+            int per = targetBodyCells > 0
+                ? Math.Min(targetBodyCells / Math.Max(1, districts),
+                    span * span * 4 / (5 * Math.Max(1, districts)))
+                : districts > 1
+                ? Math.Min((int)(span * span * 0.55f * densityScale
+                        / districts),
+                    span * span * 4 / (5 * Math.Max(1, districts)))
+                : Math.Min((int)(BodyArea(form, span, ref rng)
+                        * densityScale),
+                    span * span * 4 / 5);
             for (int i = 0; i < Math.Max(1, districts); i++)
             {
                 double a = Math.PI * 2.0 * i / Math.Max(1, districts)
@@ -136,6 +172,18 @@ namespace ColonistAwareness
                 int r = districts > 1 ? span / 5 : 0;
                 int cx = w / 2 + (int)(Math.Cos(a) * r) + rng.Range(-2, 3);
                 int cz = h / 2 + (int)(Math.Sin(a) * r) + rng.Range(-2, 3);
+                // the port quarter stands where the water is: the LAST
+                // district core is pulled toward the watered edge, so the
+                // trade fabric grows against its own shoreline
+                if (portSide >= 0 && districts > 1
+                    && i == Math.Max(1, districts) - 1)
+                {
+                    int pull = span / 3;
+                    if (portSide == 0) cz = h / 2 + pull;
+                    else if (portSide == 1) cx = w / 2 + pull;
+                    else if (portSide == 2) cz = h / 2 - pull;
+                    else cx = w / 2 - pull;
+                }
                 cores.Add((cx, cz));
                 GrowBlob(blob, w, h, passable, cx, cz, per, ref rng);
             }
@@ -146,6 +194,29 @@ namespace ColonistAwareness
             // edge to edge, gated where it runs deepest - stubs and door
             // land now so no building packs into the gate.
             var streetCells = new List<int>();
+            // MARKET GROUND is a trade program's demand: an open square held
+            // clear beside the principal core before anything packs, ringed
+            // by the desire lines that cross it. No trade program, no plaza.
+            if (plazaCells > 0)
+            {
+                int side = Math.Max(3, (int)Math.Sqrt(plazaCells));
+                int px = cores[0].x + 2, pz = cores[0].z + 2;
+                for (int dz = 0; dz < side; dz++)
+                    for (int dx = 0; dx < side; dx++)
+                    {
+                        int cx2 = px + dx, cz2 = pz + dz;
+                        if (cx2 < 0 || cz2 < 0 || cx2 >= w || cz2 >= h)
+                            continue;
+                        int idx2 = cx2 + cz2 * w;
+                        if (!blob[idx2]) continue;
+                        if (m.cells[idx2] == (byte)CAMorphCell.Empty)
+                        {
+                            m.cells[idx2] = (byte)CAMorphCell.Street;
+                            streetCells.Add(idx2);
+                        }
+                    }
+            }
+
             if (variant == (int)CAOutpostVariant.Checkpoint)
                 CarveCheckpointRoad(m, blob, cores[0], ref rng,
                     streetCells);
@@ -167,8 +238,13 @@ namespace ColonistAwareness
             for (int i = 1; i < cores.Count; i++)
                 CarveBetween(m, blob, cores[i - 1], cores[i], form,
                     ref rng, streetCells);
-            if (form == CAMorphForm.Industrial)
-                CarveCrossStreets(m, blob, w, h, ref rng, streetCells);
+            // Industrial draws no network here: its streets are DERIVED
+            // from the finished buildings' doors after the pack (3b below).
+            // The core-to-core carve above stays -- cores are real
+            // destinations -- but gates at bearings and branches to
+            // "underserved fabric" were still geometry before use, which is
+            // why the network read as incomplete: doors it never connected,
+            // space it never crossed for anyone.
 
             // 3. BUILDINGS packed into the body, densest by the streets,
             // interiors subdivided into rooms. A body too small to hold
@@ -189,14 +265,32 @@ namespace ColonistAwareness
                 PlaceTentFootprints(m, blob, ref rng, streetCells);
             else
                 PackBuildings(m, blob, form, ref rng, streetCells,
-                    OutpostLotCap(variant, ref rng));
+                    OutpostLotCap(variant, ref rng), accretion);
+
+            // 3b. STREETS FOLLOW USE. Every finished lot's door walks to its
+            // nearest core; the walks overlap and the overlaps are the
+            // trunks; the strongest trunk continues past the buildings to
+            // the body's rim as the settlement's exit. The network is
+            // complete by construction -- a street exists exactly where
+            // doors use it, and every door is connected.
+            if (form == CAMorphForm.Industrial)
+                DeriveDesireStreets(m, blob, cores, streetCells);
 
             // 4. THE WALL wraps the body itself - a single circuit on
             // the union's own rim; gates where streets leave. Of the
             // outpost faces only the FORT walls its rim: a watchpost
             // keeps open ground, a checkpoint holds only its stubs,
             // a tent camp at most a scrap of fence.
-            if (form == CAMorphForm.Medieval)
+            if (wallKindOverride == 0)
+            {
+                // a represented cause says OPEN: no circuit, whatever the
+                // form's habit
+            }
+            else if (wallKindOverride == 1)
+                RimWall(m, blob, full: false, ref rng);
+            else if (wallKindOverride == 2)
+                RimWall(m, blob, full: true, ref rng);
+            else if (form == CAMorphForm.Medieval)
                 RimWall(m, blob, full: true, ref rng);
             else if (form == CAMorphForm.Outpost)
             {
@@ -460,30 +554,172 @@ namespace ColonistAwareness
             }
         }
 
-        private static void CarveCrossStreets(CAMorphResult m, bool[] blob,
-            int w, int h, ref Rng rng, List<int> street)
+        // STREETS FOLLOW USE: desire lines from every door.
+        //
+        // Buildings pack first, from the cores. Each finished lot's door then
+        // walks greedily toward its nearest core through open ground,
+        // deflecting around anything standing, and every cell a walk crosses
+        // accumulates traffic. Cells with traffic become streets; cells where
+        // several walks agree widen into trunks; and the heaviest trunk is
+        // continued outward to the rim so the town has the exit its own
+        // circulation earned. Nothing is drawn that no door uses.
+        private static void DeriveDesireStreets(CAMorphResult m, bool[] blob,
+            List<(int x, int z)> cores, List<int> street)
         {
-            int lines = 2 + rng.Range(0, 2);
-            for (int i = 0; i < lines; i++)
+            int w = m.w, h = m.h;
+            if (m.lots.Count == 0 || cores.Count == 0) return;
+            var traffic = new int[w * h];
+            foreach (int s0 in street)
+                if (s0 >= 0 && s0 < traffic.Length) traffic[s0]++;
+
+            bool Open(int idx)
             {
-                bool horiz = i == 0;
-                int at = (horiz ? h : w) / 3
-                    + rng.Range(0, (horiz ? h : w) / 3);
-                for (int t = 0; t < (horiz ? w : h); t++)
+                byte c = m.cells[idx];
+                return c == (byte)CAMorphCell.Empty
+                    || c == (byte)CAMorphCell.Street;
+            }
+
+            foreach (CAMorphLot lot in m.lots)
+            {
+                if (lot == null) continue;
+                int doorIdx = lot.doorIndex >= 0 ? lot.doorIndex
+                    : (lot.cells != null && lot.cells.Count > 0
+                        ? lot.cells[0] : -1);
+                if (doorIdx < 0) continue;
+                int dx0 = doorIdx % w, dz0 = doorIdx / w;
+                // step out of the door onto open ground
+                int x = -1, z = -1;
+                foreach (var (nx, nz) in Neigh(dx0, dz0))
                 {
-                    int x = horiz ? t : at, z = horiz ? at : t;
-                    int idx = x + z * w;
-                    if (!blob[idx]) continue;
-                    if (m.cells[idx] == (byte)CAMorphCell.Empty)
-                    { m.cells[idx] = (byte)CAMorphCell.Street; street.Add(idx); }
+                    if (nx < 0 || nz < 0 || nx >= w || nz >= h) continue;
+                    int n = nx + nz * w;
+                    // a door on the body's rim opens onto ground outside the
+                    // blob; the walk may STEP there -- only street MARKING is
+                    // confined to the body
+                    if (!Open(n)) continue;
+                    x = nx; z = nz; break;
                 }
+                if (x < 0) continue;
+                var goal = cores[0];
+                int best = int.MaxValue;
+                for (int i = 0; i < cores.Count; i++)
+                {
+                    int cx = cores[i].x - x, cz = cores[i].z - z;
+                    int d = cx * cx + cz * cz;
+                    if (d < best) { best = d; goal = cores[i]; }
+                }
+                int guard = w * 4;
+                int lastDx = 0, lastDz = 0;
+                while ((x != goal.x || z != goal.z) && guard-- > 0)
+                {
+                    int idx = x + z * w;
+                    if (blob[idx]) traffic[idx]++;
+                    int sx = Math.Sign(goal.x - x);
+                    int sz = Math.Sign(goal.z - z);
+                    // primary axis first, deflect around obstruction
+                    var steps = Math.Abs(goal.x - x) >= Math.Abs(goal.z - z)
+                        ? new[] { (sx, 0), (0, sz), (0, -sz), (-sx, 0) }
+                        : new[] { (0, sz), (sx, 0), (-sx, 0), (0, -sz) };
+                    // Prefer steps INSIDE the body -- the walk is the
+                    // town's own circulation. Freeing movement entirely let
+                    // walks leave the body and skirt to the core through
+                    // unobstructed outside ground, marking nothing (run 7:
+                    // 0 cells from 14 lots). Outside steps remain only as
+                    // the doorway escape when no inside step exists.
+                    bool moved = false;
+                    for (int pass = 0; pass < 2 && !moved; pass++)
+                        foreach (var (mx, mz) in steps)
+                        {
+                            if (mx == 0 && mz == 0) continue;
+                            if (mx == -lastDx && mz == -lastDz) continue;
+                            int nx = x + mx, nz = z + mz;
+                            if (nx < 0 || nz < 0 || nx >= w || nz >= h)
+                                continue;
+                            int n = nx + nz * w;
+                            if (!Open(n)) continue;
+                            if (pass == 0 && !blob[n]) continue;
+                            x = nx; z = nz; lastDx = mx; lastDz = mz;
+                            moved = true;
+                            break;
+                        }
+                    if (!moved) break;
+                }
+            }
+
+            // walked ground becomes street; agreement becomes trunk
+            int laid = 0;
+            for (int i = 0; i < traffic.Length; i++)
+            {
+                if (traffic[i] <= 0 || !blob[i]) continue;
+                if (m.cells[i] == (byte)CAMorphCell.Empty)
+                {
+                    m.cells[i] = (byte)CAMorphCell.Street;
+                    street.Add(i);
+                    laid++;
+                }
+            }
+            m.desireStreetCells = laid;
+            m.desireWalkedLots = m.lots.Count;
+            for (int i = 0; i < traffic.Length; i++)
+            {
+                if (traffic[i] < 3) continue;
+                int cx = i % w, cz = i / w;
+                foreach (var (nx, nz) in Neigh(cx, cz))
+                {
+                    if (nx < 0 || nz < 0 || nx >= w || nz >= h) continue;
+                    int n = nx + nz * w;
+                    if (!blob[n]
+                        || m.cells[n] != (byte)CAMorphCell.Empty) continue;
+                    m.cells[n] = (byte)CAMorphCell.Street;
+                    street.Add(n);
+                    break;
+                }
+            }
+
+            // the exit the circulation earned: continue the heaviest street
+            // adjacent to the busiest core outward to the rim
+            int busiest = -1, load = 0;
+            var hub = cores[0];
+            foreach (var core in cores)
+            {
+                int total = 0;
+                for (int dz = -2; dz <= 2; dz++)
+                    for (int dx = -2; dx <= 2; dx++)
+                    {
+                        int nx = core.x + dx, nz = core.z + dz;
+                        if (nx < 0 || nz < 0 || nx >= w || nz >= h) continue;
+                        total += traffic[nx + nz * w];
+                    }
+                if (total > load) { load = total; hub = core; busiest = total; }
+            }
+            if (busiest <= 0) return;
+            // dominant outward direction = away from the body's centroid
+            long sxAcc = 0, szAcc = 0; int nBody = 0;
+            for (int i = 0; i < blob.Length; i++)
+                if (blob[i]) { sxAcc += i % w; szAcc += i / w; nBody++; }
+            if (nBody == 0) return;
+            int ox = Math.Sign(hub.x - (int)(sxAcc / nBody));
+            int oz = Math.Sign(hub.z - (int)(szAcc / nBody));
+            if (ox == 0 && oz == 0) ox = 1;
+            int ex = hub.x, ez = hub.z;
+            int guard2 = w * 2;
+            while (guard2-- > 0)
+            {
+                int nx = ex + ox, nz = ez + oz;
+                if (nx < 0 || nz < 0 || nx >= w || nz >= h) break;
+                int n = nx + nz * w;
+                if (!blob[n]) break;
+                if (m.cells[n] == (byte)CAMorphCell.Empty)
+                { m.cells[n] = (byte)CAMorphCell.Street; street.Add(n); }
+                else if (m.cells[n] != (byte)CAMorphCell.Street) break;
+                ex = nx; ez = nz;
             }
         }
 
         // Distance-to-street field (bounded BFS) - shared by the
         // building pack and the tent camp's footprint placement.
         private static int[] StreetDistance(CAMorphResult m,
-            bool[] blob, List<int> street)
+            bool[] blob, List<int> street, int horizon = 14)
         {
             int w = m.w, h = m.h;
             var dist = new int[w * h];
@@ -500,7 +736,7 @@ namespace ColonistAwareness
                     int n = nx + nz * w;
                     if (!blob[n] || dist[n] <= dist[c] + 1) continue;
                     dist[n] = dist[c] + 1;
-                    if (dist[n] < 14) q.Enqueue(n);
+                    if (dist[n] < horizon) q.Enqueue(n);
                 }
             }
             return dist;
@@ -510,14 +746,21 @@ namespace ColonistAwareness
         // buildings with alleys of one cell, subdivide the big ones.
         private static void PackBuildings(CAMorphResult m, bool[] blob,
             CAMorphForm form, ref Rng rng, List<int> street,
-            int outpostCap = 3)
+            int outpostCap = 3, float accretion = 0.35f)
         {
             int w = m.w, h = m.h;
-            int[] dist = StreetDistance(m, blob, street);
+            // Industrial packs from its cores and derives streets from the
+            // finished doors afterwards, so its distance field must reach the
+            // whole body: the 14-cell horizon that suits a pre-carved network
+            // collapsed a core-seeded town to whatever stood within fourteen
+            // cells of one point.
+            int horizon = form == CAMorphForm.Industrial
+                ? Math.Max(w, h) : 14;
+            int[] dist = StreetDistance(m, blob, street, horizon);
             var order = new List<int>();
             for (int i = 0; i < blob.Length; i++)
                 if (blob[i] && m.cells[i] == (byte)CAMorphCell.Empty
-                    && dist[i] > 0 && dist[i] < 13) order.Add(i);
+                    && dist[i] > 0 && dist[i] < horizon - 1) order.Add(i);
             // near streets first, stable shuffle within bands
             order.Sort((a, b) => dist[a] != dist[b] ? dist[a] - dist[b]
                 : ((a * 2654435761u) % 97).CompareTo(
@@ -528,6 +771,11 @@ namespace ColonistAwareness
             {
                 if (budgetGuard-- <= 0) break;
                 if (m.cells[anchor] != (byte)CAMorphCell.Empty) continue;
+                // ACCUMULATED settlements are irregular: history leaves odd
+                // gaps and mismatched frontages that a planned town lacks.
+                if (accretion > 0.05f
+                    && rng.Chance(Math.Min(0.35f, accretion * 0.3f)))
+                    continue;
                 int bw, bh;
                 switch (form)
                 {

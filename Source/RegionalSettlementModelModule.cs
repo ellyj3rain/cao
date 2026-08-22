@@ -237,6 +237,17 @@ namespace ColonistAwareness
         internal static void RealizeForConfirmation(CARegionalPlan plan)
         {
             if (plan == null) return;
+            // Confirmation freezes the complete authored causes before any
+            // settlement result is derived from them. Runtime resolution may
+            // project this state onto RimWorld factions, but it must never
+            // complete or rewrite the canonical plan after this hash is saved.
+            foreach (CARegionalFactionPlan faction in (plan.factions
+                ?? new List<CARegionalFactionPlan>())
+                .Where(item => item != null))
+            {
+                faction.EnsureCultureAndPolitics(plan);
+                CAFactionAxes.Derive(plan, faction);
+            }
             DeriveSettlementPattern(plan);
         }
 
@@ -313,13 +324,11 @@ namespace ColonistAwareness
                         + " has an incomplete or out-of-range realized fact";
                     return false;
                 }
-                int expectedLand = LandCapacity(settlement.memberTileId);
-                int expectedHistory = HistoricalDevelopment(settlement);
-                int expectedPopulation = CAWorldTendencyCausalKernel
-                    .PopulationFromFacts(expectedLand, expectedHistory,
-                        TechTier(plan, settlement),
-                        settlement.populationOrigin
-                            == CASettlementOrigin.ScenarioOverride);
+                int expectedLand = RealizedLandCapacity(settlement);
+                int expectedHistory =
+                    RealizedHistoricalDevelopment(settlement);
+                int expectedPopulation = RealizedPopulation(plan,
+                    settlement, expectedLand, expectedHistory);
                 int expectedAccess = CASettlementStartingState
                     .ExpectedAccess(settlement);
                 int expectedServices = CASettlementStartingState
@@ -612,10 +621,9 @@ namespace ColonistAwareness
                 settlement.tradeConnectivity = -1;
                 settlement.specialization = -1;
                 settlement.urbanSupport = -1;
-                settlement.landCapacity = LandCapacity(
-                    settlement.memberTileId);
-                settlement.historicalDevelopment = HistoricalDevelopment(
-                    settlement);
+                settlement.landCapacity = RealizedLandCapacity(settlement);
+                settlement.historicalDevelopment =
+                    RealizedHistoricalDevelopment(settlement);
                 settlement.hasRoadAccess =
                     CARegionalPlanUtility.ConstituentHasRoad(
                         settlement.memberTileId);
@@ -626,17 +634,21 @@ namespace ColonistAwareness
                     CARegionalPlanUtility.ConstituentIsCoastal(
                         settlement.memberTileId);
                 CACultureHistory.EnsureSettlementCulture(plan, settlement);
-                int tier = TechTier(plan, settlement);
-                settlement.residentPopulation =
-                    CAWorldTendencyCausalKernel.PopulationFromFacts(
-                        settlement.landCapacity,
-                        settlement.historicalDevelopment, tier,
-                        settlement.populationOrigin
-                            == CASettlementOrigin.ScenarioOverride);
+                settlement.residentPopulation = RealizedPopulation(plan,
+                    settlement, settlement.landCapacity,
+                    settlement.historicalDevelopment);
                 // Established functions must exist before scale, services, or
-                // viability summarize them. Environment declares need but
-                // never authors these operating contracts.
+                // viability summarize them. An operator-authored placement
+                // with no prior program history composes its minimum explicit
+                // starting contracts here; environment constrains that
+                // authoring act but never becomes the owner of a program.
                 CASettlementComposition.EnsureDerived(plan, settlement);
+                if (!CASettlementProgramAuthoring.EnsureStartingComposition(
+                        plan, settlement, out string startingFailure)
+                    && !startingFailure.NullOrEmpty())
+                    Log.Warning("[CA][Regional] settlement "
+                        + settlement.slot + " could not compose starting "
+                        + "programs: " + startingFailure + ".");
                 CASettlementProgramRegistry.EnsureDerived(plan, settlement,
                     force: true);
                 CAHabitatViability.ApplySettlement(plan, settlement);
@@ -897,7 +909,10 @@ namespace ColonistAwareness
                     settlement.reallocatedFromTileId,
                     settlement.operationalRoleMask);
                 hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                    settlement.authoredForm, 0, 0);
+                    settlement.authoredForm, settlement.authoredPopulation,
+                    settlement.authoredLandCapacity);
+                hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
+                    settlement.authoredHistoricalDevelopment, 0, 0);
                 hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
                     settlement.hasRoadAccess ? 1 : 0,
                     settlement.hasRiverAccess ? 1 : 0,
@@ -1030,6 +1045,44 @@ namespace ColonistAwareness
         {
             return CATechnologicalKnowledgeModel.CompatibilityTier(
                 CASiteState.Knowledge(plan, settlement));
+        }
+
+        // Authored causes win over fact-derivation, exactly as authoredForm
+        // does for form: an explicitly composed population, ground grade, or
+        // established history is itself the saved cause the realization
+        // consumes. Derivation supplies every value the author left unset,
+        // and validation recomputes through the same rule so the realized
+        // read model stays a pure function of saved causes either way.
+        private static int RealizedLandCapacity(
+            CARegionalSettlementPlan settlement)
+        {
+            return settlement.authoredLandCapacity >= 1
+                ? Math.Min(3, settlement.authoredLandCapacity)
+                : LandCapacity(settlement.memberTileId);
+        }
+
+        private static int RealizedHistoricalDevelopment(
+            CARegionalSettlementPlan settlement)
+        {
+            return settlement.authoredHistoricalDevelopment >= 0
+                ? Math.Min(3, settlement.authoredHistoricalDevelopment)
+                : HistoricalDevelopment(settlement);
+        }
+
+        // 18 is the model's own settlement floor (PopulationFromFacts never
+        // returns less); a smaller authored figure is not a settlement and
+        // falls through to derivation rather than realizing an invalid row.
+        private static int RealizedPopulation(CARegionalPlan plan,
+            CARegionalSettlementPlan settlement, int landCapacity,
+            int historicalDevelopment)
+        {
+            return settlement.authoredPopulation >= 18
+                ? settlement.authoredPopulation
+                : CAWorldTendencyCausalKernel.PopulationFromFacts(
+                    landCapacity, historicalDevelopment,
+                    TechTier(plan, settlement),
+                    settlement.populationOrigin
+                        == CASettlementOrigin.ScenarioOverride);
         }
 
         private static int TradeConnectivity(CARegionalPlan plan,
@@ -1410,6 +1463,49 @@ namespace ColonistAwareness
             "settlement-authority:";
         private const string AuthorityRosterOriginPrefix =
             "settlement-roster:";
+
+        internal static string SettlementRecordId(CARegionalPlan plan,
+            int slot)
+        {
+            return plan?.regionalId.NullOrEmpty() == false && slot >= 0
+                ? "CA-RS-" + plan.regionalId + "-" + slot
+                : null;
+        }
+
+        internal static string OrganizationKey(string settlementRecordId,
+            int slot)
+        {
+            return settlementRecordId.NullOrEmpty() || slot < 0
+                ? null : settlementRecordId + "#" + slot;
+        }
+
+        internal static string OrganizationKey(CARegionalPlan plan, int slot)
+        {
+            return OrganizationKey(SettlementRecordId(plan, slot), slot);
+        }
+
+        // Settlement materialization and later faction-authority writing use
+        // one canonical local organization identity. Creating it before
+        // program materialization is required because programs resolve an
+        // existing operator; they never create one as a side effect.
+        internal static CAOrganization EnsureSettlementOrganization(
+            CARegionalSettlementRecord record)
+        {
+            CAOrganizationWorldComponent orgs =
+                CAOrganizationWorldComponent.Current;
+            if (orgs == null || record == null) return null;
+            string settlementKey = OrganizationKey(record.regionalId,
+                record.slot);
+            if (settlementKey.NullOrEmpty()) return null;
+            return orgs.EnsureFor(settlementKey,
+                record.name ?? settlementKey,
+                record.faction == null
+                    ? "local organization of an independent settlement"
+                    : "local organization of "
+                        + (record.name ?? settlementKey),
+                CAOrganizationKind.Settlement);
+        }
+
         internal static void Materialize(CARegionalPlan plan,
             IEnumerable<CARegionalSettlementRecord> records)
         {
@@ -1425,17 +1521,7 @@ namespace ColonistAwareness
                 // organization. Faction ownership only adds a distinct
                 // faction-to-site authority relation.
                 foreach (CARegionalSettlementRecord record in all)
-                {
-                    string settlementKey = record.regionalId + "#"
-                        + record.slot;
-                    orgs.EnsureFor(settlementKey,
-                        record.name ?? settlementKey,
-                        record.faction == null
-                            ? "local organization of an independent settlement"
-                            : "local organization of "
-                                + (record.name ?? settlementKey),
-                        CAOrganizationKind.Settlement);
-                }
+                    EnsureSettlementOrganization(record);
                 List<CARegionalSettlementRecord> held = all
                     .Where(r => r.faction != null).ToList();
                 foreach (CARegionalFactionPlan group in

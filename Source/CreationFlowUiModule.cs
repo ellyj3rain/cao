@@ -35,8 +35,10 @@ namespace ColonistAwareness
 
     internal static class CACreationUI
     {
-        internal static readonly Color Accent =
-            new Color(0.36f, 0.76f, 0.88f);
+        // The kit's focus color is the one CAO action color; provenance
+        // colors below stay semantic (authored, generated, preset,
+        // inherited) and mean the same thing on every authoring surface.
+        internal static readonly Color Accent = CAOpeningTheme.AccentHover;
         internal static readonly Color Preset =
             new Color(0.72f, 0.62f, 0.36f);
         internal static readonly Color Authored =
@@ -107,19 +109,8 @@ namespace ColonistAwareness
                     width + (i == labels.Length - 1 ? 0f : 1f),
                     rect.height);
                 bool active = i == selected;
-                if (active)
-                    Widgets.DrawBoxSolid(part,
-                        new Color(0.18f, 0.42f, 0.50f, 0.72f));
-                else if (Mouse.IsOver(part))
-                    Widgets.DrawHighlight(part);
-                GUI.color = active ? Color.white
-                    : new Color(0.78f, 0.81f, 0.85f);
-                Text.Anchor = TextAnchor.MiddleCenter;
-                Widgets.Label(part, labels[i]);
-                Text.Anchor = TextAnchor.UpperLeft;
-                GUI.color = Color.white;
-                Widgets.DrawBox(part, 1);
-                if (Widgets.ButtonInvisible(part) && !active)
+                if (CAOpeningTheme.Chip(part, labels[i], active)
+                    && !active)
                 {
                     choose?.Invoke(i);
                     changed = true;
@@ -146,18 +137,8 @@ namespace ColonistAwareness
                     rect.y + row * (rect.height + gap), cellWidth,
                     rect.height);
                 bool active = i == selected;
-                if (active)
-                    Widgets.DrawBoxSolid(part,
-                        new Color(0.18f, 0.42f, 0.50f, 0.72f));
-                else if (Mouse.IsOver(part)) Widgets.DrawHighlight(part);
-                GUI.color = active ? Color.white
-                    : new Color(0.78f, 0.81f, 0.85f);
-                Text.Anchor = TextAnchor.MiddleCenter;
-                Widgets.Label(part, labels[i]);
-                Text.Anchor = TextAnchor.UpperLeft;
-                GUI.color = Color.white;
-                Widgets.DrawBox(part, 1);
-                if (Widgets.ButtonInvisible(part) && !active)
+                if (CAOpeningTheme.Chip(part, labels[i], active)
+                    && !active)
                     choose?.Invoke(i);
             }
             return rows * rect.height + (rows - 1) * gap;
@@ -230,7 +211,8 @@ namespace ColonistAwareness
                 item.Selected) ?? this.choices.FirstOrDefault(item =>
                 !item.Disabled) ?? this.choices.FirstOrDefault();
             selectedKey = initial?.Key;
-            doCloseX = true;
+            doCloseX = false;
+            doWindowBackground = false;
             forcePause = true;
             absorbInputAroundWindow = true;
             closeOnClickedOutside = false;
@@ -240,10 +222,15 @@ namespace ColonistAwareness
             Mathf.Min(1220f, UI.screenWidth - 32f),
             Mathf.Min(820f, UI.screenHeight - 32f));
 
+        protected override float Margin => 0f;
+
         public override void DoWindowContents(Rect inRect)
         {
-            Text.Font = GameFont.Medium;
-            Widgets.Label(new Rect(0f, 0f, inRect.width, 34f), title);
+            // One CAO surface for every large choice set in the flow.
+            inRect = CAOpeningTheme.BeginWindowSurface(inRect);
+            try
+            {
+            CAOpeningTheme.Heading(0f, 0f, inRect.width, title);
             Text.Font = GameFont.Small;
             float introHeight = introduction.NullOrEmpty() ? 0f
                 : Mathf.Max(24f, Text.CalcHeight(introduction,
@@ -285,9 +272,11 @@ namespace ColonistAwareness
                 else DrawGrid(body);
             }
 
-            if (Widgets.ButtonText(new Rect(0f, inRect.height - 38f,
-                    150f, 34f), "Cancel"))
+            if (CAOpeningTheme.GhostButton(new Rect(0f,
+                    inRect.height - 36f, 130f, 34f), "Cancel"))
                 Close();
+            }
+            finally { CAOpeningTheme.EndWindowSurface(); }
         }
 
         private float DrawSearch(Rect inRect, float y)
@@ -316,8 +305,18 @@ namespace ColonistAwareness
             groups.Insert(0, "All");
             int selected = group.NullOrEmpty() ? 0
                 : Mathf.Max(0, groups.IndexOf(group));
+            // Density: each group states how many choices it holds, so
+            // navigation carries information instead of bare names.
+            var counts = choices.Where(item => !item.Group.NullOrEmpty())
+                .GroupBy(item => item.Group, StringComparer.Ordinal)
+                .ToDictionary(items => items.Key, items => items.Count(),
+                    StringComparer.Ordinal);
+            string[] labels = groups.Select(name => name == "All"
+                ? "All (" + choices.Count + ")"
+                : counts.TryGetValue(name, out int held)
+                    ? name + " (" + held + ")" : name).ToArray();
             float height = CACreationUI.DrawSegmentRows(new Rect(0f, y,
-                inRect.width, 26f), groups.ToArray(), selected, index =>
+                inRect.width, 26f), labels, selected, index =>
             {
                 string local = groups[index];
                 group = local == "All" ? null : local;
@@ -347,7 +346,7 @@ namespace ColonistAwareness
 
         private void DrawGrid(Rect rect)
         {
-            Widgets.DrawMenuSection(rect);
+            CAOpeningTheme.SurfacePanel(rect, true);
             Rect outRect = rect.ContractedBy(6f);
             List<CACreationChoice> visible = Filtered();
             int columns = outRect.width >= 590f ? 2 : 1;
@@ -415,19 +414,16 @@ namespace ColonistAwareness
             bool applied = choice.Selected;
             bool hovered = Mouse.IsOver(rect);
             Widgets.DrawBoxSolid(rect, focused
-                ? new Color(0.18f, 0.25f, 0.29f, 0.96f)
-                : new Color(0.12f, 0.14f, 0.16f,
-                    hovered ? 0.96f : 0.78f));
-            if (hovered && !focused) Widgets.DrawHighlight(rect);
+                ? CAOpeningTheme.RaisedHover
+                : hovered ? CAOpeningTheme.Raised
+                    : CAOpeningTheme.Surface);
             Color accent = choice.Accent.a <= 0f
                 ? CACreationUI.Accent : choice.Accent;
             if (applied)
                 Widgets.DrawBoxSolid(new Rect(rect.x, rect.y, 4f,
                     rect.height), accent);
-            GUI.color = focused ? accent
-                : new Color(0.34f, 0.37f, 0.41f);
-            Widgets.DrawBox(rect, focused ? 2 : 1);
-            GUI.color = Color.white;
+            CAOpeningTheme.Border(rect, focused
+                ? CAOpeningTheme.TextLo : CAOpeningTheme.Hairline);
 
             if (applied)
             {
@@ -499,7 +495,7 @@ namespace ColonistAwareness
 
         private void DrawDetails(Rect rect)
         {
-            Widgets.DrawMenuSection(rect);
+            CAOpeningTheme.SurfacePanel(rect, true);
             Rect inner = rect.ContractedBy(12f);
             CACreationChoice choice = choices.FirstOrDefault(item =>
                 item.Key == selectedKey);
@@ -531,11 +527,26 @@ namespace ColonistAwareness
             Text.Font = GameFont.Medium;
             float titleHeight = Mathf.Max(32f, Text.CalcHeight(
                 choice.Name ?? "Unnamed choice", textWidth));
+            float replacingMeasure = 0f;
+            if (!choice.Selected)
+            {
+                CACreationChoice appliedMeasure = choices.FirstOrDefault(
+                    item => item.Selected);
+                if (appliedMeasure != null)
+                {
+                    Text.Font = GameFont.Tiny;
+                    replacingMeasure = Text.CalcHeight("Replaces: "
+                        + (appliedMeasure.Name ?? "current choice")
+                        + " - " + (appliedMeasure.CompactSummary
+                            ?? appliedMeasure.Summary ?? ""), textWidth)
+                        + 10f;
+                }
+            }
             Text.Font = GameFont.Small;
             float viewHeight = (choice.Icon == null ? 0f : 72f)
                 + titleHeight + 4f
                 + (choice.Badge.NullOrEmpty() ? 0f : 28f)
-                + (choice.Selected ? 28f : 0f)
+                + (choice.Selected ? 28f : replacingMeasure)
                 + (choice.DisabledReason.NullOrEmpty()
                     ? 0f : disabledHeight + 12f)
                 + summaryHeight + 12f
@@ -573,6 +584,32 @@ namespace ColonistAwareness
                     CACreationUI.DrawChip(new Rect(0f, y, textWidth, 20f),
                         "Current selection", accent);
                     y += 28f;
+                }
+                else
+                {
+                    // COMPARISON, not blind choice: while inspecting an
+                    // alternative, the currently applied choice and its
+                    // one-line summary stay in view.
+                    CACreationChoice applied = choices.FirstOrDefault(
+                        item => item.Selected);
+                    if (applied != null)
+                    {
+                        string replacing = "Replaces: " + (applied.Name
+                            ?? "current choice")
+                            + ((applied.CompactSummary
+                                ?? applied.Summary).NullOrEmpty() ? ""
+                                : " - " + (applied.CompactSummary
+                                    ?? applied.Summary));
+                        Text.Font = GameFont.Tiny;
+                        GUI.color = CAOpeningTheme.TextLo;
+                        float replacingHeight = Text.CalcHeight(replacing,
+                            textWidth);
+                        Widgets.Label(new Rect(0f, y, textWidth,
+                            replacingHeight), replacing);
+                        GUI.color = Color.white;
+                        Text.Font = GameFont.Small;
+                        y += replacingHeight + 10f;
+                    }
                 }
                 if (!choice.DisabledReason.NullOrEmpty())
                 {
@@ -614,7 +651,7 @@ namespace ColonistAwareness
                 ? "Use this choice" : choice.ConfirmLabel;
             Rect use = new Rect(inner.x, inner.yMax - 36f,
                 inner.width, 34f);
-            if (Widgets.ButtonText(use, confirm, true, true,
+            if (CAOpeningTheme.PrimaryButton(use, confirm,
                     !choice.Disabled) && !choice.Disabled)
             {
                 bool accepted;

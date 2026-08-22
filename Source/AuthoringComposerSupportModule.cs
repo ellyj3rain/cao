@@ -353,17 +353,30 @@ namespace ColonistAwareness
             this.title = title;
             this.accepted = accepted;
             value = initial ?? "";
-            doCloseX = true;
+            doCloseX = false;
+            doWindowBackground = false;
             absorbInputAroundWindow = true;
         }
 
+        protected override float Margin => 0f;
+
         public override void DoWindowContents(Rect inRect)
         {
-            Widgets.Label(new Rect(0f, 0f, inRect.width, 30f), title);
-            value = Widgets.TextField(new Rect(0f, 40f, inRect.width, 30f),
-                value);
-            if (Widgets.ButtonText(new Rect(inRect.width - 120f, 88f,
-                    120f, 32f), "Save") && !value.NullOrEmpty())
+            Widgets.DrawBoxSolid(inRect, CAOpeningTheme.Ink);
+            CAOpeningTheme.SurfacePanel(inRect);
+            Rect inner = inRect.ContractedBy(14f);
+            GUI.color = CAOpeningTheme.TextHi;
+            Widgets.Label(new Rect(inner.x, inner.y, inner.width, 30f),
+                title);
+            GUI.color = Color.white;
+            value = Widgets.TextField(new Rect(inner.x, inner.y + 36f,
+                inner.width, 30f), value);
+            if (CAOpeningTheme.GhostButton(new Rect(inner.x,
+                    inner.yMax - 34f, 110f, 32f), "Cancel"))
+                Close();
+            if (CAOpeningTheme.PrimaryButton(new Rect(inner.xMax - 120f,
+                    inner.yMax - 34f, 120f, 32f), "Save",
+                    !value.NullOrEmpty()) && !value.NullOrEmpty())
             {
                 accepted?.Invoke(value.Trim());
                 Close();
@@ -388,22 +401,39 @@ namespace ColonistAwareness
             this.culture = culture;
             this.beliefs = beliefs;
             this.changed = changed;
-            doCloseX = true;
-            doCloseButton = true;
+            doCloseX = false;
+            doCloseButton = false;
+            doWindowBackground = false;
             absorbInputAroundWindow = true;
         }
 
+        protected override float Margin => 0f;
+
         public override void DoWindowContents(Rect inRect)
         {
+            inRect = CAOpeningTheme.BeginWindowSurface(inRect);
+            try
+            {
+                DoManagerContents(inRect);
+            }
+            finally
+            {
+                CAOpeningTheme.EndWindowSurface();
+            }
+        }
+
+        private void DoManagerContents(Rect inRect)
+        {
             bool cultures = culture != null;
-            Text.Font = GameFont.Medium;
-            Widgets.Label(new Rect(0f, 0f, inRect.width, 34f),
-                cultures ? "Saved Cultures"
-                    : "Saved Political Orders");
-            Text.Font = GameFont.Small;
-            Widgets.Label(new Rect(0f, 38f, inRect.width, 42f),
+            CAOpeningTheme.Heading(0f, 0f, inRect.width,
+                cultures ? "Saved Cultures" : "Saved Political Orders");
+            CAOpeningTheme.Fine(0f, 36f, inRect.width,
                 "Saved presets are global. Loading copies their listed values "
                 + "into this draft; renaming or deleting the library copy does not alter a world.");
+            if (CAOpeningTheme.PrimaryButton(new Rect(
+                    inRect.width - 150f, inRect.height - 36f, 150f, 34f),
+                    "Done"))
+                Close();
             Rect outer = new Rect(0f, 88f, inRect.width,
                 inRect.height - 136f);
             int count = cultures ? CAAuthoringProfileLibrary.Cultures.Count
@@ -480,7 +510,8 @@ namespace ColonistAwareness
             bool compact = width < 560f;
             float height = compact ? 78f : 40f;
             Rect row = new Rect(0f, rowY, width, height);
-            Widgets.DrawAltRect(row);
+            Widgets.DrawBoxSolid(row, CAOpeningTheme.Surface);
+            CAOpeningTheme.Border(row, CAOpeningTheme.Hairline);
             Rect[] buttons = new Rect[4];
             if (compact)
             {
@@ -504,7 +535,8 @@ namespace ColonistAwareness
             Action[] actions = { load, rename, duplicate, delete };
             string[] labels = { "Load", "Rename", "Copy", "Delete" };
             for (int i = 0; i < buttons.Length; i++)
-                if (Widgets.ButtonText(buttons[i], labels[i])) actions[i]?.Invoke();
+                if (CAOpeningTheme.GhostButton(buttons[i], labels[i]))
+                    actions[i]?.Invoke();
             rowY += compact ? 86f : 48f;
         }
 

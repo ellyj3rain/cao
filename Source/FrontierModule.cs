@@ -24,8 +24,10 @@ namespace ColonistAwareness
 
         public void ExposeData()
         {
-            Scribe_Values.Look(ref schemaVersion, "schemaVersion",
-                CurrentSchemaVersion);
+            // A default equal to the live value would omit the element and
+            // fail the preflight's schema binding; zero is never a written
+            // version so the stamp always serializes.
+            Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
             Scribe_Values.Look(ref mapId, "mapId", -1);
             Scribe_Values.Look(ref mapTileId, "mapTileId", -1);
             Scribe_Values.Look(ref mapWidth, "mapWidth", 0);
@@ -181,8 +183,11 @@ namespace ColonistAwareness
             var folk = new List<Pawn>();
             int count = Mathf.Clamp(holding.residentCount, 1, 6);
             PawnKindDef kind = PawnKindDefOf.Villager;
-            FactionDef generationDef = DefDatabase<FactionDef>
-                .GetNamedSilentFail(holding.generationFactionDefName)
+            FactionDef generationDef =
+                (holding.generationFactionDefName == null
+                    ? null
+                    : DefDatabase<FactionDef>.GetNamedSilentFail(
+                        holding.generationFactionDefName))
                 ?? owner?.def ?? supporter?.def;
             if (generationDef != null)
                 try

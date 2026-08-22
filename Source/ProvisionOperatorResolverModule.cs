@@ -130,4 +130,117 @@ namespace ColonistAwareness
                 prefix.Length), out pawnId) && pawnId >= 0;
         }
     }
+
+    // Placement-authored provisions bind to the settlement organization and
+    // the exact residents recorded as their initial workers. This realizes
+    // saved operator and funding facts before program preflight; it does not
+    // infer an operator from Culture, Political Order, or nearby assets.
+    internal static class CAProvisionPlacementOperatorMaterializer
+    {
+        private const string PlacementSourcePrefix =
+            "authored:regional-placement:";
+        private const string RelationOriginPrefix =
+            "provision-placement:";
+
+        internal static CAOrganization Materialize(
+            CARegionalSettlementRecord record, Map map)
+        {
+            CAOrganization organization = CASettlementAuthorityWriter
+                .EnsureSettlementOrganization(record);
+            CAOrganizationRelationsWorldComponent ledger =
+                CAOrganizationRelationsWorldComponent.Current;
+            if (organization == null || ledger == null || record == null
+                || map == null) return organization;
+
+            string recordOrigin = RelationOriginPrefix
+                + record.regionalId + "#" + record.slot + ":";
+            var desired = new Dictionary<string, HashSet<int>>(
+                StringComparer.Ordinal);
+            foreach (CAProvisionArrangement arrangement in
+                record.provisionArrangements
+                    ?? new List<CAProvisionArrangement>())
+            {
+                if (arrangement == null || !arrangement.active
+                    || arrangement.operatorIdentity
+                        != organization.organizationKey
+                    || arrangement.operatorSource?.StartsWith(
+                        PlacementSourcePrefix,
+                        StringComparison.Ordinal) != true
+                    || arrangement.funding
+                        != CAProvisionFunding.SharedWork)
+                    continue;
+                List<Pawn> workers = arrangement.populationGroupKey >= 0
+                    ? CAPopulationProjection.ResidentsInPopulationGroup(
+                        record, map, arrangement.populationGroupKey)
+                    : CAPopulationProjection.Residents(record, map);
+                desired[recordOrigin + arrangement.key] =
+                    new HashSet<int>(workers.Where(pawn => pawn != null)
+                        .Select(pawn => pawn.thingIDNumber));
+            }
+
+            List<CARelation> existing = ledger.RelationsIn(
+                organization.organizationKey);
+            foreach (CARelation relation in existing.Where(item =>
+                item != null && item.origin.Replaceable
+                && item.origin.originKey?.StartsWith(recordOrigin,
+                    StringComparison.Ordinal) == true).ToList())
+            {
+                if (!desired.TryGetValue(relation.origin.originKey,
+                        out HashSet<int> wanted)
+                    || !relation.IsPawnParty
+                    || !wanted.Contains(relation.PawnPartyId))
+                    ledger.RemoveDerivedRelation(relation);
+            }
+
+            foreach (KeyValuePair<string, HashSet<int>> group in desired)
+            {
+                int arrangementKey = int.TryParse(group.Key.Substring(
+                    recordOrigin.Length), out int parsed) ? parsed : 0;
+                string role = "starting provision work " + arrangementKey;
+                foreach (int pawnId in group.Value.OrderBy(value => value))
+                {
+                    CARelation relation = ledger.RelationsIn(
+                            organization.organizationKey)
+                        .FirstOrDefault(item => item != null
+                            && item.IsPawnParty
+                            && item.PawnPartyId == pawnId
+                            && item.role == role);
+                    if (relation == null)
+                    {
+                        relation = new CARelation
+                        {
+                            orgKey = organization.organizationKey,
+                            role = role,
+                            compensation = CACompensationKinds.Ration,
+                            protection =
+                                CAProtectionKinds.OrganizationRule,
+                            entry = CAEntryKinds.Free,
+                            exit = CAExitKinds.Free,
+                            startTick = Find.TickManager?.TicksGame ?? 0,
+                            sunsetTick = -1,
+                            origin = CAOrigin.Derived(group.Key),
+                            termsOrigin = CAOrigin.Authored(group.Key)
+                        };
+                        relation.Party = CARelationPartyRef.OfPawn(pawnId);
+                        relation.delegatedResponsibilities.Add(
+                            CAResponsibilities.Work);
+                        ledger.Add(relation);
+                    }
+                    else if (relation.origin.Replaceable
+                        && relation.origin.originKey == group.Key)
+                    {
+                        relation.delegatedResponsibilities.Clear();
+                        relation.delegatedResponsibilities.Add(
+                            CAResponsibilities.Work);
+                        relation.compensation =
+                            CACompensationKinds.Ration;
+                        relation.protection =
+                            CAProtectionKinds.OrganizationRule;
+                        relation.termsOrigin = CAOrigin.Authored(group.Key);
+                    }
+                }
+            }
+            return organization;
+        }
+    }
 }

@@ -85,10 +85,13 @@ namespace ColonistAwareness
             next = following;
             if (following != null) following.prev = this;
             doCloseX = false;
+            doWindowBackground = false;
             closeOnClickedOutside = false;
             absorbInputAroundWindow = true;
             draggable = false;
         }
+
+        protected override float Margin => 0f;
 
         public override void PostOpen()
         {
@@ -118,7 +121,21 @@ namespace ColonistAwareness
 
         public override void DoWindowContents(Rect inRect)
         {
-            DrawPageTitle(inRect);
+            // Same CAO surface as the rest of the opening flow.
+            inRect = CAOpeningTheme.BeginWindowSurface(inRect);
+            try
+            {
+                DoPageContents(inRect);
+            }
+            finally
+            {
+                CAOpeningTheme.EndWindowSurface();
+            }
+        }
+
+        private void DoPageContents(Rect inRect)
+        {
+            CAOpeningTheme.Heading(0f, 0f, inRect.width, PageTitle);
             Text.Font = GameFont.Small;
             string introduction = CAPlayerFoundingModel.StartingContextSummary();
             float introductionHeight = Text.CalcHeight(introduction,
@@ -130,8 +147,10 @@ namespace ColonistAwareness
             float overviewY = flowY + 30f;
             string overview = FoundingOverview();
             float overviewHeight = Text.CalcHeight(overview, inRect.width);
-            Widgets.DrawLightHighlight(new Rect(0f, overviewY, inRect.width,
-                overviewHeight + 12f));
+            Widgets.DrawBoxSolid(new Rect(0f, overviewY, inRect.width,
+                overviewHeight + 12f), CAOpeningTheme.Surface);
+            CAOpeningTheme.Border(new Rect(0f, overviewY, inRect.width,
+                overviewHeight + 12f), CAOpeningTheme.Hairline);
             Widgets.Label(new Rect(8f, overviewY + 6f, inRect.width - 16f,
                 overviewHeight), overview);
 
@@ -139,7 +158,7 @@ namespace ColonistAwareness
             float validationWidth = inRect.width * 0.48f;
             float validationHeight = validationFailure.NullOrEmpty() ? 0f
                 : Text.CalcHeight(validationFailure, validationWidth);
-            float bottom = Mathf.Max(52f, validationHeight + 12f);
+            float bottom = Mathf.Max(96f, validationHeight + 56f);
             float gap = 12f;
             Rect cardsOut = new Rect(0f, top, inRect.width,
                 inRect.height - top - bottom);
@@ -210,13 +229,21 @@ namespace ColonistAwareness
                 GUI.color = ColorLibrary.RedReadable;
                 Text.Anchor = TextAnchor.MiddleRight;
                 Widgets.Label(new Rect(inRect.width * 0.35f,
-                    inRect.height - validationHeight - 6f,
+                    inRect.height - 48f - validationHeight,
                     validationWidth, validationHeight),
                     validationFailure);
                 Text.Anchor = TextAnchor.UpperLeft;
                 GUI.color = Color.white;
             }
-            DoBottomButtons(inRect, "Continue");
+            CAOpeningTheme.Divider(0f, inRect.height - 44f, inRect.width);
+            if (CAOpeningTheme.GhostButton(new Rect(0f,
+                    inRect.height - 36f, 130f, 34f), "Back")
+                && CanDoBack())
+                DoBack();
+            if (CAOpeningTheme.PrimaryButton(new Rect(
+                    inRect.width - 170f, inRect.height - 36f, 170f, 34f),
+                    "Continue") && CanDoNext())
+                DoNext();
         }
 
         private string FoundingOverview()
@@ -255,8 +282,16 @@ namespace ColonistAwareness
             float y = BeginCard(rect, "Society preset",
                 SocietyDescription());
             string title = preset?.Label ?? "Custom society";
+            // Custom is a composition, not a mystery: state the three
+            // components it is actually composed of.
             string detail = preset == null
-                ? "Culture, Political Order, and Technological Knowledge are a custom composition."
+                ? "Culture: " + (draft?.culture?.name ?? "not set")
+                    + ". Political Order: "
+                    + CAAuthoringChoices.PoliticalIdentity(
+                        draft?.politicalBeliefs)
+                    + ". Knowledge: "
+                    + CATechnologicalKnowledgeModel.Summary(
+                        draft?.technologicalKnowledge) + "."
                 : preset.CultureSummary + " Political Order: "
                     + CAPoliticalOrderModel.Identity(
                         preset.PoliticalPreview()) + ". Knowledge: "
@@ -385,7 +420,7 @@ namespace ColonistAwareness
             DrawSummary(rect, ref y, null,
                 CATechnologicalKnowledgeModel.Summary(
                     draft?.technologicalKnowledge),
-                "What the faction can understand, build, operate, and maintain.",
+                TechnologyConsequence(draft?.technologicalKnowledge),
                 TechnologyStateWords());
             DrawButtons(rect, ref y,
                 new CAFoundingAction("Set technological knowledge...", delegate
@@ -437,14 +472,15 @@ namespace ColonistAwareness
         private static float BeginCard(Rect rect, string title,
             string description)
         {
-            Widgets.DrawMenuSection(rect);
+            CAOpeningTheme.SurfacePanel(rect, true);
             Rect inner = rect.ContractedBy(14f);
             Text.Font = GameFont.Medium;
+            GUI.color = CAOpeningTheme.TextHi;
             Widgets.Label(new Rect(inner.x, inner.y, inner.width, 30f), title);
+            GUI.color = Color.white;
             Text.Font = GameFont.Small;
-            float height = Text.CalcHeight(description, inner.width);
-            Widgets.Label(new Rect(inner.x, inner.y + 34f, inner.width,
-                height), description);
+            float height = CAOpeningTheme.Fine(inner.x, inner.y + 34f,
+                inner.width, description);
             return inner.y + 34f + height + 10f;
         }
 
@@ -546,8 +582,15 @@ namespace ColonistAwareness
             return MeasureCard(width, TechnologyDescription(),
                 CATechnologicalKnowledgeModel.Summary(
                     draft?.technologicalKnowledge),
-                "What the faction can understand, build, operate, and maintain.",
+                TechnologyConsequence(draft?.technologicalKnowledge),
                 TechnologyStateWords());
+        }
+
+        private static string TechnologyConsequence(
+            CATechnologicalKnowledge knowledge)
+        {
+            return CATechnologicalKnowledgeModel
+                .ConstructionConsequence(knowledge);
         }
 
         private float MeasureArrangementCard(float width)
@@ -617,7 +660,8 @@ namespace ColonistAwareness
             float summaryHeight = SummaryHeight(inner.width, title, detail,
                 badge);
             Rect summary = new Rect(inner.x, y, inner.width, summaryHeight);
-            Widgets.DrawLightHighlight(summary);
+            Widgets.DrawBoxSolid(summary, CAOpeningTheme.Surface);
+            CAOpeningTheme.Border(summary, CAOpeningTheme.Hairline);
             if (icon != null)
                 GUI.DrawTexture(new Rect(summary.x + 8f, summary.y + 10f,
                     52f, 52f), icon, ScaleMode.ScaleToFit);
@@ -706,8 +750,9 @@ namespace ColonistAwareness
             float width = (inner.width - gap * (actions.Length - 1))
                 / actions.Length;
             for (int i = 0; i < actions.Length; i++)
-                if (Widgets.ButtonText(new Rect(inner.x + i * (width + gap),
-                        rowY, width, 32f), actions[i].Label))
+                if (CAOpeningTheme.GhostButton(
+                        new Rect(inner.x + i * (width + gap), rowY, width,
+                            32f), actions[i].Label))
                     actions[i].Action?.Invoke();
             y = rowY + 38f;
         }
@@ -1079,29 +1124,40 @@ namespace ColonistAwareness
         {
             this.draft = draft;
             this.changed = changed;
-            doCloseX = true;
-            doCloseButton = true;
+            doCloseX = false;
+            doCloseButton = false;
+            doWindowBackground = false;
             absorbInputAroundWindow = true;
             closeOnClickedOutside = false;
         }
 
+        protected override float Margin => 0f;
+
         public override void DoWindowContents(Rect inRect)
+        {
+            inRect = CAOpeningTheme.BeginWindowSurface(inRect);
+            try
+            {
+                DoEditorContents(inRect);
+            }
+            finally
+            {
+                CAOpeningTheme.EndWindowSurface();
+            }
+        }
+
+        private void DoEditorContents(Rect inRect)
         {
             if (draft.arrangement == null)
                 CAPlayerFoundingModel.UseSuggestedArrangement(draft);
             CAFoundingArrangement value = draft.arrangement;
-            Text.Font = GameFont.Medium;
-            Widgets.Label(new Rect(0f, 0f, inRect.width, 34f),
-                "Founding terms");
-            Text.Font = GameFont.Small;
+            CAOpeningTheme.Heading(0f, 0f, inRect.width, "Founding terms");
             const string introduction = "These rules take effect at landing. "
                 + "Political Order states what the founders consider proper; "
                 + "agreement or tension between belief and practice is retained.";
-            float introductionHeight = Text.CalcHeight(introduction,
-                inRect.width);
-            Widgets.Label(new Rect(0f, 38f, inRect.width,
-                introductionHeight), introduction);
-            float bodyTop = 38f + introductionHeight + 10f;
+            float introductionHeight = CAOpeningTheme.Fine(0f, 36f,
+                inRect.width, introduction);
+            float bodyTop = 36f + introductionHeight + 10f;
             Rect outRect = new Rect(0f, bodyTop, inRect.width,
                 Mathf.Max(80f, inRect.height - bodyTop - 55f));
             Rect view = new Rect(0f, 0f, outRect.width - 18f,
@@ -1158,11 +1214,17 @@ namespace ColonistAwareness
                 consequenceText, view.width - 20f) + 20f);
             Rect consequence = new Rect(0f, y + 10f, view.width,
                 consequenceHeight);
-            Widgets.DrawLightHighlight(consequence);
+            Widgets.DrawBoxSolid(consequence, CAOpeningTheme.Surface);
+            CAOpeningTheme.Border(consequence, CAOpeningTheme.Hairline);
             Widgets.Label(consequence.ContractedBy(10f),
                 consequenceText);
             viewHeight = consequence.yMax + 8f;
             Widgets.EndScrollView();
+
+            if (CAOpeningTheme.PrimaryButton(new Rect(
+                    inRect.width - 150f, inRect.height - 36f, 150f, 34f),
+                    "Done"))
+                Close();
         }
 
         private static void Choice(ref float y, float width, string label,

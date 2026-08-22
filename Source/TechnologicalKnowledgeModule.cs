@@ -553,9 +553,24 @@ namespace ColonistAwareness
             Ensure(target, identity, profile);
         }
 
+        // THE TWO LADDERS MUST AGREE. RankFor maps a TechLevel to a rank and
+        // TechLevelForRank maps it back; seeding goes the long way round, from
+        // a TechLevel to a profile to that profile's ranks. Those have to be
+        // the same journey, and they were not: Spacer took the "spacer"
+        // profile, whose nine domains are rank 5, and rank 5 reads back as
+        // Ultra. So every Spacer faction was seeded as an Ultra builder --
+        // observed on CannibalPirate, def techLevel Spacer, resolving
+        // CanonicalBuildTechLevel = Ultra -- while "advanced-industrial",
+        // the rank-4 profile that actually means Spacer, was unreachable
+        // from any TechLevel.
+        //
+        // Ultra keeps the rank-5 profile; Spacer takes rank 4; and the
+        // round-trip TechLevel -> profile -> rank -> TechLevel is identity
+        // at every tier.
         internal static string ProfileFor(TechLevel level)
         {
-            if (level >= TechLevel.Spacer) return "spacer";
+            if (level >= TechLevel.Ultra) return "spacer";
+            if (level >= TechLevel.Spacer) return "advanced-industrial";
             if (level >= TechLevel.Industrial)
                 return "electrified-industrial";
             if (level >= TechLevel.Medieval) return "early-modern";
@@ -626,6 +641,65 @@ namespace ColonistAwareness
             return tier >= 3 ? TechLevel.Spacer
                 : tier >= 2 ? TechLevel.Industrial
                 : tier >= 1 ? TechLevel.Medieval : TechLevel.Neolithic;
+        }
+
+        // The translation boundary's actual answer at these ranks - how
+        // much of what a player can order built this knowledge supports,
+        // and what the nearest gaps demand - computed through the same
+        // resolver the runtime enforces and cached by the knowledge's own
+        // revision. Shown wherever the knowledge is authored or chosen so
+        // changing a rank has an immediately observable consequence.
+        private static string constructionConsequence;
+        private static int constructionConsequenceRevision = int.MinValue;
+        private static object constructionConsequenceOwner;
+
+        internal static string ConstructionConsequence(
+            CATechnologicalKnowledge knowledge)
+        {
+            if (knowledge == null)
+                return "Knowledge not set: everything orderable would "
+                    + "fail its construction check.";
+            if (ReferenceEquals(constructionConsequenceOwner, knowledge)
+                && knowledge.revision == constructionConsequenceRevision
+                && constructionConsequence != null)
+                return constructionConsequence;
+            int supported = 0;
+            int blocked = 0;
+            var blockedExamples = new System.Collections.Generic
+                .List<string>();
+            void Consider(BuildableDef definition)
+            {
+                if (definition?.designationCategory == null) return;
+                if (CATechnologicalKnowledgeRuntime.CanConstructCanonical(
+                        knowledge, definition,
+                        out CATechnologyRequirement missing))
+                    supported++;
+                else
+                {
+                    blocked++;
+                    if (blockedExamples.Count < 3 && missing != null)
+                        blockedExamples.Add(definition.label + " (needs "
+                            + (missing.DomainKey.NullOrEmpty()
+                                ? "" : missing.DomainKey + " ")
+                            + missing.CompetencyKey + " "
+                            + missing.Rank + ")");
+                }
+            }
+            foreach (ThingDef definition in
+                DefDatabase<ThingDef>.AllDefsListForReading)
+                Consider(definition);
+            foreach (TerrainDef definition in
+                DefDatabase<TerrainDef>.AllDefsListForReading)
+                Consider(definition);
+            constructionConsequence = "At these ranks: " + supported
+                + " of " + (supported + blocked) + " orderable "
+                + "constructions are supported"
+                + (blockedExamples.Count == 0 ? "."
+                    : "; among the gaps: "
+                        + string.Join("; ", blockedExamples) + ".");
+            constructionConsequenceRevision = knowledge.revision;
+            constructionConsequenceOwner = knowledge;
+            return constructionConsequence;
         }
 
         internal static string Summary(CATechnologicalKnowledge value)

@@ -50,6 +50,11 @@ namespace ColonistAwareness
             if (materials.TryGetValue(key, out mat)) return mat;
             mat = MaterialPool.MatFrom("UI/Overlays/TargetHighlight_Side",
                 ShaderDatabase.Transparent, color);
+            // DrawMeshInstanced rejects an otherwise valid material unless
+            // instancing is explicitly enabled. The other CA instanced
+            // overlays already establish this material contract; claims must
+            // do the same before their first rendered frame.
+            mat.enableInstancing = true;
             materials[key] = mat;
             return mat;
         }

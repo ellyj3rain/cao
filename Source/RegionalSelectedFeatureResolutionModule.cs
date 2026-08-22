@@ -30,7 +30,11 @@ namespace ColonistAwareness
             {
                 TileMutatorWorker worker = mutator?.Worker;
                 if (worker == null
-                    || worker is TileMutatorWorker_ArcheanTrees) continue;
+                    || worker is TileMutatorWorker_ArcheanTrees
+                    || worker is TileMutatorWorker_Harbor
+                    || worker is TileMutatorWorker_AncientStructure
+                    || worker is TileMutatorWorker_AbandonedColony)
+                    continue;
                 worker.GenerateCriticalStructures(map);
             }
 
@@ -38,6 +42,20 @@ namespace ColonistAwareness
                 projection);
             Log.Message("[CA][Regional] selected-area Archean trees: "
                 + receipt);
+            string harborReceipt = projection.ApplyProjectedHarbors();
+            if (harborReceipt != null)
+                Log.Message("[CA][Regional] projected harbors: "
+                    + harborReceipt);
+            string structureReceipt =
+                projection.ApplyProjectedAncientStructures();
+            if (structureReceipt != null)
+                Log.Message("[CA][Regional] projected ancient structures: "
+                    + structureReceipt);
+            string colonyReceipt =
+                projection.ApplyProjectedAbandonedColonies();
+            if (colonyReceipt != null)
+                Log.Message("[CA][Regional] projected abandoned colonies: "
+                    + colonyReceipt);
             return false;
         }
     }
@@ -176,6 +194,49 @@ namespace ColonistAwareness
         }
     }
 
+    // Non-critical structure workers normally run only from the anchor
+    // tile. Vents, ruins, and the ancient structure's perimeter scatter
+    // are driven per carrying area instead; other anchor workers keep
+    // their native pass.
+    [HarmonyPatch(typeof(GenStep_MutatorNonCriticalStructures),
+        nameof(GenStep_MutatorNonCriticalStructures.Generate))]
+    internal static class CARegionalNonCriticalMutatorPatch
+    {
+        [HarmonyPrefix]
+        private static bool Prefix(Map map)
+        {
+            CARegionalProjectionMapComponent projection = map
+                ?.GetComponent<CARegionalProjectionMapComponent>();
+            if (projection?.Active != true) return true;
+
+            foreach (TileMutatorDef mutator in map.TileInfo.Mutators)
+            {
+                TileMutatorWorker worker = mutator?.Worker;
+                if (worker == null
+                    || worker is TileMutatorWorker_AncientVent
+                    || worker is TileMutatorWorker_AncientRuins
+                    || worker is TileMutatorWorker_AncientStructure)
+                    continue;
+                worker.GenerateNonCriticalStructures(map);
+            }
+
+            string ventReceipt = projection.ApplyProjectedAncientVents();
+            if (ventReceipt != null)
+                Log.Message("[CA][Regional] projected ancient vents: "
+                    + ventReceipt);
+            string ruinReceipt = projection.ApplyProjectedAncientRuins();
+            if (ruinReceipt != null)
+                Log.Message("[CA][Regional] projected ancient ruins: "
+                    + ruinReceipt);
+            string scatterReceipt =
+                projection.ApplyProjectedAncientStructureScatter();
+            if (scatterReceipt != null)
+                Log.Message("[CA][Regional] projected structure "
+                    + "perimeters: " + scatterReceipt);
+            return false;
+        }
+    }
+
     // GenStep_MutatorFinal normally sees only map.TileInfo.Mutators. On a
     // regional map TileInfo is deliberately anchored to one bookkeeping tile,
     // so a stockpile carried by any other selected area silently disappears.
@@ -193,19 +254,30 @@ namespace ColonistAwareness
                 ?.GetComponent<CARegionalProjectionMapComponent>();
             if (projection?.Active != true) return true;
 
-            // Preserve native final workers on the regional anchor except for
-            // Stockpile, which is driven once per actual carrier below.
+            // Preserve native final workers on the regional anchor except
+            // for Stockpile, quarries, and uplinks, which are driven per
+            // actual carrier below.
             foreach (TileMutatorDef mutator in map.TileInfo.Mutators)
             {
                 TileMutatorWorker worker = mutator?.Worker;
                 if (worker == null
-                    || worker is TileMutatorWorker_Stockpile) continue;
+                    || worker is TileMutatorWorker_Stockpile
+                    || worker is TileMutatorWorker_AncientQuarry
+                    || worker is TileMutatorWorker_AncientUplink) continue;
                 worker.GeneratePostFog(map);
             }
 
             string receipt = CARegionalStockpileAdapter.Generate(map,
                 projection);
             Log.Message("[CA][Regional] selected-area stockpiles: " + receipt);
+            string quarryReceipt = projection.ApplyProjectedAncientQuarries();
+            if (quarryReceipt != null)
+                Log.Message("[CA][Regional] projected ancient quarries: "
+                    + quarryReceipt);
+            string uplinkReceipt = projection.ApplyProjectedAncientUplinks();
+            if (uplinkReceipt != null)
+                Log.Message("[CA][Regional] projected ancient uplinks: "
+                    + uplinkReceipt);
             return false;
         }
     }

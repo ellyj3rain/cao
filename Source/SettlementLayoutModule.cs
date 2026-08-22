@@ -13,6 +13,7 @@ namespace ColonistAwareness
     // and missions read this same layout.
     public sealed class CASettlementLayout : IExposable
     {
+        public int schemaVersion = 1;
         public List<IntVec3> gates = new List<IntVec3>();
         // How WIDE each way in is, in cells, parallel to gates. A door
         // is one; a lane between two huts is three; the open side of a
@@ -37,6 +38,7 @@ namespace ColonistAwareness
 
         public void ExposeData()
         {
+            Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
             Scribe_Collections.Look(ref gates, "gates", LookMode.Value);
             Scribe_Collections.Look(ref gateWidths, "gateWidths",
                 LookMode.Value);

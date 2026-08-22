@@ -17,7 +17,20 @@ namespace ColonistAwareness
     internal sealed class CARegionalGeographyComposition
     {
         internal const int Schema = 1;
+        // PRESETS, NOT THE ONTOLOGY. These are quick sizes, tested
+        // defaults, regression fixtures, and snapping targets for
+        // auto-derived prospects. A valid region is any connected selected
+        // world geography within the supported range below -- a long
+        // valley, an island chain, a coastal strip, an irregular frontier
+        // -- and no consumer may treat this preset list as the definition
+        // of a valid extent.
         internal static readonly int[] SupportedExtents = { 4, 6, 8, 10, 12 };
+
+        // The canonical extent range. The floor keeps a region from being
+        // one lone tile pretending to be a region; the ceiling bounds the
+        // aggregate backing map the engine must hold.
+        internal const int MinExtent = 2;
+        internal const int MaxExtent = 16;
 
         internal string Signature;
         internal string Canonical;
@@ -141,7 +154,12 @@ namespace ColonistAwareness
                 "extent=" + result.ActualExtent + "/" + result.RequestedExtent,
                 "orientation=" + result.Orientation,
                 "root=" + plan.bundleRootTileId,
-                "arrival=" + result.ArrivalTileId,
+                // Arrival is deliberately NOT part of this identity: the
+                // composition describes the region's geography, and where
+                // the arriving party enters consumes that geography without
+                // changing it. Folding arrival in here made the preview
+                // treat an arrival change as a new region. ArrivalTileId
+                // stays available as descriptive data on the result.
                 "backing=" + result.BackingSize.x + "x" + result.BackingSize.z
             };
 
@@ -244,6 +262,13 @@ namespace ColonistAwareness
                     result);
 
             result.BoundaryWater.Sort(StringComparer.Ordinal);
+            // Authored feature shapes change the generated geography, so
+            // they are part of the composition's identity everywhere
+            // identity is compared (diagram cache, preview dedupe,
+            // generation validation).
+            foreach (string segment in
+                CAFeatureShapeModel.CanonicalSegments(plan))
+                canonical.Add(segment);
             result.Canonical = string.Join("|", canonical);
             result.Signature = Digest(result.Canonical);
             return result;
@@ -269,10 +294,15 @@ namespace ColonistAwareness
             }
             if (ids.Distinct().Count() != ids.Count)
                 result.Failures.Add("the selected region repeats an area");
-            if (!CARegionalGeographyComposition.SupportedExtents.Contains(
-                    plan.RequestedRegionTileCount))
-                result.Failures.Add("the requested area count is outside the "
-                    + "4, 6, 8, 10, and 12-area catalog");
+            if (plan.RequestedRegionTileCount
+                    < CARegionalGeographyComposition.MinExtent
+                || plan.RequestedRegionTileCount
+                    > CARegionalGeographyComposition.MaxExtent)
+                result.Failures.Add("the requested area count is outside "
+                    + "the supported "
+                    + CARegionalGeographyComposition.MinExtent + ".."
+                    + CARegionalGeographyComposition.MaxExtent
+                    + " area range");
             if (ids.Count > plan.RequestedRegionTileCount)
                 result.Failures.Add("the realized region exceeds its "
                     + "requested area count");
