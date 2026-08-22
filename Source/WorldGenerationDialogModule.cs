@@ -48,317 +48,22 @@ namespace ColonistAwareness
         }
     }
 
-    // THE REPRESENTATION LIBRARY. The causal model is drawn, not
-    // narrated: every picture here is computed from the same kernel
-    // generation consumes and redraws live as its tendency moves. Text
-    // on these surfaces labels and resolves ambiguity; the model itself
-    // is carried by spatial state -- runs of joined land, gathering
-    // dots, thresholds standing on a scale of real contributing facts,
-    // an occupied frontier board, colored origins, a lit distant field.
-    // Tones: ink for authored, warm for state derived from authored
-    // values, blue solely for what a generated world rolled.
+    // THE AUTHORED-STATE VOCABULARY. The world itself is carried by the
+    // rendered reference scene (CAReferenceWorldScene); this library
+    // holds the shared naming - state words per tendency, the state
+    // name, and the semantic tones: ink for authored, warm for state
+    // derived from authored values, blue solely for what a generated
+    // world rolled.
     internal static class CAWorldAuthoring
     {
         internal static readonly Color Consequence =
             new Color(0.73f, 0.70f, 0.58f);
         internal static readonly Color Realized =
             new Color(0.56f, 0.70f, 0.84f);
-        internal static readonly Color BarFill =
-            new Color(0.62f, 0.60f, 0.52f);
-        internal static readonly Color BarRail =
-            new Color(0.16f, 0.18f, 0.20f);
-        private static readonly Color JoinFill =
-            new Color(0.55f, 0.52f, 0.42f, 0.85f);
         private static readonly Color SingleTone =
             new Color(0.28f, 0.31f, 0.34f);
-        private static readonly Color PoorTone =
-            new Color(0.34f, 0.28f, 0.24f);
 
-        // Muted, distinguishable hues for peoples-of-origin.
-        internal static readonly Color[] OriginHues =
-        {
-            new Color(0.42f, 0.58f, 0.58f),
-            new Color(0.66f, 0.55f, 0.36f),
-            new Color(0.56f, 0.46f, 0.60f),
-            new Color(0.50f, 0.60f, 0.42f),
-            new Color(0.52f, 0.55f, 0.66f)
-        };
-
-        private static float Unit(int subject, int salt)
-        {
-            return CAWorldTendencyCausalKernel.Unit(7, subject, salt);
-        }
-
-        // THE LAND: one picture for both region tendencies. Cells are
-        // world tiles; the join share decides how many begin joined
-        // runs, the reach range sizes each run. When a world exists the
-        // picture uses its actual roll and says so with the realized
-        // tone.
-        internal static void DrawRegionDiagram(Rect rect,
-            CARegionalWorldPolicy p, bool showRollCaption = true)
-        {
-            bool rolled = p.realizedStitchedRegionFrequency >= 0f;
-            float share = rolled
-                ? Mathf.Clamp01(p.realizedStitchedRegionFrequency)
-                : FrequencyMid(p);
-            int cols = Mathf.Max(6, (int)(rect.width / 31f));
-            int rows = Mathf.Max(2, (int)(rect.height / 20f));
-            float cw = (rect.width - (cols - 1) * 3f) / cols;
-            float ch = (rect.height - (rows - 1) * 3f) / rows;
-            int total = cols * rows;
-            int spanMin = Mathf.Min(p.stitchedRegionSizeMin,
-                p.stitchedRegionSizeMax);
-            int spanMax = Mathf.Max(p.stitchedRegionSizeMin,
-                p.stitchedRegionSizeMax);
-            Color join = rolled ? Color.Lerp(JoinFill, Realized, 0.45f)
-                : JoinFill;
-
-            int i = 0;
-            while (i < total)
-            {
-                bool joins = Unit(i, 11) < share;
-                int size = 1;
-                if (joins)
-                    size = Mathf.Min(total - i, spanMin + (int)(
-                        Unit(i, 13) * (spanMax - spanMin + 1)));
-                if (size <= 1)
-                {
-                    var cell = CellAt(rect, i, cols, cw, ch);
-                    Widgets.DrawBoxSolid(cell, BarRail);
-                    DimBorder(cell, SingleTone);
-                    i++;
-                    continue;
-                }
-                // A joined run: contiguous tiles, drawn as fused
-                // segments per row.
-                int first = i;
-                int last = i + size - 1;
-                int segment = first;
-                while (segment <= last)
-                {
-                    int rowEnd = (segment / cols) * cols + cols - 1;
-                    int stop = Mathf.Min(last, rowEnd);
-                    Rect a = CellAt(rect, segment, cols, cw, ch);
-                    Rect b = CellAt(rect, stop, cols, cw, ch);
-                    var run = new Rect(a.x, a.y, b.xMax - a.x, ch);
-                    Widgets.DrawBoxSolid(run, join);
-                    segment = stop + 1;
-                }
-                i += size;
-            }
-            if (rolled && showRollCaption)
-            {
-                Text.Font = GameFont.Tiny;
-                GUI.color = Realized;
-                Text.Anchor = TextAnchor.UpperRight;
-                Widgets.Label(new Rect(rect.x, rect.yMax + 1f,
-                    rect.width, 14f), "as this world rolled: "
-                    + share.ToString("F2"));
-                Text.Anchor = TextAnchor.UpperLeft;
-                GUI.color = Color.white;
-                Text.Font = GameFont.Small;
-            }
-        }
-
-        private static Rect CellAt(Rect rect, int index, int cols,
-            float cw, float ch)
-        {
-            int cx = index % cols;
-            int cy = index / cols;
-            return new Rect(rect.x + cx * (cw + 3f),
-                rect.y + cy * (ch + 3f), cw, ch);
-        }
-
-        private static void DimBorder(Rect rect, Color tone)
-        {
-            GUI.color = tone;
-            Widgets.DrawBox(rect);
-            GUI.color = Color.white;
-        }
-
-        // SETTLEMENT GATHERING: the same settlements, standing apart or
-        // drawing together as the tendency moves.
-        internal static void DrawGatherField(Rect rect,
-            float concentration)
-        {
-            Widgets.DrawBoxSolid(rect, BarRail);
-            var anchorA = new Vector2(rect.x + rect.width * 0.30f,
-                rect.y + rect.height * 0.42f);
-            var anchorB = new Vector2(rect.x + rect.width * 0.70f,
-                rect.y + rect.height * 0.58f);
-            for (int i = 0; i < 16; i++)
-            {
-                var basePos = new Vector2(
-                    rect.x + 4f + Unit(i, 21) * (rect.width - 8f),
-                    rect.y + 4f + Unit(i, 22) * (rect.height - 8f));
-                Vector2 anchor = i % 2 == 0 ? anchorA : anchorB;
-                Vector2 pos = Vector2.Lerp(basePos, anchor,
-                    concentration * 0.88f);
-                Widgets.DrawBoxSolid(new Rect(pos.x - 2f, pos.y - 2f,
-                    4f, 4f), BarFill);
-            }
-        }
-
-        // URBAN DEVELOPMENT: the support scale a settlement must climb,
-        // built from its REAL contributing facts (tagged segments that
-        // never move), with the town and city bars standing where this
-        // tendency puts them. The floors that no tendency waives sit at
-        // the bars.
-        private static readonly KeyValuePair<string, int>[]
-            SupportParts =
-        {
-            new KeyValuePair<string, int>("pop", 20),
-            new KeyValuePair<string, int>("land", 12),
-            new KeyValuePair<string, int>("acc", 12),
-            new KeyValuePair<string, int>("svc", 18),
-            new KeyValuePair<string, int>("civ", 18),
-            new KeyValuePair<string, int>("eco", 15),
-            new KeyValuePair<string, int>("trd", 15),
-            new KeyValuePair<string, int>("spc", 9),
-            new KeyValuePair<string, int>("ctr", 6),
-            new KeyValuePair<string, int>("his", 12)
-        };
-
-        internal static void DrawSupportGauge(Rect rect, float urban,
-            bool withTags = true)
-        {
-            int threshold =
-                CAWorldTendencyCausalKernel.UrbanThreshold(urban);
-            float railY = rect.y + 12f;
-            float railH = withTags ? rect.height - 24f
-                : rect.height - 12f;
-            float x = rect.x;
-            float perPoint = rect.width / 137f;
-            bool dark = false;
-            foreach (KeyValuePair<string, int> part in SupportParts)
-            {
-                float w = part.Value * perPoint;
-                Widgets.DrawBoxSolid(new Rect(x, railY, w - 1f, railH),
-                    dark ? BarRail : SingleTone);
-                if (withTags)
-                {
-                    Text.Font = GameFont.Tiny;
-                    GUI.color = new Color(0.42f, 0.47f, 0.52f);
-                    Text.Anchor = TextAnchor.UpperCenter;
-                    Widgets.Label(new Rect(x - 6f, railY + railH + 1f,
-                        w + 12f, 12f), part.Key);
-                    Text.Anchor = TextAnchor.UpperLeft;
-                    GUI.color = Color.white;
-                    Text.Font = GameFont.Small;
-                }
-                x += w;
-                dark = !dark;
-            }
-            DrawThreshold(rect, perPoint, railY, railH, threshold,
-                "town " + threshold);
-            DrawThreshold(rect, perPoint, railY, railH, threshold + 12,
-                "city " + (threshold + 12));
-            var floors = new Rect(rect.x + threshold * perPoint - 24f,
-                railY, 48f + 12f * perPoint, railH);
-            TooltipHandler.TipRegion(floors, "Population floors never "
-                + "move: towns need 500 people, cities 1200.");
-        }
-
-        private static void DrawThreshold(Rect rect, float perPoint,
-            float railY, float railH, int value, string tag)
-        {
-            float tx = rect.x + value * perPoint;
-            GUI.color = Consequence;
-            Widgets.DrawBoxSolid(new Rect(tx - 1f, railY - 3f, 2f,
-                railH + 6f), Consequence);
-            Text.Font = GameFont.Tiny;
-            Text.Anchor = TextAnchor.UpperCenter;
-            Widgets.Label(new Rect(tx - 34f, rect.y - 1f, 68f, 12f),
-                tag);
-            Text.Anchor = TextAnchor.UpperLeft;
-            GUI.color = Color.white;
-            Text.Font = GameFont.Small;
-        }
-
-        // THE FRONTIER: eight suitable areas as a board. The sites
-        // tendency occupies them; the holdings tendency decides who
-        // lives in each -- resident dots and build fill. The last
-        // square is poor land: whatever the tendency, it caps at a
-        // cabin, which is the constraint made visible.
-        internal static void DrawFrontierBoard(Rect rect, float sites,
-            float holds)
-        {
-            int occupied = CAWorldTendencyCausalKernel
-                .FrontierHoldingCount(8, sites);
-            float cell = Mathf.Min(rect.height,
-                (rect.width - 7f * 8f) / 8f);
-            for (int i = 0; i < 8; i++)
-            {
-                bool poor = i == 7;
-                var square = new Rect(rect.x + i * (cell + 8f), rect.y,
-                    cell, cell);
-                Widgets.DrawBoxSolid(square, poor ? PoorTone : BarRail);
-                bool filled = i < occupied;
-                int capacity = poor ? 1 : 3;
-                int residents = CAWorldTendencyCausalKernel
-                    .FrontierResidentCount(capacity, holds);
-                int material = CAWorldTendencyCausalKernel
-                    .FrontierMaterialLevel(capacity, holds);
-                bool homestead = CAWorldTendencyCausalKernel
-                    .FrontierForm(residents, material) == 1;
-                if (filled)
-                {
-                    Widgets.DrawBoxSolid(square.ContractedBy(3f),
-                        new Color(BarFill.r, BarFill.g, BarFill.b,
-                            0.25f + 0.22f * material));
-                    for (int r = 0; r < residents; r++)
-                        Widgets.DrawBoxSolid(new Rect(
-                            square.x + 5f + r * 6f,
-                            square.yMax - 9f, 4f, 4f),
-                            CAOpeningTheme.TextHi);
-                    if (homestead)
-                        DimBorder(square, Consequence);
-                }
-                if (poor)
-                    TooltipHandler.TipRegion(square, "Poor land: caps "
-                        + "at a cabin whatever the tendency.");
-            }
-        }
-
-        // ORIGINS: six sourced settlements; how many different peoples
-        // they span is the count of distinct hues.
-        internal static void DrawOriginPips(Rect rect, float variety)
-        {
-            int distinct = CAWorldTendencyCausalKernel
-                .SourceVarietyTargetDistinct(6, 5, variety);
-            float size = Mathf.Min(rect.height, 16f);
-            for (int i = 0; i < 6; i++)
-            {
-                Color hue = OriginHues[
-                    (i < distinct ? i : (i - distinct) % distinct)
-                    % OriginHues.Length];
-                Widgets.DrawBoxSolid(new Rect(rect.x + i * (size + 6f),
-                    rect.y + (rect.height - size) * 0.5f, size, size),
-                    hue);
-            }
-        }
-
-        // THE DISTANT WORLD: twenty far-off places and peoples; the lit
-        // ones advance each interval.
-        internal static void DrawDistantField(Rect rect, float rate)
-        {
-            int active = CAWorldTendencyCausalKernel
-                .OffMapActivityBudget(20, rate);
-            float size = Mathf.Min((rect.height - 4f) / 2f,
-                (rect.width - 9f * 4f) / 10f);
-            for (int i = 0; i < 20; i++)
-            {
-                int cx = i % 10;
-                int cy = i / 10;
-                Widgets.DrawBoxSolid(new Rect(
-                    rect.x + cx * (size + 4f),
-                    rect.y + cy * (size + 4f), size, size),
-                    i < active ? BarFill : BarRail);
-            }
-        }
-
-        // The compact eight-dimension profile glyph shared by the
-        // world-params card and the preset cards.
+        // Per-tendency naming shared by chips, cards, and comparisons.
         internal sealed class Dimension
         {
             internal string Short;
@@ -384,7 +89,7 @@ namespace ColonistAwareness
                     ((p.stitchedRegionSizeMin + p.stitchedRegionSizeMax)
                         * 0.5f - 1f) / 9f),
                 Word = p => p.stitchedRegionSizeMin + "–"
-                    + p.stitchedRegionSizeMax + " tiles"
+                    + p.stitchedRegionSizeMax + " areas"
             },
             new Dimension
             {
@@ -441,126 +146,12 @@ namespace ColonistAwareness
                 + p.stitchedRegionFrequencyMax) * 0.5f;
         }
 
-        // THE WORLD VIGNETTE: one composed scene of the world the
-        // authored tendencies favor, for the Create World page. The land
-        // joins into regions at the authored (or rolled) share and
-        // reach; settlements gather or spread across it, colored by
-        // their peoples, the largest emerging as towns where urban
-        // development allows; frontier holdings dot the empty land; the
-        // strip at the right horizon is the distant world, lit where it
-        // moves. Every mark derives from the same kernel generation
-        // consumes.
-        internal static void DrawWorldVignette(Rect rect,
-            CARegionalWorldPolicy p)
+        // The eight state words as one line: the authored state read at
+        // a glance, in the page's own type.
+        internal static string StateLine(CARegionalWorldPolicy p)
         {
-            Widgets.DrawBoxSolid(rect, new Color(0.09f, 0.10f, 0.115f));
-            bool rolled = p.realizedStitchedRegionFrequency >= 0f;
-            float s = Mathf.Clamp(rect.height / 200f, 1f, 1.6f);
-            var land = new Rect(rect.x + 6f, rect.y + 6f,
-                rect.width - 30f, rect.height - 12f);
-            DrawRegionDiagram(new Rect(land.x, land.y, land.width,
-                land.height), p, false);
-
-            // Settlements: gathered or spread, colored by origin, the
-            // first few grown to towns where the urban bar allows.
-            int threshold = CAWorldTendencyCausalKernel.UrbanThreshold(
-                p.urbanGrowthPropensity);
-            int towns = Mathf.Clamp(Mathf.RoundToInt(
-                (72 - threshold) / 7f), 0, 3);
-            int distinct = CAWorldTendencyCausalKernel
-                .SourceVarietyTargetDistinct(6, 5,
-                    p.reallocationSourceVariety);
-            var anchorA = new Vector2(land.x + land.width * 0.32f,
-                land.y + land.height * 0.40f);
-            var anchorB = new Vector2(land.x + land.width * 0.68f,
-                land.y + land.height * 0.62f);
-            for (int i = 0; i < 12; i++)
-            {
-                var basePos = new Vector2(
-                    land.x + 8f + Unit(i, 31) * (land.width - 16f),
-                    land.y + 8f + Unit(i, 32) * (land.height - 16f));
-                Vector2 pos = Vector2.Lerp(basePos,
-                    i % 2 == 0 ? anchorA : anchorB,
-                    p.settlementConcentration * 0.85f);
-                Color hue = OriginHues[
-                    (i < distinct ? i : (i - distinct)
-                        % Mathf.Max(1, distinct)) % OriginHues.Length];
-                bool town = i < towns;
-                float size = (town ? 9f : 5f) * s;
-                if (town)
-                    Widgets.DrawBoxSolid(new Rect(pos.x - size * 0.5f
-                        - 1f, pos.y - size * 0.5f - 1f, size + 2f,
-                        size + 2f), CAOpeningTheme.TextHi);
-                Widgets.DrawBoxSolid(new Rect(pos.x - size * 0.5f,
-                    pos.y - size * 0.5f, size, size), hue);
-            }
-
-            // Frontier holdings on the empty land.
-            int holdings = CAWorldTendencyCausalKernel
-                .FrontierHoldingCount(8, p.frontierHoldingFrequency);
-            int material = CAWorldTendencyCausalKernel
-                .FrontierMaterialLevel(3, p.frontierHoldingSize);
-            for (int i = 0; i < holdings; i++)
-            {
-                var pos = new Vector2(
-                    land.x + 10f + Unit(i, 41) * (land.width - 20f),
-                    land.y + 10f + Unit(i, 42) * (land.height - 20f));
-                var square = new Rect(pos.x - 3f * s, pos.y - 3f * s,
-                    6f * s, 6f * s);
-                Widgets.DrawBoxSolid(square, new Color(BarFill.r,
-                    BarFill.g, BarFill.b, 0.30f + 0.22f * material));
-                GUI.color = SingleTone;
-                Widgets.DrawBox(square);
-                GUI.color = Color.white;
-            }
-
-            // The distant world at the horizon.
-            int active = Mathf.RoundToInt(
-                Mathf.Clamp01(p.offMapActivityRate) * 8f);
-            for (int i = 0; i < 8; i++)
-                Widgets.DrawBoxSolid(new Rect(rect.xMax - 16f,
-                    rect.y + 8f + i * ((rect.height - 16f) / 8f),
-                    8f, (rect.height - 16f) / 8f - 3f),
-                    i < active ? BarFill : BarRail);
-
-            if (rolled)
-                Widgets.DrawBoxSolid(new Rect(rect.x, rect.y, 4f,
-                    rect.height), Realized);
-            GUI.color = SingleTone;
-            Widgets.DrawBox(rect);
-            GUI.color = Color.white;
-        }
-
-        internal static void DrawProfile(Rect rect,
-            CARegionalWorldPolicy p, bool withShortLabels = false)
-        {
-            int count = Dimensions.Length;
-            float gap = 5f;
-            float slot = (rect.width - gap * (count - 1)) / count;
-            float barH = withShortLabels ? rect.height - 12f
-                : rect.height;
-            for (int i = 0; i < count; i++)
-            {
-                float x = rect.x + i * (slot + gap);
-                Widgets.DrawBoxSolid(new Rect(x, rect.y, slot, barH),
-                    BarRail);
-                float fill = Mathf.Clamp01(Dimensions[i].Norm(p));
-                Widgets.DrawBoxSolid(new Rect(x,
-                    rect.y + barH * (1f - fill), slot, barH * fill),
-                    BarFill);
-                if (withShortLabels)
-                {
-                    Text.Font = GameFont.Tiny;
-                    GUI.color = CAOpeningTheme.TextLo;
-                    Text.Anchor = TextAnchor.UpperCenter;
-                    Widgets.Label(new Rect(x - gap * 0.5f,
-                        rect.y + barH + 1f, slot + gap, 12f),
-                        Dimensions[i].Short);
-                    Text.Anchor = TextAnchor.UpperLeft;
-                    GUI.color = Color.white;
-                    Text.Font = GameFont.Small;
-                }
-            }
+            return string.Join(" · ", Dimensions.Select(
+                dimension => dimension.Word(p)));
         }
 
         internal static string StateName(CARegionalWorldPolicy value)
@@ -586,23 +177,28 @@ namespace ColonistAwareness
         internal string Key;
         internal string Name;
         internal string Summary;
-        internal float FrequencyMin, FrequencyMax;
-        internal int SpanMin, SpanMax;
-        internal float Concentration, Urban, FrontierFrequency,
-            FrontierSize, Variety, OffMap;
+
+        // The numbers live once, in CAWorldCharacterValues, so the
+        // deterministic receipts exercise the same table the game
+        // applies rather than a copy that can drift away from it.
+        private CAWorldCharacterValues Values
+        {
+            get { return CAWorldCharacterValues.ByKey(Key); }
+        }
 
         internal void Apply(CARegionalWorldPolicy p)
         {
-            p.stitchedRegionFrequencyMin = FrequencyMin;
-            p.stitchedRegionFrequencyMax = FrequencyMax;
-            p.stitchedRegionSizeMin = SpanMin;
-            p.stitchedRegionSizeMax = SpanMax;
-            p.settlementConcentration = Concentration;
-            p.urbanGrowthPropensity = Urban;
-            p.frontierHoldingFrequency = FrontierFrequency;
-            p.frontierHoldingSize = FrontierSize;
-            p.reallocationSourceVariety = Variety;
-            p.offMapActivityRate = OffMap;
+            CAWorldCharacterValues values = Values;
+            p.stitchedRegionFrequencyMin = values.FrequencyMin;
+            p.stitchedRegionFrequencyMax = values.FrequencyMax;
+            p.stitchedRegionSizeMin = values.SpanMin;
+            p.stitchedRegionSizeMax = values.SpanMax;
+            p.settlementConcentration = values.Concentration;
+            p.urbanGrowthPropensity = values.Urban;
+            p.frontierHoldingFrequency = values.FrontierFrequency;
+            p.frontierHoldingSize = values.FrontierSize;
+            p.reallocationSourceVariety = values.Variety;
+            p.offMapActivityRate = values.OffMap;
             p.lastAppliedPresetKey = Key;
             p.realizedStitchedRegionFrequency = -1f;
         }
@@ -617,22 +213,25 @@ namespace ColonistAwareness
         internal bool Matches(CARegionalWorldPolicy value)
         {
             if (value == null) return false;
-            return value.stitchedRegionSizeMin == SpanMin
-                && value.stitchedRegionSizeMax == SpanMax
+            CAWorldCharacterValues values = Values;
+            return value.stitchedRegionSizeMin == values.SpanMin
+                && value.stitchedRegionSizeMax == values.SpanMax
                 && Mathf.Approximately(value.stitchedRegionFrequencyMin,
-                    FrequencyMin)
+                    values.FrequencyMin)
                 && Mathf.Approximately(value.stitchedRegionFrequencyMax,
-                    FrequencyMax)
+                    values.FrequencyMax)
                 && Mathf.Approximately(value.settlementConcentration,
-                    Concentration)
-                && Mathf.Approximately(value.urbanGrowthPropensity, Urban)
+                    values.Concentration)
+                && Mathf.Approximately(value.urbanGrowthPropensity,
+                    values.Urban)
                 && Mathf.Approximately(value.frontierHoldingFrequency,
-                    FrontierFrequency)
+                    values.FrontierFrequency)
                 && Mathf.Approximately(value.frontierHoldingSize,
-                    FrontierSize)
+                    values.FrontierSize)
                 && Mathf.Approximately(value.reallocationSourceVariety,
-                    Variety)
-                && Mathf.Approximately(value.offMapActivityRate, OffMap);
+                    values.Variety)
+                && Mathf.Approximately(value.offMapActivityRate,
+                    values.OffMap);
         }
 
         internal static CAWorldPreset Matching(
@@ -652,91 +251,47 @@ namespace ColonistAwareness
             new CAWorldPreset
             {
                 Key = "balanced", Name = "Balanced world",
-                Summary = "The middle of every tendency.",
-                FrequencyMin = 0.25f, FrequencyMax = 0.55f,
-                SpanMin = 3, SpanMax = 5, Concentration = 0.5f,
-                Urban = 0.45f, FrontierFrequency = 0.45f,
-                FrontierSize = 0.5f, Variety = 0.5f, OffMap = 0.5f
+                Summary = "A little of everything.",
             },
             new CAWorldPreset
             {
                 Key = "heartlands", Name = "Settled heartlands",
-                Summary = "Joined, clustered land where towns and "
-                    + "cities come easily.",
-                FrequencyMin = 0.57f, FrequencyMax = 0.87f,
-                SpanMin = 3, SpanMax = 5, Concentration = 0.82f,
-                Urban = 0.8f, FrontierFrequency = 0.15f,
-                FrontierSize = 0.5f, Variety = 0.82f, OffMap = 0.82f
+                Summary = "Densely settled and well developed.",
             },
             new CAWorldPreset
             {
                 Key = "city-states", Name = "City-states",
-                Summary = "Dense, urban, and apart: each region stands "
-                    + "alone around its own center.",
-                FrequencyMin = 0f, FrequencyMax = 0.2f,
-                SpanMin = 2, SpanMax = 3, Concentration = 0.85f,
-                Urban = 0.9f, FrontierFrequency = 0.2f,
-                FrontierSize = 0.3f, Variety = 0.35f, OffMap = 0.35f
+                Summary = "A few large centres, far apart.",
             },
             new CAWorldPreset
             {
                 Key = "wide-marches", Name = "Wide marches",
-                Summary = "Broad joined countryside: far-reaching "
-                    + "regions, scattered towns, a working frontier.",
-                FrequencyMin = 0.6f, FrequencyMax = 0.9f,
-                SpanMin = 6, SpanMax = 9, Concentration = 0.2f,
-                Urban = 0.3f, FrontierFrequency = 0.6f,
-                FrontierSize = 0.6f, Variety = 0.5f, OffMap = 0.5f
+                Summary = "Broad regions, thinly settled.",
             },
             new CAWorldPreset
             {
                 Key = "open-frontier", Name = "Open frontier",
-                Summary = "Separate regions, dispersed settlement, and "
-                    + "many worked homesteads.",
-                FrequencyMin = 0f, FrequencyMax = 0.27f,
-                SpanMin = 2, SpanMax = 3, Concentration = 0.2f,
-                Urban = 0.15f, FrontierFrequency = 0.78f,
-                FrontierSize = 0.82f, Variety = 0.5f, OffMap = 0.5f
+                Summary = "Sparse and unclaimed.",
             },
             new CAWorldPreset
             {
                 Key = "fractured-rim", Name = "Fractured rim",
-                Summary = "A churning periphery: scattered cabins, "
-                    + "varied peoples, an active distant world.",
-                FrequencyMin = 0.25f, FrequencyMax = 0.55f,
-                SpanMin = 3, SpanMax = 5, Concentration = 0.2f,
-                Urban = 0.45f, FrontierFrequency = 0.78f,
-                FrontierSize = 0.18f, Variety = 0.82f, OffMap = 0.82f
+                Summary = "Scattered holdings, many factions.",
             },
             new CAWorldPreset
             {
                 Key = "crossroads", Name = "Crossroads world",
-                Summary = "A world defined by movement: every origin "
-                    + "distinct, the distant world fully alive.",
-                FrequencyMin = 0.3f, FrequencyMax = 0.6f,
-                SpanMin = 3, SpanMax = 6, Concentration = 0.5f,
-                Urban = 0.6f, FrontierFrequency = 0.3f,
-                FrontierSize = 0.4f, Variety = 1f, OffMap = 1f
+                Summary = "Every faction represented, always in motion.",
             },
             new CAWorldPreset
             {
                 Key = "backwater", Name = "Quiet backwater",
-                Summary = "An inward, sleepy world: peoples repeat and "
-                    + "little changes beyond the horizon.",
-                FrequencyMin = 0.25f, FrequencyMax = 0.55f,
-                SpanMin = 3, SpanMax = 5, Concentration = 0.5f,
-                Urban = 0.3f, FrontierFrequency = 0.35f,
-                FrontierSize = 0.5f, Variety = 0.15f, OffMap = 0.1f
+                Summary = "Isolated, and slow to change.",
             },
             new CAWorldPreset
             {
                 Key = "imperial-marches", Name = "Imperial marches",
-                Summary = "Metropole and marches: clustered urban cores "
-                    + "commanding a heavily worked frontier.",
-                FrequencyMin = 0.55f, FrequencyMax = 0.85f,
-                SpanMin = 4, SpanMax = 7, Concentration = 0.75f,
-                Urban = 0.85f, FrontierFrequency = 0.7f,
-                FrontierSize = 0.7f, Variety = 0.3f, OffMap = 0.6f
+                Summary = "A few powers, holding a worked frontier.",
             }
         };
     }
@@ -767,7 +322,7 @@ namespace ColonistAwareness
         {
             get
             {
-                return new Vector2(Mathf.Min(1010f, UI.screenWidth - 40f),
+                return new Vector2(Mathf.Min(1180f, UI.screenWidth - 40f),
                     Mathf.Min(830f, UI.screenHeight - 40f));
             }
         }
@@ -783,9 +338,10 @@ namespace ColonistAwareness
 
             top += CAOpeningTheme.Heading(x, top, w, "World tendencies")
                 + 2f;
-            top += CAOpeningTheme.Fine(x, top, w, "How the parts of the "
-                + "world you leave open tend to develop; Starting Region "
-                + "choices replace the matching tendency.") + 6f;
+            top += CAOpeningTheme.Fine(x, top, w, "How the world forms "
+                + "and develops beyond your direct authoring; inside "
+                + "your own starting region, your Starting Region "
+                + "choices take over.") + 6f;
             top += DrawStatePanel(x, top, w) + 8f;
 
             float bottomH = 44f;
@@ -831,59 +387,68 @@ namespace ColonistAwareness
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
 
-            var glyph = new Rect(x + width - 420f, y + 9f, 240f, 22f);
-            CAWorldAuthoring.DrawProfile(glyph, policy);
-            TooltipHandler.TipRegion(glyph, "This world's tendency "
-                + "profile.\n\n" + string.Join("\n",
-                    CAWorldAuthoring.Dimensions.Select(dimension =>
-                        dimension.Short + " — " + dimension.Label)));
-
             if (CAOpeningTheme.GhostButton(new Rect(x + width - 166f,
                     y + 10f, 156f, 32f), "World presets...",
-                    "Nine authored starting states, compared against "
-                    + "your current world."))
+                    "Nine authored starting states, each shown as the "
+                    + "world it favors, compared against your current "
+                    + "world."))
                 Verse.Find.WindowStack.Add(
                     new Dialog_CAWorldPresets(policy));
             return h;
         }
 
+        // ONE SHARED SCENE, MANY CONTROLS. The banded controls stand in
+        // one column; beside them the representative world renders under
+        // the actual kernels, and moving any control visibly changes the
+        // same world. No control carries its own mini-chart; the scene is
+        // the feedback.
+        // THE ADVANCED SURFACE. Controls on the left in the banded
+        // language; the right panel says, in plain words, what this
+        // state does to the world. The world itself is seen where it
+        // exists - the stitching on the globe, and the map preview of
+        // the settlements these tendencies generate.
+        // Two columns of controls - all eight tendencies - and the
+        // plain-words panel reading the same state, three panels off
+        // the same gutters.
         private void DrawWorldPicture(Rect content)
         {
-            float gap = 10f;
-            float panelW = (content.width - gap) / 2f;
-            float panelH = (content.height - gap) / 2f;
-            Facet(new Rect(content.x, content.y, panelW, panelH),
-                "The land", DrawLandFacet);
-            Facet(new Rect(content.x + panelW + gap, content.y, panelW,
-                panelH), "Settlement", DrawSettlementFacet);
-            Facet(new Rect(content.x, content.y + panelH + gap, panelW,
-                panelH), "The frontier", DrawFrontierFacet);
-            Facet(new Rect(content.x + panelW + gap,
-                content.y + panelH + gap, panelW, panelH),
-                "The wider world", DrawWiderWorldFacet);
+            float controlsW = Mathf.Min(354f,
+                (content.width - 24f) * 0.32f);
+            DrawControlsColumn(new Rect(content.x, content.y, controlsW,
+                content.height), true);
+            DrawControlsColumn(new Rect(content.x + controlsW + 12f,
+                content.y, controlsW, content.height), false);
+            DrawEffectPanel(new Rect(
+                content.x + (controlsW + 12f) * 2f, content.y,
+                content.width - (controlsW + 12f) * 2f,
+                content.height));
         }
 
-        private void Facet(Rect rect, string title, Action<Rect> body)
+        private void DrawControlsColumn(Rect rect, bool firstHalf)
         {
             CAOpeningTheme.SurfacePanel(rect);
             Rect inner = rect.ContractedBy(10f);
-            CAOpeningTheme.SectionLabel(inner.x, inner.y, inner.width,
-                title);
-            body(new Rect(inner.x, inner.y + 22f, inner.width,
-                inner.height - 22f));
-        }
+            float x = inner.x;
+            float w = inner.width;
+            float y = inner.y;
+            if (!firstHalf)
+            {
+                DrawControlsSecondHalf(x, y, w);
+                return;
+            }
 
-        private void DrawLandFacet(Rect rect)
-        {
-            float y = rect.y;
-            Header(rect.x, ref y, rect.width, "Joined regions",
+            CAOpeningTheme.SectionLabel(x, y, w, "The land");
+            y += 20f;
+            Header(x, ref y, w, "Joined regions",
                 CAWorldAuthoring.Dimensions[0].Word(policy),
-                "How often regions join adjacent land; the world rolls "
-                + "one share from your band. Occupied neighbors end a "
-                + "region.");
+                "How much of the world's land joins into multi-area "
+                + "regions. The world rolls one share from your band "
+                + "when it forms, then divides every part of its land "
+                + "accordingly — the regions you select and enter on "
+                + "the world map.");
             var range = new FloatRange(policy.stitchedRegionFrequencyMin,
                 policy.stitchedRegionFrequencyMax);
-            var rangeRect = new Rect(rect.x, y, rect.width - 4f, 28f);
+            var rangeRect = new Rect(x, y, w - 4f, 28f);
             Widgets.FloatRange(rangeRect, 91731744, ref range, 0f, 1f,
                 null, ToStringStyle.FloatTwo, 0f, GameFont.Tiny, null,
                 0.01f);
@@ -907,14 +472,15 @@ namespace ColonistAwareness
                     CAWorldAuthoring.Realized);
             }
             y += 30f;
-            Header(rect.x, ref y, rect.width, "Region reach",
+            Header(x, ref y, w, "Region reach",
                 CAWorldAuthoring.Dimensions[1].Word(policy),
-                "How many tiles a joined region asks for; adjacent free "
-                + "land caps it.");
+                "How many connected areas a joined region spans. A "
+                + "region's whole span becomes one continuous map when "
+                + "it is entered; coast and blocked land cap it.");
             var span = new IntRange(policy.stitchedRegionSizeMin,
                 policy.stitchedRegionSizeMax);
-            Widgets.IntRange(new Rect(rect.x, y, rect.width - 4f, 28f),
-                91731745, ref span, 1, 10);
+            Widgets.IntRange(new Rect(x, y, w - 4f, 28f), 91731745,
+                ref span, 1, 10);
             if (span.min != policy.stitchedRegionSizeMin
                 || span.max != policy.stitchedRegionSizeMax)
             {
@@ -922,89 +488,170 @@ namespace ColonistAwareness
                 policy.stitchedRegionSizeMax = span.max;
                 CAWorldTendenciesSession.MarkEdited();
             }
-            y += 32f;
-            // The land itself: tiles joining into regions at the share
-            // and reach above, live.
-            CAWorldAuthoring.DrawRegionDiagram(new Rect(rect.x, y,
-                rect.width - 4f, rect.yMax - y - 16f), policy);
-        }
+            y += 34f;
 
-        private void DrawSettlementFacet(Rect rect)
-        {
-            float y = rect.y;
-            Header(rect.x, ref y, rect.width, "Settlement gathering",
+            CAOpeningTheme.SectionLabel(x, y, w, "Settlement");
+            y += 20f;
+            Header(x, ref y, w, "Settlement gathering",
                 CAWorldAuthoring.Dimensions[2].Word(policy),
-                "Whether new settlements stand apart or draw together; "
-                + "their own ground and routes always score alongside.");
-            Slider(rect.x, ref y, rect.width,
-                policy.settlementConcentration,
+                "Where the world's settlements are placed when it forms "
+                + "— standing apart or drawing together — and where "
+                + "distant peoples later found new ones. Good ground "
+                + "always scores alongside.");
+            Slider(x, ref y, w, policy.settlementConcentration,
                 v => SetValue(ref policy.settlementConcentration, v),
                 "spread out", "clustered");
-            CAWorldAuthoring.DrawGatherField(new Rect(rect.x, y,
-                rect.width - 4f, 40f), policy.settlementConcentration);
-            y += 48f;
-            Header(rect.x, ref y, rect.width, "Urban development",
+            Header(x, ref y, w, "Urban development",
                 CAWorldAuthoring.Dimensions[3].Word(policy),
-                "Where the town and city bars stand on the support a "
-                + "settlement gathers from its real facts.");
-            Slider(rect.x, ref y, rect.width,
-                policy.urbanGrowthPropensity,
+                "Where the town and city bars stand. Every settlement's "
+                + "standing — hamlet to city, shown when you inspect it "
+                + "— is judged against these bars from its real support "
+                + "facts; the bars cannot supply support a place lacks.");
+            Slider(x, ref y, w, policy.urbanGrowthPropensity,
                 v => SetValue(ref policy.urbanGrowthPropensity, v),
                 "hard-won", "comes easily");
-            CAWorldAuthoring.DrawSupportGauge(new Rect(rect.x, y,
-                rect.width - 4f, 42f), policy.urbanGrowthPropensity);
         }
 
-        private void DrawFrontierFacet(Rect rect)
+        // What the current state actually does, in the order a player
+        // meets it: the land divides, settlements stand and grow, the
+        // frontier fills, the wider world moves.
+        internal static List<string> EffectLines(
+            CARegionalWorldPolicy p)
         {
-            float y = rect.y;
-            Header(rect.x, ref y, rect.width, "Frontier sites",
+            int threshold = CAWorldTendencyCausalKernel.UrbanThreshold(
+                p.urbanGrowthPropensity);
+            float share = p.realizedStitchedRegionFrequency >= 0f
+                ? p.realizedStitchedRegionFrequency
+                : CAWorldAuthoring.FrequencyMid(p);
+            return new List<string>
+            {
+                "About " + (share * 100f).ToString("F0") + "% of the "
+                + "world's land lies in regions that span several areas "
+                + "— " + p.stitchedRegionSizeMin + " to "
+                + p.stitchedRegionSizeMax + " of them — and each such "
+                + "region becomes one continuous map when you enter it. "
+                + "The rest of the land stands as single areas.",
+
+                p.settlementConcentration >= 0.65f
+                    ? "Settlements draw together: neighbours share "
+                    + "country, and long empty stretches lie between "
+                    + "the clusters."
+                    : p.settlementConcentration <= 0.35f
+                    ? "Settlements stand apart, each seeking its own "
+                    + "good ground across the world."
+                    : "Settlements spread evenly — neither crowded nor "
+                    + "isolated.",
+
+                "Where the bar sits for a settlement to count as a "
+                + "town or a city, judged from what each place actually "
+                + "has - its people, land, access, services and trade. "
+                + "You read a settlement's standing by inspecting it on "
+                + "the world map. Bar: " + threshold + " of 137 for a "
+                + "town, " + (threshold + 12) + " for a city.",
+
+                CAWorldTendencyCausalKernel.FrontierHoldingCount(8,
+                    p.frontierHoldingFrequency) + " of every 8 suitable "
+                + "empty areas in a region carries a frontier holding, "
+                + (p.frontierHoldingSize >= 0.6f
+                    ? "and those holdings are established homesteads "
+                    + "where the land allows."
+                    : p.frontierHoldingSize <= 0.3f
+                    ? "and those holdings are lone cabins."
+                    : "of mixed size."),
+
+                "The world's settlements are founded by "
+                + CAWorldTendencyCausalKernel.SourceVarietyTargetDistinct(
+                    6, 5, p.reallocationSourceVariety)
+                + " different peoples among every six, and "
+                + (p.offMapActivityRate >= 0.65f
+                    ? "the distant world stays busy — far-off "
+                    + "communities keep acting and founding new places "
+                    + "while you play."
+                    : p.offMapActivityRate <= 0.25f
+                    ? "the distant world is quiet: far-off places "
+                    + "change little while you play."
+                    : "the distant world keeps moving between your "
+                    + "visits.")
+            };
+        }
+
+        private void DrawEffectPanel(Rect rect)
+        {
+            CAOpeningTheme.SurfacePanel(rect);
+            Rect inner = rect.ContractedBy(12f);
+            float y = inner.y;
+            CAOpeningTheme.SectionLabel(inner.x, y, inner.width,
+                "What this world does");
+            y += 24f;
+            Text.Font = GameFont.Tiny;
+            foreach (string line in EffectLines(policy))
+            {
+                GUI.color = CAOpeningTheme.TextLo;
+                float h = Text.CalcHeight(line, inner.width);
+                Widgets.Label(new Rect(inner.x, y, inner.width, h), line);
+                y += h + 9f;
+            }
+            if (policy.realizedStitchedRegionFrequency >= 0f)
+            {
+                GUI.color = CAWorldAuthoring.Realized;
+                string rolled = "This world rolled "
+                    + policy.realizedStitchedRegionFrequency.ToString(
+                        "F2") + " for its joined-land share.";
+                float rh = Text.CalcHeight(rolled, inner.width);
+                Widgets.Label(new Rect(inner.x, y, inner.width, rh),
+                    rolled);
+                y += rh + 9f;
+            }
+            GUI.color = new Color(0.45f, 0.51f, 0.56f);
+            Widgets.Label(new Rect(inner.x, inner.yMax - 30f,
+                inner.width, 30f), "Tendencies, not guarantees — land, "
+                + "population, access, relations and scenario overrides "
+                + "decide what a world actually becomes.");
+            GUI.color = Color.white;
+            Text.Font = GameFont.Small;
+        }
+
+        private void DrawControlsSecondHalf(float x, float y, float w)
+        {
+            CAOpeningTheme.SectionLabel(x, y, w, "The frontier");
+            y += 20f;
+            Header(x, ref y, w, "Frontier sites",
                 CAWorldAuthoring.Dimensions[4].Word(policy),
-                "How many suitable empty areas gain a holding.");
-            Slider(rect.x, ref y, rect.width,
-                policy.frontierHoldingFrequency,
+                "How much of each region's suitable empty land carries "
+                + "a frontier holding when the region realizes — real "
+                + "places on the map, apart from the settlements.");
+            Slider(x, ref y, w, policy.frontierHoldingFrequency,
                 v => SetValue(ref policy.frontierHoldingFrequency, v),
                 "sparse", "common");
-            Header(rect.x, ref y, rect.width, "Holdings",
+            Header(x, ref y, w, "Holdings",
                 CAWorldAuthoring.Dimensions[5].Word(policy),
                 "Who lives in each: residents and how built-up. The "
                 + "land's capacity caps both.");
-            Slider(rect.x, ref y, rect.width,
-                policy.frontierHoldingSize,
+            Slider(x, ref y, w, policy.frontierHoldingSize,
                 v => SetValue(ref policy.frontierHoldingSize, v),
                 "lone cabins", "homesteads");
-            // The board: sites fill it, holdings decide who lives in
-            // each square; the last square is poor land showing its cap.
-            CAWorldAuthoring.DrawFrontierBoard(new Rect(rect.x, y + 2f,
-                rect.width - 4f, Mathf.Min(44f, rect.yMax - y - 6f)),
-                policy.frontierHoldingFrequency,
-                policy.frontierHoldingSize);
-        }
+            y += 4f;
 
-        private void DrawWiderWorldFacet(Rect rect)
-        {
-            float y = rect.y;
-            Header(rect.x, ref y, rect.width, "Settlement origins",
+            CAOpeningTheme.SectionLabel(x, y, w, "The wider world");
+            y += 20f;
+            Header(x, ref y, w, "Settlement origins",
                 CAWorldAuthoring.Dimensions[6].Word(policy),
-                "How many different peoples the sourced settlements "
-                + "span; only factions actually present can appear.");
-            Slider(rect.x, ref y, rect.width,
-                policy.reallocationSourceVariety,
+                "How many distinct peoples found the world's "
+                + "settlements — at world creation, in regions as they "
+                + "realize, and among later distant founders. Only "
+                + "factions actually present can appear.");
+            Slider(x, ref y, w, policy.reallocationSourceVariety,
                 v => SetValue(ref policy.reallocationSourceVariety, v),
                 "repeated", "varied");
-            CAWorldAuthoring.DrawOriginPips(new Rect(rect.x, y,
-                rect.width - 4f, 18f), policy.reallocationSourceVariety);
-            y += 26f;
-            Header(rect.x, ref y, rect.width, "Distant world",
+            Header(x, ref y, w, "Distant world",
                 CAWorldAuthoring.Dimensions[7].Word(policy),
-                "How much the far-off world moves between visits; "
-                + "loaded places always stay live.");
-            Slider(rect.x, ref y, rect.width, policy.offMapActivityRate,
+                "How much the far-off world acts while you play: the "
+                + "share of distant communities that advance each "
+                + "interval, and how often distant peoples found new "
+                + "settlements. Loaded places always stay live.");
+            Slider(x, ref y, w, policy.offMapActivityRate,
                 v => SetValue(ref policy.offMapActivityRate, v),
                 "quiet", "busy");
-            CAWorldAuthoring.DrawDistantField(new Rect(rect.x, y,
-                rect.width - 4f, Mathf.Min(30f, rect.yMax - y - 2f)),
-                policy.offMapActivityRate);
         }
 
         private void Header(float x, ref float y, float width,
@@ -1081,310 +728,190 @@ namespace ColonistAwareness
         {
             get
             {
-                return new Vector2(Mathf.Min(960f, UI.screenWidth - 48f),
-                    Mathf.Min(760f, UI.screenHeight - 48f));
+                return new Vector2(
+                    Mathf.Min(1240f, UI.screenWidth - 64f),
+                    Mathf.Min(714f, UI.screenHeight - 64f));
             }
         }
+
+        // ONE COMPOSED SCREEN THAT FITS ITSELF. Nine worlds as a
+        // measured grid - the prose IS the card, row heights come from
+        // the text - a delta line only when the selection differs from
+        // the current world, and one action band in flow under the
+        // content. Every text rect is measured (the fixed-height
+        // subtitle clipped at larger UI scales), and the window
+        // resizes to its actual content each frame, so dead space
+        // cannot exist at any scale.
+        private const float Gutter = 14f;
+        private Vector2 gridScroll = Vector2.zero;
 
         public override void DoWindowContents(Rect inRect)
         {
-            Widgets.DrawBoxSolid(inRect, CAOpeningTheme.Ink);
-            CAOpeningTheme.SurfacePanel(inRect);
-            Rect inner = inRect.ContractedBy(CAOpeningTheme.Pad + 4f);
-            float top = inner.y;
-            top += CAOpeningTheme.Heading(inner.x, top, inner.width,
-                "World presets") + 2f;
-            top += CAOpeningTheme.Fine(inner.x, top, inner.width,
-                "Authored starting states in the same space the editor "
-                + "owns; every tendency stays editable after applying.")
-                + 8f;
+            // MEASURE, THEN PAINT. This dialog set windowRect from
+            // inside here and described itself as fitting its own
+            // content. It never did: Window.WindowOnGUI assigns
+            // windowRect = GUI.Window(ID, windowRect, ...), so the rect
+            // is captured before this runs and the return value is
+            // written back over anything set during it. The window has
+            // always been InitialSize tall, and the empty band under
+            // the cards was that, not a spacing choice.
+            //
+            // Nothing here fights the engine now. The window keeps
+            // whatever size it has and paints no background of its own;
+            // what the player sees is the panel below, drawn at the
+            // height the content actually measures and centred in the
+            // window. Content-sized by construction, at any scale.
+            float edge = CAOpeningTheme.Pad + 10f;
+            float contentW = inRect.width - edge * 2f;
 
-            float bottomH = 44f;
-            float listW = 300f;
-            var listRect = new Rect(inner.x, top, listW,
-                inner.yMax - bottomH - top - 4f);
-            var detailRect = new Rect(inner.x + listW + 14f, top,
-                inner.width - listW - 14f,
-                inner.yMax - bottomH - top - 4f);
-            DrawList(listRect);
-            DrawComparison(detailRect);
-
-            CAOpeningTheme.Divider(inner.x, inner.yMax - bottomH + 2f,
-                inner.width);
-            CAWorldPreset selected = CAWorldPreset.ByKey(selectedKey);
-            bool alreadyActive = selected != null
-                && selected.Matches(policy);
-            if (CAOpeningTheme.GhostButton(new Rect(inner.x,
-                    inner.yMax - 34f, 120f, 32f), "Close"))
-                Close();
-            if (CAOpeningTheme.PrimaryButton(new Rect(inner.xMax - 190f,
-                    inner.yMax - 36f, 190f, 34f),
-                    alreadyActive ? "Already your state"
-                        : "Use this preset")
-                && !alreadyActive && selected != null)
-            {
-                selected.Apply(policy);
-                CAWorldTendenciesSession.MarkEdited();
-                Close();
-            }
-        }
-
-        private void DrawList(Rect rect)
-        {
-            float y = rect.y;
-            Text.Font = GameFont.Tiny;
-            GUI.color = CAOpeningTheme.TextLo;
-            Widgets.Label(new Rect(rect.x, y, rect.width, 16f),
-                string.Join(" · ", CAWorldAuthoring.Dimensions.Select(
-                    dimension => dimension.Short)));
-            GUI.color = Color.white;
+            const string subtitle = "The kind of world to generate.";
             Text.Font = GameFont.Small;
-            y += 18f;
-            float cardH = Mathf.Min(58f, (rect.height - 18f
-                - 6f * (CAWorldPreset.All.Length - 1))
-                / CAWorldPreset.All.Length);
-            foreach (CAWorldPreset preset in CAWorldPreset.All)
+            float subtitleH = Text.CalcHeight(subtitle, contentW);
+            float headerH = 4f + 36f + subtitleH + 14f;
+
+            const int columns = 3;
+            const float cardPadX = 16f;
+            const float nameBand = 36f;
+            // The scrollbar width is reserved whether or not the grid
+            // scrolls, so prose is measured at the width it is drawn
+            // at. Measuring wide and drawing narrow makes every row
+            // taller than the height it was given, and the prose spills
+            // into the row beneath.
+            const float scrollBar = 18f;
+            float cardsW = contentW - scrollBar;
+            float columnW = (cardsW - Gutter * (columns - 1)) / columns;
+            float proseW = columnW - cardPadX * 2f;
+            CAWorldPreset[] all = CAWorldPreset.All;
+            int rows = (all.Length + columns - 1) / columns;
+            var rowHeights = new float[rows];
+            for (int i = 0; i < all.Length; i++)
             {
-                var card = new Rect(rect.x, y, rect.width, cardH);
+                float h = nameBand + Text.CalcHeight(
+                    all[i].Summary, proseW) + 16f;
+                int r = i / columns;
+                if (h > rowHeights[r]) rowHeights[r] = h;
+            }
+            float gridHeight = 0f;
+            for (int r = 0; r < rows; r++)
+                gridHeight += rowHeights[r] + Gutter - 2f;
+
+            const float bandHeight = 50f;
+            float chromeH = edge + headerH + 8f + bandHeight + edge;
+            float roomForGrid = Mathf.Max(140f, inRect.height - chromeH);
+            bool scrolls = gridHeight > roomForGrid;
+            float gridShown = scrolls ? roomForGrid : gridHeight;
+
+            float panelH = Mathf.Min(chromeH + gridShown, inRect.height);
+            var panel = new Rect(inRect.x,
+                inRect.y + (inRect.height - panelH) * 0.5f,
+                inRect.width, panelH);
+            Widgets.DrawBoxSolid(panel, CAOpeningTheme.Ink);
+            CAOpeningTheme.SurfacePanel(panel);
+            Rect inner = panel.ContractedBy(edge);
+            float y = inner.y + 4f;
+
+            Text.Font = GameFont.Medium;
+            GUI.color = CAOpeningTheme.TextHi;
+            Text.Anchor = TextAnchor.UpperCenter;
+            Widgets.Label(new Rect(inner.x, y, inner.width, 34f),
+                "World character");
+            y += 36f;
+            Text.Font = GameFont.Small;
+            GUI.color = CAOpeningTheme.TextLo;
+            Widgets.Label(new Rect(inner.x, y, inner.width, subtitleH),
+                subtitle);
+            Text.Anchor = TextAnchor.UpperLeft;
+            GUI.color = Color.white;
+            y += subtitleH + 14f;
+
+            var gridOuter = new Rect(inner.x, y, inner.width, gridShown);
+            if (scrolls)
+                Widgets.BeginScrollView(gridOuter, ref gridScroll,
+                    new Rect(0f, 0f, cardsW, gridHeight));
+            // Inside a scroll view the origin is the view, not the
+            // window. Outside one the reserved bar width is split so
+            // the grid stays centred rather than sitting a bar width to
+            // the left of centre.
+            float originX = scrolls ? 0f : inner.x + scrollBar * 0.5f;
+            float originY = scrolls ? 0f : y;
+
+            for (int i = 0; i < all.Length; i++)
+            {
+                CAWorldPreset preset = all[i];
+                int r = i / columns;
+                int c = i % columns;
+                float rowY = originY;
+                for (int rr = 0; rr < r; rr++)
+                    rowY += rowHeights[rr] + Gutter - 2f;
+                var card = new Rect(originX + c * (columnW + Gutter),
+                    rowY, columnW, rowHeights[r]);
                 bool isSelected = preset.Key == selectedKey;
                 bool isCurrent = preset.Matches(policy);
-                Widgets.DrawBoxSolid(card, isSelected
+                bool hover = Mouse.IsOver(card);
+                Widgets.DrawBoxSolid(card, isSelected || hover
                     ? CAOpeningTheme.RaisedHover : CAOpeningTheme.Raised);
                 CAOpeningTheme.Border(card, isSelected
                     ? CAOpeningTheme.Accent : CAOpeningTheme.Hairline);
-                Text.Font = GameFont.Small;
+                if (isSelected)
+                    Widgets.DrawBoxSolid(new Rect(card.x, card.y,
+                        3f, card.height), CAOpeningTheme.Accent);
+                Text.Font = GameFont.Medium;
                 GUI.color = CAOpeningTheme.TextHi;
-                Widgets.Label(new Rect(card.x + 8f, card.y + 4f,
-                    card.width - 84f, 20f), preset.Name);
-                GUI.color = Color.white;
+                Widgets.Label(new Rect(card.x + cardPadX,
+                    card.y + 7f, columnW - cardPadX - 82f, 30f),
+                    preset.Name);
+                Text.Font = GameFont.Small;
                 if (isCurrent)
                 {
                     Text.Font = GameFont.Tiny;
                     GUI.color = CAOpeningTheme.AccentHover;
                     Text.Anchor = TextAnchor.MiddleRight;
-                    Widgets.Label(new Rect(card.xMax - 80f, card.y + 4f,
-                        72f, 18f), "current");
+                    Widgets.Label(new Rect(card.xMax - 74f,
+                        card.y + 12f, 60f, 18f), "current");
                     Text.Anchor = TextAnchor.UpperLeft;
-                    GUI.color = Color.white;
                     Text.Font = GameFont.Small;
                 }
-                CAWorldAuthoring.DrawProfile(new Rect(card.x + 8f,
-                    card.y + cardH - 22f, card.width - 16f, 16f),
-                    preset.Sample());
+                GUI.color = isSelected
+                    ? new Color(0.792f, 0.822f, 0.845f)
+                    : CAOpeningTheme.TextLo;
+                Widgets.Label(new Rect(card.x + cardPadX,
+                        card.y + nameBand, proseW,
+                        card.height - nameBand - 8f),
+                    preset.Summary);
+                GUI.color = Color.white;
                 if (Widgets.ButtonInvisible(card))
                     selectedKey = preset.Key;
-                y += cardH + 6f;
             }
-        }
+            if (scrolls) Widgets.EndScrollView();
+            y += gridShown + 8f;
 
-        // Your world and the preset's, as the same pictures side by
-        // side. Changed pairs draw bright with a numeric tag where the
-        // number is the point; unchanged pairs dim.
-        private void DrawComparison(Rect rect)
-        {
-            CAWorldPreset preset = CAWorldPreset.ByKey(selectedKey);
-            if (preset == null) return;
-            CARegionalWorldPolicy target = preset.Sample();
-            bool isCurrent = preset.Matches(policy);
-            float y = rect.y;
-            Text.Font = GameFont.Small;
-            GUI.color = CAOpeningTheme.TextHi;
-            Widgets.Label(new Rect(rect.x, y, rect.width, 22f),
-                preset.Name);
-            GUI.color = Color.white;
-            y += 20f;
-            Text.Font = GameFont.Tiny;
-            GUI.color = CAOpeningTheme.TextLo;
-            float summaryH = Text.CalcHeight(preset.Summary, rect.width);
-            Widgets.Label(new Rect(rect.x, y, rect.width, summaryH),
-                preset.Summary);
-            GUI.color = Color.white;
-            Text.Font = GameFont.Small;
-            y += summaryH + 6f;
-
-            float columnW = (rect.width - 116f - 10f) / 2f;
-            if (!isCurrent)
+            CAWorldPreset chosen = CAWorldPreset.ByKey(selectedKey);
+            float bandY = y + 4f;
+            if (CAOpeningTheme.GhostButton(new Rect(inner.x, bandY,
+                    110f, 34f), "Close"))
+                Close();
+            if (CAOpeningTheme.GhostButton(new Rect(inner.x + 122f,
+                    bandY, 192f, 34f), "Adjust tendencies...",
+                    "Set the eight underlying tendencies directly, and "
+                    + "read what each one does."))
+                Verse.Find.WindowStack.Add(
+                    new Dialog_CAWorldGeneration(policy));
+            // Offered only for a world the player actually picked here.
+            // The selection fell back to whichever preset was last
+            // applied even after the values had been edited away from
+            // it, so a world the player had deliberately altered showed
+            // that preset as their selection and offered a button that
+            // silently restored it - which is indistinguishable from
+            // the edits having been discarded on their own.
+            if (chosen != null && !chosen.Matches(policy)
+                && CAOpeningTheme.PrimaryButton(new Rect(
+                    inner.xMax - 200f, bandY - 1f, 200f, 36f),
+                    "Use this world"))
             {
-                Text.Font = GameFont.Tiny;
-                GUI.color = CAOpeningTheme.TextLo;
-                Widgets.Label(new Rect(rect.x + 116f, y, columnW, 16f),
-                    "your world");
-                GUI.color = CAOpeningTheme.TextHi;
-                Widgets.Label(new Rect(rect.x + 116f + columnW + 10f, y,
-                    columnW, 16f), preset.Name.ToLower());
-                GUI.color = Color.white;
-                Text.Font = GameFont.Small;
-                y += 18f;
+                chosen.Apply(policy);
+                CAWorldTendenciesSession.MarkEdited();
+                Close();
             }
-
-            ComparisonRow(rect.x, ref y, rect.width, columnW, "land",
-                LandChanged(policy, target), isCurrent, 46f,
-                (r, p) => CAWorldAuthoring.DrawRegionDiagram(r, p),
-                policy, target, ReachTag(policy, target));
-            ComparisonRow(rect.x, ref y, rect.width, columnW,
-                "gathering",
-                CAWorldAuthoring.Dimensions[2].Word(policy)
-                    != CAWorldAuthoring.Dimensions[2].Word(target),
-                isCurrent, 30f, (r, p) =>
-                    CAWorldAuthoring.DrawGatherField(r,
-                        p.settlementConcentration), policy, target,
-                null);
-            int nowBar = CAWorldTendencyCausalKernel.UrbanThreshold(
-                policy.urbanGrowthPropensity);
-            int thenBar = CAWorldTendencyCausalKernel.UrbanThreshold(
-                target.urbanGrowthPropensity);
-            ComparisonRow(rect.x, ref y, rect.width, columnW, "urban",
-                nowBar != thenBar, isCurrent, 34f, (r, p) =>
-                    CAWorldAuthoring.DrawSupportGauge(r,
-                        p.urbanGrowthPropensity, false), policy, target,
-                nowBar != thenBar ? "town " + nowBar + " → " + thenBar
-                    : null);
-            ComparisonRow(rect.x, ref y, rect.width, columnW,
-                "frontier", FrontierChanged(policy, target), isCurrent,
-                34f, (r, p) => CAWorldAuthoring.DrawFrontierBoard(r,
-                    p.frontierHoldingFrequency, p.frontierHoldingSize),
-                policy, target, FrontierTag(policy, target));
-            int nowDistinct = CAWorldTendencyCausalKernel
-                .SourceVarietyTargetDistinct(6, 5,
-                    policy.reallocationSourceVariety);
-            int thenDistinct = CAWorldTendencyCausalKernel
-                .SourceVarietyTargetDistinct(6, 5,
-                    target.reallocationSourceVariety);
-            ComparisonRow(rect.x, ref y, rect.width, columnW, "origins",
-                nowDistinct != thenDistinct, isCurrent, 20f, (r, p) =>
-                    CAWorldAuthoring.DrawOriginPips(r,
-                        p.reallocationSourceVariety), policy, target,
-                nowDistinct != thenDistinct
-                    ? nowDistinct + " → " + thenDistinct + " peoples"
-                    : null);
-            int nowActive = CAWorldTendencyCausalKernel
-                .OffMapActivityBudget(20, policy.offMapActivityRate);
-            int thenActive = CAWorldTendencyCausalKernel
-                .OffMapActivityBudget(20, target.offMapActivityRate);
-            ComparisonRow(rect.x, ref y, rect.width, columnW, "distant",
-                nowActive != thenActive, isCurrent, 26f, (r, p) =>
-                    CAWorldAuthoring.DrawDistantField(r,
-                        p.offMapActivityRate), policy, target,
-                nowActive != thenActive
-                    ? nowActive + " → " + thenActive + " of 20"
-                    : null);
-
-            y += 4f;
-            Text.Font = GameFont.Tiny;
-            GUI.color = CAOpeningTheme.TextLo;
-            const string caveat = "Tendencies, not guarantees.";
-            Widgets.Label(new Rect(rect.x, y, rect.width, 16f), caveat);
-            y += 16f;
-            GUI.color = new Color(0.45f, 0.51f, 0.56f);
-            string writes = "join "
-                + target.stitchedRegionFrequencyMin.ToString("F2") + "–"
-                + target.stitchedRegionFrequencyMax.ToString("F2")
-                + " · reach " + target.stitchedRegionSizeMin + "–"
-                + target.stitchedRegionSizeMax + " · gather "
-                + target.settlementConcentration.ToString("F2")
-                + " · urban "
-                + target.urbanGrowthPropensity.ToString("F2")
-                + " · sites "
-                + target.frontierHoldingFrequency.ToString("F2")
-                + " · holds "
-                + target.frontierHoldingSize.ToString("F2")
-                + " · origin "
-                + target.reallocationSourceVariety.ToString("F2")
-                + " · distant "
-                + target.offMapActivityRate.ToString("F2");
-            float writesH = Text.CalcHeight(writes, rect.width);
-            Widgets.Label(new Rect(rect.x, y, rect.width, writesH),
-                writes);
-            GUI.color = Color.white;
-            Text.Font = GameFont.Small;
-        }
-
-        private void ComparisonRow(float x, ref float y, float width,
-            float columnW, string label, bool changed, bool isCurrent,
-            float height,
-            Action<Rect, CARegionalWorldPolicy> draw,
-            CARegionalWorldPolicy now, CARegionalWorldPolicy then,
-            string tag)
-        {
-            float rowTop = y;
-            Text.Font = GameFont.Tiny;
-            GUI.color = CAOpeningTheme.TextLo;
-            Widgets.Label(new Rect(x, y + 2f, 110f, 16f), label);
-            GUI.color = Color.white;
-            Text.Font = GameFont.Small;
-            if (!isCurrent)
-            {
-                draw(new Rect(x + 116f, y, columnW, height), now);
-                draw(new Rect(x + 116f + columnW + 10f, y, columnW,
-                    height), then);
-            }
-            else
-                draw(new Rect(x + 116f, y, columnW * 2f + 10f, height),
-                    then);
-            y += height + 2f;
-            if (tag != null && !isCurrent)
-            {
-                Text.Font = GameFont.Tiny;
-                GUI.color = CAWorldAuthoring.Consequence;
-                Widgets.Label(new Rect(x + 116f, y, columnW * 2f + 10f,
-                    14f), tag);
-                GUI.color = Color.white;
-                Text.Font = GameFont.Small;
-                y += 15f;
-            }
-            // The representations draw with their own explicit colors,
-            // so an unchanged pair dims under a scrim rather than a
-            // tint: the difference between rows IS the comparison.
-            if (!changed && !isCurrent)
-                Widgets.DrawBoxSolid(new Rect(x, rowTop, width,
-                    y - rowTop), new Color(CAOpeningTheme.Ink.r,
-                    CAOpeningTheme.Ink.g, CAOpeningTheme.Ink.b, 0.55f));
-            y += 5f;
-        }
-
-        private static bool LandChanged(CARegionalWorldPolicy now,
-            CARegionalWorldPolicy then)
-        {
-            return Mathf.Abs(CAWorldAuthoring.FrequencyMid(now)
-                    - CAWorldAuthoring.FrequencyMid(then)) >= 0.08f
-                || now.stitchedRegionSizeMin != then.stitchedRegionSizeMin
-                || now.stitchedRegionSizeMax
-                    != then.stitchedRegionSizeMax;
-        }
-
-        private static string ReachTag(CARegionalWorldPolicy now,
-            CARegionalWorldPolicy then)
-        {
-            if (now.stitchedRegionSizeMin == then.stitchedRegionSizeMin
-                && now.stitchedRegionSizeMax
-                    == then.stitchedRegionSizeMax) return null;
-            return "reach " + now.stitchedRegionSizeMin + "–"
-                + now.stitchedRegionSizeMax + " → "
-                + then.stitchedRegionSizeMin + "–"
-                + then.stitchedRegionSizeMax + " tiles";
-        }
-
-        private static bool FrontierChanged(CARegionalWorldPolicy now,
-            CARegionalWorldPolicy then)
-        {
-            return CAWorldTendencyCausalKernel.FrontierHoldingCount(8,
-                    now.frontierHoldingFrequency)
-                != CAWorldTendencyCausalKernel.FrontierHoldingCount(8,
-                    then.frontierHoldingFrequency)
-                || CAWorldTendencyCausalKernel.FrontierResidentCount(3,
-                    now.frontierHoldingSize)
-                != CAWorldTendencyCausalKernel.FrontierResidentCount(3,
-                    then.frontierHoldingSize);
-        }
-
-        private static string FrontierTag(CARegionalWorldPolicy now,
-            CARegionalWorldPolicy then)
-        {
-            int a = CAWorldTendencyCausalKernel.FrontierHoldingCount(8,
-                now.frontierHoldingFrequency);
-            int b = CAWorldTendencyCausalKernel.FrontierHoldingCount(8,
-                then.frontierHoldingFrequency);
-            return a == b ? null : a + " → " + b + " of 8 areas";
         }
     }
 
@@ -1415,8 +942,13 @@ namespace ColonistAwareness
             // world's character: the state named in the page's own
             // label grammar, the world vignette these tendencies favor,
             // and the two entries into presets and causal authoring.
-            var mainRect = new Rect(rect.x, rect.y + 45f, rect.width,
-                rect.height - 45f - 38f);
+            // Page.GetMainRect, mirrored exactly. It was reproduced
+            // here 17px too tall, which put the bottom this block
+            // clamps against inside the page's own Back/Next strip -
+            // so on a short column the entry button could be drawn
+            // over the buttons that leave the page.
+            var mainRect = new Rect(0f, 45f, rect.width,
+                rect.height - 38f - 45f - 17f);
             float columnW = (mainRect.width - 18f) * 0.5f;
             float rows = 240f
                 + (ModsConfig.OdysseyActive ? 40f : 0f)
@@ -1431,30 +963,32 @@ namespace ColonistAwareness
             Widgets.Label(new Rect(x, y, 200f, 30f), "World character");
             GUI.color = CAWorldAuthoring.IsPresetState(p)
                 ? CAOpeningTheme.TextHi : CAOpeningTheme.AccentHover;
-            Widgets.Label(new Rect(x + 200f, y, columnW - 200f, 30f),
+            Widgets.Label(new Rect(x + 200f, y, columnW - 200f, 22f),
                 CAWorldAuthoring.StateName(p));
             GUI.color = Color.white;
-            y += 34f;
+            // The state's one meaning line, in the same place the
+            // editor states it.
+            CAWorldPreset activePreset = CAWorldPreset.Matching(p);
+            string meaning = activePreset != null ? activePreset.Summary
+                : p.lastAppliedPresetKey != null
+                    ? "Diverges from that preset."
+                    : "Authored directly.";
+            Text.Font = GameFont.Tiny;
+            GUI.color = CAOpeningTheme.TextLo;
+            Widgets.Label(new Rect(x + 200f, y + 20f,
+                columnW - 200f, 16f), meaning);
+            GUI.color = Color.white;
+            Text.Font = GameFont.Small;
+            y += 38f;
 
-            float buttonsY = bottom - 30f;
-            float vignetteH = Mathf.Max(90f, buttonsY - 8f - y);
-            var vignette = new Rect(x, y, columnW, vignetteH);
-            CAWorldAuthoring.DrawWorldVignette(vignette, p);
-            TooltipHandler.TipRegion(vignette, "The world these "
-                + "tendencies favor: how its land joins, where "
-                + "settlement gathers and grows, who founded it, how "
-                + "worked its frontier is, and how alive the distant "
-                + "world stays.");
-
-            float buttonW = (columnW - 10f) * 0.5f;
-            if (Widgets.ButtonText(new Rect(x, buttonsY, buttonW, 30f),
-                    "World presets..."))
+            // One entry, in the page's own button grammar. The world's
+            // character is chosen there in plain language; the eight
+            // tendencies live one door further in.
+            if (Widgets.ButtonText(new Rect(x + 200f,
+                    Mathf.Min(y, bottom - 30f), columnW - 200f, 30f),
+                    "Choose world character..."))
                 Verse.Find.WindowStack.Add(
                     new Dialog_CAWorldPresets(p));
-            if (Widgets.ButtonText(new Rect(x + buttonW + 10f,
-                    buttonsY, buttonW, 30f), "Author tendencies..."))
-                Verse.Find.WindowStack.Add(new Dialog_CAWorldGeneration(
-                    CAWorldTendenciesSession.Policy));
         }
     }
 }
