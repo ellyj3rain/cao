@@ -1,4 +1,4 @@
-import test from "node:test";
+﻿import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
@@ -13,16 +13,16 @@ import {
 
 test("semantic replay derives the current CAO version", () => {
   const replay = computeVersionReplay();
-  assert.equal(replay.currentVersion, "1.7.1.0-alpha");
-  assert.equal(CURRENT_VERSION, "1.7.1.0-alpha");
-  assert.equal(replay.trace.length, 45);
+  assert.equal(replay.currentVersion, "1.7.2.0-alpha");
+  assert.equal(CURRENT_VERSION, "1.7.2.0-alpha");
+  assert.equal(replay.trace.length, 46);
   assert.equal(replay.trace[0].version, "0.1.0.0-pre-alpha");
   assert.equal(replay.trace[1].version, "0.2.0.0-pre-alpha");
   assert.equal(replay.trace[2].version, "0.2.0.1-pre-alpha");
   assert.equal(replay.trace[8].version, "0.5.0.0-alpha");
 });
 
-test("version units partition A1-B18 exactly once", () => {
+test("version units partition A1-B19 exactly once", () => {
   const covered = VERSION_UNITS.flatMap(expandBatchSpan);
   const expected = [
     ...Array.from({ length: 102 }, (_, index) => `A${index + 1}`),
@@ -44,6 +44,7 @@ test("version units partition A1-B18 exactly once", () => {
     "B16",
     "B17",
     "B18",
+    "B19",
   ];
   assert.deepEqual(covered, expected);
 });
@@ -58,6 +59,7 @@ test("Neo odometer caps roll mechanically", () => {
 test("repository projections and identifiers match the replay", () => {
   const result = validateRepository(DEFAULT_REPO_ROOT);
   assert.equal(result.ok, true, result.errors.join("\n"));
-  assert.equal(result.closedBatchCount, 120);
-  assert.equal(result.nextBatch, "B19");
+  assert.equal(result.closedBatchCount, 121);
+  assert.equal(result.nextBatch, "B20");
 });
+
