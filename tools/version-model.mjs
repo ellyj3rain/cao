@@ -19,8 +19,8 @@ export const KOHAI_HARD_CAP = 16;
 export const PATCH_HARD_CAP = 24;
 export const MATURITY_LADDER = Object.freeze(["pre-alpha", "alpha", "beta", "rc"]);
 export const ROOT_REPLAY_START_VERSION = "0.1.0.0-pre-alpha";
-export const CLOSED_BATCH_TIP = "B17";
-export const NEXT_BATCH = "B18";
+export const CLOSED_BATCH_TIP = "B18";
+export const NEXT_BATCH = "B19";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_REPO_ROOT = resolve(here, "..");
@@ -482,6 +482,17 @@ export const VERSION_UNITS = Object.freeze([
     name: "First-class site affiliation and pawn epistemics",
     threads: ["T-001", "T-002", "T-004", "T-005", "T-013", "T-014", "T-019", "T-021", "T-022", "T-023", "T-024", "T-025", "T-028", "T-030"],
     rationale: "B17 makes absence of faction ownership a first-class social fact across major settlements and every existing frontier form. Ownership, material support, resident affiliation, and local social state are independently typed; factionless sites retain Culture, Ideoligion, Political Order, Technological Knowledge, institutions, organizations, programs, provisions, population, and development without a sentinel or placeholder faction. Atomic adjacent-schema migration and explicit scale transitions preserve those facts without manufacturing ownership. B17 also extends the existing proposition store with an optional broader pawn-knowledge mode: typed durable and transient facts remain pawn-private, reports copy the teller's remembered record with provenance and source age, contradictory versions can coexist, and revision or supersession occurs only through later evidence. Direct inspection, current-fixture conversion, executable separation receipts, retained regression suites, reproducible builds, and byte-verified deployment establish a new simulation and authoring capability, so the unit carries the minor tier.",
+  },
+  {
+    id: "VU-045",
+    series: "B",
+    first: 18,
+    last: 18,
+    dates: "2026-08-18 to 2026-08-19",
+    tier: "kohai",
+    name: "Authoring-state convergence and runtime performance",
+    threads: ["T-001", "T-002", "T-009", "T-013", "T-019", "T-020", "T-021", "T-022", "T-027", "T-030"],
+    rationale: "B18 matures the existing regional start path into a measured performance-convergence loop and closes it correct. Retained fixed-seed generation optimizations bring complete 400x6 generation from 257 s to 122 s under the preferred three-minute target while preserving authored settlement state, native candidate order, RNG semantics, and population composition. The one remaining creation defect is repaired at one coherent boundary: program rooms, program assets, provision stock, and generated residents all join the settlement's map-edge-connected pawn network, restoring the native settlement spawn predicate CA's direct BaseGen push had dropped, with clean candidate rollback and unweakened runtime access validation. A new passive-play matrix measures paused, speed-tier, surface, combat, fire, and full in-game-day operation with bounded per-phase evidence, and its disposable save - the first real current-boundary save CA's emitted-save seal ever validated end to end - surfaced and closed a queue of latent save-refusal defects: combat spatial-log growth beyond the streaming element limit now bounded by a named recency horizon, default-omission fields force-serialized, missing schema stamps added across eight record classes, death-reachable null references moved to allow-null or pruned at their owners, and three kernel contracts corrected to shipped or designed state. Because the unit extends and structurally matures the existing capability line rather than establishing a new player-visible one, it carries the kohai tier.",
   },
 ]);
 
