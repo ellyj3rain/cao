@@ -170,6 +170,21 @@ namespace ColonistAwareness
                     + "; relations with you: "
                     + (record.faction?.PlayerRelationKind.ToString()
                         ?? "-"));
+                text.AppendLine("  creation: authorized="
+                    + record.creationAuthorized + ", executable="
+                    + record.creationExecutable + ", material="
+                    + record.creationMaterialFeasible + ", siting="
+                    + record.creationSitingFeasible
+                    + (record.creationBlocker.NullOrEmpty() ? ""
+                        : "; blocker: " + record.creationBlocker));
+                foreach (CASettlementProgramEntry entry in record
+                    .settlementProgram?.entries
+                        ?? new List<CASettlementProgramEntry>())
+                    text.AppendLine("      program " + entry.programKey + " / "
+                        + entry.operatorIdentity + ": "
+                        + (entry.materializationState ?? "pending")
+                        + (entry.blocker.NullOrEmpty() ? ""
+                            : " - " + entry.blocker));
 
                 // [A] population groups: expected vs actual
                 if (record.populationGroups == null || record.populationGroups.Count == 0)
@@ -260,6 +275,22 @@ namespace ColonistAwareness
                         + (op != null ? op.name + " (treasury "
                             + op.treasury.ToString("F0") + ")"
                             : "MISSING") + "   EXPECT present");
+                    CAProvisionMaterialEvidence material =
+                        CAProvisionMaterializationAdapter.Observe(record, map,
+                            arrangement);
+                    text.AppendLine("        runtime: "
+                        + (arrangement.operational ? "operational" : "not operating")
+                        + "; exact material contract: "
+                        + (material.Complete ? "complete" : "incomplete")
+                        + (material.Failure.NullOrEmpty() ? ""
+                            : " - " + material.Failure)
+                        + (arrangement.operational
+                            || arrangement.inactiveReason.NullOrEmpty() ? ""
+                            : "; runtime blocker: "
+                                + arrangement.inactiveReason));
+                    if (!arrangement.operational)
+                        AppendProvisionAccessDiagnostic(text, record, map,
+                            arrangement, material);
                     if (arrangement.funding
                         == CAProvisionFunding.Taxation)
                     {
@@ -317,7 +348,7 @@ namespace ColonistAwareness
                     {
                         if (thing.def.defName == "FueledStove"
                             || thing.def.defName == "Campfire") stoves++;
-                        else if (thing.def.defName == "Table2x2c")
+                        else if (thing.def.IsTable)
                             tables++;
                         else if (thing.def.defName == "Pemmican")
                             foodStacks++;
@@ -374,7 +405,11 @@ namespace ColonistAwareness
                 if (axisLedger != null)
                 {
                     int holdings = axisLedger.Holdings.Count(h =>
-                        h != null && h.mapId == map.uniqueID);
+                        h != null && h.mapId == map.uniqueID
+                            && (h.ownerIdentity == org.organizationKey
+                                || h.operatorIdentity == org.organizationKey
+                                || h.ownerOrgKey == org.organizationKey
+                                || h.operatorOrgKey == org.organizationKey));
                     if (holdings > 0)
                         text.AppendLine("      holdings on this map: "
                             + holdings + " (tenure per the ownership "
@@ -558,6 +593,111 @@ namespace ColonistAwareness
             return tally.Count == 0 ? "none"
                 : string.Join(", ", tally.Select(pair =>
                     pair.Key + " x" + pair.Value).ToArray());
+        }
+
+        // Read-only forensic evidence for a provision arrangement the
+        // runtime resolver refused: exact node, stock, and resident
+        // positions, per-target native reachability, and the standing
+        // edifice neighborhood around the first node. Bounded to the
+        // non-operating arrangements of the developer receipt.
+        private static void AppendProvisionAccessDiagnostic(
+            StringBuilder text, CARegionalSettlementRecord record, Map map,
+            CAProvisionArrangement arrangement,
+            CAProvisionMaterialEvidence material)
+        {
+            CAResolvedProvisionOperator resolved =
+                CAProvisionOperatorResolver.Resolve(record, map, arrangement);
+            List<Pawn> eligible = CAProvisionAccessService.EligibleResidents(
+                record, map, arrangement, resolved?.Organization)
+                .Where(pawn => pawn != null && pawn.Spawned && !pawn.Dead)
+                .ToList();
+            string RegionWords(IntVec3 cell)
+            {
+                Region region = cell.InBounds(map)
+                    ? map.regionGrid.GetValidRegionAt(cell) : null;
+                return region == null ? "region none"
+                    : "region " + region.id + " " + region.type
+                        + " district "
+                        + (region.District?.ID.ToString() ?? "none");
+            }
+            int Reachers(LocalTargetInfo target)
+            {
+                return eligible.Count(pawn => pawn.CanReach(target,
+                    Verse.AI.PathEndMode.Touch, Danger.Some));
+            }
+            text.AppendLine("        [access diagnostic] eligible residents: "
+                + eligible.Count);
+            foreach (Pawn pawn in eligible.Take(4))
+                text.AppendLine("          resident pawn:"
+                    + pawn.thingIDNumber + " at " + pawn.Position + "; "
+                    + RegionWords(pawn.Position));
+            var nodeCells = new List<IntVec3>();
+            foreach (CAFacilityHolding node in material.Nodes
+                ?? new List<CAFacilityHolding>())
+            {
+                nodeCells.Add(node.cell);
+                text.AppendLine("          node " + node.assetRole + " at "
+                    + node.cell + "; " + RegionWords(node.cell)
+                    + "; reachable by " + Reachers(node.cell) + "/"
+                    + eligible.Count);
+            }
+            foreach (CAStartingStockRecord stock in material.Stock
+                ?? new List<CAStartingStockRecord>())
+            {
+                Thing thing = map.listerThings.AllThings.FirstOrDefault(
+                    item => item != null && !item.Destroyed
+                        && item.thingIDNumber == stock.thingId);
+                text.AppendLine(thing == null
+                    ? "          stock thing " + stock.thingId + " ("
+                        + stock.thingDefName + ") is not standing on the map"
+                    : "          stock " + thing.def.defName + " x"
+                        + thing.stackCount + " at " + thing.Position + "; "
+                        + RegionWords(thing.Position) + "; reachable by "
+                        + Reachers(thing) + "/" + eligible.Count);
+            }
+            if (nodeCells.Count == 0) return;
+            IntVec3 center = nodeCells[0];
+            var pawnCells = new HashSet<IntVec3>(eligible.Select(pawn =>
+                pawn.Position));
+            var stockCells = new HashSet<IntVec3>((material.Stock
+                    ?? new List<CAStartingStockRecord>())
+                .Select(stock => map.listerThings.AllThings.FirstOrDefault(
+                    item => item != null && !item.Destroyed
+                        && item.thingIDNumber == stock.thingId))
+                .Where(thing => thing != null)
+                .Select(thing => thing.Position));
+            text.AppendLine("          standing neighborhood 33x33 around "
+                + center + " (N up; #=impassable edifice, D=door, "
+                + "A=aperture, n=node, s=stock, p=resident, +=building, "
+                + "~=water, .=walkable, x=unwalkable):");
+            for (int dz = 16; dz >= -16; dz--)
+            {
+                var row = new StringBuilder("          ");
+                for (int dx = -16; dx <= 16; dx++)
+                {
+                    IntVec3 cell = center + new IntVec3(dx, 0, dz);
+                    char mark;
+                    if (!cell.InBounds(map)) mark = ' ';
+                    else if (pawnCells.Contains(cell)) mark = 'p';
+                    else if (nodeCells.Contains(cell)) mark = 'n';
+                    else if (stockCells.Contains(cell)) mark = 's';
+                    else
+                    {
+                        Building edifice = cell.GetEdifice(map);
+                        if (edifice is Building_Door) mark = 'D';
+                        else if (edifice is Building_CAAperture) mark = 'A';
+                        else if (edifice != null
+                            && edifice.def.passability
+                                == Traversability.Impassable) mark = '#';
+                        else if (edifice != null) mark = '+';
+                        else if (cell.GetTerrain(map)?.IsWater == true)
+                            mark = '~';
+                        else mark = cell.Walkable(map) ? '.' : 'x';
+                    }
+                    row.Append(mark);
+                }
+                text.AppendLine(row.ToString());
+            }
         }
     }
 

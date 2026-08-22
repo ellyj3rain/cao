@@ -226,6 +226,12 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref residentAuthor, "residentAuthor",
                 CAResidentRosterAuthor.None);
             Scribe_Collections.Look(ref cells, "cells", LookMode.Undefined);
+            // A roster slot does not survive the pawn object's destruction
+            // (the load path already strips nulls); pruning at save keeps
+            // the emitted reference list free of the null entries the
+            // campaign preflight refuses.
+            if (Scribe.mode == LoadSaveMode.Saving && residents != null)
+                residents.RemoveAll(pawn => pawn == null || pawn.Destroyed);
             Scribe_Collections.Look(ref residents, "residents", LookMode.Reference);
             if (cells == null) cells = new List<IntVec3>();
             if (residents == null) residents = new List<Pawn>();

@@ -331,8 +331,52 @@ namespace ColonistAwareness
             return p.CurJob == null || !p.CurJob.playerForced;
         }
 
+        // A lost team pawn's slot entry never leaves the drill on its own:
+        // the paired removal keeps the pawn/cell rows aligned and keeps a
+        // destroyed pawn from serializing as a null reference the campaign
+        // preflight refuses.
+        public override void Notify_PawnLost(Pawn p,
+            PawnLostCondition condition)
+        {
+            base.Notify_PawnLost(p, condition);
+            RemovePairedPawn(p);
+        }
+
+        private void RemovePairedPawn(Pawn p)
+        {
+            int slot = slotPawns.IndexOf(p);
+            if (slot >= 0)
+            {
+                slotPawns.RemoveAt(slot);
+                if (slot < slotCells.Count) slotCells.RemoveAt(slot);
+            }
+            int clear = clearPawns.IndexOf(p);
+            if (clear >= 0)
+            {
+                clearPawns.RemoveAt(clear);
+                if (clear < clearCells.Count) clearCells.RemoveAt(clear);
+            }
+        }
+
+        private void PruneDestroyedPairs()
+        {
+            for (int i = slotPawns.Count - 1; i >= 0; i--)
+                if (slotPawns[i] == null || slotPawns[i].Destroyed)
+                {
+                    slotPawns.RemoveAt(i);
+                    if (i < slotCells.Count) slotCells.RemoveAt(i);
+                }
+            for (int i = clearPawns.Count - 1; i >= 0; i--)
+                if (clearPawns[i] == null || clearPawns[i].Destroyed)
+                {
+                    clearPawns.RemoveAt(i);
+                    if (i < clearCells.Count) clearCells.RemoveAt(i);
+                }
+        }
+
         public override void ExposeData()
         {
+            if (Scribe.mode == LoadSaveMode.Saving) PruneDestroyedPairs();
             Scribe_References.Look(ref door, "door");
             Scribe_Collections.Look(ref slotPawns, "slotPawns", LookMode.Reference);
             Scribe_Collections.Look(ref slotCells, "slotCells", LookMode.Value);

@@ -234,6 +234,18 @@ namespace ColonistAwareness
             return averageDistance <= 1.6f ? 4 : 2;
         }
 
+        // The variety tendency's whole effect: how many distinct owning
+        // factions a source selection of a given size aims to represent.
+        // Selection then prefers unrepresented owners until this target is
+        // met, and the pool's actual composition caps the result.
+        public static int SourceVarietyTargetDistinct(int count,
+            int distinctAvailable, float variety)
+        {
+            if (count <= 0) return 0;
+            return Math.Min(count, 1 + (int)Math.Round(
+                Clamp01(variety) * Math.Max(0, distinctAvailable - 1)));
+        }
+
         public static int OffMapActivityBudget(int subjectCount, float rate)
         {
             if (subjectCount <= 0 || rate <= 0f) return 0;

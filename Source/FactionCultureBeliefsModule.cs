@@ -454,10 +454,14 @@ namespace ColonistAwareness
                 LookMode.Deep);
             Scribe_Values.Look(ref questionRegistryVersion,
                 "questionRegistryVersion", 0);
+            // The campaign preflight requires both spread fields exactly
+            // once per culture; a default-valued spread (2 is one of the
+            // five authorable values) must still serialize or the emitted
+            // save fails its own completeness seal.
             Scribe_Values.Look(ref withinGroupSpread,
-                "withinGroupSpread", 2);
+                "withinGroupSpread", 2, forceSave: true);
             Scribe_Values.Look(ref subgroupSeparation,
-                "subgroupSeparation", 2);
+                "subgroupSeparation", 2, forceSave: true);
             Scribe_Collections.Look(ref inheritedQuestions,
                 "inheritedQuestions", LookMode.Deep);
             Scribe_Collections.Look(ref localQuestions,
@@ -727,10 +731,17 @@ namespace ColonistAwareness
         {
             Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
             Scribe_Values.Look(ref id, "id");
-            Scribe_Values.Look(ref name, "name");
-            Scribe_Values.Look(ref nameAuthored, "nameAuthored", false);
-            Scribe_Values.Look(ref nameRoll, "nameRoll", 0);
-            Scribe_Values.Look(ref generationRoll, "generationRoll", 0);
+            // The campaign preflight requires the four name/roll fields
+            // exactly once per political order; their idle defaults (an
+            // unauthored generated name, roll zero) are ordinary states
+            // that must still serialize.
+            Scribe_Values.Look(ref name, "name", null, forceSave: true);
+            Scribe_Values.Look(ref nameAuthored, "nameAuthored", false,
+                forceSave: true);
+            Scribe_Values.Look(ref nameRoll, "nameRoll", 0,
+                forceSave: true);
+            Scribe_Values.Look(ref generationRoll, "generationRoll", 0,
+                forceSave: true);
             Scribe_Collections.Look(ref questions, "questions",
                 LookMode.Deep);
             Scribe_Collections.Look(ref positions, "positions", LookMode.Deep);
@@ -818,6 +829,28 @@ namespace ColonistAwareness
                 CACultureDistributionKernel.Fingerprint(actual),
                 CACultureDistributionKernel.Fingerprint(expected),
                 StringComparison.Ordinal);
+        }
+
+        // The state a plan is born with before anyone has authored a
+        // Culture: no identity because no content. A pending draft carrying
+        // one of these is mid-composition, not corrupt -- there is nothing
+        // in it to lose. Anything WITH content but without identity is
+        // still corruption and still refused by ValidationFailure.
+        internal static bool IsUnauthoredShell(CACulture culture)
+        {
+            return culture == null
+                || (culture.id.NullOrEmpty()
+                    && culture.name.NullOrEmpty()
+                    && (culture.constituents?.Count ?? 0) == 0
+                    && (culture.inheritedQuestions?.Count ?? 0) == 0
+                    && (culture.localQuestions?.Count ?? 0) == 0
+                    && (culture.inheritedMeanings?.Count ?? 0) == 0
+                    && (culture.localMeanings?.Count ?? 0) == 0
+                    && (culture.inheritedPractices?.Count ?? 0) == 0
+                    && (culture.practices?.Count ?? 0) == 0
+                    && (culture.observations?.Count ?? 0) == 0
+                    && (culture.transitions?.Count ?? 0) == 0
+                    && (culture.legacyEvidence?.Count ?? 0) == 0);
         }
 
         // Pure validation for durable owners. It does not prune, generate,
@@ -3401,18 +3434,36 @@ namespace ColonistAwareness
                         ? CACultureIdeoligionComparison.Pending
                         : CACultureIdeoligionComparison.Single
                     : ideoligionComparison;
-            doCloseX = true;
-            doCloseButton = true;
+            doCloseX = false;
+            doCloseButton = false;
+            doWindowBackground = false;
             absorbInputAroundWindow = true;
             closeOnClickedOutside = false;
         }
 
+        protected override float Margin => 0f;
+
         public override void DoWindowContents(Rect inRect)
+        {
+            inRect = CAOpeningTheme.BeginWindowSurface(inRect);
+            try
+            {
+                DoEditorContents(inRect);
+            }
+            finally
+            {
+                CAOpeningTheme.EndWindowSurface();
+            }
+        }
+
+        private void DoEditorContents(Rect inRect)
         {
             GameFont previous = Text.Font;
             Text.Font = GameFont.Medium;
+            GUI.color = CAOpeningTheme.TextHi;
             Widgets.Label(new Rect(0f, 0f, inRect.width, 34f),
                 "Culture");
+            GUI.color = Color.white;
             Text.Font = previous;
             float y = 38f;
             if (!factionLabel.NullOrEmpty())
@@ -3459,6 +3510,11 @@ namespace ColonistAwareness
             else DrawVisual(ref rowY, view.width);
             viewHeight = rowY + 12f;
             Widgets.EndScrollView();
+
+            if (CAOpeningTheme.PrimaryButton(new Rect(
+                    inRect.width - 150f, inRect.height - 32f, 150f, 30f),
+                    "Done"))
+                Close();
         }
 
         private float DrawActions(Rect inRect, float y)
@@ -3492,8 +3548,9 @@ namespace ColonistAwareness
             {
                 int row = i / columns;
                 int column = i % columns;
-                if (Widgets.ButtonText(new Rect(column * (width + gap),
-                        y + row * 36f, width, 30f), labels[i]))
+                if (CAOpeningTheme.GhostButton(
+                        new Rect(column * (width + gap), y + row * 36f,
+                            width, 30f), labels[i]))
                     actions[i]();
             }
             return y + rows * 36f + 4f;
@@ -3559,7 +3616,7 @@ namespace ColonistAwareness
                     + culture.practices.Count > 0;
             if (hasCausalFacts)
             {
-                if (Widgets.ButtonText(new Rect(0f, y,
+                if (CAOpeningTheme.GhostButton(new Rect(0f, y,
                         Mathf.Min(260f, width), 32f),
                         "Gameplay effects..."))
                     Find.WindowStack.Add(
@@ -3694,7 +3751,8 @@ namespace ColonistAwareness
                     ? InheritedFallbackHeight(width - 24f)
                     : AdvancedQuestionHeight(question, width - 24f);
             Rect box = new Rect(0f, y, width, boxHeight);
-            Widgets.DrawMenuSection(box);
+            Widgets.DrawBoxSolid(box, CAOpeningTheme.Surface);
+            CAOpeningTheme.Border(box, CAOpeningTheme.Hairline);
             float at = y + 10f;
             Text.Font = GameFont.Small;
             Widgets.Label(new Rect(12f, at, width - 272f, 28f),
@@ -3712,8 +3770,9 @@ namespace ColonistAwareness
             if (fittedBadge != badge)
                 TooltipHandler.TipRegion(badgeRect, badge);
             GUI.color = Color.white;
-            if (question != null && Widgets.ButtonText(new Rect(width - 72f,
-                    at, 60f, 28f), expanded ? "Less" : "More"))
+            if (question != null && CAOpeningTheme.GhostButton(
+                    new Rect(width - 72f, at, 60f, 28f),
+                    expanded ? "Less" : "More"))
                 expandedQuestionKey = expanded ? null : definition.Key;
             at += 30f;
             GUI.color = ColoredText.SubtleGrayColor;
@@ -3757,7 +3816,7 @@ namespace ColonistAwareness
                     DrawExplanation(ref at, width - 24f,
                         "This is the view residents brought with them. Set a "
                         + "local view before changing it for this settlement.");
-                    if (Widgets.ButtonText(new Rect(0f, at,
+                    if (CAOpeningTheme.GhostButton(new Rect(0f, at,
                             Mathf.Min(260f, width), 28f),
                             "Set local view"))
                     {
@@ -3858,8 +3917,8 @@ namespace ColonistAwareness
             }
             string preview = QuestionPreview(question, summary);
             DrawExplanation(ref y, width - 24f, preview);
-            if (question.spreadOverride && Widgets.ButtonText(new Rect(0f, y,
-                    Mathf.Min(260f, width), 28f),
+            if (question.spreadOverride && CAOpeningTheme.GhostButton(
+                    new Rect(0f, y, Mathf.Min(260f, width), 28f),
                     "Use overall disagreement"))
             {
                 question.spreadOverride = false;
@@ -3875,7 +3934,7 @@ namespace ColonistAwareness
                         == (question.populationScope ?? "*"));
             if (boundary == CACultureAuthoringBoundary.EstablishedLocal
                 && hasInheritedPredecessor
-                && Widgets.ButtonText(new Rect(0f, y,
+                && CAOpeningTheme.GhostButton(new Rect(0f, y,
                     Mathf.Min(260f, width), 28f), "Use residents' view"))
             {
                 EditableQuestions.Remove(question);
@@ -3904,8 +3963,8 @@ namespace ColonistAwareness
             }
             bool customSubgroups = question.subgroups.Any(value =>
                 value != null && !value.inherited);
-            if (customSubgroups && Widgets.ButtonText(new Rect(0f, y,
-                    Mathf.Min(300f, width), 28f),
+            if (customSubgroups && CAOpeningTheme.GhostButton(
+                    new Rect(0f, y, Mathf.Min(300f, width), 28f),
                     "Use group differences"))
             {
                 foreach (CACultureSubgroupDistribution subgroup in
@@ -4234,7 +4293,8 @@ namespace ColonistAwareness
                 ? new Rect(0f, y + labelHeight + 4f, width, 32f)
                 : new Rect(labelWidth + 8f, y, width - labelWidth - 8f,
                     Mathf.Max(32f, labelHeight));
-            if (Widgets.ButtonText(valueRect, value ?? "Choose")) edit?.Invoke();
+            if (CAOpeningTheme.GhostButton(valueRect, value ?? "Choose"))
+                edit?.Invoke();
             y = valueRect.yMax + 8f;
         }
 
@@ -4366,27 +4426,44 @@ namespace ColonistAwareness
             this.culture = culture ?? new CACulture();
             this.ownerLabel = ownerLabel;
             this.boundary = boundary;
-            doCloseX = true;
-            doCloseButton = true;
+            doCloseX = false;
+            doCloseButton = false;
+            doWindowBackground = false;
             absorbInputAroundWindow = true;
         }
 
+        protected override float Margin => 0f;
+
         public override void DoWindowContents(Rect inRect)
         {
+            inRect = CAOpeningTheme.BeginWindowSurface(inRect);
+            try
+            {
+                DoInspectorContents(inRect);
+            }
+            finally
+            {
+                CAOpeningTheme.EndWindowSurface();
+            }
+        }
+
+        private void DoInspectorContents(Rect inRect)
+        {
             GameFont prior = Text.Font;
-            Text.Font = GameFont.Medium;
-            Widgets.Label(new Rect(0f, 0f, inRect.width, 34f),
+            CAOpeningTheme.Heading(0f, 0f, inRect.width,
                 "Gameplay effects");
-            Text.Font = GameFont.Small;
             const string introduction = "How these values affect people and "
                 + "settlements. Ideoligion, Political Order, and institutions "
                 + "are set separately.";
-            float introHeight = Text.CalcHeight(introduction, inRect.width);
-            Widgets.Label(new Rect(0f, 40f, inRect.width, introHeight),
+            float introHeight = CAOpeningTheme.Fine(0f, 36f, inRect.width,
                 introduction);
-            float top = 50f + introHeight;
+            float top = 46f + introHeight;
+            if (CAOpeningTheme.PrimaryButton(new Rect(
+                    inRect.width - 150f, inRect.height - 32f, 150f, 30f),
+                    "Done"))
+                Close();
             Rect outRect = new Rect(0f, top, inRect.width,
-                inRect.height - top - 34f);
+                inRect.height - top - 38f);
             Rect view = new Rect(0f, 0f, outRect.width - 18f,
                 Mathf.Max(outRect.height, viewHeight));
             Widgets.BeginScrollView(outRect, ref scroll, view);
@@ -4552,18 +4629,29 @@ namespace ColonistAwareness
             this.culture = culture;
             this.changed = changed;
             value = culture?.name ?? "";
-            doCloseX = true;
+            doCloseX = false;
+            doWindowBackground = false;
             absorbInputAroundWindow = true;
         }
 
+        protected override float Margin => 0f;
+
         public override void DoWindowContents(Rect inRect)
         {
-            Widgets.Label(new Rect(0f, 0f, inRect.width, 30f),
+            Widgets.DrawBoxSolid(inRect, CAOpeningTheme.Ink);
+            CAOpeningTheme.SurfacePanel(inRect);
+            Rect inner = inRect.ContractedBy(14f);
+            GUI.color = CAOpeningTheme.TextHi;
+            Widgets.Label(new Rect(inner.x, inner.y, inner.width, 30f),
                 "Culture name");
-            value = Widgets.TextField(new Rect(0f, 40f, inRect.width, 30f),
-                value);
-            if (Widgets.ButtonText(new Rect(inRect.width - 120f, 88f,
-                    120f, 32f), "Save"))
+            GUI.color = Color.white;
+            value = Widgets.TextField(new Rect(inner.x, inner.y + 36f,
+                inner.width, 30f), value);
+            if (CAOpeningTheme.GhostButton(new Rect(inner.x,
+                    inner.yMax - 34f, 110f, 32f), "Cancel"))
+                Close();
+            if (CAOpeningTheme.PrimaryButton(new Rect(inner.xMax - 120f,
+                    inner.yMax - 34f, 120f, 32f), "Save"))
             {
                 if (!value.NullOrEmpty())
                     culture.Choose(CACulture.NameField, value.Trim());

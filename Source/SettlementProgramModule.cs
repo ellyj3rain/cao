@@ -1124,11 +1124,14 @@ namespace ColonistAwareness
         {
             this.plan = plan;
             this.settlement = settlement;
-            doCloseX = true;
-            doCloseButton = true;
+            doCloseX = false;
+            doCloseButton = false;
+            doWindowBackground = false;
             closeOnClickedOutside = false;
             absorbInputAroundWindow = true;
         }
+
+        protected override float Margin => 0f;
 
         public override Vector2 InitialSize => new Vector2(
             Mathf.Min(920f, UI.screenWidth - 48f),
@@ -1136,28 +1139,37 @@ namespace ColonistAwareness
 
         public override void DoWindowContents(Rect inRect)
         {
-            Text.Font = GameFont.Medium;
-            Widgets.Label(new Rect(0f, 0f, inRect.width, 34f),
+            inRect = CAOpeningTheme.BeginWindowSurface(inRect);
+            try
+            {
+                DoEditorContents(inRect);
+            }
+            finally
+            {
+                CAOpeningTheme.EndWindowSurface();
+            }
+        }
+
+        private void DoEditorContents(Rect inRect)
+        {
+            CAOpeningTheme.Heading(0f, 0f, inRect.width,
                 "Settlement programs");
-            Text.Font = GameFont.Small;
             string name = settlement == null ? "Settlement"
                 : CARegionalPlanUtility.SettlementName(plan, settlement);
-            float introHeight = Text.CalcHeight(name
-                + ". Each program is supported by a saved operating contract: "
-                + "need, operator, labor, knowledge, material, access, and "
-                + "maintenance where required.",
-                inRect.width);
-            Widgets.Label(new Rect(0f, 38f, inRect.width, introHeight),
+            float introHeight = CAOpeningTheme.Fine(0f, 36f, inRect.width,
                 name + ". Each program is supported by a saved operating "
                 + "contract: need, operator, labor, knowledge, material, "
                 + "access, and maintenance where required.");
-            float controlsY = 46f + introHeight;
-            if (Widgets.ButtonText(new Rect(0f, controlsY, 220f, 30f),
-                    "Establish a program..."))
+            float controlsY = 44f + introHeight;
+            if (CAOpeningTheme.GhostButton(new Rect(0f, controlsY, 220f,
+                    30f), "Establish a program..."))
                 OpenEstablishMenu();
+            if (CAOpeningTheme.PrimaryButton(new Rect(
+                    inRect.width - 150f, controlsY, 150f, 30f), "Done"))
+                Close();
             float top = controlsY + 38f;
             Rect outRect = new Rect(0f, top, inRect.width,
-                inRect.height - top - 36f);
+                inRect.height - top - 6f);
             Rect view = new Rect(0f, 0f, outRect.width - 18f,
                 Mathf.Max(outRect.height, measuredHeight));
             Widgets.BeginScrollView(outRect, ref scroll, view);
@@ -1198,7 +1210,8 @@ namespace ColonistAwareness
                     .ToList();
             if (unavailable.Count > 0)
             {
-                if (Widgets.ButtonText(new Rect(0f, y, view.width, 28f),
+                if (CAOpeningTheme.GhostButton(
+                        new Rect(0f, y, view.width, 28f),
                         showUnavailable ? "Hide unavailable programs"
                             : "Show unavailable programs"))
                     showUnavailable = !showUnavailable;
@@ -1257,8 +1270,8 @@ namespace ColonistAwareness
             Widgets.Label(new Rect(labelWidth + 12f, y,
                 contentWidth - labelWidth - 12f, height), detail);
             GUI.color = Color.white;
-            if (Widgets.ButtonText(new Rect(width - removeWidth, y,
-                    removeWidth, 28f), "Remove"))
+            if (CAOpeningTheme.GhostButton(new Rect(width - removeWidth,
+                    y, removeWidth, 28f), "Remove"))
                 CASettlementProgramAuthoring.Remove(plan, settlement,
                     entry);
             y += height + 6f;

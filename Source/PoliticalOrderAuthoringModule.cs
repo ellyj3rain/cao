@@ -866,13 +866,27 @@ namespace ColonistAwareness
         private static void CompleteFromPreset(CAPoliticalBeliefs beliefs,
             string key, CAAxisSource source)
         {
-            BuildPreset(beliefs, key, source, true);
+            // Complete the destination from the chosen preset's finished
+            // composition. Building directly with missingOnly would let the
+            // common starting values occupy every empty question before the
+            // preset's own positions were reached.
+            var complete = new CAPoliticalBeliefs();
+            BuildPreset(complete, key, source, false);
+            foreach (CAPoliticalQuestionState state in complete.questions)
+            {
+                if (State(beliefs, state.questionKey)?.options?.Count > 0)
+                    continue;
+                beliefs.questions.Add(state.Copy());
+            }
         }
 
         private static void BuildPreset(CAPoliticalBeliefs beliefs,
             string key, CAAxisSource source, bool missingOnly)
         {
-            // Every preset starts from one complete social-market baseline.
+            // Shared positions are explicit common values; each preset then
+            // replaces the subjects on which it differs. Completion copies
+            // from the finished preset rather than treating these values as a
+            // universal generated order.
             Set(beliefs, "authority.leadership", source, missingOnly,
                 "council", 55, "executive", 25, "assembly", 20);
             Set(beliefs, "authority.decisions", source, missingOnly,
@@ -1407,59 +1421,40 @@ namespace ColonistAwareness
                     "council")
                 + Weight(beliefs, "authority.leadership", "assembly");
             int federal = Weight(beliefs, "authority.leadership", "federal");
-            string authority = executive >= 45 ? Pick(roll,
-                    "executive", "presidential", "directive")
-                : federal >= 35 ? Pick(roll, "federal", "confederal",
-                    "delegated")
-                : democratic >= 55 ? Pick(roll, "democratic", "council",
-                    "assembly") : "mixed-authority";
-
             double privateShare = PropertyAverage(beliefs, "private");
             double cooperative = PropertyAverage(beliefs, "cooperative");
             double publicShare = PropertyAverage(beliefs, "public");
             double common = PropertyAverage(beliefs, "common");
-            string economy;
-            if (privateShare >= 32 && cooperative >= 22
-                && publicShare >= 18)
-                economy = Pick(roll, "free-enterprise market-socialist",
-                    "mixed-enterprise social-market",
-                    "plural-ownership social-market");
-            else if (privateShare >= 55)
-                economy = Pick(roll, "free-enterprise", "commercial",
-                    "private-market");
-            else if (cooperative + common >= 62)
-                economy = Pick(roll, "cooperative-commonwealth",
-                    "mutualist", "commonwealth");
-            else if (publicShare >= 55)
-                economy = Pick(roll, "public-developmentalist",
-                    "state-social", "public-enterprise");
-            else if (cooperative >= 38)
-                economy = Pick(roll, "market-socialist", "cooperative-market",
-                    "worker-commonwealth");
-            else economy = "mixed-economy";
-
-            int liberty = Weight(beliefs, "civic.liberty", "protected");
-            int residentVoice = Weight(beliefs, "civic.participation",
-                "residents");
             int orthodoxy = Weight(beliefs, "civic.liberty", "orthodox");
-            string civic = orthodoxy >= 60 ? "orthodox"
-                : liberty >= 60 && residentVoice >= 45
-                    ? Pick(roll, "civic-libertarian", "pluralist-civic",
-                        "civil-libertarian")
-                    : residentVoice >= 45 ? "popular-civic"
-                        : "restricted-civic";
-
             int inherited = Weight(beliefs, "civic.status", "hereditary")
                 + Weight(beliefs, "civic.status", "caste");
-            int equal = Weight(beliefs, "civic.status", "equal");
-            string status = inherited >= 45 ? " aristocratic"
-                : equal >= 60 ? "" : " meritocratic";
-            bool antiRent = Weight(beliefs, "economy.rent", "noExtraction")
-                    + Weight(beliefs, "economy.rent", "cost") >= 50
-                && Weight(beliefs, "property.land", "private") >= 30;
-            return (authority + " " + economy + " " + civic
-                + status + (antiRent ? " anti-rent" : "") + " order")
-                .CapitalizeFirst();
+
+            if (orthodoxy >= 60)
+                return Pick(roll, "Central party state",
+                    "Directive party state", "Orthodox state");
+            if (inherited >= 45)
+                return Pick(roll, "Customary landed order",
+                    "Hereditary civic order", "Landed commonwealth");
+            if (publicShare >= 55 && executive >= 45)
+                return Pick(roll, "Developmental state",
+                    "Public development order", "Executive commonwealth");
+            if (cooperative + common >= 62 && democratic >= 55)
+                return Pick(roll, "Cooperative commonwealth",
+                    "Communal assembly", "Mutual commonwealth");
+            if (cooperative >= 38 && democratic >= 55)
+                return Pick(roll, "Cooperative republic",
+                    "Civic cooperative order", "Worker commonwealth");
+            if (privateShare >= 55 && democratic >= 55)
+                return Pick(roll, "Civic market republic",
+                    "Commercial republic", "Representative market order");
+            if (federal >= 35)
+                return Pick(roll, "Federal commonwealth",
+                    "Delegated civic order", "Confederal order");
+            if (executive >= 45)
+                return Pick(roll, "Executive civic order",
+                    "Presidential order", "Directive commonwealth");
+            return Pick(roll, "Civic mixed economy",
+                "Plural civic order", "Mixed civic commonwealth");
         }
 
         private static double PropertyAverage(CAPoliticalBeliefs beliefs,
@@ -1495,7 +1490,7 @@ namespace ColonistAwareness
         private readonly CAFoundingArrangement foundingArrangement;
         private readonly string seed;
         private readonly Action changed;
-        private string group = "Overview";
+        private string group = CAPoliticalQuestionRegistry.Authority;
         private Vector2 scroll;
         private float viewHeight;
 
@@ -1513,11 +1508,17 @@ namespace ColonistAwareness
             this.foundingArrangement = foundingArrangement;
             this.changed = changed;
             CAPoliticalBeliefsModel.Ensure(this.beliefs, this.seed);
+            // One close affordance, not two. The X and the bottom Close
+            // button did the same thing, and doCloseButton also reserves a
+            // band of empty chrome at the foot of the window.
             doCloseX = true;
-            doCloseButton = true;
+            doCloseButton = false;
+            doWindowBackground = false;
             absorbInputAroundWindow = true;
             closeOnClickedOutside = false;
         }
+
+        protected override float Margin => 0f;
 
         internal static Dialog_CAPoliticalOrderEditor ForFounding(
             CAPoliticalBeliefs beliefs, string seed,
@@ -1538,10 +1539,28 @@ namespace ColonistAwareness
 
         public override void DoWindowContents(Rect inRect)
         {
+            inRect = CAOpeningTheme.BeginWindowSurface(inRect);
+            try
+            {
+                DoEditorContents(inRect);
+            }
+            finally
+            {
+                CAOpeningTheme.EndWindowSurface();
+            }
+        }
+
+        private void DoEditorContents(Rect inRect)
+        {
+            long performanceStarted = CAConvergenceExercise
+                    .PoliticalProbeEnabled
+                ? System.Diagnostics.Stopwatch.GetTimestamp() : 0L;
             GameFont previous = Text.Font;
             Text.Font = GameFont.Medium;
+            GUI.color = CAOpeningTheme.TextHi;
             Widgets.Label(new Rect(0f, 0f, inRect.width, 34f),
                 "Political Order");
+            GUI.color = Color.white;
             Text.Font = GameFont.Small;
             string description = representedInstitutions == null
                 ? "Choose what the founders believe should govern their "
@@ -1559,6 +1578,8 @@ namespace ColonistAwareness
                 CAPoliticalQuestionRegistry.Property,
                 CAPoliticalQuestionRegistry.Economy,
                 CAPoliticalQuestionRegistry.Security };
+            string[] tabLabels = { "Overview", "Authority", "Civic life",
+                "Property", "Economy and work", "Security" };
             float tabGap = 5f;
             float tabWidth = (inRect.width - tabGap * (tabs.Length - 1))
                 / tabs.Length;
@@ -1566,7 +1587,15 @@ namespace ColonistAwareness
             {
                 Rect tab = new Rect(i * (tabWidth + tabGap), y,
                     tabWidth, 32f);
-                if (Widgets.ButtonText(tab, tabs[i], group == tabs[i]))
+                // The cells are equal width, but only the selected tab used
+                // to draw its frame, so the rest were bare centered text in
+                // invisible cells -- and because the labels differ in length
+                // ("Property" against "Economy and work") the row read as
+                // arbitrarily spaced rather than as a tab strip. Every tab
+                // draws its cell; selection is shown by highlighting it.
+                bool selected = group == tabs[i];
+                if (CAOpeningTheme.Chip(tab, tabLabels[i], selected)
+                    && !selected)
                 {
                     group = tabs[i];
                     scroll = Vector2.zero;
@@ -1579,20 +1608,27 @@ namespace ColonistAwareness
                 Mathf.Max(outer.height, viewHeight));
             Widgets.BeginScrollView(outer, ref scroll, view);
             float rowY = 0f;
-            DrawIdentity(ref rowY, view.width);
             if (group == "Overview")
+            {
+                DrawIdentity(ref rowY, view.width);
                 DrawOverview(ref rowY, view.width);
+            }
             else
                 DrawQuestions(ref rowY, view.width, group);
             viewHeight = rowY + 12f;
             Widgets.EndScrollView();
             Text.Font = previous;
+            if (performanceStarted != 0L)
+                CAConvergenceExercise.RecordPoliticalFrame(
+                    System.Diagnostics.Stopwatch.GetTimestamp()
+                        - performanceStarted);
         }
 
         private void DrawIdentity(ref float y, float width)
         {
             Rect card = new Rect(0f, y, width, 126f);
-            Widgets.DrawMenuSection(card);
+            Widgets.DrawBoxSolid(card, CAOpeningTheme.Surface);
+            CAOpeningTheme.Border(card, CAOpeningTheme.Hairline);
             Text.Font = GameFont.Medium;
             Widgets.Label(new Rect(card.x + 12f, card.y + 9f,
                     card.width - 24f, 30f),
@@ -1610,9 +1646,10 @@ namespace ColonistAwareness
                 actionWidth, 30f);
             Rect rename = new Rect(reroll.xMax + 6f, reroll.y,
                 actionWidth, 30f);
-            if (Widgets.ButtonText(reroll, "Reroll generated name"))
+            if (CAOpeningTheme.GhostButton(reroll,
+                    "Reroll generated name"))
                 RerollName();
-            if (Widgets.ButtonText(rename, "Custom name..."))
+            if (CAOpeningTheme.GhostButton(rename, "Custom name..."))
                 Rename();
             y += card.height + 10f;
         }
@@ -1638,18 +1675,13 @@ namespace ColonistAwareness
                 int column = i % columns;
                 Rect button = new Rect(column * (buttonWidth + gap),
                     y + row * 36f, buttonWidth, 30f);
-                if (Widgets.ButtonText(button, labels[i])) actions[i]();
+                if (CAOpeningTheme.GhostButton(button, labels[i]))
+                    actions[i]();
             }
             y += rows * 36f + 8f;
-            DrawHeading(ref y, width, "Description");
-            string account = CAPoliticalOrderModel.Description(beliefs);
-            float accountHeight = Text.CalcHeight(account, width - 24f);
-            Rect accountCard = new Rect(0f, y, width,
-                accountHeight + 24f);
-            Widgets.DrawMenuSection(accountCard);
-            Widgets.Label(new Rect(12f, y + 10f, width - 24f,
-                accountHeight), account);
-            y += accountCard.height + 14f;
+            DrawHeading(ref y, width, "Summary");
+            DrawParagraph(ref y, width,
+                CAPoliticalOrderModel.ShortSummary(beliefs), Color.white);
 
             if (foundingArrangement != null)
                 DrawFoundingRelation(ref y, width);
@@ -1712,14 +1744,22 @@ namespace ColonistAwareness
                     CAPoliticalOrderModel.State(beliefs, definition.Key);
                 string sentence = CAPoliticalOrderModel.QuestionSentence(
                     beliefs, definition.Key) ?? "Not yet generated.";
+                // MEASURE THE COLUMN THAT IS ACTUALLY DRAWN. These were
+                // measured at width-170 and drawn at width-180, so every
+                // sentence wrapped into more lines than the reserved height
+                // allowed and the last line was clipped away mid-word --
+                // "...with a limited role for" and then nothing. The label
+                // column is width-180; measure width-180.
+                const float labelColumn = 180f;
                 float promptHeight = Text.CalcHeight(definition.Prompt,
-                    width - 170f);
+                    width - labelColumn);
                 float sentenceHeight = Text.CalcHeight(sentence,
-                    width - 170f);
+                    width - labelColumn);
                 float rowHeight = Mathf.Max(86f,
                     promptHeight + sentenceHeight + 38f);
                 Rect row = new Rect(0f, y, width, rowHeight);
-                Widgets.DrawAltRect(row);
+                Widgets.DrawBoxSolid(row, CAOpeningTheme.Surface);
+                CAOpeningTheme.Border(row, CAOpeningTheme.Hairline);
                 Text.Font = GameFont.Small;
                 Widgets.Label(new Rect(10f, y + 7f, width - 180f, 26f),
                     definition.Label);
@@ -1733,7 +1773,7 @@ namespace ColonistAwareness
                     width - 180f, sentenceHeight), sentence);
                 Rect edit = new Rect(width - 158f,
                     y + (rowHeight - 34f) * 0.5f, 148f, 34f);
-                if (Widgets.ButtonText(edit,
+                if (CAOpeningTheme.GhostButton(edit,
                         definition.Blendable ? "Set mix..." : "Change..."))
                     OpenQuestion(definition, state);
                 y += rowHeight + 8f;
@@ -1930,15 +1970,33 @@ namespace ColonistAwareness
             if (shares.Values.Sum() <= 0f)
                 shares[definition.Options[0].Key] = 100f;
             doCloseX = true;
+            doWindowBackground = false;
             absorbInputAroundWindow = true;
             closeOnClickedOutside = false;
         }
 
+        protected override float Margin => 0f;
+
         public override void DoWindowContents(Rect inRect)
         {
+            inRect = CAOpeningTheme.BeginWindowSurface(inRect);
+            try
+            {
+                DoEditorContents(inRect);
+            }
+            finally
+            {
+                CAOpeningTheme.EndWindowSurface();
+            }
+        }
+
+        private void DoEditorContents(Rect inRect)
+        {
             Text.Font = GameFont.Medium;
+            GUI.color = CAOpeningTheme.TextHi;
             Widgets.Label(new Rect(0f, 0f, inRect.width, 34f),
                 definition.Label);
+            GUI.color = Color.white;
             Text.Font = GameFont.Small;
             float promptHeight = Text.CalcHeight(definition.Prompt,
                 inRect.width);
@@ -1955,7 +2013,8 @@ namespace ColonistAwareness
             foreach (CAPoliticalOptionDef option in definition.Options)
             {
                 Rect row = new Rect(0f, y, inRect.width, 76f);
-                Widgets.DrawAltRect(row);
+                Widgets.DrawBoxSolid(row, CAOpeningTheme.Surface);
+                CAOpeningTheme.Border(row, CAOpeningTheme.Hairline);
                 Widgets.Label(new Rect(10f, y + 7f, 220f, 26f),
                     option.Label.CapitalizeFirst());
                 float value = Widgets.HorizontalSlider(new Rect(238f,
@@ -1983,8 +2042,8 @@ namespace ColonistAwareness
                         + "%" + (Mathf.RoundToInt(total) == 100
                             ? "." : ". This will be scaled to 100%."));
             GUI.color = Color.white;
-            if (Widgets.ButtonText(new Rect(inRect.width - 120f, y,
-                    120f, 32f), "Apply") && total > 0f)
+            if (CAOpeningTheme.PrimaryButton(new Rect(inRect.width - 120f,
+                    y, 120f, 32f), "Apply", total > 0f) && total > 0f)
             {
                 CAPoliticalOrderModel.SetQuestion(beliefs, definition.Key,
                     shares.Select(pair => new KeyValuePair<string, int>(

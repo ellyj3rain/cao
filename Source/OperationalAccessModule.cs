@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using HarmonyLib;
 using RimWorld;
@@ -16,8 +17,23 @@ namespace ColonistAwareness
     [HarmonyPatch(typeof(DropPodUtility), nameof(DropPodUtility.DropThingGroupsNear))]
     public static class Patch_CAStartingCargoOperationalAccess
     {
+        public sealed class StartingCargoScope
+        {
+            internal Map map;
+            internal System.Diagnostics.Stopwatch watch;
+        }
+
+        [ThreadStatic] private static Stack<Map> activeMaps;
+
+        internal static bool ActiveFor(Map map)
+        {
+            return map != null && activeMaps != null
+                && activeMaps.Count > 0
+                && ReferenceEquals(activeMaps.Peek(), map);
+        }
+
         public static void Prefix(Map map, List<List<Thing>> thingsGroups,
-            ref bool forbid, out System.Diagnostics.Stopwatch __state)
+            ref bool forbid, out StartingCargoScope __state)
         {
             __state = null;
             if (!forbid) return;
@@ -42,20 +58,196 @@ namespace ColonistAwareness
                         || !init.startingAndOptionalPawns.Contains(pawn))
                         continue;
                     forbid = false;
-                    __state = System.Diagnostics.Stopwatch.StartNew();
+                    if (activeMaps == null)
+                        activeMaps = new Stack<Map>();
+                    activeMaps.Push(map);
+                    __state = new StartingCargoScope
+                    {
+                        map = map,
+                        watch = System.Diagnostics.Stopwatch.StartNew()
+                    };
                     CATrace.Log("operational access: starting cargo arrives allowed");
                     return;
                 }
             }
         }
 
-        public static void Postfix(Map map,
-            System.Diagnostics.Stopwatch __state)
+        public static Exception Finalizer(Exception __exception,
+            StartingCargoScope __state)
         {
-            if (__state == null) return;
-            Log.Message("[CA][Regional][Timing] starting cargo drop placement for "
-                + map.Size.x + "x" + map.Size.z + " map " + map.uniqueID
-                + " took " + __state.ElapsedMilliseconds + " ms");
+            if (__state != null)
+            {
+                if (activeMaps != null && activeMaps.Count > 0)
+                    activeMaps.Pop();
+                if (activeMaps?.Count == 0) activeMaps = null;
+                Map map = __state.map;
+                Log.Message("[CA][Regional][Timing] starting cargo drop "
+                    + "placement for " + map.Size.x + "x" + map.Size.z
+                    + " map " + map.uniqueID + " took "
+                    + __state.watch.ElapsedMilliseconds + " ms");
+            }
+            return __exception;
+        }
+    }
+
+    // GenPlace's Near quality check compares rooms before it considers the
+    // already validated local cells. During the exact starting-cargo call that
+    // comparison forces a whole dirty regional map to rebuild its room graph.
+    // The drop search has already enforced bounds, terrain, roof, occupancy,
+    // and local-radius constraints. Treat room identity as unavailable only
+    // while GenPlace evaluates those starting groups; all ordinary placement
+    // and all play-time room queries remain native.
+    [HarmonyPatch]
+    internal static class CARegionalStartingCargoNearPlacementScopePatch
+    {
+        [ThreadStatic] private static Stack<Map> activeMaps;
+        private static Map lastLoggedMap;
+
+        internal static bool ActiveFor(Map map)
+        {
+            return map != null && activeMaps != null
+                && activeMaps.Count > 0
+                && ReferenceEquals(activeMaps.Peek(), map);
+        }
+
+        private static IEnumerable<System.Reflection.MethodBase>
+            TargetMethods()
+        {
+            System.Reflection.MethodBase wrapper = AccessTools.Method(
+                typeof(GenPlace),
+                nameof(GenPlace.TryPlaceThing), new Type[]
+                {
+                    typeof(Thing), typeof(IntVec3), typeof(Map),
+                    typeof(ThingPlaceMode), typeof(Action<Thing, int>),
+                    typeof(Predicate<IntVec3>), typeof(Rot4?), typeof(int)
+                });
+            System.Reflection.MethodBase implementation = AccessTools.Method(
+                typeof(GenPlace), nameof(GenPlace.TryPlaceThing), new Type[]
+                {
+                    typeof(Thing), typeof(IntVec3), typeof(Map),
+                    typeof(ThingPlaceMode), typeof(Thing).MakeByRefType(),
+                    typeof(Action<Thing, int>), typeof(Predicate<IntVec3>),
+                    typeof(Rot4?), typeof(int)
+                });
+            if (wrapper != null) yield return wrapper;
+            if (implementation != null) yield return implementation;
+        }
+
+        [HarmonyPrefix]
+        private static void Prefix(Map map, ThingPlaceMode mode,
+            out bool __state)
+        {
+            __state = Patch_CAStartingCargoOperationalAccess.ActiveFor(map)
+                && mode == ThingPlaceMode.Near;
+            if (!__state) return;
+            if (activeMaps == null) activeMaps = new Stack<Map>();
+            activeMaps.Push(map);
+            if (!ReferenceEquals(lastLoggedMap, map))
+            {
+                lastLoggedMap = map;
+                Log.Message("[CA][Regional] starting cargo entered the exact "
+                    + "near-placement scope; room identity is deferred only "
+                    + "for this bounded placement call");
+            }
+        }
+
+        [HarmonyFinalizer]
+        private static Exception Finalizer(Exception __exception,
+            bool __state)
+        {
+            if (__state && activeMaps != null && activeMaps.Count > 0)
+                activeMaps.Pop();
+            if (activeMaps?.Count == 0) activeMaps = null;
+            return __exception;
+        }
+    }
+
+    [HarmonyPatch(typeof(GridsUtility), nameof(GridsUtility.GetRoom))]
+    internal static class CARegionalStartingCargoRoomlessQualityPatch
+    {
+        [HarmonyPrefix]
+        private static bool Prefix(Map map, ref Room __result)
+        {
+            if (!CARegionalStartingCargoNearPlacementScopePatch
+                    .ActiveFor(map))
+                return true;
+            __result = null;
+            return false;
+        }
+    }
+
+    // Pawn spawning normally records whether the pawn is outdoors immediately.
+    // Starting cargo is placed while a regional map still has hundreds of
+    // thousands of dirty regions, so that one room query can rebuild the entire
+    // graph inside every placement call. Defer only that query while the exact
+    // starting-cargo Near placement scope is active, then run the native recent
+    // memory refresh after Map.FinalizeInit has built the canonical room graph.
+    // The weak key keeps a failed map generation from retaining its map or pawns.
+    internal static class CARegionalStartingCargoRecentMemoryDeferral
+    {
+        private sealed class DeferredPawnSet
+        {
+            internal readonly HashSet<Pawn> pawns = new HashSet<Pawn>();
+        }
+
+        private static readonly ConditionalWeakTable<Map, DeferredPawnSet>
+            pendingByMap = new ConditionalWeakTable<Map, DeferredPawnSet>();
+
+        internal static void Record(Pawn pawn, Map map)
+        {
+            if (pawn == null || map == null) return;
+            pendingByMap.GetOrCreateValue(map).pawns.Add(pawn);
+        }
+
+        internal static void Refresh(Map map)
+        {
+            if (map == null
+                || !pendingByMap.TryGetValue(map, out DeferredPawnSet pending))
+                return;
+
+            pendingByMap.Remove(map);
+            System.Diagnostics.Stopwatch watch =
+                System.Diagnostics.Stopwatch.StartNew();
+            int refreshed = 0;
+            foreach (Pawn pawn in pending.pawns)
+            {
+                if (pawn == null || !pawn.Spawned
+                    || !ReferenceEquals(pawn.Map, map))
+                    continue;
+                pawn.needs?.mood?.recentMemory?.RecentMemoryInterval();
+                refreshed++;
+            }
+
+            Log.Message("[CA][Regional][Timing] refreshed native recent-memory "
+                + "state for " + refreshed + " deferred starting pawns after "
+                + "the canonical room graph was finalized in "
+                + watch.ElapsedMilliseconds + " ms");
+        }
+    }
+
+    [HarmonyPatch(typeof(PawnRecentMemory), "Outdoors")]
+    internal static class CARegionalStartingCargoRecentMemoryOutdoorsPatch
+    {
+        [HarmonyPrefix]
+        private static bool Prefix(Pawn ___pawn, ref bool __result)
+        {
+            Map map = ___pawn?.Map;
+            if (!CARegionalStartingCargoNearPlacementScopePatch.ActiveFor(map))
+                return true;
+
+            CARegionalStartingCargoRecentMemoryDeferral.Record(___pawn, map);
+            __result = false;
+            return false;
+        }
+    }
+
+    [HarmonyPatch(typeof(Map), nameof(Map.FinalizeInit))]
+    internal static class CARegionalStartingCargoRecentMemoryFinalizePatch
+    {
+        [HarmonyPostfix]
+        private static void Postfix(Map __instance)
+        {
+            CARegionalStartingCargoRecentMemoryDeferral.Refresh(__instance);
         }
     }
 

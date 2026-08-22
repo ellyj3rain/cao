@@ -28,6 +28,7 @@ namespace ColonistAwareness
     // selects a default but does not silently establish those rules.
     public sealed class CAFoundingArrangement : IExposable
     {
+        public int schemaVersion = 1;
         public string id;
         public string label;
         public string premise;
@@ -60,6 +61,7 @@ namespace ColonistAwareness
 
         public void ExposeData()
         {
+            Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
             Scribe_Values.Look(ref id, "id");
             Scribe_Values.Look(ref label, "label");
             Scribe_Values.Look(ref premise, "premise");

@@ -368,6 +368,11 @@ namespace ColonistAwareness
                 // An established faction begins with a realized structure.
                 // The player faction begins with only the arrangement adopted
                 // at founding; its remaining institutions emerge through play.
+                bool structureIncomplete = CAFactionAxes.Axes.Any(axis =>
+                    CAFactionAxes.StateOf(record.factionStructure, axis.Key)
+                        == CAAxisSource.Unset);
+                if (faction.IsPlayer && structureIncomplete)
+                    record.institutionalStateIncomplete = true;
                 if (!faction.IsPlayer && !record.institutionalStateIncomplete)
                 {
                     structureFields += CAFactionStructureModel

@@ -30,12 +30,15 @@ namespace ColonistAwareness
             this.population = population;
             this.changed = changed;
             this.remove = remove;
-            doCloseX = true;
-            doCloseButton = true;
+            doCloseX = false;
+            doCloseButton = false;
+            doWindowBackground = false;
             forcePause = true;
             absorbInputAroundWindow = true;
             closeOnClickedOutside = false;
         }
+
+        protected override float Margin => 0f;
 
         public override Vector2 InitialSize => new Vector2(
             Mathf.Min(900f, UI.screenWidth - 48f),
@@ -43,27 +46,39 @@ namespace ColonistAwareness
 
         public override void DoWindowContents(Rect inRect)
         {
+            inRect = CAOpeningTheme.BeginWindowSurface(inRect);
+            try
+            {
+                DoEditorContents(inRect);
+            }
+            finally
+            {
+                CAOpeningTheme.EndWindowSurface();
+            }
+        }
+
+        private void DoEditorContents(Rect inRect)
+        {
             if (plan == null || settlement == null || population == null)
             {
-                Widgets.Label(inRect, "This population group is no longer available.");
+                CAOpeningTheme.Body(0f, 0f, inRect.width,
+                    "This population group is no longer available.", true);
+                if (CAOpeningTheme.PrimaryButton(new Rect(
+                        inRect.width - 150f, inRect.height - 36f, 150f,
+                        34f), "Done"))
+                    Close();
                 return;
             }
-            Text.Font = GameFont.Medium;
-            Widgets.Label(new Rect(0f, 0f, inRect.width, 34f),
+            CAOpeningTheme.Heading(0f, 0f, inRect.width,
                 population.label ?? "Population group");
-            Text.Font = GameFont.Small;
-            GUI.color = new Color(0.74f, 0.78f, 0.82f);
             const string introduction = "Set the group's size, settlement "
                 + "pattern, affiliation, Ideoligion, and Political Order. "
                 + "Belief sources may follow affiliation or remain independent.";
-            float introductionHeight = Text.CalcHeight(introduction,
-                inRect.width);
-            Widgets.Label(new Rect(0f, 38f, inRect.width,
-                introductionHeight), introduction);
-            GUI.color = Color.white;
+            float introductionHeight = CAOpeningTheme.Fine(0f, 36f,
+                inRect.width, introduction);
 
             bool main = population.isPrimary;
-            float bodyTop = 38f + introductionHeight + 10f;
+            float bodyTop = 36f + introductionHeight + 10f;
             const float footerHeight = 55f;
             Rect outRect = new Rect(0f, bodyTop, inRect.width,
                 Mathf.Max(80f, inRect.height - bodyTop - footerHeight));
@@ -147,9 +162,10 @@ namespace ColonistAwareness
 
             if (!main && remove != null)
             {
-                Rect removeRect = new Rect(0f, inRect.height - 42f,
+                Rect removeRect = new Rect(0f, inRect.height - 40f,
                     190f, 34f);
-                if (Widgets.ButtonText(removeRect, "Remove population group"))
+                if (CAOpeningTheme.GhostButton(removeRect,
+                        "Remove population group"))
                 {
                     Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
                         "Remove " + (population.label ?? "this population group")
@@ -160,6 +176,10 @@ namespace ColonistAwareness
                         }, destructive: true));
                 }
             }
+            if (CAOpeningTheme.PrimaryButton(new Rect(
+                    inRect.width - 150f, inRect.height - 40f, 150f, 34f),
+                    "Done"))
+                Close();
         }
 
         private void MarkChanged()
@@ -218,7 +238,8 @@ namespace ColonistAwareness
             Text.Font = GameFont.Small;
             Rect valueRect = new Rect(labelWidth, y + 4f,
                 width - labelWidth, 34f);
-            Widgets.DrawLightHighlight(valueRect);
+            Widgets.DrawBoxSolid(valueRect, CAOpeningTheme.Surface);
+            CAOpeningTheme.Border(valueRect, CAOpeningTheme.Hairline);
             Text.Anchor = TextAnchor.MiddleLeft;
             Widgets.Label(valueRect.ContractedBy(10f, 0f), value);
             Text.Anchor = TextAnchor.UpperLeft;
@@ -244,12 +265,14 @@ namespace ColonistAwareness
                 width - labelWidth - stateWidth - 10f, 34f);
             if (edit == null)
             {
-                Widgets.DrawLightHighlight(button);
+                Widgets.DrawBoxSolid(button, CAOpeningTheme.Surface);
+                CAOpeningTheme.Border(button, CAOpeningTheme.Hairline);
                 Text.Anchor = TextAnchor.MiddleLeft;
                 Widgets.Label(button.ContractedBy(10f, 0f), value);
                 Text.Anchor = TextAnchor.UpperLeft;
             }
-            else if (Widgets.ButtonText(button, value ?? "Not set"))
+            else if (CAOpeningTheme.GhostButton(button,
+                value ?? "Not set"))
                 edit();
             CACreationUI.DrawChip(new Rect(width - stateWidth, y + 11f,
                 stateWidth, 20f), state, edit == null

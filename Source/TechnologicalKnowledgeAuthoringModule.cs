@@ -25,35 +25,60 @@ namespace ColonistAwareness
             this.changed = changed;
             CATechnologicalKnowledgeModel.Ensure(this.knowledge,
                 this.identity);
-            doCloseX = true;
-            doCloseButton = true;
+            doCloseX = false;
+            doCloseButton = false;
+            doWindowBackground = false;
             absorbInputAroundWindow = true;
             closeOnClickedOutside = false;
         }
 
+        protected override float Margin => 0f;
+
         public override void DoWindowContents(Rect inRect)
         {
-            Text.Font = GameFont.Medium;
-            Widgets.Label(new Rect(0f, 0f, inRect.width, 34f),
-                "Technological knowledge");
-            Text.Font = GameFont.Small;
-            const string introduction = "Set what this faction can understand, build, operate, and maintain. These levels govern settlement viability, production, research, and autonomous construction.";
-            float introductionHeight = Text.CalcHeight(introduction,
-                inRect.width);
-            Widgets.Label(new Rect(0f, 38f, inRect.width,
-                introductionHeight), introduction);
+            inRect = CAOpeningTheme.BeginWindowSurface(inRect);
+            try
+            {
+                DoEditorContents(inRect);
+            }
+            finally
+            {
+                CAOpeningTheme.EndWindowSurface();
+            }
+        }
 
-            float y = 46f + introductionHeight;
+        private void DoEditorContents(Rect inRect)
+        {
+            CAOpeningTheme.Heading(0f, 0f, inRect.width,
+                "Technological knowledge");
+            const string introduction = "Set what this faction can understand, build, operate, and maintain. These levels govern settlement viability, production, research, and autonomous construction.";
+            float introductionHeight = CAOpeningTheme.Fine(0f, 36f,
+                inRect.width, introduction);
+
+            float y = 44f + introductionHeight;
             float profileWidth = Mathf.Min(250f, inRect.width * 0.32f);
-            if (Widgets.ButtonText(new Rect(0f, y, profileWidth, 30f),
-                    "Use a starting level..."))
+            if (CAOpeningTheme.GhostButton(new Rect(0f, y, profileWidth,
+                    30f), "Use a starting level..."))
                 OpenProfiles();
-            GUI.color = ColoredText.SubtleGrayColor;
+            GUI.color = CAOpeningTheme.TextLo;
             string summary = CATechnologicalKnowledgeModel.Summary(knowledge);
             Widgets.Label(new Rect(profileWidth + 12f, y + 5f,
                 inRect.width - profileWidth - 12f, 25f), summary);
             GUI.color = Color.white;
-            y += 42f;
+            y += 36f;
+            // CHANGE A RANK, SEE THE CONSEQUENCE: the same boundary answer
+            // the founding card states, recomputed live as ranks change.
+            Text.Font = GameFont.Tiny;
+            GUI.color = new Color(0.58f, 0.70f, 0.82f);
+            string consequence = CATechnologicalKnowledgeModel
+                .ConstructionConsequence(knowledge);
+            float consequenceHeight = Text.CalcHeight(consequence,
+                inRect.width);
+            Widgets.Label(new Rect(0f, y, inRect.width,
+                consequenceHeight), consequence);
+            GUI.color = Color.white;
+            Text.Font = GameFont.Small;
+            y += consequenceHeight + 8f;
 
             const float domainWidth = 250f;
             float competencyWidth = Mathf.Max(112f,
@@ -74,12 +99,19 @@ namespace ColonistAwareness
                     rowHeight - 4f), CATechnologyDomains.All[i],
                     domainWidth, competencyWidth);
             Widgets.EndScrollView();
+
+            CAOpeningTheme.Divider(0f, inRect.height - 42f, inRect.width);
+            if (CAOpeningTheme.PrimaryButton(new Rect(
+                    inRect.width - 150f, inRect.height - 36f, 150f, 34f),
+                    "Done"))
+                Close();
         }
 
         private static void DrawHeader(Rect rect, float domainWidth,
             float competencyWidth)
         {
-            Widgets.DrawLightHighlight(rect);
+            Widgets.DrawBoxSolid(rect, CAOpeningTheme.Raised);
+            CAOpeningTheme.Border(rect, CAOpeningTheme.Hairline);
             Text.Anchor = TextAnchor.MiddleLeft;
             Widgets.Label(new Rect(rect.x + 8f, rect.y, domainWidth - 8f,
                 rect.height), "Knowledge domain");
@@ -99,7 +131,8 @@ namespace ColonistAwareness
             CATechnologyDomainDef domain, float domainWidth,
             float competencyWidth)
         {
-            Widgets.DrawMenuSection(rect);
+            Widgets.DrawBoxSolid(rect, CAOpeningTheme.Surface);
+            CAOpeningTheme.Border(rect, CAOpeningTheme.Hairline);
             Text.Font = GameFont.Small;
             Widgets.Label(new Rect(rect.x + 8f, rect.y + 6f,
                 domainWidth - 14f, 24f), domain.Label);
@@ -118,7 +151,8 @@ namespace ColonistAwareness
                 Rect button = new Rect(rect.x + domainWidth
                     + i * competencyWidth + 4f, rect.y + 10f,
                     competencyWidth - 8f, 36f);
-                if (Widgets.ButtonText(button, RankButtonLabel(rank)))
+                if (CAOpeningTheme.GhostButton(button,
+                        RankButtonLabel(rank)))
                     OpenRanks(domain, competency, rank);
                 TooltipHandler.TipRegion(button, domain.Label + ": "
                     + CompetencySentence(competency, rank));

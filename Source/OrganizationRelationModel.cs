@@ -41,7 +41,13 @@ namespace ColonistAwareness
         {
             Scribe_Values.Look(ref source, prefix + "Source",
                 CAProvenance.Derived);
-            Scribe_Values.Look(ref originKey, prefix + "Origin");
+            // The preflight requires the origin key present and non-null;
+            // a derived origin created without a key is the ordinary
+            // "underived" state and must still serialize as a real value.
+            if (Scribe.mode == LoadSaveMode.Saving && originKey == null)
+                originKey = "";
+            Scribe_Values.Look(ref originKey, prefix + "Origin", null,
+                forceSave: true);
         }
     }
 
@@ -230,6 +236,7 @@ namespace ColonistAwareness
     // A relation connects a pawn or organization to an organization.
     public sealed class CARelation : IExposable
     {
+        public int schemaVersion = 1;
         public int id;
         // Backing fields for the typed party reference.
         public int partyPawnId = -1;
@@ -335,6 +342,7 @@ namespace ColonistAwareness
 
         public void ExposeData()
         {
+            Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
             Scribe_Values.Look(ref id, "id", 0);
             Scribe_Values.Look(ref partyPawnId, "partyPawnId", -1);
             Scribe_Values.Look(ref partyOrgKey, "partyOrgKey");
@@ -406,6 +414,7 @@ namespace ColonistAwareness
 
     public sealed class CAFacilityHolding : IExposable
     {
+        public int schemaVersion = 1;
         public int id;
         // Physical building identity.
         public int thingId = -1;
@@ -440,6 +449,7 @@ namespace ColonistAwareness
 
         public void ExposeData()
         {
+            Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
             Scribe_Values.Look(ref id, "id", 0);
             Scribe_Values.Look(ref thingId, "thingId", -1);
             Scribe_Values.Look(ref mapId, "mapId", -1);

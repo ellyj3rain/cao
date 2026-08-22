@@ -32,7 +32,9 @@ namespace ColonistAwareness
 
             int complete = 0;
             int unsetBeliefs = 0;
-            int unsetStructure = 0;
+            int completeStructures = 0;
+            int acknowledgedIncompleteStructures = 0;
+            int unacknowledgedUnsetStructures = 0;
             int changedIdeoligions = 0;
             foreach (Faction faction in factions)
             {
@@ -46,9 +48,13 @@ namespace ColonistAwareness
                         record.politicalBeliefs.positions,
                         CAAxisSource.Unset) > 0)
                     unsetBeliefs++;
-                if (record == null || CAFactionAxes.CountByState(record.factionStructure,
-                        CAAxisSource.Unset) > 0)
-                    unsetStructure++;
+                bool structureUnset = record == null
+                    || CAFactionAxes.CountByState(record.factionStructure,
+                        CAAxisSource.Unset) > 0;
+                if (!structureUnset) completeStructures++;
+                else if (record?.institutionalStateIncomplete == true)
+                    acknowledgedIncompleteStructures++;
+                else unacknowledgedUnsetStructures++;
                 if (before[faction.loadID] != IdeoligionSignature(faction))
                     changedIdeoligions++;
             }
@@ -59,13 +65,18 @@ namespace ColonistAwareness
                 + complete);
             text.AppendLine("  factions with unset Political Order: "
                 + unsetBeliefs);
-            text.AppendLine("  factions with unset structure: "
-                + unsetStructure);
+            text.AppendLine("  factions with represented institutions: "
+                + completeStructures);
+            text.AppendLine("  factions explicitly awaiting institutional "
+                + "evidence: " + acknowledgedIncompleteStructures);
+            text.AppendLine("  factions with unacknowledged unset "
+                + "institutions: " + unacknowledgedUnsetStructures);
             text.AppendLine("  Ideoligions changed: " + changedIdeoligions
                 + " (expected 0)");
             text.Append("  RESULT: ").Append(changedIdeoligions == 0
                 && complete == factions.Count
-                && unsetStructure == 0
+                && unsetBeliefs == 0
+                && unacknowledgedUnsetStructures == 0
                     ? "PASS" : "FAIL");
             return text.ToString();
         }

@@ -36,6 +36,25 @@ namespace ColonistAwareness
         private static CARegionalProjectionKernel cachedKernel;
         private static Texture2D cachedGround;
         private static CARegionalCandidateFacts cachedFacts;
+
+        // Turning the shape or stepping the size builds a NEW composition,
+        // and one cached slot meant every step back through orientations
+        // paid the full kernel build again -- the clunk the operator
+        // reported on the rotation control. A short most-recently-used
+        // memory keeps the last few compositions warm, so cycling through
+        // orientations costs one build each the first time and nothing
+        // after.
+        private sealed class CachedComposition
+        {
+            internal long Signature;
+            internal CARegionalProjectionKernel Kernel;
+            internal Texture2D Ground;
+            internal CARegionalCandidateFacts Facts;
+        }
+
+        private const int CompositionCacheDepth = 8;
+        private static readonly List<CachedComposition> compositions =
+            new List<CachedComposition>();
         // Held per projection identity, so a measurement never outlives
         // the geography it measured.
         private static long fidelitySignature;
@@ -82,7 +101,10 @@ namespace ColonistAwareness
 
         internal static void Release()
         {
-            if (cachedGround != null) UnityEngine.Object.Destroy(cachedGround);
+            foreach (CachedComposition held in compositions)
+                if (held.Ground != null)
+                    UnityEngine.Object.Destroy(held.Ground);
+            compositions.Clear();
             cachedGround = null;
             cachedKernel = null;
             cachedFacts = null;
@@ -99,16 +121,22 @@ namespace ColonistAwareness
         // ever touching it.
         internal static void InvalidateForWorldBoundary()
         {
-            Texture2D staleGround = cachedGround;
+            List<Texture2D> staleGrounds = compositions
+                .Where(held => held.Ground != null)
+                .Select(held => held.Ground).ToList();
+            compositions.Clear();
             cachedGround = null;
             cachedKernel = null;
             cachedFacts = null;
             fidelity = null;
             fidelitySignature = 0L;
             cachedSignature = 0L;
-            if (staleGround != null)
+            if (staleGrounds.Count > 0)
                 LongEventHandler.ExecuteWhenFinished(() =>
-                    UnityEngine.Object.Destroy(staleGround));
+                {
+                    foreach (Texture2D stale in staleGrounds)
+                        UnityEngine.Object.Destroy(stale);
+                });
         }
 
         // Preview geography changes with the footprint anchor, constituents,
@@ -129,7 +157,9 @@ namespace ColonistAwareness
             // is rare on a particular world.
             foreach (int id in plan.memberTileIds.OrderBy(id => id))
                 value = SignatureStep(value, id);
-            return unchecked((long)value);
+            long folded = CAFeatureShapeModel.FoldSignature(
+                unchecked((long)value), plan);
+            return folded;
         }
 
         private static ulong SignatureStep(ulong value, int item)
@@ -151,16 +181,47 @@ namespace ColonistAwareness
             }
             long signature = Signature(plan);
             if (signature == cachedSignature && cachedKernel != null) return;
+            CachedComposition warm = compositions.FirstOrDefault(held =>
+                held.Signature == signature);
+            if (warm != null)
+            {
+                compositions.Remove(warm);
+                compositions.Insert(0, warm);
+                cachedSignature = warm.Signature;
+                cachedKernel = warm.Kernel;
+                cachedGround = warm.Ground;
+                cachedFacts = warm.Facts;
+                return;
+            }
             CARegionalProjectionRequest request =
                 CARegionalProjectionRequest.ForPreview(plan,
                     TargetLongestSide);
-            Release();
             cachedSignature = signature;
             cachedKernel = CARegionalProjectionKernel.Build(request);
-            if (!cachedKernel.Active && cachedKernel.Members == null) return;
+            if (!cachedKernel.Active && cachedKernel.Members == null)
+            {
+                cachedGround = null;
+                cachedFacts = null;
+                return;
+            }
             cachedGround = Paint(cachedKernel);
             cachedFacts = new CARegionalCandidateFacts(cachedKernel,
                 plan.memberTileIds);
+            compositions.Insert(0, new CachedComposition
+            {
+                Signature = signature,
+                Kernel = cachedKernel,
+                Ground = cachedGround,
+                Facts = cachedFacts
+            });
+            while (compositions.Count > CompositionCacheDepth)
+            {
+                CachedComposition evicted =
+                    compositions[compositions.Count - 1];
+                compositions.RemoveAt(compositions.Count - 1);
+                if (evicted.Ground != null)
+                    UnityEngine.Object.Destroy(evicted.Ground);
+            }
             CARegionalGeographyComposition composition =
                 CARegionalGeographyContract.Inspect(plan, cachedKernel);
             Log.Message("[CA][Regional][Preview] candidate projection "
@@ -220,13 +281,93 @@ namespace ColonistAwareness
                 color = new Color(0.12f, 0.29f, 0.40f);
             BiomeDef realized = kernel.BiomeAtIndex(index);
             if (realized?.isWaterBiome == true)
-                color = new Color(0.10f, 0.24f, 0.34f);
+            {
+                if (kernel.BergValueByCell != null
+                    && kernel.BergValueByCell[index] > 0.35f)
+                    // Iceberg mass stands white on the water.
+                    color = Color.Lerp(new Color(0.72f, 0.78f, 0.84f),
+                        new Color(0.90f, 0.93f, 0.96f), Mathf.InverseLerp(
+                            0.35f, 1f, kernel.BergValueByCell[index]));
+                else
+                {
+                    // Water reads by its own depth: pale over shelves and
+                    // sandbars, dark over open sea -- atolls, lagoons and
+                    // island passages become legible instead of one flat
+                    // blue.
+                    float depth = kernel.WaterDepth != null
+                        ? Mathf.Clamp01(kernel.WaterDepth[index] / 900f)
+                        : 0.5f;
+                    color = Color.Lerp(new Color(0.24f, 0.46f, 0.55f),
+                        new Color(0.06f, 0.16f, 0.26f), depth);
+                }
+            }
+            else if (kernel.LakeValueByCell != null
+                && kernel.LakeValueByCell[index] > 0.25f
+                && (kernel.LakeValueByCell[index] > 0.45f
+                    || CARegionalProjectionKernel.IsLavaKind(
+                        (CAInlandWaterKind)kernel.LakeKindByCell[index])))
+            {
+                // Inland water reads like the coast does: pale over the
+                // shore band, dark at the basin's heart, and by its own
+                // kind -- toxic water green, a dry bed as cracked pan,
+                // lava glowing over volcanic rock.
+                float value = kernel.LakeValueByCell[index];
+                var kind = (CAInlandWaterKind)kernel.LakeKindByCell[index];
+                if (CARegionalProjectionKernel.IsLavaKind(kind))
+                    color = value > 0.4f
+                        ? new Color(0.82f, 0.28f, 0.10f)
+                        : new Color(0.26f, 0.21f, 0.19f);
+                else if (kind == CAInlandWaterKind.Oasis)
+                    color = value > 0.57f
+                        ? new Color(0.22f, 0.44f, 0.52f)
+                        : new Color(0.30f, 0.42f, 0.24f);
+                else if (kind == CAInlandWaterKind.DryLake)
+                    color = value > 0.5f
+                        ? new Color(0.60f, 0.54f, 0.42f)
+                        : new Color(0.66f, 0.61f, 0.45f);
+                else if (value <= 0.5f)
+                    color = new Color(0.66f, 0.61f, 0.45f);
+                else
+                {
+                    float depth = Mathf.InverseLerp(0.5f, 0.85f, value);
+                    color = kind == CAInlandWaterKind.Toxic
+                        ? Color.Lerp(new Color(0.33f, 0.46f, 0.33f),
+                            new Color(0.16f, 0.30f, 0.20f), depth)
+                        : Color.Lerp(new Color(0.24f, 0.46f, 0.55f),
+                            new Color(0.08f, 0.20f, 0.32f), depth);
+                }
+            }
             else if (kernel.LittoralFormationByCell != null
                 && kernel.LittoralFormationByCell[index]
                     == (byte)CALittoralFormation.VanillaBeach)
                 color = new Color(0.66f, 0.61f, 0.45f);
             else
+            {
                 color *= 0.86f;
+                // Relief is real information: the same blended hill factor
+                // the elevation rescale consumes shades the diagram, and
+                // genuine mountain mass reads as rock instead of biome
+                // green -- the map's shape stops lying about its ground.
+                if (kernel.HillFactorByCell != null)
+                {
+                    float hill = kernel.HillFactorByCell[index];
+                    if (hill > 1.35f)
+                        color = Color.Lerp(color,
+                            new Color(0.42f, 0.38f, 0.34f),
+                            Mathf.Clamp01((hill - 1.35f) / 0.9f));
+                    else
+                        color *= Mathf.Lerp(0.94f, 1.10f,
+                            Mathf.InverseLerp(0.80f, 1.35f, hill));
+                }
+            }
+            // A stitched region owns its seams: a one-cell shade change
+            // where area ownership turns over keeps the composition honest
+            // without drawing a border wall.
+            if (x + 1 < width && kernel.MemberByCell[index + 1] != member)
+                color *= 0.90f;
+            else if (z + 1 < height
+                && kernel.MemberByCell[index + width] != member)
+                color *= 0.90f;
             color.a = 1f;
             return color;
         }
@@ -645,7 +786,7 @@ namespace ColonistAwareness
         // and stripes disputed areas. The reach layer draws settlement links
         // and service reach. Layer switches use a short fade.
         internal static int overlayMode;
-        private static float overlayChangedAt;
+        internal static float overlayChangedAt;
         internal static float selectionChangedAt;
         private static Texture2D cachedOverlay;
         private static long cachedOverlaySignature;
@@ -712,7 +853,7 @@ namespace ColonistAwareness
             Action changed, Action viewDetails = null,
             Action placeSettlement = null)
         {
-            Widgets.DrawMenuSection(rect);
+            CAOpeningTheme.SurfacePanel(rect, true);
             Rect inner = rect.ContractedBy(6f);
             CARegionalProjectionKernel kernel =
                 CARegionalProjectionPreview.KernelFor(plan);
@@ -725,7 +866,6 @@ namespace ColonistAwareness
 
             CARegionalCandidateFacts facts =
                 CARegionalProjectionPreview.FactsFor(plan);
-            labelHits.Clear();
             string contextText = ContextStripText(plan, facts);
             GameFont priorFont = Text.Font;
             Text.Font = GameFont.Tiny;
@@ -754,22 +894,22 @@ namespace ColonistAwareness
             if (h > area.height) { h = area.height; w = h * aspect; }
             Rect map = new Rect(area.x + (area.width - w) * 0.5f,
                 area.y + (area.height - h) * 0.5f, w, h);
+            DrawCanvas(map, plan, kernel, ground, facts, changed, true);
+            DrawContextStrip(strip, plan, contextText, viewDetails,
+                placeSettlement);
+        }
+
+        // The canvas body without the widget's own chrome: ground, layer
+        // overlays, geographic marks, labels and click handling, for a host
+        // that owns its own framing (the opening workspace). Selection
+        // state and texture caches are shared with the boxed Draw above so
+        // every surface agrees about what is selected.
+        internal static void DrawCanvas(Rect map, CARegionalPlan plan,
+            CARegionalProjectionKernel kernel, Texture2D ground,
+            CARegionalCandidateFacts facts, Action changed, bool interact)
+        {
+            labelHits.Clear();
             GUI.DrawTexture(map, ground);
-            Rect diagramBadge = new Rect(map.x + 8f, map.y + 8f,
-                Mathf.Min(226f, map.width - 16f), 24f);
-            Widgets.DrawBoxSolid(diagramBadge,
-                new Color(0.04f, 0.055f, 0.07f, 0.90f));
-            Text.Font = GameFont.Tiny;
-            Text.Anchor = TextAnchor.MiddleCenter;
-            Widgets.Label(diagramBadge,
-                "AREA DIAGRAM - exact terrain varies");
-            Text.Anchor = TextAnchor.UpperLeft;
-            Text.Font = GameFont.Small;
-            TooltipHandler.TipRegion(diagramBadge, "This shows which broad "
-                + "world area contains each object. It is not a generated "
-                + "map, a beauty or suitability score, or an exact in-map "
-                + "placement surface. Select a settlement or the arrival "
-                + "label to change its broad area here.");
             if (overlayMode == 1)
             {
                 Texture2D overlay = FactionOverlayFor(plan, kernel);
@@ -782,9 +922,7 @@ namespace ColonistAwareness
             }
             Texture2D focus = AreaFocusOverlayFor(plan, kernel);
             if (focus != null) GUI.DrawTexture(map, focus);
-            GUI.color = new Color(0.55f, 0.90f, 0.98f, 0.75f);
-            Widgets.DrawBox(map, 2);
-            GUI.color = Color.white;
+            CAOpeningTheme.Border(map, CAOpeningTheme.Hairline);
 
             DrawWaterLinks(map, kernel, facts);
             DrawRoads(map, kernel, facts);
@@ -798,9 +936,7 @@ namespace ColonistAwareness
             // register its control first. Markers overlap constantly on a
             // dense region, and "whatever GUI saw first" is not an order
             // anyone can predict from looking at the screen.
-            HandleClicks(map, kernel, plan, facts, changed);
-            DrawContextStrip(strip, plan, contextText, viewDetails,
-                placeSettlement);
+            if (interact) HandleClicks(map, kernel, plan, facts, changed);
         }
 
         private static void DrawLayerButtons(ref Rect area)
@@ -814,33 +950,19 @@ namespace ColonistAwareness
                 "Links between central and dependent settlements, plus "
                     + "services that reach across the region."
             };
+            // Self-describing chips; the "Map view" caption earned nothing.
             Rect row = new Rect(area.x, area.y, area.width, 26f);
-            const float labelWidth = 62f;
-            Widgets.Label(new Rect(row.x, row.y + 4f, labelWidth, 22f),
-                "Map view");
-            float w = (row.width - labelWidth - 8f) / names.Length;
+            float w = (row.width - 12f) / names.Length;
             for (int i = 0; i < names.Length; i++)
             {
-                Rect button = new Rect(row.x + labelWidth + 8f + i * w,
-                    row.y, w - 3f, 24f);
+                var button = new Rect(row.x + i * (w + 6f), row.y, w, 24f);
                 bool active = overlayMode == i;
-                if (active)
-                {
-                    Widgets.DrawBoxSolid(button,
-                        new Color(0.18f, 0.42f, 0.50f, 0.72f));
-                    Widgets.DrawBox(button, 1);
-                }
-                else if (Mouse.IsOver(button))
-                    Widgets.DrawHighlight(button);
-                Text.Anchor = TextAnchor.MiddleCenter;
-                Widgets.Label(button, names[i]);
-                Text.Anchor = TextAnchor.UpperLeft;
-                if (Widgets.ButtonInvisible(button) && !active)
+                if (CAOpeningTheme.Chip(button, names[i], active, tips[i])
+                    && !active)
                 {
                     overlayMode = i;
                     overlayChangedAt = Time.realtimeSinceStartup;
                 }
-                TooltipHandler.TipRegion(button, tips[i]);
             }
             area = new Rect(area.x, area.y + 30f, area.width,
                 area.height - 30f);
@@ -1095,26 +1217,28 @@ namespace ColonistAwareness
                         && a.reach == CAProvisionReach.Region);
                 if (regionReach)
                 {
-                    // A hollow diamond ring - four lines, occluding
-                    // nothing underneath it.
+                    // A hollow circular ring - service reach around the
+                    // provider, occluding nothing underneath it.
                     Color ringColor = new Color(1f, 0.95f, 0.6f,
                         0.75f * alpha);
-                    float r = 26f;
-                    Vector2 n = new Vector2(at.x, at.y - r);
-                    Vector2 e = new Vector2(at.x + r, at.y);
-                    Vector2 s = new Vector2(at.x, at.y + r);
-                    Vector2 w2 = new Vector2(at.x - r, at.y);
-                    Widgets.DrawLine(n, e, ringColor, 2f);
-                    Widgets.DrawLine(e, s, ringColor, 2f);
-                    Widgets.DrawLine(s, w2, ringColor, 2f);
-                    Widgets.DrawLine(w2, n, ringColor, 2f);
+                    const float r = 26f;
+                    const int segments = 16;
+                    Vector2 previous = at + new Vector2(r, 0f);
+                    for (int s = 1; s <= segments; s++)
+                    {
+                        float angle = s * Mathf.PI * 2f / segments;
+                        Vector2 next = at + new Vector2(
+                            Mathf.Cos(angle) * r, Mathf.Sin(angle) * r);
+                        Widgets.DrawLine(previous, next, ringColor, 2f);
+                        previous = next;
+                    }
                 }
             }
         }
 
         // ---- coordinate transfer -------------------------------------------
 
-        private static Vector2 ToGui(Rect map,
+        internal static Vector2 ToGui(Rect map,
             CARegionalProjectionKernel kernel, Vector2 cellPoint)
         {
             float nx = (cellPoint.x + 0.5f) / kernel.Size.x;
@@ -1144,7 +1268,8 @@ namespace ColonistAwareness
                 float radius = Mathf.Clamp(link.River.widthOnMap * 0.5f,
                     1.5f, 15f) * kernel.Resolution;
                 DrawLink(map, kernel, link, new Color(0.30f, 0.52f, 0.68f),
-                    Math.Max(2f, CellsToPixels(map, kernel, radius * 2f)));
+                    Math.Max(2f, CellsToPixels(map, kernel, radius * 2f)),
+                    0.10f);
             }
         }
 
@@ -1162,22 +1287,52 @@ namespace ColonistAwareness
                     ? new Color(0.80f, 0.74f, 0.58f)
                     : new Color(0.63f, 0.56f, 0.43f);
                 DrawLink(map, kernel, link, color,
-                    Math.Max(2.5f, CellsToPixels(map, kernel, radius * 2f)));
+                    Math.Max(2.5f, CellsToPixels(map, kernel, radius * 2f)),
+                    0.03f);
             }
         }
 
         private static void DrawLink(Rect map,
             CARegionalProjectionKernel kernel,
             CARegionalCandidateFacts.Link link, Color color,
-            float pixelThickness)
+            float pixelThickness, float meander = 0f)
         {
             Vector2 from = kernel.ProjectPoint(link.From);
             Vector2 to = kernel.ProjectPoint(link.To);
             if (!ClipToFrame(kernel, ref from, ref to)) return;
             // Widgets.DrawLine multiplies its width argument by three before
             // drawing, so the argument is a third of the thickness wanted.
-            Widgets.DrawLine(ToGui(map, kernel, from),
-                ToGui(map, kernel, to), color, pixelThickness / 3f);
+            Vector2 delta = to - from;
+            float length = delta.magnitude;
+            if (meander <= 0f || length < 6f)
+            {
+                Widgets.DrawLine(ToGui(map, kernel, from),
+                    ToGui(map, kernel, to), color, pixelThickness / 3f);
+                return;
+            }
+            // A river is not a ruled line. The channel sways around its
+            // link with a deterministic meander seeded by the tile pair --
+            // the same pair always draws the same bends -- pinched to zero
+            // at both ends so chained links stay continuous.
+            Vector2 across = new Vector2(-delta.y, delta.x) / length;
+            float phase = ((link.From.tileId * 31 + link.To.tileId * 17)
+                % 628) / 100f;
+            const int Steps = 8;
+            Vector2 prior = from;
+            for (int step = 1; step <= Steps; step++)
+            {
+                float t = step / (float)Steps;
+                float pinch = 1f - Mathf.Abs(2f * t - 1f);
+                float sway = Mathf.Sin(t * Mathf.PI * 2f + phase) * pinch
+                    * length * meander;
+                Vector2 point = step == Steps ? to
+                    : from + delta * t + across * sway;
+                point.x = Mathf.Clamp(point.x, 0f, kernel.Size.x - 1f);
+                point.y = Mathf.Clamp(point.y, 0f, kernel.Size.z - 1f);
+                Widgets.DrawLine(ToGui(map, kernel, prior),
+                    ToGui(map, kernel, point), color, pixelThickness / 3f);
+                prior = point;
+            }
         }
 
         // Liang-Barsky against the projected frame, matching the clip the
@@ -1225,25 +1380,53 @@ namespace ColonistAwareness
             CARegionalProjectionKernel kernel, CARegionalCandidateFacts facts)
         {
             if (facts == null) return;
+            bool roomForLabels = map.width > 520f;
             foreach (CARegionalCandidateFacts.Feature feature in
                 facts.Features)
             {
                 Vector2 point = FeatureScreenPoint(map, kernel, facts,
                     feature);
-                Rect glyph = new Rect(point.x - 3.5f, point.y - 3.5f,
-                    7f, 7f);
+                // A landmark pin - a grounded tick with the feature's own
+                // name, never an abstract glyph. Ochre marks an old site;
+                // off-white marks a present landmark. Geographic features
+                // draw as geometry elsewhere; the pin only names the ground
+                // that carries them.
                 Color color = feature.Historical
                     ? new Color(0.82f, 0.72f, 0.46f)
-                    : new Color(0.88f, 0.92f, 0.9f);
-                float turn = feature.Historical ? 0f : 45f;
-                GUI.color = new Color(0.08f, 0.09f, 0.1f, 0.75f);
-                Widgets.DrawTextureRotated(glyph.ExpandedBy(1f),
-                    BaseContent.WhiteTex, turn);
-                GUI.color = color;
-                Widgets.DrawTextureRotated(glyph, BaseContent.WhiteTex,
-                    turn);
-                GUI.color = Color.white;
-                TooltipHandler.TipRegion(glyph.ExpandedBy(5f),
+                    : new Color(0.90f, 0.91f, 0.88f);
+                var halo = new Color(0.05f, 0.06f, 0.07f, 0.85f);
+                var stem = new Rect(point.x - 1f, point.y - 9f, 2f, 9f);
+                var foot = new Rect(point.x - 3f, point.y - 1f, 6f, 2f);
+                Widgets.DrawBoxSolid(stem.ExpandedBy(1f), halo);
+                Widgets.DrawBoxSolid(foot.ExpandedBy(1f), halo);
+                Widgets.DrawBoxSolid(stem, color);
+                Widgets.DrawBoxSolid(foot, color);
+                Rect hit = new Rect(point.x - 8f, point.y - 12f, 16f, 16f);
+                if (roomForLabels && !feature.Name.NullOrEmpty())
+                {
+                    Text.Font = GameFont.Tiny;
+                    Vector2 size = Text.CalcSize(feature.Name);
+                    var label = new Rect(point.x + 6f, point.y - 16f,
+                        size.x + 8f, 15f);
+                    label.x = Mathf.Min(label.x,
+                        map.xMax - label.width - 2f);
+                    label.y = Mathf.Max(label.y, map.y + 2f);
+                    Widgets.DrawBoxSolid(label,
+                        new Color(0.05f, 0.06f, 0.07f, 0.72f));
+                    GUI.color = color;
+                    Text.Anchor = TextAnchor.MiddleCenter;
+                    Widgets.Label(label, feature.Name);
+                    Text.Anchor = TextAnchor.UpperLeft;
+                    GUI.color = Color.white;
+                    Text.Font = GameFont.Small;
+                    hit = new Rect(Mathf.Min(hit.x, label.x),
+                        Mathf.Min(hit.y, label.y),
+                        Mathf.Max(hit.xMax, label.xMax)
+                            - Mathf.Min(hit.x, label.x),
+                        Mathf.Max(hit.yMax, label.yMax)
+                            - Mathf.Min(hit.y, label.y));
+                }
+                TooltipHandler.TipRegion(hit,
                     feature.Name + "\n" + feature.Def.LabelCap
                     + (feature.Historical
                         ? " - old site"
@@ -1313,16 +1496,16 @@ namespace ColonistAwareness
                         Mathf.Clamp(raw.y, map.y + 5f, map.yMax - 5f));
                     size = 7f;
                 }
+                // Settlements everywhere in CA read as squares; an outside
+                // settlement is the same mark in its faction's color, dimmed
+                // when it is only edge-pinned on its true bearing.
                 Rect glyph = new Rect(point.x - size * 0.5f,
                     point.y - size * 0.5f, size, size);
-                GUI.color = new Color(0.05f, 0.06f, 0.07f,
-                    neighbor.InFrame ? 0.9f : 0.6f);
-                Widgets.DrawTextureRotated(glyph.ExpandedBy(2f),
-                    BaseContent.WhiteTex, 45f);
-                GUI.color = neighbor.InFrame
-                    ? color : new Color(color.r, color.g, color.b, 0.6f);
-                Widgets.DrawTextureRotated(glyph, BaseContent.WhiteTex, 45f);
-                GUI.color = Color.white;
+                Widgets.DrawBoxSolid(glyph.ExpandedBy(2f),
+                    new Color(0.05f, 0.06f, 0.07f,
+                        neighbor.InFrame ? 0.9f : 0.6f));
+                Widgets.DrawBoxSolid(glyph, neighbor.InFrame
+                    ? color : new Color(color.r, color.g, color.b, 0.6f));
                 TooltipHandler.TipRegion(glyph.ExpandedBy(4f),
                     (neighbor.Object.LabelCap.NullOrEmpty()
                         ? neighbor.Object.def?.LabelCap.ToString()
@@ -1424,13 +1607,15 @@ namespace ColonistAwareness
             return AreaCentroid(kernel, settlement.memberTileId);
         }
 
-        private static Vector2 AreaCentroid(
+        internal static Vector2 AreaCentroid(
             CARegionalProjectionKernel kernel, int memberTileId)
         {
             return kernel.VisualLandAnchor(memberTileId);
         }
 
-        // Draw the landing as an area label rather than an exact coordinate.
+        // The arrival is a point-of-entry mark ON the region - a ringed
+        // point with a small name - not a floating dialog chip. It marks
+        // the broad area; the exact cell is chosen from generated terrain.
         private static void DrawLanding(Rect map,
             CARegionalProjectionKernel kernel, CARegionalPlan plan)
         {
@@ -1438,42 +1623,54 @@ namespace ColonistAwareness
             if (!landing.Valid) return;
             Vector2 point = ToGui(map, kernel,
                 AreaCentroid(kernel, landing.tileId));
-            const float width = 86f;
-            const float lineHeight = 24f;
-            int settlementRows = plan.settlements.Count(settlement =>
-                settlement != null
-                    && settlement.memberTileId == landing.tileId);
-            float blockHeight = (settlementRows + 1) * lineHeight;
-            float blockY = Mathf.Clamp(point.y - blockHeight * 0.5f,
-                map.y + 36f, map.yMax - blockHeight - 4f);
-            Rect hit = new Rect(point.x - width * 0.5f, blockY, width, 22f);
-            hit.x = Mathf.Clamp(hit.x, map.x + 4f,
-                map.xMax - hit.width - 4f);
-            hit.y = Mathf.Clamp(hit.y, map.y + 36f,
-                map.yMax - hit.height - 4f);
+            point.x = Mathf.Clamp(point.x, map.x + 14f, map.xMax - 14f);
+            point.y = Mathf.Clamp(point.y, map.y + 40f, map.yMax - 26f);
+            bool selected = selectedKind == CARegionSelectionKind.Arrival;
+            Color mark = selected
+                ? new Color(0.98f, 0.97f, 0.92f)
+                : new Color(0.88f, 0.87f, 0.80f);
+            var halo = new Color(0.05f, 0.06f, 0.07f, 0.85f);
+            const float r = 8f;
+            const int segments = 14;
+            Vector2 previous = point + new Vector2(r, 0f);
+            for (int s = 1; s <= segments; s++)
+            {
+                float angle = s * Mathf.PI * 2f / segments;
+                Vector2 next = point + new Vector2(
+                    Mathf.Cos(angle) * r, Mathf.Sin(angle) * r);
+                Widgets.DrawLine(previous, next, halo, 4f);
+                Widgets.DrawLine(previous, next, mark,
+                    selected ? 2.4f : 1.8f);
+                previous = next;
+            }
+            Widgets.DrawBoxSolid(
+                new Rect(point.x - 2f, point.y - 2f, 4f, 4f), mark);
+            Text.Font = GameFont.Tiny;
+            Vector2 nameSize = Text.CalcSize("Arrival");
+            var label = new Rect(point.x - (nameSize.x + 8f) * 0.5f,
+                point.y + r + 3f, nameSize.x + 8f, 15f);
+            label.x = Mathf.Clamp(label.x, map.x + 2f,
+                map.xMax - label.width - 2f);
+            Widgets.DrawBoxSolid(label, new Color(0.05f, 0.06f, 0.07f,
+                selected ? 0.9f : 0.72f));
+            GUI.color = mark;
+            Text.Anchor = TextAnchor.MiddleCenter;
+            Widgets.Label(label, "Arrival");
+            Text.Anchor = TextAnchor.UpperLeft;
+            GUI.color = Color.white;
+            Text.Font = GameFont.Small;
+            var hit = new Rect(point.x - r - 4f, point.y - r - 4f,
+                (r + 4f) * 2f, (r + 4f) * 2f + 18f);
             labelHits.Add(new LabelHit
             {
                 Kind = LabelHitKind.Arrival,
                 SettlementSlot = -1,
                 Rect = hit
             });
-            bool selected = selectedKind == CARegionSelectionKind.Arrival;
-            Widgets.DrawBoxSolid(hit,
-                selected
-                    ? new Color(0.08f, 0.20f, 0.24f, 0.98f)
-                    : new Color(0.04f, 0.10f, 0.13f, 0.92f));
-            GUI.color = new Color(0.55f, 0.95f, 1f);
-            Widgets.DrawBox(hit, selected ? 2 : 1);
-            Text.Font = GameFont.Tiny;
-            Text.Anchor = TextAnchor.MiddleCenter;
-            Widgets.Label(hit, "Arrival area");
-            Text.Anchor = TextAnchor.UpperLeft;
-            Text.Font = GameFont.Small;
-            GUI.color = Color.white;
             if (Mouse.IsOver(hit))
-                TooltipHandler.TipRegion(hit, "Click to select the arrival "
-                    + "area. The exact arrival cell is chosen from generated "
-                    + "terrain.");
+                TooltipHandler.TipRegion(hit, "Where the arriving party "
+                    + "enters this region. Click to select; the exact "
+                    + "arrival cell is chosen from generated terrain.");
         }
 
         // Selection and placement, resolved in one pass and in one order:
@@ -1558,26 +1755,23 @@ namespace ColonistAwareness
                         MessageTypeDefOf.RejectInput, false);
                 else
                 {
-                    PlanetTile tile = CARegionalPlanUtility.SurfaceTile(tileId);
-                    var reason = new System.Text.StringBuilder();
-                    if (tile.Valid && TileFinder.IsValidTileForNewSettlement(
-                            tile, reason))
+                    // Arrival consumes the region; the one owner of that
+                    // write is TrySetArrival. A confirmed plan reopens for
+                    // authoring first because its realization was accepted
+                    // against the previous arrival.
+                    bool moving = plan.startTileId != tileId;
+                    if (moving) ReopenForMapAuthoring(plan);
+                    if (CARegionalSetupSession.TrySetArrival(plan, tileId,
+                            out string arrivalRefusal))
                     {
-                        if (plan.startTileId != tileId)
-                        {
-                            ReopenForMapAuthoring(plan);
-                            plan.startTileId = tileId;
-                            changed?.Invoke();
-                        }
+                        if (moving) changed?.Invoke();
                         SelectArrival(tileId);
                         Messages.Message("Arrival area: "
                             + CARegionalPlanUtility.TileSummary(tileId),
                             MessageTypeDefOf.TaskCompletion, false);
                     }
                     else
-                        Messages.Message(reason.Length > 0
-                                ? reason.ToString()
-                                : "This area cannot be used for arrival.",
+                        Messages.Message(arrivalRefusal,
                             MessageTypeDefOf.RejectInput, false);
                 }
                 awaitingArrivalArea = false;
@@ -1757,7 +1951,7 @@ namespace ColonistAwareness
             bool place = ShowPlaceSettlement(placeSettlement);
             float actionsWidth = ContextActionWidth(viewDetails,
                 placeSettlement);
-            GUI.color = new Color(0.78f, 0.81f, 0.85f);
+            GUI.color = CAOpeningTheme.TextLo;
             Rect textRect = new Rect(strip.x + markerWidth, strip.y,
                 strip.width - markerWidth - actionsWidth
                     - (actionsWidth > 0f ? 6f : 0f),
@@ -1770,7 +1964,7 @@ namespace ColonistAwareness
             {
                 Rect detailsRect = new Rect(right - 104f, strip.y, 104f,
                     strip.height);
-                if (Widgets.ButtonText(detailsRect, "View details"))
+                if (CAOpeningTheme.GhostButton(detailsRect, "View details"))
                     viewDetails();
                 right = detailsRect.x - 6f;
             }
@@ -1784,7 +1978,7 @@ namespace ColonistAwareness
                         ? "Move arrival" : "Move area";
                 Rect moveRect = new Rect(right - 104f, strip.y, 104f,
                     strip.height);
-                if (Widgets.ButtonText(moveRect, label))
+                if (CAOpeningTheme.GhostButton(moveRect, label))
                 {
                     if (movingSettlement || movingArrival)
                     {
@@ -1815,7 +2009,8 @@ namespace ColonistAwareness
             {
                 Rect placeRect = new Rect(right - 126f, strip.y, 126f,
                     strip.height);
-                if (Widgets.ButtonText(placeRect, "Place settlement"))
+                if (CAOpeningTheme.GhostButton(placeRect,
+                        "Place settlement"))
                     placeSettlement();
                 TooltipHandler.TipRegion(placeRect, "Choose an existing "
                     + "faction or a starting society, then assign the new "
@@ -1826,7 +2021,7 @@ namespace ColonistAwareness
             Text.Font = GameFont.Small;
         }
 
-        private static string ContextStripText(CARegionalPlan plan,
+        internal static string ContextStripText(CARegionalPlan plan,
             CARegionalCandidateFacts facts)
         {
             string text;

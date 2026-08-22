@@ -81,7 +81,7 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref kind, "kind",
                 CAPopulationGroupKind.Main);
             Scribe_Values.Look(ref isPrimary, "isPrimary",
-                kind == CAPopulationGroupKind.Main);
+                kind == CAPopulationGroupKind.Main, forceSave: true);
             Scribe_Values.Look(ref label, "label");
             Scribe_Values.Look(ref share, "share", 0);
             Scribe_Values.Look(ref factionKey, "factionKey", -1);

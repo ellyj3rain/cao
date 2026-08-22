@@ -25,8 +25,10 @@ namespace ColonistAwareness
 
         public void ExposeData()
         {
-            Scribe_Values.Look(ref schemaVersion, "schemaVersion",
-                CurrentSchemaVersion);
+            // Zero is never a written version, so the stamp always
+            // serializes; a default equal to the live value would omit it
+            // and fail the preflight's schema binding.
+            Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
             Scribe_Values.Look(ref ownership, "ownership",
                 CASiteFactionReferenceKind.None);
             Scribe_Values.Look(ref ownerRegionalFactionKey,
@@ -149,8 +151,9 @@ namespace ColonistAwareness
 
         public void ExposeData()
         {
-            Scribe_Values.Look(ref schemaVersion, "schemaVersion",
-                CurrentSchemaVersion);
+            // Zero is never a written version; see the ownership links
+            // stamp above for the omission rationale.
+            Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
             Scribe_Values.Look(ref explicitLocalDivergence,
                 "explicitLocalDivergence", false);
             Scribe_Deep.Look(ref politicalOrder, "politicalOrder");

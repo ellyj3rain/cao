@@ -142,7 +142,8 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref uncertainty, "uncertainty", 0.35f);
             Scribe_Collections.Look(ref constructUncertainties,
                 "constructUncertainties", LookMode.Deep);
-            Scribe_Values.Look(ref mappingVersion, "mappingVersion", 1);
+            Scribe_Values.Look(ref mappingVersion, "mappingVersion", 1,
+                forceSave: true);
             Scribe_Values.Look(ref establishedTick, "establishedTick", -1);
             Scribe_Collections.Look(ref evidence, "evidence", LookMode.Deep);
             Scribe_Deep.Look(ref dynamicState, "dynamicState");
@@ -235,7 +236,7 @@ namespace ColonistAwareness
         {
             Scribe_Values.Look(ref subjectKey, "subjectKey");
             Scribe_Values.Look(ref lastObservedTick,
-                "lastObservedTick", -1);
+                "lastObservedTick", -1, forceSave: true);
         }
     }
 
@@ -267,7 +268,7 @@ namespace ColonistAwareness
             Scribe_Collections.Look(ref exposures,
                 "exposures", LookMode.Deep);
             Scribe_Values.Look(ref lastContactTick,
-                "lastContactTick", -1);
+                "lastContactTick", -1, forceSave: true);
         }
     }
 

@@ -671,8 +671,18 @@ namespace ColonistAwareness
         {
             base.ExposeData();
             Scribe_Values.Look(ref detail, "CA_detail");
-            Scribe_Values.Look(ref belief, "CA_politicalBelief");
-            Scribe_Values.Look(ref eventIdentity, "CA_eventIdentity");
+            // The native-record preflight requires both fields present; a
+            // thought created without a belief or identity string is a
+            // handled state and must still serialize.
+            if (Scribe.mode == LoadSaveMode.Saving)
+            {
+                if (belief == null) belief = "";
+                if (eventIdentity == null) eventIdentity = "";
+            }
+            Scribe_Values.Look(ref belief, "CA_politicalBelief", null,
+                forceSave: true);
+            Scribe_Values.Look(ref eventIdentity, "CA_eventIdentity", null,
+                forceSave: true);
         }
     }
 }

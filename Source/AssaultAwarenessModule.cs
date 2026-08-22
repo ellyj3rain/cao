@@ -781,8 +781,12 @@ namespace ColonistAwareness
         public override void ExposeData()
         {
             base.ExposeData();
-            Scribe_Values.Look(ref hostileId, "hostileId", -1);
-            Scribe_Values.Look(ref sourceTick, "sourceTick", -1);
+            // The native-record preflight requires both fields present;
+            // the pre-toil defaults must still serialize.
+            Scribe_Values.Look(ref hostileId, "hostileId", -1,
+                forceSave: true);
+            Scribe_Values.Look(ref sourceTick, "sourceTick", -1,
+                forceSave: true);
             Scribe_Values.Look(ref completedSweep, "completedSweep", false);
         }
 

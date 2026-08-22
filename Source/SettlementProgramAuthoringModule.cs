@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Verse;
 
 namespace ColonistAwareness
 {
@@ -9,6 +10,106 @@ namespace ColonistAwareness
     // derives the material program from it.
     internal static class CASettlementProgramAuthoring
     {
+        // A newly placed inhabited settlement needs a real starting operation,
+        // not merely the abstract capacity to create one later. Placement is
+        // the authoring boundary: ground, population, and faction knowledge
+        // select a minimum coherent composition, and the exact resulting facts
+        // are persisted before confirmation. Any existing active or inactive
+        // fact is operational history and prevents this initializer from
+        // replacing an operator's later edits.
+        internal static bool EnsureStartingComposition(CARegionalPlan plan,
+            CARegionalSettlementPlan settlement, out string failure)
+        {
+            failure = null;
+            if (plan == null || settlement == null || plan.confirmed
+                || !plan.operatorAuthored)
+                return false;
+            if (settlement.operationalFacts == null)
+                settlement.operationalFacts =
+                    new List<CASettlementOperationalFact>();
+            if (settlement.operationalFacts.Any(item => item != null))
+                return false;
+            if (settlement.provisionArrangements == null)
+                settlement.provisionArrangements =
+                    new List<CAProvisionArrangement>();
+            if (settlement.provisionArrangements.Any(item => item != null))
+                return false;
+            if (plan.regionalId.NullOrEmpty())
+            {
+                failure = "the region has no stable identity for its "
+                    + "starting operators";
+                return false;
+            }
+
+            CASettlementPopulationGroup group = (settlement.populationGroups
+                    ?? new List<CASettlementPopulationGroup>())
+                .Where(item => item != null && item.share > 0)
+                .OrderByDescending(item => item.isPrimary)
+                .ThenByDescending(item => item.share)
+                .ThenBy(item => item.key).FirstOrDefault();
+            if (group == null)
+            {
+                failure = "the settlement has no population to operate its "
+                    + "starting programs";
+                return false;
+            }
+
+            CASettlementEnvironmentFacts environment =
+                CASettlementEnvironment.ForTile(settlement.memberTileId);
+            CAProvisionArrangement provision = PlacementProvision(plan,
+                settlement, group, out failure);
+            if (provision == null) return false;
+            List<string> programKeys = StartingProgramKeys(plan, settlement,
+                environment);
+            foreach (string programKey in programKeys)
+                if (!CanMaterialize(plan, settlement, programKey,
+                        out failure))
+                    return false;
+
+            var additions = new List<CASettlementOperationalFact>();
+            foreach (string programKey in programKeys.Distinct(
+                StringComparer.Ordinal))
+            {
+                bool isProvision = programKey
+                    == CASettlementProgramRegistry.CommunalProvision;
+                CAEstablishedProgramFactSpec spec =
+                    CASettlementOperationalFactAuthoringKernel
+                        .EstablishForPlacement(programKey, group.key, 1,
+                            isProvision ? provision.operatorIdentity : null,
+                            isProvision ? provision.fundingSource : null,
+                            isProvision ? provision.stockSource : null,
+                            isProvision ? provision.materialSource : null,
+                            isProvision ? provision.accessSource : null);
+                additions.Add(FromSpec(spec));
+            }
+            settlement.provisionArrangements.Add(provision);
+            settlement.operationalFacts.AddRange(additions);
+            CASettlementProgramRegistry.EnsureDerived(plan, settlement,
+                force: true);
+            CASettlementProgramEntry provisionProgram = settlement
+                .settlementProgram?.Entry(
+                    CASettlementProgramRegistry.CommunalProvision,
+                    provision.operatorIdentity);
+            if (!CASettlementComposition.TryValidateProvisionArrangements(
+                    plan, settlement, out failure)
+                || provisionProgram == null)
+            {
+                if (failure.NullOrEmpty())
+                    failure = "the starting provision program did not "
+                        + "preserve its exact operator";
+                var factKeys = new HashSet<string>(additions.Select(item =>
+                    item.factKey), StringComparer.Ordinal);
+                settlement.operationalFacts.RemoveAll(item => item != null
+                    && factKeys.Contains(item.factKey));
+                settlement.provisionArrangements.RemoveAll(item =>
+                    item != null && item.basisKey == provision.basisKey);
+                CASettlementProgramRegistry.EnsureDerived(plan, settlement,
+                    force: true);
+                return false;
+            }
+            return additions.Count > 0;
+        }
+
         internal static bool Establish(CARegionalPlan plan,
             CARegionalSettlementPlan settlement, string programKey,
             int populationGroupKey, out string failure)
@@ -80,18 +181,236 @@ namespace ColonistAwareness
         {
             if (plan == null || settlement == null || entry == null)
                 return false;
-            int removed = (settlement.operationalFacts
+            List<CASettlementOperationalFact> matches =
+                (settlement.operationalFacts
                     ?? new List<CASettlementOperationalFact>())
-                .RemoveAll(item => item != null
+                .Where(item => item != null && item.active
                     && item.programKey == entry.programKey
-                    && item.operatorIdentity == entry.operatorIdentity);
-            if (removed == 0) return false;
+                    && item.operatorIdentity == entry.operatorIdentity)
+                .ToList();
+            if (matches.Count == 0) return false;
+            foreach (CASettlementOperationalFact fact in matches)
+                fact.active = false;
             CASettlementProgramRegistry.EnsureDerived(plan, settlement,
                 force: true);
             plan.operatorAuthored = true;
             plan.confirmed = false;
             CARegionalSetupSession.SavePending();
             return true;
+        }
+
+        private static List<string> StartingProgramKeys(CARegionalPlan plan,
+            CARegionalSettlementPlan settlement,
+            CASettlementEnvironmentFacts environment)
+        {
+            var result = new List<string>
+            {
+                CASettlementProgramRegistry.Housing,
+                CASettlementProgramRegistry.CommunalProvision
+            };
+            CAHabitatRequirementProfile requirements =
+                CAHabitatViability.Requirements(environment);
+            CATechnologicalKnowledge knowledge = CASiteState.Knowledge(plan,
+                settlement);
+            bool canProtectCultivation = settlement.landCapacity >= 2
+                && CATechnologicalKnowledgeModel.Rank(knowledge,
+                    CATechnologyDomains.Agriculture,
+                    CATechnologyCompetencies.Operate) >= 2;
+
+            switch (environment?.FoodRoute
+                ?? CAHabitatFoodRoute.OutdoorCultivation)
+            {
+                case CAHabitatFoodRoute.ForageAndHunt:
+                    result.Add(CASettlementProgramRegistry.Gathering);
+                    break;
+                case CAHabitatFoodRoute.ProtectedLowLightCultivation:
+                case CAHabitatFoodRoute.ProtectedCultivation:
+                    if (canProtectCultivation)
+                    {
+                        result.Add(CASettlementProgramRegistry.Agriculture);
+                        result.Add(CASettlementProgramRegistry.Production);
+                    }
+                    else
+                    {
+                        result.Add(CASettlementProgramRegistry.Trade);
+                        result.Add(CASettlementProgramRegistry.Storage);
+                    }
+                    break;
+                case CAHabitatFoodRoute.StoredAndSupported:
+                    result.Add(CASettlementProgramRegistry.Trade);
+                    result.Add(CASettlementProgramRegistry.Storage);
+                    break;
+                default:
+                    result.Add(settlement.landCapacity >= 2
+                        ? CASettlementProgramRegistry.Agriculture
+                        : CASettlementProgramRegistry.Gathering);
+                    break;
+            }
+
+            if (requirements.Requires(CAHabitatRequirement.FoodReserve)
+                || requirements.Requires(
+                    CAHabitatRequirement.WaterTreatment))
+                result.Add(CASettlementProgramRegistry.Storage);
+            if (requirements.Requires(CAHabitatRequirement.MedicalCare)
+                || requirements.Requires(
+                    CAHabitatRequirement.HazardProtection))
+                result.Add(CASettlementProgramRegistry.Medicine);
+            if (requirements.Requires(CAHabitatRequirement.ThermalControl)
+                || requirements.Requires(
+                    CAHabitatRequirement.HazardProtection)
+                || requirements.Requires(
+                    CAHabitatRequirement.BreathableInterior))
+                result.Add(CASettlementProgramRegistry.Production);
+
+            // Standing composes function. A population past the town
+            // threshold operates production beyond subsistence; past the
+            // urban threshold it operates a market and its stores; an
+            // established history keeps stores; a market on coastal ground
+            // reaches for water transport. Each is a real starting contract,
+            // so it joins only where its assets can materialize on this
+            // ground -- environment constrains the authoring act without
+            // owning the program.
+            if (settlement.residentPopulation >= 140)
+                AddMaterializable(plan, settlement, result,
+                    CASettlementProgramRegistry.Production);
+            if (settlement.residentPopulation >= 280)
+            {
+                AddMaterializable(plan, settlement, result,
+                    CASettlementProgramRegistry.Trade);
+                AddMaterializable(plan, settlement, result,
+                    CASettlementProgramRegistry.Storage);
+            }
+            if (settlement.historicalDevelopment >= 2)
+                AddMaterializable(plan, settlement, result,
+                    CASettlementProgramRegistry.Storage);
+            if (settlement.hasCoastalAccess
+                && result.Contains(CASettlementProgramRegistry.Trade))
+                AddMaterializable(plan, settlement, result,
+                    CASettlementProgramRegistry.Transport);
+            return result.Distinct(StringComparer.Ordinal).ToList();
+        }
+
+        private static void AddMaterializable(CARegionalPlan plan,
+            CARegionalSettlementPlan settlement, List<string> keys,
+            string programKey)
+        {
+            if (!keys.Contains(programKey)
+                && CanMaterialize(plan, settlement, programKey, out _))
+                keys.Add(programKey);
+        }
+
+        private static CAProvisionArrangement PlacementProvision(
+            CARegionalPlan plan, CARegionalSettlementPlan settlement,
+            CASettlementPopulationGroup group, out string failure)
+        {
+            failure = null;
+            ThingDef stock = DefDatabase<ThingDef>
+                .GetNamedSilentFail("Pemmican");
+            if (stock == null || stock.category != ThingCategory.Item
+                || stock.stackLimit < 40)
+            {
+                failure = "the starting provision stock is not loaded";
+                return null;
+            }
+            string operatorIdentity = CASettlementAuthorityWriter
+                .OrganizationKey(plan, settlement.slot);
+            if (operatorIdentity.NullOrEmpty())
+            {
+                failure = "the settlement has no stable organization identity";
+                return null;
+            }
+            string source = "authored:regional-placement:"
+                + CASettlementProgramRegistry.CommunalProvision;
+            var arrangement = new CAProvisionArrangement
+            {
+                key = 1,
+                basisKey = "regional-placement:" + plan.regionalId + ":"
+                    + settlement.slot + ":provision:1",
+                basisLabel = "Shared kitchen",
+                operatorKind = CAProvisionOperator.Communal,
+                operatorIdentity = operatorIdentity,
+                operatorSource = source + ":operator",
+                populationGroupKey = group.key,
+                access = CAProvisionAccess.Universal,
+                accessSource = source + ":access",
+                funding = CAProvisionFunding.SharedWork,
+                fundingSource = source + ":funding",
+                distribution = CAProvisionDistribution.Centralized,
+                distributionSource = source + ":distribution",
+                laborSource = source + ":labor",
+                knowledgeSource = source + ":knowledge",
+                materialSource = source + ":materials",
+                stockSource = "authored:Pemmican:40",
+                nodes = 1,
+                reach = CAProvisionReach.Settlement,
+                active = true,
+                operational = false,
+                waterSecured = true
+            };
+            var fact = new CAProvisionOperatorFact
+            {
+                Key = arrangement.key,
+                BasisKey = arrangement.basisKey,
+                BasisLabel = arrangement.basisLabel,
+                Operator = arrangement.operatorKind.ToString(),
+                OperatorIdentity = arrangement.operatorIdentity,
+                OperatorSource = arrangement.operatorSource,
+                PopulationGroupKey = arrangement.populationGroupKey,
+                Access = arrangement.access.ToString(),
+                AccessSource = arrangement.accessSource,
+                Funding = arrangement.funding.ToString(),
+                FundingSource = arrangement.fundingSource,
+                Distribution = arrangement.distribution.ToString(),
+                DistributionSource = arrangement.distributionSource,
+                LaborSource = arrangement.laborSource,
+                KnowledgeSource = arrangement.knowledgeSource,
+                MaterialSource = arrangement.materialSource,
+                StockSource = arrangement.stockSource,
+                Nodes = arrangement.nodes,
+                Reach = arrangement.reach.ToString()
+            };
+            if (CAProvisionCausalKernel.Complete(fact)) return arrangement;
+            failure = "the starting provision arrangement is incomplete";
+            return null;
+        }
+
+        private static bool CanMaterialize(CARegionalPlan plan,
+            CARegionalSettlementPlan settlement, string programKey,
+            out string failure)
+        {
+            failure = null;
+            CASettlementProgramDef definition =
+                CASettlementProgramRegistry.Find(programKey);
+            if (definition == null)
+            {
+                failure = "starting program " + programKey
+                    + " is not registered";
+                return false;
+            }
+            if (definition.NativeSpatialContract)
+            {
+                if (definition.SpatiallyRealized?.Invoke(plan, settlement)
+                    == true) return true;
+                failure = definition.Label
+                    + " cannot be established on the selected ground";
+                return false;
+            }
+            int roles = 0;
+            foreach (string[] group in definition.CandidateGroups
+                ?.Invoke(plan, settlement)
+                    ?? Enumerable.Empty<string[]>())
+            {
+                roles++;
+                if (CASettlementProgramRegistry.LoadedFunctionalCandidates(
+                        definition, group).Count > 0) continue;
+                failure = definition.Label
+                    + " has no loaded functional asset for one required role";
+                return false;
+            }
+            if (roles >= definition.MinimumFunctionalRoles) return true;
+            failure = definition.Label
+                + " has no complete material contract";
+            return false;
         }
 
         internal static CASettlementOperationalFact FromSpec(

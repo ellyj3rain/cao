@@ -140,12 +140,20 @@ namespace ColonistAwareness
                         ? "" : "  " + line.detail));
             }
             text.AppendLine("  [=] must not differ between landings; [~] may.");
+            var expansions = new List<string>();
+            if (ModsConfig.RoyaltyActive) expansions.Add("Royalty");
+            if (ModsConfig.IdeologyActive) expansions.Add("Ideology");
+            if (ModsConfig.BiotechActive) expansions.Add("Biotech");
+            if (ModsConfig.AnomalyActive) expansions.Add("Anomaly");
+            if (ModsConfig.OdysseyActive) expansions.Add("Odyssey");
             text.AppendLine("  NOT COVERED by this receipt, stated rather than "
-                + "implied: content this install does not load (only five "
-                + "TileMutatorDefs are present, and no Odyssey or Anomaly "
-                + "content), anything a mod places after generation, and the "
-                + "runtime colony clock - GenLocalDate's hour-of-day family "
-                + "still reads the parented tile by design.");
+                + "implied: content this install does not load (this session "
+                + "loads " + DefDatabase<TileMutatorDef>.DefCount
+                + " TileMutatorDefs; active expansions ["
+                + string.Join(", ", expansions) + "]), anything a mod places "
+                + "after generation, and the runtime colony clock - "
+                + "GenLocalDate's hour-of-day family still reads the parented "
+                + "tile by design.");
             return text.ToString();
         }
 

@@ -131,6 +131,8 @@ namespace ColonistAwareness
         private static FieldInfo previewSizeOverrideField;
         private static FieldInfo previewWidgetField;
         private static PropertyInfo previewTextureProperty;
+        private static FieldInfo previewTexCoordsField;
+        private static PropertyInfo previewMapProperty;
         private static string lastPreviewRequestSignature;
 
         internal static void TryInstall()
@@ -375,6 +377,24 @@ namespace ColonistAwareness
                     Log.Warning("[CA][Regional] Map Preview exact-size texture "
                         + "compatibility could not be installed");
                 }
+                // CAO presentation of the regional preview: the engine and
+                // window lifecycle stay Map Preview's; what is DRAWN inside
+                // the window becomes CAO's regional preview whenever a
+                // regional plan is bound - zoomable, pannable, per-cell
+                // inspectable, with the arrival marked on the real map.
+                MethodInfo previewDoContents = AccessTools.Method(
+                    previewWindowType, "DoWindowContents");
+                if (previewDoContents != null)
+                    previewHarmony.Patch(previewDoContents,
+                        prefix: new HarmonyMethod(
+                            typeof(CARegionalCompatibility),
+                            nameof(PreviewWindowContentsPrefix)));
+                Type previewWidgetBaseType =
+                    FindType("MapPreview.MapPreviewWidget");
+                previewTexCoordsField = AccessTools.Field(
+                    previewWidgetBaseType, "TexCoords");
+                previewMapProperty = AccessTools.Property(
+                    previewWidgetBaseType, "PreviewMap");
                 MethodInfo previewPreClose = AccessTools.Method(
                     previewWindowType, "PreClose", Type.EmptyTypes);
                 if (previewPreClose != null)
@@ -441,15 +461,708 @@ namespace ColonistAwareness
             return new IntVec2(-1, -1);
         }
 
-        private static void PreviewWindowTileSelectedPrefix(object __instance,
+        // The signature of the composition whose generated texture the
+        // preview window currently holds. Set when a regional request is
+        // allowed through to generation; consulted so that selecting
+        // anything INSIDE an already-generated composition - a settlement,
+        // a member area, a changed arrival - keeps the texture instead of
+        // paying a full map generation for the same answer.
+        private static string generatedPreviewSignature;
+
+        // ---- CAO presentation of the regional preview -----------------------
+        // Navigation state for inspecting the generated region: zoom about
+        // the cursor, pan by dragging. Reset whenever the shown composition
+        // changes so a new region always opens fully framed.
+        private static float previewZoom = 1f;
+        private static Vector2 previewPan = new Vector2(0.5f, 0.5f);
+        private static string previewNavSignature;
+
+        private static bool PreviewWindowContentsPrefix(object __instance,
+            Rect inRect)
+        {
+            try
+            {
+                CARegionalPlan plan =
+                    CARegionalSetupSession.ActivePreviewPlan;
+                if (plan == null || previewWidgetField == null
+                    || previewTextureProperty == null) return true;
+                object widget = previewWidgetField.GetValue(__instance);
+                Texture2D texture = widget == null ? null
+                    : previewTextureProperty.GetValue(widget, null)
+                        as Texture2D;
+                if (texture == null) return true;
+                Rect generatedArea = previewTexCoordsField != null
+                    ? (Rect)previewTexCoordsField.GetValue(widget)
+                    : new Rect(0f, 0f, 1f, 1f);
+                if (generatedArea.width <= 0f || generatedArea.height <= 0f)
+                    generatedArea = new Rect(0f, 0f, 1f, 1f);
+                Map previewMap = previewMapProperty?.GetValue(widget, null)
+                    as Map;
+                bool generating = IsMapPreviewGenerating();
+
+                CARegionalGeographyComposition composition =
+                    CARegionalGeographyContract.Inspect(plan);
+                if (composition.Signature != previewNavSignature)
+                {
+                    previewNavSignature = composition.Signature;
+                    previewZoom = 1f;
+                    previewPan = new Vector2(0.5f, 0.5f);
+                }
+
+                Widgets.DrawBoxSolid(inRect, CAOpeningTheme.Ink);
+                Rect frame = inRect.ContractedBy(4f);
+                const float headerHeight = 18f;
+                Text.Font = GameFont.Tiny;
+                GUI.color = CAOpeningTheme.TextLo;
+                Widgets.Label(new Rect(frame.x + 4f, frame.y,
+                    frame.width - 8f, headerHeight),
+                    CARegionalPlanUtility.RegionName(plan) + " · "
+                    + plan.BackingMapSize.x + "x" + plan.BackingMapSize.z
+                    + (generating ? " · generating..."
+                        : previewZoom > 1.01f
+                            ? " · " + previewZoom.ToString("F1")
+                                + "x · drag to pan, scroll to zoom, "
+                                + "right-click to reset"
+                            : " · scroll to zoom · hover for ground"));
+                GUI.color = Color.white;
+                Text.Font = GameFont.Small;
+
+                // Fit the generated map's true aspect inside the remaining
+                // frame; the window is already aspect-framed, so this only
+                // absorbs the header strip.
+                Rect available = new Rect(frame.x,
+                    frame.y + headerHeight + 2f, frame.width,
+                    frame.height - headerHeight - 2f);
+                float mapAspect = plan.BackingMapSize.z > 0
+                    ? plan.BackingMapSize.x / (float)plan.BackingMapSize.z
+                    : 1f;
+                float w = available.width;
+                float h = w / mapAspect;
+                if (h > available.height)
+                {
+                    h = available.height;
+                    w = h * mapAspect;
+                }
+                var map = new Rect(
+                    available.x + (available.width - w) * 0.5f,
+                    available.y + (available.height - h) * 0.5f, w, h);
+
+                HandlePreviewShapeHandles(map, plan);
+                HandlePreviewNavigation(map);
+
+                float half = 0.5f / previewZoom;
+                previewPan.x = Mathf.Clamp(previewPan.x, half, 1f - half);
+                previewPan.y = Mathf.Clamp(previewPan.y, half, 1f - half);
+                var view = new Rect(
+                    generatedArea.x + (previewPan.x - half)
+                        * generatedArea.width,
+                    generatedArea.y + (previewPan.y - half)
+                        * generatedArea.height,
+                    generatedArea.width / previewZoom,
+                    generatedArea.height / previewZoom);
+                GUI.DrawTextureWithTexCoords(map, texture, view);
+                // THE REGIONAL SEMANTIC LAYER over the real terrain: which
+                // authored facts occupy this geography. Member seams are a
+                // whisper from the same partition generation consumes;
+                // settlements and landmarks sit at their actual projected
+                // anchors; the arrival is the ringed entry point.
+                Texture2D seams = PreviewSeamOverlayFor(plan);
+                if (seams != null)
+                {
+                    float seamHalf = 0.5f / previewZoom;
+                    GUI.DrawTextureWithTexCoords(map, seams, new Rect(
+                        previewPan.x - seamHalf, previewPan.y - seamHalf,
+                        1f / previewZoom, 1f / previewZoom));
+                }
+                CAOpeningTheme.Border(map, CAOpeningTheme.Hairline);
+
+                DrawPreviewFeatures(map, plan);
+                DrawPreviewSettlements(map, plan);
+                DrawPreviewArrival(map, plan);
+                HandlePreviewArrivalChoice(map, plan);
+                HandlePreviewCompose(map, plan);
+                HandlePreviewInspect(map, plan);
+                if (previewMap != null && !generating
+                    && Mouse.IsOver(map))
+                    TipPreviewCell(map, plan, previewMap);
+
+                if (generating)
+                {
+                    Widgets.DrawBoxSolid(map, new Color(
+                        CAOpeningTheme.Ink.r, CAOpeningTheme.Ink.g,
+                        CAOpeningTheme.Ink.b, 0.62f));
+                    Text.Font = GameFont.Tiny;
+                    GUI.color = CAOpeningTheme.TextLo;
+                    Text.Anchor = TextAnchor.MiddleCenter;
+                    Widgets.Label(map, "Generating the region...");
+                    Text.Anchor = TextAnchor.UpperLeft;
+                    GUI.color = Color.white;
+                    Text.Font = GameFont.Small;
+                }
+                return false;
+            }
+            catch (Exception failure)
+            {
+                Log.ErrorOnce("[CA][Regional][Preview] CAO presentation "
+                    + "failed; the stock preview drawing remains: "
+                    + failure, 889417234);
+                return true;
+            }
+        }
+
+        // Normalized position (x right, y up, generated-area space) of a
+        // screen point inside the current zoomed view, and back.
+        private static Vector2 PreviewNormAt(Rect map, Vector2 screen)
+        {
+            float half = 0.5f / previewZoom;
+            float ux = (screen.x - map.x) / map.width;
+            float uy = (map.yMax - screen.y) / map.height;
+            return new Vector2(
+                previewPan.x - half + ux / previewZoom,
+                previewPan.y - half + uy / previewZoom);
+        }
+
+        private static Vector2 PreviewScreenAt(Rect map, Vector2 norm)
+        {
+            float half = 0.5f / previewZoom;
+            float ux = (norm.x - (previewPan.x - half)) * previewZoom;
+            float uy = (norm.y - (previewPan.y - half)) * previewZoom;
+            return new Vector2(map.x + ux * map.width,
+                map.yMax - uy * map.height);
+        }
+
+        private static void HandlePreviewNavigation(Rect map)
+        {
+            Event current = Event.current;
+            if (!map.Contains(current.mousePosition)) return;
+            if (current.type == EventType.ScrollWheel)
+            {
+                Vector2 anchor = PreviewNormAt(map, current.mousePosition);
+                float next = Mathf.Clamp(previewZoom
+                    * (current.delta.y < 0f ? 1.25f : 0.8f), 1f, 8f);
+                if (!Mathf.Approximately(next, previewZoom))
+                {
+                    // Keep the ground under the cursor under the cursor:
+                    // norm = pan - half + u/zoom, solved for the new pan
+                    // with the same norm and cursor fraction u.
+                    float ux = (current.mousePosition.x - map.x)
+                        / map.width;
+                    float uy = (map.yMax - current.mousePosition.y)
+                        / map.height;
+                    previewZoom = next;
+                    float half = 0.5f / previewZoom;
+                    previewPan = new Vector2(
+                        anchor.x - ux / previewZoom + half,
+                        anchor.y - uy / previewZoom + half);
+                }
+                current.Use();
+            }
+            else if (current.type == EventType.MouseDrag
+                && current.button == 0 && previewZoom > 1.01f)
+            {
+                previewPan.x -= current.delta.x
+                    / (map.width * previewZoom);
+                previewPan.y += current.delta.y
+                    / (map.height * previewZoom);
+                current.Use();
+            }
+            else if (current.type == EventType.MouseDown
+                && current.button == 1)
+            {
+                previewZoom = 1f;
+                previewPan = new Vector2(0.5f, 0.5f);
+                current.Use();
+            }
+        }
+
+        // Hairline member-boundary overlay derived from the projection
+        // kernel's per-cell ownership - the same partition generation
+        // consumes - cached per composition.
+        private static Texture2D previewSeamOverlay;
+        private static long previewSeamSignature;
+
+        private static Texture2D PreviewSeamOverlayFor(CARegionalPlan plan)
+        {
+            if (plan?.memberTileIds == null) return null;
+            CARegionalProjectionKernel kernel =
+                CARegionalProjectionPreview.KernelFor(plan);
+            if (kernel?.MemberByCell == null || kernel.Size.x <= 1
+                || kernel.Size.z <= 1) return null;
+            // The world seed is part of the identity: two different worlds
+            // can reuse the same tile ids, and a stale overlay would show
+            // the previous world's seams over the new world's terrain.
+            long signature = 17L + (Verse.Find.World?.info?.Seed ?? 0);
+            signature = signature * 31L + kernel.Size.x;
+            signature = signature * 31L + kernel.Size.z;
+            foreach (int member in plan.memberTileIds)
+                signature = signature * 31L + member;
+            if (signature == previewSeamSignature
+                && previewSeamOverlay != null) return previewSeamOverlay;
+            if (previewSeamOverlay != null)
+                UnityEngine.Object.Destroy(previewSeamOverlay);
+            int width = kernel.Size.x, height = kernel.Size.z;
+            int[] memberByCell = kernel.MemberByCell;
+            var pixels = new Color32[width * height];
+            var seam = new Color32(10, 12, 14, 78);
+            for (int z = 0; z < height - 1; z++)
+            {
+                int row = z * width;
+                for (int x = 0; x < width - 1; x++)
+                {
+                    int i = row + x;
+                    if (i + 1 >= memberByCell.Length
+                        || i + width >= memberByCell.Length) continue;
+                    int owner = memberByCell[i];
+                    if (owner < 0) continue;
+                    if ((memberByCell[i + 1] >= 0
+                            && memberByCell[i + 1] != owner)
+                        || (memberByCell[i + width] >= 0
+                            && memberByCell[i + width] != owner))
+                        pixels[i] = seam;
+                }
+            }
+            previewSeamOverlay = new Texture2D(width, height,
+                TextureFormat.RGBA32, false);
+            previewSeamOverlay.filterMode = FilterMode.Bilinear;
+            previewSeamOverlay.SetPixels32(pixels);
+            previewSeamOverlay.Apply();
+            previewSeamSignature = signature;
+            return previewSeamOverlay;
+        }
+
+        private static void DrawPreviewSettlements(Rect map,
+            CARegionalPlan plan)
+        {
+            if (plan.settlements == null || plan.settlements.Count == 0)
+                return;
+            CARegionalProjectionKernel kernel =
+                CARegionalProjectionPreview.KernelFor(plan);
+            if (kernel == null || kernel.Size.x <= 0) return;
+            foreach (CARegionalSettlementPlan settlement in
+                plan.settlements)
+            {
+                if (settlement == null) continue;
+                Vector2 anchor = kernel.VisualLandAnchor(
+                    settlement.memberTileId);
+                var norm = new Vector2((anchor.x + 0.5f) / kernel.Size.x,
+                    (anchor.y + 0.5f) / kernel.Size.z);
+                Vector2 at = PreviewScreenAt(map, norm);
+                if (at.x < map.x + 5f || at.x > map.xMax - 5f
+                    || at.y < map.y + 5f || at.y > map.yMax - 5f)
+                    continue;
+                Color color = CARegionalWorldOverlay.FactionColor(
+                    settlement.OwningFactionKey);
+                var glyph = new Rect(at.x - 4f, at.y - 4f, 8f, 8f);
+                Widgets.DrawBoxSolid(glyph.ExpandedBy(1f),
+                    new Color(0.05f, 0.06f, 0.07f, 0.9f));
+                Widgets.DrawBoxSolid(glyph, color);
+                string name = CARegionalPlanUtility.SettlementName(plan,
+                    settlement);
+                if (!name.NullOrEmpty())
+                {
+                    Text.Font = GameFont.Tiny;
+                    Vector2 size = Text.CalcSize(name);
+                    var label = new Rect(at.x - (size.x + 8f) * 0.5f,
+                        at.y + 6f, size.x + 8f, 15f);
+                    label.x = Mathf.Clamp(label.x, map.x + 2f,
+                        map.xMax - label.width - 2f);
+                    if (label.yMax < map.yMax - 2f)
+                    {
+                        Widgets.DrawBoxSolid(label,
+                            new Color(0.05f, 0.06f, 0.07f, 0.72f));
+                        GUI.color = new Color(0.90f, 0.91f, 0.90f);
+                        Text.Anchor = TextAnchor.MiddleCenter;
+                        Widgets.Label(label, name);
+                        Text.Anchor = TextAnchor.UpperLeft;
+                        GUI.color = Color.white;
+                    }
+                    Text.Font = GameFont.Small;
+                }
+                TooltipHandler.TipRegion(glyph.ExpandedBy(4f),
+                    (name.NullOrEmpty() ? "Settlement" : name) + "\n"
+                    + CARegionalPlanUtility.TileWords(
+                        settlement.memberTileId)
+                    + "\nExact site is chosen from generated terrain.");
+            }
+        }
+
+        private static void DrawPreviewFeatures(Rect map,
+            CARegionalPlan plan)
+        {
+            CARegionalCandidateFacts facts =
+                CARegionalProjectionPreview.FactsFor(plan);
+            CARegionalProjectionKernel kernel =
+                CARegionalProjectionPreview.KernelFor(plan);
+            if (facts == null || kernel == null || kernel.Size.x <= 0)
+                return;
+            foreach (CARegionalCandidateFacts.Feature feature in
+                facts.Features)
+            {
+                if (feature?.Tile.Valid != true) continue;
+                Vector2 anchor = kernel.VisualLandAnchor(
+                    feature.Tile.tileId);
+                var norm = new Vector2((anchor.x + 0.5f) / kernel.Size.x,
+                    (anchor.y + 0.5f) / kernel.Size.z);
+                Vector2 at = PreviewScreenAt(map, norm);
+                if (at.x < map.x + 5f || at.x > map.xMax - 5f
+                    || at.y < map.y + 8f || at.y > map.yMax - 5f)
+                    continue;
+                Color color = feature.Historical
+                    ? new Color(0.82f, 0.72f, 0.46f)
+                    : new Color(0.90f, 0.91f, 0.88f);
+                var halo = new Color(0.05f, 0.06f, 0.07f, 0.85f);
+                var stem = new Rect(at.x - 1f, at.y - 8f, 2f, 8f);
+                var foot = new Rect(at.x - 3f, at.y - 1f, 6f, 2f);
+                Widgets.DrawBoxSolid(stem.ExpandedBy(1f), halo);
+                Widgets.DrawBoxSolid(foot.ExpandedBy(1f), halo);
+                Widgets.DrawBoxSolid(stem, color);
+                Widgets.DrawBoxSolid(foot, color);
+                TooltipHandler.TipRegion(new Rect(at.x - 7f, at.y - 11f,
+                    14f, 14f), feature.Name + "\n"
+                    + feature.Def.LabelCap);
+            }
+        }
+
+        private static void DrawPreviewArrival(Rect map,
+            CARegionalPlan plan)
+        {
+            CARegionalProjectionKernel kernel =
+                CARegionalProjectionPreview.KernelFor(plan);
+            if (kernel == null || kernel.Size.x <= 0
+                || kernel.Size.z <= 0) return;
+            Vector2 anchor = kernel.VisualLandAnchor(plan.startTileId);
+            var norm = new Vector2((anchor.x + 0.5f) / kernel.Size.x,
+                (anchor.y + 0.5f) / kernel.Size.z);
+            Vector2 at = PreviewScreenAt(map, norm);
+            if (at.x < map.x + 6f || at.x > map.xMax - 6f
+                || at.y < map.y + 6f || at.y > map.yMax - 6f) return;
+            var halo = new Color(0.05f, 0.06f, 0.07f, 0.85f);
+            var mark = new Color(0.95f, 0.93f, 0.86f);
+            const float r = 7f;
+            const int segments = 12;
+            Vector2 previous = at + new Vector2(r, 0f);
+            for (int s = 1; s <= segments; s++)
+            {
+                float angle = s * Mathf.PI * 2f / segments;
+                Vector2 next = at + new Vector2(Mathf.Cos(angle) * r,
+                    Mathf.Sin(angle) * r);
+                Widgets.DrawLine(previous, next, halo, 3.4f);
+                Widgets.DrawLine(previous, next, mark, 1.6f);
+                previous = next;
+            }
+            Widgets.DrawBoxSolid(new Rect(at.x - 1.5f, at.y - 1.5f, 3f,
+                3f), mark);
+            TooltipHandler.TipRegion(new Rect(at.x - r - 2f,
+                at.y - r - 2f, (r + 2f) * 2f, (r + 2f) * 2f),
+                "Arrival: where the arriving party enters this region.");
+        }
+
+        private static void HandlePreviewArrivalChoice(Rect map,
+            CARegionalPlan plan)
+        {
+            if (CAOpeningAugments.Mode != CALandingMode.Arrival) return;
+            Event current = Event.current;
+            if (current.type != EventType.MouseDown || current.button != 0
+                || !map.Contains(current.mousePosition)) return;
+            CARegionalProjectionKernel kernel =
+                CARegionalProjectionPreview.KernelFor(plan);
+            if (kernel == null) return;
+            Vector2 norm = PreviewNormAt(map, current.mousePosition);
+            int x = Mathf.Clamp(Mathf.FloorToInt(norm.x * kernel.Size.x),
+                0, kernel.Size.x - 1);
+            int z = Mathf.Clamp(Mathf.FloorToInt(norm.y * kernel.Size.z),
+                0, kernel.Size.z - 1);
+            int index = kernel.Indices.CellToIndex(new IntVec3(x, 0, z));
+            PlanetTile member = kernel.MemberTileAtIndex(index);
+            if (member.Valid)
+            {
+                if (CARegionalSetupSession.TrySetArrival(plan,
+                        member.tileId, out string refusal))
+                    Messages.Message("Arrival area: "
+                        + CARegionalPlanUtility.TileSummary(member.tileId),
+                        MessageTypeDefOf.TaskCompletion, false);
+                else
+                    Messages.Message(refusal,
+                        MessageTypeDefOf.RejectInput, false);
+            }
+            else
+                Messages.Message("Choose land inside the region.",
+                    MessageTypeDefOf.RejectInput, false);
+            current.Use();
+        }
+
+        private static string draggingHandleFeature;
+        private static int draggingHandleTile = -1;
+        private static Vector2 draggingHandleScreen;
+
+        // Direct spatial editing: while the shape editor is open for one
+        // of this plan's areas, each of that area's inland-water basins
+        // offers a drag handle at its resolved center; releasing commits
+        // the basin's position through the editor's canonical-state seam.
+        // Runs before navigation so a handle drag beats the pan.
+        private static void HandlePreviewShapeHandles(Rect map,
+            CARegionalPlan plan)
+        {
+            Dialog_CAFeatureShapeEditor editor = Verse.Find.WindowStack
+                ?.Windows?.OfType<Dialog_CAFeatureShapeEditor>()
+                .FirstOrDefault(item => item.Plan == plan);
+            if (editor == null)
+            {
+                draggingHandleFeature = null;
+                draggingHandleTile = -1;
+                return;
+            }
+            CARegionalProjectionKernel kernel =
+                CARegionalProjectionPreview.KernelFor(plan);
+            if (kernel == null || kernel.Size.x <= 0) return;
+            Event current = Event.current;
+            foreach (CARegionalProjectionKernel.CAInlandWaterCenter basin
+                in kernel.InlandWaterCenters)
+            {
+                if (basin.TileId != editor.TileId
+                    || basin.Kind == CAInlandWaterKind.Basin) continue;
+                bool dragging = draggingHandleFeature == basin.FeatureDef
+                    && draggingHandleTile == basin.TileId;
+                Vector2 at = dragging ? draggingHandleScreen
+                    : PreviewScreenAt(map, new Vector2(
+                        (basin.Center.x + 0.5f) / kernel.Size.x,
+                        (basin.Center.y + 0.5f) / kernel.Size.z));
+                if (!dragging && (at.x < map.x + 6f
+                    || at.x > map.xMax - 6f || at.y < map.y + 6f
+                    || at.y > map.yMax - 6f)) continue;
+                DrawHandleDiamond(at, dragging);
+                TooltipHandler.TipRegion(new Rect(at.x - 9f, at.y - 9f,
+                    18f, 18f),
+                    "Drag to move this water body within its area.");
+                if (current.type == EventType.MouseDown
+                    && current.button == 0
+                    && Vector2.Distance(current.mousePosition, at) <= 9f)
+                {
+                    draggingHandleFeature = basin.FeatureDef;
+                    draggingHandleTile = basin.TileId;
+                    draggingHandleScreen = at;
+                    current.Use();
+                }
+                else if (dragging && current.type == EventType.MouseDrag)
+                {
+                    draggingHandleScreen = current.mousePosition;
+                    current.Use();
+                }
+                else if (dragging && current.type == EventType.MouseUp)
+                {
+                    Vector2 norm = PreviewNormAt(map,
+                        draggingHandleScreen);
+                    var cell = new Vector2(
+                        norm.x * kernel.Size.x - 0.5f,
+                        norm.y * kernel.Size.z - 0.5f);
+                    editor.CommitWander(basin.FeatureDef,
+                        (cell.x - basin.Anchor.x) / basin.Span,
+                        (cell.y - basin.Anchor.y) / basin.Span);
+                    draggingHandleFeature = null;
+                    draggingHandleTile = -1;
+                    current.Use();
+                }
+            }
+        }
+
+        private static void DrawHandleDiamond(Vector2 at, bool active)
+        {
+            var halo = new Color(0.05f, 0.06f, 0.07f, 0.9f);
+            Color tone = active ? new Color(0.97f, 0.90f, 0.62f)
+                : new Color(0.93f, 0.86f, 0.62f);
+            var up = new Vector2(0f, 6f);
+            var right = new Vector2(6f, 0f);
+            Widgets.DrawLine(at - up, at + right, halo, 3.2f);
+            Widgets.DrawLine(at + right, at + up, halo, 3.2f);
+            Widgets.DrawLine(at + up, at - right, halo, 3.2f);
+            Widgets.DrawLine(at - right, at - up, halo, 3.2f);
+            Widgets.DrawLine(at - up, at + right, tone, 1.6f);
+            Widgets.DrawLine(at + right, at + up, tone, 1.6f);
+            Widgets.DrawLine(at + up, at - right, tone, 1.6f);
+            Widgets.DrawLine(at - right, at - up, tone, 1.6f);
+        }
+
+        // Inspect acts on the preview exactly as it acts on the world: a
+        // click selects the member under the cursor (the column answers
+        // with that area's facts), and a double-click opens its
+        // feature-shape editor when the area carries shapeable features.
+        // The two views stay one authoring surface.
+        private static void HandlePreviewInspect(Rect map,
+            CARegionalPlan plan)
+        {
+            if (CAOpeningAugments.Mode != CALandingMode.Inspect) return;
+            Event current = Event.current;
+            if (current.type != EventType.MouseDown || current.button != 0
+                || !map.Contains(current.mousePosition)) return;
+            CARegionalProjectionKernel kernel =
+                CARegionalProjectionPreview.KernelFor(plan);
+            if (kernel == null || kernel.Size.x <= 0) return;
+            Vector2 norm = PreviewNormAt(map, current.mousePosition);
+            if (norm.x < 0f || norm.x >= 1f || norm.y < 0f
+                || norm.y >= 1f) return;
+            int x = Mathf.Clamp((int)(norm.x * kernel.Size.x), 0,
+                kernel.Size.x - 1);
+            int z = Mathf.Clamp((int)(norm.y * kernel.Size.z), 0,
+                kernel.Size.z - 1);
+            PlanetTile member = kernel.MemberTileAtIndex(
+                kernel.Indices.CellToIndex(new IntVec3(x, 0, z)));
+            if (!member.Valid) return;
+            Verse.Find.WorldInterface.SelectedTile = member;
+            if (current.clickCount >= 2 && (member.Tile?.Mutators
+                    ?? Enumerable.Empty<TileMutatorDef>())
+                .Any(CAFeatureShapeModel.Shapeable))
+                Verse.Find.WindowStack.Add(
+                    new Dialog_CAFeatureShapeEditor(plan, member.tileId));
+            current.Use();
+        }
+
+        // Compose acts on the preview exactly as it acts on the world:
+        // point at the generated map, the member under the cursor answers,
+        // a click releases it through the same guarded funnel. The two
+        // views stay one authoring surface.
+        private static void HandlePreviewCompose(Rect map,
+            CARegionalPlan plan)
+        {
+            if (CAOpeningAugments.Mode != CALandingMode.Compose) return;
+            if (!map.Contains(Event.current.mousePosition)) return;
+            CARegionalProjectionKernel kernel =
+                CARegionalProjectionPreview.KernelFor(plan);
+            if (kernel == null || kernel.Size.x <= 0) return;
+            Vector2 norm = PreviewNormAt(map, Event.current.mousePosition);
+            if (norm.x < 0f || norm.x >= 1f || norm.y < 0f || norm.y >= 1f)
+                return;
+            int kx = Mathf.Clamp((int)(norm.x * kernel.Size.x), 0,
+                kernel.Size.x - 1);
+            int kz = Mathf.Clamp((int)(norm.y * kernel.Size.z), 0,
+                kernel.Size.z - 1);
+            PlanetTile member = kernel.MemberTileAtIndex(
+                kernel.Indices.CellToIndex(new IntVec3(kx, 0, kz)));
+            if (!member.Valid) return;
+            Vector2 anchor = kernel.VisualLandAnchor(member.tileId);
+            Vector2 at = PreviewScreenAt(map, new Vector2(
+                (anchor.x + 0.5f) / kernel.Size.x,
+                (anchor.y + 0.5f) / kernel.Size.z));
+            if (at.x >= map.x && at.x <= map.xMax && at.y >= map.y
+                && at.y <= map.yMax)
+            {
+                const float r = 10f;
+                const int segments = 12;
+                Vector2 previous = at + new Vector2(r, 0f);
+                for (int s = 1; s <= segments; s++)
+                {
+                    float angle = s * Mathf.PI * 2f / segments;
+                    Vector2 next = at + new Vector2(
+                        Mathf.Cos(angle) * r, Mathf.Sin(angle) * r);
+                    Widgets.DrawLine(previous, next,
+                        CAOpeningAugments.RemoveTone, 1.8f);
+                    previous = next;
+                }
+            }
+            CAOpeningAugments.CursorStatement("Release "
+                + (member.Tile?.PrimaryBiome?.label ?? "this area"),
+                CAOpeningAugments.RemoveTone);
+            if (Event.current.type == EventType.MouseDown
+                && Event.current.button == 0)
+            {
+                CAExpandedLandmassProfile profile;
+                if (CAExpandedLandmassProfile.TryFor(
+                        Verse.Find.GameInitData.mapSize, out profile))
+                    CARegionalSetupSession.ToggleRegionArea(profile, plan,
+                        member);
+                Event.current.Use();
+            }
+        }
+
+        private static void TipPreviewCell(Rect map, CARegionalPlan plan,
+            Map previewMap)
+        {
+            Vector2 norm = PreviewNormAt(map, Event.current.mousePosition);
+            if (norm.x < 0f || norm.x >= 1f || norm.y < 0f || norm.y >= 1f)
+                return;
+            int cellX = Mathf.Clamp((int)(norm.x * previewMap.Size.x), 0,
+                previewMap.Size.x - 1);
+            int cellZ = Mathf.Clamp((int)(norm.y * previewMap.Size.z), 0,
+                previewMap.Size.z - 1);
+            string terrain = null;
+            try
+            {
+                terrain = previewMap.terrainGrid
+                    ?.TerrainAt(new IntVec3(cellX, 0, cellZ))?.label;
+            }
+            catch { }
+            if (terrain.NullOrEmpty()) return;
+            string area = null;
+            string water = null;
+            CARegionalProjectionKernel kernel =
+                CARegionalProjectionPreview.KernelFor(plan);
+            if (kernel != null && kernel.Size.x > 0)
+            {
+                int kx = Mathf.Clamp((int)(norm.x * kernel.Size.x), 0,
+                    kernel.Size.x - 1);
+                int kz = Mathf.Clamp((int)(norm.y * kernel.Size.z), 0,
+                    kernel.Size.z - 1);
+                int index = kernel.Indices.CellToIndex(
+                    new IntVec3(kx, 0, kz));
+                PlanetTile member = kernel.MemberTileAtIndex(index);
+                if (member.Valid)
+                {
+                    area = CARegionalPlanUtility.TileWords(member.tileId);
+                    if (CAOpeningAugments.Mode == CALandingMode.Inspect
+                        && (member.Tile?.Mutators
+                            ?? Enumerable.Empty<TileMutatorDef>())
+                        .Any(CAFeatureShapeModel.Shapeable))
+                        area += "\nDouble-click to shape this area's "
+                            + "features.";
+                }
+                ushort[] depths = kernel.WaterDepth;
+                if (depths != null && index < depths.Length
+                    && depths[index] > 0)
+                    water = depths[index] < 300 ? "shallow water"
+                        : depths[index] < 700 ? "deep water"
+                            : "very deep water";
+            }
+            TooltipHandler.TipRegion(map, new TipSignal(
+                terrain.CapitalizeFirst()
+                + (water == null ? "" : " · " + water)
+                + (area == null ? "" : "\n" + area)
+                + "\n(" + cellX + " | " + cellZ + ")", 73211905));
+        }
+
+        private static bool PreviewWindowTileSelectedPrefix(object __instance,
             World world, ref PlanetTile tileId, ref MapParent mapParent)
         {
             if (__instance == null || world == null
                 || previewDetermineMapSizeMethod == null
                 || previewWidgetField == null
-                || previewTextureProperty == null) return;
+                || previewTextureProperty == null) return true;
             try
             {
+                CARegionalPlan plan = ResolvePreviewPlan(world, tileId);
+                if (plan != null)
+                {
+                    IntVec2 size = new IntVec2(plan.BackingMapSize.x,
+                        plan.BackingMapSize.z);
+                    CARegionalGeographyComposition composition =
+                        CARegionalGeographyContract.Inspect(plan);
+                    object widget = previewWidgetField.GetValue(__instance);
+                    Texture2D texture = widget == null ? null
+                        : previewTextureProperty.GetValue(widget, null)
+                            as Texture2D;
+                    // Same geography, finished texture at the exact backing
+                    // frame: the selection is a question the texture already
+                    // answers. Keep the binding fresh and skip regeneration
+                    // entirely.
+                    if (composition.Signature == generatedPreviewSignature
+                        && texture != null
+                        && texture.width == size.x
+                        && texture.height == size.z
+                        && !CARegionalCompatibility.IsMapPreviewGenerating())
+                    {
+                        CARegionalSetupSession.BindPreviewPlan(plan);
+                        return false;
+                    }
+                }
+
                 // The external window persists its current position while it
                 // handles a tile change. Present its own undocked position for
                 // that write, then the postfix returns it to CA's temporary
@@ -461,7 +1174,6 @@ namespace ColonistAwareness
                 // the selected composition cannot inherit a regional frame or
                 // regional gensteps from the last click.
                 CARegionalSetupSession.ClearPreviewBinding();
-                CARegionalPlan plan = ResolvePreviewPlan(world, tileId);
                 if (plan != null)
                 {
                     CARegionalSetupSession.BindPreviewPlan(plan);
@@ -475,34 +1187,42 @@ namespace ColonistAwareness
                             mapParent = canonicalParent;
                     }
                 }
-                if (plan == null) return;
-                IntVec2 size = new IntVec2(plan.BackingMapSize.x,
+                if (plan == null)
+                {
+                    generatedPreviewSignature = null;
+                    return true;
+                }
+                IntVec2 backing = new IntVec2(plan.BackingMapSize.x,
                     plan.BackingMapSize.z);
-                EnsurePreviewMaximum(size);
-                object widget = previewWidgetField.GetValue(__instance);
-                Texture2D texture = widget == null ? null
-                    : previewTextureProperty.GetValue(widget, null)
+                EnsurePreviewMaximum(backing);
+                object boundWidget = previewWidgetField.GetValue(__instance);
+                Texture2D boundTexture = boundWidget == null ? null
+                    : previewTextureProperty.GetValue(boundWidget, null)
                         as Texture2D;
-                if (texture != null
-                    && (texture.width != size.x || texture.height != size.z)
-                    && !texture.Reinitialize(size.x, size.z))
+                if (boundTexture != null
+                    && (boundTexture.width != backing.x
+                        || boundTexture.height != backing.z)
+                    && !boundTexture.Reinitialize(backing.x, backing.z))
                 {
                     Log.Warning("[CA][Regional] Map Preview texture rejected "
-                        + "exact regional backing " + size.x + "x" + size.z);
-                    return;
+                        + "exact regional backing " + backing.x + "x"
+                        + backing.z);
+                    return true;
                 }
-                CARegionalGeographyComposition composition =
+                CARegionalGeographyComposition bound =
                     CARegionalGeographyContract.Inspect(plan);
-                if (lastPreviewRequestSignature != composition.Signature)
+                generatedPreviewSignature = bound.Signature;
+                if (lastPreviewRequestSignature != bound.Signature)
                 {
-                    lastPreviewRequestSignature = composition.Signature;
+                    lastPreviewRequestSignature = bound.Signature;
                     Log.Message("[CA][Regional][Preview] request "
-                        + composition.Signature + " bound to candidate "
+                        + bound.Signature + " bound to candidate "
                         + (plan.candidateId ?? "unknown") + "; arrival "
-                        + plan.startTileId + "; exact backing " + size.x + "x"
-                        + size.z + "; texture "
-                        + (texture == null ? "unavailable" : texture.width
-                            + "x" + texture.height));
+                        + plan.startTileId + "; exact backing " + backing.x
+                        + "x" + backing.z + "; texture "
+                        + (boundTexture == null ? "unavailable"
+                            : boundTexture.width + "x"
+                                + boundTexture.height));
                 }
             }
             catch (Exception ex)
@@ -511,6 +1231,7 @@ namespace ColonistAwareness
                     + "resize failed: " + ex.GetType().Name + ": "
                     + ex.Message);
             }
+            return true;
         }
 
         private static void PreviewWindowTileSelectedPostfix()
@@ -575,11 +1296,30 @@ namespace ColonistAwareness
                 hasProfile = CAExpandedLandmassProfile.TryFor(__result.x,
                     out profile);
             if (!hasProfile) return;
-            int count;
-            if (pending?.memberTileIds != null
+            // A CONFIRMED REGION HAS ONE DURABLE PHYSICAL IDENTITY. This
+            // entry point built a fresh candidate anchored on whatever tile
+            // was clicked, so selecting settlement A and settlement B of the
+            // SAME realized region produced two different candidate
+            // geographies and the preview re-randomized on every selection.
+            // The realized (or pending) region that already contains the
+            // tile is the only legitimate answer for its members; a fresh
+            // candidate is for tiles that belong to nothing.
+            CARegionalPlan realized = CARegionalWorldComponent.Current
+                ?.FindRegionContaining(tile);
+            if (realized == null && pending?.memberTileIds != null
                 && pending.memberTileIds.Contains(tile.tileId))
+                realized = pending;
+            CARegionalPlan plan;
+            if (realized != null)
             {
-                count = pending.RequestedRegionTileCount;
+                plan = realized;
+            }
+            else if (CARegionalGeometry.IsBlocked(tile))
+            {
+                // An accidental click on open ocean or an impassable
+                // mountain must not hijack the composition with a doomed
+                // one-tile footprint; the click simply is not a region.
+                return;
             }
             else
             {
@@ -588,12 +1328,13 @@ namespace ColonistAwareness
                     ?? CAWorldTendenciesSession.Policy;
                 int available = Math.Max(1, CARegionalBundleBuilder.Build(
                     tile, 12).Count);
-                count = CARegionalSetupSession.StickyRegionTileCount > 0
+                int count = CARegionalSetupSession.StickyRegionTileCount > 0
                     ? CARegionalSetupSession.StickyRegionTileCount
                     : policy.ResolveRequestedExtent(tile, available);
+                count = SnapToCatalog(count);
+                plan = CARegionalSetupSession.EnsurePreviewPlan(
+                    tile, profile, count);
             }
-            CARegionalPlan plan = CARegionalSetupSession.EnsurePreviewPlan(
-                tile, profile, count);
             if (plan == null) return;
             CARegionalSetupSession.BindPreviewPlan(plan);
             __result = new IntVec2(plan.BackingMapSize.x,
@@ -613,6 +1354,9 @@ namespace ColonistAwareness
                 && pending.memberTileIds.Contains(tile.tileId))
                 plan = pending;
             if (plan != null) return plan;
+            // Ocean and impassable mountains are not prospective regions;
+            // the accidental click keeps whatever was selected before.
+            if (CARegionalGeometry.IsBlocked(tile)) return null;
 
             CAExpandedLandmassProfile profile;
             int localSize = Verse.Find.GameInitData?.mapSize ?? 0;
@@ -634,8 +1378,21 @@ namespace ColonistAwareness
             int count = CARegionalSetupSession.StickyRegionTileCount > 0
                 ? CARegionalSetupSession.StickyRegionTileCount
                 : policy.ResolveRequestedExtent(tile, available);
+            count = SnapToCatalog(count);
             return CARegionalSetupSession.EnsurePreviewPlan(tile, profile,
                 count);
+        }
+
+        // A prospective candidate must request an extent the durable
+        // catalog actually supports, or its own preview refuses it.
+        private static int SnapToCatalog(int count)
+        {
+            int best = CARegionalGeographyComposition.SupportedExtents[0];
+            foreach (int extent in
+                CARegionalGeographyComposition.SupportedExtents)
+                if (Math.Abs(extent - count) < Math.Abs(best - count))
+                    best = extent;
+            return best;
         }
 
         private static void EnsurePreviewMaximum(IntVec2 size)
@@ -660,12 +1417,19 @@ namespace ColonistAwareness
         {
             CARegionalPlan plan = CARegionalSetupSession.ActivePreviewPlan;
             if (!IsMapPreviewGenerating() || plan == null) return;
+            // Ordered like a real generation, not appended after it.
+            // Appending ran the projection LAST, so every earlier vanilla
+            // consumer of per-cell mutators found the component inactive
+            // and failed neutral -- which is exactly why peninsulas,
+            // islands, wetlands, icebergs, and reservoirs existed on the
+            // world card but never appeared in the preview texture.
             __result = (__result ?? Enumerable.Empty<GenStepDef>())
                 .Concat(new[]
                 {
                     CARegionalDefOf.CA_RegionalProjection,
                     CARegionalDefOf.CA_RegionalWorldLinks
-                }).Where(def => def != null).Distinct();
+                }).Where(def => def != null).Distinct()
+                .OrderBy(def => def.order).ThenBy(def => def.index);
             Log.Message("[CA][Regional][Preview] bound persisted footprint "
                 + (plan.regionalId ?? "unknown") + "; canonical landing "
                 + plan.startTileId + "; members "
@@ -679,7 +1443,13 @@ namespace ColonistAwareness
         private static void PreviewMinimalComponentsPostfix(Map map)
         {
             CARegionalPlan plan = CARegionalSetupSession.ActivePreviewPlan;
-            if (map == null || plan == null || map.Size != plan.BackingMapSize
+            // Membership, not exact size: previews generate at reduced
+            // resolution, and the size-equality guard kept this component
+            // off every scaled preview -- leaving early mutator consumers
+            // to fail neutral, which is why mutator content never appeared
+            // in preview terrain.
+            if (map == null || plan == null
+                || plan.memberTileIds == null
                 || !plan.memberTileIds.Contains(map.Tile.tileId)
                 || map.GetComponent<CARegionalProjectionMapComponent>() != null)
                 return;
@@ -739,6 +1509,7 @@ namespace ColonistAwareness
     // allocation uses the spawned thing identity, never room proximity.
     public sealed class CAStartingStockRecord : IExposable
     {
+        public int schemaVersion = 1;
         public int thingId = -1;
         public string thingDefName;
         public string providerIdentity;
@@ -748,6 +1519,7 @@ namespace ColonistAwareness
 
         public void ExposeData()
         {
+            Scribe_Values.Look(ref schemaVersion, "schemaVersion", 0);
             Scribe_Values.Look(ref thingId, "thingId", -1);
             Scribe_Values.Look(ref thingDefName, "thingDefName");
             Scribe_Values.Look(ref providerIdentity, "providerIdentity");
@@ -1259,6 +2031,14 @@ namespace ColonistAwareness
                     "CA_regionalPlans", LookMode.Deep);
                 Scribe_Deep.Look(ref worldPolicy, "CA_regionalWorldPolicy");
                 Scribe_Deep.Look(ref groundwater, "CA_groundwaterTuning");
+                // The transient developer-exercise plan round-trips through
+                // its own transient slot so the benchmark matrix's
+                // disposable save/reload is structurally complete: the plan
+                // never enters the durable `regions` list, it restores as
+                // transient, and further saves remain blocked after a
+                // reload. Ordinary campaigns scribe null here.
+                Scribe_Deep.Look(ref transientDeveloperExerciseRegion,
+                    "CA_transientDeveloperExerciseRegion");
             }
             if (Scribe.mode == LoadSaveMode.PostLoadInit && readable)
             {
@@ -2161,25 +2941,7 @@ namespace ColonistAwareness
                 throw new InvalidOperationException("Unconfirmed authored region "
                     + (region.regionalId ?? "unknown")
                     + " cannot enter durable world state.");
-            string realizationFailure;
-            if (!CARegionalSettlements.TryValidateRealization(region,
-                    out realizationFailure))
-                throw new InvalidOperationException("Regional plan "
-                    + (region.regionalId ?? "unknown")
-                    + " has invalid persisted settlement realization: "
-                    + realizationFailure + ".");
-            string identityFailure;
-            if (!CARegionalPlanUtility.TryValidateStableIdentities(region,
-                    out identityFailure))
-                throw new InvalidOperationException("Durable region "
-                    + (region.regionalId ?? "unknown") + " is invalid: "
-                    + identityFailure + ".");
-            string factionFailure;
-            if (!CARegionalPlanUtility.TryValidateDistinctFactionClaims(region,
-                    out factionFailure))
-                throw new InvalidOperationException("Durable region "
-                    + (region.regionalId ?? "unknown") + " is invalid: "
-                    + factionFailure);
+            ValidateConfirmedComposition(region, "Durable region");
             CACompatibilityReport compatibility =
                 CARegionalContentCompatibility.Evaluate(region);
             if (!compatibility.IsValid)
@@ -2241,8 +3003,8 @@ namespace ColonistAwareness
                 throw new InvalidOperationException("A transient regional "
                     + "exercise requires a confirmed candidate carrying the "
                     + "explicit developer-exercise stamp.");
-            if (region.worldPolicy == null)
-                region.worldPolicy = WorldPolicy.Copy();
+            ValidateConfirmedComposition(region,
+                "Transient developer exercise");
             transientDeveloperExerciseRegion = region;
             Log.Warning("[CA][Regional] transient developer exercise "
                 + region.regionalId + " registered for this runtime only; it "
@@ -2250,6 +3012,37 @@ namespace ColonistAwareness
                 + "be saved; compatibility at registration: "
                 + (compatibility?.Summary() ?? "unavailable") + ".");
             return region;
+        }
+
+        internal static void ValidateConfirmedComposition(CARegionalPlan region,
+            string context)
+        {
+            string regionId = region?.regionalId ?? "unknown";
+            if (!CARegionalSettlements.TryValidateRealization(region,
+                    out string realizationFailure))
+                throw new InvalidOperationException(context + " " + regionId
+                    + " has invalid persisted settlement realization: "
+                    + realizationFailure + ".");
+            if (!CARegionalPlanUtility.TryValidateStableIdentities(region,
+                    out string identityFailure))
+                throw new InvalidOperationException(context + " " + regionId
+                    + " is invalid: " + identityFailure + ".");
+            if (!CARegionalPlanUtility.TryValidateDistinctFactionClaims(region,
+                    out string factionFailure))
+                throw new InvalidOperationException(context + " " + regionId
+                    + " is invalid: " + factionFailure);
+            if (!CARegionalPlanUtility.TryValidateStartingSettlements(region,
+                    out string settlementFailure))
+                throw new InvalidOperationException(context + " " + regionId
+                    + " is invalid: " + settlementFailure);
+            foreach (CARegionalSettlementPlan settlement in (region.settlements
+                ?? new List<CARegionalSettlementPlan>())
+                .Where(item => item != null))
+                if (!CASettlementProgramRegistry.TryValidateSaved(region,
+                        settlement, out string programFailure))
+                    throw new InvalidOperationException(context + " "
+                        + regionId + " has invalid saved settlement "
+                        + settlement.slot + ": " + programFailure + ".");
         }
 
         internal CARegionalPlan EnsureDerivedRegion(PlanetTile mapTile,
@@ -2402,8 +3195,9 @@ namespace ColonistAwareness
                 beneficiaries.Add("settlement residents");
             var record = new CARegionalSettlementRecord
             {
-                regionalId = "CA-RS-" + (localRegion?.regionalId
-                    ?? regionKey ?? "region") + "-" + slot,
+                regionalId = CASettlementAuthorityWriter
+                    .SettlementRecordId(localRegion, slot)
+                    ?? "CA-RS-" + (regionKey ?? "region") + "-" + slot,
                 regionKey = regionKey,
                 slot = slot,
                 mapSize = localMapSize,
@@ -2425,7 +3219,10 @@ namespace ColonistAwareness
                 civicInfrastructure = resolvedCivic,
                 settlementProgram = settlement?.settlementProgram?.Copy()
                     ?? new CASettlementProgram(),
-                culture = settlement?.localCulture?.Copy(),
+                // The record validator requires a culture object; an
+                // identity-only culture is the designed empty state.
+                culture = settlement?.localCulture?.Copy()
+                    ?? new CACulture(),
                 persistent = settlement?.persistent ?? true,
                 faction = faction,
                 factionLinks = settlement?.factionLinks?.Copy()
@@ -2996,7 +3793,8 @@ namespace ColonistAwareness
         {
             base.ExposeData();
             Scribe_References.Look(ref faction, "faction");
-            Scribe_Values.Look(ref settlementCenter, "settlementCenter");
+            Scribe_Values.Look(ref settlementCenter, "settlementCenter",
+                default, forceSave: true);
         }
     }
 
@@ -3281,6 +4079,41 @@ namespace ColonistAwareness
                 record.realizedRole = settlement.realizedRole;
                 record.realizedScale = settlement.realizedScale;
                 record.persistent = settlement.persistent;
+                // THE RUNTIME BOUNDARY RECEIPT. Every input that legitimately
+                // controls physical synthesis, per settlement, side by side
+                // in the log -- so when phenotypes converge, the receipt
+                // states whether the inputs were identical or a downstream
+                // consumer was lossy, instead of leaving it to inference.
+                Log.Message("[CA][Settlement][Boundary] "
+                    + (settlement.customName ?? ("slot " + settlement.slot))
+                    + ": pop " + record.residentPopulation
+                    + "; land " + record.landCapacity
+                    + "; econ " + record.economicCapacity
+                    + "; trade " + record.tradeConnectivity
+                    + "; spec " + record.specialization
+                    + "; hist " + record.historicalDevelopment
+                    + "; urban " + record.urbanSupport
+                    + "; roles " + record.operationalRoleMask
+                    + "; form " + CASettlementAxes.Form(
+                        settlement.authoredForm,
+                        CATechnologicalKnowledgeRuntime
+                            .CanonicalBuildTechLevel(record.faction))
+                    + "; constructRank " + CATechnologicalKnowledgeRuntime
+                        .CanonicalRank(record.faction,
+                            CATechnologyDomains.Construction,
+                            CATechnologyCompetencies.Construct)
+                    + "; programs ["
+                    + string.Join(", ",
+                        (record.settlementProgram?.entries
+                            ?? new List<CASettlementProgramEntry>())
+                        .Where(e => e != null)
+                        .Select(e => e.programKey
+                            .Replace("ca.settlement.", "")
+                            + ":" + e.count + "x" + e.extent)) + "]"
+                    + "; authored pop/land/hist "
+                    + settlement.authoredPopulation + "/"
+                    + settlement.authoredLandCapacity + "/"
+                    + settlement.authoredHistoricalDevelopment);
 
                 CellRect rect;
                 IntVec3 preferred = projection?.CenterForMember(
@@ -3300,13 +4133,20 @@ namespace ColonistAwareness
                         + "for " + record.regionalId + " on " + map.Tile);
                     continue;
                 }
-                int districts = region.settlements.Count(item => // [morphology lane]
+                // Districts belong to THIS settlement's urban standing. They
+                // were counted from how many OTHER settlements shared the
+                // member tile and cluster, so a settlement's internal
+                // complexity was a property of its neighbours rather than of
+                // its own authored development. The cluster count still sets
+                // the floor, because co-sited settlements do join, but the
+                // settlement's own standing may raise it.
+                int clustered = region.settlements.Count(item => // [morphology lane]
                     item != null
                     && item.memberTileId == settlement.memberTileId
                     && item.PhysicalClusterKey
                         == settlement.PhysicalClusterKey);
                 Materialize(record, rect, map,
-                    Math.Max(1, districts)); // [morphology lane]
+                    Math.Max(1, clustered)); // [morphology lane]
                 clusterRects.Add(rect);
                 materialized++;
                 materializedSlots.Add(slot);
@@ -3341,8 +4181,49 @@ namespace ColonistAwareness
             rect = CellRect.Empty;
             int activePrograms = record.settlementProgram?.entries?.Count(
                 entry => entry != null && entry.blocker.NullOrEmpty()) ?? 0;
-            int size = Mathf.Clamp(44 + record.realizedScale * 6
-                + Math.Min(12, activePrograms), 44, 86);
+            // A PORT IS A CONSEQUENCE, NOT A TOGGLE. Placement penalized
+            // water universally, so every settlement fled the shore and the
+            // pier's own honest gate (real waterfront, a bridgeable run,
+            // material knowledge) could never fire. A settlement whose
+            // program carries trade or transport SEEKS moderate waterfront
+            // instead: enough shore for a working pier, never so much that
+            // the town stands in the sea. The hard 0.28 rejection stays for
+            // everyone.
+            bool seeksWaterfront = record.settlementProgram?.entries?.Any(
+                entry => entry != null
+                    && (entry.programKey
+                            == CASettlementProgramCausalKernel.Trade
+                        || entry.programKey
+                            == CASettlementProgramCausalKernel.Transport))
+                ?? false;
+            // The ground reserved follows what the settlement's own
+            // functions need (program count x extent) bounded by the land it
+            // holds -- the same requirements morphology consumes -- never a
+            // display scalar, and never one hard ceiling for every
+            // settlement.
+            int programCells = 0;
+            foreach (CASettlementProgramEntry sizingEntry in
+                record.settlementProgram?.entries
+                    ?? new List<CASettlementProgramEntry>())
+                if (sizingEntry != null)
+                    programCells += Math.Max(1, sizingEntry.count)
+                        * Math.Max(9, sizingEntry.extent * 9);
+            int landBand = record.landCapacity < 0 ? 1
+                : Math.Min(4, record.landCapacity);
+            int sizingResidents = record.residentPopulation >= 18
+                    && record.residentPopulation <= 1200
+                ? record.residentPopulation
+                : record.populationBaseline > 0
+                    && record.populationBaseline <= 1200
+                ? record.populationBaseline : 10;
+            int wanted = (int)Mathf.Sqrt(
+                Mathf.Max(sizingResidents * 35f + programCells * 5f, 1f)
+                / 0.45f);
+            int size = Mathf.Clamp(
+                Mathf.Max(44 + record.realizedScale * 6
+                        + Math.Min(12, activePrograms),
+                    wanted),
+                44, 96 + landBand * 16);
             List<CellRect> used = MapGenerator.UsedRects;
 
             if (record.localRect != CellRect.Empty
@@ -3378,7 +4259,10 @@ namespace ColonistAwareness
                         if (!ValidRect(candidate, map, used,
                                 physicalCluster, out score)) continue;
                         float water = SampleWaterFraction(candidate, map);
-                        score += 6f - water * 6f;
+                        score += seeksWaterfront
+                            ? 6f * Mathf.Max(0f,
+                                1f - Mathf.Abs(water - 0.15f) / 0.13f)
+                            : 6f - water * 6f;
                         if (score > best.Score)
                         {
                             best.Rect = candidate;
@@ -3391,6 +4275,11 @@ namespace ColonistAwareness
                     && best.WaterFraction <= 0.28f)
                 {
                     rect = best.Rect;
+                    if (seeksWaterfront)
+                        Log.Message("[CA][Settlement][Port] " + record.name
+                            + ": trade/transport program sought waterfront; "
+                            + "clustered rect water fraction "
+                            + best.WaterFraction.ToString("F2"));
                     return true;
                 }
             }
@@ -3409,7 +4298,10 @@ namespace ColonistAwareness
                 if (!ValidRect(candidate, map, used, physicalCluster,
                         out score)) continue;
                 float water = SampleWaterFraction(candidate, map);
-                score -= water * 6f;
+                score += seeksWaterfront
+                    ? 6f * Mathf.Max(0f,
+                        1f - Mathf.Abs(water - 0.15f) / 0.13f)
+                    : -water * 6f;
                 if (score > best.Score)
                 {
                     best.Rect = candidate;
@@ -3420,6 +4312,11 @@ namespace ColonistAwareness
             if (best.Rect == CellRect.Empty || best.WaterFraction > 0.28f)
                 return false;
             rect = best.Rect;
+            if (seeksWaterfront)
+                Log.Message("[CA][Settlement][Port] " + record.name
+                    + ": trade/transport program sought waterfront; chosen "
+                    + "rect water fraction "
+                    + best.WaterFraction.ToString("F2"));
             return true;
         }
 
@@ -3497,9 +4394,27 @@ namespace ColonistAwareness
             CAMorphologyAdapter.Materialize(map, rect,
                 CAMorphologyAdapter.FormFor(record),
                 GenText.StableStringHash(record.regionalId),
-                record.faction, districts);
+                record.faction, districts, 1f, record);
             // Add apertures from technology, settlement form, and status.
             CAApertures.CutApertures(map, record);
+            // Fit out the shell. The morphology resolves three thing defs;
+            // the operator corpus resolves 151, and a quarter of everything
+            // real players build is power. Beds, light, seating, a power
+            // spine and site-oriented defence are added here, read from the
+            // projection's own per-cell geography.
+            CASettlementFitOut.Furnish(map, rect, record,
+                GenText.StableStringHash(record.regionalId));
+            // The land the settlement lives from: worked fields for its
+            // agriculture operations, traced to their operating groups.
+            // This is the self-sufficiency substrate and the causal end of
+            // the settlement edge -- fabric meets fields where farming is
+            // operated, and meets wilderness where it is not.
+            CASettlementSubsistence.Materialize(map, rect, record,
+                GenText.StableStringHash(record.regionalId));
+            CASettlementDevelopmentProposal creationProposal =
+                CASettlementAssetRegistry.CreationFromRecord(record);
+            CASettlementAssetRegistry.EnsureCreationSitingCapacity(map,
+                record, creationProposal, out string programSiteResult);
             MapGenerator.UsedRects.Add(rect);
 
             if (record.faction == null)
@@ -3530,7 +4445,15 @@ namespace ColonistAwareness
                     singlePawnLord = lord,
                     pawnGroupKindDef = PawnGroupKindDefOf.Settlement,
                     pawnGroupMakerParams = groupParms,
-                    attackWhenPlayerBecameEnemy = true
+                    attackWhenPlayerBecameEnemy = true,
+                    // Native SymbolResolver_Settlement applies exactly this
+                    // predicate to its inhabitants; pushing "pawnGroup"
+                    // directly dropped it, letting residents spawn inside
+                    // sealed courtyards outside the settlement's reachable
+                    // network.
+                    singlePawnSpawnCellExtraPredicate = cell =>
+                        map.reachability.CanReachMapEdge(cell,
+                            TraverseParms.For(TraverseMode.PassDoors))
                 };
                 BaseGen.globalSettings.map = map;
                 BaseGen.symbolStack.Push("pawnGroup", resolve);
@@ -3543,8 +4466,6 @@ namespace ColonistAwareness
             // The confirmed composition owns creation authority. The selected
             // map rect supplies the remaining siting fact. Only their exact
             // conjunction makes the starting program executable.
-            CASettlementDevelopmentProposal creationProposal =
-                CASettlementAssetRegistry.CreationFromRecord(record);
             bool creationSitingFeasible = CASettlementAssetRegistry
                 .CanSiteCreationDemands(map, rect, creationProposal,
                     out string creationSitingBlocker);
@@ -3553,12 +4474,13 @@ namespace ColonistAwareness
                 creationSitingBlocker);
 
             // Materialize only programs whose exact runtime operator resolves.
-            // A settlement map no longer creates an organization as a side
-            // effect of reaching this point.
+            // The local settlement organization and placement-authored work
+            // relations are realized first because operator resolution is
+            // read-only and never creates missing social state.
             CADomesticUnitFormation.Reconcile(record, map);
             CAOrganization programOperator =
-                CAOrganizationWorldComponent.Current?.ByKey(
-                    record.regionalId + "#" + record.slot);
+                CAProvisionPlacementOperatorMaterializer.Materialize(record,
+                    map);
             CASettlementProgramMaterializer.Materialize(programOperator,
                 record, map);
             CAProvisionRuntimeResolver.Reconcile(record, map);
@@ -3611,7 +4533,11 @@ namespace ColonistAwareness
                     Pawn pawn = PawnGenerator.GeneratePawn(kind, null);
                     IntVec3 cell;
                     if (!CellFinder.TryFindRandomCellInsideWith(
-                            rect, cellCandidate => cellCandidate.Standable(map),
+                            rect, cellCandidate =>
+                                cellCandidate.Standable(map)
+                                && map.reachability.CanReachMapEdge(
+                                    cellCandidate, TraverseParms.For(
+                                        TraverseMode.PassDoors)),
                             out cell))
                         cell = CellFinder.RandomClosewalkCellNear(
                             rect.CenterCell, map, 18);
@@ -3702,6 +4628,11 @@ namespace ColonistAwareness
                 region = world.EnsureDerivedRegion(parent.Tile, profile,
                     parent.Faction);
             CARegionalPlanResolver.Resolve(region);
+            // Resolution may create or find RimWorld faction objects, but the
+            // confirmed authoring state must remain byte-for-byte causal input.
+            // Revalidate before the backing map or any regional genstep exists.
+            CARegionalWorldComponent.ValidateConfirmedComposition(region,
+                "Resolved regional plan");
             mapSize = region.BackingMapSize;
 
             var steps = extraGenStepDefs?.ToList()
@@ -3761,6 +4692,14 @@ namespace ColonistAwareness
         {
             if (CARegionalWorldComponent.Current
                     ?.HasTransientDeveloperExercise != true)
+                return true;
+            // The passive benchmark matrix's own disposable save is the
+            // single exercise save that is structurally complete: the
+            // transient plan scribes through its transient slot, the file
+            // is reloaded inside the same disposable session, and it is
+            // deleted at matrix completion. Every other save stays blocked.
+            if (CAPassivePlayMatrix.AllowDisposableSave
+                && fileName == CAPassivePlayMatrix.DisposableSaveName)
                 return true;
             Log.Error("[CA][Regional] blocked save '"
                 + (fileName ?? "(unnamed)") + "': a disposable regional "

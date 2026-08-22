@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -9,11 +10,187 @@ namespace ColonistAwareness
     // Materialize the deterministic settlement layout as walls, doors, floors,
     // streets, fields, fences, roofs, and shore facilities. Existing buildings
     // and pawns are preserved; blocked cells are skipped.
+    // WHAT THE REPRESENTED SETTLEMENT PHYSICALLY REQUIRES.
+    //
+    // Derived per cause from the record -- no scalar stands between the
+    // simulation and the ground:
+    //   program entries (count, extent)  -> body-cell floor: the footprint
+    //                                       its own functions need
+    //   landCapacity                     -> body-cell ceiling: the ground it
+    //                                       actually holds
+    //   quarter-bearing programs         -> districts: industry from
+    //                                       production/specialized industry,
+    //                                       a port quarter from
+    //                                       trade/transport WITH waterfront;
+    //                                       never a scalar threshold
+    //   defense program / security role  -> wall, afforded by economy (full
+    //                                       when it can be held, partial
+    //                                       when it cannot); absent cause,
+    //                                       the form's own idiom stands
+    //   historicalDevelopment            -> accretion: accumulated fabric
+    //                                       reads irregular, planned reads
+    //                                       regular
+    //   trade program                    -> market ground beside the core
+    //   geography                        -> which edge the port quarter
+    //                                       grows against
+    //   economicCapacity                 -> infrastructure tier (paving
+    //                                       verge width)
+    public sealed class CASettlementPhysicalRequirements
+    {
+        public int BodyCells = -1;
+        public int Quarters = 1;
+        public int WallKind = -1;
+        public float Accretion = 0.35f;
+        public int PlazaCells;
+        public int PortSide = -1;
+        public int InfrastructureTier = 1;
+        public string Provenance = "no represented requirements";
+
+        public static CASettlementPhysicalRequirements For(
+            CARegionalSettlementRecord record, Map map, CellRect rect)
+        {
+            var need = new CASettlementPhysicalRequirements();
+            if (record?.settlementProgram?.entries == null) return need;
+            var keys = new HashSet<string>(StringComparer.Ordinal);
+            int programCells = 0;
+            foreach (CASettlementProgramEntry entry in
+                record.settlementProgram.entries)
+            {
+                if (entry == null || entry.programKey.NullOrEmpty())
+                    continue;
+                keys.Add(entry.programKey);
+                // each program needs standing room: its own extent, its
+                // count of instances, and the circulation around them
+                programCells += Math.Max(1, entry.count)
+                    * Math.Max(9, entry.extent * 9);
+            }
+            if (programCells <= 0) return need;
+
+            // RESIDENTIAL GROUND IS ITS OWN CAUSE. The fixture proved the
+            // entries' count/extent are unit counts (one kitchen, one
+            // infirmary), not population-scaled footprints: summing them
+            // alone starved a ten-resident settlement to 75 cells and two
+            // lots. Dwellings for the people who live here enter as the
+            // resident population's own term, beside -- never inside -- the
+            // functional footprints.
+            int residents = record.residentPopulation >= 18
+                    && record.residentPopulation <= 1200
+                ? record.residentPopulation
+                : record.populationBaseline > 0
+                    && record.populationBaseline <= 1200
+                ? record.populationBaseline : 10;
+            // Empirically ~95 blob cells stand one building with its
+            // circulation, so ground is sized by the LOTS the settlement
+            // needs: one dwelling per household of ~3, plus one lot per
+            // program entry, plus the shared hall the provision receipts
+            // already stand.
+            int households = (residents + 2) / 3;
+            int residentialCells = households * 95;
+
+            // floor from function and habitation, ceiling from land held
+            int landBand = record.landCapacity < 0 ? 1
+                : Math.Min(4, record.landCapacity);
+            int ceiling = (int)(rect.Area * (0.30f + 0.13f * landBand));
+            int programLots = record.settlementProgram.entries
+                .Count(e => e != null && !e.programKey.NullOrEmpty());
+            need.BodyCells = Math.Min(
+                residentialCells + (programLots + 1) * 95
+                    + programCells * 2, ceiling);
+
+            bool industry = keys.Contains(
+                    CASettlementProgramCausalKernel.Production)
+                || keys.Contains(CASettlementProgramCausalKernel
+                    .SpecializedIndustry);
+            bool trading = keys.Contains(
+                    CASettlementProgramCausalKernel.Trade)
+                || keys.Contains(
+                    CASettlementProgramCausalKernel.Transport);
+            need.PortSide = trading ? WaterSide(map, rect) : -1;
+            need.Quarters = 1 + (industry ? 1 : 0)
+                + (need.PortSide >= 0 ? 1 : 0);
+
+            int economy = record.economicCapacity < 0 ? 1
+                : Math.Min(4, record.economicCapacity);
+            bool defense = keys.Contains(
+                    CASettlementProgramCausalKernel.Defense)
+                || (record.operationalRoleMask & 1) != 0;
+            need.WallKind = defense ? (economy >= 2 ? 2 : 1) : -1;
+
+            int history = record.historicalDevelopment < 0 ? 1
+                : Math.Min(4, record.historicalDevelopment);
+            need.Accretion = history / 4f;
+
+            need.PlazaCells = keys.Contains(
+                    CASettlementProgramCausalKernel.Trade)
+                ? Math.Max(12, 6 * Math.Max(1,
+                    record.settlementProgram.entries
+                        .Where(e => e != null && e.programKey
+                            == CASettlementProgramCausalKernel.Trade)
+                        .Sum(e => Math.Max(1, e.extent))))
+                : 0;
+            need.InfrastructureTier = economy >= 3 ? 2
+                : economy >= 1 ? 1 : 0;
+
+            need.Provenance = "households " + households
+                + " x95 + program lots " + (programLots + 1)
+                + " x95 + extents " + programCells
+                + " x2 vs land ceiling " + ceiling
+                + " -> body " + need.BodyCells
+                + "; quarters " + need.Quarters
+                + (industry ? " (+industry)" : "")
+                + (need.PortSide >= 0 ? " (+port@side" + need.PortSide + ")"
+                    : "")
+                + "; wall " + (need.WallKind == 2 ? "full (defense, afforded)"
+                    : need.WallKind == 1 ? "partial (defense, unafforded)"
+                    : "form idiom")
+                + "; accretion " + need.Accretion.ToString("F2")
+                + " (history " + history + ")"
+                + "; plaza " + need.PlazaCells
+                + "; infrastructure " + need.InfrastructureTier
+                + " (economy " + economy + ")";
+            return need;
+        }
+
+        // The edge of the rect beyond which the water actually lies; -1 when
+        // no edge is watered. Geography decides, never a toggle.
+        private static int WaterSide(Map map, CellRect rect)
+        {
+            if (map == null) return -1;
+            var probes = new[]
+            {
+                new IntVec3(rect.CenterCell.x, 0, rect.maxZ + 8),
+                new IntVec3(rect.maxX + 8, 0, rect.CenterCell.z),
+                new IntVec3(rect.CenterCell.x, 0, rect.minZ - 8),
+                new IntVec3(rect.minX - 8, 0, rect.CenterCell.z),
+            };
+            int best = -1, bestWater = 0;
+            for (int side = 0; side < 4; side++)
+            {
+                int water = 0;
+                for (int spread = -6; spread <= 6; spread += 3)
+                {
+                    IntVec3 c = probes[side];
+                    if (side == 0 || side == 2) c.x += spread;
+                    else c.z += spread;
+                    try
+                    {
+                        if (c.InBounds(map)
+                            && c.GetTerrain(map)?.IsWater == true) water++;
+                    }
+                    catch { }
+                }
+                if (water > bestWater) { bestWater = water; best = side; }
+            }
+            return bestWater >= 2 ? best : -1;
+        }
+    }
+
     public static class CAMorphologyAdapter
     {
         public static bool Materialize(Map map, CellRect rect,
             CAMorphForm form, int seed, Faction faction,
-            int districts = 1)
+            int districts = 1, float densityScale = 1f,
+            CARegionalSettlementRecord record = null)
         {
             var caSw = System.Diagnostics.Stopwatch.StartNew();
             try
@@ -29,9 +206,28 @@ namespace ColonistAwareness
                 int offZ = rect.minZ + (rect.Height - h) / 2;
 
                 bool[] passable = PassableMask(map, offX, offZ, w, h);
-                CAMorphResult plan = CASettlementMorphology.Generate(
-                    form, seed, w, h, passable,
-                    districts < 1 ? 1 : districts);
+                CASettlementPhysicalRequirements need =
+                    CASettlementPhysicalRequirements.For(record, map, rect);
+                int quarters = Math.Max(districts < 1 ? 1 : districts,
+                    need.Quarters);
+                // A CA settlement GROWS from its represented state --
+                // households and program facilities placed one at a time,
+                // each ranked by the corpus's learned relationships against
+                // everything already standing, trips wearing the streets
+                // the next placements front. The one-shot morphology
+                // remains for outposts, forms without a record, and as the
+                // CA_SETTLEMENT_GROWER=0 fallback.
+                CAMorphResult plan = record != null
+                        && !CASettlementGrowth.Disabled
+                    ? CASettlementGrowth.Generate(record, seed, w, h,
+                        passable, need, map)
+                    : CASettlementMorphology.Generate(
+                        form, seed, w, h, passable, quarters, -1,
+                        densityScale, need.BodyCells, need.Accretion,
+                        need.WallKind, need.PlazaCells, need.PortSide);
+                if (record != null)
+                    Log.Message("[CA][Settlement][Requirements] "
+                        + (record.name ?? "?") + ": " + need.Provenance);
                 // no lots grown = no claim: the caller's
                 // fallback takes over; never an empty stamp.
                 if (plan.lots.Count == 0) return false;
@@ -57,7 +253,7 @@ namespace ColonistAwareness
                             CATechnologyDomains.Weapons,
                             CATechnologyCompetencies.Construct) - 1)));
                 GroundCulture(map, plan, body, palette, seed,
-                    offX, offZ, receipt);
+                    offX, offZ, receipt, need.InfrastructureTier);
                 // Piers are DERIVED, not toggled. BuildPier already has to
                 // find navigable water adjacent to the settlement before it
                 // can place anything, so real waterfront geography is the
@@ -66,20 +262,38 @@ namespace ColonistAwareness
                 // shore.
                 BuildPier(map, plan, body, palette, faction,
                     offX, offZ, receipt);
+                // Harbor works are the TRADE consequence of a pier: a
+                // settlement whose program carries trade or transport earns
+                // storage at the shore end of the deck, because goods land
+                // there. A pier alone is just fishing.
+                if (receipt.pierCells > 0
+                    && record?.settlementProgram?.entries?.Any(entry =>
+                        entry != null && (entry.programKey
+                                == CASettlementProgramCausalKernel.Trade
+                            || entry.programKey
+                                == CASettlementProgramCausalKernel
+                                    .Transport)) == true)
+                    BuildHarborWorks(map, palette, faction, receipt);
                 Log.Message("[CA] morphology " + form + " ["
                     + caSw.ElapsedMilliseconds + " ms] grown over "
                     + rect + " for " + (faction?.Name ?? "no faction")
                     + ": " + built + " cells materialized, "
                     + plan.lots.Count + " lots, " + roofed
-                    + " cells roofed, " + (districts < 1 ? 1 : districts)
+                    + " cells roofed, " + quarters
                     + " district(s), seed " + seed
                     + "; ground: " + receipt.pavedCells + " paved, "
                     + receipt.purgedPlants + " wild plants purged, "
                     + receipt.gardens + " garden(s), "
                     + receipt.gradientCells + " gradient street cells, "
+                    + "desire streets " + plan.desireStreetCells
+                    + " cells from " + plan.desireWalkedLots + " lots; "
                     + (receipt.pierCells > 0
                         ? "pier built (" + receipt.pierCells + " cells)"
-                        : "no pier"));
+                        : "no pier")
+                    + (receipt.harborCells > 0
+                        ? "; harbor works (" + receipt.harborCells
+                            + " placed)"
+                        : ""));
                 return built > 0;
             }
             catch (Exception e)
@@ -375,15 +589,69 @@ namespace ColonistAwareness
         // gardens, not oversights. Industrial pours its pad solid
         // - concrete with worn paved patches - and purges the wild
         // growth that would poke through it.
+        // Distance, over body cells, from anything that carries traffic: the
+        // streets and the doors buildings open onto. Bounded, because only the
+        // first few cells matter -- beyond a verge the ground is not walked on
+        // and has no reason to be floored.
+        private static int[] UseDistance(CAMorphResult plan, bool[] body)
+        {
+            int w = plan.w, h = plan.h;
+            var dist = new int[w * h];
+            for (int i = 0; i < dist.Length; i++) dist[i] = 9999;
+            var queue = new System.Collections.Generic.Queue<int>();
+            for (int i = 0; i < plan.cells.Length; i++)
+            {
+                byte c = plan.cells[i];
+                if (c != (byte)CAMorphCell.Street
+                    && c != (byte)CAMorphCell.Door) continue;
+                dist[i] = 0;
+                queue.Enqueue(i);
+            }
+            while (queue.Count > 0)
+            {
+                int at = queue.Dequeue();
+                if (dist[at] >= 4) continue;
+                int ax = at % w, az = at / w;
+                for (int d = 0; d < 4; d++)
+                {
+                    int nx = ax + (d == 0 ? 1 : d == 1 ? -1 : 0);
+                    int nz = az + (d == 2 ? 1 : d == 3 ? -1 : 0);
+                    if (nx < 0 || nz < 0 || nx >= w || nz >= h) continue;
+                    int n = nx + nz * w;
+                    if (!body[n] || dist[n] <= dist[at] + 1) continue;
+                    dist[n] = dist[at] + 1;
+                    queue.Enqueue(n);
+                }
+            }
+            return dist;
+        }
+
         private static void GroundCulture(Map map, CAMorphResult plan,
             bool[] body, Palette palette, int seed, int offX, int offZ,
-            Receipt receipt)
+            Receipt receipt, int infrastructureTier = -1)
         {
             try
             {
                 if (palette.tier <= 0) return;
                 bool[] garden = palette.tier == 1
                     ? MarkGardens(plan, body, seed, receipt) : null;
+                // GROUND FOLLOWS USE. This paved EVERY empty cell inside the
+                // grown body, so all the interstitial space between buildings
+                // was floored and the settlement filled into a solid slab --
+                // 750-950 paved cells against 66 street cells on a 65x65 rect.
+                // The edge of that paved region is the hard border that made
+                // every settlement read as a square no matter how its
+                // buildings were arranged. Nothing drew that border on
+                // purpose; it is where floor stopped meeting grass.
+                //
+                // Paving now traces where people actually move: a verge along
+                // the streets and a threshold at the doors. Ground beyond that
+                // stays what the terrain already was, so the settlement ends
+                // where its fabric ends instead of at the rim of a slab.
+                int[] use = UseDistance(plan, body);
+                int verge = infrastructureTier >= 0
+                    ? Math.Max(1, infrastructureTier)
+                    : (palette.tier >= 2 ? 2 : 1);
                 for (int z = 0; z < plan.h; z++)
                     for (int x = 0; x < plan.w; x++)
                     {
@@ -391,6 +659,7 @@ namespace ColonistAwareness
                         if (!body[idx] || plan.cells[idx]
                             != (byte)CAMorphCell.Empty) continue;
                         if (garden != null && garden[idx]) continue;
+                        if (use[idx] > verge) continue;
                         var c = new IntVec3(offX + x, 0, offZ + z);
                         try
                         {
@@ -484,6 +753,42 @@ namespace ColonistAwareness
             return garden;
         }
 
+        // Storage where the goods land: shelves on the land cells around
+        // the pier's shore anchor, from the settlement's own palette.
+        // Derived like the pier itself: no shore anchor, no works.
+        private static void BuildHarborWorks(Map map, Palette palette,
+            Faction faction, Receipt receipt)
+        {
+            try
+            {
+                if (receipt.pierShore == IntVec3.Invalid) return;
+                ThingDef shelf = DefDatabase<ThingDef>
+                    .GetNamedSilentFail("Shelf");
+                if (shelf == null) return;
+                IntVec3 landward = receipt.pierShore - receipt.pierDir;
+                var perp = new IntVec3(receipt.pierDir.z, 0,
+                    receipt.pierDir.x);
+                var spots = new[]
+                {
+                    landward, landward + perp, landward - perp,
+                };
+                foreach (IntVec3 c in spots)
+                {
+                    try
+                    {
+                        if (!c.InBounds(map) || HoldsBuilding(c, map))
+                            continue;
+                        TerrainDef here = c.GetTerrain(map);
+                        if (here == null || here.IsWater) continue;
+                        receipt.harborCells += SpawnEdifice(map, c, shelf,
+                            palette.wallStuff, faction);
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+
         // ---- docks: a pier where the rim meets open water ----
         // A real waterfront (a run of shore cells on the body rim)
         // earns one pier: a two-wide bridge deck run 4-8 cells over
@@ -552,6 +857,8 @@ namespace ColonistAwareness
                 }
                 int len = Math.Min(Math.Min(bestRun, off), 8);
                 if (len < 4) return;
+                receipt.pierShore = site;
+                receipt.pierDir = dir;
                 // deterministic length inside 4..len, by site hash
                 len = 4 + (int)((uint)(site.x * 73 + site.z * 131)
                     % (uint)(len - 3));
@@ -695,6 +1002,9 @@ namespace ColonistAwareness
         private sealed class Receipt
         {
             internal int pavedCells;
+            internal int harborCells;
+            internal IntVec3 pierShore = IntVec3.Invalid;
+            internal IntVec3 pierDir = IntVec3.Invalid;
             internal int purgedPlants;
             internal int gardens;
             internal int gradientCells;

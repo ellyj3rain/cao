@@ -140,6 +140,10 @@ namespace ColonistAwareness
         // Every settlement retains its structural state. This controls how
         // often distant factions and settlements act.
         public float offMapActivityRate = 0.5f;
+        // Preset provenance: the last bundle applied, so a diverged state
+        // can say which preset it came from. Purely descriptive; the
+        // eight values above are the only causes.
+        public string lastAppliedPresetKey;
 
         public void ExposeData()
         {
@@ -168,6 +172,8 @@ namespace ColonistAwareness
                 "urbanGrowthPropensity", 0.45f);
             Scribe_Values.Look(ref offMapActivityRate,
                 "offMapActivityRate", 0.5f);
+            Scribe_Values.Look(ref lastAppliedPresetKey,
+                "lastAppliedPresetKey");
         }
 
         // Rolled once per world and then fixed.
@@ -185,6 +191,14 @@ namespace ColonistAwareness
             realizedStitchedRegionFrequency =
                 CAWorldTendencyCausalKernel.ResolveRange(seed, 0,
                     826351197, low, high);
+            // Runtime evidence for the tendencies dialog readback: the
+            // authored band, the realized value, and who consumes it.
+            Log.Message("[CA][Tendencies] realized connected-region share "
+                + realizedStitchedRegionFrequency.ToString("F2")
+                + " from authored band " + low.ToString("F2") + ".."
+                + high.ToString("F2") + " (seed " + seed + "); consumed "
+                + "by region reallocation when generated settlements "
+                + "join adjacent world tiles");
             return realizedStitchedRegionFrequency;
         }
 
@@ -220,7 +234,8 @@ namespace ColonistAwareness
                 frontierHoldingSize = frontierHoldingSize,
                 reallocationSourceVariety = reallocationSourceVariety,
                 urbanGrowthPropensity = urbanGrowthPropensity,
-                offMapActivityRate = offMapActivityRate
+                offMapActivityRate = offMapActivityRate,
+                lastAppliedPresetKey = lastAppliedPresetKey
             };
         }
 
@@ -365,9 +380,9 @@ namespace ColonistAwareness
             var remaining = new List<Settlement>(pool);
             int distinctAvailable = remaining.Select(item => item.Faction)
                 .Where(item => item != null).Distinct().Count();
-            int targetDistinct = count <= 0 ? 0 : Math.Min(count,
-                1 + (int)Math.Round(Mathf.Clamp01(variety)
-                    * Math.Max(0, distinctAvailable - 1)));
+            int targetDistinct = CAWorldTendencyCausalKernel
+                .SourceVarietyTargetDistinct(count, distinctAvailable,
+                    variety);
             while (selected.Count < count && remaining.Count > 0)
             {
                 int represented = selected.Select(item => item.Faction)
@@ -685,6 +700,14 @@ namespace ColonistAwareness
         public bool persistent = true;
         // Settlement form may be set directly or generated from its faction.
         public int authoredForm = -1;           // what it looks like
+        // Authored causes. Like authoredForm, these are saved composition
+        // facts the realization consumes and never writes: an explicit
+        // population, ground grade, or established history wins over the
+        // fact-derived default, and the summaries above realize from
+        // whichever source applies. -1 means unauthored.
+        public int authoredPopulation = -1;
+        public int authoredLandCapacity = -1;
+        public int authoredHistoricalDevelopment = -1;
         // Empty uses the owning faction's name maker. The generated name is
         // shown during setup and may be rerolled.
         public string customName;
@@ -767,6 +790,12 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref persistent, "persistent", true);
             Scribe_Values.Look(ref customName, "customName");
             Scribe_Values.Look(ref authoredForm, "authoredForm", -1);
+            Scribe_Values.Look(ref authoredPopulation,
+                "authoredPopulation", -1);
+            Scribe_Values.Look(ref authoredLandCapacity,
+                "authoredLandCapacity", -1);
+            Scribe_Values.Look(ref authoredHistoricalDevelopment,
+                "authoredHistoricalDevelopment", -1);
         }
 
         internal int PhysicalClusterKey
@@ -1051,6 +1080,12 @@ namespace ColonistAwareness
         // Groundwater settings carried from the draft into generation.
         public CAGroundwaterTuning groundwater =
             new CAGroundwaterTuning();
+        // Canonical authored feature shapes: per carried mutator, the
+        // player's chosen degrees of freedom over CA's per-carrier
+        // re-expression. Absent records mean the deterministic
+        // identity-seeded realization.
+        public List<CAAuthoredFeatureShape> featureShapes =
+            new List<CAAuthoredFeatureShape>();
         // What the player faction brings and establishes at the founding
         // moment. Native Ideoligion remains on Faction.OfPlayer; this draft
         // persists the independent CA state and its native-Ideo receipt.
@@ -1126,6 +1161,11 @@ namespace ColonistAwareness
                 "frontierHoldings", LookMode.Deep);
             Scribe_Deep.Look(ref worldPolicy, "worldPolicy");
             Scribe_Deep.Look(ref groundwater, "groundwater");
+            Scribe_Collections.Look(ref featureShapes, "featureShapes",
+                LookMode.Deep);
+            if (Scribe.mode == LoadSaveMode.PostLoadInit
+                && featureShapes == null)
+                featureShapes = new List<CAAuthoredFeatureShape>();
             Scribe_Deep.Look(ref playerFounding, "playerFounding");
             Scribe_Values.Look(ref operatorAuthored, "operatorAuthored", false);
             Scribe_Values.Look(ref candidateId, "candidateId");
@@ -2204,6 +2244,58 @@ namespace ColonistAwareness
             return plan;
         }
 
+        // AN AUTHORED MEMBER SET IS CANONICAL GEOMETRY. Where Create derives
+        // its members from the bundle builder's stock shapes, this builds a
+        // plan around exactly the connected areas the operator composed --
+        // the presets remain conveniences over the same representation. The
+        // regional identity hashes the member set itself, so the same
+        // composition is the same region.
+        internal static CARegionalPlan CreateExplicit(
+            CAExpandedLandmassProfile profile, PlanetTile root,
+            List<int> memberIds, int footprintRotation)
+        {
+            int normalizedRotation = ((footprintRotation % 6) + 6) % 6;
+            List<PlanetTile> members = memberIds
+                .Select(CARegionalPlanUtility.SurfaceTile)
+                .Where(tile => tile.Valid).ToList();
+            IntVec3 backing = BackingMapSize(profile, root, members);
+            ulong fold = 14695981039346656037UL;
+            void step(int item)
+            {
+                unchecked
+                {
+                    fold ^= (uint)item;
+                    fold *= 1099511628211UL;
+                }
+            }
+            step(Verse.Find.World.info.Seed);
+            step(profile.Size);
+            foreach (int id in memberIds.OrderBy(id => id)) step(id);
+            int seed = unchecked((int)fold);
+            var plan = new CARegionalPlan
+            {
+                mapSize = profile.Size,
+                requestedRegionTileCount = members.Count,
+                regionTileCount = members.Count,
+                backingMapWidth = backing.x,
+                backingMapHeight = backing.z,
+                footprintRotation = normalizedRotation,
+                bundleRootTileId = root.tileId,
+                startTileId = root.tileId,
+                candidateId = MintCandidateId(),
+                memberTileIds = members.Select(tile => tile.tileId).ToList(),
+                operatorAuthored = true,
+                worldPolicy = CAWorldTendenciesSession.Policy.Copy(),
+                creationSummary =
+                    "operator-composed connected world-tile set"
+            };
+            plan.regionalId = "CA-RG-"
+                + unchecked((uint)seed).ToString("X8");
+            plan.regionName = RegionName(plan);
+            plan.footprintTileIds = CARegionalGeometry.ClaimedTiles(plan);
+            return plan;
+        }
+
         internal static void EnsureRelationRows(CARegionalPlan plan)
         {
             if (plan == null) return;
@@ -2521,7 +2613,6 @@ namespace ColonistAwareness
         private static bool committing;
         private static int lastObservedSelection = -1;
         private static bool relocationConfirmationOpen;
-        private static Vector2 landingPanelScroll;
 
         // Chosen extent and orientation, held outside the plan so they survive
         // plan replacement.
@@ -2558,7 +2649,6 @@ namespace ColonistAwareness
             // current world's pending plan.
             boundPreviewPlan = null;
             lastObservedSelection = -1;
-            landingPanelScroll = Vector2.zero;
             InstallStartingRegionPage(page);
             string identity = WorldIdentity();
             // Keep setup preferences through Back/Next and reset them when the
@@ -3015,39 +3105,41 @@ namespace ColonistAwareness
             }
             if (ChoosingLandingAnchor && Pending != null)
             {
-                if (!Pending.memberTileIds.Contains(selected.tileId))
-                {
-                    Messages.Message("Choose an arrival area inside the "
-                        + "highlighted region.",
-                        MessageTypeDefOf.RejectInput, false);
-                }
-                else if (Pending.settlements.Any(item => item != null
-                    && item.memberTileId == selected.tileId))
-                {
-                    Messages.Message("That area already contains one of this "
-                        + "region's settlements. Choose another arrival area, "
-                        + "or move that settlement first.",
-                        MessageTypeDefOf.RejectInput, false);
-                }
+                // Armed is not action: only a NEW selection is a choice.
+                // Without this gate, arming instantly consumed the already-
+                // pinned start tile, set the arrival to itself, and
+                // disarmed - the player's real click never got a chance.
+                // That is why "choose arrival" never worked, in every
+                // prior UI that armed this flow.
+                if (selected.tileId == lastObservedSelection
+                    || selected.tileId == Pending.startTileId)
+                    return;
+                if (TrySetArrival(Pending, selected.tileId,
+                        out string arrivalRefusal))
+                    Messages.Message("Arrival area: "
+                        + CARegionalPlanUtility.TileSummary(selected.tileId),
+                        MessageTypeDefOf.TaskCompletion, false);
                 else
-                {
-                    var reason = new System.Text.StringBuilder();
-                    if (TileFinder.IsValidTileForNewSettlement(selected, reason))
-                    {
-                        Pending.startTileId = selected.tileId;
-                        Pending.operatorAuthored = true;
-                        SavePending();
-                        Messages.Message("Arrival area: "
-                            + CARegionalPlanUtility.TileSummary(selected.tileId),
-                            MessageTypeDefOf.TaskCompletion, false);
-                    }
-                    else
-                    {
-                        Messages.Message(reason.ToString(),
-                            MessageTypeDefOf.RejectInput, false);
-                    }
-                }
+                    Messages.Message(arrivalRefusal,
+                        MessageTypeDefOf.RejectInput, false);
                 ChoosingLandingAnchor = false;
+                Verse.Find.WorldInterface.SelectedTile = Pending.StartTile;
+                lastObservedSelection = Pending.startTileId;
+                return;
+            }
+
+            // GRANULAR COMPOSITION: a shift-click authors the extent tile
+            // by tile -- add the clicked area, or remove it -- through the
+            // same replacement funnel the size and turn presets use, so
+            // settlements, factions, and decisions are kept identically.
+            if (Pending != null && Pending.mapSize == profile.Size
+                && Pending.memberTileIds != null
+                && (UnityEngine.Input.GetKey(KeyCode.LeftShift)
+                    || UnityEngine.Input.GetKey(KeyCode.RightShift))
+                && selected.tileId != lastObservedSelection)
+            {
+                CARegionalPlan composing = Pending;
+                ToggleRegionArea(profile, composing, selected);
                 Verse.Find.WorldInterface.SelectedTile = Pending.StartTile;
                 lastObservedSelection = Pending.startTileId;
                 return;
@@ -3260,9 +3352,18 @@ namespace ColonistAwareness
             IntVec3 backingSize)
         {
             CARegionalPlan plan = ActivePreviewPlan;
-            if (plan == null || plan.BackingMapSize != backingSize
-                || !mapTile.Valid || plan.memberTileIds == null
+            if (plan == null || !mapTile.Valid
+                || plan.memberTileIds == null
                 || !plan.memberTileIds.Contains(mapTile.tileId)) return null;
+            // A preview generates at reduced resolution, so its map size
+            // rarely equals the full backing frame. Demanding equality kept
+            // the projection plan unresolvable on every scaled preview --
+            // which is why early mutator consumers failed neutral and no
+            // mutator content ever reached the preview terrain. Exact size
+            // remains required outside preview generation.
+            if (plan.BackingMapSize != backingSize
+                && !CARegionalCompatibility.IsMapPreviewGenerating())
+                return null;
             // Preview rendering may use an unconfirmed candidate so projected
             // geography and tile mutators draw the same regional map the
             // player is inspecting. Played maps still require confirmation.
@@ -3455,6 +3556,53 @@ namespace ColonistAwareness
         // player was inspecting, while the canonical arrival is startTileId.
         // Align only at transition time so goodwill checks and GameInitData use
         // the authored arrival rather than the bundle geometry anchor.
+        // ARRIVAL IS NOT GEOGRAPHY. Where the arriving party enters an
+        // already-defined region is one field of authored state. Setting it
+        // consumes the region and changes nothing about it: not membership,
+        // not topology, not the projection or its identity, not the extent.
+        // Every arrival change in the product funnels through here so that
+        // stays structurally true.
+        internal static bool TrySetArrival(CARegionalPlan plan,
+            int memberTileId, out string refusal)
+        {
+            refusal = ArrivalRefusalFor(plan, memberTileId);
+            if (refusal != null) return false;
+            plan.startTileId = memberTileId;
+            plan.operatorAuthored = true;
+            SavePending();
+            // The world's selection ring follows the arrival - it is the
+            // one native mark players read as "this tile is chosen", and
+            // the preview dedupe makes this realignment free: same
+            // composition, no regeneration.
+            Verse.Find.WorldInterface.SelectedTile = plan.StartTile;
+            lastObservedSelection = plan.startTileId;
+            return true;
+        }
+
+        // The query half of TrySetArrival: null means this member can host
+        // the arrival right now; otherwise the stated reason it cannot.
+        // The workspace derives its valid-location overlay from this, so
+        // what the overlay shows and what the click accepts cannot drift.
+        internal static string ArrivalRefusalFor(CARegionalPlan plan,
+            int memberTileId)
+        {
+            if (plan == null || plan.memberTileIds == null
+                || !plan.memberTileIds.Contains(memberTileId))
+                return "Choose an arrival area inside the region.";
+            if (plan.settlements.Any(item => item != null
+                && item.memberTileId == memberTileId))
+                return "That area already contains one of this region's "
+                    + "settlements. Choose another arrival area, or move "
+                    + "that settlement first.";
+            PlanetTile tile = CARegionalPlanUtility.SurfaceTile(memberTileId);
+            var reason = new System.Text.StringBuilder();
+            if (!tile.Valid
+                || !TileFinder.IsValidTileForNewSettlement(tile, reason))
+                return reason.Length > 0 ? reason.ToString()
+                    : "That area cannot host the arrival.";
+            return null;
+        }
+
         internal static void AlignVanillaLandingSelection()
         {
             PlanetTile start = PendingForCurrentWorld?.StartTile
@@ -3497,40 +3645,99 @@ namespace ColonistAwareness
                 + "region to rebuild its geography.";
         }
 
-        internal static void DrawAndInteract()
+        // One gathering of the landing screen's stated facts, shared by the
+        // CAO workspace and the fallback panel so both always say the same
+        // things about the same land.
+        internal sealed class CALandingFacts
         {
-            CAExpandedLandmassProfile profile;
-            if (!CAExpandedLandmassProfile.TryFor(
-                    Verse.Find.GameInitData.mapSize, out profile)) return;
-            ObserveSelection();
-            // The Neighbors dialog is 1180x760, centred, and deliberately
-            // leaves the world live (absorbInputAroundWindow = false). This
-            // panel is painted from ExtraOnGUI, which WindowStack runs in a
-            // pass before it draws windows, so the panel is beneath every
-            // window by construction and can never win the z-order. Below
-            // ~1996px of UI width the dialog covers the panel's left edge -
-            // 315 of its 390px at 1366 - slicing the text down one side while
-            // the player reads it. Drawing it underneath buys nothing.
-            if (EditingDialogOpen) return;
-            CARegionalPlan plan = PendingForCurrentWorld;
-            if (plan == null) return;
+            internal bool reservable;
+            internal string reservationFailure;
+            internal string biomes;
+            internal string relief;
+            internal string geology;
+            internal string features;
+            internal CARegionalProjectionKernel geographyKernel;
+            internal CARegionalGeographyComposition geography;
+            internal int actualAreas;
+            internal int requestedAreas;
+            internal int claimedSea;
+            internal int claimedImpassable;
+            internal string surveyText;
+            internal string noteText;
+        }
 
-            // The panel is built after its content is known - see the measured
-            // layout below - because its height now follows the text.
-            float width = 390f;
-            Text.Font = GameFont.Small;
-            string reservationFailure = null;
-            bool reservable = CARegionalWorldComponent.Current != null
+        internal static CALandingFacts GatherLandingFacts(CARegionalPlan plan)
+        {
+            long key = LandingFactsKey(plan);
+            CALandingFacts landing = landingFactsCache;
+            if (landing == null || landingFactsKey != key)
+            {
+                landing = DeriveLandingFacts(plan);
+                landingFactsCache = landing;
+                landingFactsKey = key;
+            }
+            // Reservation validity depends on world state outside the plan
+            // (other regions' reservations, settlements near the start
+            // tile), so it can change while every keyed input stays the
+            // same; it is re-asked every pass.
+            landing.reservable = CARegionalWorldComponent.Current != null
                 && CARegionalWorldComponent.Current.CanReserveRegion(plan,
-                    out reservationFailure);
+                    out landing.reservationFailure);
             var startReason = new System.Text.StringBuilder();
-            if (reservable && !TileFinder.IsValidTileForNewSettlement(
+            if (landing.reservable && !TileFinder.IsValidTileForNewSettlement(
                     plan.StartTile, startReason))
             {
-                reservable = false;
-                reservationFailure = startReason.ToString();
+                landing.reservable = false;
+                landing.reservationFailure = startReason.ToString();
             }
-            string biomes = string.Join(", ", plan.memberTileIds
+            return landing;
+        }
+
+        private static CALandingFacts landingFactsCache;
+        private static long landingFactsKey;
+
+        // Every plan input the derived facts read, folded into one value so
+        // the per-frame member sweeps only rerun when something they state
+        // has actually changed.
+        private static long LandingFactsKey(CARegionalPlan plan)
+        {
+            unchecked
+            {
+                long key = 17L;
+                key = key * 31L + (Verse.Find.World?.info?.Seed ?? 0);
+                key = key * 31L + plan.startTileId;
+                key = key * 31L + (plan.settlements?.Count ?? 0);
+                key = key * 31L + plan.RequestedRegionTileCount;
+                List<int> members = plan.memberTileIds;
+                key = key * 31L + (members?.Count ?? 0);
+                if (members != null)
+                    for (int i = 0; i < members.Count; i++)
+                        key = key * 31L + members[i];
+                IReadOnlyList<int> reserved = plan.ReservedTileIds;
+                key = key * 31L + (reserved?.Count ?? 0);
+                if (reserved != null)
+                    for (int i = 0; i < reserved.Count; i++)
+                        key = key * 31L + reserved[i];
+                CAGroundwaterTuning tuning = plan.groundwater;
+                if (tuning != null)
+                {
+                    key = key * 31L + tuning.saltIntrusion;
+                    key = key * 31L + tuning.brackishReach;
+                    key = key * 31L + tuning.highTableReach;
+                    key = key * 31L + tuning.wetShallow.GetHashCode();
+                    key = key * 31L + tuning.wetMedium.GetHashCode();
+                    key = key * 31L + tuning.wetDeep.GetHashCode();
+                    key = key * 31L + tuning.catchmentEfficiency.GetHashCode();
+                }
+                key = CAFeatureShapeModel.FoldSignature(key, plan);
+                return key;
+            }
+        }
+
+        private static CALandingFacts DeriveLandingFacts(CARegionalPlan plan)
+        {
+            var landing = new CALandingFacts();
+            landing.biomes = string.Join(", ", plan.memberTileIds
                 .Select(CARegionalPlanUtility.SurfaceTile)
                 .Where(tile => tile.Valid)
                 .GroupBy(tile => tile.Tile.PrimaryBiome)
@@ -3538,7 +3745,7 @@ namespace ColonistAwareness
                 .ThenBy(group => group.Key?.defName)
                 .Select(group => group.Count() + " "
                     + (group.Key?.label ?? "unknown")));
-            string relief = string.Join(", ", plan.memberTileIds
+            landing.relief = string.Join(", ", plan.memberTileIds
                 .Select(CARegionalPlanUtility.SurfaceTile)
                 .Where(tile => tile.Valid)
                 .GroupBy(tile => tile.Tile.hilliness)
@@ -3551,127 +3758,60 @@ namespace ColonistAwareness
                         .Replace("mountainous", "mountains")
                         .Replace("flat", "flat")
                         .Replace("impassable", "impassable")));
-            string geology = string.Join(", ", plan.memberTileIds
+            landing.geology = string.Join(", ", plan.memberTileIds
                 .Select(CARegionalPlanUtility.SurfaceTile)
                 .Where(tile => tile.Valid)
                 .SelectMany(tile => Verse.Find.World.NaturalRockTypesIn(tile))
                 .Distinct().OrderBy(rock => rock.label)
                 .Select(rock => rock.LabelCap.ToString()));
-            CARegionalProjectionKernel geographyKernel =
+            // The special features the selected land actually carries -- the
+            // same vanilla-assigned tile mutators the generated map will
+            // realize. CA never rolls its own; this states incidence so a
+            // person can see what their composition collected.
+            landing.features = string.Join(", ", plan.memberTileIds
+                .Select(CARegionalPlanUtility.SurfaceTile)
+                .Where(tile => tile.Valid)
+                .SelectMany(tile => tile.Tile.Mutators
+                    ?? Enumerable.Empty<TileMutatorDef>())
+                .Where(def => def != null)
+                .GroupBy(def => def.label ?? def.defName)
+                .OrderByDescending(group => group.Count())
+                .ThenBy(group => group.Key, StringComparer.Ordinal)
+                .Select(group => group.Key + (group.Count() > 1
+                    ? " (" + group.Count() + ")" : "")));
+            landing.geographyKernel =
                 CARegionalProjectionPreview.KernelFor(plan);
-            CARegionalGeographyComposition geography =
-                CARegionalGeographyContract.Inspect(plan, geographyKernel);
-            // [legibility] The panel says what the land is and what
-            // the map will be. Tile numbers, reservation counts and
-            // enum names are for the log, not for a person choosing
-            // where to live.
-            int actualAreas = plan.RegionTileCount;
-            int requestedAreas = plan.RequestedRegionTileCount;
-            string bodyText = actualAreas
-                + " connected areas form this region."
-                + (actualAreas < requestedAreas
-                    ? " You asked for " + requestedAreas + ", but the "
-                        + "connected usable land ends here." : "")
-                + "\nLandscape: " + biomes
-                + "\nGround: " + relief
-                + "\nStone: " + (geology.NullOrEmpty()
-                    ? "none here" : geology)
-                + "\nRoutes and features: " + geography.PlayerSummary()
-                + "\nGeneration: " + geography.GenerationWords().CapitalizeFirst()
-                + (reservable ? ""
-                    : "\n\nThis land is not available: "
-                        + (reservationFailure ?? "something already holds it"));
-            // Show groundwater for the selected landing tile.
-            string surveyText = CAGroundwater.SurveyTile(plan.startTileId,
+            landing.geography =
+                CARegionalGeographyContract.Inspect(plan,
+                    landing.geographyKernel);
+            landing.actualAreas = plan.RegionTileCount;
+            landing.requestedAreas = plan.RequestedRegionTileCount;
+            // The outline can claim ground nobody can use -- ocean bays and
+            // impassable massifs enclosed by the selected areas. They still
+            // occupy part of the generated map, so the person choosing this
+            // land is told, instead of discovering a third of their map is
+            // sea or sheer rock.
+            foreach (int claimedId in plan.ReservedTileIds
+                ?? (IReadOnlyList<int>)new List<int>())
+            {
+                if (plan.memberTileIds.Contains(claimedId)) continue;
+                PlanetTile claimedTile =
+                    CARegionalPlanUtility.SurfaceTile(claimedId);
+                if (!claimedTile.Valid
+                    || !CARegionalGeometry.IsBlocked(claimedTile)) continue;
+                if (claimedTile.Tile?.WaterCovered == true)
+                    landing.claimedSea++;
+                else landing.claimedImpassable++;
+            }
+            landing.surveyText = CAGroundwater.SurveyTile(plan.startTileId,
                 plan.groundwater);
-            string noteText = (plan.settlements.Count == 0
+            landing.noteText = (plan.settlements.Count == 0
                     ? "No neighbors live here yet."
                     : plan.settlements.Count + " neighbor settlement"
                         + (plan.settlements.Count == 1 ? "" : "s")
                         + " will already be living here.")
-                + "\nClick another tile to move the whole area. These "
-                + "areas become one continuous map when you start.";
-
-            // All three strings have variable length. Measure each block and
-            // derive every following position from its measured height.
-            const float titleH = 30f;
-            const float gap = 6f;
-            float contentWidth = width - 42f;
-            float bodyH = Text.CalcHeight(bodyText, contentWidth);
-            float surveyH = Text.CalcHeight(surveyText, contentWidth);
-            float noteH = Text.CalcHeight(noteText, contentWidth);
-            float surveyY = bodyH + gap;
-            float buttonsY = surveyY + surveyH + gap;
-            float noteY = buttonsY + 38f + 8f + 38f + 8f + 38f + 8f;
-            float contentHeight = noteY + noteH + 8f;
-            Rect panel = RegionalPanelRect(width,
-                titleH + contentHeight + 26f);
-            CARegionalPreviewDock.Arrange(panel);
-            Widgets.DrawWindowBackground(panel);
-            Rect inner = panel.ContractedBy(12f);
-            Text.Font = GameFont.Medium;
-            Widgets.Label(new Rect(inner.x, inner.y, inner.width, titleH),
-                CARegionalPlanUtility.RegionName(plan));
-            Text.Font = GameFont.Small;
-            Rect outRect = new Rect(inner.x, inner.y + titleH + 2f,
-                inner.width, Mathf.Max(80f, inner.height - titleH - 2f));
-            Rect view = new Rect(0f, 0f, contentWidth,
-                Mathf.Max(outRect.height, contentHeight));
-            Widgets.BeginScrollView(outRect, ref landingPanelScroll, view);
-            Widgets.Label(new Rect(0f, 0f, view.width, bodyH), bodyText);
-            TooltipHandler.TipRegion(new Rect(0f, 0f, view.width, bodyH),
-                geography.Tooltip());
-            Widgets.Label(new Rect(0f, surveyY, view.width, surveyH),
-                surveyText);
-
-            float buttonWidth = (view.width - 8f) / 2f;
-            Rect extent = new Rect(0f, buttonsY,
-                buttonWidth, 38f);
-            string extentLabel = actualAreas == requestedAreas
-                ? "Size: " + actualAreas + " areas"
-                : "Size: " + actualAreas + " of " + requestedAreas
-                    + " areas";
-            if (Widgets.ButtonText(extent, extentLabel))
-                CycleRegionExtent(profile, plan);
-            TooltipHandler.TipRegion(extent, actualAreas == requestedAreas
-                ? "Choose how much connected land this region should seek."
-                : "This shape reaches " + actualAreas + " of the "
-                    + requestedAreas + " requested areas. Turning or moving "
-                    + "the region may reach the full size.");
-            Rect rotate = new Rect(extent.xMax + 8f, extent.y,
-                buttonWidth, extent.height);
-            if (Widgets.ButtonText(rotate, "Turn shape"))
-                RotateRegionFootprint(profile, plan);
-            Rect anchor = new Rect(0f, extent.yMax + 8f,
-                view.width, 38f);
-            if (Widgets.ButtonText(anchor, ChoosingLandingAnchor
-                    ? "Choose an area..." : "Choose arrival area"))
-            {
-                ChoosingLandingAnchor = true;
-                Messages.Message("Click one highlighted area to place the "
-                    + "colony inside this region.",
-                    MessageTypeDefOf.NeutralEvent, false);
-            }
-            Rect nextStep = new Rect(0f, anchor.yMax + 8f,
-                view.width, 38f);
-            GUI.color = ColoredText.SubtleGrayColor;
-            Text.Anchor = TextAnchor.MiddleCenter;
-            Widgets.Label(nextStep, "Next: set factions, settlements, and "
-                + "populations");
-            Text.Anchor = TextAnchor.UpperLeft;
-            GUI.color = Color.white;
-
-            Widgets.Label(new Rect(0f, noteY, view.width, noteH), noteText);
-            Widgets.EndScrollView();
-        }
-
-        private static Rect RegionalPanelRect(float width, float height)
-        {
-            const float margin = 18f;
-            float cappedHeight = Mathf.Min(height,
-                Mathf.Max(120f, UI.screenHeight - 142f - margin));
-            return new Rect(UI.screenWidth - width - margin, 142f,
-                width, cappedHeight);
+                + " These areas become one continuous map when you start.";
+            return landing;
         }
 
         private static bool HasDesignedRegion(CARegionalPlan plan)
@@ -3728,6 +3868,28 @@ namespace ColonistAwareness
             }
             replacement.groundwater = current.groundwater
                 ?? new CAGroundwaterTuning();
+            // Authored feature shapes follow their areas to the new land:
+            // each record moves to the corresponding member and survives
+            // only where the destination actually carries the same feature.
+            replacement.featureShapes = new List<CAAuthoredFeatureShape>();
+            foreach (CAAuthoredFeatureShape shape in current.featureShapes
+                ?? new List<CAAuthoredFeatureShape>())
+            {
+                if (shape == null || shape.keys == null
+                    || shape.keys.Count == 0) continue;
+                int shapeDestination = correspondingArea(shape.tileId);
+                PlanetTile shapeTile = CARegionalPlanUtility.SurfaceTile(
+                    shapeDestination);
+                if (shapeTile.Valid && shapeTile.Tile?.Mutators?.Any(
+                        def => def?.defName == shape.feature) == true)
+                    replacement.featureShapes.Add(new CAAuthoredFeatureShape
+                    {
+                        tileId = shapeDestination,
+                        feature = shape.feature,
+                        keys = shape.keys.ToList(),
+                        values = shape.values.ToList()
+                    });
+            }
             replacement.playerFounding = current.playerFounding?.Copy()
                 ?? new CAPlayerFoundingPlan();
             replacement.operatorAuthored = true;
@@ -3766,19 +3928,15 @@ namespace ColonistAwareness
                 + string.Join(",", replacement.memberTileIds));
         }
 
-        private static void CycleRegionExtent(
-            CAExpandedLandmassProfile profile, CARegionalPlan current)
+        // [extent] The preset sizes are direct targets, not only a cycle:
+        // more tiles of land means real geography - coast, ridge, differing
+        // biome - instead of one large square, and the panel prints the
+        // resulting composition so the cost of the choice is visible.
+        internal static void ChangeRegionExtentTo(
+            CAExpandedLandmassProfile profile, CARegionalPlan current,
+            int next)
         {
-            // [extent] Ten and twelve tiles are reachable at the
-            // smaller source scales: more tiles of land means real
-            // geography - coast, ridge, differing biome - instead of
-            // one large square. The panel prints the resulting cell
-            // count so the cost of the choice is visible before it is
-            // taken.
-            int[] options = CARegionalGeographyComposition.SupportedExtents;
-            int index = Array.IndexOf(options,
-                current.RequestedRegionTileCount);
-            int next = options[(index + 1 + options.Length) % options.Length];
+            if (next == current.RequestedRegionTileCount) return;
             CARegionalPlan replacement = CARegionalPlanUtility.Create(profile,
                 current.BundleRoot, true, next, current.FootprintRotation);
             var retainedIds = new HashSet<int>(replacement.memberTileIds);
@@ -3838,7 +3996,107 @@ namespace ColonistAwareness
                 "requested size changed to " + next + " areas");
         }
 
-        private static void RotateRegionFootprint(
+        // SHAPE AND EXTENT ARE PLAYER-AUTHORED STATE. A shift-click adds
+        // the clicked area to the region or removes it, under the same
+        // contract validation enforces: connected, unblocked, inside the
+        // canonical 2..16 range. Size and Turn stay as presets over the
+        // same geometry; a valley, island chain, or coastal strip is
+        // composed here, not forced into a stock footprint.
+        internal static void ToggleRegionArea(
+            CAExpandedLandmassProfile profile, CARegionalPlan current,
+            PlanetTile tile)
+        {
+            bool isMember = current.memberTileIds.Contains(tile.tileId);
+            if (!isMember)
+            {
+                if (CARegionalGeometry.IsBlocked(tile))
+                {
+                    Messages.Message("Open ocean and impassable mountains "
+                        + "cannot join a region.",
+                        MessageTypeDefOf.RejectInput, false);
+                    return;
+                }
+                if (current.memberTileIds.Count
+                    >= CARegionalGeographyComposition.MaxExtent)
+                {
+                    Messages.Message("A region holds at most "
+                        + CARegionalGeographyComposition.MaxExtent
+                        + " areas.", MessageTypeDefOf.RejectInput, false);
+                    return;
+                }
+                var neighbors = new List<PlanetTile>();
+                tile.Layer.GetTileNeighbors(tile, neighbors);
+                if (!neighbors.Any(neighbor => neighbor.Valid
+                    && current.memberTileIds.Contains(neighbor.tileId)))
+                {
+                    Messages.Message("New areas must touch the region.",
+                        MessageTypeDefOf.RejectInput, false);
+                    return;
+                }
+            }
+            else
+            {
+                if (current.memberTileIds.Count
+                    <= CARegionalGeographyComposition.MinExtent)
+                {
+                    Messages.Message("A region keeps at least "
+                        + CARegionalGeographyComposition.MinExtent
+                        + " areas.", MessageTypeDefOf.RejectInput, false);
+                    return;
+                }
+                List<int> remaining = current.memberTileIds
+                    .Where(id => id != tile.tileId).ToList();
+                if (!AreasConnected(remaining))
+                {
+                    Messages.Message("Removing that area would split the "
+                        + "region in two.", MessageTypeDefOf.RejectInput,
+                        false);
+                    return;
+                }
+            }
+            List<int> members = isMember
+                ? current.memberTileIds.Where(id => id != tile.tileId)
+                    .ToList()
+                : current.memberTileIds.Concat(new[] { tile.tileId })
+                    .ToList();
+            int rootId = members.Contains(current.bundleRootTileId)
+                ? current.bundleRootTileId : members[0];
+            CARegionalPlan replacement = CARegionalPlanUtility
+                .CreateExplicit(profile,
+                    CARegionalPlanUtility.SurfaceTile(rootId), members,
+                    current.footprintRotation);
+            ApplyPlanReplacement(profile, current, replacement,
+                (isMember ? "area removed at " : "area added at ")
+                    + CARegionalPlanUtility.TileWords(tile.tileId)
+                    + "; the region is now " + members.Count + " areas",
+                isMember);
+        }
+
+        private static bool AreasConnected(List<int> ids)
+        {
+            if (ids.Count == 0) return false;
+            var remaining = new HashSet<int>(ids);
+            var reached = new HashSet<int>();
+            var queue = new Queue<PlanetTile>();
+            PlanetTile first = CARegionalPlanUtility.SurfaceTile(ids[0]);
+            if (!first.Valid) return false;
+            reached.Add(first.tileId);
+            queue.Enqueue(first);
+            var neighbors = new List<PlanetTile>();
+            while (queue.Count > 0)
+            {
+                PlanetTile at = queue.Dequeue();
+                neighbors.Clear();
+                at.Layer.GetTileNeighbors(at, neighbors);
+                foreach (PlanetTile neighbor in neighbors)
+                    if (neighbor.Valid && remaining.Contains(neighbor.tileId)
+                        && reached.Add(neighbor.tileId))
+                        queue.Enqueue(neighbor);
+            }
+            return reached.Count == remaining.Count;
+        }
+
+        internal static void RotateRegionFootprint(
             CAExpandedLandmassProfile profile, CARegionalPlan current)
         {
             int next = (current.FootprintRotation + 1) % 6;
@@ -3917,6 +4175,23 @@ namespace ColonistAwareness
             }
             replacement.groundwater = current.groundwater
                 ?? new CAGroundwaterTuning();
+            // Same land, changed footprint: authored feature shapes carry
+            // where their area is still a member; a released area takes its
+            // authored shape with it.
+            var retainedMembers = new HashSet<int>(
+                replacement.memberTileIds ?? new List<int>());
+            replacement.featureShapes = (current.featureShapes
+                    ?? new List<CAAuthoredFeatureShape>())
+                .Where(shape => shape != null && shape.keys != null
+                    && shape.keys.Count > 0
+                    && retainedMembers.Contains(shape.tileId))
+                .Select(shape => new CAAuthoredFeatureShape
+                {
+                    tileId = shape.tileId,
+                    feature = shape.feature,
+                    keys = shape.keys.ToList(),
+                    values = shape.values.ToList()
+                }).ToList();
             replacement.playerFounding = current.playerFounding?.Copy()
                 ?? new CAPlayerFoundingPlan();
             replacement.consumedSources = current.consumedSources?.ToList()
@@ -4015,6 +4290,8 @@ namespace ColonistAwareness
     {
         private static bool captured;
         private static bool toolbarCaptured;
+        private static bool dragCaptured;
+        private static bool originalDraggable;
         private static Window capturedPreview;
         private static Window capturedToolbar;
         private static Vector2 previewPosition;
@@ -4063,20 +4340,31 @@ namespace ColonistAwareness
                 leftBound = Mathf.Max(leftBound,
                     inspect.windowRect.xMax + gap);
 
-            // PreviewWindow's own longest side is the user's configured size.
-            // Preserve it when the lane fits; otherwise scale the window
-            // proportionally for this page only. The generated texture and its
-            // geography remain unchanged.
+            // THE PREVIEW IS A FIRST-CLASS VIEW, not a corner thumbnail:
+            // fill the lane at the window's region aspect (the window is
+            // already aspect-framed to the exact composed backing). The
+            // texture carries backing-resolution pixels, so upscaling the
+            // window shows more of what was actually generated, and CAO's
+            // zoom/pan presentation makes the rest inspectable.
             float rightBound = detailsPanel.x - gap;
             float laneWidth = Mathf.Max(1f, rightBound - leftBound);
             float previewY = toolbar == null ? 64f
                 : Mathf.Max(64f, toolbar.windowRect.height + 55f);
             float bottom = UI.screenHeight - 158f;
             float laneHeight = Mathf.Max(1f, bottom - previewY);
-            float scale = Mathf.Min(1f, laneWidth
+            float scale = Mathf.Min(3f, Mathf.Min(laneWidth
                     / Mathf.Max(1f, preferredPreviewSize.x),
-                laneHeight / Mathf.Max(1f, preferredPreviewSize.y));
+                laneHeight / Mathf.Max(1f, preferredPreviewSize.y)));
             Vector2 previewSize = preferredPreviewSize * scale;
+            // Docked means CAO owns the geometry; dragging would fight the
+            // dock every frame. The original preference is restored when
+            // the window leaves the dock.
+            if (!dragCaptured)
+            {
+                originalDraggable = preview.draggable;
+                dragCaptured = true;
+            }
+            preview.draggable = false;
             float x = rightBound - previewSize.x;
             if (x < leftBound)
                 x = leftBound;
@@ -4131,6 +4419,11 @@ namespace ColonistAwareness
                 || !ReferenceEquals(capturedPreview, preview)) return;
             preview.windowRect.position = previewPosition;
             preview.windowRect.size = preferredPreviewSize;
+            if (dragCaptured)
+            {
+                preview.draggable = originalDraggable;
+                dragCaptured = false;
+            }
             Window toolbar = Verse.Find.WindowStack?.Windows.FirstOrDefault(
                 window => window?.GetType().FullName
                     == "MapPreview.MapPreviewToolbar");
@@ -4293,14 +4586,14 @@ namespace ColonistAwareness
                         pair.relation);
                 }
 
-            // Draft Culture, Political Order, Technological Knowledge, and
-            // represented institutions become
-            // durable faction state. Native Ideo remains separate.
+            // Confirmed Culture, Political Order, Technological Knowledge,
+            // and represented institutions become durable faction state.
+            // Confirmation owns completion; runtime resolution is a
+            // projection and may not rewrite the canonical regional plan.
+            // Native Ideo remains separate.
             foreach (CARegionalFactionPlan group in plan.factions)
             {
                 if (group?.resolvedFaction == null) continue;
-                group.EnsureCultureAndPolitics(plan);
-                CAFactionAxes.Derive(plan, group);
                 CAFactionStartingState.ApplyPlan(group.resolvedFaction,
                     group.culture, group.politicalBeliefs,
                     group.technologicalKnowledge,
@@ -4367,6 +4660,31 @@ namespace ColonistAwareness
         VanillaBeach
     }
 
+    // The radial lake family the regional projection re-expresses per
+    // carrier. Lava basins are mirrored radially without the native
+    // largest-island flood-fill cleanup, whose touches-map-edge test has no
+    // meaning at carrier scale -- small islands inside a regional lava lake
+    // survive where the native pass would have drowned them. Oasis's
+    // native anywhere-on-the-map Rand center becomes the same
+    // deterministic wander the rest of the family uses.
+    internal enum CAInlandWaterKind : byte
+    {
+        None,
+        Lake,
+        Toxic,
+        Pond,
+        DryLake,
+        LakeWithIsland,
+        LavaLake,
+        LavaCrater,
+        // Basin's water: a .3 basin exactly at the carrier's anchor (its
+        // native center picker is the map center, never offset). The
+        // raised rim and entrance corridors are a separate elevation pass.
+        Basin,
+        LakeWithIslands,
+        Oasis
+    }
+
     // Map-generation consumer of the shared projection kernel. Ownership,
     // biome, coast, water depth, littoral formation, hill blend, and
     // constituent frames come from the same kernel as the setup preview.
@@ -4390,6 +4708,9 @@ namespace ColonistAwareness
         private float[] coastValueByCell;
         private byte[] littoralFormationByCell;
         private float[] hillFactorByCell;
+        private float[] lakeValueByCell;
+        private byte[] lakeKindByCell;
+        private float[] bergValueByCell;
         private List<PlanetTile> members;
         private List<float> memberHillFactors;
         private List<PlanetTile> boundaryWaterTiles;
@@ -4411,6 +4732,49 @@ namespace ColonistAwareness
             new Dictionary<int, List<ThingDef>>();
 
         public CARegionalProjectionMapComponent(Map map) : base(map) { }
+
+        // Native ticks only the anchor tile's mutator workers (Map.MapTick
+        // iterates TileInfo.Mutators). Member-carried mutators tick here,
+        // once per def like the native loop, so a member's lava flow
+        // schedules its eruptions. The only ticking worker in the catalog
+        // (LavaFlow) reads no Init-time state, so an un-Inited member def
+        // is safe; the guard keeps a future modded ticker from breaking
+        // the map tick.
+        private List<TileMutatorDef> memberOnlyTickers;
+
+        public override void MapComponentTick()
+        {
+            base.MapComponentTick();
+            if (!Active) return;
+            if (memberOnlyTickers == null)
+            {
+                memberOnlyTickers = new List<TileMutatorDef>();
+                var anchorDefs = new HashSet<TileMutatorDef>(
+                    map.TileInfo.Mutators);
+                for (int i = 0; i < members.Count; i++)
+                {
+                    if (!IsSelectedCore(members[i])) continue;
+                    Tile info = members[i].Valid ? members[i].Tile : null;
+                    if (info == null) continue;
+                    foreach (TileMutatorDef mutator in info.Mutators)
+                        if (mutator?.Worker != null
+                            && !anchorDefs.Contains(mutator)
+                            && !memberOnlyTickers.Contains(mutator))
+                            memberOnlyTickers.Add(mutator);
+                }
+            }
+            for (int i = 0; i < memberOnlyTickers.Count; i++)
+            {
+                try { memberOnlyTickers[i].Worker?.Tick(map); }
+                catch (Exception failure)
+                {
+                    Log.ErrorOnce("[CA][Regional] member mutator tick "
+                        + memberOnlyTickers[i].defName + ": " + failure,
+                        Gen.HashCombineInt(
+                            memberOnlyTickers[i].shortHash, 0x4D544B54));
+                }
+            }
+        }
 
         internal bool Active
         {
@@ -4579,6 +4943,22 @@ namespace ColonistAwareness
             // This is RimWorld's own terrain-selection seam. It respects a
             // local biome's coastalBeachTerrain and any active mutator
             // override instead of manufacturing a CA-only sand or rock type.
+            // A shore whose water is a lake takes the native lakeshore
+            // treatment, not ocean beach -- the same distinction the
+            // water-terrain painter already draws for the water itself.
+            if (kernel?.NearestBoundaryWaterByCell != null
+                && kernel.BoundaryWaterTiles != null)
+            {
+                int index = map.cellIndices.CellToIndex(cell);
+                int nearest = index >= 0 && index
+                    < kernel.NearestBoundaryWaterByCell.Length
+                    ? kernel.NearestBoundaryWaterByCell[index] : -1;
+                if (nearest >= 0
+                    && nearest < kernel.BoundaryWaterTiles.Count
+                    && kernel.BoundaryWaterTiles[nearest].Tile
+                        ?.PrimaryBiome != BiomeDefOf.Ocean)
+                    return MapGenUtility.LakeshoreTerrainAt(cell, map);
+            }
             return MapGenUtility.BeachTerrainAt(cell, map);
         }
 
@@ -5124,6 +5504,2077 @@ namespace ColonistAwareness
                 .ToCommaList() + " textured";
         }
 
+        // Native lakes flatten their basin at MutatorPostElevationFertility
+        // so RocksFromGrid never stands rock in the bowl. The projected
+        // field does the same for every carried basin, and the map's water
+        // body anchor points at the first basin the way a native lake's
+        // Init would have set it.
+        internal string ApplyProjectedLakeElevation()
+        {
+            EnsureBuilt();
+            if (lakeValueByCell == null) return null;
+            MapGenFloatGrid elevation = MapGenerator.Elevation;
+            int flattened = 0;
+            for (int index = 0; index < lakeValueByCell.Length; index++)
+            {
+                float value = lakeValueByCell[index];
+                var kind = (CAInlandWaterKind)lakeKindByCell[index];
+                bool lava = CARegionalProjectionKernel.IsLavaKind(kind);
+                if (value <= (lava ? 0.16f : 0.45f)) continue;
+                IntVec3 cell = map.cellIndices.IndexToCell(index);
+                if (!lava || value > 0.25f)
+                {
+                    elevation[cell] = 0f;
+                    flattened++;
+                }
+                else if (kind == CAInlandWaterKind.LavaCrater)
+                    // The native crater raises a full-rock rim around its
+                    // basin before the lake flattens the middle.
+                    elevation[cell] = 1f;
+            }
+            if (kernel != null && kernel.HasLakeCenter)
+                map.waterInfo.lakeCenter = new IntVec3(
+                    Mathf.Clamp(Mathf.RoundToInt(kernel.FirstLakeCenter.x),
+                        0, map.Size.x - 1), 0,
+                    Mathf.Clamp(Mathf.RoundToInt(kernel.FirstLakeCenter.y),
+                        0, map.Size.z - 1));
+            return (kernel?.LakeCarrierCount ?? 0) + " carrier areas, "
+                + flattened + " basin cells flattened, "
+                + (kernel?.LakeWaterCells ?? 0) + " water cells";
+        }
+
+        internal string ApplyProjectedLakeTerrain()
+        {
+            EnsureBuilt();
+            if (lakeValueByCell == null) return null;
+            int water = 0;
+            int shore = 0;
+            for (int index = 0; index < lakeValueByCell.Length; index++)
+            {
+                float value = lakeValueByCell[index];
+                var kind = (CAInlandWaterKind)lakeKindByCell[index];
+                if (value <= (CARegionalProjectionKernel.IsLavaKind(kind)
+                        ? 0.25f : kind == CAInlandWaterKind.Oasis
+                        ? 0.3f : 0.45f)) continue;
+                IntVec3 cell = map.cellIndices.IndexToCell(index);
+                switch (kind == CAInlandWaterKind.Basin
+                    ? CAInlandWaterKind.Lake : kind)
+                {
+                    case CAInlandWaterKind.LavaLake:
+                    case CAInlandWaterKind.LavaCrater:
+                        if (value > 0.4f)
+                        {
+                            map.terrainGrid.SetTerrain(cell,
+                                TerrainDefOf.LavaDeep);
+                            water++;
+                        }
+                        else
+                        {
+                            map.terrainGrid.SetTerrain(cell,
+                                TerrainDefOf.VolcanicRock);
+                            shore++;
+                        }
+                        break;
+                    case CAInlandWaterKind.Lake:
+                    case CAInlandWaterKind.Toxic:
+                        if (value > 0.75f)
+                        {
+                            map.terrainGrid.SetTerrain(cell,
+                                kind == CAInlandWaterKind.Toxic
+                                    ? TerrainDefOf.ToxicWaterDeep
+                                    : MapGenUtility.DeepFreshWaterTerrainAt(
+                                        cell, map));
+                            water++;
+                        }
+                        else if (value > 0.5f)
+                        {
+                            map.terrainGrid.SetTerrain(cell,
+                                kind == CAInlandWaterKind.Toxic
+                                    ? TerrainDefOf.ToxicWaterShallow
+                                    : MapGenUtility
+                                        .ShallowFreshWaterTerrainAt(cell,
+                                            map));
+                            water++;
+                        }
+                        else if (MapGenUtility.ShouldGenerateBeachSand(cell,
+                            map))
+                        {
+                            map.terrainGrid.SetTerrain(cell,
+                                MapGenUtility.LakeshoreTerrainAt(cell, map));
+                            shore++;
+                        }
+                        break;
+                    case CAInlandWaterKind.Pond:
+                    case CAInlandWaterKind.LakeWithIsland:
+                    case CAInlandWaterKind.LakeWithIslands:
+                        if (value > 0.5f)
+                        {
+                            map.terrainGrid.SetTerrain(cell, MapGenUtility
+                                .ShallowFreshWaterTerrainAt(cell, map));
+                            water++;
+                        }
+                        else if (MapGenUtility.ShouldGenerateBeachSand(cell,
+                            map))
+                        {
+                            map.terrainGrid.SetTerrain(cell,
+                                MapGenUtility.LakeshoreTerrainAt(cell, map));
+                            shore++;
+                        }
+                        break;
+                    case CAInlandWaterKind.Oasis:
+                        // Native thresholds: deep .75, water .57, rich
+                        // soil .45, soil .3 -- the fertile ring is the
+                        // oasis's whole point.
+                        if (value > 0.75f)
+                        {
+                            map.terrainGrid.SetTerrain(cell,
+                                MapGenUtility.DeepFreshWaterTerrainAt(cell,
+                                    map));
+                            water++;
+                        }
+                        else if (value > 0.57f)
+                        {
+                            map.terrainGrid.SetTerrain(cell, MapGenUtility
+                                .ShallowFreshWaterTerrainAt(cell, map));
+                            water++;
+                        }
+                        else if (!cell.GetTerrain(map).IsWater)
+                        {
+                            map.terrainGrid.SetTerrain(cell, value > 0.45f
+                                ? TerrainDefOf.SoilRich : TerrainDefOf.Soil);
+                            shore++;
+                        }
+                        break;
+                    case CAInlandWaterKind.DryLake:
+                        map.terrainGrid.SetTerrain(cell, value > 0.5f
+                            ? TerrainDefOf.DryLakeBed : TerrainDefOf.Sand);
+                        shore++;
+                        break;
+                }
+            }
+            return water + " water cells, " + shore + " shore cells";
+        }
+
+        // Wetland is a per-cell ridged-noise texture, not a shape: native
+        // paints the whole one-tile map from a Rand-seeded field. Here each
+        // carrying area is painted from its own deterministically seeded
+        // field of the same native character, masked to the cells it owns --
+        // the ownership boundary is already noise-warped, so the texture
+        // ends where the carrier's ground ends.
+        internal string ApplyProjectedWetlands()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null)
+                return null;
+            var carrierIndexes = new List<int>();
+            for (int i = 0; i < members.Count; i++)
+            {
+                if (!IsSelectedCore(members[i])) continue;
+                Tile info = members[i].Valid ? members[i].Tile : null;
+                if (info == null) continue;
+                foreach (TileMutatorDef mutator in info.Mutators)
+                    if (mutator?.Worker is TileMutatorWorker_Wetland)
+                    {
+                        carrierIndexes.Add(i);
+                        break;
+                    }
+            }
+            if (carrierIndexes.Count == 0) return null;
+
+            int painted = 0;
+            foreach (int carrierIndex in carrierIndexes)
+            {
+                int wetTileId = members[carrierIndex].tileId;
+                string wetlandDef = CarrierDefOf(carrierIndex, worker =>
+                    worker is TileMutatorWorker_Wetland);
+                float coverage = ShapeOf(wetTileId, wetlandDef, "coverage",
+                    0f);
+                var noise = new Verse.Noise.RidgedMultifractal(0.03, 2.0, 2,
+                    ShapeSaltOf(Gen.HashCombineInt(wetTileId,
+                        0x57455442), wetTileId, wetlandDef),
+                    Verse.Noise.QualityMode.High); // "WETB"
+                for (int index = 0; index < memberByCell.Length; index++)
+                {
+                    if (memberByCell[index] != carrierIndex) continue;
+                    IntVec3 cell = map.cellIndices.IndexToCell(index);
+                    if (cell.GetEdifice(map) != null) continue;
+                    TerrainDef terrain = cell.GetTerrain(map);
+                    if (terrain.IsWater) continue;
+                    float value = Mathf.Clamp01((float)noise.GetValue(
+                        cell.x, 0.0, cell.z));
+                    if (value > 0.35f - coverage)
+                    {
+                        map.terrainGrid.SetTerrain(cell, terrain.IsRock
+                            ? MapGenUtility.MudTerrainAt(cell, map)
+                            : MapGenUtility.ShallowFreshWaterTerrainAt(cell,
+                                map));
+                        painted++;
+                    }
+                    else if (value > 0.015f
+                        && MapGenUtility.ShouldGenerateBeachSand(cell, map))
+                    {
+                        map.terrainGrid.SetTerrain(cell,
+                            MapGenUtility.MudTerrainAt(cell, map));
+                        painted++;
+                    }
+                }
+            }
+            return carrierIndexes.Count + " carrier areas, " + painted
+                + " cells wetted";
+        }
+
+        private float ShapeOf(int tileId, string featureDef, string key,
+            float fallback)
+        {
+            return CAFeatureShapeModel.Value(region?.featureShapes, tileId,
+                featureDef, key, fallback);
+        }
+
+        private int ShapeSaltOf(int salt, int tileId, string featureDef)
+        {
+            return CAFeatureShapeModel.SaltWithVariant(salt,
+                region?.featureShapes, tileId, featureDef);
+        }
+
+        private string CarrierDefOf(int carrierIndex,
+            Func<TileMutatorWorker, bool> test)
+        {
+            Tile info = members[carrierIndex].Valid
+                ? members[carrierIndex].Tile : null;
+            if (info == null) return null;
+            foreach (TileMutatorDef mutator in info.Mutators)
+                if (mutator?.Worker != null && test(mutator.Worker))
+                    return mutator.defName;
+            return null;
+        }
+
+        private List<int> CarriersOf(Func<TileMutatorWorker, bool> test)
+        {
+            var carriers = new List<int>();
+            for (int i = 0; i < members.Count; i++)
+            {
+                if (!IsSelectedCore(members[i])) continue;
+                Tile info = members[i].Valid ? members[i].Tile : null;
+                if (info == null) continue;
+                foreach (TileMutatorDef mutator in info.Mutators)
+                    if (mutator?.Worker != null && test(mutator.Worker))
+                    {
+                        carriers.Add(i);
+                        break;
+                    }
+            }
+            return carriers;
+        }
+
+        private static float CarrierUnit(int salt, int index)
+        {
+            return (Gen.HashCombineInt(salt, index) & 0xFFFF) / 65535f;
+        }
+
+        private float? CarrierCoastAngle(PlanetTile carrier)
+        {
+            try
+            {
+                return Verse.Find.World.CoastAngleAt(carrier,
+                        BiomeDefOf.Ocean)
+                    ?? Verse.Find.World.CoastAngleAt(carrier,
+                        BiomeDefOf.Lake);
+            }
+            catch { return null; }
+        }
+
+        // The native seaward falloff (FalloffAtAngle) rebuilt at carrier
+        // scale: a signed ramp low on the ocean side, one inland, so raised
+        // shapes never wall off the carrier's own coast.
+        private static Verse.Noise.ModuleBase CarrierCoastFalloff(
+            float angle, float offsetPct, float span, Vector2 center)
+        {
+            Verse.Noise.ModuleBase input =
+                new Verse.Noise.DistFromAxis_Directional(span / 2f);
+            input = new Verse.Noise.ScaleBias(0.5, 0.5, input);
+            input = new Verse.Noise.Translate(span * (0.5f - offsetPct),
+                0.0, 0.0, input);
+            input = new Verse.Noise.Rotate(0.0, angle, 0.0, input);
+            return new Verse.Noise.Translate(-center.x, 0.0, -center.y,
+                input);
+        }
+
+        // Native Plateau raises a broad flat-topped massif (falloff radius
+        // to the .2 power) shifted toward the coast when there is one. The
+        // exact native module graph is evaluated per carrying area with a
+        // deterministic seed and carrier-scaled radii, blended into the
+        // carrier's own cells.
+        internal string ApplyProjectedPlateaus()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null
+                || kernel == null) return null;
+            List<int> carriers = CarriersOf(worker =>
+                worker is TileMutatorWorker_Plateau);
+            if (carriers.Count == 0) return null;
+            MapGenFloatGrid elevation = MapGenerator.Elevation;
+            float span = Math.Max(8f, kernel.LocalCells);
+            int raised = 0;
+            foreach (int carrierIndex in carriers)
+            {
+                PlanetTile carrier = members[carrierIndex];
+                string plateauDef = CarrierDefOf(carrierIndex, worker =>
+                    worker is TileMutatorWorker_Plateau);
+                int salt = ShapeSaltOf(Gen.HashCombineInt(carrier.tileId,
+                    0x504C4154), carrier.tileId, plateauDef); // "PLAT"
+                Vector2 anchor = kernel.VisualLandAnchor(carrier.tileId);
+                float? coast = CarrierCoastAngle(carrier);
+                Vector2 offset = coast.HasValue
+                    ? anchor + Vector2Utility.FromAngle(coast.Value)
+                        * span * 0.2f
+                    : anchor + new Vector2(
+                        (CarrierUnit(salt, 1) * 2f - 1f) * 0.2f * span,
+                        (CarrierUnit(salt, 2) * 2f - 1f) * 0.2f * span);
+                float plateauWanderX = ShapeOf(carrier.tileId, plateauDef,
+                    "wanderX", float.NaN);
+                float plateauWanderZ = ShapeOf(carrier.tileId, plateauDef,
+                    "wanderZ", float.NaN);
+                if (!float.IsNaN(plateauWanderX))
+                    offset.x = anchor.x + plateauWanderX * span;
+                if (!float.IsNaN(plateauWanderZ))
+                    offset.y = anchor.y + plateauWanderZ * span;
+                Verse.Noise.ModuleBase noise =
+                    MapNoiseUtility.CreateFalloffRadius(span * 0.4f
+                        * ShapeOf(carrier.tileId, plateauDef, "span", 1f),
+                        offset, 0.2f);
+                noise = MapNoiseUtility.AddDisplacementNoise(noise, 0.015f,
+                    35f, 4, Gen.HashCombineInt(salt, 11));
+                raised += BlendElevationShape(elevation, carrierIndex,
+                    anchor, span, noise, 0f);
+            }
+            return carriers.Count + " carrier areas, " + raised
+                + " cells raised";
+        }
+
+        // Native Cliffs raises a squashed coastal shelf behind the shore
+        // (threshold .75), smoothed low toward the sea. Exact module graph,
+        // carrier-scaled.
+        internal string ApplyProjectedCliffs()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null
+                || kernel == null) return null;
+            List<int> carriers = CarriersOf(worker =>
+                worker is TileMutatorWorker_Cliffs);
+            if (carriers.Count == 0) return null;
+            MapGenFloatGrid elevation = MapGenerator.Elevation;
+            float span = Math.Max(8f, kernel.LocalCells);
+            int raised = 0;
+            foreach (int carrierIndex in carriers)
+            {
+                PlanetTile carrier = members[carrierIndex];
+                string cliffDef = CarrierDefOf(carrierIndex, worker =>
+                    worker is TileMutatorWorker_Cliffs);
+                int salt = ShapeSaltOf(Gen.HashCombineInt(carrier.tileId,
+                    0x434C4946), carrier.tileId, cliffDef); // "CLIF"
+                Vector2 anchor = kernel.VisualLandAnchor(carrier.tileId);
+                float? coast = CarrierCoastAngle(carrier);
+                float angle = ShapeOf(carrier.tileId, cliffDef,
+                    "orientation", coast ?? CarrierUnit(salt, 1) * 360f);
+                Verse.Noise.ModuleBase noise =
+                    new Verse.Noise.DistFromPoint(span * 0.5f
+                        * ShapeOf(carrier.tileId, cliffDef, "span", 1f));
+                noise = new Verse.Noise.Scale(1.0, 1.0, 0.5, noise);
+                noise = new Verse.Noise.Translate(0.0, 0.0, -span * 0.5f,
+                    noise);
+                noise = new Verse.Noise.Rotate(0.0, angle + 90f, 0.0,
+                    noise);
+                noise = new Verse.Noise.Translate(-anchor.x, 0.0,
+                    -anchor.y, noise);
+                if (coast.HasValue)
+                    noise = new Verse.Noise.SmoothMin(noise,
+                        CarrierCoastFalloff(coast.Value, 0.1f, span,
+                            anchor), 0.1);
+                noise = MapNoiseUtility.AddDisplacementNoise(noise, 0.015f,
+                    40f, 4, Gen.HashCombineInt(salt, 11));
+                raised += BlendElevationShape(elevation, carrierIndex,
+                    anchor, span, noise, 0.75f);
+            }
+            return carriers.Count + " carrier areas, " + raised
+                + " cells raised";
+        }
+
+        // Shared consumer for native shapes that SET elevation above a
+        // threshold: owner-masked, faded at the carrier's rim, kept out of
+        // projected water so a raised shelf never stands in the sea.
+        private int BlendElevationShape(MapGenFloatGrid elevation,
+            int carrierIndex, Vector2 anchor, float span,
+            Verse.Noise.ModuleBase noise, float threshold)
+        {
+            int changed = 0;
+            int minX = Math.Max(0, Mathf.FloorToInt(anchor.x - span * 1.2f));
+            int maxX = Math.Min(map.Size.x - 1,
+                Mathf.CeilToInt(anchor.x + span * 1.2f));
+            int minZ = Math.Max(0, Mathf.FloorToInt(anchor.y - span * 1.2f));
+            int maxZ = Math.Min(map.Size.z - 1,
+                Mathf.CeilToInt(anchor.y + span * 1.2f));
+            for (int z = minZ; z <= maxZ; z++)
+            {
+                for (int x = minX; x <= maxX; x++)
+                {
+                    int index = z * map.Size.x + x;
+                    if (memberByCell[index] != carrierIndex) continue;
+                    if (boundaryWaterByCell != null
+                        && boundaryWaterByCell[index] >= 0) continue;
+                    if (lakeValueByCell != null
+                        && lakeValueByCell[index] > 0.5f
+                        && lakeKindByCell[index]
+                            != (byte)CAInlandWaterKind.DryLake) continue;
+                    float localX = x - anchor.x;
+                    float localZ = z - anchor.y;
+                    float envelope = Mathf.Sqrt(localX * localX
+                        + localZ * localZ) / (span * 0.95f);
+                    if (envelope > 1.15f) continue;
+                    float value = (float)noise.GetValue(x, 0.0, z);
+                    if (value <= threshold) continue;
+                    float fade = Mathf.SmoothStep(0f, 1f,
+                        Mathf.InverseLerp(0.80f, 1.15f, envelope));
+                    IntVec3 cell = map.cellIndices.IndexToCell(index);
+                    float blended = Mathf.Lerp(value, elevation[cell], fade);
+                    if (Mathf.Abs(blended - elevation[cell]) < 0.01f)
+                        continue;
+                    elevation[cell] = blended;
+                    changed++;
+                }
+            }
+            return changed;
+        }
+
+        // Obsidian lumps at the native density, confined to the carrying
+        // area: the native worker delegates to the lump scatterer over the
+        // whole map, so on a regional map the anchor's deposits spread
+        // region-wide and a member's never appeared.
+        private sealed class CACarrierLumpScatterer
+            : GenStep_ScatterLumpsMineable
+        {
+            internal Func<IntVec3, bool> allowedCell;
+            protected override bool CanScatterAt(IntVec3 c, Map map)
+            {
+                return (allowedCell == null || allowedCell(c))
+                    && base.CanScatterAt(c, map);
+            }
+        }
+
+        internal string ApplyProjectedObsidianDeposits()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null)
+                return null;
+            List<int> carriers = CarriersOf(worker =>
+                worker is TileMutatorWorker_ObsidianDeposits);
+            if (carriers.Count == 0) return null;
+            // Mineable lumps are things; the terrain-only preview pipeline
+            // discards them, so seeding is real-generation work.
+            if (CARegionalCompatibility.IsMapPreviewGenerating())
+                return null;
+            float per10k = GenStep_RocksFromGrid
+                .GetResourceBlotchesPer10KCellsForMap(map) * 0.1f;
+            int lumps = 0;
+            foreach (int carrierIndex in carriers)
+            {
+                int carrierCells = 0;
+                for (int index = 0; index < memberByCell.Length; index++)
+                    if (memberByCell[index] == carrierIndex) carrierCells++;
+                if (carrierCells == 0) continue;
+                // The scatterer computes count from whole-map area; scale
+                // the density so the carrier receives exactly its own
+                // one-tile share, then confine placement to its cells.
+                float share = per10k * carrierCells
+                    / (float)memberByCell.Length;
+                int local = carrierIndex;
+                var scatter = new CACarrierLumpScatterer
+                {
+                    maxValue = float.MaxValue,
+                    countPer10kCellsRange = new FloatRange(share, share),
+                    forcedDefToScatter = ThingDefOf.MineableObsidian,
+                    allowedCell = cell => memberByCell[
+                        map.cellIndices.CellToIndex(cell)] == local
+                };
+                scatter.Generate(map, default(GenStepParams));
+                lumps++;
+            }
+            return carriers.Count + " carrier areas seeded";
+        }
+
+        // Native Harbor plants a faction dock outpost near the one-tile
+        // map's center and runs its dock seaward by map-center geometry.
+        // Per carrier: the outpost seeks clear ground near the carrier's
+        // own land, its owner prefers the settlement that actually holds
+        // the area, and the dock runs toward the carrier's real nearest
+        // boundary water. The native perpendicular center-alignment leg
+        // has no carrier-scale meaning and is dropped -- the dock walks
+        // straight to open water (named deviation).
+        internal string ApplyProjectedHarbors()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null
+                || kernel == null) return null;
+            List<int> carriers = CarriersOf(worker =>
+                worker is TileMutatorWorker_Harbor);
+            if (carriers.Count == 0) return null;
+            var receipts = new List<string>();
+            foreach (int carrierIndex in carriers)
+            {
+                PlanetTile carrier = members[carrierIndex];
+                Vector2 anchor = kernel.VisualLandAnchor(carrier.tileId);
+                var anchorCell = new IntVec3(
+                    Mathf.Clamp(Mathf.RoundToInt(anchor.x), 0,
+                        map.Size.x - 1), 0,
+                    Mathf.Clamp(Mathf.RoundToInt(anchor.y), 0,
+                        map.Size.z - 1));
+                List<CellRect> usedRects = MapGenerator
+                    .GetOrGenerateVar<List<CellRect>>("UsedRects");
+                CellRect rect;
+                if (!MapGenUtility.TryGetClosestClearRectTo(out rect,
+                    new IntVec2(16, 16), anchorCell,
+                    r => !r.Cells.Any(c =>
+                            c.GetTerrain(map).IsWater)
+                        && !usedRects.Any(ur => ur.Overlaps(r)
+                            && ur.CenterCell.InHorDistOf(anchorCell,
+                                75f))))
+                {
+                    IntVec3 fallback;
+                    if (!CellFinder.TryFindRandomCellNear(anchorCell, map,
+                        75, c => !c.GetTerrain(map).IsWater
+                            && c.GetEdifice(map) == null, out fallback))
+                    {
+                        receipts.Add(carrier.tileId + ":no ground");
+                        continue;
+                    }
+                    rect = CellRect.CenteredOn(fallback, 8);
+                }
+                Faction faction = OwnerFactionFor(carrier.tileId)
+                    ?? map.ParentFaction;
+                if (faction == null || faction == Faction.OfPlayer)
+                    Find.FactionManager.GetFactions().TryRandomElement(
+                        out faction);
+                if (faction == null)
+                {
+                    receipts.Add(carrier.tileId + ":no faction");
+                    continue;
+                }
+                var outpost = new GenStep_Outpost
+                {
+                    size = 16,
+                    forcedRect = rect,
+                    overrideFaction = faction,
+                    postProcessSettlementParams =
+                        new MapGenUtility.PostProcessSettlementParams
+                        {
+                            clearBuildingFaction = true,
+                            faction = faction,
+                            damageBuildings = true,
+                            canDamageWalls = false,
+                            noFuel = true,
+                            ageCorpses = true
+                        },
+                    settlementDontGeneratePawns = true,
+                    generateLoot = false
+                };
+                outpost.Generate(map, default(GenStepParams));
+
+                IntVec3 center = rect.CenterCell;
+                int nearest = kernel.NearestBoundaryWaterByCell[
+                    map.cellIndices.CellToIndex(center)];
+                if (nearest < 0
+                    || nearest >= kernel.BoundaryWaterTiles.Count)
+                {
+                    receipts.Add(carrier.tileId + ":outpost, no water");
+                    continue;
+                }
+                Vector2 waterPoint = kernel.ProjectPoint(
+                    kernel.BoundaryWaterTiles[nearest]);
+                Rot4 waterDir = Rot4.FromAngleFlat((new IntVec3(
+                    Mathf.RoundToInt(waterPoint.x), 0,
+                    Mathf.RoundToInt(waterPoint.y)) - center).AngleFlat);
+                var path = new List<IntVec3>();
+                IntVec3 walk = center;
+                int guard = 199;
+                while (walk.InBounds(map)
+                    && !walk.GetTerrain(map).IsOcean && guard-- > 0)
+                {
+                    path.Add(walk);
+                    walk += waterDir.AsIntVec3;
+                }
+                if (!walk.InBounds(map) || guard <= 0)
+                {
+                    receipts.Add(carrier.tileId
+                        + ":outpost, dock found no open water");
+                    continue;
+                }
+                DockExtend(walk, path, Rand.RangeInclusive(19, 27),
+                    waterDir, 1f, true, waterDir);
+                path = DockStartFrom(path, rect);
+                foreach (IntVec3 item in path)
+                    DockAround(item);
+                receipts.Add(carrier.tileId + ":dock " + path.Count
+                    + " cells");
+            }
+            return string.Join(" | ", receipts);
+        }
+
+        // ---- ancient-structure family, carrier-local ---------------------
+        // Native anchors these to the one-tile map (its center, its edges,
+        // or anywhere on it). Per carrier: searches confine to the cells
+        // the carrier owns, counts stay the native per-tile counts, and
+        // member-carried structures exist at all. Ownership containment
+        // replaces the native map-edge margins -- named deviation.
+
+        private List<IntVec3> OwnedCells(int carrierIndex)
+        {
+            var cells = new List<IntVec3>();
+            for (int index = 0; index < memberByCell.Length; index++)
+                if (memberByCell[index] == carrierIndex)
+                    cells.Add(map.cellIndices.IndexToCell(index));
+            return cells;
+        }
+
+        private bool CarrierOwnsRect(int carrierIndex, CellRect rect)
+        {
+            foreach (IntVec3 cell in rect)
+            {
+                if (!cell.InBounds(map)) return false;
+                if (memberByCell[map.cellIndices.CellToIndex(cell)]
+                    != carrierIndex) return false;
+            }
+            return true;
+        }
+
+        private List<KeyValuePair<int, TileMutatorDef>> CarrierDefsOf(
+            Func<TileMutatorWorker, bool> test)
+        {
+            var entries = new List<KeyValuePair<int, TileMutatorDef>>();
+            for (int i = 0; i < members.Count; i++)
+            {
+                if (!IsSelectedCore(members[i])) continue;
+                Tile info = members[i].Valid ? members[i].Tile : null;
+                if (info == null) continue;
+                foreach (TileMutatorDef mutator in info.Mutators)
+                    if (mutator?.Worker != null && test(mutator.Worker))
+                        entries.Add(new KeyValuePair<int, TileMutatorDef>(
+                            i, mutator));
+            }
+            return entries;
+        }
+
+        internal string ApplyProjectedAncientVents()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null)
+                return null;
+            List<KeyValuePair<int, TileMutatorDef>> entries = CarrierDefsOf(
+                worker => worker is TileMutatorWorker_AncientVent);
+            if (entries.Count == 0) return null;
+            List<CellRect> usedRects = MapGenerator
+                .GetOrGenerateVar<List<CellRect>>("UsedRects");
+            int vents = 0;
+            foreach (KeyValuePair<int, TileMutatorDef> entry in entries)
+            {
+                var ventDef = AccessTools.Property(
+                        entry.Value.Worker.GetType(), "AncientVentDef")
+                    ?.GetValue(entry.Value.Worker) as ThingDef;
+                if (ventDef == null) continue;
+                List<IntVec3> owned = OwnedCells(entry.Key);
+                if (owned.Count == 0) continue;
+                int target = Rand.RangeInclusive(5, 9);
+                var positions = new List<IntVec3>();
+                int attempts = 400;
+                while (positions.Count < target && attempts-- > 0)
+                {
+                    IntVec3 candidate = owned.RandomElement();
+                    if (!GenSpawn.CanSpawnAt(ventDef, candidate, map, null,
+                        canWipeEdifices: false)) continue;
+                    CellRect occupied = GenAdj.OccupiedRect(candidate,
+                        Rot4.North, ventDef.size);
+                    if (!CarrierOwnsRect(entry.Key, occupied)) continue;
+                    if (usedRects.Any(rect => rect.Overlaps(occupied)))
+                        continue;
+                    if (positions.Any(placed =>
+                        placed.InHorDistOf(candidate, 25f))) continue;
+                    positions.Add(candidate);
+                }
+                positions.RemoveAll(position => GenRadial.RadialCellsAround(
+                        position, 0f, 8.9f)
+                    .Any(cell => cell.InBounds(map)
+                        && map.terrainGrid.TerrainAt(cell).IsWater));
+                foreach (IntVec3 position in positions)
+                    foreach (IntVec3 cell in GenRadial.RadialCellsAround(
+                        position, 0f, 8.9f))
+                        if (cell.InBounds(map)
+                            && cell.GetEdifice(map) == null)
+                            map.terrainGrid.SetTerrain(cell,
+                                TerrainDefOf.AncientMegastructure);
+                foreach (IntVec3 position in positions)
+                {
+                    Thing thing = ThingMaker.MakeThing(ventDef);
+                    GenSpawn.Spawn(thing, position, map);
+                    usedRects.Add(thing.OccupiedRect());
+                    vents++;
+                }
+            }
+            return entries.Count + " carrier entries, " + vents
+                + " vents placed";
+        }
+
+        // Native ruins fill .3-.5 of the ONE-TILE map through a map-wide
+        // generator whose internal placement cannot be masked. The fill is
+        // scaled to the carrying areas' share of the aggregate so the
+        // QUANTITY is the native per-tile quantity; positions remain
+        // map-wide -- named deviation, recorded until the native generator
+        // grows a maskable seam.
+        internal string ApplyProjectedAncientRuins()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null)
+                return null;
+            List<int> carriers = CarriersOf(worker =>
+                worker is TileMutatorWorker_AncientRuins);
+            if (carriers.Count == 0) return null;
+            int carrierCells = 0;
+            for (int index = 0; index < memberByCell.Length; index++)
+                if (carriers.Contains(memberByCell[index])) carrierCells++;
+            if (carrierCells == 0) return null;
+            float share = carrierCells / (float)memberByCell.Length;
+            try
+            {
+                var genStep = (GenStep_AncientRuins)GenStepDefOf
+                    .AncientRuins_Special.genStep;
+                genStep.GenerateRuins(map, default(GenStepParams),
+                    new FloatRange(0.3f * share, 0.5f * share));
+            }
+            catch (Exception failure)
+            {
+                Log.Error("[CA][Regional] ancient ruins generation: "
+                    + failure);
+            }
+            return carriers.Count + " carrier areas, fill share "
+                + share.ToStringPercent();
+        }
+
+        private readonly Dictionary<string, CellRect>
+            ancientStructureRects = new Dictionary<string, CellRect>();
+
+        internal string ApplyProjectedAncientStructures()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null
+                || kernel == null) return null;
+            List<KeyValuePair<int, TileMutatorDef>> entries = CarrierDefsOf(
+                worker => worker is TileMutatorWorker_AncientStructure);
+            if (entries.Count == 0) return null;
+            List<CellRect> usedRects = MapGenerator
+                .GetOrGenerateVar<List<CellRect>>("UsedRects");
+            int placed = 0;
+            foreach (KeyValuePair<int, TileMutatorDef> entry in entries)
+            {
+                var parms = entry.Value.structureGenParms;
+                if (parms?.structureLayoutDef == null) continue;
+                Vector2 anchor = kernel.VisualLandAnchor(
+                    members[entry.Key].tileId);
+                var anchorCell = new IntVec3(
+                    Mathf.Clamp(Mathf.RoundToInt(anchor.x), 0,
+                        map.Size.x - 1), 0,
+                    Mathf.Clamp(Mathf.RoundToInt(anchor.y), 0,
+                        map.Size.z - 1));
+                int width = parms.structureSizeRange.RandomInRange
+                    + parms.perimeterExpandBy * 2;
+                int height = parms.structureSizeRange.RandomInRange
+                    + parms.perimeterExpandBy * 2;
+                int carrier = entry.Key;
+                CellRect perimeter;
+                if (!MapGenUtility.TryGetClosestClearRectTo(out perimeter,
+                    new IntVec2(width, height), anchorCell,
+                    rect => CarrierOwnsRect(carrier, rect)
+                        && !usedRects.Any(used => used.Overlaps(rect))))
+                    perimeter = anchorCell.RectAbout(width, height)
+                        .ClipInsideMap(map);
+                usedRects.Add(perimeter);
+                CellRect inner = perimeter.ContractedBy(
+                    parms.perimeterExpandBy);
+                MapGenerator.SetVar("SpawnRect", inner);
+                var sketchParms = new StructureGenParams
+                {
+                    size = inner.Size
+                };
+                LayoutWorker layoutWorker =
+                    parms.structureLayoutDef.Worker;
+                LayoutStructureSketch sketch =
+                    layoutWorker.GenerateStructureSketch(sketchParms);
+                map.layoutStructureSketches.Add(sketch);
+                layoutWorker.Spawn(sketch, map, inner.Min);
+                TileMutatorWorker privateWorker = CAPrivateWorkers.For(
+                    entry.Value, new CAFeatureInstance(region.candidateId,
+                        carrier, members[carrier].tileId,
+                        entry.Value.defName, 1));
+                AccessTools.Method(
+                        typeof(TileMutatorWorker_AncientStructure),
+                        "GeneratePerimeter")
+                    ?.Invoke(privateWorker, new object[] { sketch, map });
+                ancientStructureRects[carrier + ":"
+                    + entry.Value.defName] = perimeter;
+                placed++;
+            }
+            return entries.Count + " carrier entries, " + placed
+                + " structures placed";
+        }
+
+        internal string ApplyProjectedAncientStructureScatter()
+        {
+            if (ancientStructureRects.Count == 0) return null;
+            EnsureBuilt();
+            List<KeyValuePair<int, TileMutatorDef>> entries = CarrierDefsOf(
+                worker => worker is TileMutatorWorker_AncientStructure);
+            int scattered = 0;
+            foreach (KeyValuePair<int, TileMutatorDef> entry in entries)
+            {
+                CellRect rect;
+                if (!ancientStructureRects.TryGetValue(entry.Key + ":"
+                    + entry.Value.defName, out rect)) continue;
+                MapGenUtility.SpawnScatteredGroupPrefabs(map, rect,
+                    entry.Value.structureGenParms.scatteredPrefabs);
+                scattered++;
+            }
+            return scattered + " perimeters scattered";
+        }
+
+        internal string ApplyProjectedAncientQuarries()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null)
+                return null;
+            List<int> carriers = CarriersOf(worker =>
+                worker is TileMutatorWorker_AncientQuarry);
+            if (carriers.Count == 0) return null;
+            int carved = 0;
+            foreach (int carrierIndex in carriers)
+            {
+                List<IntVec3> owned = OwnedCells(carrierIndex);
+                if (owned.Count == 0) continue;
+                int areas = Rand.RangeInclusive(10, 15);
+                for (int i = 0; i < areas; i++)
+                {
+                    IntVec3 seat = IntVec3.Invalid;
+                    for (int attempt = 0; attempt < 80; attempt++)
+                    {
+                        IntVec3 candidate = owned.RandomElement();
+                        if (candidate.Fogged(map)) continue;
+                        Building edifice = candidate.GetEdifice(map);
+                        if (edifice == null
+                            || !edifice.def.IsNonResourceNaturalRock)
+                            continue;
+                        bool exposed = false;
+                        foreach (IntVec3 direction in
+                            GenAdj.CardinalDirections)
+                        {
+                            IntVec3 side = candidate + direction;
+                            if (side.InBounds(map)
+                                && side.GetEdifice(map) == null)
+                                exposed = true;
+                        }
+                        if (!exposed) continue;
+                        int size = 0;
+                        map.floodFiller.FloodFill(candidate,
+                            cell => cell.GetEdifice(map)?.def.mineable
+                                ?? false,
+                            (Action<IntVec3>)delegate { size++; },
+                            int.MaxValue, false, null);
+                        if (size < 1000) continue;
+                        seat = candidate;
+                        break;
+                    }
+                    if (!seat.IsValid) continue;
+                    int lumpSize = Rand.RangeInclusive(100, 500);
+                    List<IntVec3> lump = GridShapeMaker.IrregularLump(seat,
+                        map, lumpSize);
+                    bool allRoofed = lump.All(cell => cell.Roofed(map));
+                    foreach (IntVec3 cell in lump)
+                    {
+                        Building edifice = cell.GetEdifice(map);
+                        if (edifice != null)
+                        {
+                            if (!edifice.def.mineable) continue;
+                            edifice.Destroy();
+                            map.fogGrid.FloodUnfogAdjacent(cell, false);
+                            if (Rand.Chance(0.8f))
+                                GenSpawn.Spawn(ThingDefOf.Filth_RubbleRock,
+                                    cell, map);
+                            if (Rand.Chance(0.1f) && edifice.def.building
+                                .mineableThing != null)
+                            {
+                                Thing yield = GenSpawn.Spawn(
+                                    edifice.def.building.mineableThing,
+                                    cell, map);
+                                yield.stackCount = Rand.Range(1, Mathf.Max(
+                                    1, edifice.def.building
+                                        .EffectiveMineableYield));
+                                if (yield.def.EverHaulable
+                                    && !yield.def.designateHaulable)
+                                    yield.SetForbidden(true, false);
+                            }
+                        }
+                        if (!allRoofed) map.roofGrid.SetRoof(cell, null);
+                    }
+                    if (allRoofed)
+                        foreach (IntVec3 cell in lump)
+                        {
+                            if (RoofCollapseUtility.WithinRangeOfRoofHolder(
+                                cell, map)) continue;
+                            ThingDef rock = DeepDrillUtility.RockForTerrain(
+                                cell.GetTerrain(map));
+                            if (rock == null) continue;
+                            ThingDef stuff = DefDatabase<ThingDef>.AllDefs
+                                .FirstOrDefault(def => def.IsStuff
+                                    && def.stuffProps.SourceNaturalRock
+                                        == rock);
+                            if (stuff == null
+                                || !stuff.stuffProps.CanMake(
+                                    ThingDefOf.Column))
+                                stuff = GenStuff.RandomStuffByCommonalityFor(
+                                    ThingDefOf.Column);
+                            GenSpawn.Spawn(ThingMaker.MakeThing(
+                                ThingDefOf.Column, stuff), cell, map);
+                        }
+                    carved++;
+                }
+            }
+            RoofCollapseCellsFinder.CheckAndRemoveCollpsingRoofs(map);
+            return carriers.Count + " carrier areas, " + carved
+                + " quarried lumps";
+        }
+
+        internal string ApplyProjectedAncientUplinks()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null)
+                return null;
+            List<int> carriers = CarriersOf(worker =>
+                worker is TileMutatorWorker_AncientUplink);
+            if (carriers.Count == 0) return null;
+            List<CellRect> usedRects = MapGenerator
+                .GetOrGenerateVar<List<CellRect>>("UsedRects");
+            PrefabDef prefab = PrefabDefOf.AncientUplink;
+            int placed = 0;
+            foreach (int carrierIndex in carriers)
+            {
+                List<IntVec3> owned = OwnedCells(carrierIndex);
+                if (owned.Count == 0) continue;
+                CellRect rect = CellRect.Empty;
+                for (int attempt = 0; attempt < 200; attempt++)
+                {
+                    IntVec3 candidate = owned.RandomElement();
+                    CellRect probe = CellRect.CenteredOn(candidate,
+                        prefab.size.x, prefab.size.z);
+                    if (!probe.InBounds(map)) continue;
+                    if (!CarrierOwnsRect(carrierIndex, probe)) continue;
+                    if (probe.Cells.Any(cell => cell.Fogged(map)))
+                        continue;
+                    if (!PrefabUtility.CanSpawnPrefab(prefab, map,
+                        UplinkRoot(probe), Rot4.North,
+                        canWipeEdifices: false)) continue;
+                    if (usedRects.Any(used => used.Overlaps(probe)))
+                        continue;
+                    rect = probe;
+                    break;
+                }
+                if (rect == CellRect.Empty) continue;
+                foreach (IntVec3 cell in rect)
+                    map.terrainGrid.SetTerrain(cell,
+                        TerrainDefOf.AncientTile);
+                PrefabUtility.SpawnPrefab(prefab, map, UplinkRoot(rect),
+                    Rot4.North);
+                usedRects.Add(rect);
+                placed++;
+            }
+            return carriers.Count + " carrier areas, " + placed
+                + " uplinks placed";
+        }
+
+        private static IntVec3 UplinkRoot(CellRect rect)
+        {
+            IntVec3 center = rect.CenterCell;
+            if (rect.Width % 2 == 0) center.x--;
+            if (rect.Height % 2 == 0) center.z--;
+            return center;
+        }
+
+        private sealed class CACarrierSettlementScatterer
+            : GenStep_Settlement
+        {
+            internal Func<IntVec3, bool> allowedCell;
+            protected override bool CanScatterAt(IntVec3 c, Map map)
+            {
+                return (allowedCell == null || allowedCell(c))
+                    && base.CanScatterAt(c, map);
+            }
+        }
+
+        internal string ApplyProjectedAbandonedColonies()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null)
+                return null;
+            List<KeyValuePair<int, TileMutatorDef>> entries = CarrierDefsOf(
+                worker => worker is TileMutatorWorker_AbandonedColony);
+            if (entries.Count == 0) return null;
+            int placed = 0;
+            foreach (KeyValuePair<int, TileMutatorDef> entry in entries)
+            {
+                var faction = AccessTools.Method(
+                        entry.Value.Worker.GetType(), "GetFaction")
+                    ?.Invoke(entry.Value.Worker, null) as Faction;
+                if (faction == null) continue;
+                int carrier = entry.Key;
+                var scatter = new CACarrierSettlementScatterer
+                {
+                    generatePawns = false,
+                    overrideFaction = faction,
+                    count = 1,
+                    lootThingSetMaker = ThingSetMakerDefOf
+                        .MapGen_AbandonedColonyStockpile,
+                    lootMarketValue = 500f,
+                    postProcessSettlementParams =
+                        new MapGenUtility.PostProcessSettlementParams
+                        {
+                            clearBuildingFaction = true,
+                            faction = faction,
+                            damageBuildings = true,
+                            canDamageWalls = false,
+                            noFuel = true,
+                            ageCorpses = true
+                        },
+                    allowedCell = cell => memberByCell[
+                        map.cellIndices.CellToIndex(cell)] == carrier
+                };
+                scatter.Generate(map, default(GenStepParams));
+                CellRect rect = MapGenerator.GetVar<CellRect>(
+                    "SettlementRect");
+                MapGenUtility.ScatterCorpses(rect, map, faction,
+                    new IntRange(0, 3), new FloatRange(20f, 60f));
+                MapGenUtility.DestroyTurrets(map);
+                MapGenUtility.DestroyProcessedFood(map);
+                MapGenUtility.ForbidAllItems(map);
+                MapGenerator.GetOrGenerateVar<List<CellRect>>("UsedRects")
+                    .Add(rect);
+                placed++;
+            }
+            return entries.Count + " carrier entries, " + placed
+                + " abandoned colonies";
+        }
+
+        private Faction OwnerFactionFor(int tileId)
+        {
+            CARegionalSettlementPlan place = region?.settlements
+                ?.FirstOrDefault(item => item != null
+                    && item.memberTileId == tileId);
+            int loadId = place?.factionLinks?.ownerWorldFactionLoadId
+                ?? -1;
+            if (loadId < 0) return null;
+            return Find.FactionManager.AllFactions.FirstOrDefault(
+                faction => faction.loadID == loadId);
+        }
+
+        // The native dock builders, re-expressed verbatim with the water
+        // direction threaded as a parameter instead of worker state.
+        private bool DockCollision(IntVec3 checkCell, Rot4 dir,
+            List<IntVec3> path)
+        {
+            if (!DockValidateCell(checkCell, dir, path)) return true;
+            if (!DockValidateCell(checkCell,
+                    dir.Rotated(RotationDirection.Clockwise), path)
+                || !DockValidateCell(checkCell,
+                    dir.Rotated(RotationDirection.Counterclockwise), path))
+                return true;
+            return false;
+        }
+
+        private bool DockValidateCell(IntVec3 cell, Rot4 dir,
+            List<IntVec3> path)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                IntVec3 probe = cell + dir.AsIntVec3 * i;
+                if (!probe.InBounds(map)
+                    || !probe.GetTerrain(map).IsOcean
+                    || path.Contains(probe))
+                    return false;
+            }
+            return true;
+        }
+
+        private void DockExtend(IntVec3 startCell, List<IntVec3> path,
+            int length, Rot4 direction, float branchChance,
+            bool mainBranch, Rot4 waterDir)
+        {
+            int untilBranch = Rand.RangeInclusive(9, 11);
+            for (int i = 0; i < length; i++)
+            {
+                IntVec3 cell = startCell + direction.AsIntVec3 * i;
+                if (!cell.InBounds(map)) continue;
+                if (DockCollision(cell, direction, path))
+                {
+                    if (mainBranch && i > 10) break;
+                    if (!mainBranch && i > 0)
+                    {
+                        for (int back = i; back > 1; back--)
+                            path.Pop();
+                        break;
+                    }
+                }
+                path.Add(cell);
+                untilBranch--;
+                if (untilBranch != 0) continue;
+                untilBranch = Rand.RangeInclusive(9, 11);
+                if (Rand.Chance(branchChance))
+                {
+                    Rot4 branch;
+                    do
+                    {
+                        branch = direction.Rotated(Rand.Bool
+                            ? RotationDirection.Clockwise
+                            : RotationDirection.Counterclockwise);
+                    }
+                    while (branch == waterDir.Opposite);
+                    DockExtend(cell, path, Rand.RangeInclusive(8, 11),
+                        branch, branchChance - 0.7f, false, waterDir);
+                    if (mainBranch && Rand.Chance(0.75f))
+                        DockExtend(cell, path, Rand.RangeInclusive(8, 11),
+                            branch.Opposite, branchChance - 0.7f, false,
+                            waterDir);
+                    else if (Rand.Bool)
+                    {
+                        path.Add(cell + branch.Opposite.AsIntVec3);
+                        path.Add(cell + branch.Opposite.AsIntVec3 * 2);
+                    }
+                }
+            }
+        }
+
+        private static List<IntVec3> DockStartFrom(List<IntVec3> path,
+            CellRect outpostRect)
+        {
+            path.Reverse();
+            for (int i = 0; i < path.Count; i++)
+            {
+                IntVec3 cell = path[i];
+                foreach (IntVec3 adjacent in GenAdj.AdjacentCellsAndInside)
+                {
+                    if (!outpostRect.Contains(cell + adjacent)) continue;
+                    path = path.GetRange(0, i);
+                    path.Reverse();
+                    return path;
+                }
+            }
+            path.Reverse();
+            return path;
+        }
+
+        private void DockAround(IntVec3 cell)
+        {
+            foreach (IntVec3 adjacent in GenAdj.AdjacentCellsAndInside)
+            {
+                IntVec3 c = cell + adjacent;
+                if (!c.InBounds(map)) continue;
+                TerrainDef terrain = c.GetTerrain(map);
+                if (terrain.IsFloor) continue;
+                Building edifice = c.GetEdifice(map);
+                if (edifice != null)
+                {
+                    if (edifice.def.building.isNaturalRock)
+                    {
+                        edifice.Destroy();
+                        map.roofGrid.SetRoof(c, null);
+                    }
+                    else if (edifice.def.fillPercent >= 0.99f) continue;
+                }
+                map.terrainGrid.SetTerrain(c, terrain.IsWater
+                    ? TerrainDefOf.Bridge : TerrainDefOf.PackedDirt);
+            }
+        }
+
+        // Deterministic entrance angles with a minimum separation,
+        // replacing the native Rand retry loop.
+        private static List<float> CarrierEntranceAngles(int salt,
+            int count, float minSeparation, float? first)
+        {
+            var angles = new List<float>();
+            if (first.HasValue) angles.Add(first.Value);
+            int target = count + (first.HasValue ? 1 : 0);
+            int attempt = 0;
+            while (angles.Count < target && attempt < 300)
+            {
+                float candidate = CarrierUnit(salt, 100 + attempt) * 360f;
+                attempt++;
+                if (angles.Any(existing => Mathf.Abs(Mathf.DeltaAngle(
+                        existing, candidate)) < minSeparation)) continue;
+                angles.Add(candidate);
+            }
+            return angles;
+        }
+
+        // Basin's raised rim and entrance corridors (its water is kind
+        // Basin in the shared inland-water field): a rock ring around the
+        // anchor, cut by a wide entrance facing away from the coast and
+        // one or two narrow extra corridors.
+        internal string ApplyProjectedBasinRims()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null
+                || kernel == null) return null;
+            List<int> carriers = CarriersOf(worker =>
+                worker is TileMutatorWorker_Basin);
+            if (carriers.Count == 0) return null;
+            MapGenFloatGrid elevation = MapGenerator.Elevation;
+            float span = Math.Max(8f, kernel.LocalCells);
+            int raised = 0;
+            foreach (int carrierIndex in carriers)
+            {
+                PlanetTile carrier = members[carrierIndex];
+                string basinDef = CarrierDefOf(carrierIndex, worker =>
+                    worker is TileMutatorWorker_Basin);
+                int salt = ShapeSaltOf(Gen.HashCombineInt(carrier.tileId,
+                    0x4241534E), carrier.tileId, basinDef); // "BASN"
+                float basinSpan = ShapeOf(carrier.tileId, basinDef, "span",
+                    1f);
+                Vector2 anchor = kernel.VisualLandAnchor(carrier.tileId);
+                float? coast = CarrierCoastAngle(carrier);
+                float mainAngle = ShapeOf(carrier.tileId, basinDef,
+                    "orientation", (coast.HasValue ? coast.Value + 180f
+                        : CarrierUnit(salt, 1) * 360f)
+                    + (CarrierUnit(salt, 2) * 60f - 30f));
+                Verse.Noise.ModuleBase ring =
+                    MapNoiseUtility.CreateFalloffRadius(
+                        span * 0.35f * basinSpan, anchor, 1f,
+                        invert: false);
+                Verse.Noise.ModuleBase cone =
+                    new Verse.Noise.DistFromCone(5f, span * 0.05f);
+                cone = new Verse.Noise.Rotate(0.0, 360f - mainAngle, 0.0,
+                    cone);
+                cone = new Verse.Noise.Translate(-anchor.x, 0.0, -anchor.y,
+                    cone);
+                ring = new Verse.Noise.SmoothMin(ring, cone, 0.2);
+                int extras = Mathf.Clamp(Mathf.RoundToInt(ShapeOf(
+                    carrier.tileId, basinDef, "corridors",
+                    1 + (CarrierUnit(salt, 3) > 0.5f ? 1 : 0))), 1, 2);
+                foreach (float angle in CarrierEntranceAngles(
+                    Gen.HashCombineInt(salt, 4), extras, 70f, mainAngle))
+                {
+                    if (Mathf.Approximately(angle, mainAngle)) continue;
+                    cone = new Verse.Noise.DistFromCone(5f, span * 0.02f);
+                    cone = new Verse.Noise.Rotate(0.0, angle, 0.0, cone);
+                    cone = new Verse.Noise.Translate(-anchor.x, 0.0,
+                        -anchor.y, cone);
+                    ring = new Verse.Noise.SmoothMin(ring, cone, 0.2);
+                }
+                if (coast.HasValue)
+                    ring = new Verse.Noise.SmoothMin(ring,
+                        CarrierCoastFalloff(coast.Value, 0.1f, span,
+                            anchor), 0.1);
+                ring = MapNoiseUtility.AddDisplacementNoise(ring, 0.015f,
+                    35f, 4, Gen.HashCombineInt(salt, 5));
+                raised += BlendElevationShape(elevation, carrierIndex,
+                    anchor, span, ring, 0.5f);
+            }
+            return carriers.Count + " carrier areas, " + raised
+                + " rim cells raised";
+        }
+
+        // Hollow: a raised bowl behind the coast opened by two cone
+        // corridors at fixed bearings. All native constants, exact graph,
+        // carrier-scaled.
+        internal string ApplyProjectedHollows()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null
+                || kernel == null) return null;
+            List<int> carriers = CarriersOf(worker =>
+                worker is TileMutatorWorker_Hollow);
+            if (carriers.Count == 0) return null;
+            MapGenFloatGrid elevation = MapGenerator.Elevation;
+            float span = Math.Max(8f, kernel.LocalCells);
+            int raised = 0;
+            foreach (int carrierIndex in carriers)
+            {
+                PlanetTile carrier = members[carrierIndex];
+                string hollowDef = CarrierDefOf(carrierIndex, worker =>
+                    worker is TileMutatorWorker_Hollow);
+                int salt = ShapeSaltOf(Gen.HashCombineInt(carrier.tileId,
+                    0x484F4C4C), carrier.tileId, hollowDef); // "HOLL"
+                Vector2 anchor = kernel.VisualLandAnchor(carrier.tileId);
+                float? coast = CarrierCoastAngle(carrier);
+                float angle = ShapeOf(carrier.tileId, hollowDef,
+                    "orientation", coast ?? CarrierUnit(salt, 1) * 360f);
+                Verse.Noise.ModuleBase bowl =
+                    MapNoiseUtility.CreateFalloffRadius(span * 0.25f
+                        * ShapeOf(carrier.tileId, hollowDef, "span", 1f),
+                        Vector2.zero, 1f, invert: false);
+                bowl = new Verse.Noise.Translate(0.0, 0.0, span * 0.175f,
+                    bowl);
+                bowl = new Verse.Noise.Rotate(0.0, angle + 90f, 0.0, bowl);
+                bowl = new Verse.Noise.Translate(-anchor.x, 0.0, -anchor.y,
+                    bowl);
+                Verse.Noise.ModuleBase cone =
+                    new Verse.Noise.DistFromCone(0.5f, span * 0.25f);
+                cone = new Verse.Noise.Translate(0.0, 0.0, -span * 0.025f,
+                    cone);
+                cone = new Verse.Noise.Rotate(0.0, angle + 90f, 0.0, cone);
+                cone = new Verse.Noise.Translate(-anchor.x, 0.0, -anchor.y,
+                    cone);
+                bowl = new Verse.Noise.SmoothMin(bowl, cone, 0.5);
+                cone = new Verse.Noise.DistFromCone(3f, span * 0.25f);
+                cone = new Verse.Noise.Translate(0.0, 0.0, span * 0.375f,
+                    cone);
+                cone = new Verse.Noise.Rotate(0.0, angle + 90f, 0.0, cone);
+                cone = new Verse.Noise.Translate(-anchor.x, 0.0, -anchor.y,
+                    cone);
+                bowl = new Verse.Noise.SmoothMin(bowl, cone, 0.5);
+                if (coast.HasValue)
+                    bowl = new Verse.Noise.SmoothMin(bowl,
+                        CarrierCoastFalloff(coast.Value, 0.1f, span,
+                            anchor), 0.1);
+                bowl = MapNoiseUtility.AddDisplacementNoise(bowl, 0.015f,
+                    40f, 4, Gen.HashCombineInt(salt, 2));
+                raised += BlendElevationShape(elevation, carrierIndex,
+                    anchor, span, bowl, 0.5f);
+            }
+            return carriers.Count + " carrier areas, " + raised
+                + " bowl cells raised";
+        }
+
+        // Chasm: a rock enclosure around an open squashed pit, cut by
+        // three to six narrow entrance corridors at separated bearings.
+        internal string ApplyProjectedChasms()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null
+                || kernel == null) return null;
+            List<int> carriers = CarriersOf(worker =>
+                worker is TileMutatorWorker_Chasm);
+            if (carriers.Count == 0) return null;
+            MapGenFloatGrid elevation = MapGenerator.Elevation;
+            float span = Math.Max(8f, kernel.LocalCells);
+            int raised = 0;
+            foreach (int carrierIndex in carriers)
+            {
+                PlanetTile carrier = members[carrierIndex];
+                string chasmDef = CarrierDefOf(carrierIndex, worker =>
+                    worker is TileMutatorWorker_Chasm);
+                int salt = ShapeSaltOf(Gen.HashCombineInt(carrier.tileId,
+                    0x4348534D), carrier.tileId, chasmDef); // "CHSM"
+                Vector2 anchor = kernel.VisualLandAnchor(carrier.tileId);
+                float? coast = CarrierCoastAngle(carrier);
+                Verse.Noise.ModuleBase pit =
+                    new Verse.Noise.DistFromPoint(span * 0.4f
+                        * ShapeOf(carrier.tileId, chasmDef, "span", 1f));
+                pit = new Verse.Noise.Scale(ShapeOf(carrier.tileId,
+                    chasmDef, "stretch", Mathf.Lerp(1f, 1.3f,
+                        CarrierUnit(salt, 1))), 1.0, 1.0, pit);
+                pit = new Verse.Noise.Rotate(0.0, ShapeOf(carrier.tileId,
+                    chasmDef, "orientation", CarrierUnit(salt, 2) * 360f),
+                    0.0, pit);
+                pit = new Verse.Noise.Translate(-anchor.x, 0.0, -anchor.y,
+                    pit);
+                if (coast.HasValue)
+                    pit = new Verse.Noise.SmoothMin(pit,
+                        CarrierCoastFalloff(coast.Value, 0.1f, span,
+                            anchor), 0.2);
+                pit = MapNoiseUtility.AddDisplacementNoise(pit, 0.015f, 40f,
+                    4, Gen.HashCombineInt(salt, 3));
+                Verse.Noise.ModuleBase corridors =
+                    new Verse.Noise.Const(1.0);
+                int count = Mathf.Clamp(Mathf.RoundToInt(ShapeOf(
+                    carrier.tileId, chasmDef, "corridors",
+                    3 + Mathf.RoundToInt(CarrierUnit(salt, 4) * 3f))),
+                    3, 6);
+                foreach (float angle in CarrierEntranceAngles(
+                    Gen.HashCombineInt(salt, 5), count, 40f, null))
+                {
+                    Verse.Noise.ModuleBase corridor =
+                        new Verse.Noise.DistFromAxis(span * 0.06f);
+                    corridor = new Verse.Noise.ScaleBias(-1.0, 1.0,
+                        corridor);
+                    corridor = new Verse.Noise.Multiply(corridor,
+                        new Verse.Noise.CutOff(invert: false,
+                            zAxis: true));
+                    corridor = new Verse.Noise.ScaleBias(-1.0, 1.0,
+                        corridor);
+                    corridor = new Verse.Noise.Rotate(0.0, angle, 0.0,
+                        corridor);
+                    corridor = new Verse.Noise.Translate(-anchor.x, 0.0,
+                        -anchor.y, corridor);
+                    corridors = new Verse.Noise.SmoothMin(corridors,
+                        corridor, 0.2);
+                }
+                corridors = MapNoiseUtility.AddDisplacementNoise(corridors,
+                    0.007f, 50f, 6, Gen.HashCombineInt(salt, 6));
+                pit = new Verse.Noise.SmoothMin(pit, corridors, 0.2);
+                raised += BlendElevationShape(elevation, carrierIndex,
+                    anchor, span, pit, 0.5f);
+            }
+            return carriers.Count + " carrier areas, " + raised
+                + " enclosure cells raised";
+        }
+
+        // Crevasse: an ice canyon along a random axis; everything outside
+        // the open band becomes solid ice under rock roof. The exact native
+        // graph is evaluated per carrying area with a deterministic seed
+        // and carrier-scaled span, masked to owned cells.
+        private Verse.Noise.ModuleBase CrevasseField(int carrierIndex,
+            float span, Vector2 anchor)
+        {
+            int tileId = members[carrierIndex].tileId;
+            string crevasseDef = CarrierDefOf(carrierIndex, worker =>
+                worker is TileMutatorWorker_Crevasse);
+            int salt = ShapeSaltOf(Gen.HashCombineInt(tileId,
+                0x43524556), tileId, crevasseDef); // "CREV"
+            Verse.Noise.ModuleBase field =
+                new Verse.Noise.DistFromAxis(span * 0.15f
+                    * ShapeOf(tileId, crevasseDef, "span", 1f));
+            field = new Verse.Noise.Rotate(0.0, ShapeOf(tileId,
+                crevasseDef, "orientation",
+                CarrierUnit(salt, 1) * 180f), 0.0, field);
+            field = new Verse.Noise.Translate(-anchor.x, 0.0, -anchor.y,
+                field);
+            return MapNoiseUtility.AddDisplacementNoise(field, 0.015f, 20f,
+                4, Gen.HashCombineInt(salt, 2));
+        }
+
+        internal string ApplyProjectedCrevasseElevation()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null
+                || kernel == null) return null;
+            List<int> carriers = CarriersOf(worker =>
+                worker is TileMutatorWorker_Crevasse);
+            if (carriers.Count == 0) return null;
+            MapGenFloatGrid elevation = MapGenerator.Elevation;
+            float span = Math.Max(8f, kernel.LocalCells);
+            int opened = 0;
+            foreach (int carrierIndex in carriers)
+            {
+                Vector2 anchor = kernel.VisualLandAnchor(
+                    members[carrierIndex].tileId);
+                Verse.Noise.ModuleBase field = CrevasseField(carrierIndex,
+                    span, anchor);
+                for (int index = 0; index < memberByCell.Length; index++)
+                {
+                    if (memberByCell[index] != carrierIndex) continue;
+                    IntVec3 cell = map.cellIndices.IndexToCell(index);
+                    if (field.GetValue(cell.x, 0.0, cell.z) <= 0.5)
+                    {
+                        elevation[cell] = 0f;
+                        opened++;
+                    }
+                }
+            }
+            return carriers.Count + " carrier areas, " + opened
+                + " canyon cells opened";
+        }
+
+        internal string ApplyProjectedCrevasseTerrain()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null
+                || kernel == null) return null;
+            List<int> carriers = CarriersOf(worker =>
+                worker is TileMutatorWorker_Crevasse);
+            if (carriers.Count == 0) return null;
+            // Preview keeps the ice-terrain statement of the mass; roofs
+            // and solid-ice things are discarded by the terrain-only
+            // pipeline and wait for real generation.
+            bool preview = CARegionalCompatibility.IsMapPreviewGenerating();
+            float span = Math.Max(8f, kernel.LocalCells);
+            int iced = 0;
+            foreach (int carrierIndex in carriers)
+            {
+                Vector2 anchor = kernel.VisualLandAnchor(
+                    members[carrierIndex].tileId);
+                Verse.Noise.ModuleBase field = CrevasseField(carrierIndex,
+                    span, anchor);
+                for (int index = 0; index < memberByCell.Length; index++)
+                {
+                    if (memberByCell[index] != carrierIndex) continue;
+                    IntVec3 cell = map.cellIndices.IndexToCell(index);
+                    float value = (float)field.GetValue(cell.x, 0.0,
+                        cell.z);
+                    if (value <= 0.5f) continue;
+                    if (!preview)
+                    {
+                        if (value > 0.798f)
+                            map.roofGrid.SetRoof(cell,
+                                RoofDefOf.RoofRockThick);
+                        else if (value > 0.728f)
+                            map.roofGrid.SetRoof(cell,
+                                RoofDefOf.RoofRockThin);
+                    }
+                    if (cell.GetEdifice(map) == null)
+                    {
+                        if (!preview)
+                            GenSpawn.Spawn(ThingDefOf.SolidIce, cell, map);
+                        map.terrainGrid.SetTerrain(cell, TerrainDefOf.Ice);
+                        iced++;
+                    }
+                }
+            }
+            return carriers.Count + " carrier areas, " + iced
+                + " ice-mass cells";
+        }
+
+        // Hot springs: perlin pools inside a soft radial area. Exact native
+        // graph per carrying area, carrier-anchored.
+        private Verse.Noise.ModuleBase HotSpringField(int carrierIndex,
+            float span, Vector2 anchor)
+        {
+            int tileId = members[carrierIndex].tileId;
+            string springDef = CarrierDefOf(carrierIndex, worker =>
+                worker is TileMutatorWorker_HotSprings);
+            int salt = ShapeSaltOf(Gen.HashCombineInt(tileId,
+                0x53505247), tileId, springDef); // "SPRG"
+            float springWanderX = ShapeOf(tileId, springDef, "wanderX",
+                float.NaN);
+            float springWanderZ = ShapeOf(tileId, springDef, "wanderZ",
+                float.NaN);
+            if (!float.IsNaN(springWanderX))
+                anchor.x += springWanderX * span;
+            if (!float.IsNaN(springWanderZ))
+                anchor.y += springWanderZ * span;
+            Verse.Noise.ModuleBase pools = new Verse.Noise.Perlin(0.05,
+                1.5, 0.5, 4, Gen.HashCombineInt(salt, 1),
+                Verse.Noise.QualityMode.Medium);
+            pools = new Verse.Noise.ScaleBias(0.5, 0.5, pools);
+            Verse.Noise.ModuleBase area =
+                MapNoiseUtility.CreateFalloffRadius(span * 0.35f
+                    * ShapeOf(tileId, springDef, "span", 1f), anchor,
+                    0.05f);
+            area = MapNoiseUtility.AddDisplacementNoise(area, 0.015f, 25f,
+                1, Gen.HashCombineInt(salt, 2));
+            return new Verse.Noise.Multiply(pools, area);
+        }
+
+        internal string ApplyProjectedHotSpringElevation()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null
+                || kernel == null) return null;
+            List<int> carriers = CarriersOf(worker =>
+                worker is TileMutatorWorker_HotSprings);
+            if (carriers.Count == 0) return null;
+            MapGenFloatGrid elevation = MapGenerator.Elevation;
+            float span = Math.Max(8f, kernel.LocalCells);
+            int flattened = 0;
+            foreach (int carrierIndex in carriers)
+            {
+                Vector2 anchor = kernel.VisualLandAnchor(
+                    members[carrierIndex].tileId);
+                Verse.Noise.ModuleBase field = HotSpringField(carrierIndex,
+                    span, anchor);
+                float pools = ShapeOf(members[carrierIndex].tileId,
+                    CarrierDefOf(carrierIndex, worker =>
+                        worker is TileMutatorWorker_HotSprings),
+                    "pools", 0f);
+                for (int index = 0; index < memberByCell.Length; index++)
+                {
+                    if (memberByCell[index] != carrierIndex) continue;
+                    IntVec3 cell = map.cellIndices.IndexToCell(index);
+                    if (field.GetValue(cell.x, 0.0, cell.z)
+                        > 0.65f - pools)
+                    {
+                        elevation[cell] = 0f;
+                        flattened++;
+                    }
+                }
+            }
+            return carriers.Count + " carrier areas, " + flattened
+                + " cells flattened";
+        }
+
+        internal string ApplyProjectedHotSpringTerrain()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null
+                || kernel == null) return null;
+            List<int> carriers = CarriersOf(worker =>
+                worker is TileMutatorWorker_HotSprings);
+            if (carriers.Count == 0) return null;
+            float span = Math.Max(8f, kernel.LocalCells);
+            int springs = 0;
+            foreach (int carrierIndex in carriers)
+            {
+                Vector2 anchor = kernel.VisualLandAnchor(
+                    members[carrierIndex].tileId);
+                Verse.Noise.ModuleBase field = HotSpringField(carrierIndex,
+                    span, anchor);
+                float pools = ShapeOf(members[carrierIndex].tileId,
+                    CarrierDefOf(carrierIndex, worker =>
+                        worker is TileMutatorWorker_HotSprings),
+                    "pools", 0f);
+                for (int index = 0; index < memberByCell.Length; index++)
+                {
+                    if (memberByCell[index] != carrierIndex) continue;
+                    IntVec3 cell = map.cellIndices.IndexToCell(index);
+                    float value = (float)field.GetValue(cell.x, 0.0,
+                        cell.z);
+                    if (value > 0.85f - pools)
+                    {
+                        map.terrainGrid.SetTerrain(cell,
+                            TerrainDefOf.HotSpring);
+                        springs++;
+                    }
+                    else if (value > 0.65f - pools)
+                        map.terrainGrid.SetTerrain(cell,
+                            GenStep_RocksFromGrid.RockDefAt(cell)
+                                .building.naturalTerrain);
+                }
+            }
+            return carriers.Count + " carrier areas, " + springs
+                + " spring cells";
+        }
+
+        // Terraforming scar: native replaces the whole one-tile elevation
+        // with a doubly-warped alien field. The same graph, deterministic
+        // parameters drawn from the native ranges, replaces the carrying
+        // area's own elevation with a faded rim.
+        internal string ApplyProjectedTerraformingScars()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null
+                || kernel == null) return null;
+            List<int> carriers = CarriersOf(worker =>
+                worker is TileMutatorWorker_TerraformingScar);
+            if (carriers.Count == 0) return null;
+            MapGenFloatGrid elevation = MapGenerator.Elevation;
+            float span = Math.Max(8f, kernel.LocalCells);
+            int rewritten = 0;
+            foreach (int carrierIndex in carriers)
+            {
+                string scarDef = CarrierDefOf(carrierIndex, worker =>
+                    worker is TileMutatorWorker_TerraformingScar);
+                int salt = ShapeSaltOf(Gen.HashCombineInt(
+                    members[carrierIndex].tileId, 0x53434152),
+                    members[carrierIndex].tileId, scarDef); // "SCAR"
+                Vector2 anchor = kernel.VisualLandAnchor(
+                    members[carrierIndex].tileId);
+                Verse.Noise.ModuleBase field = new Verse.Noise.Perlin(
+                    Mathf.Lerp(GenStep_ElevationFertility.ElevationFreqRange
+                            .min, GenStep_ElevationFertility
+                            .ElevationFreqRange.max,
+                        CarrierUnit(salt, 1)), 2.0, 0.5, 3,
+                    Gen.HashCombineInt(salt, 2),
+                    Verse.Noise.QualityMode.High);
+                field = MapNoiseUtility.AddDisplacementNoise(field,
+                    Mathf.Lerp(GenStep_ElevationFertility.DetailFreqRange
+                        .min, GenStep_ElevationFertility.DetailFreqRange
+                        .max, CarrierUnit(salt, 3)),
+                    Mathf.Lerp(GenStep_ElevationFertility
+                        .DetailStrengthRange.min, GenStep_ElevationFertility
+                        .DetailStrengthRange.max, CarrierUnit(salt, 4)),
+                    GenStep_ElevationFertility.DetailOctavesRange.min,
+                    Gen.HashCombineInt(salt, 5));
+                field = new Verse.Noise.Scale(2.0, 1.0, 1.0, field);
+                field = new Verse.Noise.Rotate(0.0,
+                    CarrierUnit(salt, 6) * 180f, 0.0, field);
+                field = MapNoiseUtility.AddDisplacementNoise(field, 0.005f,
+                    75f, 4, Gen.HashCombineInt(salt, 7));
+                field = new Verse.Noise.Rotate(0.0, ShapeOf(
+                    members[carrierIndex].tileId, scarDef, "orientation",
+                    CarrierUnit(salt, 8) * 180f), 0.0, field);
+                field = new Verse.Noise.ScaleBias(0.5, 0.5, field);
+                field = new Verse.Noise.Multiply(field,
+                    new Verse.Noise.Const(
+                        MapGenTuning.ElevationFactorMountains));
+                for (int index = 0; index < memberByCell.Length; index++)
+                {
+                    if (memberByCell[index] != carrierIndex) continue;
+                    if (boundaryWaterByCell != null
+                        && boundaryWaterByCell[index] >= 0) continue;
+                    float localX = map.cellIndices.IndexToCell(index).x
+                        - anchor.x;
+                    float localZ = map.cellIndices.IndexToCell(index).z
+                        - anchor.y;
+                    float envelope = Mathf.Sqrt(localX * localX
+                        + localZ * localZ) / (span * 0.95f);
+                    if (envelope > 1.15f) continue;
+                    IntVec3 cell = map.cellIndices.IndexToCell(index);
+                    float value = (float)field.GetValue(cell.x, 0.0,
+                        cell.z);
+                    float fade = Mathf.SmoothStep(0f, 1f,
+                        Mathf.InverseLerp(0.80f, 1.15f, envelope));
+                    elevation[cell] = Mathf.Lerp(value, elevation[cell],
+                        fade);
+                    rewritten++;
+                }
+            }
+            return carriers.Count + " carrier areas, " + rewritten
+                + " cells rewritten";
+        }
+
+        // Dune fields are stretched voronoi ridge patterns, scale-free like
+        // wetland: native builds one Rand-seeded field per one-tile map.
+        // Each carrying area gets its own deterministically seeded exact
+        // native graph, masked to owned cells -- soft sand between sand
+        // ridges, or solid ice spurs between ice ridges.
+        internal string ApplyProjectedDunes()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null)
+                return null;
+            List<int> sandCarriers = CarriersOf(worker =>
+                worker is TileMutatorWorker_Dunes);
+            List<int> iceCarriers = CarriersOf(worker =>
+                worker is TileMutatorWorker_IceDunes);
+            // Ice dunes only spawn things, which the terrain-only preview
+            // pipeline discards -- native ice dunes never showed in the
+            // preview either.
+            if (CARegionalCompatibility.IsMapPreviewGenerating())
+                iceCarriers = new List<int>();
+            if (sandCarriers.Count == 0 && iceCarriers.Count == 0)
+                return null;
+            int softened = 0;
+            int iced = 0;
+            foreach (int carrierIndex in sandCarriers)
+            {
+                int duneTileId = members[carrierIndex].tileId;
+                string duneDef = CarrierDefOf(carrierIndex, worker =>
+                    worker is TileMutatorWorker_Dunes);
+                int salt = ShapeSaltOf(Gen.HashCombineInt(duneTileId,
+                    0x44554E45), duneTileId, duneDef); // "DUNE"
+                Verse.Noise.ModuleBase noise = new Verse.Noise.Voronoi2D(
+                    0.0025, Gen.HashCombineInt(salt, 1), 0.15f, 0.5f,
+                    staggered: true);
+                noise = MapNoiseUtility.AddDisplacementNoise(noise, 0.015f,
+                    20f, 2, Gen.HashCombineInt(salt, 2));
+                noise = new Verse.Noise.Scale(1.0, 1.0, 15.0, noise);
+                Verse.Noise.ModuleBase ripple = new Verse.Noise.Perlin(
+                    0.02, 2.0, 0.5, 2, Gen.HashCombineInt(salt, 3),
+                    Verse.Noise.QualityMode.Medium);
+                ripple = new Verse.Noise.Multiply(ripple,
+                    new Verse.Noise.Const(7.5));
+                noise = new Verse.Noise.Displace(noise,
+                    new Verse.Noise.Const(0.0), new Verse.Noise.Const(0.0),
+                    ripple);
+                noise = new Verse.Noise.Rotate(0.0, ShapeOf(duneTileId,
+                    duneDef, "orientation", CarrierUnit(salt, 4) * 180f),
+                    0.0, noise);
+                for (int index = 0; index < memberByCell.Length; index++)
+                {
+                    if (memberByCell[index] != carrierIndex) continue;
+                    IntVec3 cell = map.cellIndices.IndexToCell(index);
+                    if (!(noise.GetValue(cell.x, 0.0, cell.z) > 0.2)
+                        && cell.GetTerrain(map) == TerrainDefOf.Sand)
+                    {
+                        map.terrainGrid.SetTerrain(cell,
+                            TerrainDefOf.SoftSand);
+                        softened++;
+                    }
+                }
+            }
+            foreach (int carrierIndex in iceCarriers)
+            {
+                int iceTileId = members[carrierIndex].tileId;
+                string iceDef = CarrierDefOf(carrierIndex, worker =>
+                    worker is TileMutatorWorker_IceDunes);
+                int salt = ShapeSaltOf(Gen.HashCombineInt(iceTileId,
+                    0x49445545), iceTileId, iceDef); // "IDUE"
+                Verse.Noise.ModuleBase noise = new Verse.Noise.Voronoi2D(
+                    0.007, Gen.HashCombineInt(salt, 1), 0.5f,
+                    staggered: true);
+                noise = MapNoiseUtility.AddDisplacementNoise(noise, 0.03f,
+                    10f, 3, Gen.HashCombineInt(salt, 2));
+                noise = new Verse.Noise.Scale(3.0, 1.0, 1.0, noise);
+                Verse.Noise.ModuleBase ripple = new Verse.Noise.Perlin(
+                    0.02, 2.0, 0.5, 2, Gen.HashCombineInt(salt, 3),
+                    Verse.Noise.QualityMode.Medium);
+                ripple = new Verse.Noise.Multiply(ripple,
+                    new Verse.Noise.Const(6.5));
+                noise = new Verse.Noise.Displace(noise, ripple,
+                    new Verse.Noise.Const(0.0), new Verse.Noise.Const(0.0));
+                noise = new Verse.Noise.Rotate(0.0, ShapeOf(iceTileId,
+                    iceDef, "orientation", CarrierUnit(salt, 4) * 180f),
+                    0.0, noise);
+                for (int index = 0; index < memberByCell.Length; index++)
+                {
+                    if (memberByCell[index] != carrierIndex) continue;
+                    IntVec3 cell = map.cellIndices.IndexToCell(index);
+                    // The edifice guard is a deviation from native: on a
+                    // one-tile map nothing else spawns solid ice, but at
+                    // regional scale an iceberg's seam-crossing walls can
+                    // reach a neighboring ice-dunes carrier's cells.
+                    if (!(noise.GetValue(cell.x, 0.0, cell.z) > 0.2)
+                        && !cell.GetTerrain(map).IsWater
+                        && cell.GetEdifice(map) == null)
+                    {
+                        GenSpawn.Spawn(ThingDefOf.SolidIce, cell, map);
+                        iced++;
+                    }
+                }
+            }
+            return (sandCarriers.Count + iceCarriers.Count)
+                + " carrier areas, " + softened + " cells softened, "
+                + iced + " ice spurs";
+        }
+
+        // Native LavaFlow flattens everything but narrow rock veins and
+        // cools the ground to lava rock. The same inverted ridged field is
+        // applied per carrying area with a deterministic seed, masked to
+        // owned cells. The worker's Tick hook (eruption incidents) stays
+        // native and root-only: a member-carried flow field is projected
+        // but does not schedule eruptions.
+        private List<int> LavaFlowCarriers()
+        {
+            var carriers = new List<int>();
+            for (int i = 0; i < members.Count; i++)
+            {
+                if (!IsSelectedCore(members[i])) continue;
+                Tile info = members[i].Valid ? members[i].Tile : null;
+                if (info == null) continue;
+                foreach (TileMutatorDef mutator in info.Mutators)
+                    if (mutator?.Worker is TileMutatorWorker_LavaFlow)
+                    {
+                        carriers.Add(i);
+                        break;
+                    }
+            }
+            return carriers;
+        }
+
+        private Verse.Noise.ModuleBase LavaFlowField(int carrierIndex)
+        {
+            int tileId = members[carrierIndex].tileId;
+            Verse.Noise.ModuleBase field = new Verse.Noise.RidgedMultifractal(
+                0.03, 2.0, 3, ShapeSaltOf(Gen.HashCombineInt(tileId,
+                    0x464C4F57), tileId, CarrierDefOf(carrierIndex,
+                    worker => worker is TileMutatorWorker_LavaFlow)),
+                Verse.Noise.QualityMode.High); // "FLOW"
+            field = new Verse.Noise.Clamp(0.0, 1.0, field);
+            field = new Verse.Noise.Invert(field);
+            return new Verse.Noise.ScaleBias(1.0, 1.0, field);
+        }
+
+        private float LavaFlowVeinThreshold(int carrierIndex)
+        {
+            return 0.85f - ShapeOf(members[carrierIndex].tileId,
+                CarrierDefOf(carrierIndex, worker =>
+                    worker is TileMutatorWorker_LavaFlow), "veins", 0f);
+        }
+
+        internal string ApplyProjectedLavaFlowElevation()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null)
+                return null;
+            List<int> carriers = LavaFlowCarriers();
+            if (carriers.Count == 0) return null;
+            MapGenFloatGrid elevation = MapGenerator.Elevation;
+            int flattened = 0;
+            foreach (int carrierIndex in carriers)
+            {
+                Verse.Noise.ModuleBase field = LavaFlowField(carrierIndex);
+                float veinThreshold = LavaFlowVeinThreshold(carrierIndex);
+                for (int index = 0; index < memberByCell.Length; index++)
+                {
+                    if (memberByCell[index] != carrierIndex) continue;
+                    IntVec3 cell = map.cellIndices.IndexToCell(index);
+                    if (field.GetValue(cell.x, 0.0, cell.z)
+                        > veinThreshold) continue;
+                    elevation[cell] = 0f;
+                    flattened++;
+                }
+            }
+            return carriers.Count + " carrier areas, " + flattened
+                + " cells flattened";
+        }
+
+        internal string ApplyProjectedLavaFlowTerrain()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null)
+                return null;
+            List<int> carriers = LavaFlowCarriers();
+            if (carriers.Count == 0) return null;
+            TerrainPatchMaker patchMaker = map.Biome.terrainPatchMakers
+                .FirstOrDefault(item => item.isPond);
+            int cooled = 0;
+            foreach (int carrierIndex in carriers)
+            {
+                Verse.Noise.ModuleBase field = LavaFlowField(carrierIndex);
+                for (int index = 0; index < memberByCell.Length; index++)
+                {
+                    if (memberByCell[index] != carrierIndex) continue;
+                    IntVec3 cell = map.cellIndices.IndexToCell(index);
+                    TerrainDef terrain = cell.GetTerrain(map);
+                    if (terrain.IsWater) continue;
+                    if (terrain == TerrainDefOf.VolcanicRock)
+                        map.terrainGrid.SetTerrain(cell, TerrainDefOf.Soil);
+                    TerrainDef patch = patchMaker?.TerrainAt(cell, map,
+                        cell.GetFertility(map));
+                    if (patch != null)
+                    {
+                        map.terrainGrid.SetTerrain(cell,
+                            patch == TerrainDefOf.VolcanicRock
+                                ? TerrainDefOf.CooledLava : patch);
+                    }
+                    else if (!(field.GetValue(cell.x, 0.0, cell.z)
+                            > LavaFlowVeinThreshold(carrierIndex))
+                        && terrain != TerrainDefOf.LavaDeep)
+                    {
+                        map.terrainGrid.SetTerrain(cell,
+                            TerrainDefOf.CooledLava);
+                        cooled++;
+                    }
+                }
+            }
+            patchMaker?.Cleanup();
+            return carriers.Count + " carrier areas, " + cooled
+                + " cells cooled";
+        }
+
+        // Native Valley adds a trough-and-flanks field oriented by the
+        // coast: carved toward -1 along its axis, walls rising toward +1,
+        // the seaward side smoothed low so the valley opens to the water.
+        // The same field is added here per carrying area, masked to the
+        // cells it owns, faded at its rim, and kept out of projected water.
+        internal string ApplyProjectedValleys()
+        {
+            EnsureBuilt();
+            if (region == null || members == null || memberByCell == null
+                || kernel == null) return null;
+            var carriers = new List<int>();
+            for (int i = 0; i < members.Count; i++)
+            {
+                if (!IsSelectedCore(members[i])) continue;
+                Tile info = members[i].Valid ? members[i].Tile : null;
+                if (info == null) continue;
+                foreach (TileMutatorDef mutator in info.Mutators)
+                    if (mutator?.Worker is TileMutatorWorker_Valley)
+                    {
+                        carriers.Add(i);
+                        break;
+                    }
+            }
+            if (carriers.Count == 0) return null;
+
+            MapGenFloatGrid elevation = MapGenerator.Elevation;
+            float span = Math.Max(8f, kernel.LocalCells);
+            int carved = 0;
+            foreach (int carrierIndex in carriers)
+            {
+                PlanetTile carrier = members[carrierIndex];
+                string valleyDef = CarrierDefOf(carrierIndex, worker =>
+                    worker is TileMutatorWorker_Valley);
+                int salt = ShapeSaltOf(Gen.HashCombineInt(carrier.tileId,
+                    0x56414C4C), carrier.tileId, valleyDef); // "VALL"
+                float widthScale = ShapeOf(carrier.tileId, valleyDef,
+                    "span", 1f);
+                Vector2 center = kernel.VisualLandAnchor(carrier.tileId);
+                float? coast = null;
+                try
+                {
+                    coast = Verse.Find.World.CoastAngleAt(carrier,
+                            BiomeDefOf.Ocean)
+                        ?? Verse.Find.World.CoastAngleAt(carrier,
+                            BiomeDefOf.Lake);
+                }
+                catch { }
+                float angleDegrees = ShapeOf(carrier.tileId, valleyDef,
+                    "orientation", coast ?? (Gen.HashCombineInt(salt, 31)
+                        & 0xFFFF) / 65535f * 360f);
+                float angle = angleDegrees * Mathf.Deg2Rad;
+                float cos = Mathf.Cos(angle);
+                float sin = Mathf.Sin(angle);
+
+                int minX = Math.Max(0,
+                    Mathf.FloorToInt(center.x - span * 1.2f));
+                int maxX = Math.Min(map.Size.x - 1,
+                    Mathf.CeilToInt(center.x + span * 1.2f));
+                int minZ = Math.Max(0,
+                    Mathf.FloorToInt(center.y - span * 1.2f));
+                int maxZ = Math.Min(map.Size.z - 1,
+                    Mathf.CeilToInt(center.y + span * 1.2f));
+                for (int z = minZ; z <= maxZ; z++)
+                {
+                    for (int x = minX; x <= maxX; x++)
+                    {
+                        int index = z * map.Size.x + x;
+                        if (memberByCell[index] != carrierIndex) continue;
+                        if (boundaryWaterByCell != null
+                            && boundaryWaterByCell[index] >= 0) continue;
+                        if (lakeValueByCell != null
+                            && lakeValueByCell[index] > 0.5f
+                            && lakeKindByCell[index]
+                                != (byte)CAInlandWaterKind.DryLake) continue;
+                        float localX = x - center.x
+                            + (kernel.SampleWorldNoise(x, z, 0.015f,
+                                Gen.HashCombineInt(salt, 11)) * 2f - 1f)
+                                * 30f;
+                        float localZ = z - center.y
+                            + (kernel.SampleWorldNoise(x, z, 0.015f,
+                                Gen.HashCombineInt(salt, 12)) * 2f - 1f)
+                                * 30f;
+                        float envelope = Mathf.Sqrt(localX * localX
+                            + localZ * localZ) / (span * 0.95f);
+                        if (envelope > 1.15f) continue;
+                        float along = -sin * localX + cos * localZ;
+                        float across = cos * localX + sin * localZ;
+                        float value = 2f * Mathf.Pow(Mathf.Clamp01(
+                            Mathf.Abs(across)
+                            / (0.3f * span * widthScale)), 0.5f) - 1f;
+                        if (coast.HasValue)
+                            value = GenMath.SmoothMin(value,
+                                Mathf.Clamp01(0.7f - along / span), 0.1f);
+                        float fade = Mathf.SmoothStep(0f, 1f,
+                            Mathf.InverseLerp(0.80f, 1.15f, envelope));
+                        float add = value * (1f - fade);
+                        if (Mathf.Abs(add) < 0.01f) continue;
+                        IntVec3 cell = map.cellIndices.IndexToCell(index);
+                        elevation[cell] += add;
+                        if (add < -0.05f) carved++;
+                    }
+                }
+            }
+            return carriers.Count + " carrier areas, " + carved
+                + " cells carved";
+        }
+
+        // Iceberg surface: ice past .35, solid ice walls past .55, and the
+        // shallow ring where the berg field is barely positive -- the same
+        // thresholds the native worker paints from its own field.
+        internal string ApplyProjectedIcebergs()
+        {
+            EnsureBuilt();
+            if (bergValueByCell == null) return null;
+            // The preview pipeline renders terrain only; things it spawns
+            // are dead work discarded with the preview map. Terrain writes
+            // stay so the berg shows; walls wait for real generation.
+            bool preview = CARegionalCompatibility.IsMapPreviewGenerating();
+            int ice = 0;
+            int walls = 0;
+            for (int index = 0; index < bergValueByCell.Length; index++)
+            {
+                float value = bergValueByCell[index];
+                if (value <= 0f) continue;
+                IntVec3 cell = map.cellIndices.IndexToCell(index);
+                if (value > 0.35f)
+                {
+                    map.terrainGrid.SetTerrain(cell, TerrainDefOf.Ice);
+                    ice++;
+                }
+                else
+                    map.terrainGrid.SetTerrain(cell,
+                        MapGenUtility.ShallowOceanWaterTerrainAt(cell, map));
+                if (!preview && value > 0.55f)
+                {
+                    GenSpawn.Spawn(ThingDefOf.SolidIce, cell, map);
+                    walls++;
+                }
+            }
+            return (kernel?.IcebergCarrierCount ?? 0) + " carrier areas, "
+                + ice + " ice cells, " + walls + " ice walls";
+        }
+
         internal string MountainFieldSummary()
         {
             EnsureBuilt();
@@ -5270,10 +7721,22 @@ namespace ColonistAwareness
             CARegionalGeographyComposition composition =
                 CARegionalGeographyContract.Inspect(region, kernel);
             if (!composition.IsValid)
-                throw new InvalidOperationException("[CA][Regional] confirmed "
-                    + "composition " + composition.Signature
-                    + " failed at generation: "
-                    + string.Join("; ", composition.Failures));
+            {
+                // A prospective preview may carry compositions the durable
+                // catalog would refuse (auto-derived extents above all).
+                // The preview still projects what it can and states the
+                // failure; only a durable generation aborts on it.
+                if (CARegionalCompatibility.IsMapPreviewGenerating())
+                    Log.Warning("[CA][Regional] preview composition "
+                        + composition.Signature + " is outside the durable "
+                        + "catalog: "
+                        + string.Join("; ", composition.Failures));
+                else
+                    throw new InvalidOperationException("[CA][Regional] "
+                        + "confirmed composition " + composition.Signature
+                        + " failed at generation: "
+                        + string.Join("; ", composition.Failures));
+            }
             memberByCell = kernel.MemberByCell;
             if (memberByCell.Length == 0) return;
             nearestLandMemberByCell = kernel.NearestLandMemberByCell;
@@ -5283,6 +7746,9 @@ namespace ColonistAwareness
             coastValueByCell = kernel.CoastValueByCell;
             littoralFormationByCell = kernel.LittoralFormationByCell;
             hillFactorByCell = kernel.HillFactorByCell;
+            lakeValueByCell = kernel.LakeValueByCell;
+            lakeKindByCell = kernel.LakeKindByCell;
+            bergValueByCell = kernel.BergValueByCell;
             members = kernel.Members;
             memberHillFactors = kernel.MemberHillFactors;
             boundaryWaterTiles = kernel.BoundaryWaterTiles;
@@ -5321,8 +7787,15 @@ namespace ColonistAwareness
                     projection.Region);
             int sampledWaterSources = projection.BoundaryWaterTileIds.Count();
             CARegionalPlan generating = projection.Region;
+            // A preview exists precisely to show an unconfirmed prospective
+            // candidate; demanding confirmation here aborted every world-map
+            // preview of a prospective region halfway through its own
+            // projection and left a broken partial texture behind a red
+            // error. Durable map generation still demands confirmation.
+            bool previewGeneration =
+                CARegionalCompatibility.IsMapPreviewGenerating();
             if (generating == null || generating.candidateId.NullOrEmpty()
-                || !generating.confirmed)
+                || (!generating.confirmed && !previewGeneration))
                 throw new InvalidOperationException(
                     "[CA][Regional] generation requires a confirmed candidate "
                     + "with an identity. Return to regional setup and confirm "
@@ -5341,7 +7814,8 @@ namespace ColonistAwareness
                     + (generating?.candidateId ?? "(no id)") + " - "
                     + atGeneration.ActionableFailure() + " ("
                     + atGeneration.Summary() + ")";
-                bool transientTest = generating?.developerExercise == true;
+                bool transientTest = generating?.developerExercise == true
+                    || previewGeneration;
                 if (!transientTest)
                     throw new InvalidOperationException(failure
                         + " Generation aborted: durable regional generation "
@@ -6073,10 +8547,21 @@ namespace ColonistAwareness
         Page_SelectStartingSite.ExtraOnGUI))]
     internal static class CARegionalLandingPageGuiPatch
     {
+        // The live globe stays whole and vivid - it IS the authoring
+        // surface. What goes: the stock page chrome (title, beveled
+        // bottom row, tutorial arrow), replaced by progression inside
+        // CA's own column, drawn by the postfix along with the direct
+        // composition and arrival interactions on the world itself.
+        [HarmonyPrefix]
+        private static bool Prefix(Page_SelectStartingSite __instance)
+        {
+            return !CAOpeningAugments.BeginPageFrame(__instance);
+        }
+
         [HarmonyPostfix]
         private static void Postfix()
         {
-            CARegionalSetupSession.DrawAndInteract();
+            CAOpeningAugments.DrawLanding();
         }
     }
 
@@ -6335,7 +8820,13 @@ namespace ColonistAwareness
     {
         private static readonly FieldInfo MapField = AccessTools.Field(
             typeof(RegionAndRoomUpdater), "map");
+        private static readonly FieldInfo InitializedField = AccessTools.Field(
+            typeof(RegionAndRoomUpdater), "initialized");
         [ThreadStatic] private static bool timingActive;
+        [ThreadStatic] private static Map rebuildingMap;
+        [ThreadStatic] private static int timedDirtyCells;
+        [ThreadStatic] private static int timedTotalCells;
+        [ThreadStatic] private static bool timedInitialized;
 
         [HarmonyPrefix]
         private static void Prefix(RegionAndRoomUpdater __instance,
@@ -6354,29 +8845,56 @@ namespace ColonistAwareness
             __state = map?.GetComponent<CARegionalProjectionMapComponent>()
                     ?.Active == true
                 ? System.Diagnostics.Stopwatch.StartNew() : null;
-            if (__state != null) timingActive = true;
+            if (__state != null)
+            {
+                timingActive = true;
+                rebuildingMap = map;
+                timedDirtyCells = map.regionDirtyer.DirtyCells.Count;
+                timedTotalCells = map.cellIndices.NumGridCells;
+                timedInitialized = InitializedField != null
+                    && (bool)InitializedField.GetValue(__instance);
+            }
         }
 
         [HarmonyPostfix]
         private static void Postfix(RegionAndRoomUpdater __instance,
             System.Diagnostics.Stopwatch __state)
         {
-            if (__state == null || __state.ElapsedMilliseconds < 25) return;
+            if (__state == null) return;
+            timingActive = false;
+            rebuildingMap = null;
+            if (__state.ElapsedMilliseconds < 25) return;
             Map map = MapField?.GetValue(__instance) as Map;
             if (map == null) return;
+            float coverage = timedTotalCells > 0
+                ? (float)timedDirtyCells / timedTotalCells : 0f;
             Log.Message("[CA][Regional][Timing] region/room rebuild for "
                 + map.Size.x + "x" + map.Size.z + " map " + map.uniqueID
-                + " took " + __state.ElapsedMilliseconds + " ms");
-            timingActive = false;
+                + " took " + __state.ElapsedMilliseconds + " ms; dirty "
+                + timedDirtyCells + "/" + timedTotalCells + " ("
+                + coverage.ToString("P1") + "); initialized="
+                + timedInitialized);
         }
 
         [HarmonyFinalizer]
         private static Exception Finalizer(Exception __exception,
             System.Diagnostics.Stopwatch __state)
         {
-            if (__state != null) timingActive = false;
+            if (__state != null)
+            {
+                timingActive = false;
+                rebuildingMap = null;
+            }
             return __exception;
         }
+
+        internal static bool IsRebuilding(RegionGrid grid)
+        {
+            return rebuildingMap != null && grid != null
+                && ReferenceEquals(rebuildingMap.regionGrid, grid);
+        }
+
+        internal static bool IsRebuildingRegions => rebuildingMap != null;
     }
 
     // RegionMaker asks for the same cell classification while it flood-fills a
@@ -6468,15 +8986,17 @@ namespace ColonistAwareness
             IntVec3 cell, out Region result)
         {
             result = null;
-            if (activeMap == null || grid == null
-                || !ReferenceEquals(activeMap.regionGrid, grid))
+            bool initialRebuild = activeMap != null && grid != null
+                && ReferenceEquals(activeMap.regionGrid, grid);
+            if (!initialRebuild
+                && !CARegionalRegionRebuildTimingPatch.IsRebuilding(grid))
                 return false;
 
             // RegionGrid.GetValidRegionAt normally asks the updater to rebuild
-            // before reading the grid. During this initial outer rebuild that
-            // request is guaranteed to return immediately because `working` is
-            // already true. Read the same validated slot directly instead of
-            // making 1.87 million nested updater calls.
+            // before reading the grid. During an outer rebuild that request is
+            // guaranteed to return immediately because `working` is already
+            // true. Read the same validated slot directly instead of making a
+            // nested updater call for every dirty-cell and flood-fill lookup.
             result = grid.GetValidRegionAt_NoRebuild(cell);
             return true;
         }
@@ -7307,7 +9827,17 @@ namespace ColonistAwareness
             {
                 TileMutatorWorker worker = mutator?.Worker;
                 if (worker == null) continue;
-                if (OwnsProjectedTopology(worker))
+                if (OwnsProjectedTopology(worker)
+                    || MirroredInlandWater(worker)
+                    || worker is TileMutatorWorker_Valley
+                    || worker is TileMutatorWorker_LavaFlow
+                    || worker is TileMutatorWorker_Plateau
+                    || worker is TileMutatorWorker_Cliffs
+                    || worker is TileMutatorWorker_Crevasse
+                    || worker is TileMutatorWorker_HotSprings
+                    || worker is TileMutatorWorker_TerraformingScar
+                    || worker is TileMutatorWorker_Hollow
+                    || worker is TileMutatorWorker_Chasm)
                 {
                     replaced.Add(mutator.defName);
                     continue;
@@ -7320,8 +9850,57 @@ namespace ColonistAwareness
             // rock, so the elevation must already be final. This is the same
             // order the engine uses, where Mountain's genOrder -200 precedes
             // Caves' -100 inside the one genstep.
+            // Scars rewrite base ground first; plateaus and cliffs SET
+            // their shelves before the mountain add stacks on real ground;
+            // valleys carve after mountains so the flanks shape real rock;
+            // caves flood-fill the final elevation; canyons, springs, and
+            // lakes flatten last.
+            string scarReceipt = projection?.ApplyProjectedTerraformingScars();
+            if (scarReceipt != null)
+                Log.Message("[CA][Regional] projected terraforming scars: "
+                    + scarReceipt);
+            string plateauReceipt = projection?.ApplyProjectedPlateaus();
+            if (plateauReceipt != null)
+                Log.Message("[CA][Regional] projected plateaus: "
+                    + plateauReceipt);
+            string cliffReceipt = projection?.ApplyProjectedCliffs();
+            if (cliffReceipt != null)
+                Log.Message("[CA][Regional] projected cliffs: "
+                    + cliffReceipt);
+            string basinReceipt = projection?.ApplyProjectedBasinRims();
+            if (basinReceipt != null)
+                Log.Message("[CA][Regional] projected basin rims: "
+                    + basinReceipt);
+            string hollowReceipt = projection?.ApplyProjectedHollows();
+            if (hollowReceipt != null)
+                Log.Message("[CA][Regional] projected hollows: "
+                    + hollowReceipt);
+            string chasmReceipt = projection?.ApplyProjectedChasms();
+            if (chasmReceipt != null)
+                Log.Message("[CA][Regional] projected chasms: "
+                    + chasmReceipt);
             int mountainCells = projection?.ApplyProjectedMountains() ?? 0;
+            string valleyReceipt = projection?.ApplyProjectedValleys();
             string caveReceipt = projection?.ApplyProjectedCaves();
+            string lakeReceipt = projection?.ApplyProjectedLakeElevation();
+            string lavaFlowReceipt =
+                projection?.ApplyProjectedLavaFlowElevation();
+            if (lavaFlowReceipt != null)
+                Log.Message("[CA][Regional] projected lava flows: "
+                    + lavaFlowReceipt);
+            string crevasseReceipt =
+                projection?.ApplyProjectedCrevasseElevation();
+            if (crevasseReceipt != null)
+                Log.Message("[CA][Regional] projected crevasses: "
+                    + crevasseReceipt);
+            string springElevation =
+                projection?.ApplyProjectedHotSpringElevation();
+            if (springElevation != null)
+                Log.Message("[CA][Regional] projected hot springs: "
+                    + springElevation);
+            if (valleyReceipt != null)
+                Log.Message("[CA][Regional] projected valleys: "
+                    + valleyReceipt);
             if (replaced.Count > 0)
                 Log.Message("[CA][Regional] regional projection replaced "
                     + "root-local post-elevation topology mutators: "
@@ -7332,6 +9911,9 @@ namespace ColonistAwareness
                         : projection.MountainFieldSummary()));
             if (caveReceipt != null)
                 Log.Message("[CA][Regional] projected caves: " + caveReceipt);
+            if (lakeReceipt != null)
+                Log.Message("[CA][Regional] projected inland water: "
+                    + lakeReceipt);
             return false;
         }
 
@@ -7343,7 +9925,15 @@ namespace ColonistAwareness
             {
                 TileMutatorWorker worker = mutator?.Worker;
                 if (worker == null) continue;
-                if (OwnsProjectedTerrain(worker))
+                if (OwnsProjectedTerrain(worker)
+                    || MirroredInlandWater(worker)
+                    || worker is TileMutatorWorker_Wetland
+                    || worker is TileMutatorWorker_LavaFlow
+                    || worker is TileMutatorWorker_Dunes
+                    || worker is TileMutatorWorker_IceDunes
+                    || worker is TileMutatorWorker_Crevasse
+                    || worker is TileMutatorWorker_HotSprings
+                    || worker is TileMutatorWorker_ObsidianDeposits)
                 {
                     replaced.Add(mutator.defName);
                     continue;
@@ -7353,6 +9943,42 @@ namespace ColonistAwareness
             CARegionalProjectionMapComponent projection =
                 map.GetComponent<CARegionalProjectionMapComponent>();
             string caveTerrain = projection?.ApplyProjectedCaveTerrain();
+            string lakeTerrain = projection?.ApplyProjectedLakeTerrain();
+            if (lakeTerrain != null)
+                Log.Message("[CA][Regional] projected inland water terrain: "
+                    + lakeTerrain);
+            string wetlandReceipt = projection?.ApplyProjectedWetlands();
+            if (wetlandReceipt != null)
+                Log.Message("[CA][Regional] projected wetlands: "
+                    + wetlandReceipt);
+            string icebergReceipt = projection?.ApplyProjectedIcebergs();
+            if (icebergReceipt != null)
+                Log.Message("[CA][Regional] projected icebergs: "
+                    + icebergReceipt);
+            string lavaFlowTerrain =
+                projection?.ApplyProjectedLavaFlowTerrain();
+            if (lavaFlowTerrain != null)
+                Log.Message("[CA][Regional] projected lava-flow terrain: "
+                    + lavaFlowTerrain);
+            string dunesReceipt = projection?.ApplyProjectedDunes();
+            if (dunesReceipt != null)
+                Log.Message("[CA][Regional] projected dunes: "
+                    + dunesReceipt);
+            string crevasseTerrain =
+                projection?.ApplyProjectedCrevasseTerrain();
+            if (crevasseTerrain != null)
+                Log.Message("[CA][Regional] projected crevasse ice: "
+                    + crevasseTerrain);
+            string springTerrain =
+                projection?.ApplyProjectedHotSpringTerrain();
+            if (springTerrain != null)
+                Log.Message("[CA][Regional] projected hot-spring terrain: "
+                    + springTerrain);
+            string obsidianReceipt =
+                projection?.ApplyProjectedObsidianDeposits();
+            if (obsidianReceipt != null)
+                Log.Message("[CA][Regional] projected obsidian deposits: "
+                    + obsidianReceipt);
             if (replaced.Count > 0)
                 Log.Message("[CA][Regional] regional projection replaced "
                     + "root-local post-terrain topology mutators: "
@@ -7555,7 +10181,38 @@ namespace ColonistAwareness
             if (worker == null) return "region-wide";
             if (mutator.IsCave
                 || worker is TileMutatorWorker_Caves
-                || OwnsProjectedTopology(worker))
+                || OwnsProjectedTopology(worker)
+                || MirroredInlandWater(worker)
+                || worker is TileMutatorWorker_Wetland
+                || worker is TileMutatorWorker_Valley
+                || worker is TileMutatorWorker_LavaFlow
+                || worker is TileMutatorWorker_Plateau
+                || worker is TileMutatorWorker_Cliffs
+                || worker is TileMutatorWorker_Dunes
+                || worker is TileMutatorWorker_IceDunes
+                || worker is TileMutatorWorker_Crevasse
+                || worker is TileMutatorWorker_HotSprings
+                || worker is TileMutatorWorker_TerraformingScar
+                || worker is TileMutatorWorker_Hollow
+                || worker is TileMutatorWorker_Chasm
+                || worker is TileMutatorWorker_ObsidianDeposits
+                || worker is TileMutatorWorker_Harbor
+                || worker is TileMutatorWorker_AncientVent
+                || worker is TileMutatorWorker_AncientRuins
+                || worker is TileMutatorWorker_AncientStructure
+                || worker is TileMutatorWorker_AbandonedColony
+                || worker is TileMutatorWorker_AncientQuarry
+                || worker is TileMutatorWorker_AncientUplink
+                // Adapted by the earlier substrate arc: per-cell fields,
+                // selected-feature resolution, engine-root and frame
+                // adapters, and the headwater terrain patch. Named here so
+                // the member-mutator loss receipt reports them truthfully.
+                || worker is TileMutatorWorker_PlantGrove
+                || worker is TileMutatorWorker_AnimalHabitat
+                || worker is TileMutatorWorker_MineralRich
+                || worker is TileMutatorWorker_MixedBiome
+                || worker is TileMutatorWorker_Patches
+                || worker is TileMutatorWorker_Headwater)
                 return "connected";
             if (OverridesAnyHook(worker, SpawningHooks)) return "incompatible";
             if (OverridesAnyHook(worker, GridValuedHooks)) return "tile-local";
@@ -7601,6 +10258,15 @@ namespace ColonistAwareness
                 || worker is TileMutatorWorker_River
                 || worker is TileMutatorWorker_Mountain
                 || worker is TileMutatorWorker_Caves;
+        }
+
+        // The radial lake family the kernel re-expresses per carrier. The
+        // native root instance must not also flood the aggregate at
+        // region-proportionate scale.
+        private static bool MirroredInlandWater(TileMutatorWorker worker)
+        {
+            return CARegionalProjectionKernel.InlandWaterKindOf(worker)
+                != CAInlandWaterKind.None;
         }
 
         // The terrain phase is a narrower set. A cave worker's GeneratePostTerrain

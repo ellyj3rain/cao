@@ -99,6 +99,11 @@ namespace ColonistAwareness
                     failure = "regional plan contains a null faction";
                     return false;
                 }
+                // Unauthored shells are a legitimate mid-composition state
+                // for a pending draft; the confirm gates still demand a
+                // substantive Culture before the plan becomes canonical.
+                if (CACultureModel.IsUnauthoredShell(faction.culture))
+                    continue;
                 string cultureFailure = CACultureModel.ValidationFailure(
                     faction.culture, requireSubstantive: true);
                 if (!cultureFailure.NullOrEmpty())
@@ -115,7 +120,8 @@ namespace ColonistAwareness
                     failure = "regional plan contains a null settlement";
                     return false;
                 }
-                if (settlement.localCulture == null) continue;
+                if (CACultureModel.IsUnauthoredShell(settlement.localCulture))
+                    continue;
                 string cultureFailure = CACultureModel.ValidationFailure(
                     settlement.localCulture, requireSubstantive: true);
                 if (!cultureFailure.NullOrEmpty())
@@ -125,13 +131,23 @@ namespace ColonistAwareness
                     return false;
                 }
             }
-            string foundingFailure = CACultureModel.ValidationFailure(
-                plan.playerFounding.culture, requireSubstantive: true);
-            if (!foundingFailure.NullOrEmpty())
+            // A draft saved before the founding step carries the shell the
+            // plan was born with; that draft is the operator's composition
+            // work and refusing the whole plan over it would discard it.
+            if (!CACultureModel.IsUnauthoredShell(plan.playerFounding.culture))
             {
-                failure = "player founding Culture: " + foundingFailure;
-                return false;
+                string foundingFailure = CACultureModel.ValidationFailure(
+                    plan.playerFounding.culture, requireSubstantive: true);
+                if (!foundingFailure.NullOrEmpty())
+                {
+                    failure = "player founding Culture: " + foundingFailure;
+                    return false;
+                }
             }
+            // Restore the born-with invariant for legacy drafts that
+            // scribed a null founding Culture; consumers rely on non-null.
+            if (plan.playerFounding.culture == null)
+                plan.playerFounding.culture = new CACulture();
             return true;
         }
 

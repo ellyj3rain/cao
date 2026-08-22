@@ -39,9 +39,14 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref targetIdentity, "targetIdentity");
             Scribe_Values.Look(ref tick, "tick", -1);
             Scribe_Values.Look(ref pawnId, "pawnId", -1);
+            // None plus -1 is the first-class no-world-faction relation and
+            // the preflight requires both fields present; they must
+            // serialize even at those defaults.
             Scribe_Values.Look(ref actorFactionReference,
-                "actorFactionReference", CASiteFactionReferenceKind.None);
-            Scribe_Values.Look(ref factionLoadId, "factionLoadId", -1);
+                "actorFactionReference", CASiteFactionReferenceKind.None,
+                forceSave: true);
+            Scribe_Values.Look(ref factionLoadId, "factionLoadId", -1,
+                forceSave: true);
             Scribe_Values.Look(ref mapId, "mapId", -1);
             Scribe_Values.Look(ref localityKey, "localityKey");
             Scribe_Values.Look(ref cellX, "cellX", -1);

@@ -109,6 +109,14 @@ namespace ColonistAwareness
             Scribe_Values.Look(ref bornTick, "bornTick", -1);
             Scribe_Collections.Look(ref circuits, "circuits",
                 LookMode.Deep);
+            // The 250-tick patrol step already drops dead or despawned
+            // walkers; pruning at save closes the window where a save
+            // lands between the destruction and the next step, which the
+            // campaign preflight would refuse as a null patrol pawn.
+            if (Scribe.mode == LoadSaveMode.Saving && patrols != null)
+                patrols.RemoveAll(assignment => assignment == null
+                    || assignment.pawn == null
+                    || assignment.pawn.Destroyed);
             Scribe_Collections.Look(ref patrols, "patrols", LookMode.Deep);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {

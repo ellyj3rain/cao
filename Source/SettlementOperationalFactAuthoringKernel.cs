@@ -34,6 +34,33 @@ namespace ColonistAwareness
             string fundingSource = null, string stockSource = null,
             string materialSource = null, string accessSource = null)
         {
+            return EstablishWithSource(programKey, populationGroupKey,
+                sequence, "authored:established", null, fundingSource,
+                stockSource, materialSource, accessSource);
+        }
+
+        // Choosing a populated settlement and its ground is an authoring act.
+        // The editor may compose the minimum programs that make that exact
+        // choice habitable, but it records that provenance separately from a
+        // program the operator added one by one. Both paths produce the same
+        // operational-fact ontology and downstream program contract.
+        public static CAEstablishedProgramFactSpec EstablishForPlacement(
+            string programKey, int populationGroupKey, int sequence,
+            string operatorIdentity = null, string fundingSource = null,
+            string stockSource = null, string materialSource = null,
+            string accessSource = null)
+        {
+            return EstablishWithSource(programKey, populationGroupKey,
+                sequence, "authored:regional-placement", operatorIdentity,
+                fundingSource, stockSource, materialSource, accessSource);
+        }
+
+        private static CAEstablishedProgramFactSpec EstablishWithSource(
+            string programKey, int populationGroupKey, int sequence,
+            string sourceRoot, string exactOperatorIdentity,
+            string fundingSource, string stockSource, string materialSource,
+            string accessSource)
+        {
             if (string.IsNullOrWhiteSpace(programKey))
                 throw new ArgumentException("A program key is required.",
                     nameof(programKey));
@@ -42,16 +69,24 @@ namespace ColonistAwareness
                     nameof(populationGroupKey));
             if (sequence < 1)
                 throw new ArgumentOutOfRangeException(nameof(sequence));
+            if (string.IsNullOrWhiteSpace(sourceRoot)
+                || !sourceRoot.StartsWith("authored:",
+                    StringComparison.Ordinal))
+                throw new ArgumentException("An authored source is required.",
+                    nameof(sourceRoot));
 
             string population = "population-group:" + populationGroupKey;
-            string authored = "authored:established:" + programKey;
+            string operatorIdentity = string.IsNullOrWhiteSpace(
+                exactOperatorIdentity) ? population : exactOperatorIdentity;
+            string authored = sourceRoot + ":" + programKey;
             return new CAEstablishedProgramFactSpec
             {
-                FactKey = "established:" + programKey + ":" + population
+                FactKey = "established:" + programKey + ":"
+                    + operatorIdentity
                     + ":" + sequence,
                 ProgramKey = programKey,
                 NeedSource = authored + ":need",
-                OperatorIdentity = population,
+                OperatorIdentity = operatorIdentity,
                 OperatorSource = authored + ":operator",
                 LaborSource = "authored:" + population,
                 StandingSource = authored + ":standing",

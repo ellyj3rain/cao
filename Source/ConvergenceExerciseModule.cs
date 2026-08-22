@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -27,16 +29,34 @@ namespace ColonistAwareness
     internal static class CAConvergenceExercise
     {
         internal static bool Armed;
+        internal static bool HoldSession;
         // The exercise's scale, parsed from the arming value: "1" runs
         // the cheap 200x4 miniature; "350x8" runs a real play-scale
         // regional landmass. The mod's basis IS the large map, so the
         // full-scale form is what a demonstration run should use.
         internal static int SourceScale = 200;
         internal static int RegionTiles = 4;
+        internal const string FixedWorldSeed =
+            "CA-B18-PERFORMANCE-CONVERGENCE";
+        internal const int FixedStartingTileSeed = 181806;
+        internal const int FixedRunRandomSeed = 181814;
+        internal static bool FixedRunRandomStateActive;
         // Set ONLY by the quicktest postfix that authored the candidate.
         // The run-and-report component requires it, so the component can
         // never act on - and never shut down - a game a person started.
         internal static bool AuthoredThisSession;
+        private const int PoliticalProbeSlots = 2;
+        private static readonly long[] PoliticalOpenTicks =
+            new long[PoliticalProbeSlots];
+        private static readonly long[] PoliticalFirstFrameTicks =
+            new long[PoliticalProbeSlots];
+        private static readonly long[] PoliticalTotalFrameTicks =
+            new long[PoliticalProbeSlots];
+        private static readonly long[] PoliticalMaximumFrameTicks =
+            new long[PoliticalProbeSlots];
+        private static readonly int[] PoliticalFrameCounts =
+            new int[PoliticalProbeSlots];
+        private static int politicalProbeSlot = -1;
         private const string MarkerFile =
             "ColonistAwareness.convergence-exercise.txt";
 
@@ -70,6 +90,35 @@ namespace ColonistAwareness
                     catch (Exception) { }
                 }
                 if (string.IsNullOrEmpty(armed)) return;
+                if (armed.EndsWith("-hold", StringComparison.Ordinal))
+                {
+                    HoldSession = true;
+                    armed = armed.Substring(0,
+                        armed.Length - "-hold".Length);
+                }
+                if (armed.EndsWith("-notrace", StringComparison.Ordinal))
+                {
+                    CAPassivePlayMatrix.SuppressTrace = true;
+                    armed = armed.Substring(0,
+                        armed.Length - "-notrace".Length);
+                }
+                if (armed.EndsWith("-passive", StringComparison.Ordinal))
+                {
+                    CAPassivePlayMatrix.Requested = true;
+                    armed = armed.Substring(0,
+                        armed.Length - "-passive".Length);
+                }
+                // GEOGRAPHY IS A FIXTURE AXIS. "400x6@peninsula" lands on a
+                // peninsula; without a profile the fixture keeps its old
+                // seeded-random tile, which is inland and exercises none of
+                // the projection kernel's coast, littoral or river paths.
+                int at = armed.IndexOf('@');
+                if (at >= 0)
+                {
+                    CAExerciseGeography.Requested =
+                        armed.Substring(at + 1).Trim().ToLowerInvariant();
+                    armed = armed.Substring(0, at);
+                }
                 if (armed != "1" && armed.Contains("x"))
                 {
                     string[] parts = armed.Split(new[] { 'x' },
@@ -144,6 +193,12 @@ namespace ColonistAwareness
                 CARegionalContentCompatibility.DeveloperExerciseUnverified =
                     true;
                 Armed = true;
+                CATickAttributionProbe.Arm(loadGuard);
+                // a held run is a measurement run: the operator reported the
+                // game feels slower, and a feeling cannot be argued with --
+                // only measured against the 22.3 ms quiet baseline
+                CASteadyEffectsSubProbe.Arm(loadGuard);
+                CATickListAttribution.Arm(loadGuard);
                 LongEventHandler.QueueLongEvent(BuildAndLaunch,
                     "GeneratingMap", doAsynchronously: false, null);
                 Log.Message("[CA][Exercise] ARMED: the exercise will "
@@ -159,6 +214,13 @@ namespace ColonistAwareness
 
         private static bool BlockSaveLoads(string fileName)
         {
+            // The passive matrix's own disposable save is the single load
+            // the exercise session models; it is allowed only inside the
+            // matrix's explicit reload window and never touches an
+            // operator save.
+            if (CAPassivePlayMatrix.AllowDisposableLoad
+                && fileName == CAPassivePlayMatrix.DisposableSaveName)
+                return true;
             Log.Warning("[CA][Exercise] BLOCKED save-load attempt for '"
                 + (fileName ?? "null") + "' during the exercise session. "
                 + "Caller:\n" + Environment.StackTrace);
@@ -169,13 +231,14 @@ namespace ColonistAwareness
         {
             try
             {
-                Root_Play.SetupForQuickTestPlay();
+                SetupForConvergenceExercise();
                 AuthorCandidate();
                 if (!AuthoredThisSession)
                 {
                     Log.Error("[CA][Exercise] authoring did not complete; "
                         + "not launching a game");
                     Current.Game = null;
+                    ReleaseFixedRunRandomState();
                     return;
                 }
                 // ROOT_PLAY.START HAS THREE BRANCHES and only one of them
@@ -203,6 +266,172 @@ namespace ColonistAwareness
             {
                 Log.Error("[CA][Exercise] stage-one setup failed: " + e);
                 try { Current.Game = null; } catch (Exception) { }
+                ReleaseFixedRunRandomState();
+            }
+        }
+
+        internal static bool PoliticalProbeEnabled => Armed
+            && AuthoredThisSession && politicalProbeSlot >= 0;
+
+        internal static void ResetPoliticalProbe()
+        {
+            Array.Clear(PoliticalOpenTicks, 0, PoliticalOpenTicks.Length);
+            Array.Clear(PoliticalFirstFrameTicks, 0,
+                PoliticalFirstFrameTicks.Length);
+            Array.Clear(PoliticalTotalFrameTicks, 0,
+                PoliticalTotalFrameTicks.Length);
+            Array.Clear(PoliticalMaximumFrameTicks, 0,
+                PoliticalMaximumFrameTicks.Length);
+            Array.Clear(PoliticalFrameCounts, 0,
+                PoliticalFrameCounts.Length);
+            politicalProbeSlot = -1;
+        }
+
+        internal static void BeginPoliticalProbe(int slot, long openTicks)
+        {
+            if (slot < 0 || slot >= PoliticalProbeSlots) return;
+            PoliticalOpenTicks[slot] = Math.Max(0L, openTicks);
+            politicalProbeSlot = slot;
+        }
+
+        internal static void EndPoliticalProbe()
+        {
+            politicalProbeSlot = -1;
+        }
+
+        internal static void RecordPoliticalFrame(long elapsedTicks)
+        {
+            int slot = politicalProbeSlot;
+            if (slot < 0 || slot >= PoliticalProbeSlots) return;
+            long elapsed = Math.Max(0L, elapsedTicks);
+            if (PoliticalFrameCounts[slot] == 0)
+                PoliticalFirstFrameTicks[slot] = elapsed;
+            PoliticalFrameCounts[slot]++;
+            PoliticalTotalFrameTicks[slot] += elapsed;
+            if (elapsed > PoliticalMaximumFrameTicks[slot])
+                PoliticalMaximumFrameTicks[slot] = elapsed;
+        }
+
+        internal static string PoliticalProbeReport()
+        {
+            var text = new StringBuilder();
+            for (int slot = 0; slot < PoliticalProbeSlots; slot++)
+            {
+                double openMs = Milliseconds(PoliticalOpenTicks[slot]);
+                double firstFrameMs = Milliseconds(
+                    PoliticalFirstFrameTicks[slot]);
+                double maximumMs = Milliseconds(
+                    PoliticalMaximumFrameTicks[slot]);
+                double meanMs = PoliticalFrameCounts[slot] == 0 ? 0d
+                    : Milliseconds(PoliticalTotalFrameTicks[slot])
+                        / PoliticalFrameCounts[slot];
+                double effectiveOpenMs = openMs + firstFrameMs;
+                string name = slot == 0 ? "first open" : "reopen";
+                text.Append(name).Append(": request+construction ")
+                    .Append(openMs.ToString("F3",
+                        System.Globalization.CultureInfo.InvariantCulture))
+                    .Append(" ms; first render ")
+                    .Append(firstFrameMs.ToString("F3",
+                        System.Globalization.CultureInfo.InvariantCulture))
+                    .Append(" ms; effective open ")
+                    .Append(effectiveOpenMs.ToString("F3",
+                        System.Globalization.CultureInfo.InvariantCulture))
+                    .Append(" ms; render calls ")
+                    .Append(PoliticalFrameCounts[slot])
+                    .Append("; mean/max ")
+                    .Append(meanMs.ToString("F3",
+                        System.Globalization.CultureInfo.InvariantCulture))
+                    .Append('/')
+                    .Append(maximumMs.ToString("F3",
+                        System.Globalization.CultureInfo.InvariantCulture))
+                    .AppendLine(" ms");
+            }
+            double first = Milliseconds(PoliticalOpenTicks[0]
+                + PoliticalFirstFrameTicks[0]);
+            double reopen = Milliseconds(PoliticalOpenTicks[1]
+                + PoliticalFirstFrameTicks[1]);
+            double ordinaryMax = Math.Max(
+                Milliseconds(PoliticalMaximumFrameTicks[0]),
+                Milliseconds(PoliticalMaximumFrameTicks[1]));
+            bool firstMeasured = PoliticalFrameCounts[0] > 0;
+            bool reopenMeasured = PoliticalFrameCounts[1] > 0;
+            text.Append("thresholds: first open <1000 ms ")
+                .Append(firstMeasured && first < 1000d ? "PASS" : "FAIL")
+                .Append("; reopen <250 ms ")
+                .Append(reopenMeasured && reopen < 250d ? "PASS" : "FAIL")
+                .Append("; ordinary render <100 ms ")
+                .Append(firstMeasured && reopenMeasured
+                    && ordinaryMax < 100d ? "PASS" : "FAIL");
+            if (!firstMeasured || !reopenMeasured)
+                text.Append(" (OnGUI was not rendered; no UI result claimed)");
+            return text.ToString();
+        }
+
+        private static double Milliseconds(long ticks)
+        {
+            return ticks * 1000d / Stopwatch.Frequency;
+        }
+
+        // RimWorld's developer quick-test setup chooses a fresh random world
+        // seed on every launch. This exercise needs the same native setup with
+        // a governed fixed seed so before/after phase timings and result
+        // fingerprints are comparable across fresh processes.
+        private static void SetupForConvergenceExercise()
+        {
+            Rand.PushState(FixedRunRandomSeed);
+            FixedRunRandomStateActive = true;
+            Current.ProgramState = ProgramState.Entry;
+            Game.ClearCaches();
+            Current.Game = new Game();
+            Current.Game.InitData = new GameInitData();
+            Current.Game.Scenario = ScenarioDefOf.Crashlanded.scenario;
+            Find.Scenario.PreConfigure();
+            Current.Game.storyteller = new Storyteller(
+                StorytellerDefOf.Cassandra, DifficultyDefOf.Rough);
+            Current.Game.World = WorldGenerator.GenerateWorld(0.3f,
+                FixedWorldSeed, OverallRainfall.Normal,
+                OverallTemperature.Normal, OverallPopulation.Normal,
+                LandmarkDensity.Normal);
+            Rand.PushState(FixedStartingTileSeed);
+            try
+            {
+                PlanetTile geographic;
+                if (CAExerciseGeography.TrySelect(RegionTiles, out geographic))
+                    Find.GameInitData.startingTile = geographic;
+                else
+                {
+                    if (!string.IsNullOrEmpty(CAExerciseGeography.Requested))
+                        Log.Warning("[CA][Exercise] no tile satisfied "
+                            + "geography profile '"
+                            + CAExerciseGeography.Requested
+                            + "'; falling back to the seeded random tile. "
+                            + "Known profiles: "
+                            + CAExerciseGeography.Profiles);
+                    Find.GameInitData.ChooseRandomStartingTile();
+                }
+            }
+            finally
+            {
+                Rand.PopState();
+            }
+            Find.GameInitData.mapSize = 250;
+            Find.Scenario.PostIdeoChosen();
+            Log.Message("[CA][Exercise] fixed benchmark setup: world seed "
+                + FixedWorldSeed + ", starting-tile seed "
+                + FixedStartingTileSeed + ", run RNG seed "
+                + FixedRunRandomSeed + ", scale " + SourceScale + "x"
+                + RegionTiles + ", geography " + CAExerciseGeography.Resolved);
+        }
+
+        internal static void ReleaseFixedRunRandomState()
+        {
+            if (!FixedRunRandomStateActive) return;
+            FixedRunRandomStateActive = false;
+            try { Rand.PopState(); }
+            catch (Exception error)
+            {
+                Log.Warning("[CA][Exercise] fixed benchmark RNG cleanup "
+                    + "failed during shutdown: " + error.Message);
             }
         }
 
@@ -215,7 +444,6 @@ namespace ColonistAwareness
         {
             try
             {
-                Find.GameInitData.ChooseRandomStartingTile();
                 PlanetTile root = Find.GameInitData.startingTile;
                 CAExpandedLandmassProfile profile;
                 if (!CAExpandedLandmassProfile.TryFor(
@@ -263,6 +491,14 @@ namespace ColonistAwareness
                 plan.factions.Add(tradeFaction);
                 councilFaction.EnsureCultureAndPolitics(plan);
                 tradeFaction.EnsureCultureAndPolitics(plan);
+                CACultureAuthoringKernel.CompleteMissing(
+                    councilFaction.culture,
+                    (plan.candidateId ?? "ca") + ":faction:1:culture",
+                    "starting-region generation");
+                CACultureAuthoringKernel.CompleteMissing(
+                    tradeFaction.culture,
+                    (plan.candidateId ?? "ca") + ":faction:2:culture",
+                    "starting-region generation");
                 CAPoliticalOrderModel.ApplyPreset(
                     councilFaction.politicalBeliefs,
                     "cooperative-commonwealth", CAAxisSource.Authored);
@@ -288,6 +524,20 @@ namespace ColonistAwareness
                 {
                     int memberIndex = i <= 1 ? 0
                         : (i - 1) % members.Count;
+                    // THE FIXTURE AUTHORS THE CAUSES, NEVER THE SUMMARIES.
+                    // Population, ground grade, and established history are
+                    // the authorable facts; the starting composition selects
+                    // programs from them at realization, and economy, trade,
+                    // specialization, and urban support are summaries of
+                    // that composition. Run 9 proved that writing summaries
+                    // here is exactly the writing derivation must overwrite,
+                    // so all four settlements realized identical. The spread
+                    // is deterministic per slot: a foraging hamlet, a
+                    // farming village, an old producing town, and a populous
+                    // coastal market.
+                    int[] pops = { 18, 60, 140, 320 };
+                    int[] lands = { 1, 2, 2, 3 };
+                    int[] histories = { 0, 1, 3, 2 };
                     plan.settlements.Add(new CARegionalSettlementPlan
                     {
                         slot = i,
@@ -297,7 +547,10 @@ namespace ColonistAwareness
                         persistent = true,
                         populationOrigin =
                             CASettlementOrigin.ScenarioOverride,
-                        reallocatedFromTileId = -1
+                        reallocatedFromTileId = -1,
+                        authoredPopulation = pops[i % 4],
+                        authoredLandCapacity = lands[i % 4],
+                        authoredHistoricalDevelopment = histories[i % 4]
                     });
                 }
                 CARegionalPlanUtility.EnsureRelationRows(plan);
@@ -307,12 +560,19 @@ namespace ColonistAwareness
                 if (!first.populationGroups.Any(c => c != null
                     && c.kind == CAPopulationGroupKind.OtherFaction))
                 {
+                    const int minorityShare = 20;
+                    CASettlementPopulationGroup primary = first
+                        .populationGroups.FirstOrDefault(c => c != null
+                            && c.isPrimary);
+                    if (primary != null)
+                        primary.share = CACreationFlowContracts
+                            .MainPopulationShare(minorityShare);
                     first.populationGroups.Insert(1, new CASettlementPopulationGroup
                     {
                         key = 7,
                         kind = CAPopulationGroupKind.OtherFaction,
                         label = "Charter Towns",
-                        share = 20,
+                        share = minorityShare,
                         factionKey = 2,
                         ideoligionFactionKey = 2,
                         politicalBeliefsFactionKey = 2,
@@ -323,12 +583,21 @@ namespace ColonistAwareness
                     first.provisionArrangements.Clear();
                     CASettlementComposition.EnsureDerived(plan, first);
                 }
-                CARegionalSettlements.EnsureSettlementPattern(plan);
+                CARegionalSettlements.RealizeForConfirmation(plan);
+                foreach (CARegionalSettlementPlan settlementPlan in
+                    plan.settlements.Where(item => item != null))
+                    CASettlementProgramRegistry.EnsureDerived(plan,
+                        settlementPlan);
 
                 string failure;
                 if (!CARegionalPlanUtility.TryValidateStartingSettlements(
                         plan, out failure))
-                    Log.Warning("[CA][Exercise] validation: " + failure);
+                    throw new InvalidOperationException(
+                        "starting-settlement validation: " + failure);
+                if (!CARegionalSettlements.TryValidateRealization(plan,
+                        out failure))
+                    throw new InvalidOperationException(
+                        "settlement realization validation: " + failure);
                 plan.confirmed = true;
                 plan.developerExercise = true;
                 plan.creationSummary = (plan.creationSummary ?? "")
@@ -373,6 +642,11 @@ namespace ColonistAwareness
         private float mapReadyAt = -1f;
         private int stage;
         private readonly StringBuilder report = new StringBuilder();
+        private bool pendingPoliticalOpen;
+        private bool pendingPoliticalClose;
+        private bool pendingWorldJump;
+        private int politicalOpenSlot;
+        private Window politicalWindow;
 
         public CAConvergenceExerciseComponent(Game game) { }
 
@@ -385,6 +659,15 @@ namespace ColonistAwareness
                 || !CAConvergenceExercise.AuthoredThisSession) return;
             try
             {
+                // Once the passive matrix owns the session - including
+                // across its disposable reload, where this component is a
+                // fresh instance - the ordinary receipt schedule must not
+                // restart.
+                if (CAPassivePlayMatrix.Running)
+                {
+                    CAPassivePlayMatrix.Update(this);
+                    return;
+                }
                 if (Find.CurrentMap == null) return;
                 float now = Time.realtimeSinceStartup;
                 if (mapReadyAt < 0f)
@@ -392,43 +675,75 @@ namespace ColonistAwareness
                     mapReadyAt = now;
                     if (Find.TickManager.CurTimeSpeed == TimeSpeed.Paused)
                         Find.TickManager.CurTimeSpeed = TimeSpeed.Normal;
+                    CAConvergenceExercise.ResetPoliticalProbe();
+                    politicalOpenSlot = 0;
+                    pendingPoliticalOpen = true;
                     return;
                 }
                 float elapsed = now - mapReadyAt;
-                if (stage == 0 && elapsed >= 15f)
+                if (stage == 0 && elapsed >= 3f)
                 {
                     stage = 1;
-                    RunReceipts();
-                    Jump(0);
+                    pendingPoliticalClose = true;
                 }
-                else if (stage == 1 && elapsed >= 22f)
+                else if (stage == 1 && elapsed >= 4f)
                 {
                     stage = 2;
-                    Capture("ca-exercise-settlement-a.png");
+                    politicalOpenSlot = 1;
+                    pendingPoliticalOpen = true;
                 }
-                else if (stage == 2 && elapsed >= 30f)
+                else if (stage == 2 && elapsed >= 7f)
                 {
                     stage = 3;
-                    Jump(2);
+                    pendingPoliticalClose = true;
+                    CAModuleProfiler.SetEnabled(true, reset: true);
                 }
-                else if (stage == 3 && elapsed >= 36f)
+                else if (stage == 3 && elapsed >= 22f)
                 {
                     stage = 4;
-                    Capture("ca-exercise-settlement-b.png");
+                    RunReceipts();
+                    CAModuleProfiler.SetEnabled(false);
+                    Jump(0);
                 }
-                else if (stage == 4 && elapsed >= 44f)
+                else if (stage == 4 && elapsed >= 29f)
                 {
                     stage = 5;
-                    CameraJumper.TryShowWorld();
+                    Capture("ca-exercise-settlement-a.png");
                 }
-                else if (stage == 5 && elapsed >= 50f)
+                else if (stage == 5 && elapsed >= 37f)
                 {
                     stage = 6;
+                    Jump(2);
+                }
+                else if (stage == 6 && elapsed >= 43f)
+                {
+                    stage = 7;
+                    Capture("ca-exercise-settlement-b.png");
+                }
+                else if (stage == 7 && elapsed >= 51f)
+                {
+                    stage = 8;
+                    pendingWorldJump = true;
+                }
+                else if (stage == 8 && elapsed >= 57f)
+                {
+                    stage = 9;
                     Capture("ca-exercise-world.png");
                 }
-                else if (stage == 6 && elapsed >= 58f)
+                else if (stage == 9 && elapsed >= 65f)
                 {
-                    Finish("complete");
+                    stage = 10;
+                    // Captures are banked; a held session gets the menu back
+                    // up for the operator's own inspection.
+                    if (CAConvergenceExercise.HoldSession)
+                    {
+                        politicalOpenSlot = 1;
+                        pendingPoliticalOpen = true;
+                    }
+                    if (CAPassivePlayMatrix.Requested)
+                        CAPassivePlayMatrix.Begin(report.ToString());
+                    else
+                        Finish("complete");
                 }
                 else if (elapsed >= 300f)
                 {
@@ -439,6 +754,57 @@ namespace ColonistAwareness
             {
                 report.AppendLine("EXERCISE FAILED: " + e);
                 Finish("exception");
+            }
+        }
+
+        public override void GameComponentOnGUI()
+        {
+            if (!CAConvergenceExercise.Armed
+                || !CAConvergenceExercise.AuthoredThisSession) return;
+            if (CAPassivePlayMatrix.Running)
+            {
+                CAPassivePlayMatrix.ServeGui();
+                return;
+            }
+            if (pendingPoliticalClose)
+            {
+                pendingPoliticalClose = false;
+                // The probe window must be down during the settlement and
+                // world captures -- run 10's evidence screenshots were all
+                // three blocked by this menu. A -hold run still exists to be
+                // LOOKED AT, so the hold path reopens the menu once the
+                // captures are done, instead of never closing it.
+                if (politicalWindow != null)
+                    Find.WindowStack.TryRemove(politicalWindow,
+                        doCloseSound: false);
+                politicalWindow = null;
+                CAConvergenceExercise.EndPoliticalProbe();
+            }
+            if (pendingPoliticalOpen)
+            {
+                pendingPoliticalOpen = false;
+                var beliefs = new CAPoliticalBeliefs();
+                long started = Stopwatch.GetTimestamp();
+                politicalWindow =
+                    Dialog_CAPoliticalOrderEditor.ForEstablished(
+                        beliefs, new List<CAAxisEntry>(),
+                        "b18-political-menu-probe-"
+                            + politicalOpenSlot, null);
+                Find.WindowStack.Add(politicalWindow);
+                CAConvergenceExercise.BeginPoliticalProbe(
+                    politicalOpenSlot,
+                    Stopwatch.GetTimestamp() - started);
+            }
+            if (pendingWorldJump)
+            {
+                pendingWorldJump = false;
+                // WorldFeatures creates wrapped labels during its next
+                // Update. In ordinary play the click that changes views has
+                // already initialized Verse.Text inside OnGUI; the harness
+                // must preserve that same lifecycle instead of jumping from
+                // GameComponentUpdate.
+                Text.Font = GameFont.Small;
+                CameraJumper.TryShowWorld();
             }
         }
 
@@ -454,6 +820,10 @@ namespace ColonistAwareness
                 () => CAConvergenceReceipt.RunRadicalShift(map));
             Append("FACTION CULTURE AND POLITICS RECEIPT",
                 () => CAFactionStateReceipt.Run());
+            Append("POLITICAL ORDER MENU PERFORMANCE",
+                () => CAConvergenceExercise.PoliticalProbeReport());
+            Append("PASSIVE PLAY MODULE PROFILE (15 WALL SECONDS)",
+                () => CAModuleProfiler.Snapshot().ToLogText());
             Write("ca-convergence-receipts.txt");
             Log.Message("[CA][Exercise] receipts written");
         }
@@ -513,10 +883,31 @@ namespace ColonistAwareness
             }
         }
 
+        // The watchdog branch is reached on EVERY frame once elapsed passes
+        // its threshold. A shutting-down run only ever saw one call because
+        // Root.Shutdown ended the process; a -hold run returns instead, so
+        // without this guard the watchdog re-fires every frame forever --
+        // rewriting ca-convergence-receipts.txt hundreds of times a second
+        // and burying Player.log, which is itself the receipt surface.
+        private bool finished;
+
         private void Finish(string how)
         {
+            if (finished) return;
+            finished = true;
             report.AppendLine("==== exercise finished: " + how + " ====");
             Write("ca-convergence-receipts.txt");
+            CAConvergenceExercise.ReleaseFixedRunRandomState();
+            // A -hold run exists to be PLAYED after generation: the
+            // operator (or an input multiplexer driving a virtual cursor)
+            // takes the session from here, so the exercise ends itself
+            // without ending the process.
+            if (CAConvergenceExercise.HoldSession)
+            {
+                Log.Message("[CA][Exercise] " + how
+                    + "; HOLD: session left interactive for live play");
+                return;
+            }
             Log.Message("[CA][Exercise] " + how + "; shutting down");
             Root.Shutdown();
         }
