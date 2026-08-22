@@ -313,17 +313,24 @@ namespace ColonistAwareness
         public sealed class NestedSchemaBinding
         {
             internal NestedSchemaBinding(string schemaKey,
-                string componentType, string parentPath, bool allowNull)
+                string componentType, string parentPath, bool allowNull,
+                bool versionless = false)
             {
                 SchemaKey = schemaKey;
                 ComponentType = componentType;
                 ParentPath = parentPath;
                 AllowNull = allowNull;
+                Versionless = versionless;
             }
             public string SchemaKey { get; }
             public string ComponentType { get; }
             public string ParentPath { get; }
             public bool AllowNull { get; }
+            // A versionless binding keeps the catalog key's executable
+            // route while accepting a shipped shape that cannot carry a
+            // schemaVersion child (a bare scribed list); the frame is
+            // evaluated at the catalog's current version.
+            public bool Versionless { get; }
         }
 
         public static readonly NestedSchemaBinding[] NestedSchemaBindings =
@@ -399,11 +406,18 @@ namespace ColonistAwareness
             N("model.technological-knowledge",
                 "ColonistAwareness.CAOrganizationWorldComponent",
                 "CA_frontierMapPlans/li/holdings/li/localSociety/technologicalKnowledge"),
+            // The shipped factionStructure shape is a bare axis-entry list
+            // whose node cannot carry a schemaVersion child; the versionless
+            // bindings keep the catalog key's executable route while the
+            // parents' own contracts validate the entries structurally.
             N("model.represented-institutions",
                 "ColonistAwareness.CAFactionStateWorldComponent",
-                "CA_factionStates/li/factionStructure"),
-            N("model.represented-institutions", "ColonistAwareness.CARegionalWorldComponent",
-                "CA_regionalPlans/li/factions/li/factionStructure"),
+                "CA_factionStates/li/factionStructure",
+                allowNull: false, versionless: true),
+            N("model.represented-institutions",
+                "ColonistAwareness.CARegionalWorldComponent",
+                "CA_regionalPlans/li/factions/li/factionStructure",
+                allowNull: false, versionless: true),
             N("model.site-faction-links",
                 "ColonistAwareness.CARegionalWorldComponent",
                 "CA_regionalPlans/li/settlements/li/factionLinks"),
@@ -428,12 +442,14 @@ namespace ColonistAwareness
             N("model.site-local-society",
                 "ColonistAwareness.CAOrganizationWorldComponent",
                 "CA_frontierMapPlans/li/holdings/li/localSociety"),
+            // A founding whose preset applied through the relation ledger
+            // leaves the plan's inner arrangement legitimately null.
             N("model.founding-arrangement",
                 "ColonistAwareness.CAPlayerFoundingWorldComponent",
-                "CA_playerFounding/arrangement"),
+                "CA_playerFounding/arrangement", true),
             N("model.founding-arrangement",
                 "ColonistAwareness.CARegionalWorldComponent",
-                "CA_regionalPlans/li/playerFounding/arrangement"),
+                "CA_regionalPlans/li/playerFounding/arrangement", true),
             N("model.player-founding-plan",
                 "ColonistAwareness.CAPlayerFoundingWorldComponent",
                 "CA_playerFounding"),
@@ -586,14 +602,28 @@ namespace ColonistAwareness
                     "orderTerminationConditions", "orderFireSuppressed",
                     "orderEnvelopes", "orderGrits", "orderProfilePinned"),
                 ["ColonistAwareness.LordJob_CAStackBreach"] = K(
-                    "door", "slotPawns", "slotCells", "clearPawns",
+                    "slotPawns", "slotCells", "clearPawns",
                     "clearCells"),
                 ["ColonistAwareness.LordJob_CARegionalSettlement"] = K(
-                    "faction", "settlementCenter"),
+                    "settlementCenter"),
                 ["ColonistAwareness.JobDriver_CASearchKnownContact"] = K(
                     "hostileId", "sourceTick"),
                 ["ColonistAwareness.Thought_CAPoliticalBelief"] = K(
                     "CA_politicalBelief", "CA_eventIdentity")
+            };
+
+        // Native reference children whose referents can legitimately die
+        // or be destroyed while the record persists: the element must
+        // still occur, but a null reference is real state - a breach door
+        // that was destroyed mid-fight keeps its doorCell, and a
+        // settlement lord for an unowned site has a null faction by the
+        // site-affiliation contract.
+        private static readonly Dictionary<string, string[]> NativeAllowNull =
+            new Dictionary<string, string[]>(StringComparer.Ordinal)
+            {
+                ["ColonistAwareness.LordJob_CAStackBreach"] = K("door"),
+                ["ColonistAwareness.LordJob_CARegionalSettlement"] = K(
+                    "faction")
             };
 
         private static readonly Dictionary<string, string[]> NativeParallel =
@@ -730,7 +760,7 @@ namespace ColonistAwareness
             P(CACampaignPayloadScope.PerMap,
                 "ColonistAwareness.AutonomousHomeMapComponent",
                 K("map.autonomous-home"), "CA_homeSuppressedKinds",
-                "CA_homeCompletedAutoBuildings"),
+                "CA_homeCompletedBuildings"),
             P(CACampaignPayloadScope.PerMap,
                 "ColonistAwareness.CAParleyMapComponent",
                 K("map.parley"), "CA_parleyMissions", "CA_envoyMissions"),
@@ -852,7 +882,7 @@ namespace ColonistAwareness
                 K(), K()),
             R("ColonistAwareness.CAPlayerFoundingWorldComponent",
                 "CA_playerFounding",
-                K("culture", "politicalBeliefs", "arrangement"), K(), K()),
+                K("culture", "politicalBeliefs"), K("arrangement"), K()),
             R("ColonistAwareness.CAOrganizationRelationsWorldComponent",
                 "CA_relations/li",
                 K("delegatedResponsibilities", "retainedResponsibilities",
@@ -897,9 +927,12 @@ namespace ColonistAwareness
                 "CA_spacePrograms/li", K("cells", "residents"), K(), K()),
             R("ColonistAwareness.CAHomePrerequisiteMapComponent",
                 "CA_homeMaterialDemand", K("requirements"), K(), K(), true),
+            // A casualty fact legitimately outlives its pawns: a dead or
+            // despawned rescuer or beneficiary scribes as a null
+            // reference, and the fact remains real knowledge history.
             R("ColonistAwareness.MissionCasualtyKnowledgeMapComponent",
-                "CA_missionCasualtyFacts/li", K("rescuer", "beneficiary"),
-                K(), K()),
+                "CA_missionCasualtyFacts/li", K(),
+                K("rescuer", "beneficiary"), K()),
             R("ColonistAwareness.CAPatrolSystemMapComponent",
                 "circuits/li", K("nodes"), K(), K()),
             R("ColonistAwareness.CAPatrolSystemMapComponent",
@@ -1148,7 +1181,9 @@ namespace ColonistAwareness
                         PayloadElementFrame parent = payloadFrames.Count > 0
                             ? payloadFrames.Peek() : payloadRoot;
                         AccountBufferedElement(payloadComponentType,
-                            ref payloadBufferedElements);
+                            ref payloadBufferedElements,
+                            string.IsNullOrEmpty(parent.Path)
+                                ? name : parent.Path + "/" + name);
                         var frame = new PayloadElementFrame
                         {
                             Depth = reader.Depth,
@@ -1473,13 +1508,18 @@ namespace ColonistAwareness
         }
 
         private static void AccountBufferedElement(string owner,
-            ref int bufferedElements)
+            ref int bufferedElements, string overflowPath = null)
         {
             bufferedElements++;
             if (bufferedElements > MaxBufferedElementsPerRecord)
                 throw new InvalidDataException((owner ?? "campaign payload")
                     + " exceeds the " + MaxBufferedElementsPerRecord
-                    + "-element streaming preflight record limit");
+                    + "-element streaming preflight record limit"
+                    // The element that crosses the limit statistically sits
+                    // inside the dominant collection; its exact path is the
+                    // evidence a bounding repair needs.
+                    + (overflowPath == null ? ""
+                        : " at element path " + overflowPath));
         }
 
         private static void AccountBufferedText(string owner, int characters,
@@ -1670,7 +1710,9 @@ namespace ColonistAwareness
             if (!NativeRequired.TryGetValue(native.ClassName,
                     out string[] required))
                 return; // CA JobDrivers persist native job state unless listed.
-            ValidateRequiredChildren(native.Root, required, K(), K(),
+            ValidateRequiredChildren(native.Root, required,
+                NativeAllowNull.TryGetValue(native.ClassName,
+                    out string[] allowNull) ? allowNull : K(), K(),
                 native.Failures);
             if (NativeParallel.TryGetValue(native.ClassName,
                     out string[] parallel))
@@ -1900,6 +1942,10 @@ namespace ColonistAwareness
                             + binding.SchemaKey + " record");
                         continue;
                     }
+                    // Versionless routes accept the shipped shape at the
+                    // catalog's current version; the parent frame's own
+                    // contracts validate the content.
+                    if (binding.Versionless) continue;
                     CACampaignSchemaDefinition schema =
                         CACampaignSchemaCatalog.All.First(item =>
                             item.Key == binding.SchemaKey);
@@ -2077,8 +2123,14 @@ namespace ColonistAwareness
             }
             if (questionsByScope.Count == 0)
             {
-                failures.Add(culture.Path
-                    + " has no represented Culture population scope");
+                // An identity-only culture is a first-class designed state:
+                // the initial-state boundary creates only identity, and
+                // substantive questions require authored or observed
+                // history (the player faction before founding authorship is
+                // the ordinary case). Structural contracts on the culture's
+                // required children still enforce above; per-scope question
+                // coverage enforces below whenever any scope is
+                // represented.
                 return;
             }
             HashSet<string> requiredQuestions = savedSchemaVersion == 10
@@ -3491,10 +3543,11 @@ namespace ColonistAwareness
         private static string[] K(params string[] keys) => keys;
 
         private static NestedSchemaBinding N(string schemaKey,
-            string componentType, string parentPath, bool allowNull = false)
+            string componentType, string parentPath, bool allowNull = false,
+            bool versionless = false)
         {
             return new NestedSchemaBinding(schemaKey, componentType,
-                parentPath, allowNull);
+                parentPath, allowNull, versionless);
         }
 
         private static void AddManifestRecord(
