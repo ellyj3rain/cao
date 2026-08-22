@@ -56,6 +56,24 @@
     <displayPriorityInCategory>3995</displayPriorityInCategory>
   </StatDef>
 
+  <!-- The world-wide regional partition, built by world generation itself:
+       after geography (Terrain 0, Tiles 5, Lakes 150, Rivers 200) and
+       before Factions (500), so settlement placement can consume regional
+       structure. -->
+  <WorldGenStepDef>
+    <defName>CA_RegionalTopology</defName>
+    <order>450</order>
+    <worldGenStep Class="ColonistAwareness.WorldGenStep_CARegionalTopology" />
+  </WorldGenStepDef>
+
+  <!-- World settlement state derives after roads exist (Roads 600), so the
+       access facts behind each settlement's urban class are real. -->
+  <WorldGenStepDef>
+    <defName>CA_RegionalWorldSettlementState</defName>
+    <order>650</order>
+    <worldGenStep Class="ColonistAwareness.WorldGenStep_CARegionalWorldSettlementState" />
+  </WorldGenStepDef>
+
   <GenStepDef>
     <defName>CA_RegionalProjection</defName>
     <order>190</order>
