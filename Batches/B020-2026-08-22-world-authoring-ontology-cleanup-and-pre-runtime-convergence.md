@@ -154,3 +154,38 @@ drift (316 classified / 0 Critical-High). Preview and realization were
 traced to the same candidate member-set machinery; no second geographic
 ontology exists for the preview. In-game confirmation of the new selection
 behavior remains the operator's boundary.
+
+## Addendum 3 - gravship landings enter the regional authoring model (2026-08-23 UTC / 2026-08-22 PDT)
+
+Tracing established that no gravship regional authoring ever existed in the
+published line or in Claude's raw post-B17 archive: the Odyssey lifecycle
+never reaches the creation pages, and every unauthored landing has always
+taken the visit-scoped derived-region fallback. The reported absence is not
+a removed option; it was never there.
+
+Where the flow now enters (commit f8e5b7d3): the gravship landing-confirm
+seam. SettlementProximityGoodwillUtility.CheckConfirmSettle with a grav
+engine fires when the player confirms a landing site; for fresh,
+unoccupied, ungoverned surface ground the confirmed action first opens the
+landing-region author (Dialog_CAGravshipLandingRegion). The candidate is
+seeded by the decoupled selection of Addendum 2 (extent and orientation
+rules, barrier evidence, exact-match partition identity), drawn on the
+globe footprint layer while the dialog is open and during flight, and
+composed at materialization by the same durable tail a derived region
+takes (policy snapshot, populated derivation, validation, anchor
+absorption, reservation, registration). Registration happens inside the
+map-generation prefix via CALandingAuthoring.ConsumePrepared, matched by
+exact destination tile and scale. Three exits preserve prior behavior:
+Land without authoring, Cancel (no launch), and any registration failure
+(warns and derives as before). Caravan settling and creation flow callers
+reach the seam with a null engine and are untouched.
+
+Founding arrangement is deliberately not re-authored: the colony already
+founded; the landing authors regional geography and composition only.
+
+Isolated operator decision (not invented here): the friction policy for
+mid-campaign authoring entry - whether every fresh-ground gravship landing
+opens the author, or the author is offered differently (for example from
+the targeting flow or the regional overview). Caravan mid-campaign settling
+(SettleInEmptyTileUtility / SettleInExistingMapUtility) is the same
+question and currently keeps derived behavior.

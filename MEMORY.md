@@ -38,7 +38,7 @@ junction for the operator, not a defect in the index.
 | `CORE.md` | CANONICAL | Project identity, canonical composition, governing constraints. |
 | `ARCHITECTURE.md` | CANONICAL | Ratified framework shape; the four pillars. |
 | `GOVERNANCE.md` | CANONICAL | Operating discipline and model-facing instruction surface. |
-| `DECISION_REGISTRY.md` | CANONICAL, APPEND-ONLY | Ratified decisions DR-1 through DR-179. Later records supersede earlier decisions without rewriting them. |
+| `DECISION_REGISTRY.md` | CANONICAL, APPEND-ONLY | Ratified decisions DR-1 through DR-180. Later records supersede earlier decisions without rewriting them. |
 | `FINDINGS.md` | CANONICAL, APPEND-ONLY | Verified findings F-1…F-135 and F-151…F-165. Former Git labels F-136…F-150 resolve through the former-label crosswalk and are not reused as finding identifiers. |
 | `BATCH_LOG.md` | REGULATORY | Chronological index for the single append-only batch sequence and the next-batch declaration. |
 | `VERSION_MAP.md` | REGULATORY, GENERATED | Chronological version-unit replay derived from `tools/version-model.mjs`. |

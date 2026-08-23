@@ -2604,3 +2604,16 @@
   partition kernel and by candidate bundle growth as soft evidence. The
   rainfall term computed at B20 introduction now actually participates,
   repairing the divergence between the declared and implemented measure.
+
+- **DR-180** (2026-08-22) - **The gravship lifecycle enters the same
+  regional authoring model at the landing-confirm seam.** A gravship
+  landing on fresh, unoccupied, ungoverned surface ground is the colony
+  choosing a home region: it authors region selection by the established
+  extent and orientation rules (DR-178), composes by the same derivation
+  machinery any authored region uses, and registers at materialization,
+  never before, so an abandoned flight leaves no ghost region. Visit-scoped
+  map openings keep the derived-region fallback, and skipping or failing
+  authoring preserves it exactly. Founding arrangement is foundings state
+  and is not re-authored at a landing. The mid-campaign caravan settle flow
+  is explicitly out of scope here pending the operator's friction-policy
+  decision.
