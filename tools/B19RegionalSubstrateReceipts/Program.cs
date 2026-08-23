@@ -1,4 +1,4 @@
-using ColonistAwareness;
+﻿using ColonistAwareness;
 
 // Deterministic acceptance receipts for the world-wide regional partition
 // kernel. These pass or fail on the kernel's actual mathematics: no engine,
@@ -87,11 +87,13 @@ internal static class Program
 
         internal List<CARegionalTopologyKernel.RegionSeed> Partition(
             int seed, float share, int sizeMin, int sizeMax,
-            ISet<int> preAssigned = null)
+            ISet<int> preAssigned = null,
+            Func<int, int, float> barrierCost = null)
         {
             return CARegionalTopologyKernel.Partition(seed,
                 Eligible.OrderBy(id => id).ToList(), NeighborsOf,
-                PositionOf, share, sizeMin, sizeMax, preAssigned);
+                PositionOf, share, sizeMin, sizeMax, preAssigned,
+                barrierCost);
         }
     }
 
@@ -177,7 +179,7 @@ internal static class Program
         }
 
         // 7. Span band: no joined region exceeds the ceiling, and any
-        // joined region below the floor is at a merge fixpoint — no
+        // joined region below the floor is at a merge fixpoint â€” no
         // adjacent region could absorb it inside the band. Sub-floor
         // regions at the fixpoint are genuinely blocked geography.
         List<CARegionalTopologyKernel.RegionSeed> banded =
@@ -283,6 +285,43 @@ internal static class Program
                 + string.Join(",", components.Select(component =>
                     component.Count)) + "], deterministic ordering "
                 + (carveDeterministic ? "holds" : "BROKEN"));
+
+        // 11b. Geographic barriers: a vertical wall of high-cost edges
+        // splits the grid; no region may cross the barrier.
+        var barrierWorld = new GridWorld(12, 4);
+        int barrierCol = 5;
+        float BarrierWall(int from, int to)
+        {
+            int fromX = from % barrierWorld.Width;
+            int toX = to % barrierWorld.Width;
+            // An edge between column 5 and column 6 is a full barrier.
+            if ((fromX == barrierCol && toX == barrierCol + 1)
+                || (fromX == barrierCol + 1 && toX == barrierCol))
+                return 1f;
+            return 0f;
+        }
+        List<CARegionalTopologyKernel.RegionSeed> barrierRun =
+            barrierWorld.Partition(42, 0.80f, 2, 4,
+                barrierCost: BarrierWall);
+        int barrierCrossing = 0;
+        foreach (CARegionalTopologyKernel.RegionSeed region in barrierRun)
+            foreach (int id in region.MemberTileIds)
+            {
+                int x = id % barrierWorld.Width;
+                foreach (int mate in region.MemberTileIds)
+                {
+                    int ox = mate % barrierWorld.Width;
+                    if ((x <= barrierCol && ox > barrierCol)
+                        || (x > barrierCol && ox <= barrierCol))
+                    {
+                        barrierCrossing++;
+                        break;
+                    }
+                }
+            }
+        Check("geographic-barriers",
+            barrierCrossing == 0,
+            barrierCrossing + " regions cross the barrier (must be 0)");
 
         // 12. Unit hash: bounded, deterministic, salt-sensitive.
         bool unitSane = true;
@@ -447,12 +486,15 @@ internal static class Program
                     character.FrontierSize),
                 CAWorldTendencyCausalKernel.SourceVarietyTargetDistinct(
                     12, 8, character.Variety),
-                CAWorldTendencyCausalKernel.OffMapActivityBudget(20,
-                    character.OffMap)
+                CAWorldTendencyCausalKernel.DistantFoundingRoll(
+                    1, 0, character.DistantFounding) ? 1d : 0d,
+                character.WorldDevelopment,
+                character.WorldVariability,
+                character.WorldStability
             }));
         }
         double[] tolerance =
-            { 0.02d, 0.25d, 0.05d, 0.5d, 0.5d, 0.5d, 0.5d, 0.5d, 0.5d };
+            { 0.02d, 0.25d, 0.05d, 0.5d, 0.5d, 0.5d, 0.5d, 0.5d, 0.5d, 0.5d, 0.5d, 0.5d };
         var collisions = new List<string>();
         for (int i = 0; i < structures.Count; i++)
             for (int j = i + 1; j < structures.Count; j++)
@@ -751,32 +793,55 @@ internal static class Program
                 + residentsSmall + " -> " + residentsLarge + " residents; "
                 + "poor land caps material at 0 whatever the tendency");
 
-        // Off-map rate owns the acting share of distant subjects.
-        int budgetLow = CAWorldTendencyCausalKernel.OffMapActivityBudget(
-            20, 0.10f);
-        int budgetHigh = CAWorldTendencyCausalKernel.OffMapActivityBudget(
-            20, 0.90f);
-        Check("offmap-budget",
-            budgetLow < budgetHigh && budgetHigh <= 20 && budgetLow >= 1
-                && CAWorldTendencyCausalKernel.OffMapActivityBudget(0,
-                    0.9f) == 0,
-            budgetLow + " of 20 act at 0.10 -> " + budgetHigh
-                + " at 0.90");
+        // Distant founding rate gates new settlement appearance.
+        bool foundLow = CAWorldTendencyCausalKernel.DistantFoundingRoll(
+            42, 0, 0.10f);
+        bool foundHigh = CAWorldTendencyCausalKernel.DistantFoundingRoll(
+            42, 0, 0.90f);
+        bool foundZero = CAWorldTendencyCausalKernel.DistantFoundingRoll(
+            42, 0, 0f);
+        int foundCount = 0;
+        for (int p = 0; p < 100; p++)
+            if (CAWorldTendencyCausalKernel.DistantFoundingRoll(42, p, 0.5f))
+                foundCount++;
+        Check("distant-founding",
+            !foundZero && foundCount > 0 && foundCount < 100,
+            "rate 0 gates all; rate 0.5 founds " + foundCount
+                + " of 100 periods");
 
         // World settlement facts: deterministic, bounded, and support
         // rises with population and access.
         int populationA = CAWorldTendencyCausalKernel
-            .WorldSettlementPopulation(9, 100, 3, 2);
+            .WorldSettlementPopulation(9, 100, 3, 2, 2);
         int populationB = CAWorldTendencyCausalKernel
-            .WorldSettlementPopulation(9, 100, 3, 2);
+            .WorldSettlementPopulation(9, 100, 3, 2, 2);
+        // Variability creates coherent countertypical tech tiers.
+        int popLowVar = CAWorldTendencyCausalKernel
+            .WorldSettlementPopulation(9, 100, 3, 2, 2, 0f);
+        int popHighVar = CAWorldTendencyCausalKernel
+            .WorldSettlementPopulation(9, 100, 3, 2, 2, 0.9f);
+        int popVarRepro = CAWorldTendencyCausalKernel
+            .WorldSettlementPopulation(9, 100, 3, 2, 2, 0.9f);
         int supportPoor = CAWorldTendencyCausalKernel.WorldSettlementSupport(
-            80, 1, 0, false);
+            80, 1, 0, false, 0);
         int supportRich = CAWorldTendencyCausalKernel.WorldSettlementSupport(
-            900, 3, 3, true);
+            900, 3, 3, true, 3);
+        // Stability cadence scales with stability.
+        int cadenceLow = CAWorldTendencyCausalKernel.StabilityCadence(
+            60000, 0f);
+        int cadenceHigh = CAWorldTendencyCausalKernel.StabilityCadence(
+            60000, 1f);
+        Check("stability-cadence",
+            cadenceLow == 60000 && cadenceHigh == 300000,
+            "cadence " + cadenceLow + " at 0 -> " + cadenceHigh
+                + " at 1");
         Check("world-settlement-facts",
             populationA == populationB && populationA >= 18
-                && supportRich > supportPoor,
+                && supportRich > supportPoor
+                && popVarRepro == popHighVar,
             "population " + populationA + " reproducible; support "
-                + supportPoor + " poor -> " + supportRich + " rich");
+                + supportPoor + " poor -> " + supportRich + " rich"
+                + "; variability " + popLowVar + " -> " + popHighVar
+                + " reproducible");
     }
 }
