@@ -2366,33 +2366,60 @@ namespace ColonistAwareness
             };
             plan.regionalId = "CA-RG-"
                 + unchecked((uint)seed).ToString("X8");
+            TryAdoptPartitionIdentity(plan);
             plan.regionName = RegionName(plan);
             plan.footprintTileIds = CARegionalGeometry.ClaimedTiles(plan);
             return plan;
         }
 
-        // LAND IS ALREADY REGIONAL. Selecting new ground during setup
-        // selects the persistent partition region that contains it; the
-        // authored candidate starts as exactly that region, and composing
-        // edits from the base. The stock bundle remains the fallback for
-        // ground the partition does not cover.
+        // ONE LAND, ONE IDENTITY. A composition that matches a persistent
+        // partition region's member set exactly IS that region: the same
+        // land keeps the same identity whether the player arrived by
+        // selection, by extent and orientation, or tile by tile. The
+        // partition is geographic evidence, never a boundary the selection
+        // must reproduce; exact coincidence is the only path by which a
+        // candidate inherits a partition identity.
+        internal static void TryAdoptPartitionIdentity(CARegionalPlan plan)
+        {
+            if (plan?.memberTileIds == null || plan.memberTileIds.Count == 0)
+                return;
+            CARegionalTopologyRecord match = CARegionalWorldComponent
+                .Current?.TopologyRecordAt(plan.bundleRootTileId);
+            if (match?.memberTileIds != null
+                && match.memberTileIds.Count == plan.memberTileIds.Count
+                && new HashSet<int>(match.memberTileIds).SetEquals(
+                    plan.memberTileIds))
+                plan.regionalId = match.regionId;
+        }
+
+        // SELECTION IS AUTHORING. New ground selects by the established
+        // extent and orientation rules over connected usable land, with
+        // geographic barrier evidence biasing candidate growth - the same
+        // shared measure the world stitching is built from. The partition
+        // is not the selection, and configuration (extent, orientation)
+        // shapes the result. Ground the connected-land builder cannot
+        // claim at all (for example land already inside a realized
+        // region) keeps the partition record as the only remaining
+        // candidate source, preserving prior coverage there.
         internal static CARegionalPlan CreateAuthoredAt(
             CAExpandedLandmassProfile profile, PlanetTile clicked,
             int fallbackCount, int fallbackRotation)
         {
+            CARegionalPlan plan = Create(profile, clicked, true,
+                fallbackCount, fallbackRotation);
+            if (plan.memberTileIds != null && plan.memberTileIds.Count > 0)
+                return plan;
             CARegionalTopologyRecord record = CARegionalWorldComponent
                 .Current?.TopologyRecordAt(clicked);
-            if (record == null)
-                return Create(profile, clicked, true, fallbackCount,
-                    fallbackRotation);
-            CARegionalPlan plan = CreateExplicit(profile,
-                SurfaceTile(record.rootTileId),
+            if (record == null) return plan;
+            plan = CreateExplicit(profile, SurfaceTile(record.rootTileId),
                 record.memberTileIds.ToList(), 0);
             plan.regionalId = record.regionId;
             plan.startTileId = record.memberTileIds.Contains(clicked.tileId)
                 ? clicked.tileId : record.rootTileId;
             plan.creationSummary = "selected from the world's persistent "
-                + "regional partition";
+                + "regional partition after connected land could not be"
+                + " claimed";
             return plan;
         }
 
@@ -2487,17 +2514,9 @@ namespace ColonistAwareness
             };
             plan.regionalId = "CA-RG-"
                 + unchecked((uint)seed).ToString("X8");
-            // A composition that matches a persistent partition region
-            // exactly IS that region: the same land keeps the same
-            // identity whether the player arrived at it by selection or by
-            // composing their way back to it.
-            CARegionalTopologyRecord match = CARegionalWorldComponent
-                .Current?.TopologyRecordAt(root);
-            if (match?.memberTileIds != null
-                && match.memberTileIds.Count == memberIds.Count
-                && new HashSet<int>(match.memberTileIds).SetEquals(
-                    memberIds))
-                plan.regionalId = match.regionId;
+            // One land, one identity: a composition matching a partition
+            // region exactly inherits that region identity.
+            TryAdoptPartitionIdentity(plan);
             plan.regionName = RegionName(plan);
             plan.footprintTileIds = CARegionalGeometry.ClaimedTiles(plan);
             return plan;
@@ -2692,7 +2711,13 @@ namespace ColonistAwareness
             {
                 IOrderedEnumerable<PlanetTile> ordered = frontier.Values
                     .OrderByDescending(tile => SelectedNeighborCount(tile,
-                        chosen));
+                        chosen))
+                    // Geographic barrier evidence: among equally cohesive
+                    // candidates, prefer the attachment crossing the
+                    // weakest geographic barrier - the same shared measure
+                    // the world partition is built from. Evidence, never
+                    // a mandate: cohesion still orders first.
+                    .ThenBy(tile => AttachmentBarrier(tile, chosen));
                 // Orientation zero is the pre-rotation canonical ordering, so
                 // adding the control does not lose an already useful specimen.
                 // Other orientations bias the same nested growth sequence
@@ -2724,6 +2749,22 @@ namespace ColonistAwareness
                     frontier[tile.tileId] = tile;
                 }
             }
+        }
+
+        // The cheapest edge by which a frontier candidate could attach
+        // to the already-chosen set, by shared geographic barrier cost.
+        private static float AttachmentBarrier(PlanetTile candidate,
+            HashSet<int> chosen)
+        {
+            var neighbors = new List<PlanetTile>();
+            candidate.Layer.GetTileNeighbors(candidate, neighbors);
+            float cost = 1f;
+            foreach (PlanetTile neighbor in neighbors)
+                if (chosen.Contains(neighbor.tileId))
+                    cost = Math.Min(cost,
+                        CARegionalGeometry.GeographicBarrierCost(
+                            neighbor.tileId, candidate.tileId));
+            return cost;
         }
 
         private static float HeadingDistance(PlanetTile root,

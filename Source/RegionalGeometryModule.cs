@@ -63,6 +63,70 @@ namespace ColonistAwareness
                 || Verse.Find.World.Impassable(tile);
         }
 
+        // GEOGRAPHIC BARRIER COST between two adjacent surface tiles. This
+        // is the one shared measure of what separates ground: elevation
+        // cliffs, relief transitions, biome ecotones, coast-to-inland
+        // breaks, and temperature or rainfall transitions all raise the
+        // cost; a shared road or river lowers it (a corridor, not a
+        // barrier). The world partition is built from it; candidate
+        // selection treats it as evidence when growing, never as a
+        // boundary it must reproduce.
+        internal static float GeographicBarrierCost(int fromId, int toId)
+        {
+            PlanetLayer surface = Verse.Find.WorldGrid?.Surface;
+            if (surface == null) return 1f;
+            PlanetTile fromPlanet = new PlanetTile(fromId, surface);
+            PlanetTile toPlanet = new PlanetTile(toId, surface);
+            Tile from = fromPlanet.Valid ? fromPlanet.Tile : null;
+            Tile to = toPlanet.Valid ? toPlanet.Tile : null;
+            if (from == null || to == null) return 1f;
+
+            // Elevation difference: a 1500m cliff or ridge is a full
+            // barrier; smaller differences scale linearly.
+            float elevDiff = Math.Abs(from.elevation - to.elevation);
+            float elevCost = Math.Min(1f, elevDiff / 1500f);
+
+            // Hilliness transition: a two-level jump (flat to large
+            // hills, small hills to mountains) is a barrier.
+            int fromHill = (int)from.hilliness;
+            int toHill = (int)to.hilliness;
+            float hillCost = Math.Min(1f,
+                Math.Abs(fromHill - toHill) * 0.35f);
+
+            // Biome transition: a mild ecotone boundary.
+            float biomeCost = from.PrimaryBiome != to.PrimaryBiome
+                ? 0.2f : 0f;
+
+            // Coastal coherence: coastal tiles prefer to join with other
+            // coastal tiles, so coastlines form region edges.
+            bool fromCoastal = CARegionalPlanUtility
+                .ConstituentIsCoastal(fromId);
+            bool toCoastal = CARegionalPlanUtility
+                .ConstituentIsCoastal(toId);
+            float coastCost = (fromCoastal != toCoastal) ? 0.5f : 0f;
+
+            // River corridor: tiles that share a river link prefer to
+            // join. A river is a corridor, not a barrier.
+            bool shareRiver = CARegionalPlanUtility
+                .ConstituentsShareRoute(fromId, toId);
+            float riverAffinity = shareRiver ? -0.3f : 0f;
+
+            // Temperature and rainfall transitions are mild
+            // environmental barriers (ecotones). The rainfall term was
+            // computed and then dropped when this measure was introduced
+            // at B20; it now participates, matching the batch record's
+            // declared behavior.
+            float tempDiff = Math.Abs(from.temperature - to.temperature);
+            float tempCost = Math.Min(0.5f, tempDiff / 30f);
+            float rainDiff = Math.Abs(from.rainfall - to.rainfall);
+            float rainCost = Math.Min(0.4f, rainDiff / 1000f);
+
+            float baseCost = Math.Max(Math.Max(elevCost, hillCost),
+                Math.Max(biomeCost, Math.Max(coastCost,
+                    Math.Max(tempCost, rainCost))));
+            return Math.Max(0f, baseCost + riverAffinity);
+        }
+
         internal static CARegionalEnvelopeGeometry BuildEnvelope(
             CARegionalPlan plan, bool smooth = true)
         {

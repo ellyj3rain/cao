@@ -96,62 +96,18 @@ namespace ColonistAwareness
                 return (center.x, center.y, center.z);
             }
 
-            // GEOGRAPHIC BARRIER COST between two adjacent tiles. The
-            // partition kernel uses this to stop regions from growing
-            // across mountain ridges, major hilliness transitions, and
-            // biome boundaries. Coastlines, valleys, and river corridors
-            // emerge as a consequence: tiles that share elevation, relief,
-            // and biome join naturally; tiles separated by a ridge or a
-            // biome transition form their own regions.
+            // GEOGRAPHIC BARRIER COST is the shared geographic measure
+            // owned by CARegionalGeometry.GeographicBarrierCost; the
+            // partition kernel consumes it here, and candidate selection
+            // consumes the same measure as growth evidence. Mountain
+            // ridges, relief transitions, biome boundaries, coastline
+            // breaks, temperature or rainfall transitions all raise the
+            // cost; river corridors lower it. Coastlines, valleys, and
+            // river corridors emerge as a consequence.
             float BarrierCost(int fromId, int toId)
             {
-                PlanetTile fromPlanet = new PlanetTile(fromId, surface);
-                PlanetTile toPlanet = new PlanetTile(toId, surface);
-                Tile from = fromPlanet.Valid ? fromPlanet.Tile : null;
-                Tile to = toPlanet.Valid ? toPlanet.Tile : null;
-                if (from == null || to == null) return 1f;
-
-                // Elevation difference: a 1500m cliff or ridge is a full
-                // barrier; smaller differences scale linearly.
-                float elevDiff = Math.Abs(from.elevation - to.elevation);
-                float elevCost = Math.Min(1f, elevDiff / 1500f);
-
-                // Hilliness transition: a two-level jump (flat to large
-                // hills, small hills to mountains) is a barrier.
-                int fromHill = (int)from.hilliness;
-                int toHill = (int)to.hilliness;
-                float hillCost = Math.Min(1f,
-                    Math.Abs(fromHill - toHill) * 0.35f);
-
-                // Biome transition: a mild ecotone boundary.
-                float biomeCost = from.PrimaryBiome != to.PrimaryBiome
-                    ? 0.2f : 0f;
-
-                // Coastal coherence: coastal tiles prefer to join with
-                // other coastal tiles. A coast-to-inland transition is a
-                // mild barrier so coastlines form region edges.
-                bool fromCoastal = CARegionalPlanUtility
-                    .ConstituentIsCoastal(fromId);
-                bool toCoastal = CARegionalPlanUtility
-                    .ConstituentIsCoastal(toId);
-                float coastCost = (fromCoastal != toCoastal) ? 0.5f : 0f;
-
-                // River corridor: tiles that share a river link prefer to
-                // join. A river is a corridor, not a barrier.
-                bool shareRiver = CARegionalPlanUtility
-                    .ConstituentsShareRoute(fromId, toId);
-                float riverAffinity = shareRiver ? -0.3f : 0f;
-
-                // Temperature transition: a large temperature difference
-                // is a mild environmental barrier (ecotone).
-                float tempDiff = Math.Abs(from.temperature - to.temperature);
-                float tempCost = Math.Min(0.5f, tempDiff / 30f);
-                float rainDiff = Math.Abs(from.rainfall - to.rainfall);
-                float rainCost = Math.Min(0.4f, rainDiff / 1000f);
-
-                float baseCost = Math.Max(Math.Max(elevCost, hillCost),
-                    Math.Max(biomeCost, Math.Max(coastCost, tempCost)));
-                return Math.Max(0f, baseCost + riverAffinity);
+                return CARegionalGeometry.GeographicBarrierCost(fromId,
+                    toId);
             }
 
             int seed = world.info.Seed;
