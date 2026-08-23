@@ -19,8 +19,8 @@ export const KOHAI_HARD_CAP = 16;
 export const PATCH_HARD_CAP = 24;
 export const MATURITY_LADDER = Object.freeze(["pre-alpha", "alpha", "beta", "rc"]);
 export const ROOT_REPLAY_START_VERSION = "0.1.0.0-pre-alpha";
-export const CLOSED_BATCH_TIP = "B19";
-export const NEXT_BATCH = "B20";
+export const CLOSED_BATCH_TIP = "B20";
+export const NEXT_BATCH = "B21";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_REPO_ROOT = resolve(here, "..");
@@ -505,6 +505,17 @@ export const VERSION_UNITS = Object.freeze([
     threads: ["T-001", "T-002", "T-005", "T-013", "T-019", "T-020", "T-021", "T-022", "T-024", "T-025", "T-026", "T-028", "T-030"],
     rationale: "B19 realizes the regional substrate as a persistent world system and closes settlement composition so an authored settlement is causally complete and honest about what it is. A world-wide regional topology enters world generation and world settlements consume the world's tendencies persistently; setup becomes region-first over the partition (one region, one map) and the regional overview becomes the world's viewport. The opening feature runs the real mechanics - the region diagram runs the live partition kernel, the gather field places by the real WorldPlacementScore, vignette towns are the real threshold comparison - and the front door becomes plain-language World character (nine named worlds in authored prose, the eight tendencies one door deeper) after the rendered-graphics program is removed in totality. Settlement composition is closed: one settlement-culture authority, one style authority, culture that a place's residents brought, a pure material kernel with its own receipts, operational roles that each build something, and one resolver answering what a materialized settlement knows. Material support reaches material; quarters follow population and support, not the naming bar; a population false closure is reverted; and the anchor boundary - vanilla and mod settlements that carry state but no record - is recorded rather than softened. Deterministic substrate acceptance is 34/34 and the retained B10, B14, B17, and B18 suites re-verify against B19's changed kernels (B18 reads 9/10 only because the active fixture evolved past its failed-run composition). The unit extends and structurally matures the existing regional substrate and settlement-composition line rather than opening a new player-visible capability boundary, so it carries the kohai tier; the minor alternative (persistent regional topology as a new world-gen capability) is recorded for operator ratification. The governed 8.0.423 reproducible-build receipt is named environmental debt.",
   },
+  {
+    id: "VU-047",
+    series: "B",
+    first: 20,
+    last: 20,
+    dates: "2026-08-22",
+    tier: "minor",
+    name: "World-authoring ontology cleanup and pre-runtime convergence",
+    threads: ["T-001", "T-002", "T-005", "T-013", "T-019", "T-020", "T-021", "T-022", "T-024", "T-025", "T-026", "T-028", "T-030"],
+    rationale: "B20 cleans the inherited world-authoring ontology into a causally honest surface and resolves the pre-runtime architectural gaps identified during the B19 audit. The improperly coupled offMapActivityRate is split into distantFoundingRate (authored) and derived political pulse cadence; the hidden per-tile hash history is replaced by worldDevelopment (authored) with position-in-network derivation; urbanGrowthPropensity is removed as an authored classification threshold (DR-114, DR-115) and replaced with fixed constants; variability is implemented as coherent countertypical tech-tier divergence with Culture norm-strength modulation; stability modulates state-transition resistance, not activity cadence; the partition kernel becomes geography-aware; all footprint settlements are preserved as authoritative anchors; the autonomous construction path consumes the corpus-derived spatial evidence; and the authoring surface is layered with intermediate controls and user-saveable presets. The unit establishes a new authoring/runtime contract, so it carries the minor tier.",
+  }
 ]);
 
 function parseVersion(version) {

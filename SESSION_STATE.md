@@ -1,7 +1,7 @@
 ﻿| Document | Colonist Awareness Overhaul Session State |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.7.2.0-alpha` · closed batch tip `B19` · next `B20` |
+| Version | `1.8.0.0-alpha` · closed batch tip `B20` · next `B21` |
 <!-- cao:generated:version END -->
 | Repository | `SESSION_STATE.md` |
 | Status | CLOSED - B19 is built, verified, recorded, and published to main; the only remaining B19 boundary is the operator's in-game visual/gameplay acceptance, then B20. |
