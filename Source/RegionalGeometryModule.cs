@@ -597,12 +597,12 @@ namespace ColonistAwareness
             BaseContent.WhiteTex, ShaderDatabase.WorldOverlayTransparent,
             new Color(0.98f, 0.93f, 0.74f, 0.92f), 3593);
 
-        private string lastKey;
+        private int lastKey = -1;
 
         public override bool VisibleWhenLayerNotSelected => false;
         public override bool VisibleInBackground => false;
         public override bool Visible => base.Visible
-            && (VisiblePlans().Any() || SelectedTopologyRecord() != null);
+            && (AnyVisiblePlan() || SelectedTopologyRecord() != null);
 
         public override bool ShouldRegenerate => base.ShouldRegenerate
             || CurrentKey() != lastKey;
@@ -821,15 +821,57 @@ namespace ColonistAwareness
             }
         }
 
-        private static string CurrentKey()
+        // Per-frame key without per-frame string churn: registered regions
+        // carry fixed member sets from registration and are covered by the
+        // world-state revision; only the in-authoring candidates (pending
+        // setup plan, landing candidate) can change members freely, so only
+        // they fold their exact identity here.
+        private static int CurrentKey()
         {
-            return (Verse.Find.World?.info?.Seed ?? 0) + ":"
-                + (Verse.Find.WorldSelector?.SelectedTile.tileId ?? -1) + ":"
-                + string.Join("|", VisiblePlans().Select(plan =>
-                    (plan.regionalId ?? "unknown") + ":"
-                    + plan.startTileId + ":"
-                    + string.Join(",", plan.memberTileIds
-                        ?? new List<int>())));
+            CARegionalWorldComponent component =
+                CARegionalWorldComponent.Current;
+            unchecked
+            {
+                int key = (Verse.Find.World?.info?.Seed ?? 0) * 397
+                    ^ (Verse.Find.WorldSelector?.SelectedTile.tileId ?? -1)
+                    ^ ((component?.WorldStateRevision ?? 0) * 31)
+                    ^ ((component?.Regions?.Count ?? 0) * 17);
+                CARegionalPlan pending =
+                    CARegionalSetupSession.PendingForCurrentWorld;
+                if (pending != null) key ^= PlanFingerprint(pending);
+                CARegionalPlan landing = CALandingAuthoring.Candidate;
+                if (landing != null) key ^= PlanFingerprint(landing) * 3;
+                return key;
+            }
+        }
+
+        private static int PlanFingerprint(CARegionalPlan plan)
+        {
+            unchecked
+            {
+                int fold = plan.mapSize * 23 ^ plan.startTileId
+                    ^ (plan.regionalId ?? "unknown").GetHashCode();
+                List<int> members = plan.memberTileIds;
+                if (members != null)
+                    for (int i = 0; i < members.Count; i++)
+                        fold = fold * 31 + members[i];
+                return fold;
+            }
+        }
+
+        private static bool AnyVisiblePlan()
+        {
+            if (CARegionalSetupSession.PendingForCurrentWorld != null
+                || CALandingAuthoring.Candidate != null)
+                return true;
+            IReadOnlyList<CARegionalPlan> regions =
+                CARegionalWorldComponent.Current?.Regions;
+            if (regions == null) return false;
+            for (int i = 0; i < regions.Count; i++)
+                if (regions[i]?.memberTileIds != null
+                    && regions[i].memberTileIds.Count > 0)
+                    return true;
+            return false;
         }
 
         private static IEnumerable<CARegionalPlan> VisiblePlans()
