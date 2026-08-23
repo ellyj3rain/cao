@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace ColonistAwareness
 {
@@ -20,6 +20,9 @@ namespace ColonistAwareness
         public int VisualOrder;
         public int MaterialCost;
         public int StableOrder;
+        // Corpus-evidence spatial-relationship score: 0 when no evidence
+        // is available; -1 to +2 from the learned envelope-density band.
+        public int EvidenceScore;
 
         public string Receipt()
         {
@@ -80,7 +83,9 @@ namespace ColonistAwareness
             comparison = incumbent.MaterialCost.CompareTo(
                 candidate.MaterialCost);
             if (comparison != 0) return comparison > 0;
-            return candidate.StableOrder < incumbent.StableOrder;
+            if (candidate.StableOrder != incumbent.StableOrder)
+                return candidate.StableOrder < incumbent.StableOrder;
+            return candidate.EvidenceScore > incumbent.EvidenceScore;
         }
 
         public static int Balance(int northEast, int northWest,

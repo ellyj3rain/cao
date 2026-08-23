@@ -162,6 +162,53 @@ namespace ColonistAwareness
                 + p.stitchedRegionFrequencyMax) * 0.5f;
         }
 
+        // INTERMEDIATE INTELLIGIBLE CONTROLS. Three groupings that sit
+        // between World Character (presets) and Advanced (individual
+        // sliders). Each is a projection over the canonical state: when
+        // the player adjusts an intermediate control, the underlying
+        // scalars are set proportionally. The Advanced sliders show the
+        // result and can fine-tune it. The intermediate values are
+        // derived from the current state so they track Advanced edits.
+        internal static float SettledOf(CARegionalWorldPolicy p)
+        {
+            return (p.worldDevelopment
+                + Mathf.Clamp01((p.settlementConcentration - 0.3f) / 0.5f)
+                + Mathf.Clamp01((p.frontierHoldingFrequency - 0.2f) / 0.5f))
+                / 3f;
+        }
+        internal static void ApplySettled(CARegionalWorldPolicy p, float v)
+        {
+            v = Mathf.Clamp01(v);
+            p.worldDevelopment = v;
+            p.settlementConcentration = 0.3f + v * 0.5f;
+            p.frontierHoldingFrequency = 0.2f + v * 0.5f;
+            CAWorldTendenciesSession.MarkEdited();
+        }
+        internal static float DiverseOf(CARegionalWorldPolicy p)
+        {
+            return (p.reallocationSourceVariety
+                + p.worldVariability / 0.8f) / 2f;
+        }
+        internal static void ApplyDiverse(CARegionalWorldPolicy p, float v)
+        {
+            v = Mathf.Clamp01(v);
+            p.reallocationSourceVariety = v;
+            p.worldVariability = v * 0.8f;
+            CAWorldTendenciesSession.MarkEdited();
+        }
+        internal static float DynamicOf(CARegionalWorldPolicy p)
+        {
+            return (p.distantFoundingRate
+                + (1f - p.worldStability) / 0.6f) / 2f;
+        }
+        internal static void ApplyDynamic(CARegionalWorldPolicy p, float v)
+        {
+            v = Mathf.Clamp01(v);
+            p.distantFoundingRate = v;
+            p.worldStability = 1f - v * 0.6f;
+            CAWorldTendenciesSession.MarkEdited();
+        }
+
         // The eleven state words as one line: the authored state read at
         // a glance, in the page's own type.
         internal static string StateLine(CARegionalWorldPolicy p)
@@ -197,9 +244,12 @@ namespace ColonistAwareness
         // The numbers live once, in CAWorldCharacterValues, so the
         // deterministic receipts exercise the same table the game
         // applies rather than a copy that can drift away from it.
-        private CAWorldCharacterValues Values
+        private CAWorldCharacterValues values;
+        internal CAWorldCharacterValues Values
         {
-            get { return CAWorldCharacterValues.ByKey(Key); }
+            get { return !string.IsNullOrEmpty(values.Key) ? values
+                : CAWorldCharacterValues.ByKey(Key); }
+            set { values = value; }
         }
 
         internal void Apply(CARegionalWorldPolicy p)
@@ -266,6 +316,107 @@ namespace ColonistAwareness
                 : All.FirstOrDefault(preset => preset.Key == key);
         }
 
+        // USER-SAVEABLE PRESETS. The player can save the current world
+        // state as a named preset and load it later. Stored as a JSON
+        // file in the mod config directory.
+        private static List<CAWorldPreset> userPresets;
+        private static string UserPresetDir => System.IO.Path.Combine(
+            Verse.GenFilePaths.ConfigFolderPath,
+            "CAWorldPresets");
+        internal static List<CAWorldPreset> UserPresets
+        {
+            get
+            {
+                if (userPresets != null) return userPresets;
+                userPresets = new List<CAWorldPreset>();
+                try
+                {
+                    string dir = UserPresetDir;
+                    if (!System.IO.Directory.Exists(dir)) return userPresets;
+                    foreach (string file in System.IO.Directory
+                        .GetFiles(dir, "*.txt"))
+                    {
+                        string json = System.IO.File.ReadAllText(file);
+                        var preset = ParseUserPreset(json, file);
+                        if (preset != null) userPresets.Add(preset);
+                    }
+                }
+                catch { }
+                return userPresets;
+            }
+        }
+        internal static void SaveUserPreset(string name,
+            CARegionalWorldPolicy policy)
+        {
+            try
+            {
+                string dir = UserPresetDir;
+                System.IO.Directory.CreateDirectory(dir);
+                string key = "user-" + System.Text.RegularExpressions.Regex
+                    .Replace(name, "[^A-Za-z0-9_-]", "_").ToLowerInvariant();
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine("key=" + key);
+                sb.AppendLine("name=" + name);
+                sb.AppendLine("settlementConcentration=" + policy.settlementConcentration.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("frontierHoldingFrequency=" + policy.frontierHoldingFrequency.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("frontierHoldingSize=" + policy.frontierHoldingSize.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("reallocationSourceVariety=" + policy.reallocationSourceVariety.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("worldDevelopment=" + policy.worldDevelopment.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("distantFoundingRate=" + policy.distantFoundingRate.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("worldVariability=" + policy.worldVariability.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("worldStability=" + policy.worldStability.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("stitchedRegionFrequencyMin=" + policy.stitchedRegionFrequencyMin.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("stitchedRegionFrequencyMax=" + policy.stitchedRegionFrequencyMax.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("stitchedRegionSizeMin=" + policy.stitchedRegionSizeMin.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("stitchedRegionSizeMax=" + policy.stitchedRegionSizeMax.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                string path = System.IO.Path.Combine(dir, key + ".txt");
+                System.IO.File.WriteAllText(path, sb.ToString());
+                userPresets = null;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning("[CA][WorldPresets] could not save: " + ex.Message);
+            }
+        }
+        private static CAWorldPreset ParseUserPreset(string text, string fileName)
+        {
+            try
+            {
+                var p = new CAWorldPreset { Summary = "Your saved world." };
+                var lines = text.Split(new[] { '\r', '\n' },
+                    System.StringSplitOptions.RemoveEmptyEntries);
+                var map = new System.Collections.Generic.Dictionary<string, string>();
+                foreach (string line in lines)
+                {
+                    int eq = line.IndexOf('=');
+                    if (eq > 0)
+                        map[line.Substring(0, eq)] = line.Substring(eq + 1);
+                }
+                if (!map.TryGetValue("key", out string key) || key.NullOrEmpty())
+                    return null;
+                p.Key = key;
+                p.Name = map.TryGetValue("name", out string name) ? name : "User preset";
+                float f(string k) => float.Parse(map[k],
+                    System.Globalization.CultureInfo.InvariantCulture);
+                int i(string k) => int.Parse(map[k],
+                    System.Globalization.CultureInfo.InvariantCulture);
+                p.Values = new CAWorldCharacterValues(key,
+                    f("stitchedRegionFrequencyMin"),
+                    f("stitchedRegionFrequencyMax"),
+                    i("stitchedRegionSizeMin"),
+                    i("stitchedRegionSizeMax"),
+                    f("settlementConcentration"),
+                    f("frontierHoldingFrequency"),
+                    f("frontierHoldingSize"),
+                    f("reallocationSourceVariety"),
+                    f("worldDevelopment"),
+                    f("distantFoundingRate"),
+                    f("worldVariability"),
+                    f("worldStability"));
+                return p;
+            }
+            catch { return null; }
+        }
         internal static readonly CAWorldPreset[] All =
         {
             new CAWorldPreset
@@ -456,9 +607,45 @@ namespace ColonistAwareness
                 DrawControlsSecondHalf(x, y, w);
                 return;
             }
+            // INTERMEDIATE CONTROLS: three intelligible groupings that
+            // sit between World Character and the individual Advanced
+            // sliders. Adjusting one sets multiple scalars at once;
+            // the individual sliders below reflect the result.
+            CAOpeningTheme.SectionLabel(x, y, w, "World shape");
+            y += 20f;;
+            float settled = CAWorldAuthoring.SettledOf(policy);
+            Header(x, ref y, w, "How settled",
+                settled >= 0.65f ? "densely settled"
+                    : settled <= 0.3f ? "sparse" : "moderate",
+                "A single control for how populated, gathered, "
+                + "and fronted the world is.");
+            Slider(x, ref y, w, settled,
+                v => CAWorldAuthoring.ApplySettled(policy, v),
+                "sparse", "settled");
+            float diverse = CAWorldAuthoring.DiverseOf(policy);
+            Header(x, ref y, w, "How diverse",
+                diverse >= 0.65f ? "highly diverse"
+                    : diverse <= 0.3f ? "uniform" : "mixed",
+                "A single control for how many peoples found "
+                + "settlements and how much settlements diverge.");
+            Slider(x, ref y, w, diverse,
+                v => CAWorldAuthoring.ApplyDiverse(policy, v),
+                "uniform", "diverse");
+            float dynamic = CAWorldAuthoring.DynamicOf(policy);
+            Header(x, ref y, w, "How dynamic",
+                dynamic >= 0.65f ? "fast-changing"
+                    : dynamic <= 0.3f ? "slow" : "moderate",
+                "A single control for how often the world "
+                + "founds new places and how readily state changes.");
+            Slider(x, ref y, w, dynamic,
+                v => CAWorldAuthoring.ApplyDynamic(policy, v),
+                "slow", "dynamic");
+            y += 6f;
+            CAOpeningTheme.SectionLabel(x, y, w, "Advanced");
+            y += 20f;
 
             CAOpeningTheme.SectionLabel(x, y, w, "The land");
-            y += 20f;
+            y += 20f;;
             Header(x, ref y, w, "Joined regions",
                 CAWorldAuthoring.Dimensions[0].Word(policy),
                 "How much of the world's land joins into multi-area "
@@ -511,7 +698,7 @@ namespace ColonistAwareness
             y += 34f;
 
             CAOpeningTheme.SectionLabel(x, y, w, "Settlement");
-            y += 20f;
+            y += 20f;;
             Header(x, ref y, w, "Settlement gathering",
                 CAWorldAuthoring.Dimensions[2].Word(policy),
                 "Where the world's settlements are placed when it forms "
@@ -624,7 +811,7 @@ namespace ColonistAwareness
         private void DrawControlsSecondHalf(float x, float y, float w)
         {
             CAOpeningTheme.SectionLabel(x, y, w, "The frontier");
-            y += 20f;
+            y += 20f;;
             Header(x, ref y, w, "Frontier sites",
                 CAWorldAuthoring.Dimensions[3].Word(policy),
                 "How much of each region's suitable empty land carries "
@@ -643,7 +830,7 @@ namespace ColonistAwareness
             y += 4f;
 
             CAOpeningTheme.SectionLabel(x, y, w, "The wider world");
-            y += 20f;
+            y += 20f;;
             Header(x, ref y, w, "Settlement origins",
                 CAWorldAuthoring.Dimensions[5].Word(policy),
                 "How many distinct peoples found the world's "

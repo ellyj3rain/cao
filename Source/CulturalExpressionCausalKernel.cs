@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -228,7 +228,8 @@ namespace ColonistAwareness
             CACulturalHistoryEvidence previous,
             CACulturalHistoryEvidence current,
             IEnumerable<CACulturalPracticeState> priorPractices,
-            string priorCultureSignature)
+            string priorCultureSignature,
+            float stabilityResistance = 0f)
         {
             if (current == null)
                 throw new ArgumentNullException(nameof(current));
@@ -276,9 +277,19 @@ namespace ColonistAwareness
                     int strength = Math.Max(0, Math.Min(100,
                         evidence.Strength));
                     if (updated.TryGetValue(evidence.Key, out prior))
+                    {
+                        // Stability modulates how readily established
+                        // cultural practice shifts toward new evidence.
+                        // At resistance 0, the prior holds 75% weight;
+                        // at resistance 0.7, it holds ~90%.
+                        double priorWeight = 3d + stabilityResistance * 4d;
+                        double newWeight = 1d;
                         strength = (int)Math.Round(
-                            (prior.Strength * 3d + strength) / 4d,
+                            (prior.Strength * priorWeight
+                                + strength * newWeight)
+                            / (priorWeight + newWeight),
                             MidpointRounding.AwayFromZero);
+                    }
                     updated[evidence.Key] = new CACulturalPracticeState
                     {
                         Key = evidence.Key,
@@ -290,7 +301,12 @@ namespace ColonistAwareness
                 foreach (CACulturalPracticeState prior in existing)
                 {
                     if (observedKeys.Contains(prior.Key)) continue;
-                    int decayed = Math.Max(0, prior.Strength - 10 * periods);
+                    // Stability slows practice decay: established
+                    // practices hold longer in a stable world.
+                    int decayRate = (int)Math.Max(1,
+                        10 * (1f - stabilityResistance * 0.7f));
+                    int decayed = Math.Max(0,
+                        prior.Strength - decayRate * periods);
                     if (decayed == 0) updated.Remove(prior.Key);
                     else updated[prior.Key] = new CACulturalPracticeState
                     {

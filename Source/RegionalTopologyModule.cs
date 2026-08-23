@@ -134,7 +134,7 @@ namespace ColonistAwareness
                     .ConstituentIsCoastal(fromId);
                 bool toCoastal = CARegionalPlanUtility
                     .ConstituentIsCoastal(toId);
-                float coastCost = (fromCoastal != toCoastal) ? 0.25f : 0f;
+                float coastCost = (fromCoastal != toCoastal) ? 0.5f : 0f;
 
                 // River corridor: tiles that share a river link prefer to
                 // join. A river is a corridor, not a barrier.
@@ -145,7 +145,9 @@ namespace ColonistAwareness
                 // Temperature transition: a large temperature difference
                 // is a mild environmental barrier (ecotone).
                 float tempDiff = Math.Abs(from.temperature - to.temperature);
-                float tempCost = Math.Min(0.25f, tempDiff / 40f);
+                float tempCost = Math.Min(0.5f, tempDiff / 30f);
+                float rainDiff = Math.Abs(from.rainfall - to.rainfall);
+                float rainCost = Math.Min(0.4f, rainDiff / 1000f);
 
                 float baseCost = Math.Max(Math.Max(elevCost, hillCost),
                     Math.Max(biomeCost, Math.Max(coastCost, tempCost)));

@@ -307,8 +307,11 @@ namespace ColonistAwareness
                         settlement.Faction)) continue;
                 bool isArrivalAnchor = settlement.Tile.tileId
                     == plan.startTileId;
-                if (!isArrivalAnchor
-                    && settlement.Faction == parentFaction) continue;
+                // Same-faction settlements on any member tile are anchors:
+                // they stay on the world map, keep their vanilla layout, and
+                // get CAO composition. Different-faction settlements on
+                // member tiles are absorbed as reallocated sources.
+                bool sameFaction = settlement.Faction == parentFaction;
                 if (footprint.Contains(settlement.Tile.tileId))
                 {
                     // ARRIVAL MUST NOT CHANGE COMPOSITION. This skipped a
@@ -412,7 +415,8 @@ namespace ColonistAwareness
             {
                 CARegionalFactionPlan group = GroupFor(resident);
                 int destination = resident.Tile.tileId;
-                bool anchor = destination == plan.startTileId;
+                bool anchor = destination == plan.startTileId
+                    || (residents.Count > 0 && resident.Faction == parentFaction);
                 usedByTile[destination] = usedByTile.TryGetValue(destination,
                     out int prior) ? prior + 1 : 1;
                 assignedTiles.Add(destination);

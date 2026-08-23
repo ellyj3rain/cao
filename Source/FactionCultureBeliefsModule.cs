@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
@@ -1828,16 +1828,16 @@ namespace ColonistAwareness
                     ? "local to " + culture.localityKey
                     : "developing in " + culture.localityKey;
             string plurality = culture.constituents.Count <= 1 ? ""
-                : " · " + culture.constituents.Count
+                : " Â· " + culture.constituents.Count
                     + " cultural roots";
             string change = culture.transitions.Count == 0 ? ""
-                : " · " + culture.transitions.Count + " recorded change"
+                : " Â· " + culture.transitions.Count + " recorded change"
                     + (culture.transitions.Count == 1 ? "" : "s");
             int meaningCount = PopulationQuestions(culture).Count();
             int practiceCount = culture.inheritedPractices.Count
                 + culture.practices.Count;
             string practice = practiceCount == 0 ? ""
-                : " · " + practiceCount + " observed practice"
+                : " Â· " + practiceCount + " observed practice"
                     + (practiceCount == 1 ? "" : "s");
             string salient = string.Join(", ", PopulationQuestions(culture)
                 .Where(item => item != null)
@@ -1848,11 +1848,11 @@ namespace ColonistAwareness
                     item.questionKey)?.Label ?? "recorded value")
                 .ToArray());
             string top = salient.NullOrEmpty() ? ""
-                : " · main values: " + salient;
-            return identity + " · " + continuity + plurality + change
-                + " · " + meaningCount + " value"
+                : " Â· main values: " + salient;
+            return identity + " Â· " + continuity + plurality + change
+                + " Â· " + meaningCount + " value"
                     + (meaningCount == 1 ? "" : "s") + practice
-                + top + " · visual style: " + visual;
+                + top + " Â· visual style: " + visual;
         }
 
         internal static CACulturalMeaningResolution Resolve(CACulture culture,
@@ -2098,6 +2098,49 @@ namespace ColonistAwareness
                         + "the scenario starts.";
                 local.lastTransitionCause = null;
                 settlement.localCulture = local;
+                // Coherent countertypical culture modulation: a settlement
+                // that diverged from its faction\u2019s tech tier (per the
+                // world variability tendency) has a culture that is less
+                // bound by faction tradition. This does not invent a new
+                // culture; it modulates how strongly the inherited culture
+                // holds. A higher-tech divergent settlement is more open
+                // to local variation; a lower-tech one is more bound by
+                // tradition.
+                float variability = plan.worldPolicy?.worldVariability
+                    ?? 0f;
+                if (variability > 0f)
+                {
+                    int worldSeed = 0;
+                    try { worldSeed = Verse.Find.World.info.Seed; }
+                    catch { }
+                    int tileId = settlement.memberTileId;
+                    if (tileId >= 0
+                        && CAWorldTendencyCausalKernel.Unit(worldSeed,
+                            tileId, 3721) < variability)
+                    {
+                        int factionTech = CARegionalWorldSettlements
+                            .TechTierOf(settlement.factionLinks != null
+                                ? CASiteState.ResolveOwner(plan,
+                                    settlement.factionLinks)
+                                : null);
+                        int divergentTech = factionTech
+                            + (CAWorldTendencyCausalKernel.Unit(worldSeed,
+                                tileId, 3727) < 0.5f ? -1 : 1)
+                            * (1 + (int)(variability * 2f));
+                        divergentTech = Math.Max(0, Math.Min(3,
+                            divergentTech));
+                        float normModulation = divergentTech > factionTech
+                            ? -0.15f : 0.10f;
+                        foreach (CACultureQuestionDistribution q
+                            in local.localQuestions)
+                        {
+                            if (q == null) continue;
+                            q.normStrength = Math.Max(0.10f,
+                                Math.Min(0.90f,
+                                    q.normStrength + normModulation));
+                        }
+                    }
+                }
                 return;
             }
 
@@ -2227,9 +2270,14 @@ namespace ColonistAwareness
                         SourceSignature = item.sourceSignature
                     }).ToList();
             string predecessor = StateSignature(culture);
+            // Stability modulates how readily established cultural
+            // state shifts toward new evidence. A stable world holds
+            // its culture longer; a volatile world shifts faster.
+            float stabilityResistance = CARegionalWorldComponent.Current
+                ?.WorldPolicy?.worldStability ?? 0.5f;
             CACulturalTransitionEvaluation evaluated =
                 CACultureLongitudinalKernel.Evaluate(previous, evidence,
-                    prior, predecessor);
+                    prior, predecessor, stabilityResistance);
             var qualifiedKeys = new HashSet<string>(qualified.Select(item =>
                 item.Key), StringComparer.Ordinal);
             foreach (CACulturePractice practice in culture.practices
@@ -3225,8 +3273,8 @@ namespace ColonistAwareness
                 CAFactionAxes.Decisions);
             string ownership = OptionLabels(structure,
                 CAFactionAxes.Ownership);
-            return (leadership ?? "leadership not set") + " · "
-                + (decisions ?? "decision rules not set") + " · "
+            return (leadership ?? "leadership not set") + " Â· "
+                + (decisions ?? "decision rules not set") + " Â· "
                 + (ownership ?? "ownership not set");
         }
 
