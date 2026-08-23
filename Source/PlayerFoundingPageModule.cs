@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
@@ -455,11 +455,6 @@ namespace ColonistAwareness
                 reading in readings)
                 DrawComparison(comparisonArea, ref y, reading);
             DrawButtons(rect, ref y,
-                new CAFoundingAction("Use suggested", delegate
-                {
-                    CAPlayerFoundingModel.UseSuggestedArrangement(draft);
-                    Changed();
-                }),
                 new CAFoundingAction("Presets...",
                     OpenArrangementPresets),
                 new CAFoundingAction("Edit", delegate
@@ -827,8 +822,7 @@ namespace ColonistAwareness
 
         private void RefreshSuggestedArrangement()
         {
-            if (draft?.ArrangementSource == CAAxisSource.Generated)
-                CAPlayerFoundingModel.UseSuggestedArrangement(draft);
+            // Suggested arrangement auto-generation removed per operator direction.
         }
 
         private void OpenCulturePresets()
@@ -950,9 +944,9 @@ namespace ColonistAwareness
         {
             if (terms == null) return "Not set";
             return (terms.leaderRule == "none" ? "No permanent leader"
-                    : "Chosen leader") + " · "
+                    : "Chosen leader") + " Â· "
                 + (terms.workRequired ? "Required work" : "Voluntary work")
-                + " · " + (terms.sharedSupplies
+                + " Â· " + (terms.sharedSupplies
                     ? "Shared supplies" : "Separate supplies");
         }
 
@@ -1149,7 +1143,12 @@ namespace ColonistAwareness
         private void DoEditorContents(Rect inRect)
         {
             if (draft.arrangement == null)
-                CAPlayerFoundingModel.UseSuggestedArrangement(draft);
+                draft.arrangement = new CAFoundingArrangement
+                {
+                    id = "blank",
+                    label = "No terms chosen",
+                    premise = "Choose founding terms or a preset."
+                };
             CAFoundingArrangement value = draft.arrangement;
             CAOpeningTheme.Heading(0f, 0f, inRect.width, "Founding terms");
             const string introduction = "These rules take effect at landing. "
