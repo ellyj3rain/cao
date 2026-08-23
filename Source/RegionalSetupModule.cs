@@ -308,10 +308,13 @@ namespace ColonistAwareness
                 ?.Settlements ?? new List<Settlement>())
             {
                 if (settlement == null || settlement.Faction == null
-                    || settlement.Faction == parentFaction
                     || settlement.Faction.IsPlayer
                     || !CARegionalPlanUtility.IsEligibleExistingFaction(
                         settlement.Faction)) continue;
+                bool isArrivalAnchor = settlement.Tile.tileId
+                    == plan.startTileId;
+                if (!isArrivalAnchor
+                    && settlement.Faction == parentFaction) continue;
                 if (footprint.Contains(settlement.Tile.tileId))
                 {
                     // ARRIVAL MUST NOT CHANGE COMPOSITION. This skipped a
@@ -415,6 +418,7 @@ namespace ColonistAwareness
             {
                 CARegionalFactionPlan group = GroupFor(resident);
                 int destination = resident.Tile.tileId;
+                bool anchor = destination == plan.startTileId;
                 usedByTile[destination] = usedByTile.TryGetValue(destination,
                     out int prior) ? prior + 1 : 1;
                 assignedTiles.Add(destination);
@@ -423,9 +427,16 @@ namespace ColonistAwareness
                     slot = slot,
                     memberTileId = destination,
                     OwningFactionKey = group.key,
-                    populationOrigin = CASettlementOrigin
-                        .ReallocatedFromWorldPool,
-                    reallocatedFromTileId = destination,
+                    // The arrival settlement is an anchor: it stays on
+                    // the world map and keeps its vanilla physical layout.
+                    // CAO elaborates its settlement composition (culture,
+                    // programs, capabilities) without replacing its
+                    // physical form. Other absorbed residents are
+                    // reallocated and consumed normally.
+                    populationOrigin = anchor
+                        ? CASettlementOrigin.Unset
+                        : CASettlementOrigin.ReallocatedFromWorldPool,
+                    reallocatedFromTileId = anchor ? -1 : destination,
                     siteClusterKey = destination,
                     absorbedWorldPopulation = WorldPopulationAt(destination),
                     persistent = true

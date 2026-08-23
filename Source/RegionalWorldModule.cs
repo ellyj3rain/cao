@@ -4774,10 +4774,20 @@ namespace ColonistAwareness
                 int standingQuarters = CAWorldTendencyCausalKernel
                     .SettlementQuarters(record.residentPopulation,
                         record.urbanSupport);
-                Materialize(record, rect, map,
-                    Math.Max(Math.Max(1, clustered),
-                        standingQuarters)); // [morphology lane]
-                clusterRects.Add(rect);
+                // An anchor settlement (the one the player entered) keeps
+                // its vanilla physical layout. CAO still creates the
+                // settlement record with its full composition (culture,
+                // programs, capabilities, organizations) so the anchor
+                // participates in CAO\u2019s world model, but its physical
+                // form is whatever RimWorld generated, not a CAO
+                // morphology stamp.
+                if (settlement.populationOrigin != CASettlementOrigin.Unset)
+                {
+                    Materialize(record, rect, map,
+                        Math.Max(Math.Max(1, clustered),
+                            standingQuarters)); // [morphology lane]
+                    clusterRects.Add(rect);
+                }
                 materialized++;
                 materializedSlots.Add(slot);
             }
