@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld.Planet;
@@ -89,11 +89,45 @@ namespace ColonistAwareness
                 return adjacency.TryGetValue(id, out int[] found)
                     ? found : Array.Empty<int>();
             }
-            (float x, float y, float z) PositionOf(int id)
+(float x, float y, float z) PositionOf(int id)
             {
                 UnityEngine.Vector3 center = surface.GetTileCenter(
                     new PlanetTile(id, surface));
                 return (center.x, center.y, center.z);
+            }
+
+            // GEOGRAPHIC BARRIER COST between two adjacent tiles. The
+            // partition kernel uses this to stop regions from growing
+            // across mountain ridges, major hilliness transitions, and
+            // biome boundaries. Coastlines, valleys, and river corridors
+            // emerge as a consequence: tiles that share elevation, relief,
+            // and biome join naturally; tiles separated by a ridge or a
+            // biome transition form their own regions.
+            float BarrierCost(int fromId, int toId)
+            {
+                PlanetTile fromPlanet = new PlanetTile(fromId, surface);
+                PlanetTile toPlanet = new PlanetTile(toId, surface);
+                Tile from = fromPlanet.Valid ? fromPlanet.Tile : null;
+                Tile to = toPlanet.Valid ? toPlanet.Tile : null;
+                if (from == null || to == null) return 1f;
+
+                // Elevation difference: a 1500m cliff or ridge is a full
+                // barrier; smaller differences scale linearly.
+                float elevDiff = Math.Abs(from.elevation - to.elevation);
+                float elevCost = Math.Min(1f, elevDiff / 1500f);
+
+                // Hilliness transition: a two-level jump (flat to large
+                // hills, small hills to mountains) is a barrier.
+                int fromHill = (int)from.hilliness;
+                int toHill = (int)to.hilliness;
+                float hillCost = Math.Min(1f,
+                    Math.Abs(fromHill - toHill) * 0.35f);
+
+                // Biome transition: a mild ecotone boundary.
+                float biomeCost = from.PrimaryBiome != to.PrimaryBiome
+                    ? 0.2f : 0f;
+
+                return Math.Max(Math.Max(elevCost, hillCost), biomeCost);
             }
 
             int seed = world.info.Seed;
@@ -102,7 +136,8 @@ namespace ColonistAwareness
                 CARegionalTopologyKernel.Partition(seed, eligible,
                     NeighborsOf, PositionOf, share,
                     policy.stitchedRegionSizeMin,
-                    policy.stitchedRegionSizeMax, preAssigned);
+                    policy.stitchedRegionSizeMax, preAssigned,
+                    BarrierCost);
 
             var records = partition.Select(region =>
                 new CARegionalTopologyRecord

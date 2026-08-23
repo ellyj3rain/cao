@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -524,14 +524,14 @@ namespace ColonistAwareness
                 GUI.color = CAOpeningTheme.TextLo;
                 Widgets.Label(new Rect(frame.x + 4f, frame.y,
                     frame.width - 8f, headerHeight),
-                    CARegionalPlanUtility.RegionName(plan) + " · "
+                    CARegionalPlanUtility.RegionName(plan) + " Â· "
                     + plan.BackingMapSize.x + "x" + plan.BackingMapSize.z
-                    + (generating ? " · generating..."
+                    + (generating ? " Â· generating..."
                         : previewZoom > 1.01f
-                            ? " · " + previewZoom.ToString("F1")
-                                + "x · drag to pan, scroll to zoom, "
+                            ? " Â· " + previewZoom.ToString("F1")
+                                + "x Â· drag to pan, scroll to zoom, "
                                 + "right-click to reset"
-                            : " · scroll to zoom · hover for ground"));
+                            : " Â· scroll to zoom Â· hover for ground"));
                 GUI.color = Color.white;
                 Text.Font = GameFont.Small;
 
@@ -1160,7 +1160,7 @@ namespace ColonistAwareness
             }
             TooltipHandler.TipRegion(map, new TipSignal(
                 terrain.CapitalizeFirst()
-                + (water == null ? "" : " · " + water)
+                + (water == null ? "" : " Â· " + water)
                 + (area == null ? "" : "\n" + area)
                 + "\n(" + cellX + " | " + cellZ + ")", 73211905));
         }
@@ -2951,11 +2951,10 @@ namespace ColonistAwareness
             if (now - lastDistantFoundingCheckTick
                 < DistantFoundingPeriodTicks) return;
             lastDistantFoundingCheckTick = now;
-            float rate = WorldPolicy.offMapActivityRate;
-            if (rate <= 0f) return;
+            float rate = WorldPolicy.distantFoundingRate;
             int period = now / DistantFoundingPeriodTicks;
-            if (CAWorldTendencyCausalKernel.Unit(world?.info?.Seed ?? 0,
-                    period, 442771) >= rate) return;
+            if (!CAWorldTendencyCausalKernel.DistantFoundingRoll(
+                    world?.info?.Seed ?? 0, period, rate)) return;
             PlanetLayer surface = Verse.Find.WorldGrid?.Surface;
             if (surface == null) return;
             List<Settlement> standing = Verse.Find.WorldObjects?.Settlements
@@ -3007,7 +3006,7 @@ namespace ColonistAwareness
                 Log.Message("[CA][WorldSettlements] distant founding: "
                     + founded.LabelCap + " (" + founder.Name + ") at tile "
                     + tile.tileId + ", " + state.UrbanWord
-                    + "; off-map activity rate " + rate.ToString("F2"));
+                    + "; distant founding rate " + rate.ToString("F2"));
             }
         }
 
@@ -5509,8 +5508,8 @@ namespace ColonistAwareness
                     + policy.reallocationSourceVariety.ToStringPercent()
                     + "; urban growth propensity "
                     + policy.urbanGrowthPropensity.ToStringPercent()
-                    + "; off-map activity rate "
-                    + policy.offMapActivityRate.ToStringPercent());
+                    + "; distant founding rate "
+                    + policy.distantFoundingRate.ToStringPercent());
                 foreach (CARegionalFactionPlan group in
                     region.factions.OrderBy(item => item.key))
                     Log.Message("[CA][Regional] faction " + group.key

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
@@ -107,11 +107,23 @@ namespace ColonistAwareness
                 world?.TopologyRecordAt(tile);
             bool regionalCenter = record != null && record.Multi
                 && CARegionalGeography.TopologySettlementCount(record) > 1;
+            // Prior development is a real cause: the authored world
+            // baseline modulated by each settlement's position in the
+            // settlement network. A regional center — a settlement
+            // sharing joined land with others — is one step more
+            // developed than the world baseline; an isolated outpost
+            // is one step less. This replaces the hidden per-tile hash.
+            int worldDev = (int)Math.Round(
+                (world?.WorldPolicy?.worldDevelopment ?? 0.6f) * 3f);
+            int development = worldDev + (regionalCenter ? 1 : -1);
+            development = Math.Max(0, Math.Min(3, development));
+            float variability = world?.WorldPolicy?.worldVariability ?? 0f;
             int population = CAWorldTendencyCausalKernel
                 .WorldSettlementPopulation(seed, tile.tileId, land,
-                    TechTierOf(settlement.Faction));
+                    TechTierOf(settlement.Faction), development,
+                    variability);
             int support = CAWorldTendencyCausalKernel.WorldSettlementSupport(
-                population, land, access, regionalCenter);
+                population, land, access, regionalCenter, development);
             int scale = CAWorldTendencyCausalKernel.SettlementScale(
                 population, support, propensity);
             return new CARegionalWorldSettlementState
@@ -413,7 +425,7 @@ namespace ColonistAwareness
                 component.PoliticalRecordFor(record.regionId);
             string regionLine = "Region: "
                 + CARegionalGeography.TopologyName(record) + " ("
-                + record.memberTileIds.Count + " areas) — "
+                + record.memberTileIds.Count + " areas) â€” "
                 + (political?.StatusLine
                     ?? CARegionalGeography.PoliticalSummary(record));
             CARegionalPoliticalEvent latest =
@@ -516,7 +528,13 @@ namespace ColonistAwareness
                         .ToString("F2")
                     + ", origins " + policy.reallocationSourceVariety
                         .ToString("F2")
-                    + ", distant " + policy.offMapActivityRate
+                    + ", founding " + policy.distantFoundingRate
+                        .ToString("F2")
+                    + ", development " + policy.worldDevelopment
+                        .ToString("F2")
+                    + ", variability " + policy.worldVariability
+                        .ToString("F2")
+                    + ", stability " + policy.worldStability
                         .ToString("F2"));
             }
             catch (Exception ex)

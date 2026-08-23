@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -1340,11 +1340,11 @@ namespace ColonistAwareness
                     CAAuthoringSemanticKind.ScalarContinuous,
                     "CARegionalWorldPolicy", "distant represented societies",
                     CAAuthoringTemporalStatus.Normative,
-                    "one zero-to-one activity cadence modifier",
-                    "does not author political or institutional state",
+                    "one zero-to-one founding cadence modifier",
+                    "does not author political or institutional state; political-belief pulse cadence is now derived",
                     "world-tendency authoring",
-                    new[] { "CARegionalWorldPolicy.offMapActivityRate" },
-                    "frequency of distant faction and settlement activity"),
+                    new[] { "CARegionalWorldPolicy.distantFoundingRate" },
+                    "frequency of distant faction founding of new settlements"),
                 Control("founding.arrangement",
                     CAAuthoringSemanticKind.StructuredComposition,
                     "CAFoundingArrangement", "player founding moment",

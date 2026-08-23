@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -105,7 +105,15 @@ namespace ColonistAwareness
 
     public sealed class CARegionalWorldPolicy : IExposable
     {
-        // Stitched-region frequency and size.
+        // The partition kernel is now geography-aware (barrier costs
+        // from elevation, hilliness, and biome transitions stop regions
+        // from growing across mountain ridges and major ecotones). These
+        // scalars remain as authored targets: the frequency band sets how
+        // much land the player wants in joined regions, and the size
+        // band caps how large a joined region can grow. Geography now
+        // modulates the realized result — a mountainous world realizes
+        // less joined land than a plains world at the same authored share
+        // — but the targets remain meaningful authoring controls.
         public float stitchedRegionFrequencyMin = 0.25f;
         public float stitchedRegionFrequencyMax = 0.55f;
         // Rolled once per world from the world seed and then persisted.
@@ -138,11 +146,33 @@ namespace ColonistAwareness
         // infrastructure, trade, and history can support a city.
         public float urbanGrowthPropensity = 0.45f;
         // Every settlement retains its structural state. This controls how
-        // often distant factions and settlements act.
-        public float offMapActivityRate = 0.5f;
+        // often distant factions found new settlements while the player
+        // plays. Political-belief pulse cadence is now a derived property
+        // of institutional capacity, not an authored tendency.
+        public float distantFoundingRate = 0.5f;
+        // How developed the world's settlements are at the start. A real
+        // cause that replaces the hidden per-tile hash: the authored
+        // baseline is modulated by each settlement's position in the
+        // settlement network (regional centers are more developed than
+        // isolated outposts).
+        public float worldDevelopment = 0.6f;
+        // Coherent countertypical prevalence and extremity: how many
+        // settlements diverge from their faction\u2019s norm (tech level,
+        // political character) and how far that divergence goes. Low
+        // variability preserves the dominant world character; high
+        // variability produces outlier societies while the dominant
+        // character still holds.
+        public float worldVariability = 0.3f;
+        // Longitudinal stability: how slowly endogenous state transitions
+        // (culture drift, political shifts, institutional change, distant
+        // founding) proceed. High stability slows change; low stability
+        // accelerates it. This modulates legitimate transition cadence,
+        // not randomness; it is distinct from the Storyteller\u2019s threat
+        // pacing and from variability\u2019s spatial divergence.
+        public float worldStability = 0.5f;
         // Preset provenance: the last bundle applied, so a diverged state
         // can say which preset it came from. Purely descriptive; the
-        // eight values above are the only causes.
+        // eleven values above are the only causes.
         public string lastAppliedPresetKey;
 
         public void ExposeData()
@@ -170,8 +200,14 @@ namespace ColonistAwareness
                 "reallocationSourceVariety", 0.50f);
             Scribe_Values.Look(ref urbanGrowthPropensity,
                 "urbanGrowthPropensity", 0.45f);
-            Scribe_Values.Look(ref offMapActivityRate,
-                "offMapActivityRate", 0.5f);
+            Scribe_Values.Look(ref distantFoundingRate,
+                "distantFoundingRate", 0.5f);
+            Scribe_Values.Look(ref worldDevelopment,
+                "worldDevelopment", 0.6f);
+            Scribe_Values.Look(ref worldVariability,
+                "worldVariability", 0.3f);
+            Scribe_Values.Look(ref worldStability,
+                "worldStability", 0.5f);
             Scribe_Values.Look(ref lastAppliedPresetKey,
                 "lastAppliedPresetKey");
         }
@@ -234,7 +270,10 @@ namespace ColonistAwareness
                 frontierHoldingSize = frontierHoldingSize,
                 reallocationSourceVariety = reallocationSourceVariety,
                 urbanGrowthPropensity = urbanGrowthPropensity,
-                offMapActivityRate = offMapActivityRate,
+                distantFoundingRate = distantFoundingRate,
+                worldDevelopment = worldDevelopment,
+                worldVariability = worldVariability,
+                worldStability = worldStability,
                 lastAppliedPresetKey = lastAppliedPresetKey
             };
         }
@@ -635,7 +674,7 @@ namespace ColonistAwareness
                         existingFactionLoadId);
                     return !CARegionalPlanUtility.IsEligibleExistingFaction(
                             faction) ? "Choose existing faction"
-                        : faction.Name + " · " + TechnologySummary;
+                        : faction.Name + " Â· " + TechnologySummary;
                 }
                 FactionDef def = CARegionalPlanUtility.FactionDefByName(
                     customFactionDefName);
@@ -644,7 +683,7 @@ namespace ColonistAwareness
                 string name = customName.NullOrEmpty()
                     ? "New " + def.LabelCap.ToString()
                     : customName;
-                return name + " · " + TechnologySummary;
+                return name + " Â· " + TechnologySummary;
             }
         }
 
@@ -2092,9 +2131,9 @@ namespace ColonistAwareness
             PlanetTile tile = SurfaceTile(id);
             if (!tile.Valid) return "invalid tile";
             Tile info = tile.Tile;
-            return "tile " + id + " · "
+            return "tile " + id + " Â· "
                 + (info.PrimaryBiome?.LabelCap.ToString() ?? "unknown biome")
-                + " · " + info.hilliness;
+                + " Â· " + info.hilliness;
         }
 
         // Road and river access come from the settlement's world tile. The
@@ -9814,7 +9853,7 @@ namespace ColonistAwareness
         // RegionalRockChunksJobsModule. A lazy yield iterator here re-runs
         // its whole body on every enumeration, and the patching machinery
         // enumerates more than once per application against the same
-        // in-place-mutated instructions — the first pass rewrites the call,
+        // in-place-mutated instructions â€” the first pass rewrites the call,
         // the next pass finds nothing and fires a spurious "replaced 0"
         // receipt while the replacement has in fact landed.
         [HarmonyTranspiler]
