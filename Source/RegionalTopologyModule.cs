@@ -127,7 +127,29 @@ namespace ColonistAwareness
                 float biomeCost = from.PrimaryBiome != to.PrimaryBiome
                     ? 0.2f : 0f;
 
-                return Math.Max(Math.Max(elevCost, hillCost), biomeCost);
+                // Coastal coherence: coastal tiles prefer to join with
+                // other coastal tiles. A coast-to-inland transition is a
+                // mild barrier so coastlines form region edges.
+                bool fromCoastal = CARegionalPlanUtility
+                    .ConstituentIsCoastal(fromId);
+                bool toCoastal = CARegionalPlanUtility
+                    .ConstituentIsCoastal(toId);
+                float coastCost = (fromCoastal != toCoastal) ? 0.25f : 0f;
+
+                // River corridor: tiles that share a river link prefer to
+                // join. A river is a corridor, not a barrier.
+                bool shareRiver = CARegionalPlanUtility
+                    .ConstituentsShareRoute(fromId, toId);
+                float riverAffinity = shareRiver ? -0.3f : 0f;
+
+                // Temperature transition: a large temperature difference
+                // is a mild environmental barrier (ecotone).
+                float tempDiff = Math.Abs(from.temperature - to.temperature);
+                float tempCost = Math.Min(0.25f, tempDiff / 40f);
+
+                float baseCost = Math.Max(Math.Max(elevCost, hillCost),
+                    Math.Max(biomeCost, Math.Max(coastCost, tempCost)));
+                return Math.Max(0f, baseCost + riverAffinity);
             }
 
             int seed = world.info.Seed;
