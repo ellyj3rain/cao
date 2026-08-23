@@ -111,3 +111,46 @@ Region authoring, starting-population presuppositions, UI text encoding
 (repaired source awaits visual confirmation), creation-screen latency, and the
 administration/physical-space design directions recorded in the batch's
 deferral list.
+
+## Addendum 2 - selection/partition decoupling and the shared geographic measure (2026-08-23 UTC / 2026-08-22 PDT)
+
+Runtime review exposed a wrong boundary: initial selection seeded the
+candidate as exactly the persistent partition region, discarding configured
+extent and orientation on partitioned ground. The operator's direction: the
+globe's stitched topology is persistent, visible geographic structure and
+evidence for plausible boundaries; regional selection is an authoring
+decision under the established size and configuration rules; determinism
+means the same world seed plus authoring inputs reproduce the selection, not
+that a selection is tied to a pre-generated partition.
+
+Changes on the branch (commit  48cea85):
+
+- CreateAuthoredAt now builds the candidate through the established
+  extent-and-orientation contract over connected usable land. The partition
+  record is consulted only as a fallback when the connected-land builder
+  cannot claim the ground at all (land already inside a realized region).
+  Relocation of a designed region now honors its requested extent and
+  orientation at the destination, matching the B14 interaction contract.
+- CARegionalPlanUtility.TryAdoptPartitionIdentity owns the one-land-one-
+  identity rule: a composition whose member set matches a partition
+  region exactly inherits that region's identity. It now applies to
+  authored (CreateAuthoredAt, CreateExplicit) and derived (Create)
+  candidates uniformly.
+- CARegionalGeometry.GeographicBarrierCost owns the single geographic
+  barrier measure (elevation, hilliness, biome, coastal coherence, river
+  corridor affinity, temperature, rainfall) consumed by both the partition
+  kernel and, as soft growth evidence, the candidate bundle builder. This
+  is stitching-as-evidence in selection: no selection is forced to follow
+  a partition boundary, but geography still shapes plausibility.
+- Correction: the rainfall transition term was computed and then dropped
+  by the introduced code, contradicting this record's declared behavior.
+  It now participates. Existing worlds keep their persisted partitions;
+  new worlds partition with the complete measure.
+
+Verification: source compiles 0/0 under the governed 8.0.423 build;
+substrate acceptance re-run remains 36/36 PASS (the harness's kernel
+contracts are unchanged by construction); B10 census regenerated for line
+drift (316 classified / 0 Critical-High). Preview and realization were
+traced to the same candidate member-set machinery; no second geographic
+ontology exists for the preview. In-game confirmation of the new selection
+behavior remains the operator's boundary.

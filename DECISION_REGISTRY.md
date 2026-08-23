@@ -2584,3 +2584,23 @@
   exact legacy evidence by a scoped fixture repair; generic migration remains
   strict. This completes the existing Culture line as kohai unit `VU-043` and
   derives `1.6.1.0-alpha`.
+
+- **DR-178** (2026-08-22) - **Regional selection is authoring; the partition
+  is geographic evidence.** The world's stitched topology is persistent,
+  visible geographic structure and evidence for plausible regional
+  boundaries. Starting-region selection follows the established size and
+  configuration rules over connected usable land and never has to reproduce
+  a pre-generated partition cell. A composition whose member set matches a
+  partition region exactly inherits that region's identity; exact
+  coincidence is the only such path. Determinism means the same world seed
+  plus authoring inputs reproduce the selection. The preview and the
+  realized map present the same candidate; no second geographic ontology
+  exists for the preview.
+
+- **DR-179** (2026-08-22) - **One shared geographic barrier measure.**
+  CARegionalGeometry.GeographicBarrierCost owns the barrier cost between
+  adjacent surface tiles - elevation, hilliness, biome, coastal coherence,
+  river corridor affinity, temperature, and rainfall - consumed by the
+  partition kernel and by candidate bundle growth as soft evidence. The
+  rainfall term computed at B20 introduction now actually participates,
+  repairing the divergence between the declared and implemented measure.

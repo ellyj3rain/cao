@@ -71,7 +71,7 @@ is its byte-identical output.
 | Retained suites | **PASS** - B10 316 classified / 0 Critical-High and B11 persistence census (267 carriers, 89 schemas, 5 exclusions, 0 invalid) regenerated and re-run 2026-08-22; B14 24/24, B17 PASS, B18 9/10 unchanged from the B19 close record |
 | Source compile | **PASS** - 0 warnings / 0 errors, governed SDK 8.0.423 |
 | Reproducible build (8.0.423) | **PASS locally** - two clean governed builds byte-identical; CI re-verification runs on push |
-| Deployment | **PASS** - committed deployed assembly at the junction-resolved loaded path, SHA-256 `ED49A02832CBD12C79A1C3982CD98F26F73B99B6F5E3A95363A28FB58ED1B04E`, 4,813,824 bytes, written 2026-08-22 21:16 PDT; supersedes the B19 production build `63DF9C6E...` |
+| Deployment | **PASS** - committed deployed assembly at the junction-resolved loaded path, SHA-256 `AA60AC8B13D575060D209B4254BC7504C315FBD19E237A8CA04EF9E5EB54E324`, 4,814,336 bytes; supersedes `ED49A028...` (encoding repair build) and the B19 production build `63DF9C6E...` |
 | Repository gates | **PASS locally** - `verify-repository.mjs` green after the test-expectation refresh; PR #18 first `ci-verify` run failed only on those stale expectations |
 
 ## Operator runtime boundary
@@ -82,7 +82,7 @@ visual or gameplay acceptance for the operator.
 
 | Runtime focus | Operator check |
 |---|---|
-| Deployed build | Confirm the loaded assembly is `ED49A028...` (the `[CA][Build]` line in the player log records it) and not the pre-fix `A383799E...` |
+| Deployed build | Confirm the loaded assembly is `AA60AC8B...` (the `[CA][Build]` line in the player log records it) and not the pre-fix `A383799E...` |
 | Runtime fixes | Presets hold their names instead of "Custom"; no "Use suggested" button; preview clicks do not reach the globe; political order editor closes by "Done"; Gravship landing reaches a map instead of the habitation crash |
 | Topology | Confirm stitched regions exist and are visible on the globe under the standard and Gravship lifecycle paths |
 | Create World front door | Nine named worlds, layered authoring (World Character, intermediate controls, Advanced), user presets |
@@ -90,7 +90,7 @@ visual or gameplay acceptance for the operator.
 | Anchor boundary | World-map inspect-string reads honestly; non-player settlements generate vanilla on entry |
 | Save/reload | Save and reload the real campaign; note wall time |
 
-Open runtime threads beyond the fixes: stitching visibility on the globe, the
+Selection model (Addendum 2): clicking new ground now authors by the configured extent and orientation with geographic-barrier evidence, and only an exact composition match inherits a partition identity - confirm the resulting shapes read as intended. Open runtime threads beyond the fixes: stitching visibility on the globe, the
 Gravship lifecycle's relationship to Starting Region authoring, starting-
 population presuppositions against a variable pawn set, creation-screen
 latency, and the administration and physical-space design directions. None of
