@@ -843,6 +843,17 @@ namespace ColonistAwareness
                 yield return pending;
             }
 
+            // A landing candidate being authored for a gravship arrival
+            // draws here too, so the geography under composition is the
+            // geography on the globe.
+            CARegionalPlan landing = CALandingAuthoring.Candidate;
+            if (landing?.memberTileIds != null
+                && landing.memberTileIds.Count > 0)
+            {
+                seen.Add(PlanKey(landing));
+                yield return landing;
+            }
+
             IReadOnlyList<CARegionalPlan> regions =
                 CARegionalWorldComponent.Current?.Regions;
             if (regions == null) yield break;
@@ -867,6 +878,10 @@ namespace ColonistAwareness
 
         private static bool IsSelected(CARegionalPlan plan)
         {
+            // The landing candidate being authored is the active selection
+            // by definition.
+            if (plan != null && plan == CALandingAuthoring.Candidate)
+                return true;
             PlanetTile tile = Verse.Find.WorldSelector?.SelectedTile
                 ?? PlanetTile.Invalid;
             return tile.Valid && plan?.ReservedTileIds != null

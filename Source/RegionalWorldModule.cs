@@ -3609,6 +3609,26 @@ namespace ColonistAwareness
                         + settlement.slot + ": " + programFailure + ".");
         }
 
+        // An authored landing candidate (the gravship arrives to live) takes
+        // the same durable realization tail a derived region takes: policy
+        // snapshot, composed population from residents and the world pool,
+        // validation, anchor absorption and pool consumption, reservation,
+        // registration. Authoring chose the geography; this composes it.
+        internal CARegionalPlan RegisterAuthoredLanding(CARegionalPlan candidate,
+            CAExpandedLandmassProfile profile, Faction parentFaction)
+        {
+            candidate.worldPolicy = WorldPolicy.Copy();
+            WorldPolicy.PopulateDerived(candidate, profile, parentFaction);
+            candidate.operatorAuthored = true;
+            ValidateDurableRegion(candidate);
+            CARegionalPlanUtility.ConsumeReallocatedSources(candidate);
+            if (!TryReserveRegion(candidate, out string failure))
+                throw new InvalidOperationException("Regional footprint "
+                    + candidate.regionalId + " cannot be reserved: "
+                    + failure);
+            return RegisterRegion(candidate);
+        }
+
         internal CARegionalPlan EnsureDerivedRegion(PlanetTile mapTile,
             CAExpandedLandmassProfile profile, Faction parentFaction)
         {
@@ -5280,8 +5300,35 @@ namespace ColonistAwareness
                 CARegionalSetupSession.ClearPending();
             }
             else
-                region = world.EnsureDerivedRegion(parent.Tile, profile,
-                    parent.Faction);
+            {
+                // A gravship landing carrying an authored landing candidate
+                // materializes that selection through the same durable tail
+                // a derived region takes; anything else - visits,
+                // unauthored landings, interrupted authoring - lands
+                // derived, exactly as before.
+                CARegionalPlan prepared = CALandingAuthoring.ConsumePrepared(
+                    parent.Tile, profile);
+                region = null;
+                if (prepared != null)
+                {
+                    try
+                    {
+                        region = world.RegisterAuthoredLanding(prepared,
+                            profile, parent.Faction);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning("[CA][Regional] authored landing "
+                            + "candidate " + prepared.regionalId
+                            + " could not be registered (" + ex.Message
+                            + "); deriving the region instead");
+                        region = null;
+                    }
+                }
+                if (region == null)
+                    region = world.EnsureDerivedRegion(parent.Tile, profile,
+                        parent.Faction);
+            }
             CARegionalPlanResolver.Resolve(region);
             // Resolution may create or find RimWorld faction objects, but the
             // confirmed authoring state must remain byte-for-byte causal input.
