@@ -410,12 +410,32 @@ namespace ColonistAwareness
                 }
                 if (!habitat.Viable)
                 {
-                    failure = "settlement " + settlement.slot
-                        + " cannot support permanent habitation: "
-                        + (settlement.habitatBlocker ?? "missing "
+                    // Anchor settlements keep their vanilla physical
+                    // layout and are authoritative existing centers.
+                    // CAO elaborates their composition without requiring
+                    // their vanilla buildings to meet CAO habitation
+                    // standards. Skip the viability failure for anchors;
+                    // authored (reallocated) settlements must still pass.
+                    if (settlement.populationOrigin
+                            == CASettlementOrigin.Unset)
+                    {
+                        Log.Warning("[CA][Regional] anchor settlement "
+                            + settlement.slot + " does not meet CAO "
+                            + "habitation standards ("
                             + CAHabitatViability.MissingWords(
-                                habitat.MissingRequirementMask));
-                    return false;
+                                habitat.MissingRequirementMask)
+                            + "); it keeps its vanilla layout as an "
+                            + "authoritative existing center");
+                    }
+                    else
+                    {
+                        failure = "settlement " + settlement.slot
+                            + " cannot support permanent habitation: "
+                            + (settlement.habitatBlocker ?? "missing "
+                                + CAHabitatViability.MissingWords(
+                                    habitat.MissingRequirementMask));
+                        return false;
+                    }
                 }
             }
             if ((settlements.Count == 1
