@@ -594,6 +594,17 @@ namespace ColonistAwareness
                     && Mouse.IsOver(map))
                     TipPreviewCell(map, plan, previewMap);
 
+                // Absorb mouse events inside the preview area so clicks
+                // do not pass through to the world map underneath it.
+                // The preview is informational; this makes it inert
+                // without removing existing navigation/inspect features
+                // that already consume their own events.
+                if (Mouse.IsOver(inRect)
+                    && Event.current != null
+                    && Event.current.isMouse
+                    && Event.current.type == EventType.MouseDown)
+                    Event.current.Use();
+
                 if (generating)
                 {
                     Widgets.DrawBoxSolid(map, new Color(

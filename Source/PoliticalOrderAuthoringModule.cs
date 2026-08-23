@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -615,7 +615,7 @@ namespace ColonistAwareness
             parts.Add(antiExtraction >= 50
                 ? "rent extraction barred" : DominantLabel(beliefs,
                     "economy.rent"));
-            return string.Join(" · ", parts.Where(value =>
+            return string.Join(" Â· ", parts.Where(value =>
                     !value.NullOrEmpty()).Distinct().ToArray());
         }
 
@@ -1618,6 +1618,15 @@ namespace ColonistAwareness
             viewHeight = rowY + 12f;
             Widgets.EndScrollView();
             Text.Font = previous;
+            // Visible close affordance: a "Done" button at the bottom
+            // of the editor, clearer than relying on the X or ESC alone.
+            float btnW = 120f;
+            float btnH = 32f;
+            Rect doneBtn = new Rect(
+                inRect.x + (inRect.width - btnW) * 0.5f,
+                inRect.yMax - btnH - 8f, btnW, btnH);
+            if (Widgets.ButtonText(doneBtn, "Done"))
+                Close();
             if (performanceStarted != 0L)
                 CAConvergenceExercise.RecordPoliticalFrame(
                     System.Diagnostics.Stopwatch.GetTimestamp()
