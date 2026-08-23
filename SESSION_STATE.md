@@ -71,7 +71,7 @@ is its byte-identical output.
 | Retained suites | **PASS** - B10 316 classified / 0 Critical-High and B11 persistence census (267 carriers, 89 schemas, 5 exclusions, 0 invalid) regenerated and re-run 2026-08-22; B14 24/24, B17 PASS, B18 9/10 unchanged from the B19 close record |
 | Source compile | **PASS** - 0 warnings / 0 errors, governed SDK 8.0.423 |
 | Reproducible build (8.0.423) | **PASS locally** - two clean governed builds byte-identical; CI re-verification runs on push |
-| Deployment | **PASS** - committed deployed assembly at the junction-resolved loaded path, SHA-256 `2B0C8C2D55C460482271FDB770F798560F40E1689975AC354067B9893589C1AD`, 4,820,992 bytes; supersedes `AA60AC8B...` (selection decoupling), `ED49A028...` (encoding repair), and the B19 production build `63DF9C6E...` |
+| Deployment | **PASS** - committed deployed assembly at the junction-resolved loaded path, SHA-256 `8746887102E9811DC0E60A47E109944F7666F7757E650ECEFBD428DD402391C3`, 4,821,504 bytes; supersedes `2B0C8C2D...` (landing authoring), `AA60AC8B...` (selection decoupling), `ED49A028...` (encoding repair), and the B19 production build `63DF9C6E...` |
 | Repository gates | **PASS locally** - `verify-repository.mjs` green after the test-expectation refresh; PR #18 first `ci-verify` run failed only on those stale expectations |
 
 ## Operator runtime boundary
@@ -82,7 +82,7 @@ visual or gameplay acceptance for the operator.
 
 | Runtime focus | Operator check |
 |---|---|
-| Deployed build | Confirm the loaded assembly is `2B0C8C2D...` (the `[CA][Build]` line in the player log records it) and not the pre-fix `A383799E...` |
+| Deployed build | Confirm the loaded assembly is `87468871...` (the `[CA][Build]` line in the player log records it) and not the pre-fix `A383799E...` |
 | Runtime fixes | Presets hold their names instead of "Custom"; no "Use suggested" button; preview clicks do not reach the globe; political order editor closes by "Done"; Gravship landing on fresh ground opens the landing-region author (confirm authors and registers at materialization; land-without-authoring derives as before; cancel does not launch) and reaches a map without the habitation crash |
 | Topology | Confirm stitched regions exist and are visible on the globe under the standard and Gravship lifecycle paths |
 | Create World front door | Nine named worlds, layered authoring (World Character, intermediate controls, Advanced), user presets |
@@ -91,9 +91,8 @@ visual or gameplay acceptance for the operator.
 | Save/reload | Save and reload the real campaign; note wall time |
 
 Selection model (Addendum 2): clicking new ground now authors by the configured extent and orientation with geographic-barrier evidence, and only an exact composition match inherits a partition identity - confirm the resulting shapes read as intended. Open runtime threads beyond the fixes: stitching visibility on the globe, the operator friction policy for mid-campaign authoring entry
-(per-landing author, where offered, whether caravan settling joins), starting-
-population presuppositions against a variable pawn set, creation-screen
-latency, and the administration and physical-space design directions. None of
+(per-landing author, where offered, whether caravan settling joins), whether the
+variable-pawn-set behavior reads correctly under Prepare Carefully (the pawn set is now the count truth wherever it exists), further creation-screen latency profiling with the game instrumented, and the administration and physical-space design directions. None of
 these is accepted or settled by this record.
 
 ## Environment and preserved evidence

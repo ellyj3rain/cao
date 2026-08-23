@@ -1,4 +1,4 @@
-﻿# B20 - World-Authoring Ontology Cleanup and Pre-Runtime Convergence
+﻿﻿# B20 - World-Authoring Ontology Cleanup and Pre-Runtime Convergence
 
 | Field | Record |
 |---|---|
@@ -123,7 +123,7 @@ decision under the established size and configuration rules; determinism
 means the same world seed plus authoring inputs reproduce the selection, not
 that a selection is tied to a pre-generated partition.
 
-Changes on the branch (commit  48cea85):
+Changes on the branch (commit `048cea85`):
 
 - CreateAuthoredAt now builds the candidate through the established
   extent-and-orientation contract over connected usable land. The partition
@@ -189,3 +189,37 @@ opens the author, or the author is offered differently (for example from
 the targeting flow or the regional overview). Caravan mid-campaign settling
 (SettleInEmptyTileUtility / SettleInExistingMapUtility) is the same
 question and currently keeps derived behavior.
+
+## Addendum 4 - starting-population truth and creation-screen frame churn (2026-08-23 UTC / 2026-08-22 PDT)
+
+**Dynamic starting population.** The trace found a single fixed-count access
+point, `CAPlayerFoundingModel.StartingPawnCount()`, feeding the founding
+default-arrangement choice, the ancestral-group gate, the founding context
+summary, the arrangement consequence copy, and the culture-preview residents
+input; the runtime operational-access path already read the actual pawn set
+correctly. The accessor now reads RimWorld's actual generated pawn set
+(`startingAndOptionalPawns`) whenever that set exists, so customization systems
+such as Prepare Carefully - which change the population on the starting-pawn
+page, after the scenario's configured total - are honored everywhere the
+count is read. Before pawn generation only the scenario configuration
+exists, and the accessor says so by reading it; nothing presupposes it after.
+
+**Auto-generated founding terms removed at the seed boundary too.** The
+runtime-phase fix removed the suggestion button and its refresh fallback, but
+`CAPlayerFoundingModel.Ensure` still auto-filled an unseeded draft from the
+scenario default, making the blank-arrangement fallback unreachable. Ensure
+no longer generates terms: terms are authored or absent. Null and blank
+arrangements are valid end to end, and runtime application already tolerates
+absence.
+
+**Creation-screen frame churn.** Two bounded per-frame costs on the world map
+(which hosts the creation screens) are fixed in the footprint draw layer:
+`Visible` answered through a full allocation enumerator, and the
+mesh-regeneration key joined every registered region's full member list into
+a string every frame. Visibility now answers without allocation, and the key
+is an allocation-free integer fingerprint: registered regions are covered by
+the world-state revision (their member sets are fixed at registration), and
+only in-authoring candidates fold their exact identity.
+
+Deeper latency work (actual frame profiles on the creation screens) needs a
+running game with instrumentation; it remains open for the operator loop.
