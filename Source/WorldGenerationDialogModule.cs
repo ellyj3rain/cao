@@ -265,6 +265,8 @@ namespace ColonistAwareness
             p.frontierHoldingSize = values.FrontierSize;
             p.reallocationSourceVariety = values.Variety;
             p.distantFoundingRate = values.DistantFounding;
+            p.worldVariability = values.WorldVariability;
+            p.worldStability = values.WorldStability;
             p.lastAppliedPresetKey = Key;
             p.realizedStitchedRegionFrequency = -1f;
         }
