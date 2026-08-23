@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
@@ -88,7 +88,7 @@ namespace ColonistAwareness
                 Norm = p => Mathf.Clamp01(
                     ((p.stitchedRegionSizeMin + p.stitchedRegionSizeMax)
                         * 0.5f - 1f) / 9f),
-                Word = p => p.stitchedRegionSizeMin + "–"
+                Word = p => p.stitchedRegionSizeMin + "â€“"
                     + p.stitchedRegionSizeMax + " areas"
             },
             new Dimension
@@ -133,10 +133,34 @@ namespace ColonistAwareness
             },
             new Dimension
             {
-                Short = "distant", Label = "Distant world",
-                Norm = p => p.offMapActivityRate,
-                Word = p => p.offMapActivityRate >= 0.65f ? "busy"
-                    : p.offMapActivityRate <= 0.25f ? "quiet" : "active"
+                Short = "dev", Label = "Settlement development",
+                Norm = p => p.worldDevelopment,
+                Word = p => p.worldDevelopment >= 0.75f ? "well-established"
+                    : p.worldDevelopment <= 0.3f ? "young settlements"
+                    : "moderately developed"
+            },
+            new Dimension
+            {
+                Short = "founding", Label = "Distant founding",
+                Norm = p => p.distantFoundingRate,
+                Word = p => p.distantFoundingRate >= 0.65f ? "expanding"
+                    : p.distantFoundingRate <= 0.25f ? "static" : "occasional"
+            },
+            new Dimension
+            {
+                Short = "vary", Label = "Variability",
+                Norm = p => p.worldVariability,
+                Word = p => p.worldVariability >= 0.65f ? "highly varied"
+                    : p.worldVariability <= 0.2f ? "uniform"
+                    : "some outliers"
+            },
+            new Dimension
+            {
+                Short = "stable", Label = "Stability",
+                Norm = p => p.worldStability,
+                Word = p => p.worldStability >= 0.75f ? "very stable"
+                    : p.worldStability <= 0.25f ? "volatile"
+                    : "moderate"
             }
         };
 
@@ -146,11 +170,11 @@ namespace ColonistAwareness
                 + p.stitchedRegionFrequencyMax) * 0.5f;
         }
 
-        // The eight state words as one line: the authored state read at
+        // The eleven state words as one line: the authored state read at
         // a glance, in the page's own type.
         internal static string StateLine(CARegionalWorldPolicy p)
         {
-            return string.Join(" · ", Dimensions.Select(
+            return string.Join(" Â· ", Dimensions.Select(
                 dimension => dimension.Word(p)));
         }
 
@@ -161,7 +185,7 @@ namespace ColonistAwareness
             CAWorldPreset origin = CAWorldPreset.ByKey(
                 value?.lastAppliedPresetKey);
             return origin == null ? "Custom world"
-                : "Custom — from " + origin.Name;
+                : "Custom â€” from " + origin.Name;
         }
 
         internal static bool IsPresetState(CARegionalWorldPolicy value)
@@ -198,7 +222,7 @@ namespace ColonistAwareness
             p.frontierHoldingFrequency = values.FrontierFrequency;
             p.frontierHoldingSize = values.FrontierSize;
             p.reallocationSourceVariety = values.Variety;
-            p.offMapActivityRate = values.OffMap;
+            p.distantFoundingRate = values.DistantFounding;
             p.lastAppliedPresetKey = Key;
             p.realizedStitchedRegionFrequency = -1f;
         }
@@ -230,8 +254,14 @@ namespace ColonistAwareness
                     values.FrontierSize)
                 && Mathf.Approximately(value.reallocationSourceVariety,
                     values.Variety)
-                && Mathf.Approximately(value.offMapActivityRate,
-                    values.OffMap);
+                && Mathf.Approximately(value.distantFoundingRate,
+                    values.DistantFounding)
+                && Mathf.Approximately(value.worldDevelopment,
+                    values.WorldDevelopment)
+                && Mathf.Approximately(value.worldVariability,
+                    values.WorldVariability)
+                && Mathf.Approximately(value.worldStability,
+                    values.WorldStability);
         }
 
         internal static CAWorldPreset Matching(
@@ -353,7 +383,7 @@ namespace ColonistAwareness
             Text.Font = GameFont.Tiny;
             GUI.color = CAOpeningTheme.TextLo;
             Widgets.Label(new Rect(x, inner.yMax - 30f, w - 170f, 24f),
-                "Tendencies, not guarantees — land, population, access, "
+                "Tendencies, not guarantees â€” land, population, access, "
                 + "relations, and scenario overrides decide realized "
                 + "outcomes.");
             GUI.color = Color.white;
@@ -444,7 +474,7 @@ namespace ColonistAwareness
                 "How much of the world's land joins into multi-area "
                 + "regions. The world rolls one share from your band "
                 + "when it forms, then divides every part of its land "
-                + "accordingly — the regions you select and enter on "
+                + "accordingly â€” the regions you select and enter on "
                 + "the world map.");
             var range = new FloatRange(policy.stitchedRegionFrequencyMin,
                 policy.stitchedRegionFrequencyMax);
@@ -495,7 +525,7 @@ namespace ColonistAwareness
             Header(x, ref y, w, "Settlement gathering",
                 CAWorldAuthoring.Dimensions[2].Word(policy),
                 "Where the world's settlements are placed when it forms "
-                + "— standing apart or drawing together — and where "
+                + "â€” standing apart or drawing together â€” and where "
                 + "distant peoples later found new ones. Good ground "
                 + "always scores alongside.");
             Slider(x, ref y, w, policy.settlementConcentration,
@@ -504,8 +534,8 @@ namespace ColonistAwareness
             Header(x, ref y, w, "Urban development",
                 CAWorldAuthoring.Dimensions[3].Word(policy),
                 "Where the town and city bars stand. Every settlement's "
-                + "standing — hamlet to city, shown when you inspect it "
-                + "— is judged against these bars from its real support "
+                + "standing â€” hamlet to city, shown when you inspect it "
+                + "â€” is judged against these bars from its real support "
                 + "facts; the bars cannot supply support a place lacks.");
             Slider(x, ref y, w, policy.urbanGrowthPropensity,
                 v => SetValue(ref policy.urbanGrowthPropensity, v),
@@ -527,8 +557,8 @@ namespace ColonistAwareness
             {
                 "About " + (share * 100f).ToString("F0") + "% of the "
                 + "world's land lies in regions that span several areas "
-                + "— " + p.stitchedRegionSizeMin + " to "
-                + p.stitchedRegionSizeMax + " of them — and each such "
+                + "â€” " + p.stitchedRegionSizeMin + " to "
+                + p.stitchedRegionSizeMax + " of them â€” and each such "
                 + "region becomes one continuous map when you enter it. "
                 + "The rest of the land stands as single areas.",
 
@@ -539,7 +569,7 @@ namespace ColonistAwareness
                     : p.settlementConcentration <= 0.35f
                     ? "Settlements stand apart, each seeking its own "
                     + "good ground across the world."
-                    : "Settlements spread evenly — neither crowded nor "
+                    : "Settlements spread evenly â€” neither crowded nor "
                     + "isolated.",
 
                 "Where the bar sits for a settlement to count as a "
@@ -563,11 +593,11 @@ namespace ColonistAwareness
                 + CAWorldTendencyCausalKernel.SourceVarietyTargetDistinct(
                     6, 5, p.reallocationSourceVariety)
                 + " different peoples among every six, and "
-                + (p.offMapActivityRate >= 0.65f
-                    ? "the distant world stays busy — far-off "
+                + (p.distantFoundingRate >= 0.65f
+                    ? "the distant world stays busy â€” far-off "
                     + "communities keep acting and founding new places "
                     + "while you play."
-                    : p.offMapActivityRate <= 0.25f
+                    : p.distantFoundingRate <= 0.25f
                     ? "the distant world is quiet: far-off places "
                     + "change little while you play."
                     : "the distant world keeps moving between your "
@@ -604,7 +634,7 @@ namespace ColonistAwareness
             }
             GUI.color = new Color(0.45f, 0.51f, 0.56f);
             Widgets.Label(new Rect(inner.x, inner.yMax - 30f,
-                inner.width, 30f), "Tendencies, not guarantees — land, "
+                inner.width, 30f), "Tendencies, not guarantees â€” land, "
                 + "population, access, relations and scenario overrides "
                 + "decide what a world actually becomes.");
             GUI.color = Color.white;
@@ -618,7 +648,7 @@ namespace ColonistAwareness
             Header(x, ref y, w, "Frontier sites",
                 CAWorldAuthoring.Dimensions[4].Word(policy),
                 "How much of each region's suitable empty land carries "
-                + "a frontier holding when the region realizes — real "
+                + "a frontier holding when the region realizes â€” real "
                 + "places on the map, apart from the settlements.");
             Slider(x, ref y, w, policy.frontierHoldingFrequency,
                 v => SetValue(ref policy.frontierHoldingFrequency, v),
@@ -637,21 +667,30 @@ namespace ColonistAwareness
             Header(x, ref y, w, "Settlement origins",
                 CAWorldAuthoring.Dimensions[6].Word(policy),
                 "How many distinct peoples found the world's "
-                + "settlements — at world creation, in regions as they "
+                + "settlements â€” at world creation, in regions as they "
                 + "realize, and among later distant founders. Only "
                 + "factions actually present can appear.");
             Slider(x, ref y, w, policy.reallocationSourceVariety,
                 v => SetValue(ref policy.reallocationSourceVariety, v),
                 "repeated", "varied");
-            Header(x, ref y, w, "Distant world",
+            Header(x, ref y, w, "Settlement development",
                 CAWorldAuthoring.Dimensions[7].Word(policy),
-                "How much the far-off world acts while you play: the "
-                + "share of distant communities that advance each "
-                + "interval, and how often distant peoples found new "
-                + "settlements. Loaded places always stay live.");
-            Slider(x, ref y, w, policy.offMapActivityRate,
-                v => SetValue(ref policy.offMapActivityRate, v),
-                "quiet", "busy");
+                "How much accumulated infrastructure and history "
+                + "the world\u2019s settlements begin with. A "
+                + "well-established world has deep roots; a young "
+                + "world starts thin. Regional centers are one step "
+                + "more developed than isolated outposts.");
+            Slider(x, ref y, w, policy.worldDevelopment,
+                v => SetValue(ref policy.worldDevelopment, v),
+                "young", "established");
+            Header(x, ref y, w, "Distant founding",
+                CAWorldAuthoring.Dimensions[8].Word(policy),
+                "How often distant peoples found new settlements "
+                + "while you play. Loaded places always stay live "
+                + "regardless of this tendency.");
+            Slider(x, ref y, w, policy.distantFoundingRate,
+                v => SetValue(ref policy.distantFoundingRate, v),
+                "static", "expanding");
         }
 
         private void Header(float x, ref float y, float width,

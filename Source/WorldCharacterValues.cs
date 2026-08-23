@@ -1,4 +1,4 @@
-namespace ColonistAwareness
+﻿namespace ColonistAwareness
 {
     // THE AUTHORED VALUES BEHIND EACH NAMED WORLD, AS PURE DATA. The
     // chooser presents these and the world consumes them, but until now
@@ -23,12 +23,17 @@ namespace ColonistAwareness
         internal readonly float FrontierFrequency;
         internal readonly float FrontierSize;
         internal readonly float Variety;
-        internal readonly float OffMap;
+        internal readonly float WorldDevelopment;
+        internal readonly float DistantFounding;
+        internal readonly float WorldVariability;
+        internal readonly float WorldStability;
 
         internal CAWorldCharacterValues(string key, float frequencyMin,
             float frequencyMax, int spanMin, int spanMax,
             float concentration, float urban, float frontierFrequency,
-            float frontierSize, float variety, float offMap)
+            float frontierSize, float variety, float worldDevelopment,
+            float distantFounding, float worldVariability,
+            float worldStability)
         {
             Key = key;
             FrequencyMin = frequencyMin;
@@ -40,7 +45,10 @@ namespace ColonistAwareness
             FrontierFrequency = frontierFrequency;
             FrontierSize = frontierSize;
             Variety = variety;
-            OffMap = offMap;
+            WorldDevelopment = worldDevelopment;
+            DistantFounding = distantFounding;
+            WorldVariability = worldVariability;
+            WorldStability = worldStability;
         }
 
         internal float FrequencyMid
@@ -51,25 +59,32 @@ namespace ColonistAwareness
         internal static readonly CAWorldCharacterValues[] All =
         {
             new CAWorldCharacterValues("balanced",
-                0.25f, 0.55f, 3, 5, 0.5f, 0.45f, 0.45f, 0.5f, 0.5f, 0.5f),
+                0.25f, 0.55f, 3, 5, 0.5f, 0.45f, 0.45f, 0.5f, 0.5f,
+                0.5f, 0.5f, 0.35f, 0.5f),
             new CAWorldCharacterValues("heartlands",
                 0.57f, 0.87f, 3, 5, 0.82f, 0.8f, 0.15f, 0.5f, 0.82f,
-                0.82f),
+                0.85f, 0.55f, 0.15f, 0.85f),
             new CAWorldCharacterValues("city-states",
-                0f, 0.2f, 2, 3, 0.85f, 0.9f, 0.2f, 0.3f, 0.35f, 0.35f),
+                0f, 0.2f, 2, 3, 0.85f, 0.9f, 0.2f, 0.3f, 0.35f,
+                0.85f, 0.35f, 0.25f, 0.7f),
             new CAWorldCharacterValues("wide-marches",
-                0.6f, 0.9f, 6, 9, 0.2f, 0.3f, 0.6f, 0.6f, 0.5f, 0.5f),
+                0.6f, 0.9f, 6, 9, 0.2f, 0.3f, 0.6f, 0.6f, 0.5f,
+                0.35f, 0.45f, 0.45f, 0.35f),
             new CAWorldCharacterValues("open-frontier",
-                0f, 0.27f, 2, 3, 0.2f, 0.15f, 0.78f, 0.82f, 0.5f, 0.5f),
+                0f, 0.27f, 2, 3, 0.2f, 0.15f, 0.78f, 0.82f, 0.5f,
+                0.15f, 0.3f, 0.55f, 0.2f),
             new CAWorldCharacterValues("fractured-rim",
                 0.25f, 0.55f, 3, 5, 0.2f, 0.45f, 0.78f, 0.18f, 0.82f,
-                0.82f),
+                0.35f, 0.82f, 0.85f, 0.15f),
             new CAWorldCharacterValues("crossroads",
-                0.3f, 0.6f, 3, 6, 0.5f, 0.6f, 0.3f, 0.4f, 1f, 1f),
+                0.3f, 0.6f, 3, 6, 0.5f, 0.6f, 0.3f, 0.4f, 1f,
+                0.55f, 0.85f, 0.65f, 0.4f),
             new CAWorldCharacterValues("backwater",
-                0.25f, 0.55f, 3, 5, 0.5f, 0.3f, 0.35f, 0.5f, 0.15f, 0.1f),
+                0.25f, 0.55f, 3, 5, 0.5f, 0.3f, 0.35f, 0.5f, 0.15f,
+                0.3f, 0.1f, 0.15f, 0.8f),
             new CAWorldCharacterValues("imperial-marches",
-                0.55f, 0.85f, 4, 7, 0.75f, 0.85f, 0.7f, 0.7f, 0.3f, 0.6f)
+                0.55f, 0.85f, 4, 7, 0.75f, 0.85f, 0.7f, 0.7f, 0.3f,
+                0.8f, 0.6f, 0.35f, 0.6f)
         };
 
         internal static CAWorldCharacterValues ByKey(string key)
