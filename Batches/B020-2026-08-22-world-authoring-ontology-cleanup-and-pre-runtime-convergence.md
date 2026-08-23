@@ -43,3 +43,71 @@ B20 closes at the corrected source, deterministic acceptance, and current govern
 - GENUINELY OPERATOR-BLOCKED: visual and gameplay acceptance of the Create-World front door, the settlement inspect-string, the in-game regional start, and the anchor settlement composition. The operator is the design authority and judge of how the game looks and plays; deterministic and game-assembly evidence does not settle that question.
 
 Static, source, deterministic-acceptance, and reported gate state do not establish visual or gameplay acceptance. The next development batch is `B21`; the next runtime action is the operator's in-game test.
+
+## Addendum - runtime-test phase and corrections (2026-08-23 UTC / 2026-08-22 PDT)
+
+B20's governance close (`b1dc25bb`) was followed by an operator runtime-test
+session and five runtime-fix commits on the same branch. This addendum records
+that phase without altering the closed record above.
+
+### Runtime fixes after the governance close
+
+| Commit | Fix | Runtime verification |
+|---|---|---|
+| `1c6b0e42` | Preset "Custom" glitch: `CAWorldPreset.Apply` now assigns `worldVariability` and `worldStability`; presets match deterministically again | Implemented and code-inspected; not exercised in game |
+| `90a0638e` | "Use suggested" founding-arrangement button and auto-suggestion fallback removed per operator direction; a blank arrangement ("No terms chosen") is the fallback | Implemented and code-inspected; not exercised in game |
+| `f863be87` | Topology lifecycle: `EnsureTopology` and `RebuildWorldSettlementStates` moved from the order-450 WorldGenStep (not executed by the Gravship/Odyssey lifecycle) into `FinalizeInit`, which runs for every path, idempotently | Implemented and code-inspected; not exercised in game |
+| `abfd982c` | Regional preview absorbs mouse events instead of clicking through to the globe; the political order editor gains a visible "Done" close affordance | Implemented and code-inspected; not exercised in game |
+| `b4ad888e` | Gravship landing crash: anchor settlements (`populationOrigin == CASettlementOrigin.Unset`) skip the CAO habitation-viability failure and log a warning; they are authoritative existing centers that keep their vanilla layouts. CAO-authored (reallocated) settlements must still pass | Implemented and code-inspected; not exercised in game |
+
+### Runtime evidence captured
+
+The operator's last in-game session loaded assembly SHA-256 `A383799E...`
+(4,814,848 bytes, written 2026-08-22 19:04 PDT), a build from before every one
+of the five fixes; the session before it loaded the B19 production assembly
+`63DF9C6E...`. The game's own log captured the reported landfall crash
+(`System.InvalidOperationException`: "settlement 0 cannot support permanent
+habitation: Missing heating or cooling, a reliable food route, local medical
+care" from `ValidateConfirmedComposition` via `EnsureDerivedRegion`, during
+`GravshipUtility.ArriveNewMap`) and the topology gap behind it
+("[CA][Topology] tile 98594 has no partition membership; deriving a legacy
+visit-scoped region"). No runtime fix above has therefore been in-game
+verified; each is a candidate for the operator's next launch.
+
+### Corrections applied with this reconciliation
+
+- Source encoding repair. The B20 editing passes double-encoded non-ASCII
+  punctuation into mojibake (35 middle-dot sequences U+00C2 U+00B7, 15 em-dash sequences U+00E2 U+20AC U+201D, 1 en-dash sequence U+00E2 U+20AC U+201C; across 9 production source files and one receipts tool) and added
+  UTF-8 byte-order marks to 19 source files. Pre-B20 main carries zero
+  corruption and no BOMs outside `StackLord.cs` and bundled third-party
+  sources; all of it is repaired back to that convention. The
+  `Receipts/B18` convergence-receipt artifact carries mojibake captured during
+  earlier runs; receipts are immutable evidence and are intentionally not
+  rewritten.
+- `tools/version-model.test.mjs` expectations advanced to the closed B20 state
+  (`1.8.0.0-alpha`, A1-B20, 122 batches, B21 next). The stale expectations were
+  the sole failure in PR #18's first `ci-verify` run (2026-08-23T02:12Z);
+  `codeql` and `dependency-scan` were green.
+- Retained-suite censuses regenerated (`B10_SYNTHETIC_STATE_SWEEP.md`,
+  `PERSISTENCE_CENSUS.md`) for the line drift the runtime-fix commits
+  introduced; classifications unchanged (B10 316 classified / 0 Critical-High;
+  persistence census passes).
+- The named environmental debt on the governed build is lifted: .NET SDK
+  8.0.423 is now installed locally (the B19-era claim of no network no longer
+  holds). Two clean governed production builds
+  (Release / Rebuild / ContinuousIntegrationBuild / no debug symbols per
+  `tools/ci/verify-dotnet.sh`) are byte-identical, and the tracked and
+  junction-deployed assembly is their output: SHA-256 `ED49A028...`,
+  4,813,824 bytes, replacing `63DF9C6E...` (B19 production build).
+
+### Standing after this addendum
+
+PR #18 is open and not merged. B20 closes further - and B21 opens - only after
+the operator's explicit in-game acceptance of the deployed assembly, which
+includes but is not limited to the five runtime fixes above. Open runtime
+threads carried for the operator's judgment and next phases: stitching
+visualization on the globe, the Gravship lifecycle's relationship to Starting
+Region authoring, starting-population presuppositions, UI text encoding
+(repaired source awaits visual confirmation), creation-screen latency, and the
+administration/physical-space design directions recorded in the batch's
+deferral list.
