@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -615,7 +615,7 @@ namespace ColonistAwareness
             parts.Add(antiExtraction >= 50
                 ? "rent extraction barred" : DominantLabel(beliefs,
                     "economy.rent"));
-            return string.Join(" Â· ", parts.Where(value =>
+            return string.Join(" · ", parts.Where(value =>
                     !value.NullOrEmpty()).Distinct().ToArray());
         }
 

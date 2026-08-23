@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
@@ -425,7 +425,7 @@ namespace ColonistAwareness
                 component.PoliticalRecordFor(record.regionId);
             string regionLine = "Region: "
                 + CARegionalGeography.TopologyName(record) + " ("
-                + record.memberTileIds.Count + " areas) â€” "
+                + record.memberTileIds.Count + " areas) — "
                 + (political?.StatusLine
                     ?? CARegionalGeography.PoliticalSummary(record));
             CARegionalPoliticalEvent latest =

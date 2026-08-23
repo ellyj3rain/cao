@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -5026,10 +5026,10 @@ namespace ColonistAwareness
                     row.width - 8f, 18f),
                     all[i].organizationKey == "player" ? "your colony"
                         : all[i].IsFederation
-                            ? "federation Â· " + all[i].MemberKeys.Count
+                            ? "federation · " + all[i].MemberKeys.Count
                                 + " members"
                         : all[i].IsFactionOrganization
-                            ? "faction organization Â· "
+                            ? "faction organization · "
                                 + all[i].SettlementMemberKeys.Count
                                 + " settlements"
                         : all[i].offices.Count + " office(s), "
@@ -5097,7 +5097,7 @@ namespace ColonistAwareness
                         Widgets.DrawHighlightIfMouseover(memberRow);
                         Widgets.Label(memberRow,
                             (settlement?.name ?? settlementKey)
-                            + " Â· shared: " + shared);
+                            + " · shared: " + shared);
                         if (settlement != null
                             && Widgets.ButtonInvisible(memberRow))
                             selectedKey = settlement.organizationKey;

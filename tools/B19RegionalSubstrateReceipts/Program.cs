@@ -1,4 +1,4 @@
-﻿using ColonistAwareness;
+using ColonistAwareness;
 
 // Deterministic acceptance receipts for the world-wide regional partition
 // kernel. These pass or fail on the kernel's actual mathematics: no engine,
@@ -179,7 +179,7 @@ internal static class Program
         }
 
         // 7. Span band: no joined region exceeds the ceiling, and any
-        // joined region below the floor is at a merge fixpoint â€” no
+        // joined region below the floor is at a merge fixpoint — no
         // adjacent region could absorb it inside the band. Sub-floor
         // regions at the fixpoint are genuinely blocked geography.
         List<CARegionalTopologyKernel.RegionSeed> banded =

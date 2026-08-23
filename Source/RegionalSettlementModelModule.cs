@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -1208,7 +1208,7 @@ namespace ColonistAwareness
                 return plan.settlements.Any(b => b != null)
                     ? "not set"
                     : "unsettled land";
-            return PatternWords(topology) + " Â· " + ScaleWords(scale);
+            return PatternWords(topology) + " · " + ScaleWords(scale);
         }
 
         // Settlement authority is separate from Political Order. It may be
@@ -1318,7 +1318,7 @@ namespace ColonistAwareness
                 : "present in " + held + " settlement"
                     + (held == 1 ? "" : "s"));
             if (minority > 0)
-                text.Append(" Â· resident population in " + minority
+                text.Append(" · resident population in " + minority
                     + " more");
             CASettlementAuthority authority;
             bool authorityKnown = TrySettlementAuthorityOf(plan, group,
@@ -1327,8 +1327,8 @@ namespace ColonistAwareness
                 text.Append((authority
                         == CASettlementAuthority.IndependentWithSharedDefense
                         || authority == CASettlementAuthority.Independent)
-                    ? " Â· no single capital"
-                    : " Â· seat at its "
+                    ? " · no single capital"
+                    : " · seat at its "
                         + (plan.settlements.FirstOrDefault(b => b != null
                             && b.OwningFactionKey == group.key
                             && b.realizedRole
@@ -1347,12 +1347,12 @@ namespace ColonistAwareness
                 out authority);
             int held = plan.settlements.Count(b => b != null
                 && b.OwningFactionKey == group.key);
-            if (held == 0) return structure + " Â· no settlements";
-            if (held == 1) return structure + " Â· one settlement";
-            return structure + " Â· " + (authorityKnown
+            if (held == 0) return structure + " · no settlements";
+            if (held == 1) return structure + " · one settlement";
+            return structure + " · " + (authorityKnown
                     ? SettlementAuthorityWords(authority)
                     : "authority between settlements not set")
-                + " Â· " + PatternWords(
+                + " · " + PatternWords(
                     (CASettlementPattern)plan.settlementPattern)
                 + " " + ScaleWords(
                     (CASettlementScale)plan.settlementScale);

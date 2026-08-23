@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -524,14 +524,14 @@ namespace ColonistAwareness
                 GUI.color = CAOpeningTheme.TextLo;
                 Widgets.Label(new Rect(frame.x + 4f, frame.y,
                     frame.width - 8f, headerHeight),
-                    CARegionalPlanUtility.RegionName(plan) + " Â· "
+                    CARegionalPlanUtility.RegionName(plan) + " · "
                     + plan.BackingMapSize.x + "x" + plan.BackingMapSize.z
-                    + (generating ? " Â· generating..."
+                    + (generating ? " · generating..."
                         : previewZoom > 1.01f
-                            ? " Â· " + previewZoom.ToString("F1")
-                                + "x Â· drag to pan, scroll to zoom, "
+                            ? " · " + previewZoom.ToString("F1")
+                                + "x · drag to pan, scroll to zoom, "
                                 + "right-click to reset"
-                            : " Â· scroll to zoom Â· hover for ground"));
+                            : " · scroll to zoom · hover for ground"));
                 GUI.color = Color.white;
                 Text.Font = GameFont.Small;
 
@@ -1171,7 +1171,7 @@ namespace ColonistAwareness
             }
             TooltipHandler.TipRegion(map, new TipSignal(
                 terrain.CapitalizeFirst()
-                + (water == null ? "" : " Â· " + water)
+                + (water == null ? "" : " · " + water)
                 + (area == null ? "" : "\n" + area)
                 + "\n(" + cellX + " | " + cellZ + ")", 73211905));
         }

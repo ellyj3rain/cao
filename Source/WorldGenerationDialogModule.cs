@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
@@ -88,7 +88,7 @@ namespace ColonistAwareness
                 Norm = p => Mathf.Clamp01(
                     ((p.stitchedRegionSizeMin + p.stitchedRegionSizeMax)
                         * 0.5f - 1f) / 9f),
-                Word = p => p.stitchedRegionSizeMin + "â€“"
+                Word = p => p.stitchedRegionSizeMin + "–"
                     + p.stitchedRegionSizeMax + " areas"
             },
             new Dimension
@@ -213,7 +213,7 @@ namespace ColonistAwareness
         // a glance, in the page's own type.
         internal static string StateLine(CARegionalWorldPolicy p)
         {
-            return string.Join(" Â· ", Dimensions.Select(
+            return string.Join(" · ", Dimensions.Select(
                 dimension => dimension.Word(p)));
         }
 
@@ -224,7 +224,7 @@ namespace ColonistAwareness
             CAWorldPreset origin = CAWorldPreset.ByKey(
                 value?.lastAppliedPresetKey);
             return origin == null ? "Custom world"
-                : "Custom â€” from " + origin.Name;
+                : "Custom — from " + origin.Name;
         }
 
         internal static bool IsPresetState(CARegionalWorldPolicy value)
@@ -526,7 +526,7 @@ namespace ColonistAwareness
             Text.Font = GameFont.Tiny;
             GUI.color = CAOpeningTheme.TextLo;
             Widgets.Label(new Rect(x, inner.yMax - 30f, w - 170f, 24f),
-                "Tendencies, not guarantees â€” land, population, access, "
+                "Tendencies, not guarantees — land, population, access, "
                 + "relations, and scenario overrides decide realized "
                 + "outcomes.");
             GUI.color = Color.white;
@@ -653,7 +653,7 @@ namespace ColonistAwareness
                 "How much of the world's land joins into multi-area "
                 + "regions. The world rolls one share from your band "
                 + "when it forms, then divides every part of its land "
-                + "accordingly â€” the regions you select and enter on "
+                + "accordingly — the regions you select and enter on "
                 + "the world map.");
             var range = new FloatRange(policy.stitchedRegionFrequencyMin,
                 policy.stitchedRegionFrequencyMax);
@@ -704,7 +704,7 @@ namespace ColonistAwareness
             Header(x, ref y, w, "Settlement gathering",
                 CAWorldAuthoring.Dimensions[2].Word(policy),
                 "Where the world's settlements are placed when it forms "
-                + "â€” standing apart or drawing together â€” and where "
+                + "— standing apart or drawing together — and where "
                 + "distant peoples later found new ones. Good ground "
                 + "always scores alongside.");
             Slider(x, ref y, w, policy.settlementConcentration,
@@ -726,8 +726,8 @@ namespace ColonistAwareness
             {
                 "About " + (share * 100f).ToString("F0") + "% of the "
                 + "world's land lies in regions that span several areas "
-                + "â€” " + p.stitchedRegionSizeMin + " to "
-                + p.stitchedRegionSizeMax + " of them â€” and each such "
+                + "— " + p.stitchedRegionSizeMin + " to "
+                + p.stitchedRegionSizeMax + " of them — and each such "
                 + "region becomes one continuous map when you enter it. "
                 + "The rest of the land stands as single areas.",
 
@@ -738,7 +738,7 @@ namespace ColonistAwareness
                     : p.settlementConcentration <= 0.35f
                     ? "Settlements stand apart, each seeking its own "
                     + "good ground across the world."
-                    : "Settlements spread evenly â€” neither crowded nor "
+                    : "Settlements spread evenly — neither crowded nor "
                     + "isolated.",
 
                 "Where the bar sits for a settlement to count as a "
@@ -763,7 +763,7 @@ namespace ColonistAwareness
                     6, 5, p.reallocationSourceVariety)
                 + " different peoples among every six, and "
                 + (p.distantFoundingRate >= 0.65f
-                    ? "the distant world stays busy â€” far-off "
+                    ? "the distant world stays busy — far-off "
                     + "communities keep acting and founding new places "
                     + "while you play."
                     : p.distantFoundingRate <= 0.25f
@@ -803,7 +803,7 @@ namespace ColonistAwareness
             }
             GUI.color = new Color(0.45f, 0.51f, 0.56f);
             Widgets.Label(new Rect(inner.x, inner.yMax - 30f,
-                inner.width, 30f), "Tendencies, not guarantees â€” land, "
+                inner.width, 30f), "Tendencies, not guarantees — land, "
                 + "population, access, relations and scenario overrides "
                 + "decide what a world actually becomes.");
             GUI.color = Color.white;
@@ -817,7 +817,7 @@ namespace ColonistAwareness
             Header(x, ref y, w, "Frontier sites",
                 CAWorldAuthoring.Dimensions[3].Word(policy),
                 "How much of each region's suitable empty land carries "
-                + "a frontier holding when the region realizes â€” real "
+                + "a frontier holding when the region realizes — real "
                 + "places on the map, apart from the settlements.");
             Slider(x, ref y, w, policy.frontierHoldingFrequency,
                 v => SetValue(ref policy.frontierHoldingFrequency, v),
@@ -836,7 +836,7 @@ namespace ColonistAwareness
             Header(x, ref y, w, "Settlement origins",
                 CAWorldAuthoring.Dimensions[5].Word(policy),
                 "How many distinct peoples found the world's "
-                + "settlements â€” at world creation, in regions as they "
+                + "settlements — at world creation, in regions as they "
                 + "realize, and among later distant founders. Only "
                 + "factions actually present can appear.");
             Slider(x, ref y, w, policy.reallocationSourceVariety,

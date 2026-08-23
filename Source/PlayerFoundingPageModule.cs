@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
@@ -944,9 +944,9 @@ namespace ColonistAwareness
         {
             if (terms == null) return "Not set";
             return (terms.leaderRule == "none" ? "No permanent leader"
-                    : "Chosen leader") + " Â· "
+                    : "Chosen leader") + " · "
                 + (terms.workRequired ? "Required work" : "Voluntary work")
-                + " Â· " + (terms.sharedSupplies
+                + " · " + (terms.sharedSupplies
                     ? "Shared supplies" : "Separate supplies");
         }
 

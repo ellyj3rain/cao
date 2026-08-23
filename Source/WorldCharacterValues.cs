@@ -1,4 +1,4 @@
-﻿namespace ColonistAwareness
+namespace ColonistAwareness
 {
     // THE AUTHORED VALUES BEHIND EACH NAMED WORLD, AS PURE DATA. The
     // chooser presents these and the world consumes them. This table

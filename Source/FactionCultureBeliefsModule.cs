@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
@@ -1828,16 +1828,16 @@ namespace ColonistAwareness
                     ? "local to " + culture.localityKey
                     : "developing in " + culture.localityKey;
             string plurality = culture.constituents.Count <= 1 ? ""
-                : " Â· " + culture.constituents.Count
+                : " · " + culture.constituents.Count
                     + " cultural roots";
             string change = culture.transitions.Count == 0 ? ""
-                : " Â· " + culture.transitions.Count + " recorded change"
+                : " · " + culture.transitions.Count + " recorded change"
                     + (culture.transitions.Count == 1 ? "" : "s");
             int meaningCount = PopulationQuestions(culture).Count();
             int practiceCount = culture.inheritedPractices.Count
                 + culture.practices.Count;
             string practice = practiceCount == 0 ? ""
-                : " Â· " + practiceCount + " observed practice"
+                : " · " + practiceCount + " observed practice"
                     + (practiceCount == 1 ? "" : "s");
             string salient = string.Join(", ", PopulationQuestions(culture)
                 .Where(item => item != null)
@@ -1848,11 +1848,11 @@ namespace ColonistAwareness
                     item.questionKey)?.Label ?? "recorded value")
                 .ToArray());
             string top = salient.NullOrEmpty() ? ""
-                : " Â· main values: " + salient;
-            return identity + " Â· " + continuity + plurality + change
-                + " Â· " + meaningCount + " value"
+                : " · main values: " + salient;
+            return identity + " · " + continuity + plurality + change
+                + " · " + meaningCount + " value"
                     + (meaningCount == 1 ? "" : "s") + practice
-                + top + " Â· visual style: " + visual;
+                + top + " · visual style: " + visual;
         }
 
         internal static CACulturalMeaningResolution Resolve(CACulture culture,
@@ -3273,8 +3273,8 @@ namespace ColonistAwareness
                 CAFactionAxes.Decisions);
             string ownership = OptionLabels(structure,
                 CAFactionAxes.Ownership);
-            return (leadership ?? "leadership not set") + " Â· "
-                + (decisions ?? "decision rules not set") + " Â· "
+            return (leadership ?? "leadership not set") + " · "
+                + (decisions ?? "decision rules not set") + " · "
                 + (ownership ?? "ownership not set");
         }
 

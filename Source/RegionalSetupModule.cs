@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -681,7 +681,7 @@ namespace ColonistAwareness
                         existingFactionLoadId);
                     return !CARegionalPlanUtility.IsEligibleExistingFaction(
                             faction) ? "Choose existing faction"
-                        : faction.Name + " Â· " + TechnologySummary;
+                        : faction.Name + " · " + TechnologySummary;
                 }
                 FactionDef def = CARegionalPlanUtility.FactionDefByName(
                     customFactionDefName);
@@ -690,7 +690,7 @@ namespace ColonistAwareness
                 string name = customName.NullOrEmpty()
                     ? "New " + def.LabelCap.ToString()
                     : customName;
-                return name + " Â· " + TechnologySummary;
+                return name + " · " + TechnologySummary;
             }
         }
 
@@ -2138,9 +2138,9 @@ namespace ColonistAwareness
             PlanetTile tile = SurfaceTile(id);
             if (!tile.Valid) return "invalid tile";
             Tile info = tile.Tile;
-            return "tile " + id + " Â· "
+            return "tile " + id + " · "
                 + (info.PrimaryBiome?.LabelCap.ToString() ?? "unknown biome")
-                + " Â· " + info.hilliness;
+                + " · " + info.hilliness;
         }
 
         // Road and river access come from the settlement's world tile. The
@@ -9860,7 +9860,7 @@ namespace ColonistAwareness
         // RegionalRockChunksJobsModule. A lazy yield iterator here re-runs
         // its whole body on every enumeration, and the patching machinery
         // enumerates more than once per application against the same
-        // in-place-mutated instructions â€” the first pass rewrites the call,
+        // in-place-mutated instructions — the first pass rewrites the call,
         // the next pass finds nothing and fires a spurious "replaced 0"
         // receipt while the replacement has in fact landed.
         [HarmonyTranspiler]
