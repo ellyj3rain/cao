@@ -178,19 +178,19 @@ namespace ColonistAwareness
                 + Clamp(historicalDevelopment, 0, 3) * 4;
         }
 
-        // The tendency changes only this threshold. It cannot supply missing
-        // population, land, access, services, civic development, economic
-        // capacity, trade links, specialization, regional role, or history.
-        public static int UrbanThreshold(float propensity)
-        {
-            return 72 - (int)Math.Round(Clamp01(propensity) * 20f);
-        }
+        // FIXED CLASSIFICATION THRESHOLD. The town/city bar is a game
+        // constant, not authored world state (DR-114: settlement scale is
+        // derived; DR-115: generic intensity controls are not authoring
+        // primitives). A settlement with support >= 62 counts as a town;
+        // >= 74 as a city. The support facts (population, land, access,
+        // services, civic, economic, trade, specialization, regional role,
+        // history) determine the scale; the threshold does not.
+        public const int TownThreshold = 62;
+        public const int CityThreshold = 74;
 
-        // Values match CASettlementScale.
-        public static int SettlementScale(int population, int urbanSupport,
-            float urbanGrowthPropensity)
+        public static int SettlementScale(int population, int urbanSupport)
         {
-            int threshold = UrbanThreshold(urbanGrowthPropensity);
+            int threshold = TownThreshold;
             if (population >= 1200 && urbanSupport >= threshold + 12) return 5;
             if (population >= 500 && urbanSupport >= threshold) return 4;
             if (population >= 280) return 3;
@@ -205,7 +205,7 @@ namespace ColonistAwareness
         // raise identical internal structure.
         //
         // Deliberately NOT keyed to realized scale. Scale is population
-        // and support measured against UrbanThreshold, which the urban
+        // and support measured against a fixed classification threshold, which the
         // tendency moves - so keying quarters to scale let a naming
         // preference change how much of a settlement physically got
         // built. The tendency decides where the bar for calling a place

@@ -2259,13 +2259,7 @@ namespace ColonistAwareness
         // background organization updates its political beliefs once per
         // cadence period, round-robin across sync ticks.
         private int politicalPulseCursor;
-        private int PoliticalPulseCadenceTicks()
-        {
-            float stability = CARegionalWorldComponent.Current
-                ?.WorldPolicy?.worldStability ?? 0.5f;
-            return CAWorldTendencyCausalKernel.StabilityCadence(60000,
-                stability);
-        }
+        private const int PoliticalPulseCadenceTicks = 60000;
 
         private void PulsePoliticalBeliefsOnCadence(int now)
         {
@@ -2284,10 +2278,9 @@ namespace ColonistAwareness
             // cadence and 2500-tick sync, that is one org per 24 orgs
             // per sync tick — each background org pulses roughly once
             // per in-game day, matching Culture's longitudinal cadence.
-            int cadence = PoliticalPulseCadenceTicks();
             int perSync = Math.Max(1, (int)Math.Ceiling(
                 (double)background.Count * 2500
-                / cadence));
+                / PoliticalPulseCadenceTicks));
             for (int n = 0; n < perSync; n++)
             {
                 CAOrganization org = background[

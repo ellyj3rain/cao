@@ -101,14 +101,6 @@ namespace ColonistAwareness
             },
             new Dimension
             {
-                Short = "urban", Label = "Urban development",
-                Norm = p => p.urbanGrowthPropensity,
-                Word = p => p.urbanGrowthPropensity >= 0.65f
-                    ? "comes easily" : p.urbanGrowthPropensity <= 0.3f
-                        ? "hard-won" : "typical"
-            },
-            new Dimension
-            {
                 Short = "sites", Label = "Frontier sites",
                 Norm = p => p.frontierHoldingFrequency,
                 Word = p => p.frontierHoldingFrequency >= 0.65f
@@ -218,7 +210,7 @@ namespace ColonistAwareness
             p.stitchedRegionSizeMin = values.SpanMin;
             p.stitchedRegionSizeMax = values.SpanMax;
             p.settlementConcentration = values.Concentration;
-            p.urbanGrowthPropensity = values.Urban;
+            p.worldDevelopment = values.WorldDevelopment;
             p.frontierHoldingFrequency = values.FrontierFrequency;
             p.frontierHoldingSize = values.FrontierSize;
             p.reallocationSourceVariety = values.Variety;
@@ -246,8 +238,6 @@ namespace ColonistAwareness
                     values.FrequencyMax)
                 && Mathf.Approximately(value.settlementConcentration,
                     values.Concentration)
-                && Mathf.Approximately(value.urbanGrowthPropensity,
-                    values.Urban)
                 && Mathf.Approximately(value.frontierHoldingFrequency,
                     values.FrontierFrequency)
                 && Mathf.Approximately(value.frontierHoldingSize,
@@ -531,15 +521,6 @@ namespace ColonistAwareness
             Slider(x, ref y, w, policy.settlementConcentration,
                 v => SetValue(ref policy.settlementConcentration, v),
                 "spread out", "clustered");
-            Header(x, ref y, w, "Urban development",
-                CAWorldAuthoring.Dimensions[3].Word(policy),
-                "Where the town and city bars stand. Every settlement's "
-                + "standing â€” hamlet to city, shown when you inspect it "
-                + "â€” is judged against these bars from its real support "
-                + "facts; the bars cannot supply support a place lacks.");
-            Slider(x, ref y, w, policy.urbanGrowthPropensity,
-                v => SetValue(ref policy.urbanGrowthPropensity, v),
-                "hard-won", "comes easily");
         }
 
         // What the current state actually does, in the order a player
@@ -548,8 +529,7 @@ namespace ColonistAwareness
         internal static List<string> EffectLines(
             CARegionalWorldPolicy p)
         {
-            int threshold = CAWorldTendencyCausalKernel.UrbanThreshold(
-                p.urbanGrowthPropensity);
+            int threshold = CAWorldTendencyCausalKernel.TownThreshold;
             float share = p.realizedStitchedRegionFrequency >= 0f
                 ? p.realizedStitchedRegionFrequency
                 : CAWorldAuthoring.FrequencyMid(p);
@@ -646,7 +626,7 @@ namespace ColonistAwareness
             CAOpeningTheme.SectionLabel(x, y, w, "The frontier");
             y += 20f;
             Header(x, ref y, w, "Frontier sites",
-                CAWorldAuthoring.Dimensions[4].Word(policy),
+                CAWorldAuthoring.Dimensions[3].Word(policy),
                 "How much of each region's suitable empty land carries "
                 + "a frontier holding when the region realizes â€” real "
                 + "places on the map, apart from the settlements.");
@@ -654,7 +634,7 @@ namespace ColonistAwareness
                 v => SetValue(ref policy.frontierHoldingFrequency, v),
                 "sparse", "common");
             Header(x, ref y, w, "Holdings",
-                CAWorldAuthoring.Dimensions[5].Word(policy),
+                CAWorldAuthoring.Dimensions[4].Word(policy),
                 "Who lives in each: residents and how built-up. The "
                 + "land's capacity caps both.");
             Slider(x, ref y, w, policy.frontierHoldingSize,
@@ -665,7 +645,7 @@ namespace ColonistAwareness
             CAOpeningTheme.SectionLabel(x, y, w, "The wider world");
             y += 20f;
             Header(x, ref y, w, "Settlement origins",
-                CAWorldAuthoring.Dimensions[6].Word(policy),
+                CAWorldAuthoring.Dimensions[5].Word(policy),
                 "How many distinct peoples found the world's "
                 + "settlements â€” at world creation, in regions as they "
                 + "realize, and among later distant founders. Only "
@@ -674,7 +654,7 @@ namespace ColonistAwareness
                 v => SetValue(ref policy.reallocationSourceVariety, v),
                 "repeated", "varied");
             Header(x, ref y, w, "Settlement development",
-                CAWorldAuthoring.Dimensions[7].Word(policy),
+                CAWorldAuthoring.Dimensions[6].Word(policy),
                 "How much accumulated infrastructure and history "
                 + "the world\u2019s settlements begin with. A "
                 + "well-established world has deep roots; a young "
@@ -684,13 +664,31 @@ namespace ColonistAwareness
                 v => SetValue(ref policy.worldDevelopment, v),
                 "young", "established");
             Header(x, ref y, w, "Distant founding",
-                CAWorldAuthoring.Dimensions[8].Word(policy),
+                CAWorldAuthoring.Dimensions[7].Word(policy),
                 "How often distant peoples found new settlements "
                 + "while you play. Loaded places always stay live "
                 + "regardless of this tendency.");
             Slider(x, ref y, w, policy.distantFoundingRate,
                 v => SetValue(ref policy.distantFoundingRate, v),
                 "static", "expanding");
+            Header(x, ref y, w, "Variability",
+                CAWorldAuthoring.Dimensions[8].Word(policy),
+                "How many settlements diverge from their faction\u2019s "
+                + "norm and how far. A uniform world keeps its dominant "
+                + "character everywhere; a varied world has coherent "
+                + "outlier societies while the dominant character holds.");
+            Slider(x, ref y, w, policy.worldVariability,
+                v => SetValue(ref policy.worldVariability, v),
+                "uniform", "highly varied");
+            Header(x, ref y, w, "Stability",
+                CAWorldAuthoring.Dimensions[9].Word(policy),
+                "How readily established state holds through time. "
+                + "A stable world changes slowly; a volatile one "
+                + "shifts quickly. This modulates transition resistance, "
+                + "not activity frequency.");
+            Slider(x, ref y, w, policy.worldStability,
+                v => SetValue(ref policy.worldStability, v),
+                "volatile", "very stable");
         }
 
         private void Header(float x, ref float y, float width,

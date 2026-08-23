@@ -1307,7 +1307,7 @@ namespace ColonistAwareness
                     "one zero-to-one threshold modifier",
                     "cannot create population, land, access, service, trade, role, or history",
                     "world-tendency authoring",
-                    new[] { "CARegionalWorldPolicy.urbanGrowthPropensity" },
+                    new[] { "CARegionalWorldPolicy.worldDevelopment" },
                     "urban-support threshold only"),
                 Control("world.frontier-frequency",
                     CAAuthoringSemanticKind.ScalarContinuous,

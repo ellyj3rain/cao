@@ -5516,8 +5516,8 @@ namespace ColonistAwareness
                     + policy.frontierHoldingSize.ToStringPercent()
                     + "; settlement source variety "
                     + policy.reallocationSourceVariety.ToStringPercent()
-                    + "; urban growth propensity "
-                    + policy.urbanGrowthPropensity.ToStringPercent()
+                    + "; settlement development "
+                    + policy.worldDevelopment.ToStringPercent()
                     + "; distant founding rate "
                     + policy.distantFoundingRate.ToStringPercent());
                 foreach (CARegionalFactionPlan group in

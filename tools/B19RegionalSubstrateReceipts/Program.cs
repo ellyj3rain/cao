@@ -476,8 +476,7 @@ internal static class Program
                 total == 0 ? 0d : (double)joinedLand / total,
                 joined == 0 ? 0d : (double)joinedLand / joined,
                 spreadBias,
-                CAWorldTendencyCausalKernel.UrbanThreshold(
-                    character.Urban),
+                (double)CAWorldTendencyCausalKernel.TownThreshold,
                 CAWorldTendencyCausalKernel.FrontierHoldingCount(8,
                     character.FrontierFrequency),
                 CAWorldTendencyCausalKernel.FrontierResidentCount(3,
@@ -628,38 +627,30 @@ internal static class Program
                 + ") and still builds stone over timber ("
                 + localWoodSparing + ")");
 
-        // A NAMING BAR MUST NOT BUILD BUILDINGS. Urban propensity moves
-        // where the town and city bars sit; it cannot supply a place
-        // with support it lacks, and it must not supply it with
-        // physical structure either. Quarters were keyed to realized
-        // scale, which is measured against that moving bar, so sliding
-        // it changed how much of a settlement got built. This is the
-        // manufactured-consequence case: the parameter was given a
-        // physical expression rather than being recognized as a
-        // classification threshold.
-        // Support 60 straddles the bar: strict reading leaves this
-        // place short of a city, generous reading admits it.
-        int quartersLowBar = CAWorldTendencyCausalKernel.SettlementQuarters(
+        // A CLASSIFICATION BAR MUST NOT BUILD BUILDINGS. The town/city
+        // bar is a fixed game constant. It cannot supply a place with
+        // support it lacks, and it must not supply it with physical
+        // structure either. Quarters derive from population and support
+        // against the unmoved threshold, not from any authored control.
+        // Quarters follow population and support against the fixed
+        // threshold, not any authored control. The same settlement
+        // builds the same quarters regardless of the bar; different
+        // support builds different quarters.
+        int quartersAt60 = CAWorldTendencyCausalKernel.SettlementQuarters(
             600, 60);
-        int quartersHighBar = CAWorldTendencyCausalKernel
-            .SettlementQuarters(600, 60);
-        int scaleAtLowPropensity = CAWorldTendencyCausalKernel
-            .SettlementScale(600, 60, 0.10f);
-        int scaleAtHighPropensity = CAWorldTendencyCausalKernel
-            .SettlementScale(600, 60, 0.90f);
+        int scaleAt60 = CAWorldTendencyCausalKernel
+            .SettlementScale(600, 60);
         int hamletQuarters = CAWorldTendencyCausalKernel.SettlementQuarters(
             80, 20);
         int cityQuarters = CAWorldTendencyCausalKernel.SettlementQuarters(
             1400, 90);
         Check("quarters-follow-facts-not-the-naming-bar",
-            quartersLowBar == quartersHighBar
-                && scaleAtLowPropensity != scaleAtHighPropensity
-                && hamletQuarters < cityQuarters,
-            "the same settlement builds " + quartersLowBar
-                + " quarters whatever the bar is called, while its"
-                + " standing still moves (" + scaleAtLowPropensity
-                + " to " + scaleAtHighPropensity + "); a hamlet builds "
-                + hamletQuarters + " and a city " + cityQuarters);
+            hamletQuarters < cityQuarters
+                && quartersAt60 >= 1,
+            "the same settlement builds " + quartersAt60
+                + " quarters from its support, not from any control; "
+                + "a hamlet builds " + hamletQuarters
+                + " and a city " + cityQuarters);
 
         // MATERIAL SUPPORT REACHES MATERIAL. A frontier holding on
         // treeless ground has no timber of its own; a supporter is a
@@ -758,20 +749,16 @@ internal static class Program
             "target " + varietyLow + " at 0.10 -> " + varietyHigh
                 + " at 0.95, bounded by pool");
 
-        // Urban propensity moves only the threshold: a borderline
-        // settlement crosses into town at high propensity, and no
-        // propensity can make a city from missing support.
-        int borderlineLow = CAWorldTendencyCausalKernel.SettlementScale(
-            600, 62, 0.10f);
-        int borderlineHigh = CAWorldTendencyCausalKernel.SettlementScale(
-            600, 62, 0.90f);
-        int starvedHigh = CAWorldTendencyCausalKernel.SettlementScale(
-            600, 20, 1.00f);
+        // The classification threshold is a fixed constant (DR-114, DR-115).
+        // A settlement with support at the bar is a town; support below it
+        // is not. No authored control moves the bar.
+        int atBar = CAWorldTendencyCausalKernel.SettlementScale(600, 62);
+        int belowBar = CAWorldTendencyCausalKernel.SettlementScale(600, 61);
+        int starved = CAWorldTendencyCausalKernel.SettlementScale(600, 20);
         Check("urban-threshold",
-            borderlineLow == 3 && borderlineHigh == 4 && starvedHigh == 3,
-            "support 62 at population 600: scale " + borderlineLow
-                + " at 0.10 -> " + borderlineHigh + " at 0.90; support 20 "
-                + "stays " + starvedHigh + " at 1.00");
+            atBar >= 3 && belowBar < atBar && starved < atBar,
+            "support 62 -> scale " + atBar + " (town); 61 -> " + belowBar
+                + "; 20 -> " + starved + " (below bar, not a town)");
 
         // Frontier frequency owns the count; size owns residents and
         // material under land caps; neither leaks into the other.

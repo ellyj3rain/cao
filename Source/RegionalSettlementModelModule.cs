@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -347,8 +347,7 @@ namespace ColonistAwareness
                     expectedHistory);
                 int expectedScale = CAWorldTendencyCausalKernel
                     .SettlementScale(expectedPopulation,
-                        expectedSupport,
-                        plan.worldPolicy.urbanGrowthPropensity);
+                        expectedSupport);
                 if (settlement.landCapacity != expectedLand
                     || settlement.historicalDevelopment != expectedHistory
                     || settlement.residentPopulation != expectedPopulation
@@ -714,8 +713,7 @@ namespace ColonistAwareness
                 settlement.realizedScale = (byte)
                     CAWorldTendencyCausalKernel.SettlementScale(
                         settlement.residentPopulation,
-                        settlement.urbanSupport,
-                        policy.urbanGrowthPropensity);
+                        settlement.urbanSupport);
             }
             plan.settlementScale = settlements.Count == 0 ? (byte)0
                 : settlements.Max(item => item.realizedScale);
@@ -836,7 +834,7 @@ namespace ColonistAwareness
             CARegionalWorldPolicy policy = plan?.worldPolicy
                 ?? new CARegionalWorldPolicy();
             hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                Mathf.RoundToInt(policy.urbanGrowthPropensity * 10000f));
+                Mathf.RoundToInt(policy.worldDevelopment * 10000f));
             hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
                 Mathf.RoundToInt(policy.frontierHoldingFrequency * 10000f));
             hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
@@ -1190,7 +1188,7 @@ namespace ColonistAwareness
                 return plan.settlements.Any(b => b != null)
                     ? "not set"
                     : "unsettled land";
-            return PatternWords(topology) + " · " + ScaleWords(scale);
+            return PatternWords(topology) + " Â· " + ScaleWords(scale);
         }
 
         // Settlement authority is separate from Political Order. It may be
@@ -1300,7 +1298,7 @@ namespace ColonistAwareness
                 : "present in " + held + " settlement"
                     + (held == 1 ? "" : "s"));
             if (minority > 0)
-                text.Append(" · resident population in " + minority
+                text.Append(" Â· resident population in " + minority
                     + " more");
             CASettlementAuthority authority;
             bool authorityKnown = TrySettlementAuthorityOf(plan, group,
@@ -1309,8 +1307,8 @@ namespace ColonistAwareness
                 text.Append((authority
                         == CASettlementAuthority.IndependentWithSharedDefense
                         || authority == CASettlementAuthority.Independent)
-                    ? " · no single capital"
-                    : " · seat at its "
+                    ? " Â· no single capital"
+                    : " Â· seat at its "
                         + (plan.settlements.FirstOrDefault(b => b != null
                             && b.OwningFactionKey == group.key
                             && b.realizedRole
@@ -1329,12 +1327,12 @@ namespace ColonistAwareness
                 out authority);
             int held = plan.settlements.Count(b => b != null
                 && b.OwningFactionKey == group.key);
-            if (held == 0) return structure + " · no settlements";
-            if (held == 1) return structure + " · one settlement";
-            return structure + " · " + (authorityKnown
+            if (held == 0) return structure + " Â· no settlements";
+            if (held == 1) return structure + " Â· one settlement";
+            return structure + " Â· " + (authorityKnown
                     ? SettlementAuthorityWords(authority)
                     : "authority between settlements not set")
-                + " · " + PatternWords(
+                + " Â· " + PatternWords(
                     (CASettlementPattern)plan.settlementPattern)
                 + " " + ScaleWords(
                     (CASettlementScale)plan.settlementScale);

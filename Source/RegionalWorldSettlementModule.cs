@@ -99,8 +99,8 @@ namespace ColonistAwareness
             int land = LandCapacityOf(tile);
             int access = AccessOf(tile);
             var world = CARegionalWorldComponent.Current;
-            float propensity = world?.WorldPolicy?.urbanGrowthPropensity
-                ?? 0.45f;
+            // Urban threshold is a fixed classification constant; the
+            // settlement support facts determine its scale.
             // A settlement sharing a joined region with others is that
             // land's candidate center; lone outposts are not.
             CARegionalTopologyRecord record =
@@ -125,7 +125,7 @@ namespace ColonistAwareness
             int support = CAWorldTendencyCausalKernel.WorldSettlementSupport(
                 population, land, access, regionalCenter, development);
             int scale = CAWorldTendencyCausalKernel.SettlementScale(
-                population, support, propensity);
+                population, support);
             return new CARegionalWorldSettlementState
             {
                 tileId = tile.tileId,
@@ -522,8 +522,7 @@ namespace ColonistAwareness
                     + owners.Count + " peoples, " + towns
                     + " of them town-or-larger; authored gathering "
                     + policy.settlementConcentration.ToString("F2")
-                    + ", urban " + policy.urbanGrowthPropensity
-                        .ToString("F2")
+                    + ", urban (fixed threshold)"
                     + ", frontier " + policy.frontierHoldingFrequency
                         .ToString("F2")
                     + ", origins " + policy.reallocationSourceVariety

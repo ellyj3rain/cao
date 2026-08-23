@@ -142,9 +142,6 @@ namespace ColonistAwareness
         // automatically reallocated settlements. It never creates a faction.
         public float reallocationSourceVariety = 0.50f;
 
-        // Urban scale applies only when population, geography,
-        // infrastructure, trade, and history can support a city.
-        public float urbanGrowthPropensity = 0.45f;
         // Every settlement retains its structural state. This controls how
         // often distant factions found new settlements while the player
         // plays. Political-belief pulse cadence is now a derived property
@@ -198,8 +195,6 @@ namespace ColonistAwareness
                 "frontierHoldingSize", 0.50f);
             Scribe_Values.Look(ref reallocationSourceVariety,
                 "reallocationSourceVariety", 0.50f);
-            Scribe_Values.Look(ref urbanGrowthPropensity,
-                "urbanGrowthPropensity", 0.45f);
             Scribe_Values.Look(ref distantFoundingRate,
                 "distantFoundingRate", 0.5f);
             Scribe_Values.Look(ref worldDevelopment,
@@ -269,7 +264,6 @@ namespace ColonistAwareness
                 frontierHoldingFrequency = frontierHoldingFrequency,
                 frontierHoldingSize = frontierHoldingSize,
                 reallocationSourceVariety = reallocationSourceVariety,
-                urbanGrowthPropensity = urbanGrowthPropensity,
                 distantFoundingRate = distantFoundingRate,
                 worldDevelopment = worldDevelopment,
                 worldVariability = worldVariability,
