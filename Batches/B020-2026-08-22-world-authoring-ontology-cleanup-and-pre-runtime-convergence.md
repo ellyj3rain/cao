@@ -223,3 +223,31 @@ only in-authoring candidates fold their exact identity.
 
 Deeper latency work (actual frame profiles on the creation screens) needs a
 running game with instrumentation; it remains open for the operator loop.
+
+## Addendum 5 - rules-at-landing scope audit and physical-space trace (2026-08-23 UTC / 2026-08-23 PDT)
+
+**Rules at Landing audit.** The founding-terms surface (founding arrangement:
+leadership rule, work requirement, founder decision rule, supply sharing,
+duration) was audited for causal creep into unrelated systems. Its complete
+consumer set is the landing-time application (leader designation and terms
+in force at founding), authored political shaping at creation, preview and
+summary copy, and compatibility-preflight identity. No tactical, awareness,
+work, or other behavioral system reads it. No authority creep exists and no
+corrective code was required.
+
+**Administration direction.** The operator-suggested Administration surface
+is recovered and recorded in ROADMAP: one main-tab hub for rules, politics,
+institutions, and regional administrative facts, separate from behavior
+tooling. Existing in-campaign political surfaces (the political order editor
+for established factions and the organization tab) remain where they are;
+the hub's shape is an operator design decision.
+
+**Physical-space semantics trace.** Space purpose and style are owned,
+persisted, and consumed facts (CASpacePurpose, CASpaceStyle; HomeIntent;
+autonomous construction; facility siting; settlement materialization with
+culture and style authorities, B19-B20). The layer the operator's direction
+anticipates - pawns interpreting physical spaces through culture and
+ideoligion with mood consequences - is not present and is not bolted on
+speculatively: it needs pawn spatial-morphology perception and causally
+owned thought definitions. Recorded in ROADMAP as research-tier alongside
+the batch's deferred culture-conditioned morphology.
