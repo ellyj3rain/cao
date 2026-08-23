@@ -2815,14 +2815,18 @@ namespace ColonistAwareness
             // the once-per-subject guard would silence the second world played
             // in a session.
             CARegionalEngineRoot.ForgetAnnouncements();
+            // Topology initialization moved from the WorldGenStep to here
+            // so it runs for every world lifecycle path, including Gravship
+            // and any DLC start that does not run the standard WorldGenStep
+            // pipeline. The method is idempotent: if the WorldGenStep already
+            // built the partition, it returns immediately.
+            EnsureTopology(fromLoad
+                ? "post-load migration" : "world finalization");
+            if (topology.Count > 0 && worldSettlementStates.Count == 0)
+                RebuildWorldSettlementStates(fromLoad
+                    ? "post-load migration" : "world finalization");
             if (!fromLoad)
                 return;
-            // Saves created before the world-wide partition existed receive
-            // it exactly once here, with registered regional footprints
-            // pre-owned so realized ground is never double-claimed.
-            EnsureTopology("post-load migration");
-            if (topology.Count > 0 && worldSettlementStates.Count == 0)
-                RebuildWorldSettlementStates("post-load migration");
             if (regions == null) return;
             if (!ReconcileReservationRegistry(out string failure))
                 throw new InvalidOperationException(
