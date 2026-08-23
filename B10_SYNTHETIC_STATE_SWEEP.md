@@ -275,15 +275,15 @@ None.
 | `Source/RegionalSetupModule.cs:8704` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `Rand.PopState();` |
 | `Source/RegionalSetupModule.cs:9786` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `// root, and each RockNoise draws Rand.Range in iteration order, so the` |
 | `Source/RegionalSetupModule.cs:9815` | physical, spatial, or presentation variation | map geometry, river geometry, native pawn generation, or technical draft key | `6, Rand.Range(0, int.MaxValue), QualityMode.Medium)` |
-| `Source/RegionalWorldModule.cs:4943` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `float angle = attempt * 137.50776f + Rand.Range(-12f, 12f);` |
-| `Source/RegionalWorldModule.cs:5051` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `GenText.StableStringHash(record.regionalId),` |
-| `Source/RegionalWorldModule.cs:5061` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `GenText.StableStringHash(record.regionalId));` |
-| `Source/RegionalWorldModule.cs:5068` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `GenText.StableStringHash(record.regionalId));` |
-| `Source/RegionalWorldModule.cs:5092` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `seed = Gen.HashCombineInt(` |
-| `Source/RegionalWorldModule.cs:5093` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `GenText.StableStringHash(record.regionalId),` |
-| `Source/RegionalWorldModule.cs:5181` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `Rand.PushState(Gen.HashCombineInt(` |
-| `Source/RegionalWorldModule.cs:5182` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `GenText.StableStringHash(record.regionalId),` |
-| `Source/RegionalWorldModule.cs:5203` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `finally { Rand.PopState(); }` |
+| `Source/RegionalWorldModule.cs:4963` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `float angle = attempt * 137.50776f + Rand.Range(-12f, 12f);` |
+| `Source/RegionalWorldModule.cs:5071` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `GenText.StableStringHash(record.regionalId),` |
+| `Source/RegionalWorldModule.cs:5081` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `GenText.StableStringHash(record.regionalId));` |
+| `Source/RegionalWorldModule.cs:5088` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `GenText.StableStringHash(record.regionalId));` |
+| `Source/RegionalWorldModule.cs:5112` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `seed = Gen.HashCombineInt(` |
+| `Source/RegionalWorldModule.cs:5113` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `GenText.StableStringHash(record.regionalId),` |
+| `Source/RegionalWorldModule.cs:5201` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `Rand.PushState(Gen.HashCombineInt(` |
+| `Source/RegionalWorldModule.cs:5202` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `GenText.StableStringHash(record.regionalId),` |
+| `Source/RegionalWorldModule.cs:5223` | physical, spatial, or presentation variation | equivalent spatial placement after saved settlement eligibility | `finally { Rand.PopState(); }` |
 | `Source/RegionalWorldSettlementModule.cs:172` | physical, spatial, or presentation variation | eligible world-settlement placement and founder selection after eligibility exists | `int id = Rand.Range(0, layer.TilesCount);` |
 | `Source/RegionalWorldSettlementModule.cs:226` | physical, spatial, or presentation variation | eligible world-settlement placement and founder selection after eligibility exists | `return preferred.RandomElementByWeight(faction =>` |
 | `Source/RegionalWorldSettlementModule.cs:284` | physical, spatial, or presentation variation | eligible world-settlement placement and founder selection after eligibility exists | `.RandomInRange;` |
