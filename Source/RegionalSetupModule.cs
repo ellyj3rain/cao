@@ -307,10 +307,11 @@ namespace ColonistAwareness
                         settlement.Faction)) continue;
                 bool isArrivalAnchor = settlement.Tile.tileId
                     == plan.startTileId;
-                // Same-faction settlements on any member tile are anchors:
-                // they stay on the world map, keep their vanilla layout, and
-                // get CAO composition. Different-faction settlements on
-                // member tiles are absorbed as reallocated sources.
+                // All settlements on the region own member tiles are
+                // authoritative anchors: they stay on the world map,
+                // keep their vanilla layout, and get CAO composition.
+                // Only pool settlements from outside the region are
+                // reallocated and consumed.
                 bool sameFaction = settlement.Faction == parentFaction;
                 if (footprint.Contains(settlement.Tile.tileId))
                 {
@@ -415,8 +416,7 @@ namespace ColonistAwareness
             {
                 CARegionalFactionPlan group = GroupFor(resident);
                 int destination = resident.Tile.tileId;
-                bool anchor = destination == plan.startTileId
-                    || (residents.Count > 0 && resident.Faction == parentFaction);
+                bool anchor = true;
                 usedByTile[destination] = usedByTile.TryGetValue(destination,
                     out int prior) ? prior + 1 : 1;
                 assignedTiles.Add(destination);
@@ -425,12 +425,10 @@ namespace ColonistAwareness
                     slot = slot,
                     memberTileId = destination,
                     OwningFactionKey = group.key,
-                    // The arrival settlement is an anchor: it stays on
-                    // the world map and keeps its vanilla physical layout.
-                    // CAO elaborates its settlement composition (culture,
-                    // programs, capabilities) without replacing its
-                    // physical form. Other absorbed residents are
-                    // reallocated and consumed normally.
+                    // Every settlement on the region own ground is an
+                    // anchor. It keeps its vanilla layout and gets CAO
+                    // composition. Pool settlements from outside the
+                    // region are still reallocated and consumed.
                     populationOrigin = anchor
                         ? CASettlementOrigin.Unset
                         : CASettlementOrigin.ReallocatedFromWorldPool,
