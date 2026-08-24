@@ -71,7 +71,7 @@ is its byte-identical output.
 | Retained suites | **PASS** - B10 316 classified / 0 Critical-High and B11 persistence census (267 carriers, 89 schemas, 5 exclusions, 0 invalid) regenerated and re-run 2026-08-22; B14 24/24, B17 PASS, B18 9/10 unchanged from the B19 close record |
 | Source compile | **PASS** - 0 warnings / 0 errors, governed SDK 8.0.423 |
 | Reproducible build (8.0.423) | **PASS locally** - two clean governed builds byte-identical; CI re-verification runs on push |
-| Deployment | **PASS** - committed deployed assembly at the junction-resolved loaded path, SHA-256 `843D37CF6C314AC217DAF5AC6194F760835A60AADED361C1E582990A451DA900`; supersedes `87468871...` (population truth and frame churn), `2B0C8C2D...` (landing authoring), `AA60AC8B...` (selection decoupling), and the B19 production build `63DF9C6E...` |
+| Deployment | **PASS** - committed deployed assembly at the junction-resolved loaded path, SHA-256 `843D37CF6C314AC217DAF5AC6194F760835A60AADED361C1E582990A451DA900`, 4,822,016 bytes; supersedes `87468871...` (population truth and frame churn), `2B0C8C2D...` (landing authoring), `AA60AC8B...` (selection decoupling), and the B19 production build `63DF9C6E...` |
 | Repository gates | **PASS locally** - `verify-repository.mjs` green after the test-expectation refresh; PR #18 first `ci-verify` run failed only on those stale expectations |
 
 ## Operator runtime boundary
