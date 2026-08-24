@@ -946,6 +946,28 @@ namespace ColonistAwareness
                 ? pending : null;
         }
 
+        // The partition cells currently under examination: the selected
+        // tile is region plus its partition neighbors. Empty when no
+        // surface land is selected. Global overlays gate on this so they
+        // stay quiet until the player is actually looking at somewhere.
+        internal static HashSet<string> PartitionContextIds()
+        {
+            var ids = new HashSet<string>();
+            PlanetTile selected = Verse.Find.WorldSelector?.SelectedTile
+                ?? PlanetTile.Invalid;
+            if (!selected.Valid) return ids;
+            if (selected.Layer != Verse.Find.WorldGrid?.Surface) return ids;
+            CARegionalWorldComponent world = CARegionalWorldComponent.Current;
+            if (world == null) return ids;
+            CARegionalTopologyRecord record = world.TopologyRecordAt(selected);
+            if (record == null) return ids;
+            if (!string.IsNullOrEmpty(record.regionId))
+                ids.Add(record.regionId);
+            foreach (string neighbor in world.TopologyNeighborsOf(record))
+                if (!string.IsNullOrEmpty(neighbor)) ids.Add(neighbor);
+            return ids;
+        }
+
         // The partition region for land no plan governs. Realized ground
         // answers through RegionAt first; this is the membership truth for
         // everything else.
