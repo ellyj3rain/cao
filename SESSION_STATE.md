@@ -71,7 +71,7 @@ is its byte-identical output.
 | Retained suites | **PASS** - B10 316 classified / 0 Critical-High and B11 persistence census (267 carriers, 89 schemas, 5 exclusions, 0 invalid) regenerated and re-run 2026-08-22; B14 24/24, B17 PASS, B18 9/10 unchanged from the B19 close record |
 | Source compile | **PASS** - 0 warnings / 0 errors, governed SDK 8.0.423 |
 | Reproducible build (8.0.423) | **PASS locally** - two clean governed builds byte-identical; CI re-verification runs on push |
-| Deployment | **PASS** - committed deployed assembly at the junction-resolved loaded path, SHA-256 `8746887102E9811DC0E60A47E109944F7666F7757E650ECEFBD428DD402391C3`, 4,821,504 bytes; supersedes `2B0C8C2D...` (landing authoring), `AA60AC8B...` (selection decoupling), `ED49A028...` (encoding repair), and the B19 production build `63DF9C6E...` |
+| Deployment | **PASS** - committed deployed assembly at the junction-resolved loaded path, SHA-256 `843D37CF6C314AC217DAF5AC6194F760835A60AADED361C1E582990A451DA900`; supersedes `87468871...` (population truth and frame churn), `2B0C8C2D...` (landing authoring), `AA60AC8B...` (selection decoupling), and the B19 production build `63DF9C6E...` |
 | Repository gates | **PASS locally** - `verify-repository.mjs` green after the test-expectation refresh; PR #18 first `ci-verify` run failed only on those stale expectations |
 
 ## Operator runtime boundary
@@ -82,7 +82,7 @@ visual or gameplay acceptance for the operator.
 
 | Runtime focus | Operator check |
 |---|---|
-| Deployed build | Confirm the loaded assembly is `87468871...` (the `[CA][Build]` line in the player log records it) and not the pre-fix `A383799E...` |
+| Deployed build | Confirm the loaded assembly is `843D37CF...` (the `[CA][Build]` line in the player log records it) and not the pre-fix `A383799E...` |
 | Runtime fixes | Presets hold their names instead of "Custom"; no "Use suggested" button; preview clicks do not reach the globe; political order editor closes by "Done"; Gravship landing on fresh ground opens the landing-region author (confirm authors and registers at materialization; land-without-authoring derives as before; cancel does not launch) and reaches a map without the habitation crash |
 | Topology | Confirm stitched regions exist and are visible on the globe under the standard and Gravship lifecycle paths |
 | Create World front door | Nine named worlds, layered authoring (World Character, intermediate controls, Advanced), user presets |

@@ -251,3 +251,34 @@ ideoligion with mood consequences - is not present and is not bolted on
 speculatively: it needs pawn spatial-morphology perception and causally
 owned thought definitions. Recorded in ROADMAP as research-tier alongside
 the batch's deferred culture-conditioned morphology.
+
+## Addendum 6 - globe rendering corrections from live runtime review (2026-08-23 UTC / 2026-08-23 PDT)
+
+The operator ran the deployed build and reported the globe blanketed in
+glyph noise ("insane", "incoherent", "moves with the camera"), with the
+operator's own classification: the outlines are the regions - the stitching
+- and the glyph field (frontier homestead/cabin marks flattened across the
+entire planet) has nothing to do with stitching.
+
+Corrections on the branch:
+
+- The world-frontier overlay no longer flattens every unrealized region's
+  holdings onto the globe. Frontier holdings are regional content: they draw
+  only for the partition cell under the selected tile and its partition
+  neighbors [[BT]]CARegionalGeography.PartitionContextIds()[[BT]], cached per world
+  revision and context change. The town-and-larger standing marks
+  (urbanClass 4+) stay; they are few and settlement-level. Realized-region
+  holdings continue to draw inside their own regions.
+- The partition layer keeps drawing every joined region's outline - the
+  outlines ARE the stitching the globe is supposed to communicate. An
+  intermediate narrowing (inhabited regions plus selection context only,
+  uncommitted) was reverted per the operator's direction.
+
+Runtime notes captured for the record: with the lifecycle fix in place the
+partition now builds under the gravship scenario lifecycle (242,244 regions,
+36,419 joined, realized share 0.41 against 0.40 rolled; 475 world settlement
+states, 111 town-or-larger). Settlement inspect lines present stitched
+membership and standing (e.g. "large village (~425 people)", "Region: Eado
+Cliffs region (3 areas) - held by Compact of Moiloo"). During gravship
+landing target-selection the vanilla targeter is modal, so settlement clicks
+not responding mid-targeting is base-game behavior rather than a CAO defect.
