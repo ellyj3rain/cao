@@ -1,7 +1,8 @@
 ﻿# Colonist Awareness - roadmap
 
-The A sequence is closed at `A102`; the chronology is complete through `B19`,
-and `B20` is the next development batch after the operator runtime test.
+The A sequence is closed at `A102`; the chronology is complete through `B20` in governance
+records, and `B21` is the next development batch after the operator's runtime acceptance of the
+deployed B20 build.
 Historical batch identifiers below use the current sequence. Thematic `T-*`
 identifiers link continuing work across nonadjacent batches. The chronological
 catalog is [`BATCH_LOG.md`](BATCH_LOG.md); thematic links are in
@@ -1734,3 +1735,52 @@ evidence instead of live scope state. The current fixture, retained B10-B15
 suites, reproducible builds, and byte-verified deployment close the static
 boundary. The next action is the operator's runtime test; `B17` is the next
 ordinary batch.
+
+## World-Authoring Ontology Cleanup and Landing Authoring - B20 / T-001, T-002, T-005, T-013, T-019-T-022, T-024-T-026, T-028, T-030
+
+B20 cleans the world-authoring ontology into a causally honest surface: the
+off-map activity scalar is split into authored distant founding and derived
+political pulse cadence; hidden per-tile hash history becomes authored world
+development; the urban classification threshold is a game constant, not
+authored state; variability adds coherent countertypical divergence with
+Culture norm-strength modulation; stability carries state-transition
+resistance; the partition kernel is geography-aware; every footprint
+settlement stands as an authoritative anchor; corpus evidence enters
+autonomous siting; and the front door layers World Character, intermediate
+controls, and Advanced sliders with user-saveable presets.
+
+After the governance close, the operator's runtime testing produced five
+fixes and then the deeper architectural corrections recorded in the batch
+record's addenda: regional selection decoupled from the partition (selection
+is authoring by extent and orientation; the partition is geographic evidence;
+exact-match alone inherits partition identity - DR-178/DR-179); the shared
+geographic barrier measure now includes its rainfall term; gravship landings
+on fresh ground enter regional authoring at the landing-confirm seam and
+register at materialization, with derived behavior preserved on skip, cancel,
+or failure (DR-180); the starting pawn count everywhere follows the actual
+generated pawn set rather than a presupposed scenario total; and the world
+map's per-frame layer costs were made allocation-free. The five runtime fixes
+and all addenda work await the operator's in-game acceptance of the deployed
+build.
+
+Recorded directions pending operator design authority:
+
+- **Administration surface.** The rules-at-landing audit found no authority
+  creep: the founding terms (leadership, work, decisions, supplies,
+  duration) are consumed by landing-time application, political-shaping at
+  authoring, and preview copy only; no behavioral system reads them. The
+  operator-suggested Administration hub would unify rules/politics/
+  institutional configuration (political order editor, represented
+  institutions, landing-rules record, regional administrative facts) under
+  one main-tab surface separate from behavior tooling. Its exact shape is an
+  operator design decision; nothing is built speculatively.
+- **Physical-space semantics.** The trace found the space ontology already
+  owned: CASpacePurpose (thirteen purposes) and CASpaceStyle drive
+  autonomous construction, home intent, facility siting, and settlement
+  materialization, with corpus evidence entering siting at B20. What does
+  not exist is pawn-perceived significance: culture- or
+  ideoligion-conditioned interpretation of spaces feeding mood. That layer
+  requires pawn spatial-morphology intelligence and causally owned thought
+  definitions, and is recorded as research-tier; no arbitrary mood bonuses
+  are added. Culture-conditioned morphology remains an intentional deferral
+  from the batch record.

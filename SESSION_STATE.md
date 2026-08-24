@@ -1,44 +1,57 @@
 ﻿| Document | Colonist Awareness Overhaul Session State |
 |---|---|
 <!-- cao:generated:version BEGIN -->
-| Version | `1.7.2.0-alpha` · closed batch tip `B19` · next `B20` |
+| Version | `1.8.0.0-alpha` · closed batch tip `B20` · next `B21` |
 <!-- cao:generated:version END -->
 | Repository | `SESSION_STATE.md` |
-| Status | CLOSED - B19 is built, verified, recorded, and published to main; the only remaining B19 boundary is the operator's in-game visual/gameplay acceptance, then B20. |
+| Status | ACTIVE - B20 is closed in governance records with five runtime fixes committed on top; the deployed assembly awaits the operator's in-game acceptance, and PR #18 is open and unmerged. |
 
 # Session state
 
-Updated 2026-08-22 (B19 closure + publication). Read this before claiming where
-creation or gameplay testing stands. Compile, deterministic acceptance,
-deployment, CI verification, and operator runtime evidence remain separate.
+Updated 2026-08-22 PDT / 2026-08-23 UTC (B20 governance close, operator
+runtime-test phase, and the correction pass that reconciled both). Read this
+before claiming where creation or gameplay testing stands. Compile,
+deterministic acceptance, deployment, CI verification, and operator runtime
+evidence remain separate.
 
-## B19 - Regional substrate realization and settlement composition closure
+## B20 - world-authoring ontology cleanup and pre-runtime convergence
 
-B19 is closed append-only and published to `origin/main` (`1e97b75d`). Source,
-deterministic acceptance, retained-suite re-verification, the committed
-deployed-assembly identity, and the governed records are complete. The batch
-record is
-`Batches/B019-2026-08-21-regional-substrate-realization-and-settlement-composition-closure.md`;
-receipts are in `Receipts/B19`.
+B20 is closed append-only; the batch record is
+`Batches/B020-2026-08-22-world-authoring-ontology-cleanup-and-pre-runtime-convergence.md`,
+including its runtime-phase addendum. Development lives on
+`b20-world-authoring-ontology-cleanup` (branched from the published B19 line
+`1c61e205`): ten governed layer commits, the governance close (`b1dc25bb`),
+and five runtime-fix commits made after the close while the operator tested.
 
-What B19 closed: persistent world-wide regional topology and region-first setup
-(`CA_RegionalTopology` order 450, `CA_RegionalWorldSettlementState` order 650);
-the substrate/tendencies mechanical-truth pass (the opening feature runs the
-real mechanics); the front-door rework to plain-language World character after
-the rendered-graphics program was removed in totality (~1,900 lines);
-settlement composition (one culture authority, one style authority, culture a
-place's residents brought, a pure material kernel with its own receipts,
-operational roles that each build something, one knowledge resolver);
-material support reaches material; quarters follow population and support,
-not the naming bar; the population false closure reverted; the anchor boundary
-recorded, not softened; the security chain traced to pawn behaviour.
+| Commit | Fix | Runtime verification |
+|---|---|---|
+| `1c6b0e42` | Preset "Custom" glitch: `CAWorldPreset.Apply` now assigns `worldVariability` and `worldStability` | Implemented, code-inspected; not exercised in game |
+| `90a0638e` | "Use suggested" founding-arrangement button and auto-suggestion removed per operator direction; blank arrangement fallback | Implemented, code-inspected; not exercised in game |
+| `f863be87` | Topology lifecycle: `EnsureTopology` and `RebuildWorldSettlementStates` moved from the order-450 WorldGenStep (not run by the Gravship/Odyssey lifecycle) into `FinalizeInit`, idempotent, all lifecycle paths | Implemented, code-inspected; not exercised in game |
+| `abfd982c` | Regional preview absorbs mouse events; political order editor gains a visible "Done" button | Implemented, code-inspected; not exercised in game |
+| `b4ad888e` | Anchor settlements (`populationOrigin == CASettlementOrigin.Unset`) skip the CAO habitation-viability failure; anchors keep vanilla layouts as authoritative centers | Implemented, code-inspected; not exercised in game |
 
-The corrections (wrong-coupling fix, reverted false closure, three false-absence
-findings) are preserved in the B019 record. The post-B17 commit history was
-reconstructed to the governed layer-split and logical-atomicity standard:
-Claude's ~217 post-B17 commits (census-replay spam, assembly-rebuild spam, batch
-interleaving) were replaced by 13 canonical commits (B18: 5; B19: 6; 2 [REPO]
-normalization) on the clean published B17 base, preserving the exact final tree.
+What runtime testing established: the operator's last session loaded assembly
+SHA-256 `A383799E...` (4,814,848 bytes, written 2026-08-22 19:04 PDT), built
+before any of the five fixes; so no runtime fix has been exercised in game.
+The log captured both defects behind the crash: `[CA][Topology] tile 98594 has
+no partition membership; deriving a legacy visit-scoped region`, then
+`System.InvalidOperationException` ("settlement 0 cannot support permanent
+habitation: Missing heating or cooling, a reliable food route, local medical
+care") from `ValidateConfirmedComposition` via `EnsureDerivedRegion` during
+`GravshipUtility.ArriveNewMap`.
+
+Corrections applied 2026-08-22 PDT with this reconciliation, all committed on
+the branch: B20 editing passes had double-encoded non-ASCII punctuation into
+mojibake (35 middle-dot, 15 em-dash, 1 en-dash sequences across 9 source
+files and one receipts tool) and added byte-order marks the repository does
+not use; repaired mechanically to main's convention. `version-model.test.mjs`
+expectations advanced to the closed B20 state - their staleness was the sole
+failure in PR #18's first `ci-verify` run; `codeql` and `dependency-scan` were
+green. Retained-receipt censuses regenerated for runtime-fix line drift
+(classifications unchanged). The B19 named environmental debt is lifted: .NET
+SDK 8.0.423 is now installed locally, and the governed production build below
+is its byte-identical output.
 
 ## Governed runtime fixture
 
@@ -54,55 +67,49 @@ normalization) on the clean published B17 base, preserving the exact final tree.
 
 | Gate | Result |
 |---|---|
-| B19 regional substrate acceptance | **PASS** - 34/34 deterministic kernel contracts, including the closing corrections (`quarters-follow-facts-not-the-naming-bar`, `support-reaches-treeless-ground`, `world-character-separation`) |
-| Retained suites | **PASS** - B10 316 classified / 0 Critical-High; B14 24/24; B17 PASS (14/14 fact families, against the real game assembly); B18 9/10 (the one FAIL is fixture evolution past B18's failed-run, not a regression; B18's closed receipt stays 10/10) |
-| Source compile | **PASS** - 0 warnings / 0 errors |
-| Reproducible build (governed 8.0.423) | **VERIFIED by CI** - PR #16 ci-verify green: the governed 8.0.423 build, two byte-identical reproducible builds, and the tracked shipping assembly verified current. Locally 8.0.423 is unavailable (9.0.316 only); the local 9.0.316 build (SHA-256 `6D1696EE...`) is diagnostic only, not the governed artifact |
-| Deployment | **PASS** - committed deployed assembly present at the junction-resolved loaded path, SHA-256 `63DF9C6E...`, 4,804,096 bytes; published to `origin/main` (`1e97b75d`) |
-| Repository gates | **PASS** - version replay `1.7.2.0-alpha` (46 units cover A1-B19, B20 next); CI ci-verify + dependency-scan + CodeQL green on the published PR |
-
-Current executable receipts in `Receipts/B19` establish source, deterministic
-acceptance, retained-suite, build, and deployment-identity evidence. CI
-(ci-verify) established the governed 8.0.423 reproducible-build receipt. None of
-this establishes how the flow looks or plays.
-
-## Reproducible build (CI-verified)
-
-The governed build contract pins .NET SDK 8.0.423 (`global.json`,
-`rollForward: disable`). 8.0.423 is not installed locally (only 9.0.316 is
-present) and no local network is available to install it; the local 9.0.316
-substitute (two byte-identical builds, SHA-256 `6D1696EE...`) is diagnostic
-evidence only. The governed 8.0.423 reproducible-build receipt is satisfied by
-CI: PR #16 `ci-verify` ran the governed 8.0.423 build, produced two
-byte-identical reproducible builds, and proved the tracked shipping assembly is
-current. CI is the governed arbiter for this receipt; it is not debt.
+| Regional substrate acceptance | **PASS** - 36/36 deterministic kernel contracts, re-run 2026-08-22 against branch-tip source including all five runtime fixes |
+| Retained suites | **PASS** - B10 316 classified / 0 Critical-High and B11 persistence census (267 carriers, 89 schemas, 5 exclusions, 0 invalid) regenerated and re-run 2026-08-22; B14 24/24, B17 PASS, B18 9/10 unchanged from the B19 close record |
+| Source compile | **PASS** - 0 warnings / 0 errors, governed SDK 8.0.423 |
+| Reproducible build (8.0.423) | **PASS locally** - two clean governed builds byte-identical; CI re-verification runs on push |
+| Deployment | **PASS** - committed deployed assembly at the junction-resolved loaded path, SHA-256 `843D37CF6C314AC217DAF5AC6194F760835A60AADED361C1E582990A451DA900`, 4,822,016 bytes; supersedes `87468871...` (population truth and frame churn), `2B0C8C2D...` (landing authoring), `AA60AC8B...` (selection decoupling), and the B19 production build `63DF9C6E...` |
+| Repository gates | **PASS locally** - `verify-repository.mjs` green after the test-expectation refresh; PR #18 first `ci-verify` run failed only on those stale expectations |
 
 ## Operator runtime boundary
 
-A fresh operator launch is the next evidence boundary and the only remaining
-B19 boundary. The agent does not choose values, advance creation, start the
-game, alter saves, or claim visual or gameplay acceptance for the operator.
+The operator's next in-game launch is the current evidence boundary. The agent
+does not choose values, advance creation, start the game, alter saves, or claim
+visual or gameplay acceptance for the operator.
 
 | Runtime focus | Operator check |
 |---|---|
-| Create World front door | Confirm World character reads as intended - nine named worlds, plain-language detail, named differences, tendencies one door deeper; copy asserts only witnessed mechanics. |
-| Regional start | Confirm the fixture region loads and a start reaches a playable map with visible progress throughout. |
-| Settlement composition | Visit generated settlements; confirm culture, style, material reach, quarters, and roles present and reachable. |
-| Anchor boundary | Confirm the world-map settlement standing/population inspect-string reads honestly; entering a non-player settlement produces vanilla generation. |
-| Save/reload | Save and reload the real campaign; note wall time (large regional saves carry a measured native load cost). |
+| Deployed build | Confirm the loaded assembly is `843D37CF...` (the `[CA][Build]` line in the player log records it) and not the pre-fix `A383799E...` |
+| Runtime fixes | Presets hold their names instead of "Custom"; no "Use suggested" button; preview clicks do not reach the globe; political order editor closes by "Done"; Gravship landing on fresh ground opens the landing-region author (confirm authors and registers at materialization; land-without-authoring derives as before; cancel does not launch) and reaches a map without the habitation crash |
+| Topology | Confirm stitched regions exist and are visible on the globe under the standard and Gravship lifecycle paths |
+| Create World front door | Nine named worlds, layered authoring (World Character, intermediate controls, Advanced), user presets |
+| Settlement composition | Visit generated settlements; culture, style, material reach, quarters, roles |
+| Anchor boundary | World-map inspect-string reads honestly; non-player settlements generate vanilla on entry |
+| Save/reload | Save and reload the real campaign; note wall time |
+
+Selection model (Addendum 2): clicking new ground now authors by the configured extent and orientation with geographic-barrier evidence, and only an exact composition match inherits a partition identity - confirm the resulting shapes read as intended. Open runtime threads beyond the fixes: stitching visibility on the globe, the operator friction policy for mid-campaign authoring entry
+(per-landing author, where offered, whether caravan settling joins), whether the
+variable-pawn-set behavior reads correctly under Prepare Carefully (the pawn set is now the count truth wherever it exists), further creation-screen latency profiling with the game instrumented, and the administration and physical-space design directions. None of
+these is accepted or settled by this record.
 
 ## Environment and preserved evidence
 
 - RimWorld target: 1.6.4871 rev591; managed assemblies at `C:\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed`.
-- .NET SDK: 8.0.423 (governed pin) verified by CI; locally 9.0.316 only (diagnostic), no local network.
-- The B18 performance evidence boundary: curated per-run receipts and acceptance screenshots are tracked in Git; raw run logs and raw per-phase progress are kept local (gitignored) per `Receipts/B18/B18_PERFORMANCE_ARTIFACT_INDEX.md`.
+- .NET SDK: 8.0.423 (governed pin) installed locally at `C:\Users\jleyv\dotnet-8.0.423` on 2026-08-22; 9.0.317 remains the system SDK; network is available (the B19-era local-network restriction no longer holds).
+- Mod install path `C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\ColonistAwareness` is an NTFS junction to this worktree; the game loads this repository's tracked assembly.
+- The B18 performance evidence boundary: curated per-run receipts and acceptance screenshots are tracked in Git; raw run logs and raw per-phase progress are kept local (gitignored) per `Receipts/B18/B18_PERFORMANCE_ARTIFACT_INDEX.md`. The `Receipts/B18` convergence-receipt artifact retains mojibake captured during earlier runs; receipts are immutable evidence.
 - Operator working state on the pre-B17 governance line (`a2.5-orphan-preserved`, 146 changes) is preserved in `git stash@{0}`, not discarded.
 - Operator saves, autosaves, and checkpoints were never modified.
 - Operator control of time, pawn orders, windows, saves, and autosave remains unchanged unless explicitly requested.
 
 ## Publication and ref state
 
-- `origin/main` = `1e97b75d` = the canonical B19-closed line (merged via PR #16, rebase-merge, linear, CI-verified).
-- `origin/mallowfluff/b18-authoring-state-convergence` deleted (superseded by main).
+- `origin/main` = `1c61e205` = the canonical B19-closed line (PR #16 rebase-merge `1e97b75d`, PR #17 session-state convergence, CI-verified).
+- Branch `b20-world-authoring-ontology-cleanup`: ten B20 layer commits, governance close `b1dc25bb`, five runtime-fix commits through `b4ad888e`, and the correction commits of this reconciliation.
+- PR #18 (`b20-world-authoring-ontology-cleanup` -> `main`) is open and unmerged; first `ci-verify` run red on stale version-model test expectations only, corrected here.
+- The operator has not given in-game acceptance for the deployed build. Do not merge PR #18 and do not declare B20 runtime-accepted without the operator's explicit acceptance.
 - Local `archive/claude-post-b17-raw` (`91a30aa`) preserves Claude's raw post-B17 tip for forensic provenance.
-- B20 is the next development batch; not started.
+- B21 is the next development batch; it opens after the operator's B20 runtime-acceptance boundary.

@@ -594,6 +594,17 @@ namespace ColonistAwareness
                     && Mouse.IsOver(map))
                     TipPreviewCell(map, plan, previewMap);
 
+                // Absorb mouse events inside the preview area so clicks
+                // do not pass through to the world map underneath it.
+                // The preview is informational; this makes it inert
+                // without removing existing navigation/inspect features
+                // that already consume their own events.
+                if (Mouse.IsOver(inRect)
+                    && Event.current != null
+                    && Event.current.isMouse
+                    && Event.current.type == EventType.MouseDown)
+                    Event.current.Use();
+
                 if (generating)
                 {
                     Widgets.DrawBoxSolid(map, new Color(
@@ -2815,14 +2826,18 @@ namespace ColonistAwareness
             // the once-per-subject guard would silence the second world played
             // in a session.
             CARegionalEngineRoot.ForgetAnnouncements();
+            // Topology initialization moved from the WorldGenStep to here
+            // so it runs for every world lifecycle path, including Gravship
+            // and any DLC start that does not run the standard WorldGenStep
+            // pipeline. The method is idempotent: if the WorldGenStep already
+            // built the partition, it returns immediately.
+            EnsureTopology(fromLoad
+                ? "post-load migration" : "world finalization");
+            if (topology.Count > 0 && worldSettlementStates.Count == 0)
+                RebuildWorldSettlementStates(fromLoad
+                    ? "post-load migration" : "world finalization");
             if (!fromLoad)
                 return;
-            // Saves created before the world-wide partition existed receive
-            // it exactly once here, with registered regional footprints
-            // pre-owned so realized ground is never double-claimed.
-            EnsureTopology("post-load migration");
-            if (topology.Count > 0 && worldSettlementStates.Count == 0)
-                RebuildWorldSettlementStates("post-load migration");
             if (regions == null) return;
             if (!ReconcileReservationRegistry(out string failure))
                 throw new InvalidOperationException(
@@ -2951,11 +2966,10 @@ namespace ColonistAwareness
             if (now - lastDistantFoundingCheckTick
                 < DistantFoundingPeriodTicks) return;
             lastDistantFoundingCheckTick = now;
-            float rate = WorldPolicy.offMapActivityRate;
-            if (rate <= 0f) return;
+            float rate = WorldPolicy.distantFoundingRate;
             int period = now / DistantFoundingPeriodTicks;
-            if (CAWorldTendencyCausalKernel.Unit(world?.info?.Seed ?? 0,
-                    period, 442771) >= rate) return;
+            if (!CAWorldTendencyCausalKernel.DistantFoundingRoll(
+                    world?.info?.Seed ?? 0, period, rate)) return;
             PlanetLayer surface = Verse.Find.WorldGrid?.Surface;
             if (surface == null) return;
             List<Settlement> standing = Verse.Find.WorldObjects?.Settlements
@@ -3007,7 +3021,7 @@ namespace ColonistAwareness
                 Log.Message("[CA][WorldSettlements] distant founding: "
                     + founded.LabelCap + " (" + founder.Name + ") at tile "
                     + tile.tileId + ", " + state.UrbanWord
-                    + "; off-map activity rate " + rate.ToString("F2"));
+                    + "; distant founding rate " + rate.ToString("F2"));
             }
         }
 
@@ -3593,6 +3607,26 @@ namespace ColonistAwareness
                     throw new InvalidOperationException(context + " "
                         + regionId + " has invalid saved settlement "
                         + settlement.slot + ": " + programFailure + ".");
+        }
+
+        // An authored landing candidate (the gravship arrives to live) takes
+        // the same durable realization tail a derived region takes: policy
+        // snapshot, composed population from residents and the world pool,
+        // validation, anchor absorption and pool consumption, reservation,
+        // registration. Authoring chose the geography; this composes it.
+        internal CARegionalPlan RegisterAuthoredLanding(CARegionalPlan candidate,
+            CAExpandedLandmassProfile profile, Faction parentFaction)
+        {
+            candidate.worldPolicy = WorldPolicy.Copy();
+            WorldPolicy.PopulateDerived(candidate, profile, parentFaction);
+            candidate.operatorAuthored = true;
+            ValidateDurableRegion(candidate);
+            CARegionalPlanUtility.ConsumeReallocatedSources(candidate);
+            if (!TryReserveRegion(candidate, out string failure))
+                throw new InvalidOperationException("Regional footprint "
+                    + candidate.regionalId + " cannot be reserved: "
+                    + failure);
+            return RegisterRegion(candidate);
         }
 
         internal CARegionalPlan EnsureDerivedRegion(PlanetTile mapTile,
@@ -4775,10 +4809,20 @@ namespace ColonistAwareness
                 int standingQuarters = CAWorldTendencyCausalKernel
                     .SettlementQuarters(record.residentPopulation,
                         record.urbanSupport);
-                Materialize(record, rect, map,
-                    Math.Max(Math.Max(1, clustered),
-                        standingQuarters)); // [morphology lane]
-                clusterRects.Add(rect);
+                // An anchor settlement (the one the player entered) keeps
+                // its vanilla physical layout. CAO still creates the
+                // settlement record with its full composition (culture,
+                // programs, capabilities, organizations) so the anchor
+                // participates in CAO\u2019s world model, but its physical
+                // form is whatever RimWorld generated, not a CAO
+                // morphology stamp.
+                if (settlement.populationOrigin != CASettlementOrigin.Unset)
+                {
+                    Materialize(record, rect, map,
+                        Math.Max(Math.Max(1, clustered),
+                            standingQuarters)); // [morphology lane]
+                    clusterRects.Add(rect);
+                }
                 materialized++;
                 materializedSlots.Add(slot);
             }
@@ -5256,8 +5300,35 @@ namespace ColonistAwareness
                 CARegionalSetupSession.ClearPending();
             }
             else
-                region = world.EnsureDerivedRegion(parent.Tile, profile,
-                    parent.Faction);
+            {
+                // A gravship landing carrying an authored landing candidate
+                // materializes that selection through the same durable tail
+                // a derived region takes; anything else - visits,
+                // unauthored landings, interrupted authoring - lands
+                // derived, exactly as before.
+                CARegionalPlan prepared = CALandingAuthoring.ConsumePrepared(
+                    parent.Tile, profile);
+                region = null;
+                if (prepared != null)
+                {
+                    try
+                    {
+                        region = world.RegisterAuthoredLanding(prepared,
+                            profile, parent.Faction);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning("[CA][Regional] authored landing "
+                            + "candidate " + prepared.regionalId
+                            + " could not be registered (" + ex.Message
+                            + "); deriving the region instead");
+                        region = null;
+                    }
+                }
+                if (region == null)
+                    region = world.EnsureDerivedRegion(parent.Tile, profile,
+                        parent.Faction);
+            }
             CARegionalPlanResolver.Resolve(region);
             // Resolution may create or find RimWorld faction objects, but the
             // confirmed authoring state must remain byte-for-byte causal input.
@@ -5507,10 +5578,10 @@ namespace ColonistAwareness
                     + policy.frontierHoldingSize.ToStringPercent()
                     + "; settlement source variety "
                     + policy.reallocationSourceVariety.ToStringPercent()
-                    + "; urban growth propensity "
-                    + policy.urbanGrowthPropensity.ToStringPercent()
-                    + "; off-map activity rate "
-                    + policy.offMapActivityRate.ToStringPercent());
+                    + "; settlement development "
+                    + policy.worldDevelopment.ToStringPercent()
+                    + "; distant founding rate "
+                    + policy.distantFoundingRate.ToStringPercent());
                 foreach (CARegionalFactionPlan group in
                     region.factions.OrderBy(item => item.key))
                     Log.Message("[CA][Regional] faction " + group.key

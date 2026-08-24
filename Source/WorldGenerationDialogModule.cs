@@ -101,14 +101,6 @@ namespace ColonistAwareness
             },
             new Dimension
             {
-                Short = "urban", Label = "Urban development",
-                Norm = p => p.urbanGrowthPropensity,
-                Word = p => p.urbanGrowthPropensity >= 0.65f
-                    ? "comes easily" : p.urbanGrowthPropensity <= 0.3f
-                        ? "hard-won" : "typical"
-            },
-            new Dimension
-            {
                 Short = "sites", Label = "Frontier sites",
                 Norm = p => p.frontierHoldingFrequency,
                 Word = p => p.frontierHoldingFrequency >= 0.65f
@@ -133,10 +125,34 @@ namespace ColonistAwareness
             },
             new Dimension
             {
-                Short = "distant", Label = "Distant world",
-                Norm = p => p.offMapActivityRate,
-                Word = p => p.offMapActivityRate >= 0.65f ? "busy"
-                    : p.offMapActivityRate <= 0.25f ? "quiet" : "active"
+                Short = "dev", Label = "Settlement development",
+                Norm = p => p.worldDevelopment,
+                Word = p => p.worldDevelopment >= 0.75f ? "well-established"
+                    : p.worldDevelopment <= 0.3f ? "young settlements"
+                    : "moderately developed"
+            },
+            new Dimension
+            {
+                Short = "founding", Label = "Distant founding",
+                Norm = p => p.distantFoundingRate,
+                Word = p => p.distantFoundingRate >= 0.65f ? "expanding"
+                    : p.distantFoundingRate <= 0.25f ? "static" : "occasional"
+            },
+            new Dimension
+            {
+                Short = "vary", Label = "Variability",
+                Norm = p => p.worldVariability,
+                Word = p => p.worldVariability >= 0.65f ? "highly varied"
+                    : p.worldVariability <= 0.2f ? "uniform"
+                    : "some outliers"
+            },
+            new Dimension
+            {
+                Short = "stable", Label = "Stability",
+                Norm = p => p.worldStability,
+                Word = p => p.worldStability >= 0.75f ? "very stable"
+                    : p.worldStability <= 0.25f ? "volatile"
+                    : "moderate"
             }
         };
 
@@ -146,7 +162,54 @@ namespace ColonistAwareness
                 + p.stitchedRegionFrequencyMax) * 0.5f;
         }
 
-        // The eight state words as one line: the authored state read at
+        // INTERMEDIATE INTELLIGIBLE CONTROLS. Three groupings that sit
+        // between World Character (presets) and Advanced (individual
+        // sliders). Each is a projection over the canonical state: when
+        // the player adjusts an intermediate control, the underlying
+        // scalars are set proportionally. The Advanced sliders show the
+        // result and can fine-tune it. The intermediate values are
+        // derived from the current state so they track Advanced edits.
+        internal static float SettledOf(CARegionalWorldPolicy p)
+        {
+            return (p.worldDevelopment
+                + Mathf.Clamp01((p.settlementConcentration - 0.3f) / 0.5f)
+                + Mathf.Clamp01((p.frontierHoldingFrequency - 0.2f) / 0.5f))
+                / 3f;
+        }
+        internal static void ApplySettled(CARegionalWorldPolicy p, float v)
+        {
+            v = Mathf.Clamp01(v);
+            p.worldDevelopment = v;
+            p.settlementConcentration = 0.3f + v * 0.5f;
+            p.frontierHoldingFrequency = 0.2f + v * 0.5f;
+            CAWorldTendenciesSession.MarkEdited();
+        }
+        internal static float DiverseOf(CARegionalWorldPolicy p)
+        {
+            return (p.reallocationSourceVariety
+                + p.worldVariability / 0.8f) / 2f;
+        }
+        internal static void ApplyDiverse(CARegionalWorldPolicy p, float v)
+        {
+            v = Mathf.Clamp01(v);
+            p.reallocationSourceVariety = v;
+            p.worldVariability = v * 0.8f;
+            CAWorldTendenciesSession.MarkEdited();
+        }
+        internal static float DynamicOf(CARegionalWorldPolicy p)
+        {
+            return (p.distantFoundingRate
+                + (1f - p.worldStability) / 0.6f) / 2f;
+        }
+        internal static void ApplyDynamic(CARegionalWorldPolicy p, float v)
+        {
+            v = Mathf.Clamp01(v);
+            p.distantFoundingRate = v;
+            p.worldStability = 1f - v * 0.6f;
+            CAWorldTendenciesSession.MarkEdited();
+        }
+
+        // The eleven state words as one line: the authored state read at
         // a glance, in the page's own type.
         internal static string StateLine(CARegionalWorldPolicy p)
         {
@@ -181,9 +244,12 @@ namespace ColonistAwareness
         // The numbers live once, in CAWorldCharacterValues, so the
         // deterministic receipts exercise the same table the game
         // applies rather than a copy that can drift away from it.
-        private CAWorldCharacterValues Values
+        private CAWorldCharacterValues values;
+        internal CAWorldCharacterValues Values
         {
-            get { return CAWorldCharacterValues.ByKey(Key); }
+            get { return !string.IsNullOrEmpty(values.Key) ? values
+                : CAWorldCharacterValues.ByKey(Key); }
+            set { values = value; }
         }
 
         internal void Apply(CARegionalWorldPolicy p)
@@ -194,11 +260,13 @@ namespace ColonistAwareness
             p.stitchedRegionSizeMin = values.SpanMin;
             p.stitchedRegionSizeMax = values.SpanMax;
             p.settlementConcentration = values.Concentration;
-            p.urbanGrowthPropensity = values.Urban;
+            p.worldDevelopment = values.WorldDevelopment;
             p.frontierHoldingFrequency = values.FrontierFrequency;
             p.frontierHoldingSize = values.FrontierSize;
             p.reallocationSourceVariety = values.Variety;
-            p.offMapActivityRate = values.OffMap;
+            p.distantFoundingRate = values.DistantFounding;
+            p.worldVariability = values.WorldVariability;
+            p.worldStability = values.WorldStability;
             p.lastAppliedPresetKey = Key;
             p.realizedStitchedRegionFrequency = -1f;
         }
@@ -222,16 +290,20 @@ namespace ColonistAwareness
                     values.FrequencyMax)
                 && Mathf.Approximately(value.settlementConcentration,
                     values.Concentration)
-                && Mathf.Approximately(value.urbanGrowthPropensity,
-                    values.Urban)
                 && Mathf.Approximately(value.frontierHoldingFrequency,
                     values.FrontierFrequency)
                 && Mathf.Approximately(value.frontierHoldingSize,
                     values.FrontierSize)
                 && Mathf.Approximately(value.reallocationSourceVariety,
                     values.Variety)
-                && Mathf.Approximately(value.offMapActivityRate,
-                    values.OffMap);
+                && Mathf.Approximately(value.distantFoundingRate,
+                    values.DistantFounding)
+                && Mathf.Approximately(value.worldDevelopment,
+                    values.WorldDevelopment)
+                && Mathf.Approximately(value.worldVariability,
+                    values.WorldVariability)
+                && Mathf.Approximately(value.worldStability,
+                    values.WorldStability);
         }
 
         internal static CAWorldPreset Matching(
@@ -246,6 +318,107 @@ namespace ColonistAwareness
                 : All.FirstOrDefault(preset => preset.Key == key);
         }
 
+        // USER-SAVEABLE PRESETS. The player can save the current world
+        // state as a named preset and load it later. Stored as a JSON
+        // file in the mod config directory.
+        private static List<CAWorldPreset> userPresets;
+        private static string UserPresetDir => System.IO.Path.Combine(
+            Verse.GenFilePaths.ConfigFolderPath,
+            "CAWorldPresets");
+        internal static List<CAWorldPreset> UserPresets
+        {
+            get
+            {
+                if (userPresets != null) return userPresets;
+                userPresets = new List<CAWorldPreset>();
+                try
+                {
+                    string dir = UserPresetDir;
+                    if (!System.IO.Directory.Exists(dir)) return userPresets;
+                    foreach (string file in System.IO.Directory
+                        .GetFiles(dir, "*.txt"))
+                    {
+                        string json = System.IO.File.ReadAllText(file);
+                        var preset = ParseUserPreset(json, file);
+                        if (preset != null) userPresets.Add(preset);
+                    }
+                }
+                catch { }
+                return userPresets;
+            }
+        }
+        internal static void SaveUserPreset(string name,
+            CARegionalWorldPolicy policy)
+        {
+            try
+            {
+                string dir = UserPresetDir;
+                System.IO.Directory.CreateDirectory(dir);
+                string key = "user-" + System.Text.RegularExpressions.Regex
+                    .Replace(name, "[^A-Za-z0-9_-]", "_").ToLowerInvariant();
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine("key=" + key);
+                sb.AppendLine("name=" + name);
+                sb.AppendLine("settlementConcentration=" + policy.settlementConcentration.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("frontierHoldingFrequency=" + policy.frontierHoldingFrequency.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("frontierHoldingSize=" + policy.frontierHoldingSize.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("reallocationSourceVariety=" + policy.reallocationSourceVariety.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("worldDevelopment=" + policy.worldDevelopment.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("distantFoundingRate=" + policy.distantFoundingRate.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("worldVariability=" + policy.worldVariability.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("worldStability=" + policy.worldStability.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("stitchedRegionFrequencyMin=" + policy.stitchedRegionFrequencyMin.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("stitchedRegionFrequencyMax=" + policy.stitchedRegionFrequencyMax.ToString("F3", System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("stitchedRegionSizeMin=" + policy.stitchedRegionSizeMin.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine("stitchedRegionSizeMax=" + policy.stitchedRegionSizeMax.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                string path = System.IO.Path.Combine(dir, key + ".txt");
+                System.IO.File.WriteAllText(path, sb.ToString());
+                userPresets = null;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning("[CA][WorldPresets] could not save: " + ex.Message);
+            }
+        }
+        private static CAWorldPreset ParseUserPreset(string text, string fileName)
+        {
+            try
+            {
+                var p = new CAWorldPreset { Summary = "Your saved world." };
+                var lines = text.Split(new[] { '\r', '\n' },
+                    System.StringSplitOptions.RemoveEmptyEntries);
+                var map = new System.Collections.Generic.Dictionary<string, string>();
+                foreach (string line in lines)
+                {
+                    int eq = line.IndexOf('=');
+                    if (eq > 0)
+                        map[line.Substring(0, eq)] = line.Substring(eq + 1);
+                }
+                if (!map.TryGetValue("key", out string key) || key.NullOrEmpty())
+                    return null;
+                p.Key = key;
+                p.Name = map.TryGetValue("name", out string name) ? name : "User preset";
+                float f(string k) => float.Parse(map[k],
+                    System.Globalization.CultureInfo.InvariantCulture);
+                int i(string k) => int.Parse(map[k],
+                    System.Globalization.CultureInfo.InvariantCulture);
+                p.Values = new CAWorldCharacterValues(key,
+                    f("stitchedRegionFrequencyMin"),
+                    f("stitchedRegionFrequencyMax"),
+                    i("stitchedRegionSizeMin"),
+                    i("stitchedRegionSizeMax"),
+                    f("settlementConcentration"),
+                    f("frontierHoldingFrequency"),
+                    f("frontierHoldingSize"),
+                    f("reallocationSourceVariety"),
+                    f("worldDevelopment"),
+                    f("distantFoundingRate"),
+                    f("worldVariability"),
+                    f("worldStability"));
+                return p;
+            }
+            catch { return null; }
+        }
         internal static readonly CAWorldPreset[] All =
         {
             new CAWorldPreset
@@ -436,9 +609,45 @@ namespace ColonistAwareness
                 DrawControlsSecondHalf(x, y, w);
                 return;
             }
+            // INTERMEDIATE CONTROLS: three intelligible groupings that
+            // sit between World Character and the individual Advanced
+            // sliders. Adjusting one sets multiple scalars at once;
+            // the individual sliders below reflect the result.
+            CAOpeningTheme.SectionLabel(x, y, w, "World shape");
+            y += 20f;;
+            float settled = CAWorldAuthoring.SettledOf(policy);
+            Header(x, ref y, w, "How settled",
+                settled >= 0.65f ? "densely settled"
+                    : settled <= 0.3f ? "sparse" : "moderate",
+                "A single control for how populated, gathered, "
+                + "and fronted the world is.");
+            Slider(x, ref y, w, settled,
+                v => CAWorldAuthoring.ApplySettled(policy, v),
+                "sparse", "settled");
+            float diverse = CAWorldAuthoring.DiverseOf(policy);
+            Header(x, ref y, w, "How diverse",
+                diverse >= 0.65f ? "highly diverse"
+                    : diverse <= 0.3f ? "uniform" : "mixed",
+                "A single control for how many peoples found "
+                + "settlements and how much settlements diverge.");
+            Slider(x, ref y, w, diverse,
+                v => CAWorldAuthoring.ApplyDiverse(policy, v),
+                "uniform", "diverse");
+            float dynamic = CAWorldAuthoring.DynamicOf(policy);
+            Header(x, ref y, w, "How dynamic",
+                dynamic >= 0.65f ? "fast-changing"
+                    : dynamic <= 0.3f ? "slow" : "moderate",
+                "A single control for how often the world "
+                + "founds new places and how readily state changes.");
+            Slider(x, ref y, w, dynamic,
+                v => CAWorldAuthoring.ApplyDynamic(policy, v),
+                "slow", "dynamic");
+            y += 6f;
+            CAOpeningTheme.SectionLabel(x, y, w, "Advanced");
+            y += 20f;
 
             CAOpeningTheme.SectionLabel(x, y, w, "The land");
-            y += 20f;
+            y += 20f;;
             Header(x, ref y, w, "Joined regions",
                 CAWorldAuthoring.Dimensions[0].Word(policy),
                 "How much of the world's land joins into multi-area "
@@ -491,7 +700,7 @@ namespace ColonistAwareness
             y += 34f;
 
             CAOpeningTheme.SectionLabel(x, y, w, "Settlement");
-            y += 20f;
+            y += 20f;;
             Header(x, ref y, w, "Settlement gathering",
                 CAWorldAuthoring.Dimensions[2].Word(policy),
                 "Where the world's settlements are placed when it forms "
@@ -501,15 +710,6 @@ namespace ColonistAwareness
             Slider(x, ref y, w, policy.settlementConcentration,
                 v => SetValue(ref policy.settlementConcentration, v),
                 "spread out", "clustered");
-            Header(x, ref y, w, "Urban development",
-                CAWorldAuthoring.Dimensions[3].Word(policy),
-                "Where the town and city bars stand. Every settlement's "
-                + "standing — hamlet to city, shown when you inspect it "
-                + "— is judged against these bars from its real support "
-                + "facts; the bars cannot supply support a place lacks.");
-            Slider(x, ref y, w, policy.urbanGrowthPropensity,
-                v => SetValue(ref policy.urbanGrowthPropensity, v),
-                "hard-won", "comes easily");
         }
 
         // What the current state actually does, in the order a player
@@ -518,8 +718,7 @@ namespace ColonistAwareness
         internal static List<string> EffectLines(
             CARegionalWorldPolicy p)
         {
-            int threshold = CAWorldTendencyCausalKernel.UrbanThreshold(
-                p.urbanGrowthPropensity);
+            int threshold = CAWorldTendencyCausalKernel.TownThreshold;
             float share = p.realizedStitchedRegionFrequency >= 0f
                 ? p.realizedStitchedRegionFrequency
                 : CAWorldAuthoring.FrequencyMid(p);
@@ -563,11 +762,11 @@ namespace ColonistAwareness
                 + CAWorldTendencyCausalKernel.SourceVarietyTargetDistinct(
                     6, 5, p.reallocationSourceVariety)
                 + " different peoples among every six, and "
-                + (p.offMapActivityRate >= 0.65f
+                + (p.distantFoundingRate >= 0.65f
                     ? "the distant world stays busy — far-off "
                     + "communities keep acting and founding new places "
                     + "while you play."
-                    : p.offMapActivityRate <= 0.25f
+                    : p.distantFoundingRate <= 0.25f
                     ? "the distant world is quiet: far-off places "
                     + "change little while you play."
                     : "the distant world keeps moving between your "
@@ -614,9 +813,9 @@ namespace ColonistAwareness
         private void DrawControlsSecondHalf(float x, float y, float w)
         {
             CAOpeningTheme.SectionLabel(x, y, w, "The frontier");
-            y += 20f;
+            y += 20f;;
             Header(x, ref y, w, "Frontier sites",
-                CAWorldAuthoring.Dimensions[4].Word(policy),
+                CAWorldAuthoring.Dimensions[3].Word(policy),
                 "How much of each region's suitable empty land carries "
                 + "a frontier holding when the region realizes — real "
                 + "places on the map, apart from the settlements.");
@@ -624,7 +823,7 @@ namespace ColonistAwareness
                 v => SetValue(ref policy.frontierHoldingFrequency, v),
                 "sparse", "common");
             Header(x, ref y, w, "Holdings",
-                CAWorldAuthoring.Dimensions[5].Word(policy),
+                CAWorldAuthoring.Dimensions[4].Word(policy),
                 "Who lives in each: residents and how built-up. The "
                 + "land's capacity caps both.");
             Slider(x, ref y, w, policy.frontierHoldingSize,
@@ -633,9 +832,9 @@ namespace ColonistAwareness
             y += 4f;
 
             CAOpeningTheme.SectionLabel(x, y, w, "The wider world");
-            y += 20f;
+            y += 20f;;
             Header(x, ref y, w, "Settlement origins",
-                CAWorldAuthoring.Dimensions[6].Word(policy),
+                CAWorldAuthoring.Dimensions[5].Word(policy),
                 "How many distinct peoples found the world's "
                 + "settlements — at world creation, in regions as they "
                 + "realize, and among later distant founders. Only "
@@ -643,15 +842,42 @@ namespace ColonistAwareness
             Slider(x, ref y, w, policy.reallocationSourceVariety,
                 v => SetValue(ref policy.reallocationSourceVariety, v),
                 "repeated", "varied");
-            Header(x, ref y, w, "Distant world",
+            Header(x, ref y, w, "Settlement development",
+                CAWorldAuthoring.Dimensions[6].Word(policy),
+                "How much accumulated infrastructure and history "
+                + "the world\u2019s settlements begin with. A "
+                + "well-established world has deep roots; a young "
+                + "world starts thin. Regional centers are one step "
+                + "more developed than isolated outposts.");
+            Slider(x, ref y, w, policy.worldDevelopment,
+                v => SetValue(ref policy.worldDevelopment, v),
+                "young", "established");
+            Header(x, ref y, w, "Distant founding",
                 CAWorldAuthoring.Dimensions[7].Word(policy),
-                "How much the far-off world acts while you play: the "
-                + "share of distant communities that advance each "
-                + "interval, and how often distant peoples found new "
-                + "settlements. Loaded places always stay live.");
-            Slider(x, ref y, w, policy.offMapActivityRate,
-                v => SetValue(ref policy.offMapActivityRate, v),
-                "quiet", "busy");
+                "How often distant peoples found new settlements "
+                + "while you play. Loaded places always stay live "
+                + "regardless of this tendency.");
+            Slider(x, ref y, w, policy.distantFoundingRate,
+                v => SetValue(ref policy.distantFoundingRate, v),
+                "static", "expanding");
+            Header(x, ref y, w, "Variability",
+                CAWorldAuthoring.Dimensions[8].Word(policy),
+                "How many settlements diverge from their faction\u2019s "
+                + "norm and how far. A uniform world keeps its dominant "
+                + "character everywhere; a varied world has coherent "
+                + "outlier societies while the dominant character holds.");
+            Slider(x, ref y, w, policy.worldVariability,
+                v => SetValue(ref policy.worldVariability, v),
+                "uniform", "highly varied");
+            Header(x, ref y, w, "Stability",
+                CAWorldAuthoring.Dimensions[9].Word(policy),
+                "How readily established state holds through time. "
+                + "A stable world changes slowly; a volatile one "
+                + "shifts quickly. This modulates transition resistance, "
+                + "not activity frequency.");
+            Slider(x, ref y, w, policy.worldStability,
+                v => SetValue(ref policy.worldStability, v),
+                "volatile", "very stable");
         }
 
         private void Header(float x, ref float y, float width,

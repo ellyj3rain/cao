@@ -347,8 +347,7 @@ namespace ColonistAwareness
                     expectedHistory);
                 int expectedScale = CAWorldTendencyCausalKernel
                     .SettlementScale(expectedPopulation,
-                        expectedSupport,
-                        plan.worldPolicy.urbanGrowthPropensity);
+                        expectedSupport);
                 if (settlement.landCapacity != expectedLand
                     || settlement.historicalDevelopment != expectedHistory
                     || settlement.residentPopulation != expectedPopulation
@@ -411,12 +410,32 @@ namespace ColonistAwareness
                 }
                 if (!habitat.Viable)
                 {
-                    failure = "settlement " + settlement.slot
-                        + " cannot support permanent habitation: "
-                        + (settlement.habitatBlocker ?? "missing "
+                    // Anchor settlements keep their vanilla physical
+                    // layout and are authoritative existing centers.
+                    // CAO elaborates their composition without requiring
+                    // their vanilla buildings to meet CAO habitation
+                    // standards. Skip the viability failure for anchors;
+                    // authored (reallocated) settlements must still pass.
+                    if (settlement.populationOrigin
+                            == CASettlementOrigin.Unset)
+                    {
+                        Log.Warning("[CA][Regional] anchor settlement "
+                            + settlement.slot + " does not meet CAO "
+                            + "habitation standards ("
                             + CAHabitatViability.MissingWords(
-                                habitat.MissingRequirementMask));
-                    return false;
+                                habitat.MissingRequirementMask)
+                            + "); it keeps its vanilla layout as an "
+                            + "authoritative existing center");
+                    }
+                    else
+                    {
+                        failure = "settlement " + settlement.slot
+                            + " cannot support permanent habitation: "
+                            + (settlement.habitatBlocker ?? "missing "
+                                + CAHabitatViability.MissingWords(
+                                    habitat.MissingRequirementMask));
+                        return false;
+                    }
                 }
             }
             if ((settlements.Count == 1
@@ -714,8 +733,7 @@ namespace ColonistAwareness
                 settlement.realizedScale = (byte)
                     CAWorldTendencyCausalKernel.SettlementScale(
                         settlement.residentPopulation,
-                        settlement.urbanSupport,
-                        policy.urbanGrowthPropensity);
+                        settlement.urbanSupport);
             }
             plan.settlementScale = settlements.Count == 0 ? (byte)0
                 : settlements.Max(item => item.realizedScale);
@@ -836,7 +854,7 @@ namespace ColonistAwareness
             CARegionalWorldPolicy policy = plan?.worldPolicy
                 ?? new CARegionalWorldPolicy();
             hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
-                Mathf.RoundToInt(policy.urbanGrowthPropensity * 10000f));
+                Mathf.RoundToInt(policy.worldDevelopment * 10000f));
             hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,
                 Mathf.RoundToInt(policy.frontierHoldingFrequency * 10000f));
             hash = CAWorldTendencyCausalKernel.HashCombineInt(hash,

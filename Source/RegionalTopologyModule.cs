@@ -89,11 +89,25 @@ namespace ColonistAwareness
                 return adjacency.TryGetValue(id, out int[] found)
                     ? found : Array.Empty<int>();
             }
-            (float x, float y, float z) PositionOf(int id)
+(float x, float y, float z) PositionOf(int id)
             {
                 UnityEngine.Vector3 center = surface.GetTileCenter(
                     new PlanetTile(id, surface));
                 return (center.x, center.y, center.z);
+            }
+
+            // GEOGRAPHIC BARRIER COST is the shared geographic measure
+            // owned by CARegionalGeometry.GeographicBarrierCost; the
+            // partition kernel consumes it here, and candidate selection
+            // consumes the same measure as growth evidence. Mountain
+            // ridges, relief transitions, biome boundaries, coastline
+            // breaks, temperature or rainfall transitions all raise the
+            // cost; river corridors lower it. Coastlines, valleys, and
+            // river corridors emerge as a consequence.
+            float BarrierCost(int fromId, int toId)
+            {
+                return CARegionalGeometry.GeographicBarrierCost(fromId,
+                    toId);
             }
 
             int seed = world.info.Seed;
@@ -102,7 +116,8 @@ namespace ColonistAwareness
                 CARegionalTopologyKernel.Partition(seed, eligible,
                     NeighborsOf, PositionOf, share,
                     policy.stitchedRegionSizeMin,
-                    policy.stitchedRegionSizeMax, preAssigned);
+                    policy.stitchedRegionSizeMax, preAssigned,
+                    BarrierCost);
 
             var records = partition.Select(region =>
                 new CARegionalTopologyRecord

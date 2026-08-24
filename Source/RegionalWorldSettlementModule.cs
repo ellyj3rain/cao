@@ -99,21 +99,33 @@ namespace ColonistAwareness
             int land = LandCapacityOf(tile);
             int access = AccessOf(tile);
             var world = CARegionalWorldComponent.Current;
-            float propensity = world?.WorldPolicy?.urbanGrowthPropensity
-                ?? 0.45f;
+            // Urban threshold is a fixed classification constant; the
+            // settlement support facts determine its scale.
             // A settlement sharing a joined region with others is that
             // land's candidate center; lone outposts are not.
             CARegionalTopologyRecord record =
                 world?.TopologyRecordAt(tile);
             bool regionalCenter = record != null && record.Multi
                 && CARegionalGeography.TopologySettlementCount(record) > 1;
+            // Prior development is a real cause: the authored world
+            // baseline modulated by each settlement's position in the
+            // settlement network. A regional center — a settlement
+            // sharing joined land with others — is one step more
+            // developed than the world baseline; an isolated outpost
+            // is one step less. This replaces the hidden per-tile hash.
+            int worldDev = (int)Math.Round(
+                (world?.WorldPolicy?.worldDevelopment ?? 0.6f) * 3f);
+            int development = worldDev + (regionalCenter ? 1 : -1);
+            development = Math.Max(0, Math.Min(3, development));
+            float variability = world?.WorldPolicy?.worldVariability ?? 0f;
             int population = CAWorldTendencyCausalKernel
                 .WorldSettlementPopulation(seed, tile.tileId, land,
-                    TechTierOf(settlement.Faction));
+                    TechTierOf(settlement.Faction), development,
+                    variability);
             int support = CAWorldTendencyCausalKernel.WorldSettlementSupport(
-                population, land, access, regionalCenter);
+                population, land, access, regionalCenter, development);
             int scale = CAWorldTendencyCausalKernel.SettlementScale(
-                population, support, propensity);
+                population, support);
             return new CARegionalWorldSettlementState
             {
                 tileId = tile.tileId,
@@ -510,13 +522,18 @@ namespace ColonistAwareness
                     + owners.Count + " peoples, " + towns
                     + " of them town-or-larger; authored gathering "
                     + policy.settlementConcentration.ToString("F2")
-                    + ", urban " + policy.urbanGrowthPropensity
-                        .ToString("F2")
+                    + ", urban (fixed threshold)"
                     + ", frontier " + policy.frontierHoldingFrequency
                         .ToString("F2")
                     + ", origins " + policy.reallocationSourceVariety
                         .ToString("F2")
-                    + ", distant " + policy.offMapActivityRate
+                    + ", founding " + policy.distantFoundingRate
+                        .ToString("F2")
+                    + ", development " + policy.worldDevelopment
+                        .ToString("F2")
+                    + ", variability " + policy.worldVariability
+                        .ToString("F2")
+                    + ", stability " + policy.worldStability
                         .ToString("F2"));
             }
             catch (Exception ex)

@@ -505,6 +505,38 @@ namespace ColonistAwareness
                 }
                 if (lane) cardinalOpen++;
             }
+            // Corpus-evidence convergence: when the learned spatial
+            // relationship evidence is available, score the candidate
+            // site against the envelope-density band. This is the same
+            // corpus evidence the settlement growth module uses; the
+            // autonomous construction path now consumes it where it is
+            // legitimately applicable — ranking how well the site fits
+            // the learned density pattern relative to nearby buildings.
+            int evidenceScore = 0;
+            if (CASpatialRelationshipEvidence.Available)
+            {
+                int built = 0, area = 0;
+                for (int dz = -10; dz <= 10; dz++)
+                    for (int dx = -10; dx <= 10; dx++)
+                    {
+                        IntVec3 cell = center + new IntVec3(dx, 0, dz);
+                        if (!cell.InBounds(map)) continue;
+                        area++;
+                        if (cell.GetEdifice(map) != null) built++;
+                    }
+                double localDensity = area == 0 ? 0
+                    : (built + 1) / (double)area;
+                if (CASpatialRelationshipEvidence.TryBand(
+                    "envelope-density",
+                    CASpatialRelationshipEvidence.BiomeGroupFor(map),
+                    CASpatialRelationshipEvidence.QuartileFor(
+                        built + 1),
+                    out CASpatialEvidenceBand densityBand))
+                {
+                    evidenceScore = CASpatialRelationshipEvidence.Score(
+                        localDensity, densityBand);
+                }
+            }
             return new CAAutonomousBuildingPatternEvidence
             {
                 ValidGround = CanHoldCompactHabitat(map, center,
@@ -521,7 +553,8 @@ namespace ColonistAwareness
                 VisualOrder = CAAutonomousBuildingPatternKernel.Balance(
                     northEast, northWest, southEast, southWest),
                 MaterialCost = obstacles,
-                StableOrder = stableOrder
+                StableOrder = stableOrder,
+                EvidenceScore = evidenceScore
             };
         }
 

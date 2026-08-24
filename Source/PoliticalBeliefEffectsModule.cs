@@ -464,7 +464,16 @@ namespace ColonistAwareness
                     // Apply continuing loss, habituation, and repeat records.
                     int held = now - org.beliefConflictStartTicks[at];
                     float heldDays = held / 60000f;
+                    // Stability modulates how readily established political
+                    // support ceases holding: the drain rate scales down
+                    // in a stable world (the state holds) and up in a
+                    // volatile one (the state does not hold). This is
+                    // state-persistence modulation, not activity cadence.
+                    float stability = CARegionalWorldComponent.Current
+                        ?.WorldPolicy?.worldStability ?? 0.5f;
+                    float resistance = 1f - stability * 0.7f;
                     float drain = timing.drain
+                        * resistance
                         * (1f + timing.escalatePerDayHeld * heldDays);
                     CACulturalMeaningResolution cultural = CulturalMeaning(
                         org, key);

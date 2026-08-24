@@ -2065,7 +2065,7 @@ namespace ColonistAwareness
                 CAFrontier.EnsureHoldings(this);
                 ProcessAgreementsAndFederations(now);
                 TickGatherings(now);
-                PulsePoliticalBeliefsUnderBudget(now);
+                PulsePoliticalBeliefsOnCadence(now);
                 RebuildOfficeHolderIndex();
             }
         }
@@ -2253,13 +2253,16 @@ namespace ColonistAwareness
         }
 
         // Player-facing and loaded organizations update every world pulse.
-        // Off-map organizations share the saved activity budget and cursor.
-        private int offMapActivityCursor;
+        // Off-map organizations pulse on a fixed per-org cadence, not a
+        // rate-proportional budget. The cadence is a derived property of
+        // institutional life, not something the player authors: each
+        // background organization updates its political beliefs once per
+        // cadence period, round-robin across sync ticks.
+        private int politicalPulseCursor;
+        private const int PoliticalPulseCadenceTicks = 60000;
 
-        private void PulsePoliticalBeliefsUnderBudget(int now)
+        private void PulsePoliticalBeliefsOnCadence(int now)
         {
-            float offMapActivityRate = CARegionalWorldComponent.Current
-                ?.WorldPolicy?.offMapActivityRate ?? 0.5f;
             var background = new List<CAOrganization>();
             for (int i = 0; i < organizations.Count; i++)
             {
@@ -2270,12 +2273,18 @@ namespace ColonistAwareness
                 else background.Add(org);
             }
             if (background.Count == 0) return;
-            int allowance = CAWorldTendencyCausalKernel
-                .OffMapActivityBudget(background.Count, offMapActivityRate);
-            for (int n = 0; n < allowance; n++)
+            // Each sync tick (2500 ticks) processes the share of
+            // background orgs whose cadence falls due. At a 60000-tick
+            // cadence and 2500-tick sync, that is one org per 24 orgs
+            // per sync tick — each background org pulses roughly once
+            // per in-game day, matching Culture's longitudinal cadence.
+            int perSync = Math.Max(1, (int)Math.Ceiling(
+                (double)background.Count * 2500
+                / PoliticalPulseCadenceTicks));
+            for (int n = 0; n < perSync; n++)
             {
                 CAOrganization org = background[
-                    offMapActivityCursor++ % background.Count];
+                    politicalPulseCursor++ % background.Count];
                 CAPoliticalBeliefEffects.Pulse(org, now);
             }
         }
@@ -2960,8 +2969,8 @@ namespace ColonistAwareness
                 Scribe_Values.Look(ref nextOfferId, "CA_nextOfferId", 1);
                 Scribe_Values.Look(ref lastInitiativeTick,
                     "CA_lastInitiativeTick", -999999);
-                Scribe_Values.Look(ref offMapActivityCursor,
-                    "CA_offMapActivityCursor", 0);
+                Scribe_Values.Look(ref politicalPulseCursor,
+                    "CA_politicalPulseCursor", 0);
                 Scribe_Values.Look(ref nextLegitimacyTick,
                     "CA_nextInstitutionLegitimacyTick", 60000);
             }

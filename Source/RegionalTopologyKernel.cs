@@ -58,7 +58,8 @@ namespace ColonistAwareness
             Func<int, IReadOnlyList<int>> neighborsOf,
             Func<int, (float x, float y, float z)> positionOf,
             float multiTileLandShare, int sizeMin, int sizeMax,
-            ISet<int> preAssigned = null)
+            ISet<int> preAssigned = null,
+            Func<int, int, float> barrierCost = null)
         {
             var result = new List<RegionSeed>();
             if (eligibleTiles == null || eligibleTiles.Count == 0)
@@ -96,7 +97,7 @@ namespace ColonistAwareness
                     if (target > high) target = high;
                 }
                 List<int> members = Grow(rootId, target, eligible, assigned,
-                    neighborsOf, positionOf);
+                    neighborsOf, positionOf, barrierCost);
                 foreach (int id in members) assigned.Add(id);
                 result.Add(new RegionSeed
                 {
@@ -106,7 +107,7 @@ namespace ColonistAwareness
                 totalLand += members.Count;
                 if (members.Count > 1) multiLand += members.Count;
             }
-            MergeUndersized(result, neighborsOf, low, high);
+            MergeUndersized(result, neighborsOf, low, high, barrierCost);
             return result;
         }
 
@@ -116,7 +117,8 @@ namespace ColonistAwareness
         // the band, repeated to the fixpoint; what remains undersized after
         // that is genuinely blocked geography, not packing debris.
         private static void MergeUndersized(List<RegionSeed> regions,
-            Func<int, IReadOnlyList<int>> neighborsOf, int low, int high)
+            Func<int, IReadOnlyList<int>> neighborsOf, int low, int high,
+            Func<int, int, float> barrierCost = null)
         {
             int floor = Math.Max(2, low);
             if (floor <= 2 && high <= 2) return;
@@ -144,6 +146,9 @@ namespace ColonistAwareness
                             if (!ownerOf.TryGetValue(around[i],
                                     out RegionSeed other)
                                 || other == region) continue;
+                            if (barrierCost != null
+                                && barrierCost(memberId, around[i]) >= 0.7f)
+                                continue;
                             int combined = region.MemberTileIds.Count
                                 + other.MemberTileIds.Count;
                             if (combined > high) continue;
@@ -172,7 +177,8 @@ namespace ColonistAwareness
         private static List<int> Grow(int rootId, int target,
             HashSet<int> eligible, HashSet<int> assigned,
             Func<int, IReadOnlyList<int>> neighborsOf,
-            Func<int, (float x, float y, float z)> positionOf)
+            Func<int, (float x, float y, float z)> positionOf,
+            Func<int, int, float> barrierCost = null)
         {
             var members = new List<int> { rootId };
             if (target <= 1) return members;
@@ -218,6 +224,8 @@ namespace ColonistAwareness
                 for (int i = 0; i < around.Count; i++)
                 {
                     int next = around[i];
+                    if (barrierCost != null
+                        && barrierCost(from, next) >= 0.7f) continue;
                     if (!eligible.Contains(next) || assigned.Contains(next)
                         || chosen.Contains(next)) continue;
                     frontier.Add(next);

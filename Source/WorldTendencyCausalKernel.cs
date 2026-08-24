@@ -178,19 +178,19 @@ namespace ColonistAwareness
                 + Clamp(historicalDevelopment, 0, 3) * 4;
         }
 
-        // The tendency changes only this threshold. It cannot supply missing
-        // population, land, access, services, civic development, economic
-        // capacity, trade links, specialization, regional role, or history.
-        public static int UrbanThreshold(float propensity)
-        {
-            return 72 - (int)Math.Round(Clamp01(propensity) * 20f);
-        }
+        // FIXED CLASSIFICATION THRESHOLD. The town/city bar is a game
+        // constant, not authored world state (DR-114: settlement scale is
+        // derived; DR-115: generic intensity controls are not authoring
+        // primitives). A settlement with support >= 62 counts as a town;
+        // >= 74 as a city. The support facts (population, land, access,
+        // services, civic, economic, trade, specialization, regional role,
+        // history) determine the scale; the threshold does not.
+        public const int TownThreshold = 62;
+        public const int CityThreshold = 74;
 
-        // Values match CASettlementScale.
-        public static int SettlementScale(int population, int urbanSupport,
-            float urbanGrowthPropensity)
+        public static int SettlementScale(int population, int urbanSupport)
         {
-            int threshold = UrbanThreshold(urbanGrowthPropensity);
+            int threshold = TownThreshold;
             if (population >= 1200 && urbanSupport >= threshold + 12) return 5;
             if (population >= 500 && urbanSupport >= threshold) return 4;
             if (population >= 280) return 3;
@@ -205,7 +205,7 @@ namespace ColonistAwareness
         // raise identical internal structure.
         //
         // Deliberately NOT keyed to realized scale. Scale is population
-        // and support measured against UrbanThreshold, which the urban
+        // and support measured against a fixed classification threshold, which the
         // tendency moves - so keying quarters to scale let a naming
         // preference change how much of a settlement physically got
         // built. The tendency decides where the bar for calling a place
@@ -273,13 +273,6 @@ namespace ColonistAwareness
                 Clamp01(variety) * Math.Max(0, distinctAvailable - 1)));
         }
 
-        public static int OffMapActivityBudget(int subjectCount, float rate)
-        {
-            if (subjectCount <= 0 || rate <= 0f) return 0;
-            return Math.Max(1, Math.Min(subjectCount,
-                (int)Math.Ceiling(subjectCount * Clamp01(rate))));
-        }
-
         // World-scale settlement placement. Habitat preference (the biome
         // and temperature weight vanilla already computes) stays primary;
         // concentration only bends the spatial term. At 0.5 the term is a
@@ -303,17 +296,46 @@ namespace ColonistAwareness
         // World-scale settlement facts, derived deterministically from the
         // ground the settlement stands on. These are coarse world-map
         // classifications; a materialized regional settlement derives its
-        // richer record from the full composition instead.
+        // richer record from the full composition instead. The development
+        // level is a real cause supplied by the caller (the authored world
+        // baseline plus position-in-network variation); it replaces the
+        // hidden per-tile hash that previously stood for history.
         public static int WorldSettlementPopulation(int seed, int tileId,
-            int landCapacity, int techTier)
+            int landCapacity, int techTier, int developmentLevel,
+            float variability = 0f)
         {
-            int history = (int)(Unit(seed, tileId, 8317) * 4f);
+            // Countertypical tech tier: with probability proportional to
+            // variability, a settlement diverges from its faction\u2019s tech
+            // level. The divergence is deterministic (seeded by tile id),
+            // not random, and its extremity scales with variability.
+            int effectiveTechTier = techTier;
+            if (variability > 0f && Unit(seed, tileId, 3721) < variability)
+            {
+                int maxDivergence = 1 + (int)(variability * 2f);
+                int divergence = 1 + (int)(Unit(seed, tileId, 3723)
+                    * maxDivergence);
+                int direction = Unit(seed, tileId, 3727) < 0.5f ? -1 : 1;
+                effectiveTechTier = Clamp(
+                    techTier + direction * divergence, 0, 3);
+            }
             return PopulationFromFacts(landCapacity,
-                Clamp(history, 0, 3), Clamp(techTier, 0, 3), false);
+                Clamp(developmentLevel, 0, 3),
+                Clamp(effectiveTechTier, 0, 3), false);
+        }
+
+        // Stability modulates endogenous transition cadence. The base
+        // cadence is one in-game day (60000 ticks); stability scales it
+        // from 0.5x (volatile) to 5x (very stable). This modulates
+        // legitimate transition rate, not randomness.
+        public static int StabilityCadence(int baseCadence, float stability)
+        {
+            float scale = 1f + Clamp01(stability) * 4f;
+            return Math.Max(2500, (int)(baseCadence * scale));
         }
 
         public static int WorldSettlementSupport(int population,
-            int landCapacity, int access, bool regionalCenter)
+            int landCapacity, int access, bool regionalCenter,
+            int developmentLevel)
         {
             int services = population >= 400 ? 2
                 : population >= 140 ? 1 : 0;
@@ -321,9 +343,24 @@ namespace ColonistAwareness
                 : population >= 220 ? 1 : 0;
             int economic = EconomicCapacity(population, civic,
                 hasWorkshop: population >= 280, hasStores: population >= 140);
+            // Development is a real supplied cause, not a population proxy.
+            // A young world can have large settlements that are still
+            // thinly developed; an old world can have small ones that are
+            // richly developed for their size.
+            int history = Clamp(developmentLevel, 0, 3);
             return UrbanSupport(population, landCapacity, access, services,
                 civic, economic, Clamp(access, 0, 3), 0, regionalCenter,
-                population >= 500 ? 2 : population >= 200 ? 1 : 0);
+                history);
+        }
+
+        // The distant-founding gate: one deterministic roll per period.
+        // The player authors how often new settlements appear in the
+        // far-off world; this is the only thing the rate controls.
+        public static bool DistantFoundingRoll(int seed, int period,
+            float rate)
+        {
+            if (rate <= 0f) return false;
+            return Unit(seed, period, 442771) < Clamp01(rate);
         }
 
         private static float Clamp01(float value)

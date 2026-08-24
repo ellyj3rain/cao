@@ -63,6 +63,70 @@ namespace ColonistAwareness
                 || Verse.Find.World.Impassable(tile);
         }
 
+        // GEOGRAPHIC BARRIER COST between two adjacent surface tiles. This
+        // is the one shared measure of what separates ground: elevation
+        // cliffs, relief transitions, biome ecotones, coast-to-inland
+        // breaks, and temperature or rainfall transitions all raise the
+        // cost; a shared road or river lowers it (a corridor, not a
+        // barrier). The world partition is built from it; candidate
+        // selection treats it as evidence when growing, never as a
+        // boundary it must reproduce.
+        internal static float GeographicBarrierCost(int fromId, int toId)
+        {
+            PlanetLayer surface = Verse.Find.WorldGrid?.Surface;
+            if (surface == null) return 1f;
+            PlanetTile fromPlanet = new PlanetTile(fromId, surface);
+            PlanetTile toPlanet = new PlanetTile(toId, surface);
+            Tile from = fromPlanet.Valid ? fromPlanet.Tile : null;
+            Tile to = toPlanet.Valid ? toPlanet.Tile : null;
+            if (from == null || to == null) return 1f;
+
+            // Elevation difference: a 1500m cliff or ridge is a full
+            // barrier; smaller differences scale linearly.
+            float elevDiff = Math.Abs(from.elevation - to.elevation);
+            float elevCost = Math.Min(1f, elevDiff / 1500f);
+
+            // Hilliness transition: a two-level jump (flat to large
+            // hills, small hills to mountains) is a barrier.
+            int fromHill = (int)from.hilliness;
+            int toHill = (int)to.hilliness;
+            float hillCost = Math.Min(1f,
+                Math.Abs(fromHill - toHill) * 0.35f);
+
+            // Biome transition: a mild ecotone boundary.
+            float biomeCost = from.PrimaryBiome != to.PrimaryBiome
+                ? 0.2f : 0f;
+
+            // Coastal coherence: coastal tiles prefer to join with other
+            // coastal tiles, so coastlines form region edges.
+            bool fromCoastal = CARegionalPlanUtility
+                .ConstituentIsCoastal(fromId);
+            bool toCoastal = CARegionalPlanUtility
+                .ConstituentIsCoastal(toId);
+            float coastCost = (fromCoastal != toCoastal) ? 0.5f : 0f;
+
+            // River corridor: tiles that share a river link prefer to
+            // join. A river is a corridor, not a barrier.
+            bool shareRiver = CARegionalPlanUtility
+                .ConstituentsShareRoute(fromId, toId);
+            float riverAffinity = shareRiver ? -0.3f : 0f;
+
+            // Temperature and rainfall transitions are mild
+            // environmental barriers (ecotones). The rainfall term was
+            // computed and then dropped when this measure was introduced
+            // at B20; it now participates, matching the batch record's
+            // declared behavior.
+            float tempDiff = Math.Abs(from.temperature - to.temperature);
+            float tempCost = Math.Min(0.5f, tempDiff / 30f);
+            float rainDiff = Math.Abs(from.rainfall - to.rainfall);
+            float rainCost = Math.Min(0.4f, rainDiff / 1000f);
+
+            float baseCost = Math.Max(Math.Max(elevCost, hillCost),
+                Math.Max(biomeCost, Math.Max(coastCost,
+                    Math.Max(tempCost, rainCost))));
+            return Math.Max(0f, baseCost + riverAffinity);
+        }
+
         internal static CARegionalEnvelopeGeometry BuildEnvelope(
             CARegionalPlan plan, bool smooth = true)
         {
@@ -533,12 +597,12 @@ namespace ColonistAwareness
             BaseContent.WhiteTex, ShaderDatabase.WorldOverlayTransparent,
             new Color(0.98f, 0.93f, 0.74f, 0.92f), 3593);
 
-        private string lastKey;
+        private int lastKey = -1;
 
         public override bool VisibleWhenLayerNotSelected => false;
         public override bool VisibleInBackground => false;
         public override bool Visible => base.Visible
-            && (VisiblePlans().Any() || SelectedTopologyRecord() != null);
+            && (AnyVisiblePlan() || SelectedTopologyRecord() != null);
 
         public override bool ShouldRegenerate => base.ShouldRegenerate
             || CurrentKey() != lastKey;
@@ -757,15 +821,57 @@ namespace ColonistAwareness
             }
         }
 
-        private static string CurrentKey()
+        // Per-frame key without per-frame string churn: registered regions
+        // carry fixed member sets from registration and are covered by the
+        // world-state revision; only the in-authoring candidates (pending
+        // setup plan, landing candidate) can change members freely, so only
+        // they fold their exact identity here.
+        private static int CurrentKey()
         {
-            return (Verse.Find.World?.info?.Seed ?? 0) + ":"
-                + (Verse.Find.WorldSelector?.SelectedTile.tileId ?? -1) + ":"
-                + string.Join("|", VisiblePlans().Select(plan =>
-                    (plan.regionalId ?? "unknown") + ":"
-                    + plan.startTileId + ":"
-                    + string.Join(",", plan.memberTileIds
-                        ?? new List<int>())));
+            CARegionalWorldComponent component =
+                CARegionalWorldComponent.Current;
+            unchecked
+            {
+                int key = (Verse.Find.World?.info?.Seed ?? 0) * 397
+                    ^ (Verse.Find.WorldSelector?.SelectedTile.tileId ?? -1)
+                    ^ ((component?.WorldStateRevision ?? 0) * 31)
+                    ^ ((component?.Regions?.Count ?? 0) * 17);
+                CARegionalPlan pending =
+                    CARegionalSetupSession.PendingForCurrentWorld;
+                if (pending != null) key ^= PlanFingerprint(pending);
+                CARegionalPlan landing = CALandingAuthoring.Candidate;
+                if (landing != null) key ^= PlanFingerprint(landing) * 3;
+                return key;
+            }
+        }
+
+        private static int PlanFingerprint(CARegionalPlan plan)
+        {
+            unchecked
+            {
+                int fold = plan.mapSize * 23 ^ plan.startTileId
+                    ^ (plan.regionalId ?? "unknown").GetHashCode();
+                List<int> members = plan.memberTileIds;
+                if (members != null)
+                    for (int i = 0; i < members.Count; i++)
+                        fold = fold * 31 + members[i];
+                return fold;
+            }
+        }
+
+        private static bool AnyVisiblePlan()
+        {
+            if (CARegionalSetupSession.PendingForCurrentWorld != null
+                || CALandingAuthoring.Candidate != null)
+                return true;
+            IReadOnlyList<CARegionalPlan> regions =
+                CARegionalWorldComponent.Current?.Regions;
+            if (regions == null) return false;
+            for (int i = 0; i < regions.Count; i++)
+                if (regions[i]?.memberTileIds != null
+                    && regions[i].memberTileIds.Count > 0)
+                    return true;
+            return false;
         }
 
         private static IEnumerable<CARegionalPlan> VisiblePlans()
@@ -777,6 +883,17 @@ namespace ColonistAwareness
             {
                 seen.Add(PlanKey(pending));
                 yield return pending;
+            }
+
+            // A landing candidate being authored for a gravship arrival
+            // draws here too, so the geography under composition is the
+            // geography on the globe.
+            CARegionalPlan landing = CALandingAuthoring.Candidate;
+            if (landing?.memberTileIds != null
+                && landing.memberTileIds.Count > 0)
+            {
+                seen.Add(PlanKey(landing));
+                yield return landing;
             }
 
             IReadOnlyList<CARegionalPlan> regions =
@@ -803,6 +920,10 @@ namespace ColonistAwareness
 
         private static bool IsSelected(CARegionalPlan plan)
         {
+            // The landing candidate being authored is the active selection
+            // by definition.
+            if (plan != null && plan == CALandingAuthoring.Candidate)
+                return true;
             PlanetTile tile = Verse.Find.WorldSelector?.SelectedTile
                 ?? PlanetTile.Invalid;
             return tile.Valid && plan?.ReservedTileIds != null
@@ -823,6 +944,28 @@ namespace ColonistAwareness
             return pending?.ReservedTileIds != null
                     && pending.ReservedTileIds.Contains(tile.tileId)
                 ? pending : null;
+        }
+
+        // The partition cells currently under examination: the selected
+        // tile is region plus its partition neighbors. Empty when no
+        // surface land is selected. Global overlays gate on this so they
+        // stay quiet until the player is actually looking at somewhere.
+        internal static HashSet<string> PartitionContextIds()
+        {
+            var ids = new HashSet<string>();
+            PlanetTile selected = Verse.Find.WorldSelector?.SelectedTile
+                ?? PlanetTile.Invalid;
+            if (!selected.Valid) return ids;
+            if (selected.Layer != Verse.Find.WorldGrid?.Surface) return ids;
+            CARegionalWorldComponent world = CARegionalWorldComponent.Current;
+            if (world == null) return ids;
+            CARegionalTopologyRecord record = world.TopologyRecordAt(selected);
+            if (record == null) return ids;
+            if (!string.IsNullOrEmpty(record.regionId))
+                ids.Add(record.regionId);
+            foreach (string neighbor in world.TopologyNeighborsOf(record))
+                if (!string.IsNullOrEmpty(neighbor)) ids.Add(neighbor);
+            return ids;
         }
 
         // The partition region for land no plan governs. Realized ground

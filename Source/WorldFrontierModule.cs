@@ -140,18 +140,27 @@ namespace ColonistAwareness
         private static List<(CAWorldHolding Holding, string Region)>
             visible;
         private static int visibleRevision = -1;
+        private static string visibleContext;
 
         internal static IReadOnlyList<(CAWorldHolding Holding,
-            string Region)> Visible()
+            string Region)> Visible(ISet<string> contextIds)
         {
             CARegionalWorldComponent world =
                 CARegionalWorldComponent.Current;
-            if (world?.Topology == null)
+            if (world?.Topology == null || contextIds == null
+                    || contextIds.Count == 0)
                 return new List<(CAWorldHolding, string)>();
+            // The flatten is cached per world revision and per examined
+            // context change; per-region derivations are cached
+            // separately in For().
+            string contextKey = string.Join("|", contextIds
+                .Where(idValue => idValue != null).OrderBy(id => id));
             if (visible != null
-                && visibleRevision == world.WorldStateRevision)
+                && visibleRevision == world.WorldStateRevision
+                && visibleContext == contextKey)
                 return visible;
             visibleRevision = world.WorldStateRevision;
+            visibleContext = contextKey;
             visible = new List<(CAWorldHolding, string)>();
             IReadOnlyList<CARegionalTopologyRecord> topology =
                 world.Topology;
@@ -160,6 +169,9 @@ namespace ColonistAwareness
                 CARegionalTopologyRecord record = topology[i];
                 if (record?.memberTileIds == null
                     || record.memberTileIds.Count < 2) continue;
+                // Holdings are regional content, not world chrome: only
+                // the region under examination and its neighbors draw.
+                if (!contextIds.Contains(record.regionId)) continue;
                 // Realized ground draws its own real holdings.
                 PlanetTile root = CARegionalPlanUtility.SurfaceTile(
                     record.rootTileId);

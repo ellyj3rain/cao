@@ -129,7 +129,8 @@ namespace ColonistAwareness
             // plan-side realization uses, flattened once per world change
             // rather than walking the whole partition every frame.
             foreach ((CAWorldHolding holding, string region) in
-                CAWorldFrontier.Visible())
+                CAWorldFrontier.Visible(CARegionalGeography
+                    .PartitionContextIds()))
             {
                 PlanetTile tile = CARegionalPlanUtility.SurfaceTile(
                     holding.TileId);

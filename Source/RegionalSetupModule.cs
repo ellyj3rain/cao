@@ -105,7 +105,15 @@ namespace ColonistAwareness
 
     public sealed class CARegionalWorldPolicy : IExposable
     {
-        // Stitched-region frequency and size.
+        // The partition kernel is now geography-aware (barrier costs
+        // from elevation, hilliness, and biome transitions stop regions
+        // from growing across mountain ridges and major ecotones). These
+        // scalars remain as authored targets: the frequency band sets how
+        // much land the player wants in joined regions, and the size
+        // band caps how large a joined region can grow. Geography now
+        // modulates the realized result — a mountainous world realizes
+        // less joined land than a plains world at the same authored share
+        // — but the targets remain meaningful authoring controls.
         public float stitchedRegionFrequencyMin = 0.25f;
         public float stitchedRegionFrequencyMax = 0.55f;
         // Rolled once per world from the world seed and then persisted.
@@ -134,15 +142,34 @@ namespace ColonistAwareness
         // automatically reallocated settlements. It never creates a faction.
         public float reallocationSourceVariety = 0.50f;
 
-        // Urban scale applies only when population, geography,
-        // infrastructure, trade, and history can support a city.
-        public float urbanGrowthPropensity = 0.45f;
         // Every settlement retains its structural state. This controls how
-        // often distant factions and settlements act.
-        public float offMapActivityRate = 0.5f;
+        // often distant factions found new settlements while the player
+        // plays. Political-belief pulse cadence is now a derived property
+        // of institutional capacity, not an authored tendency.
+        public float distantFoundingRate = 0.5f;
+        // How developed the world's settlements are at the start. A real
+        // cause that replaces the hidden per-tile hash: the authored
+        // baseline is modulated by each settlement's position in the
+        // settlement network (regional centers are more developed than
+        // isolated outposts).
+        public float worldDevelopment = 0.6f;
+        // Coherent countertypical prevalence and extremity: how many
+        // settlements diverge from their faction\u2019s norm (tech level,
+        // political character) and how far that divergence goes. Low
+        // variability preserves the dominant world character; high
+        // variability produces outlier societies while the dominant
+        // character still holds.
+        public float worldVariability = 0.3f;
+        // Longitudinal stability: how slowly endogenous state transitions
+        // (culture drift, political shifts, institutional change, distant
+        // founding) proceed. High stability slows change; low stability
+        // accelerates it. This modulates legitimate transition cadence,
+        // not randomness; it is distinct from the Storyteller\u2019s threat
+        // pacing and from variability\u2019s spatial divergence.
+        public float worldStability = 0.5f;
         // Preset provenance: the last bundle applied, so a diverged state
         // can say which preset it came from. Purely descriptive; the
-        // eight values above are the only causes.
+        // eleven values above are the only causes.
         public string lastAppliedPresetKey;
 
         public void ExposeData()
@@ -168,10 +195,14 @@ namespace ColonistAwareness
                 "frontierHoldingSize", 0.50f);
             Scribe_Values.Look(ref reallocationSourceVariety,
                 "reallocationSourceVariety", 0.50f);
-            Scribe_Values.Look(ref urbanGrowthPropensity,
-                "urbanGrowthPropensity", 0.45f);
-            Scribe_Values.Look(ref offMapActivityRate,
-                "offMapActivityRate", 0.5f);
+            Scribe_Values.Look(ref distantFoundingRate,
+                "distantFoundingRate", 0.5f);
+            Scribe_Values.Look(ref worldDevelopment,
+                "worldDevelopment", 0.6f);
+            Scribe_Values.Look(ref worldVariability,
+                "worldVariability", 0.3f);
+            Scribe_Values.Look(ref worldStability,
+                "worldStability", 0.5f);
             Scribe_Values.Look(ref lastAppliedPresetKey,
                 "lastAppliedPresetKey");
         }
@@ -233,8 +264,10 @@ namespace ColonistAwareness
                 frontierHoldingFrequency = frontierHoldingFrequency,
                 frontierHoldingSize = frontierHoldingSize,
                 reallocationSourceVariety = reallocationSourceVariety,
-                urbanGrowthPropensity = urbanGrowthPropensity,
-                offMapActivityRate = offMapActivityRate,
+                distantFoundingRate = distantFoundingRate,
+                worldDevelopment = worldDevelopment,
+                worldVariability = worldVariability,
+                worldStability = worldStability,
                 lastAppliedPresetKey = lastAppliedPresetKey
             };
         }
@@ -269,10 +302,17 @@ namespace ColonistAwareness
                 ?.Settlements ?? new List<Settlement>())
             {
                 if (settlement == null || settlement.Faction == null
-                    || settlement.Faction == parentFaction
                     || settlement.Faction.IsPlayer
                     || !CARegionalPlanUtility.IsEligibleExistingFaction(
                         settlement.Faction)) continue;
+                bool isArrivalAnchor = settlement.Tile.tileId
+                    == plan.startTileId;
+                // All settlements on the region own member tiles are
+                // authoritative anchors: they stay on the world map,
+                // keep their vanilla layout, and get CAO composition.
+                // Only pool settlements from outside the region are
+                // reallocated and consumed.
+                bool sameFaction = settlement.Faction == parentFaction;
                 if (footprint.Contains(settlement.Tile.tileId))
                 {
                     // ARRIVAL MUST NOT CHANGE COMPOSITION. This skipped a
@@ -376,6 +416,7 @@ namespace ColonistAwareness
             {
                 CARegionalFactionPlan group = GroupFor(resident);
                 int destination = resident.Tile.tileId;
+                bool anchor = true;
                 usedByTile[destination] = usedByTile.TryGetValue(destination,
                     out int prior) ? prior + 1 : 1;
                 assignedTiles.Add(destination);
@@ -384,9 +425,14 @@ namespace ColonistAwareness
                     slot = slot,
                     memberTileId = destination,
                     OwningFactionKey = group.key,
-                    populationOrigin = CASettlementOrigin
-                        .ReallocatedFromWorldPool,
-                    reallocatedFromTileId = destination,
+                    // Every settlement on the region own ground is an
+                    // anchor. It keeps its vanilla layout and gets CAO
+                    // composition. Pool settlements from outside the
+                    // region are still reallocated and consumed.
+                    populationOrigin = anchor
+                        ? CASettlementOrigin.Unset
+                        : CASettlementOrigin.ReallocatedFromWorldPool,
+                    reallocatedFromTileId = anchor ? -1 : destination,
                     siteClusterKey = destination,
                     absorbedWorldPopulation = WorldPopulationAt(destination),
                     persistent = true
@@ -2320,33 +2366,60 @@ namespace ColonistAwareness
             };
             plan.regionalId = "CA-RG-"
                 + unchecked((uint)seed).ToString("X8");
+            TryAdoptPartitionIdentity(plan);
             plan.regionName = RegionName(plan);
             plan.footprintTileIds = CARegionalGeometry.ClaimedTiles(plan);
             return plan;
         }
 
-        // LAND IS ALREADY REGIONAL. Selecting new ground during setup
-        // selects the persistent partition region that contains it; the
-        // authored candidate starts as exactly that region, and composing
-        // edits from the base. The stock bundle remains the fallback for
-        // ground the partition does not cover.
+        // ONE LAND, ONE IDENTITY. A composition that matches a persistent
+        // partition region's member set exactly IS that region: the same
+        // land keeps the same identity whether the player arrived by
+        // selection, by extent and orientation, or tile by tile. The
+        // partition is geographic evidence, never a boundary the selection
+        // must reproduce; exact coincidence is the only path by which a
+        // candidate inherits a partition identity.
+        internal static void TryAdoptPartitionIdentity(CARegionalPlan plan)
+        {
+            if (plan?.memberTileIds == null || plan.memberTileIds.Count == 0)
+                return;
+            CARegionalTopologyRecord match = CARegionalWorldComponent
+                .Current?.TopologyRecordAt(plan.bundleRootTileId);
+            if (match?.memberTileIds != null
+                && match.memberTileIds.Count == plan.memberTileIds.Count
+                && new HashSet<int>(match.memberTileIds).SetEquals(
+                    plan.memberTileIds))
+                plan.regionalId = match.regionId;
+        }
+
+        // SELECTION IS AUTHORING. New ground selects by the established
+        // extent and orientation rules over connected usable land, with
+        // geographic barrier evidence biasing candidate growth - the same
+        // shared measure the world stitching is built from. The partition
+        // is not the selection, and configuration (extent, orientation)
+        // shapes the result. Ground the connected-land builder cannot
+        // claim at all (for example land already inside a realized
+        // region) keeps the partition record as the only remaining
+        // candidate source, preserving prior coverage there.
         internal static CARegionalPlan CreateAuthoredAt(
             CAExpandedLandmassProfile profile, PlanetTile clicked,
             int fallbackCount, int fallbackRotation)
         {
+            CARegionalPlan plan = Create(profile, clicked, true,
+                fallbackCount, fallbackRotation);
+            if (plan.memberTileIds != null && plan.memberTileIds.Count > 0)
+                return plan;
             CARegionalTopologyRecord record = CARegionalWorldComponent
                 .Current?.TopologyRecordAt(clicked);
-            if (record == null)
-                return Create(profile, clicked, true, fallbackCount,
-                    fallbackRotation);
-            CARegionalPlan plan = CreateExplicit(profile,
-                SurfaceTile(record.rootTileId),
+            if (record == null) return plan;
+            plan = CreateExplicit(profile, SurfaceTile(record.rootTileId),
                 record.memberTileIds.ToList(), 0);
             plan.regionalId = record.regionId;
             plan.startTileId = record.memberTileIds.Contains(clicked.tileId)
                 ? clicked.tileId : record.rootTileId;
             plan.creationSummary = "selected from the world's persistent "
-                + "regional partition";
+                + "regional partition after connected land could not be"
+                + " claimed";
             return plan;
         }
 
@@ -2441,17 +2514,9 @@ namespace ColonistAwareness
             };
             plan.regionalId = "CA-RG-"
                 + unchecked((uint)seed).ToString("X8");
-            // A composition that matches a persistent partition region
-            // exactly IS that region: the same land keeps the same
-            // identity whether the player arrived at it by selection or by
-            // composing their way back to it.
-            CARegionalTopologyRecord match = CARegionalWorldComponent
-                .Current?.TopologyRecordAt(root);
-            if (match?.memberTileIds != null
-                && match.memberTileIds.Count == memberIds.Count
-                && new HashSet<int>(match.memberTileIds).SetEquals(
-                    memberIds))
-                plan.regionalId = match.regionId;
+            // One land, one identity: a composition matching a partition
+            // region exactly inherits that region identity.
+            TryAdoptPartitionIdentity(plan);
             plan.regionName = RegionName(plan);
             plan.footprintTileIds = CARegionalGeometry.ClaimedTiles(plan);
             return plan;
@@ -2646,7 +2711,13 @@ namespace ColonistAwareness
             {
                 IOrderedEnumerable<PlanetTile> ordered = frontier.Values
                     .OrderByDescending(tile => SelectedNeighborCount(tile,
-                        chosen));
+                        chosen))
+                    // Geographic barrier evidence: among equally cohesive
+                    // candidates, prefer the attachment crossing the
+                    // weakest geographic barrier - the same shared measure
+                    // the world partition is built from. Evidence, never
+                    // a mandate: cohesion still orders first.
+                    .ThenBy(tile => AttachmentBarrier(tile, chosen));
                 // Orientation zero is the pre-rotation canonical ordering, so
                 // adding the control does not lose an already useful specimen.
                 // Other orientations bias the same nested growth sequence
@@ -2678,6 +2749,22 @@ namespace ColonistAwareness
                     frontier[tile.tileId] = tile;
                 }
             }
+        }
+
+        // The cheapest edge by which a frontier candidate could attach
+        // to the already-chosen set, by shared geographic barrier cost.
+        private static float AttachmentBarrier(PlanetTile candidate,
+            HashSet<int> chosen)
+        {
+            var neighbors = new List<PlanetTile>();
+            candidate.Layer.GetTileNeighbors(candidate, neighbors);
+            float cost = 1f;
+            foreach (PlanetTile neighbor in neighbors)
+                if (chosen.Contains(neighbor.tileId))
+                    cost = Math.Min(cost,
+                        CARegionalGeometry.GeographicBarrierCost(
+                            neighbor.tileId, candidate.tileId));
+            return cost;
         }
 
         private static float HeadingDistance(PlanetTile root,

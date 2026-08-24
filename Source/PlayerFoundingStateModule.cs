@@ -448,10 +448,11 @@ namespace ColonistAwareness
                 seed + ":technology");
             CATechnologicalKnowledgeModel.Ensure(
                 draft.technologicalKnowledge, seed + ":technology");
-            if (draft.arrangement == null
-                || draft.ArrangementSource == CAAxisSource.Unset
-                || draft.ArrangementSource == CAAxisSource.Generated)
-                UseSuggestedArrangement(draft);
+            // Founding terms are authored or absent: the operator chooses
+            // terms or a preset, and nothing is generated here. A draft
+            // without terms lands without terms (the blank arrangement
+            // fallback), and an already-authored arrangement is kept
+            // byte-for-byte.
             CaptureNativeIdeo(draft, NativeIdeo, null);
         }
 
@@ -602,6 +603,16 @@ namespace ColonistAwareness
 
         internal static int StartingPawnCount()
         {
+            // The generated pawn set is the truth wherever it exists. A
+            // scenario's configured total is only a premise until the pawn
+            // set is generated, and customization systems (for example
+            // Prepare Carefully) change the population there; consumers
+            // reading after generation must see the actual current set,
+            // never the presupposed count.
+            int generated = Find.GameInitData?.startingAndOptionalPawns
+                ?.Count ?? -1;
+            if (generated > 0) return generated;
+
             int initialized = Find.GameInitData?.startingPawnCount ?? -1;
             if (initialized > 0) return initialized;
 
