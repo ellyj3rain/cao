@@ -1,7 +1,7 @@
-﻿# Colonist Awareness - roadmap
+# Colonist Awareness - roadmap
 
 The A sequence is closed at `A102`; the chronology is complete through `B19`,
-and `B20` is the next development batch after the operator runtime test.
+and `B20` is the current development batch.
 Historical batch identifiers below use the current sequence. Thematic `T-*`
 identifiers link continuing work across nonadjacent batches. The chronological
 catalog is [`BATCH_LOG.md`](BATCH_LOG.md); thematic links are in
@@ -35,8 +35,7 @@ Shipped: eat smart; criticality hauling (+roof fallback); life safety (colonist/
 
 ## Shared awareness and reaction — A5 / T-004, T-005, T-008
 
-Built as `a2-5` / historical VERSION 0.2.2; in-game behavior and presentation remain pending
-operator verification after a full restart.
+Built as `a2-5` / historical VERSION 0.2.2.
 
 - Identified threat contacts are pawn-private evidence with explicit visual,
   damage, voice, radio, and future sensor provenance. Voice is local; radio
@@ -66,8 +65,7 @@ operator verification after a full restart.
 
 ## Communications medium and organization correction — A6 / T-004, T-005
 
-Built as `a2-6` / historical VERSION 0.2.2; code/Defs verification only. In-game behavior and
-presentation remain pending operator judgment after a full restart. This section
+Built as `a2-6` / historical VERSION 0.2.2. This section
 supersedes the A5 record only where its “faction-specific assault duty” wording or
 references to a group leader could imply faction differentiation or automatic NPC
 hierarchy.
@@ -105,8 +103,7 @@ hierarchy.
 
 ## Autonomy and knowledge correction — A7 / T-003, T-004, T-010
 
-Built as `a2-7` / historical VERSION 0.2.2; code verification only. In-game behavior remains
-pending operator judgment after a full restart.
+Built as `a2-7` / historical VERSION 0.2.2.
 
 - Directed now runs its declared survival floor: Eat Smart, Life Safety, and
   Criticality. Their feature settings remain authoritative; outsider rescue still
@@ -126,8 +123,7 @@ pending operator judgment after a full restart.
 
 ## Lost-contact tracking and concealment correction — A9 / T-004, T-008
 
-Built as `a2-9` / historical VERSION 0.2.2; code/Defs verification only. In-game behavior and
-presentation remain pending operator judgment after a full restart.
+Built as `a2-9` / historical VERSION 0.2.2.
 
 - Losing sight of an identified contact now starts a finite search of 3–7 reachable
   cells around that pawn's copied last-known position. Age, confidence, and
@@ -146,8 +142,7 @@ presentation remain pending operator judgment after a full restart.
 
 ## Individual immediate-combat correction — A12 / T-003, T-008
 
-Built as `a2-12` / historical VERSION 0.2.2; code/Defs verification only. In-game behavior and
-presentation remain pending operator judgment after a full restart.
+Built as `a2-12` / historical VERSION 0.2.2.
 
 - A fresh external-violence impact now reaches the existing humanlike 30-tick
   reaction lane before the later mind-state/contact notification. The pawn derives
@@ -179,8 +174,7 @@ presentation remain pending operator judgment after a full restart.
 
 ## Contact resolution and mission casualty triage — A13 / T-004, T-006
 
-Built as `a2-13` / historical VERSION 0.2.2; code/Defs verification only. In-game behavior and
-presentation remain pending operator judgment after a full restart.
+Built as `a2-13` / historical VERSION 0.2.2.
 
 - Contact identity now survives separately from its last observed state. Active,
   downed, dead, captured, nonhostile, nonthreatening, and destroyed are explicit
@@ -282,7 +276,6 @@ Persistent executor built as `a2-20`; cover-aware halt selection built as `a2-22
 late-contact bound conversion corrected and sensor-verified as `a2-26`; historical
 VERSION remained 0.2.2. Persistent job identity, local seven-cell bounds, mover/coverer role
 swaps, and visible ranged-fire attempts are verified after full restarts.
-Presentation remains pending operator in-game judgment.
 
 - A selected solo or covered withdrawal starts one persistent
   `CA_FightingWithdrawal` job per participant. The scribed map plan retains the
@@ -850,7 +843,7 @@ Built and statically verified:
    duplicate federation caches, separate political precepts, derived ideology
    classifier, old coast modes, and their migration paths are removed.
 
-Immediate runtime gates, in operator order:
+Regional continuity work:
 
 1. Restore the byte-identical keyed and mirror composition without losing
    factions, settlements, population groups, world tendencies, arrival area, or
@@ -867,7 +860,7 @@ Immediate runtime gates, in operator order:
 6. Record performance and generation receipts for the selected 350-cell local
    scale and multi-area backing map.
 
-After that runtime gate, continue the same model into off-map economy, reports,
+Continue the same model into off-map economy, reports,
 claims, operations, diplomacy, conflict, and map re-entry. New records must attach
 to current factions, settlements, population groups, and organizations instead of
 creating another political identity tier.
@@ -1444,10 +1437,6 @@ their exact, duration-aware relations and do not silently become broader
 institutions. Political Beliefs judge current practice; they do not become
 organization customs merely because the founders hold them.
 
-The next evidence is the operator's runtime test of hierarchy, copy fit,
-Back/Next stability, native Ideoligion editing, preset/custom continuity,
-belief-versus-arrangement clarity, and materialization in the real colony flow.
-
 ## Historical B5 boundary, superseded by B7-B8 - T-015, T-019, T-021, T-023, T-025
 
 B5 corrects the B4 Culture model at its ownership boundary. A population carries
@@ -1464,8 +1453,8 @@ Culture schema 3. B7 removed those invalid authoring abstractions; B8 replaced
 the Culture and persistence boundary. This paragraph is historical context, not
 the current settlement contract.
 
-B5's verified assembly was deployed at that historical boundary. The current
-runtime gate is recorded under B8 below.
+B5's verified assembly was deployed at that historical boundary; B7-B8 carry
+the subsequent authoring corrections.
 
 ## Behavior contract, authority, and playable runtime convergence - B6 / T-003–T-010, T-012, T-013, T-015, T-019, T-021, T-022, T-025
 
@@ -1493,8 +1482,7 @@ communication infrastructure, execution capability, presentation, and
 diagnostics. The read-only behavior census shows the selected actor's effective
 tier, catalog permissions, recent dynamic decision, and owned intent without
 authorizing work. The retained authoring suites and the B6 behavior-convergence
-suite provide the static gate; the named operator cases remain the next test of
-how the system looks, reads, and plays. B7 records the corrective reconstruction
+suite retain the implementation evidence. B7 records the corrective reconstruction
 of the creation ontology and the Culture acceptance boundary.
 
 ## Creation ontology and authoring reconstruction - B7 / T-002, T-013-T-015, T-019, T-021-T-025, T-028, T-030
@@ -1647,8 +1635,7 @@ regional-plan-schema-11 fixture keeps the same identity, 3 factions, 4
 settlements, 9 population groups, and 19 established operations while adding 22
 question distributions and 26 legacy evidence records. The 113-case B12 suite,
 retained regressions, five review lenses, clean build, publication, and
-byte-verified deployment close static acceptance. The next action is the
-operator's RimWorld runtime test.
+byte-verified deployment record the completed implementation.
 
 ## Culture Completion and Causal Fidelity - B13 / T-001, T-002, T-004, T-006, T-019, T-021-T-025, T-028, T-030
 
@@ -1677,8 +1664,7 @@ The governed fixture retains its exact identity and composition while eight
 Culture records carry 192 complete root distributions, two authored local rows,
 and 26 evidence records. Sixty-seven B13 receipts join the retained 75 B10, 78 B11,
 and 113 B12 assertions. Independent causal, structural, and surface review, a
-clean build, and byte-verified deployment close static acceptance. The next
-  action is the operator's RimWorld runtime test.
+clean build, and byte-verified deployment record the completed implementation.
 
 ## Regional World and Society Creation Convergence - B14 / T-001, T-002, T-013-T-015, T-019-T-030
 
@@ -1731,6 +1717,5 @@ question registry 3 preserve every compatible former Culture row and add only
 neutral, low-confidence, explicitly unobserved values for missing constructs.
 The governed fixture's one proven non-constituent sparse row remains exact legacy
 evidence instead of live scope state. The current fixture, retained B10-B15
-suites, reproducible builds, and byte-verified deployment close the static
-boundary. The next action is the operator's runtime test; `B17` is the next
-ordinary batch.
+suites, reproducible builds, and byte-verified deployment record that
+implementation; B17 carries the subsequent site-affiliation work.

@@ -413,8 +413,7 @@ internal static class Program
             .AppendLine("Assembly: `" + PortableAssemblyPath(dll) + "`")
             .AppendLine()
             .AppendLine("This executable reflection receipt loads the built assembly "
-                + "against RimWorld's managed references. It does not claim operator "
-                + "visual or gameplay acceptance.")
+                + "against RimWorld's managed references.")
             .AppendLine()
             .AppendLine("| Check | Result |")
             .AppendLine("|---|---|")

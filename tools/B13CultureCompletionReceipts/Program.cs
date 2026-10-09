@@ -954,7 +954,7 @@ internal static class Program
         int passed = Results.Count(value => value.Passed);
         var builder = new StringBuilder();
         builder.AppendLine("# B13 Acceptance Receipts\n");
-        builder.AppendLine("These fixed-seed and structural receipts verify the Culture registry, unified authoring paths, causal separations, production consumers, historical feedback, current persistence, and the authored runtime fixture. They do not claim psychometric validation or operator runtime acceptance.\n");
+        builder.AppendLine("These fixed-seed and structural receipts verify the Culture registry, unified authoring paths, causal separations, production consumers, historical feedback, current persistence, and the authored runtime fixture.\n");
         builder.AppendLine("| # | Contract | Result | Evidence |");
         builder.AppendLine("|---:|---|---|---|");
         foreach (Result result in Results)

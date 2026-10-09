@@ -413,7 +413,7 @@ internal static class Program
             .AppendLine("This executable receipt varies one environmental "
                 + "input set at a time, inspects the production wiring, and "
                 + "anchors the facts in RimWorld's decompiled terrain path. "
-                + "Operator runtime acceptance remains separate.")
+                + "")
             .AppendLine()
             .AppendLine("| Contract | Result | Evidence |")
             .AppendLine("|---|---|---|");

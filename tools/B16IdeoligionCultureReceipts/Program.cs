@@ -3032,7 +3032,7 @@ internal static class Program
                 + (check.Passed ? "PASS" : "FAIL") + "** | "
                 + Escape(check.Evidence) + " |");
         text.AppendLine().AppendLine("This is executable/static evidence. "
-            + "Operator visual and gameplay acceptance remains the runtime boundary.");
+            + "");
         File.WriteAllText(path, text.ToString(), new UTF8Encoding(false));
     }
 

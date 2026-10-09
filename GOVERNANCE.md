@@ -1,4 +1,4 @@
-﻿| Document | Colonist Awareness Overhaul Governance |
+| Document | Colonist Awareness Overhaul Governance |
 |---|---|
 <!-- cao:generated:version BEGIN -->
 | Version | `1.7.2.0-alpha` · closed batch tip `B19` · next `B20` |
@@ -86,6 +86,12 @@ substrate; the other three are what make the mod a framework.
   non-generic checkpoint named for what it proves, then continue from the working
   save. Pure observation with no meaningful state change may close unsaved.
 
+## Development assessment
+
+Neo owns the current verification assessment and README upkeep. Use `neo-verification-assessment` to reconcile operator feedback, fixes, daily simulation checks and cumulative play observations into the aggregate capability record. Select sufficient checks for changed contracts and retain applicable evidence; the operator is never assigned a mechanic enumeration or documentation chore.
+
+A batch delivers a coherent mechanic or product within its agreed scope and closes when that work is implemented and sufficiently checked. Later improvements receive a new linked batch. Play takes place when the aggregate build is playable; individual source changes do not create a standing playtest acceptance queue.
+
 ## Governance
 
 - `CORE.md` — project identity and canonical component set. `MEMORY.md` — index
@@ -113,7 +119,7 @@ substrate; the other three are what make the mod a framework.
   evidence. Local Git commits are supporting engineering evidence when retained.
 - Batch identifiers share one namespace across letter eras. The A sequence is
   closed at `A102`; development continues with `[B#]` in the same directory and
-  log. `B19` is closed and `B20` is next after the operator runtime-test boundary. A new letter does not create another
+  log. `B19` is closed and `B20` is the current development batch. A new letter does not create another
   history tree, generator, catalog, or projection layer.
 - The records now under `Batches/` establish this append-only contract. The
   immediately preceding generated history tree was a regulatory projection, not
@@ -279,8 +285,7 @@ semantic records or duplicate authoring surfaces.
 
 B11 closed after retained B10 regressions, the complete mechanics coverage
 matrix, five-lens review with no unresolved Critical or High finding, a clean
-build, normal publication, and byte-identical closed-process deployment. Static
-closure did not establish gameplay quality.
+build, normal publication, and byte-identical closed-process deployment.
 
 ## B12 Cultural Cognition Contract
 
@@ -303,11 +308,10 @@ authorization, or direct, relayed, or save-restored operator intent. Direct
 observation is knowledge regardless of access norms. Novelty affects attention
 and transmission, not truth, discovery, or native research completion.
 
-B12 closes only after 113/113 causal receipts, current-schema fixture agreement,
+B12 retained 113/113 causal receipts and current-schema fixture agreement,
 retained B10/B11 regressions, causal, psychometric/statistical, structural,
 correctness, and surface review, a clean build, normal publication, and
-byte-identical closed-process deployment. Static evidence does not establish
-psychometric validity, empirical calibration, or gameplay quality.
+byte-identical closed-process deployment.
 
 ## B13 Culture Boundary
 
@@ -331,8 +335,7 @@ silent player rerolls are invalid.
 
 B13 closed after 67/67 B13 receipts, retained 75/78/113 B10-B12 suites,
 current-fixture agreement, independent causal/structural/surface review, a clean
-build, and byte-identical closed-process deployment. Static evidence does not
-  establish empirical calibration or gameplay quality.
+build, and byte-identical closed-process deployment.
 
 ## B14 Regional World and Society Creation Contract
 

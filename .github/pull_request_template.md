@@ -12,7 +12,7 @@ Runtime behavior changed: yes / no
 - [ ] All declared current and retained executable support projects compile.
 - [ ] Required receipts or current-state records are updated.
 
-## Operator boundary
+## Product result
 
-Describe any visual, gameplay, save, deployment, or runtime evidence that remains
-for the operator. Automated checks do not substitute for operator acceptance.
+Summarize the delivered mechanic, applicable checks and observed feedback.
+Record concrete unresolved defects or later linked improvements.

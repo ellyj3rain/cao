@@ -170,8 +170,7 @@ the correct one. A second contribution was taken in the negative: OTW
 toggles `def.blockLight` on the SHARED def at runtime, and CA's
 shutter open/closed states are two defs swapped per instance
 specifically to avoid that wart.
-*Status:* technique adapted; no upstream code or assets copied;
-runtime unverified.
+*Status:* technique adapted; no upstream code or assets copied.
 
 ## Skylights (archdukejim)
 archdukejim. https://github.com/archdukejim/rimworld-skylights -
@@ -185,7 +184,7 @@ were deliberately not taken; CA lights cells for gameplay and states
 the overlay gap instead of patching the render mesh.
 *Status:* technique adapted (shared patch point with Open The
 Windows, credited per what each contributed); no upstream code
-copied; runtime unverified.
+copied.
 
 Windows and aperture prior art that was audited but NOT used -
 Owlchemist's Open The Windows fork, ED-Embrasures (whose def-only

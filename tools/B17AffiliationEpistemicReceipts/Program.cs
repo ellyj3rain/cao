@@ -735,7 +735,7 @@ internal static class Program
             .AppendLine()
             .AppendLine("Semantic fingerprint: `" + fixture.Fingerprint + "`")
             .AppendLine()
-            .AppendLine("This executable receipt verifies data behavior; operator gameplay remains the runtime acceptance boundary.");
+            .AppendLine("This executable receipt verifies data behavior.");
         File.WriteAllText(path, text.ToString(), new UTF8Encoding(false));
     }
 

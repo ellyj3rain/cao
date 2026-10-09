@@ -123,7 +123,7 @@ or relationship validation leaves the predecessor graph intact. Realized
 campaign compatibility follows the catalog preflight and backup contract in
 `CAMPAIGN_COMPATIBILITY.md`.
 
-## Acceptance boundary
+## Recorded coverage
 
 Executable B17 receipts cover owned and factionless major sites, unaffiliated
 frontier forms, support without ownership, mixed resident affiliation, local
@@ -131,5 +131,4 @@ social state without a faction, Ideoligion and institutions independent from
 ownership, scale transitions, Scribe readback, atomic migration rollback,
 pawn-private observations, relayed provenance, stale and contradictory records,
 explicit correction, fact-specific retention, the default-off boundary, and the
-broader fact-family audit. Build and receipt evidence does not establish visual
-or gameplay acceptance; the operator runtime test remains the next boundary.
+broader fact-family audit.

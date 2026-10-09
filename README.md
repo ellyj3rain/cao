@@ -6,7 +6,7 @@ institutions, beliefs, and authority. Factions make decisions and carry their
 consequences forward instead of resetting to isolated game events.
 
 <!-- cao:generated:version BEGIN -->
-Current version: `1.7.2.0-alpha`. Implementation is complete through batch `B19`; `B20` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.
+Current version: `1.7.2.0-alpha`. Closed batch history reaches `B19`; `B20` is the current development batch. SESSION_STATE records the current implementation, deployment and aggregate capability assessment.
 <!-- cao:generated:version END -->
 
 ## Framework
@@ -236,7 +236,7 @@ changes require a full RimWorld restart.
 | `About/` | Mod metadata and dependency declaration |
 | `ARCHITECTURE.md` | Current framework architecture and ownership |
 | `GOVERNANCE.md` | Project operating rules |
-| `SESSION_STATE.md` | Current build, deployment, fixture, and runtime-test boundary |
+| `SESSION_STATE.md` | Current implementation, deployment, fixture, and aggregate capability assessment |
 | `Batches/` | Append-only batch records in one alphanumeric namespace |
 | `BATCH_LOG.md` | Chronological batch catalog |
 | `Batches/THREADS.md` | Series-neutral thematic classification |
@@ -277,7 +277,7 @@ node tools/version-model.mjs --check
 Local Git may retain engineering history. A published forge is a distribution
 surface, not the project identity or the authority for its portable history.
 
-## Verification boundary
+## Working capability and assessment
 
 Executable receipts cover authoring ownership, creation navigation, founding
 state, World tendencies, behavior authorization, Culture distributions,
@@ -285,10 +285,26 @@ psychology, private/public attitudes, sparse influence, political formation,
 institutional legitimacy and sanctions, proposition knowledge, Culture history,
 domestic identity, capability evidence, operational programs, provision
 operators, fixture/runtime equivalence, and derived-state stability.
-Static receipts, builds, hashes, and reviews establish that a candidate is ready
-for the operator; they do not establish how the game looks or plays. See
-[`SESSION_STATE.md`](SESSION_STATE.md) for the exact current assembly, deployment,
-fixture, and remaining RimWorld observations.
+
+Repeated native runs and operator play already establish working emergency/work
+autonomy, construction and storage, hauling, tactical behavior, regional generation,
+and campaign creation/save/reload. The linked observations below support those
+behaviors and outcomes. Neo recovers further feedback and fixes as development
+continues and keeps this assessment current.
+
+| Working group | Retained evidence |
+|---|---|
+| Emergency/work autonomy | [F-39](FINDINGS.md): native fire fixtures exercised approach, extinguishing and repair. |
+| Construction, storage and hauling | [F-72/F-74](FINDINGS.md): operator accepted placement, stockpile access and native medical hauling. |
+| Tactical behavior | [F-108 and later battle findings](FINDINGS.md): actual native combat retained movement, contact-breaking and materially improved behavior. |
+| Regional generation | [B14 runtime receipt](Receipts/B14/B14_GENERATION_RUNTIME_RECEIPT.md): four settlements materialized with their ownership, populations and relationships; the operator reported an impressive live map. |
+| Society and knowledge custody | [B15 execution receipt](Receipts/B15/B15_TECHNOLOGICAL_KNOWLEDGE_EXECUTION_RECEIPT.md): Society targets apply atomically and survive saved-state readback; local knowledge availability follows carrier custody, loss, incapacity and recovery. |
+| Settlement materials and work | [B19 substrate receipt](Receipts/B19/B19_REGIONAL_SUBSTRATE_ACCEPTANCE_RECEIPT.md): construction materials follow represented capacity and Culture; settlement roles produce distinct works and shared defenses once. |
+| Campaign operation and durability | [B18 performance receipt](Receipts/B18/B18_PERFORMANCE_RECEIPT.md): repeated creation, speed changes, raid/fire, full simulation days, save and reload. |
+
+Neo maintains this summary from actual work and feedback. See
+[`SESSION_STATE.md`](SESSION_STATE.md) for the current implementation, deployment
+and specific continuing work.
 
 ## License and provenance
 

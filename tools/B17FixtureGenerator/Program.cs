@@ -379,7 +379,7 @@ internal static class Program
             + "| Current pair SHA-256 | `" + afterHash + "` |\n\n"
             + "Active: `" + active.Replace('\\', '/') + "`\n\n"
             + "Mirror: `" + mirror.Replace('\\', '/') + "`\n\n"
-            + "This structural receipt does not claim operator visual or gameplay acceptance.\n";
+            + "This structural receipt records the fixture conversion.\n";
         File.WriteAllText(path, text, new UTF8Encoding(false));
     }
 

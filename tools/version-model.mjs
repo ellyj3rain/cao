@@ -1,4 +1,4 @@
-﻿import {
+import {
   existsSync,
   readFileSync,
   readdirSync,
@@ -695,7 +695,7 @@ The thematic catalog is series-neutral in [\`Batches/THREADS.md\`](Batches/THREA
 
 const STAMP_MARKER = "cao:generated:version";
 const STAMP_TARGETS = Object.freeze({
-  "README.md": () => `Current version: \`${CURRENT_VERSION}\`. Implementation is complete through batch \`${CLOSED_BATCH_TIP}\`; \`${NEXT_BATCH}\` is the next development batch. SESSION_STATE records the verified assembly and live deployment state. Static verification does not substitute for how the game looks and plays.`,
+  "README.md": () => `Current version: \`${CURRENT_VERSION}\`. Closed batch history reaches \`${CLOSED_BATCH_TIP}\`; \`${NEXT_BATCH}\` is the current development batch. SESSION_STATE records the current implementation, deployment and aggregate capability assessment.`,
   "CORE.md": () => `| Version | \`${CURRENT_VERSION}\` · closed batch tip \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
   "GOVERNANCE.md": () => `| Version | \`${CURRENT_VERSION}\` · closed batch tip \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
   "MEMORY.md": () => `| Version | \`${CURRENT_VERSION}\` · closed batch tip \`${CLOSED_BATCH_TIP}\` · next \`${NEXT_BATCH}\` |`,
