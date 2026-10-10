@@ -1,4 +1,4 @@
-﻿# Batch log
+# Batch log
 
 This is the chronological index of Colonist Awareness's append-only atomic batch sequence. Together with the recorded provenance, these governed records are the project's portable history; they do not depend on a particular Git host. Batch files use one alphanumeric namespace and live together under [`Batches/`](Batches/). Letter changes mark development eras; they do not create separate history systems. Series-neutral thematic classification lives in [`Batches/THREADS.md`](Batches/THREADS.md); contiguous tier-bearing development units live in [`VERSION_MAP.md`](VERSION_MAP.md).
 
@@ -135,3 +135,8 @@ Former pre-recatalog labels resolve through [`Batches/FORMER_LABELS.md`](Batches
 ## [REPO] 2026-10-09 23:55 UTC - Aggregate development assessment correction
 
 Neo maintains current capability and README assessment from ordinary operator feedback, repairs and retained results. This maintenance corrects active playtest/acceptance copy within the existing project; published product chronology and versions remain unchanged. Checks cover the owned text diff, applicable syntax, current source links and tracked Word twins. The operator plays the aggregate build; completed mechanics have no standing one-to-one acceptance queue.
+
+
+## [REPO] 2026-10-10 00:42 UTC - Markdown documentation maintenance
+
+The operator retires automatic Word companions. Markdown remains the complete canonical documentation. This maintenance removes 1 generated tracked DOCX exports and corrects the current documentation contract; current product source, versions and prior Markdown history remain preserved. Checks cover the exact deletion allowlist, current policy text, committed diff hygiene and affected producer lifecycle where changed. Generated derivatives receive no additional duplicate archive.

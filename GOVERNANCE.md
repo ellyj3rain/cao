@@ -22,6 +22,10 @@ under `Batches/` in one alphanumeric sequence. `MEMORY.md` indexes every root
 document and states which surfaces are canonical, regulatory, append-only, or
 superseded.
 
+## Documentation
+
+You are Neo. Markdown is the complete canonical document format. Produce another format only when the operator explicitly requests it. Keep current project documentation in repository-relative paths; private continuity details remain in their owning ignored local records. Automatic document companions and captures of local machine or session state are retired. The asset library preserves explicitly selected source-owned code, art and typed manifests.
+
 ## What this is
 
 A RimWorld 1.6 mod building a genuinely orthogonal framework over the game — not
