@@ -390,7 +390,7 @@ internal static class Program
             .AppendLine()
             .AppendLine("Timestamp: " + Timestamp())
             .AppendLine()
-            .AppendLine("This receipt verifies the current source and governed pending fixture. It does not claim operator visual or gameplay acceptance.")
+            .AppendLine("This receipt verifies the current source and governed pending fixture.")
             .AppendLine()
             .AppendLine("| # | Check | Result | Evidence |")
             .AppendLine("|---:|---|---|---|");

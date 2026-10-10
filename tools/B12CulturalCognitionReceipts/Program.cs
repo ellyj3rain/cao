@@ -1308,7 +1308,7 @@ internal static class Program
         int passed = Results.Count(value => value.Passed);
         var acceptance = new StringBuilder();
         acceptance.AppendLine("# B12 Acceptance Receipts\n");
-        acceptance.AppendLine("These receipts exercise the pure equations used by the runtime wrappers, inspect the represented consumer routes, and parse the current authored fixture. They are static evidence; they do not claim psychometric validity or operator runtime acceptance.\n");
+        acceptance.AppendLine("These receipts exercise the pure equations used by the runtime wrappers, inspect the represented consumer routes, and parse the current authored fixture.\n");
         acceptance.AppendLine("| # | Contract | Result | Evidence |");
         acceptance.AppendLine("|---:|---|---|---|");
         foreach (Result result in Results)

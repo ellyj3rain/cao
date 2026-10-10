@@ -1478,7 +1478,7 @@ internal static class Program
             .AppendLine("Three-component fingerprints: `"
                 + string.Join("`, `", presetHashes) + "`")
             .AppendLine()
-            .AppendLine("This executable receipt verifies causal data behavior. It does not claim operator visual or gameplay acceptance.");
+            .AppendLine("This executable receipt verifies causal data behavior.");
         File.WriteAllText(path, text.ToString(), new UTF8Encoding(false));
     }
 
@@ -1518,7 +1518,7 @@ internal static class Program
             .AppendLine()
             .AppendLine("Repository: repository root")
             .AppendLine()
-            .AppendLine("This static receipt verifies source topology and compiled contracts. It does not claim operator visual or gameplay acceptance.");
+            .AppendLine("This static receipt verifies source topology and compiled contracts.");
         File.WriteAllText(path, text.ToString(), new UTF8Encoding(false));
     }
 
@@ -1551,8 +1551,7 @@ internal static class Program
                 + "through the same translator and receive their own receipt; "
                 + "an unused cell is not implementation evidence.")
             .AppendLine()
-            .AppendLine("This source and executable matrix does not claim "
-                + "operator visual or gameplay acceptance.");
+            .AppendLine("This matrix records source routes and executable contracts.");
         File.WriteAllText(path, text.ToString(), new UTF8Encoding(false));
     }
 
@@ -1587,8 +1586,7 @@ internal static class Program
                 + "path is `pawnGroup`, which materializes population rather "
                 + "than choosing the settlement's structural capability.")
             .AppendLine()
-            .AppendLine("This static/decompiled census does not claim operator "
-                + "visual or gameplay acceptance.");
+            .AppendLine("This census records static and decompiled source evidence.");
         File.WriteAllText(path, text.ToString(), new UTF8Encoding(false));
     }
 

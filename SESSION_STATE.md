@@ -1,16 +1,18 @@
-﻿| Document | Colonist Awareness Overhaul Session State |
+| Document | Colonist Awareness Overhaul Session State |
 |---|---|
 <!-- cao:generated:version BEGIN -->
 | Version | `1.7.2.0-alpha` · closed batch tip `B19` · next `B20` |
 <!-- cao:generated:version END -->
 | Repository | `SESSION_STATE.md` |
-| Status | CLOSED - B19 is built, verified, recorded, and published to main; the only remaining B19 boundary is the operator's in-game visual/gameplay acceptance, then B20. |
+| Status | CLOSED - B19 is built, verified, recorded, and published to main; B20 implementation continues on its existing branch and pull request. |
 
 # Session state
 
-Updated 2026-08-22 (B19 closure + publication). Read this before claiming where
-creation or gameplay testing stands. Compile, deterministic acceptance,
-deployment, CI verification, and operator runtime evidence remain separate.
+Current assessment corrected 2026-10-09. B19 remains the published product line;
+B20 implementation and later composer work remain on the existing branch and
+PR #18. Neo maintains the aggregate capability description from retained native
+results, ordinary operator feedback and repairs. README.md links the working
+behavior and its actual supporting records.
 
 ## B19 - Regional substrate realization and settlement composition closure
 
@@ -63,8 +65,7 @@ normalization) on the clean published B17 base, preserving the exact final tree.
 
 Current executable receipts in `Receipts/B19` establish source, deterministic
 acceptance, retained-suite, build, and deployment-identity evidence. CI
-(ci-verify) established the governed 8.0.423 reproducible-build receipt. None of
-this establishes how the flow looks or plays.
+(ci-verify) established the governed 8.0.423 reproducible-build receipt.
 
 ## Reproducible build (CI-verified)
 
@@ -77,19 +78,14 @@ CI: PR #16 `ci-verify` ran the governed 8.0.423 build, produced two
 byte-identical reproducible builds, and proved the tracked shipping assembly is
 current. CI is the governed arbiter for this receipt; it is not debt.
 
-## Operator runtime boundary
+## Continuing composer work
 
-A fresh operator launch is the next evidence boundary and the only remaining
-B19 boundary. The agent does not choose values, advance creation, start the
-game, alter saves, or claim visual or gameplay acceptance for the operator.
+Neo owns the current verification assessment and README upkeep. Use `neo-verification-assessment` to reconcile operator feedback, fixes, daily simulation checks and cumulative play observations into the aggregate capability record. Select sufficient checks for changed contracts and retain applicable evidence; the operator is never assigned a mechanic enumeration or documentation chore.
 
-| Runtime focus | Operator check |
-|---|---|
-| Create World front door | Confirm World character reads as intended - nine named worlds, plain-language detail, named differences, tendencies one door deeper; copy asserts only witnessed mechanics. |
-| Regional start | Confirm the fixture region loads and a start reaches a playable map with visible progress throughout. |
-| Settlement composition | Visit generated settlements; confirm culture, style, material reach, quarters, and roles present and reachable. |
-| Anchor boundary | Confirm the world-map settlement standing/population inspect-string reads honestly; entering a non-player settlement produces vanilla generation. |
-| Save/reload | Save and reload the real campaign; note wall time (large regional saves carry a measured native load cost). |
+B20 implementation continues through the existing branch and PR #18. Retain
+its recorded composer direction, ordinary operator feedback and observed repairs.
+Later improvements receive their owning linked batch; aggregate play has no
+standing one-to-one acceptance queue.
 
 ## Environment and preserved evidence
 
@@ -105,4 +101,4 @@ game, alter saves, or claim visual or gameplay acceptance for the operator.
 - `origin/main` = `1e97b75d` = the canonical B19-closed line (merged via PR #16, rebase-merge, linear, CI-verified).
 - `origin/mallowfluff/b18-authoring-state-convergence` deleted (superseded by main).
 - Local `archive/claude-post-b17-raw` (`91a30aa`) preserves Claude's raw post-B17 tip for forensic provenance.
-- B20 is the next development batch; not started.
+- B20 is the current development batch on `b20-world-authoring-ontology-cleanup`; PR #18 remains independent from this documentation correction.
