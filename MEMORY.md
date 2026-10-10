@@ -33,7 +33,7 @@ junction for the operator, not a defect in the index.
 
 | File | Status | Role |
 |---|---|---|
-| `README.md`, `README.docx` | CANONICAL | Human entry point in working and document formats. |
+| `README.md` | CANONICAL | Complete Markdown human entry point. |
 | `MEMORY.md` | CANONICAL | This index. |
 | `CORE.md` | CANONICAL | Project identity, canonical composition, governing constraints. |
 | `ARCHITECTURE.md` | CANONICAL | Ratified framework shape; the four pillars. |
