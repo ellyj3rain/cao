@@ -25,7 +25,7 @@
     <!-- Portable build: official reference assemblies + Harmony from NuGet.
          Compiles on any machine with the .NET SDK - no game install, no Steam paths. -->
     <PackageReference Include="Krafs.Rimworld.Ref" Version="[1.6.4871]" />
-    <PackageReference Include="Lib.Harmony" Version="[2.4.2]" ExcludeAssets="runtime" />
+    <PackageReference Include="Lib.Harmony" Version="[2.4.3]" ExcludeAssets="runtime" />
   </ItemGroup>
 
 </Project>
